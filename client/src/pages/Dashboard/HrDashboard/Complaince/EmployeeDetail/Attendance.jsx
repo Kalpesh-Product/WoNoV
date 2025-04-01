@@ -20,6 +20,7 @@ import dayjs from "dayjs";
 import SecondaryButton from "../../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { TextField } from "@mui/material";
+import humanTime from "../../../../../utils/humanTime";
 
 const Attendance = () => {
   const axios = useAxiosPrivate();
@@ -65,7 +66,7 @@ const Attendance = () => {
     },
   });
   const attendanceColumns = [
-    { field: "date", headerName: "Date", width: 200 },
+    // { field: "date", headerName: "Date", width: 200 },
     { field: "inTime", headerName: "In Time" },
     { field: "outTime", headerName: "Out Time" },
     { field: "workHours", headerName: "Work Hours" },
@@ -74,63 +75,7 @@ const Attendance = () => {
     { field: "totalHours", headerName: "Total Hours" },
     { field: "entryType", headerName: "Entry Type" },
   ];
-  const rows = [
-    {
-      id: 1,
-      date: "2025-01-20",
-      inTime: "09:00 AM",
-      outTime: "05:30 PM",
-      workHours: "8h 30m",
-      breakHours: "1h",
-      totalHours: "9h 30m",
-      entryType: "Biometric",
-      status: "Sync",
-    },
-    {
-      id: 2,
-      date: "2025-01-19",
-      inTime: "09:15 AM",
-      outTime: "05:45 PM",
-      workHours: "8h 15m",
-      breakHours: "45m",
-      totalHours: "9h",
-      entryType: "Manual",
-      status: "Sync",
-    },
-    {
-      id: 3,
-      date: "2025-01-18",
-      inTime: "09:00 AM",
-      outTime: "05:00 PM",
-      workHours: "8h",
-      breakHours: "1h",
-      totalHours: "9h",
-      entryType: "Biometric",
-      status: "Sync",
-    },
-    {
-      id: 4,
-      date: "2025-01-17",
-      inTime: "09:30 AM",
-      outTime: "06:00 PM",
-      workHours: "8h 30m",
-      breakHours: "1h",
-      totalHours: "9h 30m",
-      entryType: "Biometric",
-      status: "Sync",
-    },
-    {
-      id: 5,
-      date: "2025-01-16",
-      inTime: "09:00 AM",
-      outTime: "05:30 PM",
-      workHours: "8h 30m",
-      breakHours: "30m",
-      totalHours: "9h",
-      entryType: "Manual",
-      status: "Sync",
-    },
-  ];
+
 
   //Attendance graph options
 
@@ -444,9 +389,9 @@ const Attendance = () => {
                 ]
               : attendance.map((record, index) => ({
                   id: index + 1,
-                  date: humanDate(record.date),
-                  inTime: record.inTime,
-                  outTime: record.outTime,
+                  // date: humanDate(record.date),
+                  inTime: humanTime(record.inTime),
+                  outTime: humanTime(record.outTime),
                   workHours: record.workHours,
                   breakHours: record.breakHours,
                   totalHours: record.totalHours,
