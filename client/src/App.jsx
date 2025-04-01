@@ -3,7 +3,6 @@ import { routes } from "./routes/Routes";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { Toaster } from "sonner";
 
-
 const theme = createTheme({
   typography: {
     fontFamily: [
@@ -15,13 +14,47 @@ const theme = createTheme({
       "sans-serif",
     ].join(","),
   },
+  components: {
+    MuiInputBase: {
+      styleOverrides: {
+        input: {
+          fontSize: "0.875rem",
+        },
+      },
+    },
+    MuiMenuItem:{
+      styleOverrides:{
+        root:{
+          fontSize:'0.875rem'
+        }
+      }
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#1E3D73",
+          },
+        },
+      },
+    },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          "&.Mui-focused": {
+            color: "#1E3D73",
+          },
+        },
+      },
+    },
+  },
 });
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
-        <RouterProvider router={routes} />
-        <Toaster richColors />
+      <RouterProvider router={routes} />
+      <Toaster richColors />
     </ThemeProvider>
   );
 }
