@@ -1,0 +1,345 @@
+;
+import WidgetSection from "../../../../../components/WidgetSection";
+import AgTable from "../../../../../components/AgTable";
+import BarGraph from "../../../../../components/graphs/BarGraph";
+import DataCard from "../../../../../components/DataCard";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
+
+const Attendance = () => {
+  const axios = useAxiosPrivate();
+  const { data: attendance, isLoading } = useQuery({
+    queryKey: ["attendance"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/attendance/get-all-attendance");
+        return response.data;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
+  const attendanceColumns = [
+    { field: "date", headerName: "Date", width: 200 },
+    { field: "inTime", headerName: "In Time" },
+    { field: "outTime", headerName: "Out Time" },
+    { field: "workHours", headerName: "Work Hours" },
+    { field: "breakHours", headerName: "Break Hours" },
+
+    { field: "totalHours", headerName: "Total Hours" },
+    { field: "entryType", headerName: "Entry Type" },
+  ];
+
+
+  //Attendance graph options
+
+  const attendanceData = [
+    {
+      date: "01-01-2025",
+      inTime: "9:45 AM",
+      outTime: "6:30 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0.25 }, // Gray (15 minutes)
+        { color: "#34a853", value: 8.25 }, // Green (495 minutes)
+        { color: "#ff0000", value: 0.5 },  // Red (30 minutes)
+      ],
+    },
+    {
+      date: "02-01-2025",
+      inTime: "10:00 AM",
+      outTime: "6:15 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0.5 },  // Gray (30 minutes)
+        { color: "#34a853", value: 7.75 }, // Green (465 minutes)
+        { color: "#ff0000", value: 0.75 }, // Red (45 minutes)
+      ],
+    },
+    {
+      date: "03-01-2025",
+      inTime: "9:30 AM",
+      outTime: "6:30 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0 },    // Gray (0 minutes)
+        { color: "#34a853", value: 9 },    // Green (540 minutes)
+        { color: "#ff0000", value: 0 },    // Red (0 minutes)
+      ],
+    },
+    {
+      date: "04-01-2025",
+      inTime: "9:50 AM",
+      outTime: "6:20 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0.3 },  // Gray (18 minutes)
+        { color: "#34a853", value: 8 },    // Green (480 minutes)
+        { color: "#ff0000", value: 0.5 },  // Red (30 minutes)
+      ],
+    },
+    {
+      date: "06-01-2025",
+      inTime: "10:05 AM",
+      outTime: "6:10 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0.4 },  // Gray (24 minutes)
+        { color: "#34a853", value: 7.5 },  // Green (450 minutes)
+        { color: "#ff0000", value: 1 },    // Red (60 minutes)
+      ],
+    },
+    {
+      date: "07-01-2025",
+      inTime: "9:30 AM",
+      outTime: "6:30 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0 },    // Gray (0 minutes)
+        { color: "#34a853", value: 9 },    // Green (540 minutes)
+        { color: "#ff0000", value: 0 },    // Red (0 minutes)
+      ],
+    },
+    {
+      date: "08-01-2025",
+      inTime: "9:40 AM",
+      outTime: "6:25 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0.2 },  // Gray (12 minutes)
+        { color: "#34a853", value: 8.5 },  // Green (510 minutes)
+        { color: "#ff0000", value: 0.3 },  // Red (18 minutes)
+      ],
+    },
+    {
+      date: "09-01-2025",
+      inTime: "9:55 AM",
+      outTime: "6:15 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0.4 },  // Gray (24 minutes)
+        { color: "#34a853", value: 7.75 }, // Green (465 minutes)
+        { color: "#ff0000", value: 0.85 }, // Red (51 minutes)
+      ],
+    },
+    {
+      date: "10-01-2025",
+      inTime: "9:30 AM",
+      outTime: "6:45 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0.1 },  // Gray (6 minutes)
+        { color: "#34a853", value: 8.75 }, // Green (525 minutes)
+        { color: "#ff0000", value: 0.15 }, // Red (9 minutes)
+      ],
+    },
+    {
+      date: "11-01-2025",
+      inTime: "10:00 AM",
+      outTime: "6:00 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0.6 },  // Gray (36 minutes)
+        { color: "#34a853", value: 7.25 }, // Green (435 minutes)
+        { color: "#ff0000", value: 1.15 }, // Red (69 minutes)
+      ],
+    },
+    {
+      date: "13-01-2025",
+      inTime: "9:45 AM",
+      outTime: "6:30 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0.25 }, // Gray (15 minutes)
+        { color: "#34a853", value: 8.25 }, // Green (495 minutes)
+        { color: "#ff0000", value: 0.5 },  // Red (30 minutes)
+      ],
+    },
+    {
+      date: "14-01-2025",
+      inTime: "9:35 AM",
+      outTime: "6:40 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0.2 },  // Gray (12 minutes)
+        { color: "#34a853", value: 8.75 }, // Green (525 minutes)
+        { color: "#ff0000", value: 0.05 }, // Red (3 minutes)
+      ],
+    },
+    {
+      date: "15-01-2025",
+      inTime: "10:10 AM",
+      outTime: "6:20 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0.5 },  // Gray (30 minutes)
+        { color: "#34a853", value: 7.5 },  // Green (450 minutes)
+        { color: "#ff0000", value: 1 },    // Red (60 minutes)
+      ],
+    },
+    {
+      date: "16-01-2025",
+      inTime: "9:45 AM",
+      outTime: "6:30 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0.25 }, // Gray (15 minutes)
+        { color: "#34a853", value: 8.25 }, // Green (495 minutes)
+        { color: "#ff0000", value: 0.5 },  // Red (30 minutes)
+      ],
+    },
+    {
+      date: "17-01-2025",
+      inTime: "9:50 AM",
+      outTime: "6:10 PM",
+      sections: [
+        { color: "#d3d3d3", value: 0.4 },  // Gray (24 minutes)
+        { color: "#34a853", value: 7.5 },  // Green (450 minutes)
+        { color: "#ff0000", value: 1 },    // Red (60 minutes)
+      ],
+    },
+  ];
+  
+  
+
+  const attendanceSeries = [
+    {
+      name: "Gray (Late Check-In)",
+      data: attendanceData.map((entry) => entry.sections[0].value), // Gray section values
+      color: "#d3d3d3",
+    },
+    {
+      name: "Green (Completed)",
+      data: attendanceData.map((entry) => entry.sections[1].value), // Green section values
+      color: "#34a853",
+    },
+    {
+      name: "Red (Remaining)",
+      data: attendanceData.map((entry) => entry.sections[2].value), // Red section values
+      color: "#ff0000",
+    },
+  ];
+
+  const options = {
+    chart: {
+      type: "bar",
+      stacked: true,
+      fontFamily: "Poppins-Regular",
+      toolbar: {
+        show: true,
+      },
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "70%",
+        borderRadius: 2,
+      },
+    },
+    xaxis: {
+      categories: attendanceData.map((entry) => entry.date.split("-")[0]), // Extract only the day (DD)
+      labels: {
+        style: {
+          fontSize: "12px",
+        },
+      },
+    },
+    
+    yaxis: {
+      min: 0,
+      max: 9, // Maximum set to 9 hours
+      tickAmount: 9, // 9 ticks for 0 to 9 hours
+      labels: {
+        formatter: (value) => `${value} hr`, // Display as whole hours
+      },
+    },
+    tooltip: {
+      custom: function ({ dataPointIndex }) {
+        const gray = attendanceData[dataPointIndex].sections[0].value;
+        const green = attendanceData[dataPointIndex].sections[1].value;
+        const red = attendanceData[dataPointIndex].sections[2].value;
+    
+        // Helper function to format hours and minutes
+        const formatTime = (hours) => {
+          const h = Math.floor(hours);
+          const m = Math.round((hours - h) * 60);
+          if (h === 0 && m > 0) return `${m}m`; // Only minutes
+          if (m === 0) return `${h}h`; // Only hours
+          return `${h}h ${m}m`; // Hours and minutes
+        };
+    
+        return `
+          <div style="padding: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; gap: 2rem;">
+              <div style="text-align: start;"><strong>Date</strong></div>
+              <div style="text-align: end;">${attendanceData[dataPointIndex].date}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 2rem;">
+              <div style="text-align: start;"><strong>Late Check-In</strong></div>
+              <div style="text-align: end;">${formatTime(gray)}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 2rem;">
+              <div style="text-align: start;"><strong>Completed</strong></div>
+              <div style="text-align: end;">${formatTime(green)}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 2rem;">
+              <div style="text-align: start;"><strong>Remaining</strong></div>
+              <div style="text-align: end;">${formatTime(red)}</div>
+            </div>
+          </div>
+        `;
+      },
+    },
+    
+    
+    dataLabels: {
+      enabled: true,
+      formatter: function (value) {
+        // Helper function to format hours and minutes
+        const h = Math.floor(value);
+        const m = Math.round((value - h) * 60);
+        if (h === 0 && m > 0) return `${m}m`; // Only minutes
+        if (m === 0) return `${h}h`; // Only hours
+        return `${h}h ${m}m`; // Hours and minutes
+      },
+      style: {
+        fontSize: "12px",
+        colors: ["#ffff"], // Adjust the color of data labels if needed
+      },
+    },
+    
+    
+    legend: {
+      position: "top",
+    },
+  };
+  
+  
+  
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <WidgetSection layout={3} padding>
+          <DataCard data={"18"} title={"Accurate Checkins"} />
+          <DataCard data={"8"} title={"Late Checkins"} />
+          <DataCard data={"10"} title={"Late Checkouts"} />
+        </WidgetSection>
+      </div>
+      <div className="border-default border-borderGray rounded-md">
+        <WidgetSection layout={1} title={"Current Month"}>
+          <BarGraph data={attendanceSeries} options={options} />
+        </WidgetSection>
+      </div>
+
+      <div>
+        <AgTable
+          key={isLoading ? 1:attendance.length}
+          tableTitle="Aiwin's Attendance Table"
+          buttonTitle={"Correction Request"}
+          search={true}
+          searchColumn={"Date"}
+          data={isLoading? []:[...attendance.map((record, index)=>({
+            id : index + 1,
+            date:new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"long",year:"numeric"}).format(new Date(record.date)),
+            inTime : record.inTime,
+            outTime : record.outTime,
+            workHours : record.workHours,
+            breakHours : record.breakHours,
+            totalHours : record.totalHours,
+            entryType : record.entryType,
+          }))]}
+          columns={attendanceColumns}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default Attendance;

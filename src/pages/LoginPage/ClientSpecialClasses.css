@@ -1,0 +1,92 @@
+/* PLEASE DO NOT EDIT ANY OF THE EXISTING CLASSES OR STYLING IN THIS PAGE. IT WILL DISRUPT STYLING OF MULTIPLE COMPONENTS */
+
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+
+
+@font-face {
+    font-family: Popins-Regular;
+    src: url('../../assets/WONO_images/img/font/Poppins-Regular.ttf');
+}
+
+
+
+/* .bodyP {
+    background-color: brown;
+} */
+
+/* Styles */
+
+.fontPoppinsRegular {
+    font-family: Popins-Regular !important;
+}
+
+
+
+/* Display PC layout on larger screens (e.g., desktop) */
+@media (min-width: 1024px) {
+
+
+    .wono-text-spacing {
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
+}
+
+@media (min-width: 768px) {
+
+
+    .wono-text-spacing {
+        padding-left: 7rem;
+        padding-right: 7rem;
+    }
+}
+
+/* @media (min-width: 820px) {
+
+
+    .wono-text-spacing {
+        padding-left: 1.7rem;
+        padding-right: 1.7rem;
+    }
+} */
+
+/* Display mobile layout on smaller screens */
+@media (max-width: 767px) {
+
+
+    .wono-text-spacing {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+.wono-blue-background {
+    background-color: rgb(10, 169, 239);
+}
+
+.wono-blue-text {
+    color: rgb(10, 169, 239);
+}
+
+.wono-blue-background-light {
+    background-color: rgb(80, 186, 232);
+}
+
+.wono-gray-background {
+    background-color: #f4f4f4;
+}
+
+.get-started-main-button {
+    background-color: black;
+    color: white;
+    padding: 0.5rem 2rem;
+    border-radius: 30px;
+    margin: 0;
+    font-weight: normal !important;
+    border: none;
+}
+.get-started-main-button button{
+    border: none;
+}

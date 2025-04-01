@@ -1,0 +1,211 @@
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 5px;
+  min-width: 300px;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+}
+.modal-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+  font-size: 2rem;
+  font-weight: bold;
+}
+.Fields-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+}
+label {
+  font-weight: bold;
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+}
+.btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+input {
+  border: 2px solid gray;
+}
+.btn {
+  width: 5rem;
+  height: 2rem;
+  border-radius: 5px;
+}
+.save {
+  background-color: green;
+}
+.close {
+  background-color: blue;
+}
+.custom-popper-class {
+  z-index: 1500 !important;
+}
+
+/* ToolBar section */
+
+.fc-toolbar {
+  background-color: #f0f0f0;
+  padding-top: 0 !important;
+}
+
+.fc-toolbar-title {
+  font-size: 1.5rem;
+  color: #333;
+  text-transform: uppercase;
+}
+.fc-toolbar .fc-toolbar-chunk:first-child button {
+  padding: 0.5rem !important;
+  background-color: #1e3d73;
+  color: white;
+  font-family: Poppins-Regular;
+  font-size:0.875rem; 
+}
+
+.fc-toolbar .fc-toolbar-chunk:last-child button {
+  padding: 0.5rem 0.75rem;
+  font-family: Poppins-Regular;
+  font-size:0.875rem; 
+}
+
+.fc .fc-toolbar.fc-header-toolbar {
+  padding: 0.5em 0em 1em 0em;
+  margin-bottom: 0;
+}
+.fc .fc-toolbar {
+  background-color: white;
+  font-family: Poppins-SemiBold;
+}
+.fc-toolbar-title {
+  font-family: Poppins-Regular;
+  margin: 0 !important;
+  font-size: 1.5rem !important;
+  line-height: 2rem;
+}
+
+.fc-toolbar-chunk {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+
+/*Buttons*/
+
+/* Customizing individual buttons */
+.fc-today-button {
+  color: blue;
+  font-weight: bold;
+}
+
+.fc-prev-button,
+.fc-next-button {
+  background-color: white !important;
+  border-radius: 50% !important;
+  margin: 0 !important;
+  padding: 0.3rem !important;
+  text-align: center;
+  color: black !important;
+  border : none !important;
+}
+
+.fc .fc-button-primary {
+  background-color: #1e3d73;
+  padding: 0.5rem ;
+  color: var(--fc-button-text-color);
+}
+
+.fc .fc-button:disabled {
+  opacity: 1;
+}
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background-color: #1e3d73;
+}
+/* .fc-direction-ltr .fc-button-group > .fc-button:not(:first-child) {
+    visibility: hidden;
+  } */
+.fc-direction-ltr .fc-button-group > .fc-button:not(:first-child) {
+  border-bottom-left-radius: 0px;
+  border-top-left-radius: 0px;
+  margin-left: -1px;
+}
+
+.fc .fc-view-harness {
+  background: #ffffff;
+}
+
+.fc .fc-button-primary {
+  background-color: white;
+  border-color: rgb(216, 216, 216);
+  color: black;
+  font-size: 16px;
+  padding: 8px 16px;
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(75, 63, 63, 0.1);
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.fc-button-primary:hover {
+  background-color: #0056b3;
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.fc-button-primary:active {
+  background-color: #003f7f; /* Darker background for active state */
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow change */
+}
+
+.fc .fc-button-primary::first-letter {
+  text-transform: uppercase;
+}
+.fc .fc-button-primary:disabled {
+  background-color: rgba(176, 235, 255, 0.36);
+  color: gray;
+  cursor: no-drop;
+}
+
+.fc-theme-standard .fc-popover {
+  z-index: 999;
+}
+
+/* time grid changes  */
+
+.fc-theme-standard td, .fc-theme-standard th {
+  width: 90% !important;
+}
+.fc .fc-timegrid-axis-frame {
+  justify-content: center !important;
+}
+.fc .fc-timegrid-axis-cushion{
+  width: 100% !important;
+  text-align: center !important;
+}
+
+.fc-direction-ltr .fc-timegrid-slot-label-frame {
+  text-align: center !important;
+}

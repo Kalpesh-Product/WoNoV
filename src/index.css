@@ -1,0 +1,159 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+
+  body {
+    font-family: Poppins-Regular;
+  }
+
+  .wono-blue {
+    background-color: rgba(176, 235, 255, 0.36);
+  }
+
+  .wono-blue-dark {
+    background-color: #0db4ea;
+  }
+
+  .wono-blue-dark-border {
+    border-color: #0db4ea;
+  }
+
+  .wono-blue-text {
+    color: #0db4ea;
+  }
+
+  .wono-text {
+    color: rgb(234, 127, 13);
+  }
+
+  .wono-opacity {
+    opacity: 15%;
+  }
+
+  .wono-title {
+    font-size: 1.5rem
+      /* 24px */
+    ;
+    line-height: 2rem
+      /* 32px */
+    ;
+    font-weight: 600;
+  }
+
+  .wono-bg {
+    background-color: #e6eef5;
+  }
+
+  .gray-underline {
+    border-bottom: 1px solid rgb(209, 209, 209);
+  }
+
+  .css-6y0rrm-MuiInputBase-input-MuiInput-input {
+    padding: 0 !important;
+  }
+
+  .css-13mqbm2-MuiButtonBase-root-MuiTab-root.Mui-selected {
+    color: #ffff !important;
+  }
+  .css-p563dg-MuiButtonBase-root-MuiTab-root.Mui-selected {
+    color: #ffff !important;
+  }
+
+  .css-103akpq-MuiTypography-root {
+    font-size: 1.5rem !important;
+  }
+
+}
+/* Hide scrollbar for the specified container */
+.hideScrollbar {
+  scrollbar-width: none; /* Hide scrollbar for Firefox */
+  -ms-overflow-style: none; /* Hide scrollbar for Internet Explorer and Edge */
+}
+
+.hideScrollBar::-webkit-scrollbar {
+  display: none !important /* Hide scrollbar for WebKit browsers (Chrome, Safari, etc.) */
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+  background: lightgray;
+}
+
+::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(233, 233, 233, 0.768);
+  border-radius: 15px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 15px;
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+  background: #c4c4c4ac;
+}
+
+
+.ag-root-wrapper.ag-layout-normal {
+  height: 100%;
+  border: none !important;
+}
+
+.css-1hc19t5.Mui-selected {
+  color: white !important;
+}
+
+.MuiPieArcLabel-root {
+  fill: white !important;
+  font-size: 14px; 
+   
+}
+
+.MuiPieArcLabel-series-auto-generated-id-0 {
+  fill: white !important;
+}
+
+.MuiChartsLegend{
+  display: hidden !important;
+}
+
+
+.apexcharts-canvas {
+  overflow: hidden !important; 
+}
+
+/* Styles for Reports */
+
+.status-badge {
+  padding: 0px 5px;
+  border-radius: 5px;
+  color: #fff;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.status-completed {
+  background-color: #4caf50; /* Green for Completed */
+}
+
+.status-pending {
+  background-color: #ff9800; /* Orange for Pending */
+}
+
+/* End---- Styles for Reports----End */
+
+@font-face {
+  font-family: Poppins-Regular;
+  src: url("../src/assets/WONO_images/img/font/Poppins-Regular.ttf");
+}
+
+@font-face {
+  font-family: Poppins-SemiBold;
+  src: url("../src/assets/WONO_images/img/font/Poppins-SemiBold.ttf");
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: Poppins-Bold;
+  src: url("../src/assets/WONO_images/img/font/Poppins-Bold.ttf");
+}
