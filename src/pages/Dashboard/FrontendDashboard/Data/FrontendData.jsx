@@ -1,5 +1,5 @@
 import { Tabs } from "@mui/material";
-import  { useEffect } from "react";
+import React, { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const FrontendData = () => {

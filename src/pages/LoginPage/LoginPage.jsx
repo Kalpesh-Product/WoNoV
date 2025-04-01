@@ -1,4 +1,4 @@
-import  { useState,useEffect } from "react";
+import React, { useState,useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Container, Box, Grid, TextField } from "@mui/material";
 import { toast } from "sonner";
@@ -24,10 +24,10 @@ const LoginPage = () => {
   useEffect(() => {
     if (auth.accessToken) {
       navigate('/app/dashboard/frontend-dashboard')
-    } else {
-      refresh();
+    }else{
+      refresh()
     }
-  }, [auth]);
+  }, [auth.accessToken]);
 
   // Validation function
   const handleLogin = async (e) => {
@@ -48,7 +48,6 @@ const LoginPage = () => {
         };
       });
       toast.success("Successfully logged in");
-      navigate('/app/dashboard/frontend-dashboard');
     } catch (error) {
       toast.error(error.response?.data.message);
     }

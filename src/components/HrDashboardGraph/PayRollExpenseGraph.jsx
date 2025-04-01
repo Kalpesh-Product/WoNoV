@@ -1,3 +1,4 @@
+import React from "react";
 import { useLocation } from "react-router-dom";
 import { MdRebaseEdit } from "react-icons/md";
 import { LuHardDriveUpload } from "react-icons/lu";
@@ -88,7 +89,6 @@ const PayRollExpenseGraph = () => {
       layout: 1,
       widgets: [
         <LayerBarGraph
-        key="bar-1"
           title="Budget v/s Achievements"
           data={data}
           options={options}
@@ -98,31 +98,30 @@ const PayRollExpenseGraph = () => {
     {
       layout: 6,
       widgets: [
-       <Card key="" icon={<MdRebaseEdit />} title="Edit Live Theme" />,
-       <Card key="" icon={<LuHardDriveUpload />} title="Upload Website" />,
-       <Card key="" icon={<CgWebsite />} title="New Themes" />,
-       <Card key="" icon={<SiCashapp />} title="Budget" />,
-       <Card key="" icon={<SiGoogleadsense />} title="Leads" />,
-       <Card key="" icon={<MdMiscellaneousServices />} title="Miscellaneous" />,
+        <Card icon={<MdRebaseEdit />} title="Edit Live Theme" />,
+        <Card icon={<LuHardDriveUpload />} title="Upload Website" />,
+        <Card icon={<CgWebsite />} title="New Themes" />,
+        <Card icon={<SiCashapp />} title="Budget" />,
+        <Card icon={<SiGoogleadsense />} title="Leads" />,
+        <Card icon={<MdMiscellaneousServices />} title="Miscellaneous" />,
       ],
     },
     {
       layout: 3,
       widgets: [
-        <DataCard key=""
+        <DataCard
           title={"Projected"}
           data={23}
           description={"Per Unit Cost"}
         />,
-        <DataCard key="" title={"Actual"} data={23} description={"Per Unit Cost"} />,
-        <DataCard key="" title={"Requested"} data={6000} description={"Pending"} />,
+        <DataCard title={"Actual"} data={23} description={"Per Unit Cost"} />,
+        <DataCard title={"Requested"} data={6000} description={"Pending"} />,
       ],
     },
     {
       layout: 2,
       widgets: [
         <BarGraph
-        key="bar-2"
           data={[
             150,
             320,

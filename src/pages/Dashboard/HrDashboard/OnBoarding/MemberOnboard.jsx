@@ -1,4 +1,4 @@
-
+import React from 'react'
 import { useForm, Controller } from "react-hook-form";
 import { TextField } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -6,14 +6,17 @@ import SecondaryButton from "../../../../components/SecondaryButton";
 
 
 const MemberOnboard = () => {
-  const { control, reset } = useForm();
+  const { control, handleSubmit, reset } = useForm();
+  
+    const onSubmit = (data) => {
+    };
   
     const handleReset = () => {
       reset();
     };
   return (
     <div className="h-[65vh] overflow-y-auto">
-    <form  className="">
+    <form onSubmit={handleSubmit(onSubmit)} className="">
       <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           {/* Section: Basic Information */}

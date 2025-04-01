@@ -1,5 +1,5 @@
-import  { useEffect } from "react";
-import {  Tabs } from "@mui/material";
+import React, { useEffect } from "react";
+import { Tab, Tabs } from "@mui/material";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const Data = () => {
@@ -8,10 +8,8 @@ const Data = () => {
 
   const tabs = [
     { label: "Job Application List", path: "job-application-list" },
-    {label:"Reports", path:"reports"},
-
-    
-  ]
+    { label: "Reports", path: "reports" },
+  ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
   useEffect(() => {
@@ -51,8 +49,7 @@ const Data = () => {
               backgroundColor: "#1E3D73",
               color: "white",
             },
-          }}
-        >
+          }}>
           {tabs.map((tab, index) => (
             <NavLink
               key={index}
@@ -66,8 +63,7 @@ const Data = () => {
                 padding: "12px 16px",
                 display: "block",
                 backgroundColor: isActive ? "#1E3D73" : "white",
-              })}
-            >
+              })}>
               {tab.label}
             </NavLink>
           ))}

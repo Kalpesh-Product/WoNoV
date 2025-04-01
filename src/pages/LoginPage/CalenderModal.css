@@ -204,8 +204,21 @@ input {
 .fc .fc-timegrid-axis-cushion{
   width: 100% !important;
   text-align: center !important;
+  max-width: none !important;
 }
 
 .fc-direction-ltr .fc-timegrid-slot-label-frame {
   text-align: center !important;
+}
+
+
+.fc .fc-timegrid-axis-cushion {
+  flex-shrink: 0;
+  /* max-width: 60px; */
+}
+
+.fc .fc-timegrid-slot {
+  border-bottom: 0px;
+  height: 3.5em !important;
+  background-color: white !important;
 }

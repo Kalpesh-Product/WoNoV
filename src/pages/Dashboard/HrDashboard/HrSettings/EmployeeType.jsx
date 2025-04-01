@@ -1,13 +1,33 @@
-
+import React, { useState } from 'react'
 import AgTable from "../../../../components/AgTable";
-import { Chip } from "@mui/material";
+import { Chip, TextField } from "@mui/material";
 import useAxiosPrivate from '../../../../hooks/useAxiosPrivate';
 import { useQuery } from '@tanstack/react-query';
+import { Controller, useForm } from 'react-hook-form';
+import MuiModal from '../../../../components/MuiModal';
+import PrimaryButton from '../../../../components/PrimaryButton';
+import SecondaryButton from '../../../../components/SecondaryButton';
+import { toast } from 'sonner';
 
 
 const EmployeeType = () => {
-
+  const [openModal, setOpenModal] = useState()
   const axios = useAxiosPrivate()
+
+  const { handleSubmit, control } = useForm({
+    defaultValues:{
+      employeeType : ''
+    }
+  })
+
+  const handleAddType = () =>{
+   setOpenModal(true)
+  } 
+
+  const onSubmit = (data) =>{
+    console.log(data)
+    setOpenModal(false)
+  }
 
   const { data: employeeTypes = [] } = useQuery({
     queryKey: ["employeeTypes"],
@@ -63,7 +83,7 @@ const EmployeeType = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
            <span className="text-content text-primary hover:underline cursor-pointer">
@@ -82,6 +102,7 @@ const EmployeeType = () => {
           searchColumn={"Employee Type"}
           tableTitle={"Employee Type List"}
           buttonTitle={"Add Employee Type"}
+          handleClick={handleAddType}
           data={[
             ...employeeTypes.map((type, index) => ({
               id: index + 1, 
@@ -91,6 +112,34 @@ const EmployeeType = () => {
           ]}
           columns={departmentsColumn}
         />
+
+        <div>
+          <MuiModal open={openModal} title={"Add Employee Type"}>
+            <div>
+              <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-4'>
+                <Controller
+                name='employeeType'
+                control={control}
+                render={({field})=>
+                  (<TextField
+                  {...field}
+                  size='small'
+                  label="Enter Employee Type"
+                  fullWidth
+                  />)
+                }
+                />
+
+                <div className='flex items-center justify-center gap-4'>
+                  <SecondaryButton title={"Cancel"} handleSubmit={()=>{setOpenModal(false)}} />
+                  <PrimaryButton title={"Add"} handleSubmit={()=>{
+                    toast.success("Employee Type added")
+                  }} />
+                </div>
+              </form>
+            </div>
+          </MuiModal>
+        </div>
       </div>
   )
 }

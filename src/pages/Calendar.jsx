@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -6,17 +6,17 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import "../pages/LoginPage/CalenderModal.css";
 
-import { Checkbox, FormControlLabel, FormGroup } from "@mui/material";
+import { Checkbox, CircularProgress, FormControlLabel, FormGroup } from "@mui/material";
 import dayjs from "dayjs";
 
 import MuiModal from "../components/MuiModal";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
 
 const Calender = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState(""); // 'view' or 'add'
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [headerBackground, setHeaderBackground] = useState("");
   const [newEvent, setNewEvent] = useState({
@@ -27,17 +27,17 @@ const Calender = () => {
   const [eventFilter, setEventFilter] = useState(["holiday", "event"]);
   const axios = useAxiosPrivate();
 
-  useEffect(() => {
-    const getEvents = async () => {
+  const { data: events = [], isPending: isEventsPending } = useQuery({
+    queryKey: ["events"],
+    queryFn: async () => {
       try {
         const response = await axios.get("/api/events/all-events");
-        setEvents(response.data);
+        return response.data;
       } catch (error) {
         toast.error(error.message);
         return [];
       }
-    };
-    getEvents();
+    },
   });
 
   useEffect(() => {
@@ -82,7 +82,6 @@ const Calender = () => {
     setHeaderBackground(headerBackground); // Set the background color
   };
 
-
   const closeDrawer = () => {
     setIsDrawerOpen(false);
     setSelectedEvent(null);
@@ -93,7 +92,6 @@ const Calender = () => {
     });
   };
 
- 
   return (
     <div className="flex w-[70%] md:w-full">
       <div className="flex-1 p-4 bg-white">
@@ -106,44 +104,50 @@ const Calender = () => {
                 </span>
               </div>
               <div className="flex justify-start text-content px-2">
-                <FormGroup column>
-                  {["holiday", "event"].map((type) => {
-                    const colors = {
-                      holiday: "#4caf50",
-                      event: "#ff9800",
-                    };
-                    return (
-                      <FormControlLabel
-                        key={type}
-                        control={
-                          <Checkbox
-                            sx={{
-                              fontSize: "0.75rem",
-                              transform: "scale(0.8)",
-                              color: colors[type],
-                              "&.Mui-checked": { color: colors[type] },
-                            }}
-                            checked={eventFilter.includes(type)}
-                            onChange={(e) => {
-                              const selectedType = e.target.value;
-                              setEventFilter((prevFilter) =>
-                                e.target.checked
-                                  ? [...prevFilter, selectedType]
-                                  : prevFilter.filter((t) => t !== selectedType)
-                              );
-                            }}
-                            value={type}
-                          />
-                        }
-                        label={
-                          <span style={{ fontSize: "0.875rem" }}>
-                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                          </span>
-                        }
-                      />
-                    );
-                  })}
-                </FormGroup>
+                {!isEventsPending ? (
+                  <FormGroup column>
+                    {["holiday", "event"].map((type) => {
+                      const colors = {
+                        holiday: "#4caf50",
+                        event: "#ff9800",
+                      };
+                      return (
+                        <FormControlLabel
+                          key={type}
+                          control={
+                            <Checkbox
+                              sx={{
+                                fontSize: "0.75rem",
+                                transform: "scale(0.8)",
+                                color: colors[type],
+                                "&.Mui-checked": { color: colors[type] },
+                              }}
+                              checked={eventFilter.includes(type)}
+                              onChange={(e) => {
+                                const selectedType = e.target.value;
+                                setEventFilter((prevFilter) =>
+                                  e.target.checked
+                                    ? [...prevFilter, selectedType]
+                                    : prevFilter.filter(
+                                        (t) => t !== selectedType
+                                      )
+                                );
+                              }}
+                              value={type}
+                            />
+                          }
+                          label={
+                            <span style={{ fontSize: "0.875rem" }}>
+                              {type.charAt(0).toUpperCase() + type.slice(1)}
+                            </span>
+                          }
+                        />
+                      );
+                    })}
+                  </FormGroup>
+                ) : (
+                  <CircularProgress color="#1E3D73" size={15}/>
+                )}
               </div>
             </div>
 

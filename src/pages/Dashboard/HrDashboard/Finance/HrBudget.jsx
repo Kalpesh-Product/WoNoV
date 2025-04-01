@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import LayerBarGraph from "../../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
 import {
@@ -6,6 +6,7 @@ import {
   Select,
   MenuItem,
   FormControl,
+  InputLabel,
 } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -20,17 +21,22 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
+import useAuth from "../../../../hooks/useAuth";
 
 const HrBudget = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const [openModal, setOpenModal] = useState(false);
   const { data: hrFinance = [] } = useQuery({
     queryKey: ["hrFinance"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/budget/company-budget");
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
+          `
+        );
         return response.data.allBudgets;
-      } catch  {
+      } catch (error) {
         throw new Error("Error fetching data");
       }
     },
@@ -66,7 +72,7 @@ const HrBudget = () => {
             { field: "expanseName", headerName: "Expense Name", flex: 1 },
             // { field: "department", headerName: "Department", flex: 200 },
             { field: "expanseType", headerName: "Expense Type", flex: 1 },
-            { field: "amount", headerName: "Amount", flex: 1 },
+            { field: "projectedAmount", headerName: "Amount", flex: 1 },
             { field: "dueDate", headerName: "Due Date", flex: 1 },
             { field: "status", headerName: "Status", flex: 1 },
           ],
@@ -74,13 +80,13 @@ const HrBudget = () => {
       };
     }
 
-    acc[month].amount += item.amount; // Summing the total amount per month
+    acc[month].amount += item.projectedAmount; // Summing the total amount per month
     acc[month].tableData.rows.push({
       id: item._id,
       expanseName: item.expanseName,
       department: item.department,
       expanseType: item.expanseType,
-      amount: item.amount.toFixed(2), // Ensuring two decimal places
+      projectedAmount: item.projectedAmount.toFixed(2), // Ensuring two decimal places
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       status: item.status,
     });
@@ -161,9 +167,10 @@ const HrBudget = () => {
     tooltip: {
       shared: true, // Ensure all series values are shown together
       intersect: false, // Avoid showing individual values for each series separately
-      custom: function ({ dataPointIndex, w }) {
+      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
         const utilised = utilisedData[dataPointIndex] || 0;
         const exceeded = exceededData[dataPointIndex] || 0;
+        const defaultVal = defaultData[dataPointIndex] || 0;
 
         // Custom tooltip HTML
         return `
@@ -193,349 +200,6 @@ const HrBudget = () => {
       position: "top",
     },
   };
-
-  // Data array for rendering the Accordion
-  // const financialData = [
-  //   {
-  //     month: "April 2025",
-  //     amount: "\u20B915000",
-  //     tableData: {
-  //       columns: [
-  //         { field: "expenseName", headerName: "Expense", flex: 1 },
-  //         { field: "department", headerName: "Department", flex: 1 },
-  //         { field: "payment", headerName: "Payment", flex: 1 },
-  //         { field: "paymentDate", headerName: "Payment Date", flex: 1 },
-  //         { field: "status", headerName: "Status", flex: 1 },
-  //       ],
-  //       rows: [
-  //         {
-  //           id: 1,
-  //           department: "HR",
-  //           payment: `\u20B92500`,
-  //           paymentDate: "2025-04-10",
-  //           status: "Paid",
-  //         },
-  //         {
-  //           id: 2,
-  //           department: "Finance",
-  //           payment: "\u20B92500",
-  //           paymentDate: "2025-04-15",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 3,
-  //           department: "Sales",
-  //           payment: "\u20B92500",
-  //           paymentDate: "2025-04-15",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 4,
-  //           department: "Tech",
-  //           payment: "\u20B92500",
-  //           paymentDate: "2025-04-10",
-  //           status: "Paid",
-  //         },
-  //         {
-  //           id: 5,
-  //           department: "IT",
-  //           payment: "\u20B92500",
-  //           paymentDate: "2025-03-15",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 6,
-  //           department: "Admin",
-  //           payment: "\u20B92500",
-  //           paymentDate: "2025-04-10",
-  //           status: "Pending",
-  //         },
-  //       ],
-  //     },
-  //   },
-  //   {
-  //     month: "May 2025",
-  //     amount: "\u20B945000",
-  //     tableData: {
-  //       columns: [
-  //         { field: "department", headerName: "Department", flex: 1 },
-  //         { field: "payment", headerName: "Payment", flex: 1 },
-  //         { field: "paymentDate", headerName: "Payment Date", flex: 1 },
-  //         { field: "status", headerName: "Status", flex: 1 },
-  //       ],
-  //       rows: [
-  //         {
-  //           id: 1,
-  //           department: "Marketing",
-  //           payment: "\u20B97500",
-  //           paymentDate: "2025-05-05",
-  //           status: "Paid",
-  //         },
-  //         {
-  //           id: 2,
-  //           department: "Sales",
-  //           payment: "\u20B97500",
-  //           paymentDate: "2025-05-20",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 3,
-  //           department: "Finance",
-  //           payment: "\u20B97500",
-  //           paymentDate: "2025-04-25",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 4,
-  //           department: "Tech",
-  //           payment: "\u20B97500",
-  //           paymentDate: "2025-04-10",
-  //           status: "Paid",
-  //         },
-  //         {
-  //           id: 5,
-  //           department: "IT",
-  //           payment: "\u20B97500",
-  //           paymentDate: "2025-03-15",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 6,
-  //           department: "Admin",
-  //           payment: "\u20B97500",
-  //           paymentDate: "2025-04-10",
-  //           status: "Pending",
-  //         },
-  //       ],
-  //     },
-  //   },
-  //   {
-  //     month: "June 2025",
-  //     amount: "\u20B950,000",
-  //     tableData: {
-  //       columns: [
-  //         { field: "department", headerName: "Department", flex: 1 },
-  //         { field: "payment", headerName: "Payment", flex: 1 },
-  //         { field: "paymentDate", headerName: "Payment Date", flex: 1 },
-  //         { field: "status", headerName: "Status", flex: 1 },
-  //       ],
-  //       rows: [
-  //         {
-  //           id: 1,
-  //           department: "Marketing",
-  //           payment: "\u20B98,333.3",
-  //           paymentDate: "2025-05-05",
-  //           status: "Paid",
-  //         },
-  //         {
-  //           id: 2,
-  //           department: "Sales",
-  //           payment: "\u20B98,333.3",
-  //           paymentDate: "2025-05-20",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 3,
-  //           department: "Finance",
-  //           payment: "\u20B98,333.3",
-  //           paymentDate: "2025-04-25",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 4,
-  //           department: "Tech",
-  //           payment: "\u20B98,333.3",
-  //           paymentDate: "2025-04-10",
-  //           status: "Paid",
-  //         },
-  //         {
-  //           id: 5,
-  //           department: "IT",
-  //           payment: "\u20B98,333,3",
-  //           paymentDate: "2025-03-15",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 6,
-  //           department: "Admin",
-  //           payment: "\u20B98,333.3",
-  //           paymentDate: "2025-04-10",
-  //           status: "Pending",
-  //         },
-  //       ],
-  //     },
-  //   },
-  //   {
-  //     month: "July 2025",
-  //     amount: "\u20B960,000",
-  //     tableData: {
-  //       columns: [
-  //         { field: "department", headerName: "Department", flex: 1 },
-  //         { field: "payment", headerName: "Payment", flex: 1 },
-  //         { field: "paymentDate", headerName: "Payment Date", flex: 1 },
-  //         { field: "status", headerName: "Status", flex: 1 },
-  //       ],
-  //       rows: [
-  //         {
-  //           id: 1,
-  //           department: "Marketing",
-  //           payment: "&#837710000",
-  //           paymentDate: "2025-05-05",
-  //           status: "Paid",
-  //         },
-  //         {
-  //           id: 2,
-  //           department: "Sales",
-  //           payment: "&#837710000",
-  //           paymentDate: "2025-05-20",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 3,
-  //           department: "Finance",
-  //           payment: "&#837710000",
-  //           paymentDate: "2025-04-25",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 4,
-  //           department: "Tech",
-  //           payment: "&#837710000",
-  //           paymentDate: "2025-04-10",
-  //           status: "Paid",
-  //         },
-  //         {
-  //           id: 5,
-  //           department: "IT",
-  //           payment: "&#837710000",
-  //           paymentDate: "2025-03-15",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 6,
-  //           department: "Admin",
-  //           payment: "&#837710000",
-  //           paymentDate: "2025-04-10",
-  //           status: "Pending",
-  //         },
-  //       ],
-  //     },
-  //   },
-  //   {
-  //     month: "August 2025",
-  //     amount: "\u20B970000",
-  //     tableData: {
-  //       columns: [
-  //         { field: "department", headerName: "Department", flex: 1 },
-  //         { field: "payment", headerName: "Payment", flex: 1 },
-  //         { field: "paymentDate", headerName: "Payment Date", flex: 1 },
-  //         { field: "status", headerName: "Status", flex: 1 },
-  //       ],
-  //       rows: [
-  //         {
-  //           id: 1,
-  //           department: "Marketing",
-  //           payment: "\u20B911,666",
-  //           paymentDate: "2025-05-05",
-  //           status: "Paid",
-  //         },
-  //         {
-  //           id: 2,
-  //           department: "Sales",
-  //           payment: "\u20B911,666",
-  //           paymentDate: "2025-05-20",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 3,
-  //           department: "Finance",
-  //           payment: "\u20B911,666",
-  //           paymentDate: "2025-04-25",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 4,
-  //           department: "Tech",
-  //           payment: "\u20B911,666",
-  //           paymentDate: "2025-04-10",
-  //           status: "Paid",
-  //         },
-  //         {
-  //           id: 5,
-  //           department: "IT",
-  //           payment: "\u20B911,666",
-  //           paymentDate: "2025-03-15",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 6,
-  //           department: "Admin",
-  //           payment: "\u20B911,666",
-  //           paymentDate: "2025-04-10",
-  //           status: "Pending",
-  //         },
-  //       ],
-  //     },
-  //   },
-  //   {
-  //     month: "September 2025",
-  //     amount: "\u20B980,000",
-  //     tableData: {
-  //       columns: [
-  //         { field: "department", headerName: "Department", flex: 1 },
-  //         { field: "payment", headerName: "Payment", flex: 1 },
-  //         { field: "paymentDate", headerName: "Payment Date", flex: 1 },
-  //         { field: "status", headerName: "Status", flex: 1 },
-  //       ],
-  //       rows: [
-  //         {
-  //           id: 1,
-  //           department: "Marketing",
-  //           payment: "\u20B913,333.33",
-  //           paymentDate: "2025-05-05",
-  //           status: "Paid",
-  //         },
-  //         {
-  //           id: 2,
-  //           department: "Sales",
-  //           payment: "\u20B913,333.33",
-  //           paymentDate: "2025-05-20",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 3,
-  //           department: "Finance",
-  //           payment: "\u20B913,333.33",
-  //           paymentDate: "2025-04-25",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 4,
-  //           department: "Tech",
-  //           payment: "\u20B913,333.33",
-  //           paymentDate: "2025-04-10",
-  //           status: "Paid",
-  //         },
-  //         {
-  //           id: 5,
-  //           department: "IT",
-  //           payment: "\u20B913,333.33",
-  //           paymentDate: "2025-03-15",
-  //           status: "Pending",
-  //         },
-  //         {
-  //           id: 6,
-  //           department: "Admin",
-  //           payment: "\u20B913,333.33",
-  //           paymentDate: "2025-04-10",
-  //           status: "Pending",
-  //         },
-  //       ],
-  //     },
-  //   },
-
-  //   // Add more months as needed
-  // ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -623,7 +287,9 @@ const HrBudget = () => {
             render={({ field, fieldState }) => (
               <FormControl fullWidth error={!!fieldState.error}>
                 <Select {...field} size="small" displayEmpty>
-                  <MenuItem value="" disabled>Select Expense Type</MenuItem>
+                  <MenuItem value="" disabled>
+                    Select Expense Type
+                  </MenuItem>
                   <MenuItem value="Internal">Internal</MenuItem>
                   <MenuItem value="External">External</MenuItem>
                 </Select>

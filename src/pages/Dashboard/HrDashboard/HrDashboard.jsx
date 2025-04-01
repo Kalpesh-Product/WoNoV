@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import React, { lazy, Suspense } from "react";
 import WidgetSection from "../../../components/WidgetSection";
 import Card from "../../../components/Card";
 import { LuHardDriveUpload } from "react-icons/lu";
@@ -13,6 +13,7 @@ import MuiTable from "../../../components/Tables/MuiTable";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import useAuth from "../../../hooks/useAuth";
 
 const LayerBarGraph = lazy(() =>
   import("../../../components/graphs/LayerBarGraph")
@@ -20,6 +21,34 @@ const LayerBarGraph = lazy(() =>
 
 const HrDashboard = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+  console.log(auth.user.permissions);
+  const accessibleModules = new Set();
+
+  auth.user.permissions?.deptWisePermissions?.forEach((department) => {
+    department.modules.forEach((module) => {
+      const hasViewPermission = module.submodules.some((submodule) =>
+        submodule.actions.includes("View")
+      );
+
+      if (hasViewPermission) {
+        accessibleModules.add(module.moduleName);
+      }
+    });
+  });
+
+  const usersQuery = useQuery({
+    queryKey: ["users"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/users/fetch-users");
+        return response.data;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
+
   const rawSeries = [
     {
       name: "Sales Total",
@@ -278,9 +307,10 @@ const HrDashboard = () => {
     tooltip: {
       shared: true, // Ensure all series values are shown together
       intersect: false, // Avoid showing individual values for each series separately
-      custom: function ({ dataPointIndex, w }) {
+      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
         const utilised = utilisedData[dataPointIndex] || 0;
         const exceeded = exceededData[dataPointIndex] || 0;
+        const defaultVal = defaultData[dataPointIndex] || 0;
 
         // Custom tooltip HTML
         return `
@@ -317,7 +347,7 @@ const HrDashboard = () => {
     { id: "start", label: "Date", align: "left" },
   ];
 
-  const { data: birthdays = [] } = useQuery({
+  const { data: birthdays = [], isLoading } = useQuery({
     queryKey: ["birthdays"],
     queryFn: async () => {
       try {
@@ -406,23 +436,16 @@ const HrDashboard = () => {
     },
   ];
 
-  const users = [
-    { name: "John", gender: "Male" },
-    { name: "Alice", gender: "Female" },
-    { name: "Bob", gender: "Male" },
-    { name: "Eve", gender: "Female" },
-    { name: "Charlie", gender: "Male" },
-    { name: "Charlie", gender: "Male" },
-    { name: "Diana", gender: "Female" },
-    { name: "Diana", gender: "Female" },
-    { name: "Mark", gender: "Male" },
-    { name: "James", gender: "Male" },
-  ];
-
   // Calculate total and gender-specific counts
-  const totalUsers = users.length;
-  const maleCount = users.filter((user) => user.gender === "Male").length;
-  const femaleCount = users.filter((user) => user.gender === "Female").length;
+  const totalUsers = usersQuery.isLoading ? [] : usersQuery.data.length;
+
+  const maleCount = usersQuery.isLoading
+    ? []
+    : usersQuery.data.filter((user) => user.gender === "Male").length;
+
+  const femaleCount = usersQuery.isLoading
+    ? []
+    : usersQuery.data.filter((user) => user.gender === "Female").length;
 
   const genderData = [
     {
@@ -468,7 +491,7 @@ const HrDashboard = () => {
     },
     tooltip: {
       enabled: true,
-      custom: function ({ seriesIndex }) {
+      custom: function ({ series, seriesIndex }) {
         const item = genderData[seriesIndex]; // Use genderData to fetch the correct item
         return `
           <div style="padding: 5px; font-size: 12px;">
@@ -511,7 +534,7 @@ const HrDashboard = () => {
     },
     tooltip: {
       enabled: true,
-      custom: function ({ seriesIndex }) {
+      custom: function ({ series, seriesIndex }) {
         const item = techGoaVisitors[seriesIndex]; // Access the correct item
         return `
         <div style="padding: 5px; font-size: 12px;">
@@ -530,98 +553,76 @@ const HrDashboard = () => {
       layout: 1,
       widgets: [
         <Suspense
-          key=""
           fallback={
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {/* Simulating chart skeleton */}
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
-          <LayerBarGraph
-            title="Payroll Expense Graph"
-            data={data}
-            options={optionss}
-          />
+          }>
+          <WidgetSection
+            layout={1}
+            border
+            padding
+            title={"Payroll Expense Graph"}>
+            <LayerBarGraph data={data} options={optionss} />
+          </WidgetSection>
         </Suspense>,
       ],
     },
     {
       layout: 6,
       widgets: [
-        <Card
-          key=""
-          icon={<CgWebsite />}
-          title="Employee"
-          route={"employee"}
-        />,
-        <Card
-          key=""
-          icon={<LuHardDriveUpload />}
-          title="Company"
-          route={"company"}
-        />,
-        <Card key="" icon={<SiCashapp />} title="Finance" route={"finance"} />,
-        <Card key="" icon={<CgWebsite />} title="Mix Bag" route={"#"} />,
-        <Card key="" icon={<SiGoogleadsense />} title="Data" route={"data"} />,
-        <Card
-          key=""
-          icon={<MdMiscellaneousServices />}
-          title="Settings"
-          route={"settings"}
-        />,
-      ],
+        { icon: <CgWebsite />, title: "Employee", route: "employee" },
+        { icon: <LuHardDriveUpload />, title: "Company", route: "company" },
+        { icon: <SiCashapp />, title: "Finance", route: "finance" },
+        { icon: <CgWebsite />, title: "Mix Bag", route: "#" },
+        { icon: <SiGoogleadsense />, title: "Data", route: "data" },
+        {
+          icon: <MdMiscellaneousServices />,
+          title: "Settings",
+          route: "settings",
+        },
+      ]
+        .filter((widget) => accessibleModules.has(widget.title)) // ✅ Filter widgets
+        .map((widget, index) => (
+          <Card
+            key={index}
+            icon={widget.icon}
+            title={widget.title}
+            route={widget.route}
+          />
+        )), // ✅ Convert objects into JSX elements
     },
     {
       layout: 3,
       widgets: [
-        <DataCard
-          key=""
-          title="Active"
-          data="28"
-          description="Current Headcount"
-        />,
-        <DataCard key="" title="Average" data="52K" description="salary" />,
-        <DataCard
-          key=""
-          title="Average"
-          data="25"
-          description="Monthly Employees"
-        />,
-        <DataCard
-          key=""
-          title="Average"
-          data="4%"
-          description="Monthly Iteration"
-        />,
-        <DataCard key="" title="Average" data="92%" description="Attendance" />,
-        <DataCard
-          key=""
-          title="Average"
-          data="8.1hr"
-          description="Working Hours"
-        />,
+        <DataCard title="Active" data="28" description="Current Headcount" />,
+        <DataCard title="Average" data="52K" description="salary" />,
+        <DataCard title="Average" data="25" description="Monthly Employees" />,
+        <DataCard title="Average" data="4%" description="Monthly Iteration" />,
+        <DataCard title="Average" data="92%" description="Attendance" />,
+        <DataCard title="Average" data="8.1hr" description="Working Hours" />,
       ],
     },
     {
       layout: 1,
       widgets: [
         <Suspense
-          key=""
           fallback={
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {/* Simulating chart skeleton */}
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
-          <LayerBarGraph
-            title="Department Wise Tasks% Vs Achievements in %"
-            data={series}
-            options={options}
-          />
+          }>
+          <WidgetSection
+            layout={1}
+            border
+            padding
+            title={"Department Wise Tasks% Vs Achievements in %"}>
+            <LayerBarGraph data={series} options={options} />
+          </WidgetSection>
         </Suspense>,
       ],
     },
@@ -629,7 +630,7 @@ const HrDashboard = () => {
       layout: 2,
       heading: "Site Visitor Analytics",
       widgets: [
-        <WidgetSection key="" title={"Gender Distribution"} border>
+        <WidgetSection title={"Gender Distribution"} border>
           <PieChartMui
             percent={true} // Enable percentage display
             title={"Gender Distribution"}
@@ -637,7 +638,7 @@ const HrDashboard = () => {
             options={genderPieChart}
           />
         </WidgetSection>,
-        <WidgetSection key="" layout={1} border title={"City Wise Employees"}>
+        <WidgetSection layout={1} border title={"City Wise Employees"}>
           <PieChartMui
             percent={true} // Enable percentage display
             data={techGoaVisitors} // Pass processed data
@@ -664,7 +665,6 @@ const HrDashboard = () => {
           scroll
         />,
         <MuiTable
-          key={holidayEvents.length}
           Title="Current Months Holidays and Events List"
           columns={columns2}
           rows={[
@@ -677,9 +677,8 @@ const HrDashboard = () => {
           rowsToDisplay={5}
           scroll
         />,
-        <MuiTable key={rows3.length} Title="Top 3 Performers" columns={columns3} rows={rows3} />,
+        <MuiTable Title="Top 3 Performers" columns={columns3} rows={rows3} />,
         <MuiTable
-        key={rows4.length}
           Title="Under 3 Performed List"
           columns={columns4}
           rows={rows4}
@@ -693,9 +692,11 @@ const HrDashboard = () => {
       <PayRollExpenseGraph />
       <div>
         {hrWidgets.map((widget, index) => (
-          <WidgetSection layout={widget.layout} key={index}>
-            {widget.widgets}
-          </WidgetSection>
+          <div>
+            <WidgetSection layout={widget.layout} key={index}>
+              {widget.widgets}
+            </WidgetSection>
+          </div>
         ))}
       </div>
     </>

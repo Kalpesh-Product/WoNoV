@@ -1,4 +1,4 @@
-;
+import React from "react";
 import AgTable from "../../components/AgTable";
 
 const TicketsHistory = ({ pageTitle }) => {
@@ -77,7 +77,7 @@ const TicketsHistory = ({ pageTitle }) => {
   return (
     <>
       <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary">{pageTitle}</span>
+        <span className="text-title font-pmedium text-primary">Ticket History</span>
       </div>
       <div className=" w-full">
         <AgTable data={rows} columns={laptopColumns} paginationPageSize={10} />

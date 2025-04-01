@@ -1,4 +1,4 @@
-;
+import React from "react";
 import AgTable from "../../../../../components/AgTable";
 import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";

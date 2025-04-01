@@ -1,11 +1,13 @@
-;
+import React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { TextField } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 
 const EmployeeOnboard = () => {
-  const { control, reset } = useForm();
+  const { control, handleSubmit, reset } = useForm();
+
+  const onSubmit = (data) => {};
 
   const handleReset = () => {
     reset();
@@ -13,7 +15,7 @@ const EmployeeOnboard = () => {
 
   return (
     <div className="h-[65vh] overflow-y-auto">
-      <form  className="">
+      <form onSubmit={handleSubmit(onSubmit)} className="">
         <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             {/* Section: Basic Information */}
@@ -216,9 +218,7 @@ const EmployeeOnboard = () => {
           <div>
             {/* Section: Policies */}
             <div className="py-4 border-b-default border-borderGray">
-              <span className="text-subtitle font-pmedium">
-               Policies
-              </span>
+              <span className="text-subtitle font-pmedium">Policies</span>
             </div>
             <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
               <Controller
@@ -289,9 +289,7 @@ const EmployeeOnboard = () => {
           <div>
             {/* Section: KYC Information */}
             <div className="py-4 border-b-default border-borderGray">
-              <span className="text-subtitle font-pmedium">
-               KYC
-              </span>
+              <span className="text-subtitle font-pmedium">KYC</span>
             </div>
             <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
               <Controller
@@ -404,7 +402,7 @@ const EmployeeOnboard = () => {
             {/* Section: Payroll Information */}
             <div className="py-4 border-b-default border-borderGray">
               <span className="text-subtitle font-pmedium">
-               Payroll Information
+                Payroll Information
               </span>
             </div>
             <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
@@ -495,7 +493,7 @@ const EmployeeOnboard = () => {
             {/* Section: Payroll Information */}
             <div className="py-4 border-b-default border-borderGray">
               <span className="text-subtitle font-pmedium">
-               Bank Information
+                Bank Information
               </span>
             </div>
             <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
@@ -573,7 +571,7 @@ const EmployeeOnboard = () => {
             {/* Section: Payroll Information */}
             <div className="py-4 border-b-default border-borderGray">
               <span className="text-subtitle font-pmedium">
-               Family Information
+                Family Information
               </span>
             </div>
             <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">

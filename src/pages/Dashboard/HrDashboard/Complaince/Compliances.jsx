@@ -1,5 +1,5 @@
 import { Tab, Tabs } from "@mui/material";
-import  { useEffect } from "react";
+import React, { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const Compliances = () => {
@@ -13,8 +13,8 @@ const Compliances = () => {
     { label: "Departments", path: "departments" },
     { label: "Work Locations", path: "work-locations" },
     { label: "Holidays / Events", path: "holidays" },
-    { label: "Policies", path: "policies" },
-    { label: "SOP's", path: "sops" },
+    { label: "Company Policies", path: "policies" },
+    { label: "Company SOP's", path: "sops" },
     { label: "Employee Types", path: "employee-type" },
     { label: "Shifts", path: "shifts" },
     { label: "Templates", path: "templates" },
@@ -41,7 +41,9 @@ const Compliances = () => {
       <Tabs
         value={activeTab}
         onChange={(event, newValue) => {
-          navigate(`/app/dashboard/HR-dashboard/company/${tabs[newValue].path}`);
+          navigate(
+            `/app/dashboard/HR-dashboard/company/${tabs[newValue].path}`
+          );
         }}
         variant="scrollable" // Makes tabs scrollable
         scrollButtons="auto" // Show scroll buttons when needed
@@ -67,8 +69,7 @@ const Compliances = () => {
           "& .MuiTabs-scrollButtons": {
             "&.Mui-disabled": { opacity: 0.3 }, // Style disabled scroll buttons
           },
-        }}
-      >
+        }}>
         {tabs.map((tab, index) => (
           <Tab
             key={index}

@@ -1,45 +1,53 @@
 // MuiModal.js
+import React, { useRef } from "react";
 import { Modal, Box, IconButton } from "@mui/material";
 import { IoMdClose } from "react-icons/io";
+import { AnimatePresence, motion } from "motion/react";
 
 const MuiModal = ({ open, onClose, title, children, headerBackground }) => {
+  const modalRef = useRef(null);
   return (
-    <Modal open={open} onClose={onClose} className="motion-preset-fade-md">
-      <Box
-        sx={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "40%",
-          bgcolor: "background.paper",
-          boxShadow: 24,
-          borderRadius: 2,
-          outline: "none",
-          maxHeight: "90vh",
-          overflowY: "auto",
-        }}
-      >
+    <AnimatePresence>
+      <Modal open={open} onClose={onClose}>
         <div
-          className="flex justify-between items-center px-4 py-2  z-[-1] rounded-t-md border-default border-borderGray"
-          style={{
-            backgroundColor: headerBackground ? headerBackground : "white",
-            color: headerBackground ? "white" : "black",
-          }}
+          ref={modalRef}
+          className="fixed inset-0 flex items-center justify-center"
         >
-          <div className="text-title w-full text-center text-primary">
-            {title}
-          </div>
-          <IconButton sx={{ p: 0 }} onClick={onClose}>
-            <IoMdClose
-              className="text-white"
-              style={{ color: headerBackground ? "white" : "black" }}
-            />
-          </IconButton>
+          <motion.div
+            drag
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            whileDrag={{ scale: 0.9 }}
+            exit={{ scale: 0 }}
+            dragConstraints={modalRef} // Constrain dragging within the modal container
+            dragElastic={0.2} // Adjust elasticity for smoother movement
+            className="w-2/5 bg-white shadow-xl rounded-lg outline-none max-h-[90vh] overflow-y-auto"
+          >
+            {/* Header */}
+            <div
+              className="flex justify-between items-center px-4 py-2 rounded-t-md border-b border-borderGray"
+              style={{
+                backgroundColor: headerBackground || "white",
+                color: headerBackground ? "white" : "black",
+              }}
+            >
+              <div className="text-title w-full text-center text-primary">
+                {title}
+              </div>
+              <IconButton sx={{ p: 0 }} onClick={onClose}>
+                <IoMdClose
+                  className="text-white"
+                  style={{ color: headerBackground ? "white" : "black" }}
+                />
+              </IconButton>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 h-full">{children}</div>
+          </motion.div>
         </div>
-        <div className="p-4 h-full">{children}</div>
-      </Box>
-    </Modal>
+      </Modal>
+    </AnimatePresence>
   );
 };
 

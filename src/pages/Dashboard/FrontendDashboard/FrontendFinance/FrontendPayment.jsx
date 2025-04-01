@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -24,7 +24,7 @@ const FrontendPayment = () => {
       transactions: [
         {
           title: "Google Workspace Renewal - Basic",
-          date: "2025-01-05",
+          date: "2025-04-05",
           amount: "$1200",
         },
         {
@@ -149,8 +149,7 @@ const FrontendPayment = () => {
                     }
                     label={
                       <span
-                        style={{ fontSize: "0.875rem", fontWeight: "bold" }}
-                      >
+                        style={{ fontSize: "0.875rem", fontWeight: "bold" }}>
                         {p.payment}
                       </span>
                     }
@@ -171,8 +170,7 @@ const FrontendPayment = () => {
                   <div key={index} className="flex gap-2 items-start mb-2">
                     <div
                       className="w-3 h-3 rounded-full mt-[0.3rem]"
-                      style={{ backgroundColor: event.backgroundColor }}
-                    ></div>
+                      style={{ backgroundColor: event.backgroundColor }}></div>
                     <div className="flex flex-col">
                       <span className="text-content font-medium">
                         {event.title}
@@ -212,43 +210,41 @@ const FrontendPayment = () => {
 
       {/* Modal Section */}
       <MuiModal
-  open={isDrawerOpen}
-  onClose={closeDrawer}
-  title="Payment Details"
-  headerBackground={selectedEvent?.extendedProps.color}
->
-  {selectedEvent && (
-    <div>
-      <div className="flex flex-col gap-2">
-        <span className="text-content flex items-center">
-          <span className="w-[30%]">Title</span> <span>:</span>
-          <span className="text-content font-pmedium w-full pl-4">
-            {selectedEvent.title}
-          </span>
-        </span>
-        <span className="text-content flex items-center">
-          <span className="w-[30%]">Date</span> <span>:</span>
-          <span className="text-content font-pmedium w-full pl-4">
-            {dayjs(selectedEvent.start).format("MMM D, YYYY")}
-          </span>
-        </span>
-        <span className="text-content flex items-center">
-          <span className="w-[30%]">Payment Type</span> <span>:</span>
-          <span className="text-content font-pmedium w-full pl-4">
-            {selectedEvent.extendedProps.payment}
-          </span>
-        </span>
-        <span className="text-content flex items-center">
-          <span className="w-[30%]">Amount</span> <span>:</span>
-          <span className="text-content font-pmedium w-full pl-4">
-            {selectedEvent.extendedProps.amount}
-          </span>
-        </span>
-      </div>
-    </div>
-  )}
-</MuiModal>
-
+        open={isDrawerOpen}
+        onClose={closeDrawer}
+        title="Payment Details"
+        headerBackground={selectedEvent?.extendedProps.color}>
+        {selectedEvent && (
+          <div>
+            <div className="flex flex-col gap-2">
+              <span className="text-content flex items-center">
+                <span className="w-[30%]">Title</span> <span>:</span>
+                <span className="text-content font-pmedium w-full pl-4">
+                  {selectedEvent.title}
+                </span>
+              </span>
+              <span className="text-content flex items-center">
+                <span className="w-[30%]">Date</span> <span>:</span>
+                <span className="text-content font-pmedium w-full pl-4">
+                  {dayjs(selectedEvent.start).format("MMM D, YYYY")}
+                </span>
+              </span>
+              <span className="text-content flex items-center">
+                <span className="w-[30%]">Payment Type</span> <span>:</span>
+                <span className="text-content font-pmedium w-full pl-4">
+                  {selectedEvent.extendedProps.payment}
+                </span>
+              </span>
+              <span className="text-content flex items-center">
+                <span className="w-[30%]">Amount</span> <span>:</span>
+                <span className="text-content font-pmedium w-full pl-4">
+                  {selectedEvent.extendedProps.amount}
+                </span>
+              </span>
+            </div>
+          </div>
+        )}
+      </MuiModal>
     </div>
   );
 };

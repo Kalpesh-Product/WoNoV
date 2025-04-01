@@ -1,19 +1,34 @@
-;
+import React from "react";
 import AgTable from "../../../components/AgTable";
 import { BsThreeDotsVertical } from "react-icons/bs";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 
 const TeamMember = () => {
+  const axios = useAxiosPrivate();
+  const { data: taskList, isLoading } = useQuery({
+    queryKey: ["taskList"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/tasks/get-team-tasks-projects");
+        return response.data;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
+
   const teamMembersColumn = [
-    { field: "name", headerName: "Name" ,flex:1},
-    { field: "email", headerName: "Email" ,flex:1},
-    { field: "role", headerName: "Role" ,flex:1},
-    { field: "projects", headerName: "Projects" ,flex:1},
-    { field: "task", headerName: "Task" ,flex:1},
-    { field: "status", headerName: "Status" ,flex:1},
+    { field: "name", headerName: "Name", flex: 1 },
+    { field: "email", headerName: "Email", flex: 1 },
+    { field: "role", headerName: "Role", flex: 1 },
+    { field: "projects", headerName: "Projects", flex: 1 },
+    { field: "task", headerName: "Task", flex: 1 },
+    { field: "status", headerName: "Status", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
             <BsThreeDotsVertical />
@@ -115,7 +130,6 @@ const TeamMember = () => {
       status: "Active",
     },
   ];
-  
 
   return (
     <div className="flex flex-col gap-8 p-4">
@@ -124,7 +138,21 @@ const TeamMember = () => {
           search={true}
           searchColumn={"kra"}
           tableTitle={"Team Members"}
-          data={teamMembersData}
+          data={
+            isLoading
+              ? []
+              : [
+                  ...taskList.map((task, index) => ({
+                    id: index + 1,
+                    name: task.name,
+                    email: task.email,
+                    role: task.role,
+                    projects: task.projectsCount,
+                    task: task.tasksCount,
+                    status: task.status,
+                  })),
+                ]
+          }
           columns={teamMembersColumn}
         />
       </div>

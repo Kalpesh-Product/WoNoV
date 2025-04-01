@@ -1,4 +1,4 @@
-;
+import React from "react";
 import PrimaryButton from "../components/PrimaryButton";
 import SecondaryButton from "../components/SecondaryButton";
 

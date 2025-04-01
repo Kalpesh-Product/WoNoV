@@ -1,5 +1,7 @@
-
+import React from 'react'
 import AgTable from '../../../../components/AgTable'
+import { width } from '@mui/system';
+
 
 const JobApplicationList = () => {
 

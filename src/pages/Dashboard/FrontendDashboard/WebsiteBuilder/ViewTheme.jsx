@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BiznestImage from "../../../../assets/WONO_images/img/products-images/biznestImage.webp";
 import BiznestImageMockup from "../../../../assets/WONO_images/img/website-builder/new-layout/mobile/mockups/biznest-mockup.webp";
 import Cafe_2 from "../../../../assets/WONO_images/img/website-builder/new-layout/cafe-2.webp";
@@ -116,10 +116,13 @@ const ViewTheme = () => {
     { src: Cafe_3, mockup: Cafe3Mockup, alt: "Cafe_3", tag: "cafe" },
     { src: Hostels, mockup: Hostels_mockup, alt: "Hostels", tag: "hostels" },
   ];
+  const location = useLocation();
+  const {templateName, pageName} = location.state
+  useEffect(()=>{console.log(pageName, templateName)},[pageName])
 
   const navigate = useNavigate();
 
-  const location = useLocation();
+  
   const { image: initialImage } = location.state || {
     image: { src: BiznestImage, tag: "co-working", alt: "Product Image" },
   };
@@ -127,9 +130,9 @@ const ViewTheme = () => {
   const [currentImage, setCurrentImage] = useState(initialImage);
 
   // Filter the recommendations based on the current image's tag
-  const filteredRecommendations = recommendations.filter(
-    (rec) => rec.tag === currentImage.tag
-  );
+  // const filteredRecommendations = recommendations.filter(
+  //   (rec) => rec.tag === currentImage.tag
+  // );
 
   const handleViewMore = () => {
     setShowAll(true); // Show all recommendations
@@ -164,6 +167,7 @@ const ViewTheme = () => {
                   <div className="product-page-button-space flex gap-4 items-center">
                     <button
                       className="product-page-button bg-white text-black mb-8 w-full py-2 px-8 rounded-full"
+                      onClick={()=>navigate(`/app/dashboard/frontend-dashboard/select-theme/edit-theme/${templateName}/${pageName}`)}
                     >
                       Edit theme
                     </button>
@@ -185,8 +189,8 @@ const ViewTheme = () => {
 
               <div className="product-page-image-container overflow-hidden mb-8">
                 <img
-                  src={currentImage.mockup}
-                  alt={currentImage.alt}
+                  src={BiznestImage}
+                  alt={templateName}
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -227,7 +231,7 @@ const ViewTheme = () => {
           <div className="product-page-reccomendations-header mb-8">
             <span className="text-title">Few more suggestions for you</span>
           </div>
-          <div className="product-page-reccomendations-grid grid grid-cols-2 gap-8">
+          {/* <div className="product-page-reccomendations-grid grid grid-cols-2 gap-8">
             {filteredRecommendations
               .slice(0, showAll ? filteredRecommendations.length : 4)
               .map((rec, index) => (
@@ -255,7 +259,7 @@ const ViewTheme = () => {
                 Load More
               </button>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

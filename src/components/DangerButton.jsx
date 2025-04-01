@@ -1,4 +1,4 @@
-
+import React from 'react'
 
 const DangerButton = ({title, handleSubmit, type, fontSize, externalStyles}) => {
   return (

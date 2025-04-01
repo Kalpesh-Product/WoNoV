@@ -1,4 +1,4 @@
-;
+import React from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip } from "@mui/material";
 import { BsThreeDotsVertical } from "react-icons/bs";
@@ -39,7 +39,7 @@ const DailyTasks = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
               <BsThreeDotsVertical />

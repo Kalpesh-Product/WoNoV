@@ -1,4 +1,4 @@
-;
+import React from "react";
 import Chart from "react-apexcharts";
 
 const HeatMap = ({ data, options, height }) => {

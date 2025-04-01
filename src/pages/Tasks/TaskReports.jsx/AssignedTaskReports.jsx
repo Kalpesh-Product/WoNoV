@@ -1,7 +1,24 @@
+import React from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 
 const AssignedTaskReports = () => {
+
+  const axios = useAxiosPrivate()
+  const { data: taskList, isLoading } = useQuery({
+    queryKey: ["taskList"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/tasks/get-assigned-tasks");
+        return response.data
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
+
   const assignedTaskReportsColumns = [
     { field: "id", headerName: "ID", width: 50 },
     { field: "task", headerName: "Task", width: 250 },
@@ -32,7 +49,7 @@ const AssignedTaskReports = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
             <span className="text-primary hover:underline text-content cursor-pointer">
@@ -103,7 +120,16 @@ const AssignedTaskReports = () => {
         <AgTable
           search={true}
           tableTitle={"Assigned Task Reports"}
-          data={assignedTaskReportsData}
+          data={isLoading? []:[...taskList.map((task, index)=>({
+            id : index + 1,
+            task:task.taskName,
+            project : task.project.projectName,
+            assignedBy : task.assignedBy.firstName,
+            assignedTo : task.assignedTo.map((asignee)=> asignee.firstName),
+            priority : task.priority,
+            startDate : task.assignedDate,
+            endDate : task.dueDate,
+          }))]}
           columns={assignedTaskReportsColumns}
         />
       </div>

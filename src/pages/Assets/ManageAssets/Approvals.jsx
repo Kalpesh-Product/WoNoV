@@ -1,7 +1,15 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+} from "@mui/material";
 import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 import DangerButton from "../../../components/DangerButton";
+import SecondaryButton from "../../../components/SecondaryButton";
 import MuiModal from "../../../components/MuiModal";
 
 const Approvals = () => {

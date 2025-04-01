@@ -1,15 +1,19 @@
 import Card from "../../../components/Card";
+import React from "react";
+import { useLocation } from "react-router-dom";
 import LayerBarGraph from "../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../components/WidgetSection";
 import { MdRebaseEdit } from "react-icons/md";
 import { LuHardDriveUpload } from "react-icons/lu";
 import { CgWebsite } from "react-icons/cg";
+import DataCard from "../../../components/DataCard";
 import { SiCashapp } from "react-icons/si";
 import { SiGoogleadsense } from "react-icons/si";
 import { MdMiscellaneousServices } from "react-icons/md";
 import BarGraph from "../../../components/graphs/BarGraph";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import LineGraph from "../../../components/graphs/LineGraph";
+import PrimaryButton from "../../../components/PrimaryButton";
 
 const FrontendDashboard = () => {
 
@@ -84,6 +88,19 @@ const FrontendDashboard = () => {
       position: "top",
     },
   };
+
+  const users = [
+    { name: "John", gender: "Male" },
+    { name: "Alice", gender: "Female" },
+    { name: "Bob", gender: "Male" },
+    { name: "Eve", gender: "Female" },
+    { name: "Charlie", gender: "Male" },
+    { name: "Charlie", gender: "Male" },
+    { name: "Diana", gender: "Female" },
+    { name: "Diana", gender: "Female" },
+    { name: "Mark", gender: "Male" },
+    { name: "James", gender: "Male" },
+  ];
 
   const siteVisitorsData = [
     {
@@ -166,7 +183,7 @@ const FrontendDashboard = () => {
     },
     tooltip: {
       enabled: true,
-      custom: function ({ seriesIndex }) {
+      custom: function ({ series, seriesIndex }) {
         const item = nationWiseData[seriesIndex];
         return `
           <div style="padding: 5px; font-size: 12px;">
@@ -237,7 +254,7 @@ const FrontendDashboard = () => {
     },
     tooltip: {
       enabled: true,
-      custom: function ({ dataPointIndex }) {
+      custom: function ({ series, seriesIndex, dataPointIndex }) {
         return `<div style="padding: 8px; font-size: 12px;">
           <strong>Resolved Percentage:</strong> ${resolvedPercentage[dataPointIndex]}%<br />
           <strong>Total Issues:</strong> ${totalIssues[dataPointIndex]}<br />
@@ -282,7 +299,7 @@ const FrontendDashboard = () => {
     },
     tooltip: {
       enabled: true,
-      custom: function ({ seriesIndex }) {
+      custom: function ({ series, seriesIndex }) {
         const item = goaDistrictData[seriesIndex];
         return `
           <div style="padding: 5px; font-size: 12px;">
@@ -300,7 +317,7 @@ const FrontendDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection key="" border title={"Budget v/s Achievements"}>
+        <WidgetSection border title={"Budget v/s Achievements"}>
           <LayerBarGraph
             data={data}
             options={options}
@@ -311,18 +328,18 @@ const FrontendDashboard = () => {
     {
       layout: 6,
       widgets: [
-        <Card key="" icon={<MdRebaseEdit />} title="Create Website" />,
-        <Card key="" icon={<LuHardDriveUpload />} title="Edit website" />,
-        <Card key="" icon={<CgWebsite />} title="New Themes" route={"select-theme"} />,
-        <Card key="" icon={<SiCashapp />} title="Finance" route={"finance"} />,
-        <Card key="" icon={<SiGoogleadsense />} title="Data" route={"data"} />,
-        <Card key="" icon={<MdMiscellaneousServices />} title="Settings" route={"settings"} />,
+        <Card icon={<MdRebaseEdit />} title="Create Website" />,
+        <Card icon={<LuHardDriveUpload />} title="Edit website" />,
+        <Card icon={<CgWebsite />} title="New Themes" route={"select-theme"} />,
+        <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
+        <Card icon={<SiGoogleadsense />} title="Data" route={"data"} />,
+        <Card icon={<MdMiscellaneousServices />} title="Settings" route={"settings"} />,
       ],
     },
     {
       layout: 1,
       widgets: [
-        <WidgetSection key="" layout={1} title={"Website Issues Raised"} border>
+        <WidgetSection layout={1} title={"Website Issues Raised"} border>
           <LineGraph options={websiteIssuesOptions} data={websiteIssuesData} />
         </WidgetSection>,
       ],
@@ -330,7 +347,7 @@ const FrontendDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection key="" layout={1} border title={"Site Visitors"}>
+        <WidgetSection layout={1} border title={"Site Visitors"}>
           <BarGraph data={siteVisitorsData} options={siteVisitorOptions} />
         </WidgetSection>,
       ],
@@ -338,14 +355,14 @@ const FrontendDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection key="" layout={1} border title={"Site Visitors"}>
+        <WidgetSection layout={1} border title={"Site Visitors"}>
           <PieChartMui
             percent={true} // Enable percentage display
             data={nationWiseData} // Pass processed data
             options={nationWisePieChart}
           />
         </WidgetSection>,
-        <WidgetSection key="" layout={1} border title={"Site Visitors"}>
+        <WidgetSection layout={1} border title={"Site Visitors"}>
           <PieChartMui
             percent={true} // Enable percentage display
             data={goaDistrictData} // Pass processed data

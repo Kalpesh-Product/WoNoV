@@ -1,5 +1,5 @@
-import { Tabs } from "@mui/material";
-import { useEffect } from "react";
+import { Tab, Tabs } from "@mui/material";
+import React, { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const HrFinance = () => {
@@ -52,8 +52,7 @@ const HrFinance = () => {
               backgroundColor: "#1E3D73",
               color: "white",
             },
-          }}
-        >
+          }}>
           {tabs.map((tab, index) => (
             <NavLink
               key={index}
@@ -67,8 +66,7 @@ const HrFinance = () => {
                 padding: "12px 16px",
                 display: "block",
                 backgroundColor: isActive ? "#1E3D73" : "white",
-              })}
-            >
+              })}>
               {tab.label}
             </NavLink>
           ))}

@@ -1,11 +1,12 @@
-import {useState} from 'react'
+import React,{useState} from 'react'
+import PrimaryButton from '../../../../components/PrimaryButton'
 import AgTable from '../../../../components/AgTable'
 import { Chip} from "@mui/material";
 import { Select, MenuItem, FormControl, InputLabel,  Box } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
 
-const HrReports = ({title}) => {
+const HrReports = ({title,buttonTitle,rowSelection}) => {
 
   const [selected, setSelected] = useState("");
 
@@ -16,6 +17,18 @@ const HrReports = ({title}) => {
   const handleDelete = () => {
     setSelected("");
   };
+
+
+  const StatusCellRenderer = (params) => {
+    const status = params.value;
+    const statusClass = status === 'completed' ? 'status-completed' : 'status-pending';
+    return (
+      <span className={`status-badge ${statusClass}`}>
+        {status}
+      </span>
+    );
+  };
+
 
 
     const holdiayEvents = [

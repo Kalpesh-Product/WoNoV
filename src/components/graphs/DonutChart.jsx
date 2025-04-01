@@ -1,18 +1,17 @@
-;
+import React from "react";
 import ReactApexChart from "react-apexcharts";
 
-const DonutChart = ({ centerLabel, labels, colors, series, title }) => {
-  // Example data
+const DonutChart = ({ centerLabel, labels, colors, series, tooltipValue }) => {
   const chartData = {
-    series: series, // High, Medium, Low percentages
+    series: series, 
     labels: labels,
-    colors: colors, // Red, Yellow, Green
+    colors: colors, 
   };
 
   const chartOptions = {
     chart: {
       type: "donut",
-      fontFamily:"Poppins-Regular"
+      fontFamily: "Poppins-Regular"
     },
     colors: chartData.colors,
     labels: chartData.labels,
@@ -26,7 +25,7 @@ const DonutChart = ({ centerLabel, labels, colors, series, title }) => {
     tooltip: {
       enabled: true,
       y: {
-        formatter: (val) => `${val}%`,
+        formatter: (val, { seriesIndex }) => `${tooltipValue[seriesIndex]} (${val.toFixed(1)}%)`,
       },
     },
     plotOptions: {

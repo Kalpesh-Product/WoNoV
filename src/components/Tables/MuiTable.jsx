@@ -1,4 +1,4 @@
-;
+import React from "react";
 import {
   Table,
   TableBody,
@@ -27,8 +27,9 @@ const MuiTable = ({
       <Paper>
         <TableContainer
           style={{
-            height: scroll && rowsToDisplay ? 400 : "none", // Enable scrolling if scroll is true
+            height: scroll && rowsToDisplay ? 385 : "none", // Enable scrolling if scroll is true
             overflowY: scroll && rowsToDisplay ? "auto" : "hidden",
+            overflowX: "auto",
           }}
         >
           <Table stickyHeader={scroll && rowsToDisplay}>
@@ -49,7 +50,7 @@ const MuiTable = ({
               {(scroll && rowsToDisplay ? rows : displayedRows).map((row) => (
                 <TableRow key={row[rowKey]}>
                   {columns.map((column) => (
-                    <TableCell key={column.id} align={column.align || "left"}>
+                    <TableCell key={column.id} align={column.align || "left"} style={{ minWidth: column.minWidth || 120, }}>
                       {column.renderCell
                         ? column.renderCell(row)
                         : row[column.id]}

@@ -1,96 +1,168 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
-import { Chip, CircularProgress } from "@mui/material";
-import { toast } from "sonner";
-
 import {
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  FormHelperText,
+  IconButton,
 } from "@mui/material";
+import { toast } from "sonner";
+import { useQuery, useMutation } from "@tanstack/react-query";
+
+import { TextField, MenuItem } from "@mui/material";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import { Controller, useForm } from "react-hook-form";
+import { LuImageUp, LuImageUpscale } from "react-icons/lu";
+import { MdDelete } from "react-icons/md";
+import MuiModal from "../../components/MuiModal";
+import { queryClient } from "../../main";
 
 const RaiseTicket = () => {
-  const [details, setDetails] = useState({
-    department: "",
-    ticketTitle: "",
-    otherReason: "",
-    message: "",
-  });
-  const [departments, setDepartments] = useState([]); // State for departments
-  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [ticketIssues, setTicketIssues] = useState([]); // State for ticket issues
-  const [deptLoading, setDeptLoading] = useState(false);
-  const [ticketsLoading, setTicketsLoading] = useState(false);
-  const [tickets, setTickets] = useState([]);
+  const [openModal, setOpenModal] = useState(false);
   const axios = useAxiosPrivate();
 
   // Fetch departments and ticket issues in the same useEffect
-  useEffect(() => {
-    const fetchData = async () => {
-      setDeptLoading(true);
-      try {
-        const [departmentsResponse] = await Promise.all([
-          axios.get("api/company/get-company-data?field=selectedDepartments"),
-        ]);
-        // Set departments and ticket issues
-        setDepartments(departmentsResponse?.data?.selectedDepartments || []); // Ensure fallback to an empty array
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setDeptLoading(false);
-      }
-    };
 
-    fetchData();
-  }, [axios]);
-
-  // Reusable function to fetch tickets
-  const getTickets = async () => {
+  const fetchDepartments = async () => {
     try {
-      setTicketsLoading(true);
-      const response = await axios.get("/api/tickets/get-tickets");
-      const filteredTickets = response.data.filter(
-        (ticket) => !ticket.accepted
+      const response = await axios.get(
+        "api/company/get-company-data?field=selectedDepartments"
       );
-      setTickets(filteredTickets);
-    } catch  {
-      return null;
-    } finally {
-      setTicketsLoading(false);
+      return response.data?.selectedDepartments;
+    } catch (error) {
+      console.error("Error fetching data:", error);
     }
   };
 
-  // Initial data fetch when the component mounts
-  useEffect(() => {
-    getTickets();
+  const { data: fetchedDepartments = [], isPending: departmentLoading } =
+    useQuery({
+      queryKey: ["fetchedDepartments"],
+      queryFn: fetchDepartments,
+    });
+
+  const {
+    handleSubmit,
+    reset,
+    control,
+    watch,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      department: "",
+      ticketTitle: "",
+      newIssue: "",
+      message: "",
+      issue: null,
+    },
+    mode: "onSubmit",
   });
 
-  const transformTicketsData = (tickets) => {
-    return tickets.map((ticket) => ({
-      id: ticket._id,
-      raisedBy: ticket.raisedBy?.name || "Unknown",
-      fromDepartment: ticket.raisedToDepartment.name || "N/A",
-      ticketTitle: ticket.ticket?.title || "No Title",
-      status: ticket.status || "Pending",
-    }));
+  const watchFields = watch();
+
+  const { mutate: raiseTicket, isPending: pendingRaise } = useMutation({
+    mutationFn: async (data) => {
+      const formData = new FormData();
+
+      formData.append("departmentId", data.department);
+      formData.append("issueId", data.ticketTitle);
+      formData.append("description", data.message);
+      if (data.newIssue) {
+        formData.append("newIssue", data.newIssue);
+      }
+
+      // Append image if exists
+      if (data.image) {
+        formData.append("issue", data.image); // Key name should match backend expectations
+      }
+
+      const response = await axios.post("/api/tickets/raise-ticket", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return response.data;
+    },
+    onSuccess: function (data) {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["my-tickets"] });
+      reset();
+    },
+    onError: function (data) {
+      toast.error(data.message || "Something went wrong");
+    },
+  });
+
+  const onSubmit = (data) => {
+    raiseTicket(data);
   };
 
-  // Example usage
-  const rows = transformTicketsData(tickets);
+  const { data: tickets, isPending: ticketsLoading } = useQuery({
+    queryKey: ["my-tickets"],
+    queryFn: async function () {
+      const response = await axios.get("/api/tickets/today");
+      return response.data;
+    },
+  });
 
-  const handleChange = (field, value) => {
-    setDetails((prev) => ({ ...prev, [field]: value }));
+  const handleDepartmentSelect = (deptId) => {
+    setSelectedDepartment(deptId);
+
+    // Find the selected department and get its ticketIssues
+    const selectedDept = fetchedDepartments.find(
+      (dept) => dept.department._id === deptId
+    );
+
+    setTicketIssues(selectedDept?.ticketIssues || []);
+  };
+
+  const getOtherTicketId = () => {
+    // Find the "Other" issue from the selected department
+    const otherTicket = ticketIssues.find((issue) => issue.title === "Other");
+    return otherTicket ? otherTicket._id : null;
   };
 
   const recievedTicketsColumns = [
+    { field: "id", headerName: "id", sort: "desc" },
     { field: "raisedBy", headerName: "Raised By" },
-    { field: "fromDepartment", headerName: "From Department" },
+    { field: "raisedTo", headerName: "To Department" },
     { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
+    { field: "description", headerName: "Description", flex: 1 },
 
+    {
+      field: "priority",
+      headerName: "Priority",
+      cellRenderer: (params) => {
+        const statusColorMap = {
+          High: { backgroundColor: "#FFC5C5", color: "#8B0000" }, // Light red bg, dark red font
+          Medium: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+          Low: { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+        };
+
+        const { backgroundColor, color } = statusColorMap[params.value] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+        return (
+          <>
+            <Chip
+              label={params.value}
+              style={{
+                backgroundColor,
+                color,
+              }}
+            />
+          </>
+        );
+      },
+    },
     {
       field: "status",
       headerName: "Status",
@@ -122,128 +194,218 @@ const RaiseTicket = () => {
     },
   ];
 
-  const submitData = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post("/api/tickets/raise-ticket", {
-        departmentId: selectedDepartment,
-        issueId: details.ticketTitle,
-        description: details.message,
-      });
-      toast.success(response.data.message);
-    } catch (error) {
-      toast.error(error?.message);
-    }
-
-    // Reset the form values after adding the new row
-    setDetails({
-      RaisedBy: "",
-      SelectedDepartment: "",
-      TicketTitle: "",
-      Priority: "",
-      message: "",
-      Status: "",
-    });
-  };
-
-  const handleDepartmentSelect = (deptId) => {
-    setSelectedDepartment(deptId);
-
-    // Find the selected department and get its ticketIssues
-    const selectedDept = departments.find(
-      (dept) => dept.department._id === deptId
-    );
-    setTicketIssues(selectedDept?.ticketIssues || []);
-  };
-
   return (
     <div className="p-4 flex flex-col gap-4">
       <div className="p-4 bg-white border-2 rounded-md">
         <h3 className="my-5 text-center text-3xl text-primary">
           Raise A Ticket
         </h3>
-        <div className="grid lg:grid-cols-2 md:grid-cols-2 sm:grid-cols-1 gap-4">
-          <FormControl size="small" fullWidth>
-            <InputLabel>Department</InputLabel>
-            <Select
-              label="Department"
-              onChange={(e) => handleDepartmentSelect(e.target.value)}
-            >
-              <MenuItem value="">Select Department</MenuItem>
-              {deptLoading ? (
-                <CircularProgress color="black" />
-              ) : (
-                departments?.map((dept) => (
-                  <MenuItem
-                    key={dept.department._id}
-                    value={dept.department._id}
-                  >
-                    {dept.department.name}
-                  </MenuItem>
-                ))
-              )}
-            </Select>
-          </FormControl>
+        <div>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div className="grid lg:grid-cols-2 md:grid-cols-2 sm:grid-cols-1 gap-4">
+              <Controller
+                name="department"
+                control={control}
+                rules={{ required: "Department is required" }}
+                render={({ field }) => (
+                  <>
+                    <TextField
+                      {...field}
+                      select
+                      label={"Department"}
+                      error={!!errors.department}
+                      helperText={errors.department?.message}
+                      size="small"
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                        handleDepartmentSelect(e.target.value);
+                      }}>
+                      <MenuItem value="">Select Department</MenuItem>
+                      {departmentLoading ? (
+                        <CircularProgress color="black" />
+                      ) : (
+                        fetchedDepartments?.map((dept) => (
+                          <MenuItem
+                            key={dept.department._id}
+                            value={dept.department._id}>
+                            {dept.department.name}
+                          </MenuItem>
+                        ))
+                      )}
+                    </TextField>
+                  </>
+                )}
+              />
 
-          <FormControl size="small" fullWidth>
-            <InputLabel>Ticket Title</InputLabel>
-            <Select
-              label="Ticket Title"
-              onChange={(e) => handleChange("ticketTitle", e.target.value)}
-            >
-              <MenuItem value="">Select Ticket Title</MenuItem>
-              {ticketIssues.length > 0 ? (
-                ticketIssues.map((issue) => (
-                  <MenuItem key={issue._id} value={issue._id}>
-                    {issue.title}
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled>No Issues Available</MenuItem>
+              <Controller
+                name="ticketTitle"
+                control={control}
+                rules={{ required: "Please select an Issue" }}
+                render={({ field }) => (
+                  <>
+                    <TextField
+                      {...field}
+                      size="small"
+                      select
+                      label="Issue"
+                      helperText={errors.ticketTitle?.message}
+                      error={!!errors.ticketTitle}
+                      disabled={!watchFields.department}>
+                      <MenuItem value="">Select Ticket Title</MenuItem>
+                      {ticketIssues.length > 0 ? (
+                        ticketIssues.map((issue) => (
+                          <MenuItem key={issue._id} value={issue._id}>
+                            {issue.title}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem disabled>No Issues Available</MenuItem>
+                      )}
+                    </TextField>
+                  </>
+                )}
+              />
+              {watchFields.ticketTitle === getOtherTicketId() && (
+                <Controller
+                  name="newIssue"
+                  control={control}
+                  rules={{
+                    validate: (value) =>
+                      watchFields.ticketTitle === getOtherTicketId()
+                        ? value.trim().length > 0 || "Please specify the reason"
+                        : true,
+                  }}
+                  render={({ field }) => (
+                    <>
+                      <TextField
+                        {...field}
+                        label="Please specify the reason"
+                        className="col-span-2"
+                        multiline
+                        rows={3}
+                        error={!!errors.newIssue}
+                        helperText={errors.newIssue?.message}
+                        fullWidth
+                      />
+                    </>
+                  )}
+                />
               )}
-              <MenuItem value="Others">Others</MenuItem>
-            </Select>
-          </FormControl>
-        </div>
-        <div className="mt-4">
-          {details.ticketTitle === "Others" && (
-            <TextField
-              size="small"
-              label="Please specify the reason"
-              value={details.otherReason}
-              onChange={(e) => handleChange("otherReason", e.target.value)}
-              multiline
-              maxRows={4}
-              fullWidth
-            />
-          )}
-        </div>
-        <div className="grid lg:grid-cols-2 md:grid-cols-2 sm:grid-cols-1 gap-4 mt-4">
-          <TextField
-            size="small"
-            //   disabled={!isEditable}
-            label="Message"
-            value={details.message}
-            onChange={(e) => handleChange("message", e.target.value)}
-            fullWidth
-          />
-          <TextField
-            size="small"
-            //   disabled={!isEditable}
+              <Controller
+                name="message"
+                rules={{ required: "Please specify your message" }}
+                control={control}
+                render={({ field }) => (
+                  <>
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Message"
+                      error={!!errors.message}
+                      helperText={errors.message?.message}
+                      fullWidth
+                    />
+                  </>
+                )}
+              />
+              <Controller
+                name="image"
+                control={control}
+                render={({ field: { onChange, value } }) => (
+                  <Box className="flex flex-col gap-2">
+                    {/* File Input */}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      id="image-upload"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          onChange(file);
+                          setPreview(URL.createObjectURL(file)); // Set preview
+                        }
+                      }}
+                    />
 
-            type="file"
-            //   value={formData.motherName || ""}
-            //   onChange={(e) => handleChange("motherName", e.target.value)}
-            fullWidth
-          />
-        </div>
-        <div className="flex align-middle mt-5 mb-5 items-center justify-center">
-          <PrimaryButton title="Submit" handleSubmit={submitData} />
+                    {/* Clickable TextField */}
+                    <TextField
+                      size="small"
+                      variant="outlined"
+                      fullWidth
+                      label="Upload Image"
+                      value={value ? value.name : ""}
+                      placeholder="Choose a file..."
+                      InputProps={{
+                        readOnly: true,
+                        endAdornment: (
+                          <IconButton
+                            color="primary"
+                            component="label"
+                            htmlFor="image-upload">
+                            <LuImageUp />
+                          </IconButton>
+                        ),
+                      }}
+                    />
+
+                    {/* Image Preview & Delete Icon */}
+                    {preview && (
+                      <>
+                        <span
+                          className="underline text-primary text-content cursor-pointer"
+                          onClick={() => setOpenModal(true)}>
+                          Preview
+                        </span>
+                        <MuiModal
+                          open={openModal}
+                          onClose={() => setOpenModal(false)}
+                          title={"Preview File"}>
+                          <div>
+                            <div className="flex flex-col">
+                              <IconButton
+                                color="error"
+                                onClick={() => {
+                                  onChange(null);
+                                  setPreview(null);
+                                }}>
+                                <MdDelete />
+                              </IconButton>
+                              <div className="p-2 border-default border-borderGray rounded-md">
+                                <Avatar
+                                  src={preview}
+                                  alt="Preview"
+                                  sx={{
+                                    width: "100%",
+                                    height: "100%",
+                                    borderRadius: 2,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </MuiModal>
+                      </>
+                    )}
+                  </Box>
+                )}
+              />
+            </div>
+
+            <div className="flex align-middle mt-5 mb-5 items-center justify-center">
+              <PrimaryButton
+                disabled={pendingRaise}
+                isLoading={pendingRaise}
+                title="Submit"
+                type={"submit"}
+              />
+            </div>
+          </form>
         </div>
       </div>
       <div className="rounded-md bg-white p-4 border-2 ">
         <div className="flex flex-row justify-between mb-4">
-          <div className="text-[20px]">Tickets Raised Today</div>
+          <div className="text-[20px]">My today&apos;s tickets</div>
         </div>
         <div className=" w-full">
           {ticketsLoading ? (
@@ -252,8 +414,17 @@ const RaiseTicket = () => {
             </div>
           ) : (
             <AgTable
-              key={rows.length}
-              data={rows}
+              key={tickets?.length}
+              search
+              data={tickets?.map((ticket, index) => ({
+                id: index + 1,
+                raisedBy: ticket.raisedBy.firstName,
+                raisedTo: ticket.raisedToDepartment.name,
+                description: ticket.description,
+                ticketTitle: ticket.ticket,
+                status: ticket.status,
+                priority: ticket.priority,
+              }))}
               columns={recievedTicketsColumns}
               paginationPageSize={10}
             />

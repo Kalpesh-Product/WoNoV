@@ -1,11 +1,29 @@
+import React from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip } from "@mui/material";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
 
 const DepartmentTaskReports = () => {
+
+  const axios = useAxiosPrivate()
+  const { data: taskList, isLoading } = useQuery({
+    queryKey: ["taskList"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/tasks/get-tasks");
+        return response.data
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
+
   const departmentTaskReportsColumns = [
     { field: "id", headerName: "ID", width: 50 },
     { field: "task", headerName: "Task", width: 250 },
     { field: "project", headerName: "Project", width: 200 },
+    { field: "department", headerName: "Department", width: 200 },
     { field: "assignedBy", headerName: "Assigned By", flex: 1 },
     { field: "assignedTo", headerName: "Assigned To", flex: 1 },
     {
@@ -32,7 +50,7 @@ const DepartmentTaskReports = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
             <span className="text-primary hover:underline text-content cursor-pointer">
@@ -103,7 +121,17 @@ const DepartmentTaskReports = () => {
         <AgTable
           search={true}
           tableTitle={"Department Task Reports"}
-          data={departmentTaskReportsData}
+          data={isLoading? []:[...taskList.map((task, index)=>({
+            id : index + 1,
+            task:task.taskName,
+            project : task.project.projectName,
+            department : task.project.department.name,
+            assignedBy : task.assignedBy.firstName,
+            assignedTo : task.assignedTo.map((asignee)=> asignee.firstName),
+            priority : task.priority,
+            startDate : task.assignedDate,
+            endDate : task.dueDate,
+          }))]}
           columns={departmentTaskReportsColumns}
         />
       </div>

@@ -1,4 +1,4 @@
-;
+import React from "react";
 import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -58,7 +58,7 @@ const HrPayroll = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
           <span className="text-primary hover:underline text-content cursor-pointer">

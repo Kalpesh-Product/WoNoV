@@ -1,21 +1,59 @@
-;
+import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { Chip, TextField } from "@mui/material";
+import { Chip, MenuItem, Select, TextField } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import AgTable from "../../../../components/AgTable";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { Country, State } from "country-state-city";
+import { useMutation } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import  useAuth  from "../../../../hooks/useAuth";
 
 const VendorOnboard = () => {
-  const navigate = useNavigate()
+  const { auth } = useAuth();
+  const navigate = useNavigate();
+  const axios = useAxiosPrivate();
   const { control, handleSubmit, reset } = useForm();
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [fetched, setFetched] = useState(false);
+
+  useEffect(() => {
+    setCountries(Country.getAllCountries());
+  }, []);
+
+  // Fetch states when a country is selected
+  const handleCountryChange = (countryCode) => {
+    setSelectedCountry(countryCode);
+    setStates(State.getStatesOfCountry(countryCode));
+  };
+
+  const { mutate: vendorDetails, isPending: isPending } = useMutation({
+    mutationFn: async (data) => {
+      const response = await axios.post(`/api/vendors/onboard-vendor`, {
+        ...data,
+        departmentId: auth.user.departments[0]._id || 'id',
+      });
+
+      return response.data;
+    },
+    onSuccess: function (data) {
+      toast.success(data.message);
+    },
+    onError: function (data) {
+      toast.error(data.message);
+    },
+  });
 
   const vendorColumns = [
-    { field: "vendorID", headerName: "Vendor ID", width:100 },
+    { field: "vendorID", headerName: "Vendor ID", width: 100 },
     {
       field: "vendorName",
       headerName: "Vendor Name",
-      flex:2,
+      flex: 2,
       cellRenderer: (params) => (
         <span
           style={{
@@ -23,8 +61,11 @@ const VendorOnboard = () => {
             textDecoration: "underline",
             cursor: "pointer",
           }}
-          onClick={() => navigate(`/app/dashboard/HR-dashboard/company/vendor-onboarding/vendor-details/${params.data.vendorID}`)}
-
+          onClick={() =>
+            navigate(
+              `/app/dashboard/HR-dashboard/company/vendor-onboarding/vendor-details/${params.data.vendorID}`
+            )
+          }
         >
           {params.value}
         </span>
@@ -33,7 +74,7 @@ const VendorOnboard = () => {
     {
       field: "actions",
       headerName: "Action",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
             <span className="text-primary hover:underline text-content cursor-pointer">
@@ -92,232 +133,265 @@ const VendorOnboard = () => {
     },
   ];
 
-  const onSubmit = () => {
+  const onSubmit = (data) => {
+    vendorDetails(data);
   };
 
   const handleReset = () => {
     reset();
   };
+
   return (
     <div className="flex flex-col gap-8">
-    <div className="h-[65vh] overflow-y-auto">
-      <div className="py-4">
-        <span className="text-title text-primary font-pmedium">
-          Vendor Onboarding Form
-        </span>
+      <div className="h-[65vh] overflow-y-auto">
+        <div className="py-4">
+          <span className="text-title text-primary font-pmedium">
+            Vendor Onboarding Form
+          </span>
+        </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="">
+          <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              {/* Section: Basic Information */}
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">
+                  Basic Information
+                </span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+                <Controller
+                  name="name"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Vendor Name"
+                      fullWidth
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="address"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Address"
+                      fullWidth
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="country"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      fullWidth
+                      displayEmpty
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleCountryChange(e.target.value);
+                      }}
+                      size="small"
+                    >
+                      <MenuItem value="">Select Country</MenuItem>
+                      {countries.map((country) => (
+                        <MenuItem key={country.isoCode} value={country.isoCode}>
+                          {country.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+
+                <Controller
+                  name="state"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      fullWidth
+                      displayEmpty
+                      size="small"
+                      disabled={!selectedCountry}
+                    >
+                      <MenuItem value="">Select State</MenuItem>
+                      {states.map((state) => (
+                        <MenuItem key={state.isoCode} value={state.name}>
+                          {state.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+
+                <Controller
+                  name="pinCode"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Pin Code"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="panItNo"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="PAN IT No"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="gstUin"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="GST UIN"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="registrationType"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Registration Type"
+                      fullWidth
+                    />
+                  )}
+                />
+              </div>
+            </div>
+            <div>
+              {/* Section: Job Information */}
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">
+                  Other Information
+                </span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                <Controller
+                  name="assesseeOfOtherTerritory"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <Select fullWidth size="small" {...field} displayEmpty>
+                      <MenuItem disabled value="">
+                        Assessee Of Other Territory
+                      </MenuItem>
+                      <MenuItem value={true}>Yes</MenuItem>
+                      <MenuItem value={false}>No</MenuItem>
+                    </Select>
+                  )}
+                />
+                <Controller
+                  name="isEcommerceOperator"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <Select fullWidth size="small" {...field} displayEmpty>
+                      <MenuItem disabled value="">
+                        Is Ecommerce Operator
+                      </MenuItem>
+                      <MenuItem value={true}>Yes</MenuItem>
+                      <MenuItem value={false}>No</MenuItem>
+                    </Select>
+                  )}
+                />
+                <Controller
+                  name="isDeemedExporter"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <Select fullWidth size="small" {...field} displayEmpty>
+                      <MenuItem disabled value="">
+                        Is Deemed Exporter
+                      </MenuItem>
+                      <MenuItem value={true}>Yes</MenuItem>
+                      <MenuItem value={false}>No</MenuItem>
+                    </Select>
+                  )}
+                />
+
+                <Controller
+                  name="partyType"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <Select {...field} size="small" displayEmpty>
+                      <MenuItem value="">Party Type</MenuItem>
+                      <MenuItem value="Domestic">Domestic</MenuItem>
+                      <MenuItem value="INternational">International</MenuItem>
+                    </Select>
+                  )}
+                />
+
+                <Controller
+                  name="gstinUin"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="GST IN UIN"
+                      fullWidth
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="isTransporter"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <Select fullWidth size="small" {...field} displayEmpty>
+                      <MenuItem disabled value="">
+                        Is Transporter
+                      </MenuItem>
+                      <MenuItem value={true}>Yes</MenuItem>
+                      <MenuItem value={false}>No</MenuItem>
+                    </Select>
+                  )}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex items-center justify-center gap-4">
+            <PrimaryButton type="submit" title={"Submit"} />
+            <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
+          </div>
+        </form>
       </div>
-      <form onSubmit={handleSubmit(onSubmit)} className="">
-        <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            {/* Section: Basic Information */}
-            <div className="py-4 border-b-default border-borderGray">
-              <span className="text-subtitle font-pmedium">
-                Basic Information
-              </span>
-            </div>
-            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-              <Controller
-                name="firstName"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="First Name"
-                    fullWidth
-                  />
-                )}
-              />
-
-              <Controller
-                name="middleName"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Middle Name"
-                    fullWidth
-                  />
-                )}
-              />
-              <Controller
-                name="lastName"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Last Name"
-                    fullWidth
-                  />
-                )}
-              />
-
-              <Controller
-                name="gender"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField {...field} size="small" label="gender" fullWidth />
-                )}
-              />
-
-              <Controller
-                name="dob"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField {...field} size="small" label="DOB" fullWidth />
-                )}
-              />
-              <Controller
-                name="employeeID"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Employee ID"
-                    fullWidth
-                  />
-                )}
-              />
-              <Controller
-                name="mobilePhone"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Mobile Phone"
-                    fullWidth
-                  />
-                )}
-              />
-            </div>
-          </div>
-          <div>
-            {/* Section: Job Information */}
-            <div className="py-4 border-b-default border-borderGray">
-              <span className="text-subtitle font-pmedium">
-                Job Information
-              </span>
-            </div>
-            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-              <Controller
-                name="startDate"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Start Date"
-                    fullWidth
-                  />
-                )}
-              />
-
-              <Controller
-                name="workLocation"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Work Location"
-                    fullWidth
-                  />
-                )}
-              />
-
-              <Controller
-                name="employeeType"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Employee Type"
-                    fullWidth
-                  />
-                )}
-              />
-
-              <Controller
-                name="department"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Department"
-                    fullWidth
-                  />
-                )}
-              />
-              <Controller
-                name="reportsTo"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Reports To"
-                    fullWidth
-                  />
-                )}
-              />
-              <Controller
-                name="jobTitle"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Job Title"
-                    fullWidth
-                  />
-                )}
-              />
-              <Controller
-                name="jobDescription"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Job Description"
-                    fullWidth
-                  />
-                )}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Submit Button */}
-        <div className="flex items-center justify-center gap-4">
-          <PrimaryButton type="submit" title={"Submit"} />
-          <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
-        </div>
-      </form>
-
-    
-    </div>
-    <div>
+      <div>
         <div>
           <AgTable
             search={true}

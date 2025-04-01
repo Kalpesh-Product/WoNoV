@@ -1,4 +1,4 @@
-
+import React from 'react'
 
 const GroupedButton = ({title, handleSubmit, type, fontSize, externalStyles}) => {
   return (

@@ -1,7 +1,9 @@
 import AgTable from "../../../../components/AgTable";
+import { useNavigate } from "react-router-dom";
 import PrimaryButton from "../../../../components/PrimaryButton";
 
 const FrontendWebsiteIssueReports = () => {
+  const navigate = useNavigate();
 
   const websiteIssueReportsColumn = [
     { field: "issue", headerName: "Issue" },

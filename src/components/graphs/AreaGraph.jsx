@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import Chart from "react-apexcharts";
 
 const AreaGraph = () => {
@@ -88,6 +88,7 @@ const AreaGraph = () => {
     chart: {
       type: "area",
       height: 350,
+      fontFamily:"Poppins-Regular",
       zoom: {
         enabled: false,
       },
@@ -125,9 +126,9 @@ const AreaGraph = () => {
   };
 
   return (
-    <div className="border-default border-borderGray rounded-md p-4">
+    <div className=" rounded-md p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-title font-pregular">Annual Tickets Raised</h2>
+        <h2 className="text-title font-pregular"></h2>
         <div className="flex gap-2">
           {["Yearly", "Monthly", "Weekly"].map((filter) => (
             <button

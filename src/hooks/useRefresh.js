@@ -16,7 +16,7 @@ export default function useRefresh() {
         };
       });
       return response.data;
-    } catch {
+    } catch (error) {
       setAuth((prevState) => {
         return {
           ...prevState,

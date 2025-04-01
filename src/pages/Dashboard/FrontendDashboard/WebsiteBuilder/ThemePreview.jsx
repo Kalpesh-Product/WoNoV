@@ -1,4 +1,4 @@
-;
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 const ThemePreview = ({ themes }) => {

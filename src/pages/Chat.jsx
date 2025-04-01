@@ -1,9 +1,10 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { IoMdSend, IoMdArrowDropdown, IoMdArrowDropup } from "react-icons/io";
 import { FaPaperclip } from "react-icons/fa6";
 import { MdOutlineEmojiEmotions } from "react-icons/md";
 import initialChats from "../utils/initialChat";
 import PropTypes from "prop-types";
+import { useTheme } from "@mui/material/styles";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Typography from "@mui/material/Typography";
@@ -37,6 +38,12 @@ TabPanel.propTypes = {
   value: PropTypes.number.isRequired,
 };
 
+function a11yProps(index) {
+  return {
+    id: `full-width-tab-${index}`,
+    "aria-controls": `full-width-tabpanel-${index}`,
+  };
+}
 
 const contacts = [
   {
@@ -122,11 +129,17 @@ const Chat = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [contactFilter, setContactFilter] = useState("All");
 
+  const theme = useTheme();
+  const [value, setValue] = React.useState(0);
 
   const [activeTab, setActiveTab] = useState(0);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+  };
+
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
   };
 
   useEffect(() => {

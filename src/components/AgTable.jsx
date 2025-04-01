@@ -15,12 +15,13 @@ import SecondaryButton from "./SecondaryButton";
 import { MdFilterAlt, MdFilterAltOff } from "react-icons/md";
 import { IoIosSearch } from "react-icons/io";
 
-const AgTable = React.memo(
+const AgTableComponent = React.memo(
   ({
     data,
     columns,
     dropdownColumns = [],
     paginationPageSize,
+    hideFilter,
     rowSelection,
     search,
     tableTitle,
@@ -28,7 +29,7 @@ const AgTable = React.memo(
     buttonTitle,
     tableHeight,
     enableCheckbox, // ✅ New prop to enable checkboxes
-    getRowStyle
+    getRowStyle,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -39,6 +40,7 @@ const AgTable = React.memo(
     const [isTableInView, setTableInView] = useState(true); // ✅ Track table visibility
 
     const tableRef = useRef(null); // ✅ Reference to track table visibility
+    const tableRefCurrent = tableRef.current;
 
     useEffect(() => {
       const observer = new IntersectionObserver(
@@ -48,14 +50,14 @@ const AgTable = React.memo(
         { threshold: 0.6 } // 20% of the table must be visible
       );
 
-      if (tableRef.current) {
-        observer.observe(tableRef.current);
+      if (tableRefCurrent) {
+        observer.observe(tableRefCurrent);
       }
 
       return () => {
-        if (tableRef.current) observer.unobserve(tableRef.current);
+        if (tableRefCurrent) observer.unobserve(tableRefCurrent);
       };
-    }, []);
+    }, [tableRefCurrent]);
 
     useEffect(() => {
       if (data && data.length > 0) {
@@ -152,8 +154,6 @@ const AgTable = React.memo(
       ];
     }, [columns, enableCheckbox]);
 
-    
-
     return (
       <div className="border-b-[1px] border-borderGray">
         <div className="flex justify-between items-center py-2">
@@ -172,21 +172,27 @@ const AgTable = React.memo(
               }}
             />
           )}
-          <div className="flex justify-end items-center w-full">
-            <PrimaryButton
-              title={<MdFilterAlt />}
-              handleSubmit={() => setFilterDrawerOpen(true)}
-            />
-            <SecondaryButton
-              title={<MdFilterAltOff />}
-              handleSubmit={() => {
-                setFilters({});
-                setAppliedFilters({});
-                setSearchQuery("");
-                setFilteredData(data);
-              }}
-            />
-          </div>
+          {hideFilter ? (
+            ""
+          ) : (
+            <div className="flex justify-end items-center w-full">
+              <PrimaryButton
+                title={<MdFilterAlt />}
+                handleSubmit={() => setFilterDrawerOpen(true)}
+                externalStyles={"rounded-r-none"}
+              />
+              <SecondaryButton
+                title={<MdFilterAltOff />}
+                externalStyles={"rounded-l-none"}
+                handleSubmit={() => {
+                  setFilters({});
+                  setAppliedFilters({});
+                  setSearchQuery("");
+                  setFilteredData(data);
+                }}
+              />
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           {Object.keys(appliedFilters).map((field) =>
@@ -271,6 +277,11 @@ const AgTable = React.memo(
             rowSelection={enableCheckbox ? "multiple" : rowSelection} // ✅ Enable multiple selection only when checkboxes are on
             onSelectionChanged={handleSelectionChanged}
             getRowStyle={getRowStyle}
+            className="font-pregular"
+            rowBuffer={20} // ✅ Defines how many extra rows to render outside viewport
+            cacheBlockSize={paginationPageSize} // ✅ Controls how many rows to fetch per block
+            suppressRowVirtualization={false} // ✅ Ensures row virtualization is active
+            suppressColumnVirtualisation={false} // ✅ Ensures column virtualization is active
           />
         </div>
 
@@ -288,6 +299,8 @@ const AgTable = React.memo(
   }
 );
 
-AgTable.displayName = 'AgTable'; 
+AgTableComponent.displayName = "AgTable";
+
+const AgTable = React.memo(AgTableComponent);
 
 export default AgTable;

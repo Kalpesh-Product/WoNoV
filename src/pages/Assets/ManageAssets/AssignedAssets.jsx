@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   Button,
@@ -16,6 +16,18 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 
 const AssignedAssets = () => {
+  const locations = ["ST", "DTC"];
+  const locationTypes = ["Front Desk", "Cabin", "Meeting Room"];
+
+  const floors = ["ST-701A", "ST-701B", "ST-601A", "ST501A", "G-1"];
+  const meetingRooms = [
+    "Baga",
+    "Arambol",
+    "Madrid",
+    "Vagator",
+    "San Francisco",
+  ];
+
   const [assetRows, setAssetRows] = useState([
     {
       id: 1,
@@ -200,15 +212,13 @@ const AssignedAssets = () => {
           <div className="p-2 mb-2 flex gap-2 items-center">
             <button
               className="p-2 py-2 bg-primary rounded-md text-white text-content leading-5"
-              onClick={() => showDetails(asset)}
-            >
+              onClick={() => showDetails(asset)}>
               Details
             </button>
             {!asset.isRevoked && (
               <button
                 className="p-2 py-2 bg-red-200 rounded-md text-red-600 text-content leading-5"
-                onClick={() => confirmRevoke(asset)}
-              >
+                onClick={() => confirmRevoke(asset)}>
                 Revoke
               </button>
             )}
@@ -239,8 +249,7 @@ const AssignedAssets = () => {
       <MuiModal
         open={isConfirmModalOpen}
         onClose={() => setConfirmModalOpen(false)}
-        title="Confirm Revocation"
-      >
+        title="Confirm Revocation">
         <Typography variant="body1">
           Are you sure you want to revoke this asset assignment?
         </Typography>
@@ -264,8 +273,7 @@ const AssignedAssets = () => {
           setDetailsModalOpen(false);
           reset();
         }}
-        title="Assignee Details"
-      >
+        title="Assignee Details">
         {selectedAsset && (
           <>
             {!isEditMode ? (
@@ -304,34 +312,36 @@ const AssignedAssets = () => {
                       selectedAsset.status === "Revoked"
                         ? "text-red-500"
                         : "text-green-500"
-                    }`}
-                  >
+                    }`}>
                     {selectedAsset.status}
                   </span>
                 </div>
                 <div className="flex col-span-2 justify-center">
-                  <PrimaryButton title={"Edit"} handleSubmit={() => setIsEditMode(true)}/>
+                  <PrimaryButton
+                    title={"Edit"}
+                    handleSubmit={() => setIsEditMode(true)}
+                  />
                 </div>
               </div>
             ) : (
               // 🔹 Edit Mode (Form)
               <form
                 onSubmit={handleSubmit(handleSave)}
-                className="grid grid-cols-2 gap-6 px-6 pb-0"
-              >
-                  <Controller
-                    name="assignType"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <Select {...field} size="small" displayEmpty >
-                        <MenuItem value="" disabled>Select Assign Type</MenuItem>
-                        <MenuItem value="Rental">Rental</MenuItem>
-                        <MenuItem value="Permanent">Permanent</MenuItem>
-                      </Select>
-                    )}
-                  />
-
+                className="grid grid-cols-2 gap-6 px-6 pb-0">
+                <Controller
+                  name="assignType"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <Select {...field} size="small" displayEmpty>
+                      <MenuItem value="" disabled>
+                        Select Assign Type
+                      </MenuItem>
+                      <MenuItem value="Rental">Rental</MenuItem>
+                      <MenuItem value="Permanent">Permanent</MenuItem>
+                    </Select>
+                  )}
+                />
 
                 <FormControl fullWidth>
                   <InputLabel>Department</InputLabel>
@@ -357,11 +367,16 @@ const AssignedAssets = () => {
                   control={control}
                   defaultValue={selectedAsset.assigneeName}
                   render={({ field }) => (
-                    <TextField {...field} label="Assignee Name" fullWidth size="small"/>
+                    <TextField
+                      {...field}
+                      label="Assignee Name"
+                      fullWidth
+                      size="small"
+                    />
                   )}
                 />
 
-                <FormControl fullWidth>
+                {/* <FormControl fullWidth>
                   <InputLabel>Location</InputLabel>
                   <Controller
                     name="location"
@@ -369,14 +384,43 @@ const AssignedAssets = () => {
                     defaultValue={selectedAsset.location}
                     render={({ field }) => (
                       <Select {...field} label="Location" size="small">
-                        <MenuItem value="ST-601">ST-601</MenuItem>
-                        <MenuItem value="ST-602">ST-602</MenuItem>
-                        <MenuItem value="ST-701">ST-701</MenuItem>
-                        <MenuItem value="ST-702">ST-702</MenuItem>
+                        <MenuItem value="ST-601">ST</MenuItem>
+                        <MenuItem value="ST-602">DTC</MenuItem>
+                  
                       </Select>
                     )}
                   />
-                </FormControl>
+                </FormControl> */}
+
+                <TextField select label="Location" size="small" fullWidth>
+                  {locations.map((dept) => (
+                    <MenuItem key={dept} value={dept}>
+                      {dept}
+                    </MenuItem>
+                  ))}
+                </TextField>
+
+                <TextField select label="Floor" size="small" fullWidth>
+                  {floors.map((dept) => (
+                    <MenuItem key={dept} value={dept}>
+                      {dept}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField select label="Location Type" size="small" fullWidth>
+                  {locationTypes.map((dept) => (
+                    <MenuItem key={dept} value={dept}>
+                      {dept}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField select label="Meeting Room" size="small" fullWidth>
+                  {meetingRooms.map((dept) => (
+                    <MenuItem key={dept} value={dept}>
+                      {dept}
+                    </MenuItem>
+                  ))}
+                </TextField>
 
                 <div className="flex gap-2 col-span-2">
                   <div className="w-1/2 justify-items-end">

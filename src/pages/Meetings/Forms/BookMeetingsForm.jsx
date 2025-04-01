@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   Button,
   FormControl,
@@ -7,47 +7,47 @@ import {
   MenuItem,
   Select,
   TextField,
-} from '@mui/material';
+} from "@mui/material";
 import {
   DesktopDatePicker,
   LocalizationProvider,
   TimePicker,
-} from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import MuiModal from '../../../components/MuiModal';
-import PrimaryButton from '../../../components/PrimaryButton';
+} from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import MuiModal from "../../../components/MuiModal";
+import PrimaryButton from "../../../components/PrimaryButton";
 
 const BookMeetingsForm = () => {
   const [open, setOpen] = useState(false);
 
   const { control, handleSubmit, watch } = useForm({
     defaultValues: {
-      meetingType: 'Internal',
-      firstInput: '',
-      secondInput: '',
+      meetingType: "Internal",
+      firstInput: "",
+      secondInput: "",
       date: null,
       startTime: null,
       endTime: null,
-      companyName: '',
-      personName: '',
-      registeredCompanyName: '',
-      companyUrl: '',
-      anotherCompanyUrl: '',
-      emailId: '',
-      mobileNo: '',
-      gst: '',
-      pan: '',
-      Address: '',
-      bookingFor: '',
-      subject: '',
-      agenda: '',
+      companyName: "",
+      personName: "",
+      registeredCompanyName: "",
+      companyUrl: "",
+      anotherCompanyUrl: "",
+      emailId: "",
+      mobileNo: "",
+      gst: "",
+      pan: "",
+      Address: "",
+      bookingFor: "",
+      subject: "",
+      agenda: "",
     },
   });
 
-  const meetingType = watch('meetingType');
+  const meetingType = watch("meetingType");
 
   const onSubmit = (data) => {
-    (data);
+    data;
     setOpen(false);
   };
 
@@ -134,8 +134,9 @@ const BookMeetingsForm = () => {
                   <TimePicker
                     label="End Time"
                     {...field}
+                    slotProps={{ textField: { size: "small" } }}
                     renderInput={(params) => (
-                      <TextField fullWidth {...params} />
+                      <TextField fullWidth size="small" {...params} />
                     )}
                   />
                 )}
@@ -159,7 +160,7 @@ const BookMeetingsForm = () => {
           </FormControl>
 
           {/* Conditional Inputs Based on Meeting Type */}
-          {meetingType === 'Internal' ? (
+          {meetingType === "Internal" ? (
             <div className="flex flex-col gap-4 mb-4">
               <div className="flex gap-4">
                 <FormControl fullWidth>

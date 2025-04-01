@@ -1,10 +1,11 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import PrimaryButton from "../../components/PrimaryButton";
 import {
   Button,
   Card,
   CardContent,
   CardMedia,
+  CircularProgress,
   FormControl,
   InputLabel,
   MenuItem,
@@ -28,8 +29,9 @@ const MeetingSettings = () => {
   const { auth } = useAuth();
   const inputRef = useRef();
 
+
   // Fetch Meeting Rooms from API
-  const { data: meetingRooms = [] } = useQuery({
+  const { data: meetingRooms = [], isPending:isMeetingRoomsLoading } = useQuery({
     queryKey: ["meetingRooms"],
     queryFn: async () => {
       try {
@@ -111,7 +113,7 @@ const MeetingSettings = () => {
         </div>
 
         <div className="grid grid-cols-3 gap-4">
-          {meetingRooms.map((room) => (
+          {!isMeetingRoomsLoading ? meetingRooms.map((room) => (
             <Card
               key={room._id}
               className="shadow-md hover:shadow-lg transition-shadow border border-gray-200"
@@ -128,12 +130,12 @@ const MeetingSettings = () => {
                   <span className="text-subtitle">{room.name}</span>
                   <span
                     className={`px-4 py-1 text-content font-pregular rounded-full ${
-                      room.location.status === "Available"
+                      room.status === "Available"
                         ? "bg-green-100 text-green-600"
                         : "bg-red-100 text-red-600"
                     }`}
                   >
-                    {room.location.status}
+                    {room.status}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2 mb-4 text-gray-500">
@@ -152,7 +154,7 @@ const MeetingSettings = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )) : <CircularProgress color="#1E3D73"/>}
         </div>
       </div>
 
@@ -219,8 +221,8 @@ const MeetingSettings = () => {
                       <MenuItem value="">Select Location</MenuItem>
                       {auth.user.company.workLocations.length > 0 ? (
                         auth.user.company.workLocations.map((loc) => (
-                          <MenuItem key={loc._id} value={loc.name}>
-                            {loc.name}
+                          <MenuItem key={loc._id} value={loc.buildingName}>
+                            {loc.buildingName}
                           </MenuItem>
                         ))
                       ) : (

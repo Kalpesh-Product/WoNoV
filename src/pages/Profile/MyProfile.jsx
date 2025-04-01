@@ -184,7 +184,7 @@ const MyProfile = ({ handleClose, pageTitle }) => {
   return (
     <div>
       <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary">{pageTitle}</span>
+        <span className="text-title font-pmedium text-primary">Profile Settings</span>
         <PrimaryButton
           title={isEditable ? "Cancel" : "Edit"}
           handleSubmit={handleEditClick}

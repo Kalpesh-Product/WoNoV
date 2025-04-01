@@ -1,11 +1,11 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_PROD_LINK ,
+  baseURL: "https://wono-admin-panel-be.vercel.app/",
 });
 
 export const axiosPrivate = axios.create({
-  baseURL: import.meta.env.VITE_PROD_LINK ,
+  baseURL: "https://wono-admin-panel-be.vercel.app/",
   withCredentials: true,
 });
 // export const api = axios.create({

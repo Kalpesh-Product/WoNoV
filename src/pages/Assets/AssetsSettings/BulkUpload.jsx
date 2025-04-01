@@ -17,13 +17,12 @@ const BulkUpload = () => {
       </h2>
 
       <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
-        {uploadItems.map((index) => {
+        {uploadItems.map((index, item) => {
           return (
             <>
               <div
                 className="space-y-2 border-default p-4 m-2 rounded-md"
-                key={index}
-              >
+                key={index}>
                 <div className="mb-2">{index}</div>
                 <div className="flex space-x-2">
                   {/* Placeholder Input Box */}

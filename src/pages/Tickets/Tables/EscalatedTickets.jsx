@@ -1,8 +1,78 @@
-;
 import AgTable from "../../../components/AgTable";
 import { Chip } from "@mui/material";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { toast } from "sonner";
+import { queryClient } from "../../../main";
 
 const EscalatedTickets = ({title}) => {
+
+  const axios = useAxiosPrivate();
+
+   // Fetch Supported Tickets
+   const { data: escalatedTickets = [], isLoading } = useQuery({
+    queryKey: ["tickets","escalate-tickets"],
+    queryFn: async () => {
+      const response = await axios.get("/api/tickets/ticket-filter/escalate");
+
+      return response.data;
+    },
+  });
+
+  const { mutate } = useMutation({
+      mutationKey: ["close-ticket"],
+      mutationFn: async (ticketId) => {
+       
+        const response = await axios.patch("/api/tickets/close-ticket", {
+          ticketId,
+        });
+        return response.data;
+      },
+  
+      onSuccess: (data) => {
+        toast.success(data.message || "Ticket closed successfully");
+        
+
+        queryClient.invalidateQueries({ queryKey: ["tickets","escalate-tickets"] });  
+      },
+      onError: (err) => {
+        toast.error(err.response.data.message || "Failed to close ticket");
+      },
+    });
+
+   // Transform Tickets Data
+   const transformTicketsData = (tickets) => {
+    
+    return !tickets.length
+      ? []
+      : tickets.map((ticket,index) => {
+
+       const escalatedIndex = ticket.escalatedTo.length - 1
+       const  escalatedStatus =  ticket.escalatedTo.length > 0 ?ticket.escalatedTo[escalatedIndex].status: null
+        const  escalatedTo = ticket.escalatedTo.length > 0 ? ticket.escalatedTo[escalatedIndex].raisedToDepartment.name : null
+
+        const raisedBy = `${ticket.raisedBy?.firstName} ${ticket.raisedBy?.lastName}`
+        const acceptedBy = `${ticket.acceptedBy?.firstName} ${ticket.acceptedBy?.lastName}`
+        const escalatedTicket = {
+          srno: index + 1,
+          id:ticket._id,
+          raisedBy: raisedBy || "Unknown",
+          acceptedBy: acceptedBy || "Unknown",
+          selectedDepartment: ticket.raisedBy?.departments.map((dept) => dept.name) || "N/A",
+          ticketTitle: ticket?.ticket || "No Title",
+          tickets: ticket?.assignees.length > 0 ? "Ticket Assigned": ticket?.acceptedBy ? "Ticket Accepted": "N/A",
+          status: ticket.status || "Pending",
+          escalatedStatus,
+          escalatedTo 
+        }
+
+        return escalatedTicket
+      });
+  };
+
+  const rows = isLoading ? [] : transformTicketsData(escalatedTickets);
+
+
   const recievedTicketsColumns = [
     { field:"srno",headerName:"SR NO"},
     { field: "raisedBy", headerName: "Raised By" },
@@ -22,6 +92,38 @@ const EscalatedTickets = ({title}) => {
           color: "white",
         };
         return (
+          <div className="flex flex-col justify-center pt-4">
+            <Chip
+              label={params.value}
+              style={{
+                backgroundColor,
+                color,
+              }}
+            />
+             <span className="text-small text-borderGray text-center h-full">
+              {params.data.acceptedBy}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => {
+        const statusColorMap = {
+          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+          "In Progress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+          Closed: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+          Open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
+          Completed: { backgroundColor: "#D3D3D3", color: "#696969" }, // Light gray bg, dark gray font
+        }; 
+
+        const { backgroundColor, color } = statusColorMap[params.value] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+        return (
           <>
             <Chip
               label={params.value}
@@ -34,17 +136,17 @@ const EscalatedTickets = ({title}) => {
         );
       },
     },
-    {
-      field: "status",
-      headerName: "Status",
+     {
+      field: "escalatedStatus",
+      headerName: "Escalated Status",
       cellRenderer: (params) => {
         const statusColorMap = {
-          pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-          "in-progress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
-          resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-          open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
-          completed: { backgroundColor: "#D3D3D3", color: "#696969" }, // Light gray bg, dark gray font
-        };
+          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+          "In Progress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+          Closed: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+          Open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
+          Completed: { backgroundColor: "#D3D3D3", color: "#696969" }, // Light gray bg, dark gray font
+        }; 
 
         const { backgroundColor, color } = statusColorMap[params.value] || {
           backgroundColor: "gray",
@@ -59,9 +161,6 @@ const EscalatedTickets = ({title}) => {
                 color,
               }}
             />
-            <span className="text-small text-borderGray text-center h-full">
-              By ABC
-            </span>
           </div>
         );
       },
@@ -69,7 +168,7 @@ const EscalatedTickets = ({title}) => {
     {
       field: "escalatedTo",
       headerName: "Escalated To",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
             <button
@@ -82,64 +181,37 @@ const EscalatedTickets = ({title}) => {
                 cursor: "pointer",
               }}
             >
-              Admin Department
+              {params.value}
+            </button>
+          </div>
+        </>
+      ),
+    },
+    {
+      field: "action",
+      headerName: "Action",
+      cellRenderer: (params) => (
+        <>
+          <div className="p-2 mb-2 flex gap-2">
+            <button
+              style={{
+                backgroundColor: params.data.escalatedStatus === "Closed" ? "#39A4F6": "grey",
+                color: "white",
+                border: "none",
+                padding: "0.1rem 0.5rem",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+              onClick={ () => (mutate(params.data.id))}
+            >
+              Close
             </button>
           </div>
         </>
       ),
     },
   ];
-
-  const rows = [
-    {
-      srno:"1",
-      raisedBy: "Abrar Shaikh",
-      selectedDepartment: "IT",
-      ticketTitle: "Monitor dead pixel",
-      tickets: "Accepted Ticket",
-      status: "pending",
-    },
-    {
-      srno:"2",
-      raisedBy: "John Doe",
-      selectedDepartment: "HR",
-      ticketTitle: "System login issue",
-      tickets: "Accepted Ticket",
-      status: "pending",
-    },
-    {
-      srno:"3",
-      raisedBy: "Jane Smith",
-      selectedDepartment: "Finance",
-      ticketTitle: "Printer not working",
-      tickets: "Accepted Ticket",
-      status: "pending",
-    },
-    {
-      srno:"4",
-      raisedBy: "Mike Brown",
-      selectedDepartment: "Operations",
-      ticketTitle: "Software installation request",
-      tickets: "Assigned Ticket",
-      status: "pending",
-    },
-    {
-      srno:"5",
-      raisedBy: "Emily Davis",
-      selectedDepartment: "Marketing",
-      ticketTitle: "Email access problem",
-      tickets: "Accepted Ticket",
-      status: "pending",
-    },
-    {
-      srno:"6",
-      raisedBy: "Chris Johnson",
-      selectedDepartment: "Admin",
-      ticketTitle: "Air conditioner maintenance",
-      tickets: "Assigned Ticket",
-      status: "pending",
-    },
-  ];
+  
   return (
     <div className="p-4 border-default border-borderGray rounded-md">
       <div className="pb-4">

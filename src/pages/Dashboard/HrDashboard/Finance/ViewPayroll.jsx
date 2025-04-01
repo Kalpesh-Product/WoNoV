@@ -1,6 +1,8 @@
+import React from "react";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import PrimaryButton from "../../../../components/PrimaryButton";
+import SecondaryButton from "../../../../components/SecondaryButton";
 
 const ViewPayroll = () => {
   const payrollColumns = [

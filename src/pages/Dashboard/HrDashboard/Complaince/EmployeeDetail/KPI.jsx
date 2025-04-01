@@ -1,4 +1,4 @@
-;
+import React from "react";
 import AgTable from "../../../../../components/AgTable";
 
 const KPI = () => {
@@ -7,7 +7,7 @@ const KPI = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
           <span className="text-primary hover:underline text-content cursor-pointer">
@@ -47,6 +47,7 @@ const KPI = () => {
       <div>
         <AgTable
           search={true}
+          buttonTitle={"Add KPI"}
           searchColumn={"KPIs"}
           tableTitle={"Aiwin's KPI List"}
           data={rows}

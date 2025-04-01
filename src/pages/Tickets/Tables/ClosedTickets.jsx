@@ -9,7 +9,7 @@ const ClosedTickets = ({ title }) => {
   const { data, isLoading } = useQuery({
     queryKey: ["closed-tickets"],
     queryFn: async () => {
-      const response = await axios.get("/api/tickets/filtered-tickets/close");
+      const response = await axios.get("/api/tickets/ticket-filter/close");
       return response.data || []; 
     },
     initialData: [], 
@@ -18,9 +18,9 @@ const ClosedTickets = ({ title }) => {
   const transformTicketsData = (tickets) => {
     return !tickets.length
       ? []
-      : tickets.map((ticket) => ({
-          id: ticket._id,
-          raisedBy: ticket.raisedBy?.name || "Unknown",
+      : tickets.map((ticket,index) => ({
+          id: index + 1,
+          raisedBy: ticket.raisedBy?.firstName || "Unknown",
           fromDepartment: ticket.raisedToDepartment?.name || "N/A",
           ticketTitle: ticket?.ticket || "No Title",
           status: ticket.status || "Pending",
@@ -29,6 +29,7 @@ const ClosedTickets = ({ title }) => {
 
   const rows = isLoading ? [] : transformTicketsData(data);
   const recievedTicketsColumns = [
+    {field : "id", headerName: "Ticket ID", sort:"desc" },
     { field: "raisedBy", headerName: "Raised By" },
     { field: "fromDepartment", headerName: "From Department" },
     { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },

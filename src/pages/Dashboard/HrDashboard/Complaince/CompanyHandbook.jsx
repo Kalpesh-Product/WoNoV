@@ -1,4 +1,4 @@
-;
+import React from "react";
 import biznestLogo from "../../../../assets/biznest/biznest_logo.jpg";
 import HierarchyTree from "../../../../components/HierarchyTree";
 import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";

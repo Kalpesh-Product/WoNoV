@@ -1,4 +1,4 @@
-;
+import React from "react";
 import LayerBarGraph from "../../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
 import Accordion from "@mui/material/Accordion";
@@ -74,9 +74,10 @@ const FrontendBudget = () => {
     tooltip: {
       shared: true, // Ensure all series values are shown together
       intersect: false, // Avoid showing individual values for each series separately
-      custom: function ({  dataPointIndex, w }) {
+      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
         const utilised = utilisedData[dataPointIndex] || 0;
         const exceeded = exceededData[dataPointIndex] || 0;
+        const defaultVal = defaultData[dataPointIndex] || 0;
 
         // Custom tooltip HTML
         return `

@@ -1,8 +1,7 @@
-;
+import React from "react";
 import Chart from "react-apexcharts";
 
 const LayerBarGraph = ({ title, data, options }) => {
-
   // Generate the custom legend items dynamically
   const customLegend = data
     .filter((series) => series.group === "total") // Only include "Total" series
@@ -28,13 +27,13 @@ const LayerBarGraph = ({ title, data, options }) => {
     });
   return (
     <div className="bg-white rounded-md">
-      <div className="border-b-2 p-4 border-gray-200">
+      <div className=" p-4 ">
         <span className="text-lg">{title}</span>
       </div>
       <div className="">
         {title === "Department Wise Tasks% Vs Achievements in %" && (
           <div className="flex justify-center items-center my-4">
-          {customLegend}
+            {customLegend}
           </div>
         )}
         <Chart options={options} series={data} type="bar" height={350} />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
@@ -10,6 +10,8 @@ const AssignAssets = () => {
 
   // Sample data for assignment types and departments
   const assignTypes = ["Rental", "Permanent"];
+  const locations = ["ST", "DTC"];
+  const locationTypes = ["Front Desk", "Cabin", "Meeting Room"];
   const departments = [
     "HR",
     "IT",
@@ -17,6 +19,14 @@ const AssignAssets = () => {
     "Marketing",
     "Admin",
     "Operations",
+  ];
+  const floors = ["ST-701A", "ST-701B", "ST-601A", "ST501A", "G-1"];
+  const meetingRooms = [
+    "Baga",
+    "Arambol",
+    "Madrid",
+    "Vagator",
+    "San Francisco",
   ];
 
   // Handle Assign button click
@@ -122,8 +132,7 @@ const AssignAssets = () => {
       <MuiModal
         open={openModal}
         onClose={handleCloseModal}
-        title="Assign Asset"
-      >
+        title="Assign Asset">
         {selectedAsset && (
           <div className="flex flex-col px-4">
             {/* Asset Details Section */}
@@ -196,13 +205,42 @@ const AssignAssets = () => {
                   ))}
                 </TextField>
                 <TextField size="small" label="Assignee Name" fullWidth />
-                <TextField
+                {/* <TextField
                   label="Location"
                   value={selectedAsset.location}
                   fullWidth
                   size="small"
                   InputProps={{ readOnly: true }}
-                />
+                /> */}
+
+                <TextField select label="Location" size="small" fullWidth>
+                  {locations.map((dept) => (
+                    <MenuItem key={dept} value={dept}>
+                      {dept}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField select label="Floor" size="small" fullWidth>
+                  {floors.map((dept) => (
+                    <MenuItem key={dept} value={dept}>
+                      {dept}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField select label="Location Type" size="small" fullWidth>
+                  {locationTypes.map((dept) => (
+                    <MenuItem key={dept} value={dept}>
+                      {dept}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField select label="Meeting Room" size="small" fullWidth>
+                  {meetingRooms.map((dept) => (
+                    <MenuItem key={dept} value={dept}>
+                      {dept}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </div>
             </div>
 

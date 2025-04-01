@@ -1,7 +1,10 @@
+import React from "react";
+import AreaGraph from "../../components/graphs/AreaGraph";
 import { RiArchiveDrawerLine, RiPagesLine } from "react-icons/ri";
 import { MdFormatListBulleted } from "react-icons/md";
 import { CgProfile } from "react-icons/cg";
 import Card from "../../components/Card";
+import DonutChart from "../../components/graphs/DonutChart";
 import WidgetSection from "../../components/WidgetSection";
 import DataCard from "../../components/DataCard";
 import MuiTable from "../../components/Tables/MuiTable";
@@ -22,25 +25,7 @@ const MeetingDashboard = () => {
         "/api/meetings/get-meetings-type?type=Internal"
       );
 
-      const parseTime = (timeStr) => {
-        const [time, modifier] = timeStr.split(" ");
-        let [hours, minutes] = time.split(":").map(Number);
-        if (modifier === "PM" && hours !== 12) hours += 12;
-        if (modifier === "AM" && hours === 12) hours = 0;
-        return hours * 60 + minutes; // Convert to total minutes for comparison
-      };
-
-      const sortedMeetings = response.data.sort(
-        (a, b) => parseTime(a.endTime) - parseTime(b.endTime)
-      );
-
-      const formattedMeetings = sortedMeetings.map((meeting, index) => ({
-        srNo: index + 1, // Assign serial number after sorting
-        ...meeting,
-      }));
-
-      console.log("Sorted & Formatted Internal Meetings:", formattedMeetings);
-      return formattedMeetings;
+      return response.data;
     },
   });
 
@@ -51,34 +36,14 @@ const MeetingDashboard = () => {
       const response = await axios.get(
         "/api/meetings/get-meetings-type?type=External"
       );
-
-      const parseTime = (timeStr) => {
-        const [time, modifier] = timeStr.split(" ");
-        let [hours, minutes] = time.split(":").map(Number);
-        if (modifier === "PM" && hours !== 12) hours += 12;
-        if (modifier === "AM" && hours === 12) hours = 0;
-        return hours * 60 + minutes; // Convert to total minutes for comparison
-      };
-
-      const sortedMeetings = response.data.sort(
-        (a, b) => parseTime(a.endTime) - parseTime(b.endTime)
-      );
-
-      const formattedMeetings = sortedMeetings.map((meeting, index) => ({
-        srNo: index + 1, // Assign serial number after sorting
-        ...meeting,
-      }));
-
-      console.log("Sorted & Formatted External Meetings:", formattedMeetings);
-      return formattedMeetings;
+      return response.data;
     },
   });
 
   const meetingColumns = [
-    { id: "srNo", label: "ID", align: "left" },
-    { id: "company", label: "Company", align: "left" },
+    { id: "id", label: "ID", align: "left" },
     { id: "roomName", label: "Meeting Rooms", align: "left" },
-    { id: "location", label: "Location", align: "left" },
+    { id: "unitName", label: "Location", align: "left" },
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
@@ -250,7 +215,7 @@ const MeetingDashboard = () => {
     <div>
       <ul>
         {availabilityRooms
-          .sort((a) => (a.status === "Available" ? -1 : 1)) // Sort Available rooms first
+          .sort((a, b) => (a.status === "Available" ? -1 : 1)) // Sort Available rooms first
           .map((room, index) => (
             <li key={index} className="flex items-center mb-1">
               <span
@@ -453,7 +418,7 @@ const MeetingDashboard = () => {
 
   const heatmapData = timeSlots.map((slot, index) => ({
     name: slot,
-    data: days.map((day) => ({
+    data: days.map((day, dayIndex) => ({
       x: day, // Day of the week
       y: day === "Sun" || day === "Sat" ? 0 : generateRandomData()[index], // No bookings for Sun/Sat
     })),
@@ -493,7 +458,6 @@ const MeetingDashboard = () => {
       layout: 1,
       widgets: [
         <WidgetSection
-          key=""
           layout={1}
           border
           title={"Average Meeting Room Bookings"}
@@ -510,37 +474,31 @@ const MeetingDashboard = () => {
       layout: 6,
       widgets: [
         <Card
-          key=""
           route={"/app/meetings/book-meeting"}
           title={"Book a Meeting"}
           icon={<RiPagesLine />}
         />,
         <Card
-          key=""
           route={"/app/meetings/manage-meetings"}
           title={"Manage Meetings"}
           icon={<RiArchiveDrawerLine />}
         />,
         <Card
-          key=""
           route={"/app/meetings/calendar"}
           title={"Calendar"}
           icon={<MdFormatListBulleted />}
         />,
         <Card
-          key=""
           route={"/app/meetings/reports"}
           title={"Reports"}
           icon={<CgProfile />}
         />,
         <Card
-          key=""
           route={"/app/meetings/reviews"}
           title={"Reviews"}
           icon={<RiPagesLine />}
         />,
         <Card
-          key=""
           route={"/app/meetings/settings"}
           title={"Settings"}
           icon={<RiPagesLine />}
@@ -550,20 +508,13 @@ const MeetingDashboard = () => {
     {
       layout: 3,
       widgets: [
+        <DataCard title={"Total"} data={"833"} description={"Hours Booked"} />,
         <DataCard
-          key=""
-          title={"Total"}
-          data={"833"}
-          description={"Hours Booked"}
-        />,
-        <DataCard
-          key=""
           title={"Total"}
           data={"75"}
           description={"Unique Bookings"}
         />,
         <DataCard
-          key=""
           title={"Total"}
           data={"55"}
           description={"BIZ Nest Bookings"}
@@ -573,20 +524,13 @@ const MeetingDashboard = () => {
     {
       layout: 3,
       widgets: [
+        <DataCard title={"Total"} data={"20"} description={"Hours Booked"} />,
         <DataCard
-          key=""
-          title={"Total"}
-          data={"20"}
-          description={"Hours Booked"}
-        />,
-        <DataCard
-          key=""
           title={"Average"}
           data={"1.2Hrs"}
           description={"Hours Booked"}
         />,
         <DataCard
-          key=""
           title={"Total"}
           data={"135"}
           description={"Hours Cancelled"}
@@ -597,17 +541,32 @@ const MeetingDashboard = () => {
       layout: 2,
       widgets: [
         <MuiTable
-          key={meetingsInternal.length}
           Title={"Internal Ongoing Meeting Hourly"}
-          rows={meetingsInternal}
+          // rows={meetingInternalRows}
+          rows={[
+            ...meetingsInternal.map((item, index) => ({
+              id: index + 1,
+              roomName: item.roomName,
+              meetingType: item.meetingType,
+              endTime: item.endTime,
+              unitName: item.location?.unitName,
+            })),
+          ]}
           columns={meetingColumns}
           rowsToDisplay={5}
           scroll={true}
         />,
         <MuiTable
           Title={"External Ongoing Meeting Hourly"}
-          key={meetingsExternal.length}
-          rows={meetingsExternal}
+          rows={[
+            ...meetingsExternal.map((item, index) => ({
+              id: index + 1,
+              roomName: item.roomName,
+              meetingType: item.meetingType,
+              endTime: item.endTime,
+              unitName: item.location?.unitName,
+            })),
+          ]}
           columns={meetingColumns}
           rowsToDisplay={5}
           scroll={true}
@@ -618,7 +577,6 @@ const MeetingDashboard = () => {
       layout: 2,
       widgets: [
         <WidgetSection
-          key=""
           layout={1}
           border
           title={"External Guests Visited"}
@@ -627,7 +585,6 @@ const MeetingDashboard = () => {
           <BarGraph data={externalGuestsData} options={externalGuestsOptions} />
         </WidgetSection>,
         <WidgetSection
-          key=""
           layout={1}
           border
           title={"Average Occupancy Of Rooms in %"}
@@ -643,20 +600,10 @@ const MeetingDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection
-          key=""
-          layout={1}
-          title={"Busy time during the week"}
-          border
-        >
+        <WidgetSection layout={1} title={"Busy time during the week"} border>
           <HeatMap data={heatmapData} options={heatmapOptions} height={400} />
         </WidgetSection>,
-        <WidgetSection
-          key=""
-          layout={1}
-          title={"Meeting Duration Breakdown"}
-          border
-        >
+        <WidgetSection layout={1} title={"Meeting Duration Breakdown"} border>
           <PieChartMui
             data={meetingPieData}
             options={meetingPieOptions}
@@ -668,12 +615,7 @@ const MeetingDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection
-          key=""
-          layout={1}
-          title={"Room Availability Status"}
-          border
-        >
+        <WidgetSection layout={1} title={"Room Availability Status"} border>
           <PieChartMui
             data={RoomPieData}
             options={RoomOptions}
@@ -688,9 +630,11 @@ const MeetingDashboard = () => {
     <div>
       <div>
         {meetingsWidgets.map((widget, index) => (
-          <WidgetSection key={""} layout={widget.layout}>
-            {widget?.widgets}
-          </WidgetSection>
+          <div>
+            <WidgetSection key={index} layout={widget.layout}>
+              {widget?.widgets}
+            </WidgetSection>
+          </div>
         ))}
       </div>
     </div>

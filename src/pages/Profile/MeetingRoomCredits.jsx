@@ -1,4 +1,4 @@
-;
+import React from "react";
 import AgTable from "../../components/AgTable";
 import WidgetSection from "../../components/WidgetSection";
 
@@ -67,7 +67,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
   return (
     <div>
       <div className="flex items-center justify-between ">
-        <span className="text-title font-pmedium text-primary">{pageTitle}</span>
+        <span className="text-title font-pmedium text-primary">Meetings</span>
       </div>
       <div>
         <WidgetSection layout={navigationCards.length}>

@@ -1,278 +1,277 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import "../../pages/LoginPage/CalenderModal.css";
-import { Checkbox, FormControlLabel, FormGroup } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import { convertToISOFormat } from "../../utils/dateFormat";
+
+import {
+  Checkbox,
+  CircularProgress,
+  FormControlLabel,
+  FormGroup,
+} from "@mui/material";
 import dayjs from "dayjs";
+
 import MuiModal from "../../components/MuiModal";
-
-const MeetingCalendar = () => {
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
+import DetalisFormatted from "../../components/DetalisFormatted";
+import humanDate from "../../utils/humanDateForamt";
+import { useSelector } from "react-redux";
+import { setMeetings } from "../../redux/slices/meetingSlice";
+const Calender = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState(""); // 'view' or 'add'
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const axios = useAxiosPrivate();
-  const [eventsToBeRenamed, setEventsToBeRenamed] = useState([]);
-  const statusColors = {
-    Completed: "#4caf50", // Green for Completed
-    Upcoming: "#ff9800", // Orange for Upcoming
-  };
+  const [filteredEvents, setFilteredEvents] = useState([]);
+  const [headerBackground, setHeaderBackground] = useState("");
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    start: "",
+    description: "",
+  });
+  const [eventFilter, setEventFilter] = useState([
+    "upcoming",
+    "completed",
+    // "cancelled",
+  ]);
+  const meetings = useSelector((state) => state.meetings.data);
 
-  const { data: meetingsCheck = [], isLoading } = useQuery({
-    queryKey: ["meetingsCheck"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/meetings/get-meetings");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
+  const transformedMeetings = meetings.map((meeting) => {
+    const formattedDate = `${meeting.date.split("/").reverse().join("-")}`;
+    return {
+      id: meeting._id,
+      title: meeting.subject,
+      start: dayjs(
+        `${formattedDate} ${meeting.startTime}`,
+        "YYYY-MM-DD hh:mm A"
+      ).toISOString(),
+      end: dayjs(
+        `${formattedDate} ${meeting.endTime}`,
+        "YYYY-MM-DD hh:mm A"
+      ).toISOString(),
+      extendedProps: { ...meeting },
+    };
   });
 
   useEffect(() => {
-    if (isLoading || !Array.isArray(meetingsCheck)) return;
-
-    const newEvents = meetingsCheck.map((meeting) => {
-      const startDate = convertToISOFormat(meeting.date, meeting.startTime);
-      const endDate = convertToISOFormat(meeting.date, meeting.endTime);
-
-      return {
-        title: meeting.subject || "Meeting",
-        start: startDate,
-        end: endDate,
-        allDay: false,
-        meetingStatus: meeting.meetingStatus,
-        extendedProps: {},
-      };
-    });
-
-    setEventsToBeRenamed(newEvents);
-  }, [meetingsCheck, isLoading]);
+    if (eventFilter.length === 0) {
+      setFilteredEvents(transformedMeetings);
+    } else {
+      const filtered = transformedMeetings.filter((event) =>
+        eventFilter.includes(event.extendedProps?.meetingStatus.toLowerCase())
+      );
+      setFilteredEvents(filtered);
+    }
+  }, [eventFilter, meetings]);
 
   const getTodaysEvents = () => {
-    const today = dayjs().format("YYYY-MM-DD"); // Get today's date in "YYYY-MM-DD"
-
-    return meetingsCheck.filter((meeting) => {
-      // Convert "DD-MM-YYYY" to "YYYY-MM-DD"
-      console.log(meeting.date)
-      const meetingDate = dayjs(meeting.date, "DD-MM-YYYY").format(
-        "YYYY-MM-DD"
+    const today = dayjs().startOf("day");
+    return transformedMeetings.filter((event) => {
+      const eventStart = dayjs(event.start).startOf("day");
+      const eventEnd = dayjs(event.end).startOf("day");
+      return (
+        today.isSame(eventStart) ||
+        (today.isAfter(eventStart) && today.isBefore(eventEnd))
       );
-
-      return meetingDate === today; // Compare with today's date
     });
   };
 
-  
-
   const todaysEvents = getTodaysEvents();
-  console.log(todaysEvents)
 
-  const uniqueStatuses = Array.from(
-    new Set(meetingsCheck.map((meeting) => meeting.meetingStatus))
-  );
+  const handleEventClick = (clickInfo) => {
+    const event = clickInfo.event;
+    const type = event.extendedProps?.meetingStatus.toLowerCase();
 
-  // ✅ Initialize both checkboxes as selected by default
-  const [filteredStatuses, setFilteredStatuses] = useState(uniqueStatuses);
+    const colors = {
+      Upcoming: "#3BACFF",
+      completed: "#5EFE1F",
+    };
 
-  const handleCheckboxChange = (e) => {
-    const selectedStatus = e.target.value;
+    const headerBackground = colors[type] || ""; // Fallback to empty if type doesn't match
 
-    setFilteredStatuses((prevFilter) =>
-      e.target.checked
-        ? [...prevFilter, selectedStatus]
-        : prevFilter.filter((s) => s !== selectedStatus)
-    );
+    setSelectedEvent(event);
+    setDrawerMode("view");
+    setIsDrawerOpen(true);
+    setHeaderBackground(headerBackground); // Set the background color
   };
 
-  // ✅ Apply filtering logic
-  const filteredEvents = eventsToBeRenamed
-    .filter((event) => filteredStatuses.includes(event.meetingStatus))
-    .map((event) => ({
-      ...event,
-      backgroundColor: statusColors[event.meetingStatus] || "#05C3F0",
-      borderColor: statusColors[event.meetingStatus] || "#05C3F0",
-    }));
-
-const handleEventClick = (clickInfo) => {
-  const eventDetails = clickInfo.event.extendedProps; // Extract extended properties
-  setSelectedEvent({
-    title: clickInfo.event.title,
-    date: dayjs(clickInfo.event.start).format("YYYY-MM-DD"), // Format date
-    startTime: dayjs(clickInfo.event.start).format("hh:mm A"), // Convert to AM/PM format
-    endTime: dayjs(clickInfo.event.end).format("hh:mm A"),
-    range: `${dayjs(clickInfo.event.start).format("hh:mm A")} - ${dayjs(clickInfo.event.end).format("hh:mm A")}`,
-    department: eventDetails.department || "N/A", // Ensure department exists
-    agenda: eventDetails.agenda || "No agenda available",
-    meetingStatus: eventDetails.meetingStatus || "Unknown",
-    company: eventDetails.company || "N/A",
-  });
-
-  setIsDrawerOpen(true);
-};
-
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
+    setSelectedEvent(null);
+    setNewEvent({
+      title: "",
+      start: "",
+      description: "",
+    });
+  };
 
   return (
     <div className="flex w-[70%] md:w-full">
       <div className="flex-1 p-4 bg-white">
-        <div className="flex gap-4 relative w-full">
-          <div className="flex flex-col gap-4 w-[25%]">
-            <div className="border-2 border-gray-300 rounded-md">
-              <div className="w-full flex justify-start border-b-default border-borderGray p-2">
-                <span className="text-content font-bold uppercase">
-                  Meeting Filters
-                </span>
-              </div>
-              <div className="flex justify-start text-content px-2">
-                <FormGroup column>
-                  {uniqueStatuses.map((status) => (
-                    <FormControlLabel
-                      key={status}
-                      defaultChecked={true}
-                      control={
-                        <Checkbox
-                          sx={{
-                            fontSize: "0.75rem",
-                            transform: "scale(0.8)",
-                            "&.Mui-checked": {
-                              color: statusColors[status] || "#05C3F0", // Default fallback color
-                            },
-                          }}
-                          checked={filteredStatuses.includes(status)}
-                          onChange={handleCheckboxChange}
-                          value={status}
+        <>
+          <div className="flex gap-4 relative w-full">
+            <div className="flex flex-col gap-4 w-[25%]">
+              <div className="border-2 border-gray-300  rounded-md">
+                <div className="w-full flex justify-start border-b-default border-borderGray p-2">
+                  <span className="text-content font-bold uppercase">
+                    Event Filters
+                  </span>
+                </div>
+                <div className="flex justify-start text-content px-2">
+                  <FormGroup column>
+                    {["upcoming", "completed"].map((type) => {
+                      const colors = {
+                        upcoming: "#3BACFF",
+                        completed: "#e8f5e9",
+                        // cancelled: "#fffff",
+                      };
+                      return (
+                        <FormControlLabel
+                          key={type}
+                          control={
+                            <Checkbox
+                              sx={{
+                                fontSize: "0.75rem",
+                                transform: "scale(0.8)",
+                                color: colors[type],
+                                "&.Mui-checked": { color: colors[type] },
+                              }}
+                              checked={eventFilter.includes(type)}
+                              onChange={(e) => {
+                                const selectedType = e.target.value;
+                                setEventFilter((prevFilter) =>
+                                  e.target.checked
+                                    ? [...prevFilter, selectedType]
+                                    : prevFilter.filter(
+                                        (t) => t !== selectedType
+                                      )
+                                );
+                              }}
+                              value={type}
+                            />
+                          }
+                          label={
+                            <span style={{ fontSize: "0.875rem" }}>
+                              {type.charAt(0).toUpperCase() + type.slice(1)}
+                            </span>
+                          }
                         />
-                      }
-                      label={
-                        <span
-                          style={{
-                            fontSize: "0.875rem",
-                            fontWeight: "bold",
-                            color: "black", // Label text color matches the checkbox
-                          }}
+                      );
+                    })}
+                  </FormGroup>
+                </div>
+              </div>
+
+              <div className="border-2 border-gray-300  rounded-md">
+                <div className="mb-2 text-content font-bold uppercase border-b-default border-borderGray p-2">
+                  <span>Today's Schedule</span>
+                </div>
+
+                <div className="px-2">
+                  {todaysEvents.length > 0 ? (
+                    todaysEvents.map((event, index) => {
+                      const colors = {
+                        Upcoming: "#3BACFF",
+                        completed: "#e8f5e9",
+                      };
+                      return (
+                        <div
+                          key={index}
+                          className="flex gap-2 items-center mb-2"
                         >
-                          {status}
-                        </span>
-                      }
-                    />
-                  ))}
-                </FormGroup>
+                          <div
+                            className="w-3 h-3 rounded-full mr-2"
+                            style={{
+                              backgroundColor:
+                                colors[event.extendedProps.meetingStatus],
+                            }}
+                          ></div>
+                          <div className="flex flex-col">
+                            <span className="text-content font-medium">
+                              {event.title}
+                            </span>
+                            <span className="text-small text-gray-500">
+                              {event.start
+                                ? dayjs(event.start).format("h:mm A")
+                                : "All Day"}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <span>No events today.</span>
+                  )}
+                </div>
               </div>
             </div>
+            <div className="w-full h-full overflow-y-auto">
+              <FullCalendar
+                headerToolbar={{
+                  left: "today",
+                  center: "prev title next",
+                  right: "dayGridMonth,timeGridWeek,timeGridDay",
+                }}
+                dayMaxEvents={2}
+                eventDisplay="block"
+                eventContent={(meeting) => (
+                  <span className="text-content">{meeting.event.title}</span>
+                )}
+                eventClick={handleEventClick}
+                contentHeight={520}
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                initialView="dayGridMonth"
+                events={filteredEvents}
+              />
+            </div>
+          </div>
+        </>
 
-            <div className="border-2 border-gray-300 rounded-md">
-              <div className="mb-2 text-content font-bold uppercase border-b-default border-borderGray p-2">
-                <span>Today's Meetings</span>
-              </div>
-
-              <div className="px-2 max-h-[33.5vh] overflow-y-auto">
-                {todaysEvents.length > 0 ? (
-                  todaysEvents.map((event, index) => {
-                    console.log(event.start)
-                    const colors = {
-                      Completed: "#4caf50",
-                      Upcoming: "#ff9800",
-                    };
-                    return (
-                      <div key={index} className="flex gap-2 items-center mb-2">
-                        <div
-                          className="w-4 h-4 rounded-full mr-2"
-                          style={{
-                            backgroundColor: colors[event.meetingStatus],
-                          }}
-                        ></div>
-                        <div className="flex flex-col">
-                          <span className="text-content font-medium">
-                            {event.subject}
-                          </span>
-                          <span className="text-small text-gray-500">
-                            {event.startDate
-                              ? dayjs(event.startDate).format("h:mm A")
-                              : "All Day"}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <span>No events today.</span>
+        <MuiModal
+          open={isDrawerOpen}
+          onClose={closeDrawer}
+          headerBackground={headerBackground}
+          title="Event Details"
+        >
+          {drawerMode === "view" && selectedEvent && (
+            <div>
+              <div className="flex flex-col gap-2">
+                <DetalisFormatted
+                  title={"Title"}
+                  detail={selectedEvent.title}
+                />
+                <DetalisFormatted
+                  title={"Date"}
+                  detail={humanDate(dayjs(selectedEvent.start))}
+                />
+                <DetalisFormatted
+                  title={"Time"}
+                  detail={`${dayjs(selectedEvent.start).format(
+                    "hh:mm A"
+                  )} - ${dayjs(selectedEvent.end).format("hh:mm A")}`}
+                />
+                {selectedEvent.extendedProps?.agenda && (
+                  <div className="space-y-2">
+                    <DetalisFormatted
+                      title={"Agenda"}
+                      detail={selectedEvent.extendedProps.agenda}
+                    />
+                    <DetalisFormatted
+                      title={"Location"}
+                      detail={`${selectedEvent.extendedProps.location?.unitNo} ${selectedEvent.extendedProps.roomName}`}
+                    />
+                  </div>
                 )}
               </div>
             </div>
-          </div>
-          <div className="w-full h-full overflow-y-auto">
-            <FullCalendar
-              headerToolbar={{
-                left: "today",
-                center: "prev title next",
-                right: "dayGridMonth,timeGridWeek,timeGridDay",
-              }}
-              dayMaxEvents={2}
-              eventDisplay="block"
-              displayEventTime={false}
-              eventClick={handleEventClick}
-              contentHeight={520}
-              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-              initialView="dayGridMonth"
-              events={filteredEvents} // ✅ Use filtered events
-            />
-          </div>
-        </div>
+          )}
+        </MuiModal>
       </div>
-
-      <MuiModal
-        open={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        title="Meeting Details"
-      >
-        {selectedEvent && (
-          <div>
-            <div className="flex flex-col gap-2">
-              <span className="text-content flex items-center">
-                <span className="w-[30%]">Subject</span>
-                <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4">
-                  {selectedEvent.title}
-                </span>
-              </span>
-              <span className="text-content flex items-center">
-                <span className="w-[30%]">Date</span>
-                <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4">
-                  {dayjs(selectedEvent.date).format("YYYY-MM-DD")}
-                </span>
-              </span>
-              <span className="text-content flex items-center">
-                <span className="w-[30%]">Duration</span>
-                <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4">
-                  {selectedEvent.range}
-                </span>
-              </span>
-              <span className="text-content flex items-center">
-                <span className="w-[30%]">Start Time</span>
-                <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4">
-                  {selectedEvent.startTime}
-                </span>
-              </span>
-              <span className="text-content flex items-center">
-                <span className="w-[30%]">End Time</span>
-                <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4">
-                  {selectedEvent.endTime}
-                </span>
-              </span>
-            </div>
-          </div>
-        )}
-      </MuiModal>
     </div>
   );
 };
 
-export default MeetingCalendar;
+export default Calender;

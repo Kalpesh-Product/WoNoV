@@ -90,104 +90,6 @@ const annualMonthlyRawData = [
   },
 ];
 
-// ✅ Get the current month index relative to financial year (April = 0, March = 11)
-const currentMonthIndex = new Date().getMonth() - 3;
-const normalizedCurrentMonth =
-  currentMonthIndex < 0 ? currentMonthIndex + 12 : currentMonthIndex;
-
-// ✅ Carry-Forward Logic for Future Months
-const adjustProjectedData = (actualData, projectedData) => {
-  let adjustedProjectedData = [...projectedData]; // Copy original projected values
-  let carryForward = 0;
-
-  for (let i = 0; i < projectedData.length; i++) {
-    if (i <= normalizedCurrentMonth && actualData[i] !== null) {
-      // For past/current months with actual data, use that
-      adjustedProjectedData[i] = actualData[i];
-    } else {
-      // For future months, use projected + carry-forward
-      adjustedProjectedData[i] += carryForward;
-      carryForward = adjustedProjectedData[i];
-    }
-  }
-  return adjustedProjectedData;
-};
-
-// ✅ Process Data: Aggregate Actual and Adjusted Projected Revenue Across Domains
-const actualRevenue = new Array(financialYearMonths.length).fill(0);
-const projectedRevenue = new Array(financialYearMonths.length).fill(0);
-
-annualMonthlyRawData.forEach((domain) => {
-  const adjustedProjectedData = adjustProjectedData(
-    domain.actualData,
-    domain.projectedData
-  );
-
-  for (let i = 0; i < financialYearMonths.length; i++) {
-    if (i <= normalizedCurrentMonth && domain.actualData[i] !== null) {
-      actualRevenue[i] += domain.actualData[i];
-    } else {
-      projectedRevenue[i] += adjustedProjectedData[i];
-    }
-  }
-});
-
-// Calculate total sums
-const totalActualRevenue = actualRevenue.reduce((sum, value) => sum + value, 0);
-const totalProjectedRevenue = projectedRevenue.reduce(
-  (sum, value) => sum + value,
-  0
-);
-
-// ✅ Format Data for ApexCharts (Separate Bars for Actual and Projected)
-const annualMonthlyData = [
-  {
-    name: "Actual Revenue",
-    data: actualRevenue,
-    color: "#80bf01",
-  },
-  {
-    name: "Projected Revenue",
-    data: projectedRevenue,
-    color: "#1E3D73",
-  },
-];
-
-const annualMonthlyOptions = {
-  chart: {
-    type: "bar",
-    stacked: false,
-  },
-  plotOptions: {
-    bar: {
-      dataLabels: {
-        position: "top",
-      },
-    },
-  },
-  xaxis: {
-    categories: financialYearMonths,
-    title: { text: "Months" },
-  },
-  yaxis: {
-    labels: {
-      formatter: (val) => {
-        if (val >= 10000000) return (val / 10000000).toFixed(1) + "Cr";
-        if (val >= 100000) return (val / 100000).toFixed(1) + "L";
-        return val;
-      },
-    },
-    title: { text: "Revenue" },
-  },
-  legend: { position: "top" },
-  dataLabels: { enabled: false },
-  tooltip: {
-    y: {
-      formatter: (val) => new Intl.NumberFormat("en-IN").format(val),
-    },
-  },
-};
-
 // Annual revenue graph end
 
 //---------------Monthly Unique Leads start--------------------
@@ -205,6 +107,14 @@ const leadsData = [
     domain: "Workation",
     leads: [15, 20, 30, 35, 40, 20, 45, 55, 65, 25, 30, 50],
   },
+  {
+    domain: "Virtual Office",
+    leads: [15, 20, 30, 35, 40, 20, 45, 55, 65, 25, 30, 50],
+  },
+  {
+    domain: "Alt Revenue",
+    leads: [15, 20, 30, 35, 40, 20, 45, 55, 65, 25, 30, 50],
+  },
 ];
 
 // ✅ Process Data: Stack Leads from Each Domain for Each Month
@@ -217,6 +127,7 @@ const monthlyLeadsOptions = {
   chart: {
     type: "bar",
     stacked: true, // Enable stacking for domains
+    fontFamily: "Poppins-Regular",
   },
   xaxis: {
     categories: financialYearMonths,
@@ -225,13 +136,31 @@ const monthlyLeadsOptions = {
   yaxis: {
     title: { text: "Lead Count" },
   },
+  plotOptions: {
+    bar: {
+      horizontal: false,
+      columnWidth: "30%",
+      borderRadius: 3,
+      dataLabels: {
+        position: "center",
+      },
+    },
+  },
   legend: { position: "top" },
   dataLabels: { enabled: false },
   tooltip: {
     y: {
       formatter: (val) => `${val} Leads`,
     },
+    
   },
+  colors: [
+    "#1E3D73", // Dark Blue (Co-Working)
+    "#2196F3", // Bright Blue (Meetings)
+    "#98F5E1", // Light Mint Green (Virtual Office)
+    "#00BCD4", // Cyan Blue (Workation)
+    "#1976D2", // Medium Blue (Alt Revenues)
+  ],
 };
 
 //----------------Monthly Unique Leads end------------------------
@@ -262,21 +191,55 @@ const sourcingChannelsOptions = {
   chart: {
     type: "bar",
     stacked: true, // Enable stacking for domains
+    fontFamily: "Poppins-Regular",
   },
+  colors: ["#00cdd1"],
   xaxis: {
     categories: financialYearMonths,
     title: { text: "Months" },
   },
   yaxis: {
-    title: { text: "Lead Count" },
-  },
-  legend: { position: "top" },
-  dataLabels: { enabled: false },
-  tooltip: {
-    y: {
-      formatter: (val) => `${val} Leads`,
+    title: { text: "Source Count" },
+    tickAmount: 12,
+    labels: {
+      formatter: (val) => `${val}`, // optional, for clean display
     },
   },
+  plotOptions: {
+    bar: {
+      dataLabels: { position: "top" },
+      columnWidth: "30%",
+      borderRadius: 3,
+    },
+  },
+  legend: { position: "top", show: false },
+  dataLabels: { enabled: true, position: "middle" },
+  // tooltip: {
+  //   shared: false, 
+  //   custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+  //     if (!w || !w.globals.seriesNames) return "";
+
+  //     // Extract values for the current hovered month
+  //     const allLeads = w.globals.series
+  //       .map(
+  //         (data, index) =>
+  //           `${w.globals.seriesNames[index]}: ${data[dataPointIndex]}`
+  //       )
+  //       .join("<br>");
+
+  //     return `<div style="
+  //       background: white; 
+  //       padding: 10px; 
+  //       border-radius: 5px; 
+  //       box-shadow: 0px 0px 5px rgba(0,0,0,0.2);
+  //       font-family: Poppins, sans-serif;
+  //       font-size: 12px;
+  //       color: #333;
+  //     ">
+  //       ${allLeads}
+  //     </div>`;
+  //   },
+  // },
 };
 
 // -----------------------Sourcing Channels End--------------------
@@ -300,8 +263,8 @@ const clientOccupancyData = [
   },
   {
     id: 2,
-    client: "Swiggy",
-    sector: "Food Delivery",
+    client: "Turtlemint",
+    sector: "Technology",
     location: "Bangalore",
     totalSeatsTaken: 15,
     startDate: "2022-06-15",
@@ -312,8 +275,8 @@ const clientOccupancyData = [
   },
   {
     id: 3,
-    client: "Uber",
-    sector: "Ride Sharing",
+    client: "WoNo",
+    sector: "Technology",
     location: "Mumbai",
     totalSeatsTaken: 8,
     startDate: "2021-09-20",
@@ -321,8 +284,8 @@ const clientOccupancyData = [
   },
   {
     id: 4,
-    client: "Ola",
-    sector: "Ride Sharing",
+    client: "Infuse",
+    sector: "Technology",
     location: "Hyderabad",
     totalSeatsTaken: 12,
     startDate: "2022-12-05",
@@ -403,6 +366,7 @@ const clientOccupancyPieData = processedClients.map((client) => ({
 const clientOccupancyPieOptions = {
   chart: {
     type: "pie",
+    fontFamily: "Poppins-Regular",
   },
   labels: clientOccupancyPieData.map((item) => item.label),
   tooltip: {
@@ -413,6 +377,7 @@ const clientOccupancyPieOptions = {
   legend: {
     position: "right",
   },
+  colors: ["#34c659", "#2fafc6", "#757575", "#5756d6"],
 };
 
 // -----------------------Department Pie Data End--------------------
@@ -435,20 +400,7 @@ const sectorPieChartData = Object.keys(sectorMap).map((sector) => ({
   value: ((sectorMap[sector] / totalSeats) * 100).toFixed(2), // Convert to percentage
 }));
 
-const sectorPieChartOptions = {
-  chart: {
-    type: "pie",
-  },
-  labels: sectorPieChartData.map((item) => item.label),
-  tooltip: {
-    y: {
-      formatter: (val) => `${val.toFixed(2)}%`, // Show as percentage
-    },
-  },
-  legend: {
-    position: "right",
-  },
-};
+
 
 // -----------------------Sector categories Pie Data End--------------------
 
@@ -463,6 +415,7 @@ const clientGenderData = [
 const clientGenderPieChartOptions = {
   chart: {
     type: "pie",
+    fontFamily: "Poppins-Regular",
   },
   labels: clientGenderData.map((item) => item.label),
   tooltip: {
@@ -498,6 +451,7 @@ const locationPieChartData = Object.keys(locationMap).map((location) => ({
 const locationPieChartOptions = {
   chart: {
     type: "pie",
+    fontFamily: "Poppins-Regular",
   },
   labels: locationPieChartData.map((item) => item.label),
   tooltip: {
@@ -547,8 +501,6 @@ const formattedCompanyTableData = clientOccupancyData.map((company) => ({
   completedTime: calculateCompletedTime(company.startDate),
 }));
 
-console.log(formattedCompanyTableData);
-
 // -----------------------Recently Added Assets End--------------------
 // -----------------------Client Members birthday Start--------------------
 const today = dayjs();
@@ -577,23 +529,21 @@ clientOccupancyData.forEach((company) => {
   });
 });
 
-upcomingBirthdays.sort((a, b) => dayjs(a.dateOfBirth).diff(dayjs(b.dateOfBirth)));
+upcomingBirthdays.sort((a, b) =>
+  dayjs(a.dateOfBirth).diff(dayjs(b.dateOfBirth))
+);
 
 const upcomingBirthdaysColumns = [
-    { id: "id", label: "ID" },
-    { id: "name", label: "Employee Name" },
-    { id: "birthday", label: "Date of Birth" },
-    { id: "daysLeft", label: "Days Left" },
-  ];
-  
+  { id: "id", label: "ID" },
+  { id: "name", label: "Employee Name" },
+  { id: "birthday", label: "Date of Birth" },
+  { id: "daysLeft", label: "Days Left" },
+];
 
 // -----------------------Client Members birthday End--------------------
 
 export {
-  annualMonthlyData,
-  annualMonthlyOptions,
-  totalActualRevenue,
-  totalProjectedRevenue,
+  annualMonthlyRawData,
   monthlyLeadsData,
   monthlyLeadsOptions,
   sourcingChannelsData,
@@ -601,7 +551,6 @@ export {
   clientOccupancyPieData,
   clientOccupancyPieOptions,
   sectorPieChartData,
-  sectorPieChartOptions,
   clientGenderData,
   clientGenderPieChartOptions,
   locationPieChartData,
@@ -609,5 +558,6 @@ export {
   companyTableColumns,
   formattedCompanyTableData,
   upcomingBirthdays,
-  upcomingBirthdaysColumns
+  upcomingBirthdaysColumns,
+  financialYearMonths,
 };

@@ -1,4 +1,4 @@
-;
+import React from "react";
 import BiznestHome from "../../../../assets/builder-preview/live-theme/biznest-home.jpeg";
 
 const PageDemo = () => {

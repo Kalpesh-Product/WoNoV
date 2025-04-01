@@ -1,4 +1,4 @@
-
+import React from 'react'
 import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
 import useAxiosPrivate from '../../../../hooks/useAxiosPrivate';
@@ -63,7 +63,7 @@ const HrSOP = () => {
           {
             field: "actions",
             headerName: "Actions",
-            cellRenderer: () => (
+            cellRenderer: (params) => (
               <>
                 <div className="p-2 mb-2 flex gap-2">
                  <span className="text-content text-primary hover:underline cursor-pointer">
@@ -74,7 +74,34 @@ const HrSOP = () => {
             ),
           },
         ];
-
+  
+    const rows = [
+      {
+        srno:"1",
+        id: 1,
+        policyname: "Biz Nest Leave SOP",
+        status: "Active",
+      },
+      {
+        srno:"2",
+        id: 2,
+        policyname: "Biz Nest Leave SOP",
+        status: "Active",
+      },
+      {
+        srno:"3",
+        id: 3,
+        policyname: "Biz Nest Leave SOP",
+        status: "Inactive",
+      },
+      {
+        srno:"4",
+        id: 4,
+        policyname: "Biz Nest Leave SOP",
+        status: "Active",
+      },
+      
+    ];
   return (
     <div>
         <AgTable

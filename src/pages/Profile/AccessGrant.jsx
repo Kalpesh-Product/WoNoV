@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import WidgetSection from "../../components/WidgetSection";
 
 import PrimaryButton from "../../components/PrimaryButton";
@@ -90,7 +90,7 @@ const AccessGrant = ({ pageTitle }) => {
     <div>
       {/* Page Title */}
       <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary">{pageTitle}</span>
+        <span className="text-title font-pmedium text-primary">Access Grant</span>
       </div>
 
       {/* Grid Layout for Navigation Cards */}

@@ -1,5 +1,5 @@
-import { Chip, TextField } from "@mui/material";
-import { useState } from "react";
+import { Avatar, Button, Chip, TextField } from "@mui/material";
+import React, { useState } from "react";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import SecondaryButton from "../../../../components/SecondaryButton";
@@ -32,7 +32,7 @@ const ViewVendors = () => {
     setIsEditing(!isEditing);
   };
 
-  const onSubmit = () => {
+  const onSubmit = (data) => {
     setIsEditing(!isEditing);
     toast.success("Vendor details updated successfully");
   };

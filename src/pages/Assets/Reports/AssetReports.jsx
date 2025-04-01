@@ -1,4 +1,4 @@
-;
+import React from "react";
 import AgTable from "../../../components/AgTable";
 
 const AssetReports = () => {

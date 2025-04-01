@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import WidgetSection from "../../components/WidgetSection";
 import Card from "../../components/Card";
 import { Tab, Tabs } from "@mui/material";
@@ -8,53 +8,61 @@ import SupportTickets from "./Tables/SupportTickets";
 import EscalatedTickets from "./Tables/EscalatedTickets";
 import ClosedTickets from "./Tables/ClosedTickets";
 import { useQuery } from "@tanstack/react-query";
+import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-
+ 
 const ManageTickets = () => {
-  const axios = useAxiosPrivate();
+  const axios = useAxiosPrivate()
   const [activeTab, setActiveTab] = useState(0);
-
-  const handleTabChange = (newValue) => {
+  
+  const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
+  
   // Fetch Accepted Tickets
-  const { data: acceptedTickets = []} = useQuery({
+  const { data: acceptedTickets = [], isLoading } = useQuery({
     queryKey: ["accepted-tickets"],
     queryFn: async () => {
-      const response = await axios.get("/api/tickets/filtered-tickets/accept");
+      try {
+        const response = await axios.get("/api/tickets/ticket-filter/accept-assign");
 
-      return response.data;
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching tickets:", error);
+        throw new Error("Failed to fetch tickets");
+      }
     },
   });
+
 
   const widgets = [
     {
       layout: 1,
       widgets: [
-        <div key={""} className=" rounded-md flex  gap-4">
+        <div className=" rounded-md flex  gap-4">
           <div className="border-default border-borderGray rounded-md w-full">
-            <WidgetSection key=""
+            <WidgetSection
               layout={3}
               title={"Department Pending Tickets"}
               titleDataColor={"red"}
               titleData={"25"}
             >
-              <Card key=""
+              <Card
                 title={"Recieved Tickets"}
                 titleColor={"#1E3D73"}
                 data={"45"}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
               />
-              <Card key=""
+              <Card
                 title={"Open Tickets"}
                 titleColor={"#1E3D73"}
                 data={"05"}
                 fontColor={"#FFBF42"}
                 fontFamily={"Poppins-Bold"}
               />
-              <Card key=""
+              <Card
                 title={"Closed Tickets"}
                 titleColor={"#1E3D73"}
                 data={"15"}
@@ -64,27 +72,27 @@ const ManageTickets = () => {
             </WidgetSection>
           </div>
           <div className="border-default border-borderGray rounded-md w-full">
-            <WidgetSection key=""
+            <WidgetSection
               layout={3}
               title={"Personal Pending Tickets"}
               titleDataColor={"black"}
               titleData={"06"}
             >
-              <Card key=""
+              <Card
                 title={"Accepted Tickets"}
                 data={acceptedTickets.length}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
                 titleColor={"#1E3D73"}
               />
-              <Card key=""
+              <Card
                 title={"Assigned Tickets"}
                 data={"01"}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
                 titleColor={"#1E3D73"}
               />
-              <Card key=""
+              <Card
                 title={"Escalated Tickets"}
                 data={"02"}
                 fontColor={"#1E3D73"}
@@ -102,9 +110,11 @@ const ManageTickets = () => {
     <div>
       <div>
         {widgets.map((widget, index) => (
-          <WidgetSection key={index} layout={widget.layout}>
-            {widget?.widgets}
-          </WidgetSection>
+          <div>
+            <WidgetSection key={index} layout={widget.layout}>
+              {widget?.widgets}
+            </WidgetSection>
+          </div>
         ))}
       </div>
 

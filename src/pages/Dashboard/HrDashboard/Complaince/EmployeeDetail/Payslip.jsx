@@ -1,4 +1,4 @@
-;
+import React from "react";
 import AgTable from "../../../../../components/AgTable";
 
 const Payslip = () => {
@@ -7,7 +7,7 @@ const Payslip = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
           <span className="text-primary hover:underline text-content cursor-pointer">

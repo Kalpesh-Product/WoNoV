@@ -1,6 +1,17 @@
-import { useState } from "react";
-import { FaAngleDown, FaChevronUp } from "react-icons/fa6";
-import { FaRegCalendarAlt, FaTasks } from "react-icons/fa";
+import React, { useState } from "react";
+import {
+  FaAngleDown,
+  FaChevronUp,
+  FaLaptopMedical,
+  FaBoxesStacked,
+} from "react-icons/fa6";
+import {
+  FaRegCalendarAlt,
+  FaTasks,
+  FaChartLine,
+  FaUserShield,
+  FaLaptopCode,
+} from "react-icons/fa";
 import { TbReportSearch } from "react-icons/tb";
 import { IoMdNotifications } from "react-icons/io";
 import { SiAuthelia } from "react-icons/si";
@@ -8,11 +19,15 @@ import { HiOutlineChatAlt2 } from "react-icons/hi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSidebar } from "../context/SideBarContext";
 import { MdHome } from "react-icons/md";
-import { CgWebsite } from "react-icons/cg";
-import { RiAdminFill } from "react-icons/ri";
+import { RiAdminFill} from "react-icons/ri";
 import { TbCashRegister } from "react-icons/tb";
 import { FaUserTie } from "react-icons/fa6";
-
+import { MdMeetingRoom } from "react-icons/md";
+import { GiAutoRepair } from "react-icons/gi";
+import { GrCafeteria } from "react-icons/gr";
+import { TiTicket } from "react-icons/ti";
+import SeperatorUnderline from "./SeperatorUnderline";
+import { VscPersonAdd } from "react-icons/vsc";
 
 const Sidebar = () => {
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
@@ -24,24 +39,31 @@ const Sidebar = () => {
   const menuItems = [
     {
       name: "Tickets",
-      icon: <TbReportSearch />,
+      icon: <TiTicket />,
       route: "tickets",
     },
     {
       name: "Meetings",
-      icon: <TbReportSearch />,
+      icon: <MdMeetingRoom />,
       route: "meetings",
     },
     {
       name: "Assets",
-      icon: <TbReportSearch />,
+      icon: <FaBoxesStacked />,
       route: "assets",
     },
     {
       name: "Tasks",
-      icon: <TbReportSearch />,
+      icon: <FaTasks />,
       route: "tasks",
     },
+    {
+      name: "Visitors",
+      icon: <VscPersonAdd />,
+      route: "visitors",
+    },
+  ];
+  const generalItems = [
     {
       name: "Reports",
       icon: <TbReportSearch />,
@@ -51,14 +73,17 @@ const Sidebar = () => {
     { name: "Calendar", icon: <FaRegCalendarAlt />, route: "calendar" },
     { name: "Chat", icon: <HiOutlineChatAlt2 />, route: "chat" },
     { name: "Access", icon: <SiAuthelia />, route: "access" },
-   
 
     {
       name: "Notifications",
       icon: <IoMdNotifications />,
       route: "notifications",
     },
-    // { name: "Profile", icon: <CgProfile />, route: "/profile" },
+    {
+      name: "Profile",
+      icon: <FaUserTie />,
+      route: "profile",
+    },
   ];
 
   const defaultModules = [
@@ -70,7 +95,7 @@ const Sidebar = () => {
         {
           id: 2,
           title: "Frontend Dashboard",
-          icon: <CgWebsite />,
+          icon: <FaLaptopCode />,
           route: "/app/dashboard/frontend-dashboard",
         },
         {
@@ -82,33 +107,37 @@ const Sidebar = () => {
         {
           id: 4,
           title: "Finance Dashboard",
+          route: "/app/dashboard/finance-dashboard",
           icon: <TbCashRegister />,
         },
         {
           id: 5,
           title: "Sales Dashboard",
-          icon: <TbCashRegister />,
-          route: "/app/dashboard/sales-dashboard"
+          icon: <FaChartLine />,
+          route: "/app/dashboard/sales-dashboard",
         },
         {
           id: 6,
           title: "Admin Dashboard",
-          icon: <TbCashRegister />,
+          route: "/app/dashboard/admin-dashboard",
+          icon: <FaUserShield />,
         },
         {
           id: 7,
-          title: "Maintainance Dashboard",
-          icon: <TbCashRegister />,
+          title: "Maintenance Dashboard",
+          route: "/app/dashboard/maintenance-dashboard",
+          icon: <GiAutoRepair />,
         },
         {
           id: 8,
           title: "Cafe Dashboard",
-          icon: <TbCashRegister />,
+          icon: <GrCafeteria />,
         },
         {
           id: 9,
           title: "IT Dashboard",
-          icon: <TbCashRegister />,
+          route: "/app/dashboard/IT-dashboard",
+          icon: <FaLaptopMedical />,
         },
       ],
     },
@@ -122,12 +151,11 @@ const Sidebar = () => {
     setExpandedModule((prev) => (prev === index ? null : index));
   };
 
-  const isActive = (path) => location.pathname.includes(path);
+  const isActive = (path) => location.pathname.startsWith(`${path}`);
+  const isAppsActive = (path) => location.pathname.startsWith(`/app/${path}`);
 
   return (
-    <div
-      className={`flex flex-col px-2  bg-gray`}
-    >
+    <div className={`flex flex-col px-2  bg-gray`}>
       <div
         className={`${
           isSidebarOpen ? "w-60" : "w-16"
@@ -136,7 +164,7 @@ const Sidebar = () => {
         <div className="flex relative w-full">
           <div className="p-0 flex flex-col gap-2 w-full">
             <div
-              className={`rounded-md ${
+              className={`rounded-md  ${
                 expandedModule === 0 ? "bg-gray-200" : "bg-white"
               }`}
             >
@@ -154,7 +182,7 @@ const Sidebar = () => {
                       "bg-gray-200 rounded-t-md text-black"
                     }  ${
                       isActive(module.route)
-                        ? "wono-blue border-r-4 transition-all duration-100 rounded-tl-md rounded-bl-md "
+                        ? "text-primary border-r-4 transition-all duration-100 rounded-tl-md rounded-bl-md "
                         : ""
                     }`}
                     onClick={() => {
@@ -234,54 +262,65 @@ const Sidebar = () => {
                 </div>
               ))}
             </div>
-
-            {menuItems.map((item, index) => (
-              <div
-                key={index}
-                onClick={() => handleMenuOpen(item)}
-                className={`cursor-pointer hover:text-primary transition-all duration-100 ${
-                  isActive(item.route)
-                    ? "text-primary bg-gray-200 rounded-md"
-                    : "text-gray-500"
-                } flex ${
-                  isSidebarOpen ? "" : "justify-center"
-                } items-center py-0 `}
-              >
+            {/* menuitems */}
+            <div className="pt-2  flex flex-col gap-2 w-full">
+              <SeperatorUnderline title={"Apps"} />
+              {menuItems.map((item, index) => (
                 <div
-                  className={`flex justify-center items-center w-9 h-9 ${
-                    isActive(item.route)
-                      ? "bg-primary text-white rounded-md"
-                      : ""
-                  } text-sm`}
+                  key={index}
+                  onClick={() => handleMenuOpen(item)}
+                  className={`cursor-pointer hover:text-primary transition-all duration-100 ${
+                    isAppsActive(item.route)
+                      ? "text-primary bg-gray-200 rounded-md"
+                      : "text-gray-500"
+                  } flex ${
+                    isSidebarOpen ? "" : "justify-center"
+                  } items-center py-0 `}
                 >
-                  {item.icon}
+                  <div
+                    className={`flex justify-center items-center w-9 h-9 ${
+                      isAppsActive(item.route)
+                        ? "bg-primary text-white rounded-md"
+                        : ""
+                    } text-sm`}
+                  >
+                    {item.icon}
+                  </div>
+                  {isSidebarOpen && (
+                    <span className="pl-5 text-sm">{item.name}</span>
+                  )}
                 </div>
-                {isSidebarOpen && (
-                  <span className="pl-5 text-sm">{item.name}</span>
-                )}
-              </div>
-            ))}
-
-            <div
-              onClick={() => {
-                navigate("profile");
-              }}
-              className={`flex hover:text-primary transition-all duration-100 text-gray-500 ${
-                isActive("/profile")
-                  ? "text-primary bg-gray-200 rounded-md"
-                  : "text-gray-500"
-              } ${
-                isSidebarOpen ? "pl-[0rem]" : "justify-center"
-              } items-center cursor-pointer `}
-            >
-              <div
-                className={`flex justify-center items-center w-9 h-9 ${
-                  isActive("/profile") ? "bg-primary text-white rounded-md" : ""
-                } text-sm`}
-              >
-                <FaUserTie />
-              </div>
-              {isSidebarOpen && <span className="pl-5 text-sm">Profiles</span>}
+              ))}
+            </div>
+            {/* general */}
+            <div className="pt-2  flex flex-col gap-2 w-full">
+              <SeperatorUnderline title={"General"} />
+              {generalItems.map((item, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleMenuOpen(item)}
+                  className={`cursor-pointer hover:text-primary transition-all duration-100 ${
+                    isAppsActive(item.route)
+                      ? "text-primary bg-gray-200 rounded-md"
+                      : "text-gray-500"
+                  } flex ${
+                    isSidebarOpen ? "" : "justify-center"
+                  } items-center py-0 `}
+                >
+                  <div
+                    className={`flex justify-center items-center w-9 h-9 ${
+                      isAppsActive(item.route)
+                        ? "bg-primary text-white rounded-md"
+                        : ""
+                    } text-sm`}
+                  >
+                    {item.icon}
+                  </div>
+                  {isSidebarOpen && (
+                    <span className="pl-5 text-sm">{item.name}</span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>

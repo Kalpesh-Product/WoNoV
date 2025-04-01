@@ -1,10 +1,31 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Tabs } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 
 const MyTaskListLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const axios = useAxiosPrivate();
+  const [activeTaskList,setActiveTasklist] = useState()
+  
+  const { data: taskList, isLoading } = useQuery({
+    queryKey: ["taskList"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/tasks/get-tasks");
+        return response.data
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
+
+  const dailyTaskList = taskList.filter((task) => task.taskType === 'Daily')
+  const monthlyTaskList = taskList.filter((task) => task.taskType === 'Monthly')
+  const additionalTaskList = taskList.filter((task) => task.taskType === 'Additonal')
+
 
   // Map routes to tabs
   const tabs = [
@@ -26,6 +47,11 @@ const MyTaskListLayout = () => {
   const activeTab = tabs.findIndex((tab) =>
     location.pathname.includes(tab.path)
   );
+
+  useEffect(()=>{
+
+    setActiveTasklist()
+  },[activeTab])
 
   return (
     <div className="p-4">
