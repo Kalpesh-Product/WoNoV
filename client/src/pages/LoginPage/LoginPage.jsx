@@ -96,7 +96,7 @@ const LoginPage = () => {
                 autoComplete="off"
               >
                 <Grid container spacing={2}>
-                  <Grid item xs={12}>
+                  <Grid item xs={12} sx={{ width: "100%" }}>
                     <TextField
                       label="Email"
                       variant="outlined"
@@ -107,7 +107,7 @@ const LoginPage = () => {
                     />
                   </Grid>
 
-                  <Grid item xs={12}>
+                  <Grid item xs={12} sx={{ width: "100%" }}>
                     <TextField
                       label="Password"
                       variant="outlined"
@@ -118,8 +118,9 @@ const LoginPage = () => {
                       fullWidth
                     />
                   </Grid>
-
-                  <Grid style={{ paddingTop: "0" }} p={0} item xs={12}>
+                </Grid>
+                <div className="flex flex-col justify-center w-full items-start gap-4">
+                  <Grid style={{ paddingTop: "0" }} p={0}>
                     <Box p={0} mt={2}>
                       <Link
                         to="/forgot-password"
@@ -145,7 +146,7 @@ const LoginPage = () => {
                       </button>
                     </div>
                   </Grid>
-                </Grid>
+                </div>
               </Box>
             </Container>
           </div>
