@@ -667,7 +667,10 @@ const escalateTicket = async (req, res, next) => {
     // Update the ticket: add the departmentId to the escalatedTo array
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
-      { $push: { escalatedTo: savedTicket._id } },
+      {
+        $push: { escalatedTo: savedTicket._id },
+        $set: { status: "Escalated" },
+      },
       { new: true }
     );
 
