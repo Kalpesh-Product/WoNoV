@@ -11,22 +11,28 @@ import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import TicketCard from "../../components/TicketCard";
- 
+
 const ManageTickets = () => {
-  const axios = useAxiosPrivate()
+  const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
-  
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
-  
+  console.log("First Name", auth.user?.firstName);
+
   // Fetch Accepted Tickets
-  const { data: acceptedTickets = [], isLoading } = useQuery({
-    queryKey: ["accepted-tickets"],
+  const { data: ticketsData = [], isLoading } = useQuery({
+    queryKey: ["tickets-data"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/tickets/ticket-filter/accept-assign");
+        const response = await axios.get(
+          `/api/tickets/department-tickets/${auth.user?.departments?.map(
+            (dept) => dept._id
+          )}`
+        );
 
         return response.data;
       } catch (error) {
@@ -35,7 +41,6 @@ const ManageTickets = () => {
       }
     },
   });
-
 
   const widgets = [
     {
@@ -81,7 +86,7 @@ const ManageTickets = () => {
             >
               <TicketCard
                 title={"Accepted Tickets"}
-                data={acceptedTickets.length}
+                data={"5"}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
                 titleColor={"#1E3D73"}
