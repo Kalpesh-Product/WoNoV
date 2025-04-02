@@ -10,6 +10,7 @@ const {
   getSingleUserTickets,
   filterMyTickets,
   filterTodayTickets,
+  ticketData,
 } = require("../controllers/ticketsControllers/ticketsControllers");
 const upload = require("../config/multerConfig");
 
@@ -40,6 +41,7 @@ router.patch("/assign-ticket/:ticketId", assignTicket);
 router.patch("/escalate-ticket", escalateTicket);
 router.patch("/close-ticket", closeTicket);
 router.post("/support-ticket", supportTicket);
+router.get("/department-tickets/:departmentId", ticketData);
 router.get("/ticket-filter/:flag", fetchFilteredTickets);
 
 module.exports = router;

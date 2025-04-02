@@ -573,6 +573,27 @@ const assignTicket = async (req, res, next) => {
   }
 };
 
+const ticketData = async (req, res, next) => {
+  try {
+    const company = req.company;
+    const { departmentId } = req.params;
+    const tickets = await Ticket.find({
+      company,
+      raisedToDepartment,
+      departmentId,
+    })
+      .populate([
+        { path: "raisedBy", select: "firstName lastName" },
+        { path: "raisedToDepartment", select: "name" },
+      ])
+      .lean()
+      .exec();
+    res.status(200).json(tickets);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const escalateTicket = async (req, res, next) => {
   const logPath = "tickets/TicketLog";
   const logAction = "Escalate Ticket";
@@ -1009,4 +1030,5 @@ module.exports = {
   getSingleUserTickets,
   filterMyTickets,
   filterTodayTickets,
+  ticketData,
 };
