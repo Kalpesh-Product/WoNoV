@@ -51,7 +51,7 @@ const RecievedTickets = ({ title }) => {
   const { mutate: rejectMutate, isPending: rejectPending } = useMutation({
     mutationKey: ["reject-ticket"],
     mutationFn: async (ticket) => {
-      const response = await axios.post(
+      const response = await axios.patch(
         `/api/tickets/reject-ticket/${ticket.id}`
       );
 
