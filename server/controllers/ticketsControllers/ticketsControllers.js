@@ -579,8 +579,7 @@ const ticketData = async (req, res, next) => {
     const { departmentId } = req.params;
     const tickets = await Ticket.find({
       company,
-      raisedToDepartment,
-      departmentId,
+      raisedToDepartment: departmentId,
     })
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
