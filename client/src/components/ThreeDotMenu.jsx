@@ -30,15 +30,19 @@ const ThreeDotMenu = ({ rowId, menuItems, isLoading }) => {
         transformOrigin={{ vertical: "top", horizontal: "left" }}
       >
         <div className="w-full bg-white rounded-xl motion-preset-slide-down-sm">
-          {menuItems.map(({ label, onClick }, index) => (
+          {menuItems.map(({ label, onClick, disabled }, index) => (
             <div
               key={index}
               onClick={() => {
-                onClick();
+                if (!disabled) {
+                  onClick();
+                }
               }}
-              className="bg-white text-primary p-4 py-2 border-b-[1px] border-borderGray cursor-pointer text-content hover:bg-gray-200"
+              className={`bg-white text-primary p-4 py-2 border-b-[1px] border-borderGray cursor-pointer text-content hover:bg-gray-200 ${
+                disabled ? "text-gray-400 cursor-not-allowed" : ""
+              }`}
             >
-              {isLoading ? <CircularProgress color="#1E3D73"/> : label}
+              {isLoading ? <CircularProgress color="#1E3D73" /> : label}
             </div>
           ))}
         </div>

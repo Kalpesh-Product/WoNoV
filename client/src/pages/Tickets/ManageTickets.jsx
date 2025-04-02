@@ -21,8 +21,6 @@ const ManageTickets = () => {
     setActiveTab(newValue);
   };
 
-  console.log("First Name", auth.user?.firstName);
-
   // Fetch Accepted Tickets
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
@@ -42,6 +40,21 @@ const ManageTickets = () => {
     },
   });
 
+  const ticketsFilteredData = {
+    openTickets: ticketsData.filter((item) => item.status === "Open").length,
+    closedTickets: ticketsData.filter((item) => item.status === "Closed")
+      .length,
+    pendingTickets: ticketsData.filter((item) => item.status === "Pending")
+      .length,
+    acceptedTickets: ticketsData
+    .filter((item) => item.acceptedBy === auth.user?._id).filter((item)=>item.status === "In Progress").length,
+  };
+  console.log(
+    ticketsData
+      .filter((item) => item.acceptedBy === auth.user?._id).filter((item)=>item.status === "In Progress")
+
+  );
+
   const widgets = [
     {
       layout: 1,
@@ -52,26 +65,26 @@ const ManageTickets = () => {
               layout={3}
               title={"Department Pending Tickets"}
               titleDataColor={"red"}
-              titleData={"25"}
+              titleData={ticketsFilteredData.pendingTickets}
             >
               <TicketCard
                 title={"Recieved Tickets"}
                 titleColor={"#1E3D73"}
-                data={"45"}
+                data={ticketsData.length}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
               />
               <TicketCard
                 title={"Open Tickets"}
                 titleColor={"#1E3D73"}
-                data={"05"}
+                data={ticketsFilteredData.openTickets}
                 fontColor={"#FFBF42"}
                 fontFamily={"Poppins-Bold"}
               />
               <TicketCard
                 title={"Closed Tickets"}
                 titleColor={"#1E3D73"}
-                data={"15"}
+                data={ticketsFilteredData.closedTickets}
                 fontColor={"#52CE71"}
                 fontFamily={"Poppins-Bold"}
               />
@@ -86,7 +99,7 @@ const ManageTickets = () => {
             >
               <TicketCard
                 title={"Accepted Tickets"}
-                data={"5"}
+                data={ticketsFilteredData.acceptedTickets}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
                 titleColor={"#1E3D73"}

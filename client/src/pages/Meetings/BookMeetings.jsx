@@ -57,12 +57,16 @@ const BookMeetings = () => {
     },
   });
 
+  console.log("All Meeting Rooms : ", allMeetingRooms)
+  console.log("selected Unit Id : ",selectedUnitId)
+
   // Filter meeting rooms based on selected location
   const filteredMeetingRooms = selectedUnitId
     ? allMeetingRooms.filter(
         (room) => room.location?.building?._id === selectedUnitId
       )
     : [];
+  useEffect(() => console.log(filteredMeetingRooms), [filteredMeetingRooms]);
 
   useEffect(() => {
     setValue("meetingRoom", ""); // Reset meeting room selection
@@ -194,7 +198,10 @@ const BookMeetings = () => {
                     <MenuItem key={room._id} value={room._id}>
                       <div className="flex w-full justify-between items-center">
                         <span>{`${room.name}`}</span>
-                        <div className="flex text-small gap-2 items-center py-1 px-2 rounded-full bg-primary bg-opacity-10 text-primary"><span>{`${room.seats}`}</span><MdEventSeat /></div>
+                        <div className="flex text-small gap-2 items-center py-1 px-2 rounded-full bg-primary bg-opacity-10 text-primary">
+                          <span>{`${room.seats}`}</span>
+                          <MdEventSeat />
+                        </div>
                       </div>
                     </MenuItem>
                   ))}
