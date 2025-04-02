@@ -11,7 +11,7 @@ const EscalatedTickets = ({ title }) => {
 
   // Fetch Supported Tickets
   const { data: escalatedTickets = [], isLoading } = useQuery({
-    queryKey: ["tickets", "escalate-tickets"],
+    queryKey: ["escalate-tickets"],
     queryFn: async () => {
       const response = await axios.get("/api/tickets/ticket-filter/escalate");
 
@@ -32,7 +32,7 @@ const EscalatedTickets = ({ title }) => {
       toast.success(data.message || "Ticket closed successfully");
 
       queryClient.invalidateQueries({
-        queryKey: ["tickets", "escalate-tickets"],
+        queryKey: ["escalate-tickets"],
       });
     },
     onError: (err) => {

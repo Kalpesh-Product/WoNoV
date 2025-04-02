@@ -10,6 +10,7 @@ import ClosedTickets from "./Tables/ClosedTickets";
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import TicketCard from "../../components/TicketCard";
  
 const ManageTickets = () => {
   const axios = useAxiosPrivate()
@@ -48,21 +49,21 @@ const ManageTickets = () => {
               titleDataColor={"red"}
               titleData={"25"}
             >
-              <Card
+              <TicketCard
                 title={"Recieved Tickets"}
                 titleColor={"#1E3D73"}
                 data={"45"}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
               />
-              <Card
+              <TicketCard
                 title={"Open Tickets"}
                 titleColor={"#1E3D73"}
                 data={"05"}
                 fontColor={"#FFBF42"}
                 fontFamily={"Poppins-Bold"}
               />
-              <Card
+              <TicketCard
                 title={"Closed Tickets"}
                 titleColor={"#1E3D73"}
                 data={"15"}
@@ -78,21 +79,21 @@ const ManageTickets = () => {
               titleDataColor={"black"}
               titleData={"06"}
             >
-              <Card
+              <TicketCard
                 title={"Accepted Tickets"}
                 data={acceptedTickets.length}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
                 titleColor={"#1E3D73"}
               />
-              <Card
+              <TicketCard
                 title={"Assigned Tickets"}
                 data={"01"}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
                 titleColor={"#1E3D73"}
               />
-              <Card
+              <TicketCard
                 title={"Escalated Tickets"}
                 data={"02"}
                 fontColor={"#1E3D73"}
