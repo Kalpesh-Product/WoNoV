@@ -230,29 +230,6 @@ const getTickets = async (req, res, next) => {
 
     let matchingTickets;
 
-    if (roles.includes("Master Admin") || roles.includes("Super Admin")) {
-      matchingTickets = await Tickets.find({
-        acceptedBy: { $exists: false },
-        raisedBy: { $ne: loggedInUser._id },
-        status: "Open",
-        company: loggedInUser.company,
-      })
-        .populate([
-          {
-            path: "raisedBy",
-            select: "firstName lastName departments",
-            populate: {
-              path: "departments",
-              select: "name",
-              model: "Department",
-            },
-          },
-          { path: "raisedToDepartment", select: "name" },
-        ])
-        .lean()
-        .exec();
-    } else {
-      // Department admins or users can view tickets in their departments
       matchingTickets = await Tickets.find({
         $or: [
           { raisedToDepartment: { $in: userDepartments } },
@@ -276,8 +253,6 @@ const getTickets = async (req, res, next) => {
         ])
         .lean()
         .exec();
-    }
-    console.log(matchingTickets);
 
     if (!matchingTickets.length) {
       return res.status(200).json(matchingTickets);
