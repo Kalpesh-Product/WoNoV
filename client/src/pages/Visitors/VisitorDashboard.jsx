@@ -23,6 +23,7 @@ import {
 } from "./VisitorsData/VisitorsData";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
+import { CircularProgress } from "@mui/material";
 
 const VisitorDashboard = () => {
   const axios = useAxiosPrivate();
@@ -38,6 +39,10 @@ const VisitorDashboard = () => {
       }
     },
   });
+  console.log(
+    "Visitors data : ",
+    visitorsData.map((item) => item.firstName)
+  );
 
   const visitorCategories = Array.isArray(visitorsData)
     ? visitorsData.map((item) => item.visitorType)
@@ -72,7 +77,7 @@ const VisitorDashboard = () => {
   const colors = ["#1E3D73", "#4C66A1", "#637BB8"];
   //---------------------------------------------------Category Wise Visitors Donut Data---------------------------------------------------//
   //---------------------------------------------------Visitors Table Data---------------------------------------------------//
-  const recentAssetsColumnsVX = [
+  const visitorsColumns = [
     { id: "id", label: "Sr No" },
     { id: "firstName", label: "First Name" },
     { id: "lastName", label: "Last Name" },
@@ -362,26 +367,32 @@ const VisitorDashboard = () => {
       layout: 1,
       widgets: [
         <WidgetSection layout={1} padding>
-          <MuiTable
-            Title="Visitors Today"
-            columns={recentAssetsColumnsVX}
-            rows={visitorsData.map((item, index) => ({
-              id: index + 1,
-              firstName: item.firstName,
-              lastName: item.lastName,
-              address: item.address,
-              phoneNumber: item.phoneNumber,
-              email: item.email,
-              purposeOfVisit: item.purposeOfVisit,
-              toMeet: item.toMeet,
-              checkIn: humanTime(item.checkIn),
-              checkOut: humanTime(item.checkOut),
-            }))}
-            rowKey="id"
-            rowsToDisplay={10}
-            scroll={true}
-            className="h-full"
-          />
+          {!isVisitorsData ? (
+            <MuiTable
+              Title="Visitors Today"
+              columns={visitorsColumns}
+              rows={[
+                ...visitorsData.map((item, index) => ({
+                  id: index + 1,
+                  firstName: item.firstName,
+                  lastName: item.lastName,
+                  address: item.address,
+                  phoneNumber: item.phoneNumber,
+                  email: item.email,
+                  purposeOfVisit: item.purposeOfVisit,
+                  toMeet: item.toMeet?.firstName ? item.toMeet?.firstName : "Unknown",
+                  checkIn: humanTime(item.checkIn),
+                  checkOut: humanTime(item.checkOut),
+                })),
+              ]}
+              rowKey="id"
+              rowsToDisplay={10}
+              scroll={true}
+              className="h-full"
+            />
+          ) : (
+            <CircularProgress />
+          )}
         </WidgetSection>,
       ],
     },

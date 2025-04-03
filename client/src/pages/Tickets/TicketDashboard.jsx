@@ -2,14 +2,36 @@ import React from "react";
 import WidgetSection from "../../components/WidgetSection";
 import AreaGraph from "../../components/graphs/AreaGraph";
 import Card from "../../components/Card";
-import TicketCard from "../../components/TicketCard"
+import TicketCard from "../../components/TicketCard";
 import DonutChart from "../../components/graphs/DonutChart";
 import { RiArchiveDrawerLine } from "react-icons/ri";
 import { RiPagesLine } from "react-icons/ri";
 import { MdFormatListBulleted } from "react-icons/md";
 import { CgProfile } from "react-icons/cg";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import useAuth from "../../hooks/useAuth";
 
 const TicketDashboard = () => {
+  const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+  const { data: ticketsData = [], isLoading } = useQuery({
+    queryKey: ["tickets-data"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/tickets/department-tickets/${auth.user?.departments?.map(
+            (dept) => dept._id
+          )}`
+        );
+
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching tickets:", error);
+        throw new Error("Failed to fetch tickets");
+      }
+    },
+  });
   const ticketWidgets = [
     {
       layout: 1,
@@ -20,7 +42,7 @@ const TicketDashboard = () => {
           padding
           title={"Annual Tickets Raised"}
         >
-          <AreaGraph />
+          <AreaGraph responseData={ticketsData} />
         </WidgetSection>,
       ],
     },

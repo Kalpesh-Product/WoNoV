@@ -17,6 +17,49 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 const MeetingDashboard = () => {
   const axios = useAxiosPrivate();
 
+  const { data: meetingsData = [], isLoading } = useQuery({
+    queryKey: ["meetings"],
+    queryFn: async () => {
+      const response = await axios.get("/api/meetings/get-meetings");
+      return response.data;
+    },
+  });
+  // Function to calculate total duration in hours
+  const calculateTotalDurationInHours = (meetings) => {
+    return meetings.reduce((total, meeting) => {
+      // Extract the duration string (e.g., "30m", "1h", etc.)
+      const durationStr = meeting.duration || "0m";
+
+      // Parse the duration string using dayjs to extract minutes
+      const minutes = parseDuration(durationStr);
+
+      // Convert minutes to hours
+      const hours = minutes / 60;
+
+      return total + hours;
+    }, 0);
+  };
+
+  // Function to parse duration like "30m", "1h", etc.
+  const parseDuration = (durationStr) => {
+    const regex = /(\d+)(m|h)/;
+    const match = durationStr.match(regex);
+    if (match) {
+      const value = parseInt(match[1], 10);
+      const unit = match[2];
+
+      if (unit === "m") {
+        return value; // Return minutes if 'm'
+      } else if (unit === "h") {
+        return value * 60; // Convert hours to minutes if 'h'
+      }
+    }
+
+    return 0; // Default to 0 if no valid duration format is found
+  };
+
+  // Total duration in hours
+  const totalDurationInHours = calculateTotalDurationInHours(meetingsData);
   // Fetch internal meetings
   const { data: meetingsInternal = [] } = useQuery({
     queryKey: ["meetingsInternal"],
@@ -508,7 +551,7 @@ const MeetingDashboard = () => {
     {
       layout: 3,
       widgets: [
-        <DataCard title={"Total"} data={"833"} description={"Hours Booked"} />,
+        <DataCard title={"Total"} data={totalDurationInHours} description={"Hours Booked"} />,
         <DataCard
           title={"Total"}
           data={"75"}

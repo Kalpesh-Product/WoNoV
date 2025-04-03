@@ -376,7 +376,11 @@ const ProjectList = () => {
               <Autocomplete
                 {...field}
                 multiple
-                options={assignees.isPending ? [] : assignees.data.map((user)=>user.firstName)} // Example list
+                options={
+                  assignees.isPending
+                    ? []
+                    : assignees.data.map((user) => user.firstName)
+                } // Example list
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -542,13 +546,36 @@ const TableView = ({ projects, isLoading }) => {
 
 // Project Card Component for Grid View
 const ProjectCard = ({ project }) => {
+  const axios = useAxiosPrivate();
+  const navigate = useNavigate();
+  const passProjectId = useMutation({
+    mutationFn: async () => {
+      return axios.patch(`/api/tasks/update-project/${project.id}`);
+    },
+    onSuccess: () => {
+      console.log("Project updated");
+    },
+    onError: (error) => {
+      console.log(error.response?.data?.message || "Failed to fetch project");
+    },
+  });
+
+  const handleEditClick = () => {
+    passProjectId.mutate(); // ✅ Correct way to trigger mutation
+    navigate(`/app/tasks/project-list/edit-project/${project.id}`, {
+      state: { project },
+    });
+  };
   return (
-    <div className="bg-white shadow-md rounded-lg p-3 mb-4 border border-gray-200 h-64 flex flex-col justify-between">
+    <div
+     
+      className="bg-white shadow-md rounded-lg p-3 mb-4 border border-gray-200 h-64 flex flex-col justify-between hover:bg-gray-100 hover:transition-all ease-in hover:duration-100 hover:cursor-pointer"
+    >
       <div className="flex justify-between items-center">
         <span className="font-pmedium text-subtitle">{project.title}</span>
         <ProjectMenu project={project} />
       </div>
-      <div>
+      <div  onClick={handleEditClick}> 
         <span
           className={`px-2 py-1 text-content font-pmedium rounded-md ${getPriorityClass(
             project.priority
@@ -616,7 +643,7 @@ const ProjectMenu = ({ project }) => {
     setAnchorEl(null);
   };
   return (
-    <>
+    <div className="hover:bg-gray-100 cursor-pointer">
       <IconButton
         sx={{ padding: 0, fontSize: "20px" }}
         onClick={(event) => setAnchorEl(event.currentTarget)}
@@ -631,7 +658,7 @@ const ProjectMenu = ({ project }) => {
         <MenuItem onClick={handleEditClick}>Edit Project</MenuItem>
         <MenuItem onClick={() => setAnchorEl(null)}>Delete Project</MenuItem>
       </Menu>
-    </>
+    </div>
   );
 };
 

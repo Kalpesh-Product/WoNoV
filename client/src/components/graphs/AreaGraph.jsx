@@ -1,94 +1,138 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Chart from "react-apexcharts";
+import dayjs from "dayjs"; // Import dayjs for date manipulation
 
-const AreaGraph = () => {
+const AreaGraph = ({ responseData }) => {
   const [timeFilter, setTimeFilter] = useState("Yearly"); // State for the filter
+  console.log("Response length : ",responseData.length)
 
-  // Example data for different time ranges
-  const allData = {
-    Yearly: {
-      series: [
-        {
-          name: "Total Tickets",
-          data: [150, 120, 100, 50, 100, 200, 80, 130, 140, 90, 110, 170],
-          color: "#007bff", // Blue
-        },
-        {
-          name: "Closed Tickets",
-          data: [120, 100, 80, 45, 60, 150, 75, 110, 120, 70, 90, 150],
-          color: "#28a745", // Green
-        },
-        {
-          name: "Open Tickets",
-          data: [30, 20, 20, 5, 40, 50, 5, 20, 20, 20, 20, 20],
-          color: "#ff4d4d", // Red
-        },
-      ],
-      categories: [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ], // Months
-    },
-    Monthly: {
-      series: [
-        {
-          name: "Total Tickets",
-          data: [50, 45, 60, 55, 70, 75, 65],
-          color: "#007bff", // Blue
-        },
-        {
-          name: "Closed Tickets",
-          data: [40, 35, 50, 45, 60, 65, 55],
-          color: "#28a745", // Green
-        },
-        {
-          name: "Open Tickets",
-          data: [10, 10, 10, 10, 10, 10, 10],
-          color: "#ff4d4d", // Red
-        },
-      ],
-      categories: ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6", "Week 7"], // Weeks
-    },
-    Weekly: {
-      series: [
-        {
-          name: "Total Tickets",
-          data: [20, 30, 25, 40, 35, 45, 50],
-          color: "#007bff", // Blue
-        },
-        {
-          name: "Closed Tickets",
-          data: [15, 20, 18, 30, 25, 35, 40],
-          color: "#28a745", // Green
-        },
-        {
-          name: "Open Tickets",
-          data: [5, 10, 7, 10, 10, 10, 10],
-          color: "#ff4d4d", // Red
-        },
-      ],
-      categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], // Days of the week
-    },
+  const [currentDate, setCurrentDate] = useState(dayjs());
+  const [data, setData] = useState({
+    series: [
+      { name: "Total Tickets", data: [], color: "#007bff" },
+      { name: "Closed Tickets", data: [], color: "#28a745" },
+      { name: "Open Tickets", data: [], color: "#ff4d4d" },
+    ],
+    categories: [],
+  });
+
+  // Function to transform the data based on the selected time filter
+  const transformData = (data, filter) => {
+    const transformed = {
+      Yearly: {
+        series: [
+          { name: "Total Tickets", data: Array(12).fill(0), color: "#007bff" }, // Blue
+          { name: "Closed Tickets", data: Array(12).fill(0), color: "#28a745" }, // Green
+          { name: "Open Tickets", data: Array(12).fill(0), color: "#ff4d4d" }, // Red
+        ],
+        categories: [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ],
+      },
+      Monthly: {
+        series: [
+          { name: "Total Tickets", data: Array(7).fill(0), color: "#007bff" },
+          { name: "Closed Tickets", data: Array(7).fill(0), color: "#28a745" },
+          { name: "Open Tickets", data: Array(7).fill(0), color: "#ff4d4d" },
+        ],
+        categories: [
+          "Week 1",
+          "Week 2",
+          "Week 3",
+          "Week 4",
+          "Week 5",
+          "Week 6",
+          "Week 7",
+        ],
+      },
+
+      Weekly: {
+        series: [
+          { name: "Total Tickets", data: Array(7).fill(0), color: "#007bff" }, // Blue
+          { name: "Closed Tickets", data: Array(7).fill(0), color: "#28a745" }, // Green
+          { name: "Open Tickets", data: Array(7).fill(0), color: "#ff4d4d" }, // Red
+        ],
+        categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      },
+    };
+
+    const currentYear = currentDate.year();
+    const currentMonth = currentDate.month();
+
+    data.forEach((ticket) => {
+      const createdAt = dayjs(ticket.createdAt); // Use dayjs to parse the date
+
+      // Filter for each time range
+      if (filter === "Yearly" && createdAt.year() !== currentYear) return;
+      if (
+        filter === "Monthly" &&
+        (createdAt.year() !== currentYear || createdAt.month() !== currentMonth)
+      )
+        return;
+      if (filter === "Weekly") {
+        const startOfWeek = currentDate.startOf("week");
+        const endOfWeek = currentDate.endOf("week");
+        if (
+          !(
+            createdAt.isAfter(startOfWeek.subtract(1, "day")) &&
+            createdAt.isBefore(endOfWeek.add(1, "day"))
+          )
+        )
+          return;
+      }
+
+      // Depending on the filter, categorize and count the tickets
+      let categoryIndex = null;
+      switch (filter) {
+        case "Yearly":
+          categoryIndex = createdAt.month();
+          break;
+        case "Monthly":
+          categoryIndex = Math.min(Math.floor((createdAt.date() - 1) / 7), 6);
+          break;
+        case "Weekly":
+          categoryIndex = createdAt.day(); // 0 (Sun) - 6 (Sat)
+          break;
+        default:
+          break;
+      }
+
+      // Count total, closed, and open tickets for each category
+      if (categoryIndex !== null) {
+        transformed[filter].series[0].data[categoryIndex] += 1;
+        if (ticket.status === "Closed") {
+          transformed[filter].series[1].data[categoryIndex] += 1;
+        } else if (ticket.status === "Open") {
+          transformed[filter].series[2].data[categoryIndex] += 1;
+        }
+      }
+    });
+
+    return transformed[filter];
   };
 
-  // Get the current data based on the selected filter
-  const chartData = allData[timeFilter];
+  // Use effect to transform response data when it changes
+  useEffect(() => {
+    const transformedData = transformData(responseData, timeFilter);
+    setData(transformedData);
+  }, [responseData, timeFilter, currentDate]);
 
   const chartOptions = {
     chart: {
       type: "area",
       height: 350,
-      fontFamily:"Poppins-Regular",
+      fontFamily: "Poppins-Regular",
       zoom: {
         enabled: false,
       },
@@ -97,7 +141,7 @@ const AreaGraph = () => {
       },
       scrollable: false,
     },
-    colors: chartData.series.map((item) => item.color),
+    colors: data.series.map((item) => item.color),
     dataLabels: {
       enabled: false,
     },
@@ -106,7 +150,7 @@ const AreaGraph = () => {
       width: 2,
     },
     xaxis: {
-      categories: chartData.categories,
+      categories: data.categories,
     },
     yaxis: {
       min: 0,
@@ -126,9 +170,49 @@ const AreaGraph = () => {
   };
 
   return (
-    <div className=" rounded-md p-4">
+    <div className="rounded-md p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-title font-pregular"></h2>
+
+        <div className="flex items-center gap-2">
+          <button
+            className="text-sm px-2 py-1 border rounded bg-gray-100 hover:bg-gray-200"
+            onClick={() => {
+              if (timeFilter === "Yearly") {
+                setCurrentDate((prev) => prev.subtract(1, "year"));
+              } else if (timeFilter === "Monthly") {
+                setCurrentDate((prev) => prev.subtract(1, "month"));
+              } else if (timeFilter === "Weekly") {
+                setCurrentDate((prev) => prev.subtract(1, "week"));
+              }
+            }}
+          >
+            Prev
+          </button>
+
+          <span className="text-sm font-medium text-gray-700">
+            {timeFilter === "Yearly" && currentDate.format("YYYY")}
+            {timeFilter === "Monthly" && currentDate.format("MMMM YYYY")}
+            {timeFilter === "Weekly" &&
+              `Week of ${currentDate.startOf("week").format("MMM D")}`}
+          </span>
+
+          <button
+            className="text-sm px-2 py-1 border rounded bg-gray-100 hover:bg-gray-200"
+            onClick={() => {
+              if (timeFilter === "Yearly") {
+                setCurrentDate((prev) => prev.add(1, "year"));
+              } else if (timeFilter === "Monthly") {
+                setCurrentDate((prev) => prev.add(1, "month"));
+              } else if (timeFilter === "Weekly") {
+                setCurrentDate((prev) => prev.add(1, "week"));
+              }
+            }}
+          >
+            Next
+          </button>
+        </div>
+
         <div className="flex gap-2">
           {["Yearly", "Monthly", "Weekly"].map((filter) => (
             <button
@@ -147,7 +231,7 @@ const AreaGraph = () => {
       </div>
       <Chart
         options={chartOptions}
-        series={chartData.series}
+        series={data.series}
         type="area"
         height={350}
       />

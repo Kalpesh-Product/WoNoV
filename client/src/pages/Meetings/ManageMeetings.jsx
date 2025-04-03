@@ -108,6 +108,11 @@ const ManageMeetings = () => {
     setChecklistModalOpen(false);
     setSelectedMeetingId(null);
   };
+  const handleSelectedMeeting = (data) => {
+    setSelectedMeeting(data);
+    setDetailsModal(true);
+  };
+  useEffect(() => console.log(selectedMeeting), [selectedMeeting]);
 
   const handleAddChecklistItem = () => {
     if (!newItem.trim() || !selectedMeetingId) return;
@@ -259,9 +264,7 @@ const ManageMeetings = () => {
         <div className="flex gap-2 items-center">
           <div
             onClick={() => {
-              setSelectedMeeting(params.data);
-              setDetailsModal(true);
-              setModalMode("view");
+              handleSelectedMeeting(params.data);
             }}
             className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
           >
@@ -410,12 +413,42 @@ const ManageMeetings = () => {
           )}
         </Box>
       </MuiModal>
-      <MuiModal title={"Meeting Details"} open={detailsModal} onClose={() => setDetailsModal(false)}>
+      <MuiModal
+        title={"Meeting Details"}
+        open={detailsModal}
+        onClose={() => setDetailsModal(false)}
+      >
         <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4 w-full">
-          <DetalisFormatted title={"Room Name"} detail={"2"} />
-          <DetalisFormatted title={"Department"} detail={"2"} />
-          <DetalisFormatted title={"Department"} detail={"2"} />
-          <DetalisFormatted title={"Department"} detail={"2"} />
+          <DetalisFormatted
+            title={"Room Name"}
+            detail={selectedMeeting?.roomName}
+          />
+          <DetalisFormatted title={"Date"} detail={selectedMeeting?.date} />
+          <DetalisFormatted
+            title={"Start Time"}
+            detail={selectedMeeting?.startTime}
+          />
+          <DetalisFormatted
+            title={"End Time"}
+            detail={selectedMeeting?.endTime}
+          />
+          <div className="col-span-1 ">
+            <DetalisFormatted
+              title={"Participants"}
+              detail={selectedMeeting?.participants.map((item) => (
+                <span>{`${item.firstName || "Unknown"} ${item.lastName || "Unknown"}`}</span>
+              ))}
+            />
+          </div>
+          <div></div>
+          <DetalisFormatted
+            title={"House Keeping Status"}
+            detail={selectedMeeting?.housekeepingStatus}
+          />
+          <DetalisFormatted
+            title={"Department"}
+            detail={selectedMeeting?.department}
+          />
         </div>
       </MuiModal>
     </div>
