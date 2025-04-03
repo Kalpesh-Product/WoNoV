@@ -239,7 +239,7 @@ const getTickets = async (req, res, next) => {
       }).populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
-      ]);
+      ]).lean().exec();
     } else {
       // Department admins or users can view tickets in their departments
       matchingTickets = await Tickets.find({
@@ -266,6 +266,7 @@ const getTickets = async (req, res, next) => {
         .lean()
         .exec();
     }
+    console.log(matchingTickets)
 
     if (!matchingTickets.length) {
       return res.status(200).json(matchingTickets);
@@ -281,13 +282,12 @@ const getTickets = async (req, res, next) => {
       const ticketIssue = department?.ticketIssues.find(
         (issueId) => issueId._id.toString() === ticket.ticket.toString()
       );
-
       return {
         ...ticket,
         ticketIssueTitle: ticketIssue ? ticketIssue.title : "Issue not found",
       };
     });
-
+    console.log(ticketsWithIssueTitle);
     return res.status(200).json(ticketsWithIssueTitle);
   } catch (error) {
     next(error);
