@@ -32,9 +32,9 @@ const salesRoutes = require("./routes/salesRoutes");
 const visitorRoutes = require("./routes/visitorRoutes");
 const websiteRoutes = require("./routes/websiteTemplatesRoutes");
 const getLogs = require("./controllers/logController");
+const registerEventListeners = require("./events/listeners");
 const app = express();
 const PORT = process.env.PORT || 5000;
-
 
 connectDb(process.env.DB_URL);
 
@@ -44,6 +44,7 @@ app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
+registerEventListeners();
 
 app.get("/", (req, res) => {
   if (req.accepts("html")) {

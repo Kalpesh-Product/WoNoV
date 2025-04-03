@@ -236,10 +236,21 @@ const getTickets = async (req, res, next) => {
         raisedBy: { $ne: loggedInUser._id },
         status: "Open",
         company: loggedInUser.company,
-      }).populate([
-        { path: "raisedBy", select: "firstName lastName" },
-        { path: "raisedToDepartment", select: "name" },
-      ]).lean().exec();
+      })
+        .populate([
+          {
+            path: "raisedBy",
+            select: "firstName lastName departments",
+            populate: {
+              path: "departments",
+              select: "name",
+              model: "Department",
+            },
+          },
+          { path: "raisedToDepartment", select: "name" },
+        ])
+        .lean()
+        .exec();
     } else {
       // Department admins or users can view tickets in their departments
       matchingTickets = await Tickets.find({
@@ -266,7 +277,7 @@ const getTickets = async (req, res, next) => {
         .lean()
         .exec();
     }
-    console.log(matchingTickets)
+    console.log(matchingTickets);
 
     if (!matchingTickets.length) {
       return res.status(200).json(matchingTickets);

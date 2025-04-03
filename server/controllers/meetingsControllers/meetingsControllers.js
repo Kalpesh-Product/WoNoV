@@ -2,6 +2,7 @@ const Meeting = require("../../models/meetings/Meetings");
 const User = require("../../models/hr/UserData");
 const { default: mongoose } = require("mongoose");
 const Room = require("../../models/meetings/Rooms");
+const emitter = require("../../events/eventEmmiter");
 const {
   formatDate,
   formatTime,
@@ -261,10 +262,12 @@ const addMeetings = async (req, res, next) => {
     });
 
     await meeting.save();
-
-    // Update room status to "Booked"
-    roomAvailable.status = "Occupied";
-    await roomAvailable.save();
+    emitter.emit("meeting-creation", {
+      roomId: roomAvailable._id.toString(),
+      meetingId: meeting._id.toString(),
+      startTime: startTimeObj,
+      endTime: endTimeObj,
+    });
 
     const data = {
       meetingType,
@@ -778,6 +781,8 @@ const cancelMeeting = async (req, res, next) => {
       { new: true }
     );
 
+    emitter.emit("meeting-cancelled", { meetingId });
+
     if (!cancelledMeeting) {
       throw new CustomError(
         "Meeting not found, please check the ID",
@@ -891,6 +896,12 @@ const extendMeeting = async (req, res, next) => {
     meeting.endDate = newEndTimeObj;
     await meeting.save();
 
+    const newEndDateTime = new Date(`${newEndDate}T${newEndTime}`);
+    emitter.emit("meeting-extended", {
+      meetingId: meeting._id.toString(),
+      newEndTime: newEndDateTime,
+    });
+
     // Log the successful extension
     await createLog({
       path: logPath,
@@ -958,6 +969,14 @@ const getSingleRoomMeetings = async (req, res, next) => {
     }));
 
     res.status(200).json(formattedMeetings);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateMeetingStatus = async (req, res, next) => {
+  try {
+    const { roomId, meetingId } = req.body;
   } catch (error) {
     next(error);
   }
