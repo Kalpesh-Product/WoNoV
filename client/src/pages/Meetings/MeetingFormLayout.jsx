@@ -85,44 +85,17 @@ const MeetingFormLayout = () => {
     setOpen(true);
   };
 
-  const {
-    data: availableUsers = [],
-    isLoading: availableUsersLoading,
-    error: availableUsersError,
-  } = useQuery({
-    queryKey: ["users", startDate, endDate, startTime, endTime], // Add startDate and endDate to query key
+  const { data: employees=[], isLoading } = useQuery({
+    queryKey: ["employees"],
     queryFn: async () => {
-      const formattedStartDate = dayjs(startDate).format("YYYY-MM-DD");
-      const formattedEndDate = dayjs(endDate).format("YYYY-MM-DD");
-      const formattedStartTime = dayjs(startTime).format("YYYY-MM-DD HH:mm:ss");
-      const formattedEndTime = dayjs(endTime).format("YYYY-MM-DD HH:mm:ss");
-    
-      const response = await axios.get("/api/meetings/get-available-users", {
-        params: {
-          startDate: formattedStartDate, // Send as string (not Date object)
-          endDate: formattedEndDate,
-          startTime: formattedStartTime, // Ensure local time is sent
-          endTime: formattedEndTime,
-        },
-      });
-
-      return response.data;
-    },
-    enabled: !!startDate && !!endDate && !!startTime && !!endTime, // Ensure all values exist before fetching
-  });
-
-  const {
-    data: companies = [],
-    isLoading: companiesLoading,
-    error: companiesError,
-  } = useQuery({
-    queryKey: ["companies"],
-    queryFn: async () => {
-      const response = await axios.get("/api/company/get-companies");
-      return response.data;
+      try {
+        const response = await axios.get("/api/users/fetch-users");
+        return response.data;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
     },
   });
-
   const { data: checkAvailability = [], isPending: isCheckingAvailability } =
     useQuery({
       queryKey: ["checkAvailability", meetingRoomId],
@@ -162,7 +135,6 @@ const MeetingFormLayout = () => {
   const { mutate: createMeeting, isPending: isCreateMeeting } = useMutation({
     mutationKey: ["createMeeting"],
     mutationFn: async (data) => {
-      console.log('participants',data)
       await axios.post("/api/meetings/create-meeting", {
         bookedRoom: meetingRoomId,
         meetingType: data.meetingType,
@@ -204,7 +176,6 @@ const MeetingFormLayout = () => {
 
   const onSubmit = (data) => {
     createMeeting(data);
-    console.log(data);
   };
 
  
@@ -257,7 +228,7 @@ const MeetingFormLayout = () => {
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col w-full gap-4"
         >
-          <div>
+          <div className="w-full flex justify-between items-center">
             <span className="text-content">
               Selected Date : {humanDate(startDate)}
             </span>
@@ -334,12 +305,12 @@ const MeetingFormLayout = () => {
                 render={({ field }) => (
                   <Autocomplete
                     multiple  
-                    options={availableUsers} // The user list
+                    options={employees} // The user list
                     getOptionLabel={(user) =>
                       `${user.firstName} ${user.lastName}`
-                    } // Display names
+                    } 
                     onChange={(_, newValue) => (field.onChange(newValue.map(user => user._id)))
-                    } // Sync selected users with form state
+                    } 
                     renderTags={(selected, getTagProps) =>
                       selected.map((user, index) => (
                         <Chip

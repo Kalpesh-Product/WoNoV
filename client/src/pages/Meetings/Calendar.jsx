@@ -34,7 +34,7 @@ const Calender = () => {
   });
   const [eventFilter, setEventFilter] = useState([
     "upcoming",
-    "completed",
+    "Completed",
     // "cancelled",
   ]);
   const meetings = useSelector((state) => state.meetings.data);
@@ -64,6 +64,7 @@ const Calender = () => {
         eventFilter.includes(event.extendedProps?.meetingStatus.toLowerCase())
       );
       setFilteredEvents(filtered);
+      console.log(filteredEvents)
     }
   }, [eventFilter, meetings]);
 
@@ -86,8 +87,8 @@ const Calender = () => {
     const type = event.extendedProps?.meetingStatus.toLowerCase();
 
     const colors = {
-      Upcoming: "#3BACFF",
-      completed: "#5EFE1F",
+      upcoming: "#3BACFF",
+      Completed: "#5EFE1F",
     };
 
     const headerBackground = colors[type] || ""; // Fallback to empty if type doesn't match
@@ -122,10 +123,10 @@ const Calender = () => {
                 </div>
                 <div className="flex justify-start text-content px-2">
                   <FormGroup column>
-                    {["upcoming", "completed"].map((type) => {
+                    {["upcoming", "Completed"].map((type) => {
                       const colors = {
                         upcoming: "#3BACFF",
-                        completed: "#e8f5e9",
+                        Completed: "#5EFE1F",
                         // cancelled: "#fffff",
                       };
                       return (
@@ -174,8 +175,8 @@ const Calender = () => {
                   {todaysEvents.length > 0 ? (
                     todaysEvents.map((event, index) => {
                       const colors = {
-                        Upcoming: "#3BACFF",
-                        completed: "#e8f5e9",
+                        upcoming: "#3BACFF",
+                        Completed: "#5EFE1F",
                       };
                       return (
                         <div

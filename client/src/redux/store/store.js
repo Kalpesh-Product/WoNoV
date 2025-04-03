@@ -3,17 +3,17 @@ import { persistReducer, persistStore } from "redux-persist";
 import sessionStorage from "redux-persist/lib/storage/session";
 import { encryptTransform } from "redux-persist-transform-encrypt";
 import clientReducer from "../slices/clientSlice";
+import ticketsReducer from "../slices/ticketSlice";
 import meetingsReducer from "../slices/meetingSlice";
-import salesReducer from '../slices/salesSlice'
+import salesReducer from "../slices/salesSlice";
 
 const persistConfig = {
   key: "root",
   storage: sessionStorage,
-  whitelist: ["client"],
+  whitelist: ["client","tickets"],
   transforms: [
     encryptTransform({
-      secretKey:
-        "aasdalkdsjlakwaksdasadsdnmqwoqksdbasdoaoqwdbmasdbkaboqwidhsndiwdpsokcgdkjnv",
+      secretKey: import.meta.env.VITE_REDUX_PERSIST,
       onError: (error) => console.error("Encryption Error : ", error),
     }),
   ],
@@ -21,8 +21,9 @@ const persistConfig = {
 
 const rootreducer = combineReducers({
   meetings: meetingsReducer,
+  tickets: ticketsReducer,
   client: clientReducer,
-  sales : salesReducer
+  sales: salesReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootreducer);

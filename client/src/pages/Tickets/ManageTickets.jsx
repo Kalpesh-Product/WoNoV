@@ -10,22 +10,27 @@ import ClosedTickets from "./Tables/ClosedTickets";
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
- 
+import TicketCard from "../../components/TicketCard";
+
 const ManageTickets = () => {
-  const axios = useAxiosPrivate()
+  const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
-  
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
-  
   // Fetch Accepted Tickets
-  const { data: acceptedTickets = [], isLoading } = useQuery({
-    queryKey: ["accepted-tickets"],
+  const { data: ticketsData = [], isLoading } = useQuery({
+    queryKey: ["tickets-data"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/tickets/ticket-filter/accept-assign");
+        const response = await axios.get(
+          `/api/tickets/department-tickets/${auth.user?.departments?.map(
+            (dept) => dept._id
+          )}`
+        );
 
         return response.data;
       } catch (error) {
@@ -35,6 +40,20 @@ const ManageTickets = () => {
     },
   });
 
+  const ticketsFilteredData = {
+    openTickets: ticketsData.filter((item) => item.status === "Open").length,
+    closedTickets: ticketsData.filter((item) => item.status === "Closed")
+      .length,
+    pendingTickets: ticketsData.filter((item) => item.status === "Pending")
+      .length,
+    acceptedTickets: ticketsData
+    .filter((item) => item.acceptedBy === auth.user?._id).filter((item)=>item.status === "In Progress").length,
+  };
+  console.log(
+    ticketsData
+      .filter((item) => item.acceptedBy === auth.user?._id).filter((item)=>item.status === "In Progress")
+
+  );
 
   const widgets = [
     {
@@ -46,26 +65,26 @@ const ManageTickets = () => {
               layout={3}
               title={"Department Pending Tickets"}
               titleDataColor={"red"}
-              titleData={"25"}
+              titleData={ticketsFilteredData.pendingTickets}
             >
-              <Card
+              <TicketCard
                 title={"Recieved Tickets"}
                 titleColor={"#1E3D73"}
-                data={"45"}
+                data={ticketsData.length}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
               />
-              <Card
+              <TicketCard
                 title={"Open Tickets"}
                 titleColor={"#1E3D73"}
-                data={"05"}
+                data={ticketsFilteredData.openTickets}
                 fontColor={"#FFBF42"}
                 fontFamily={"Poppins-Bold"}
               />
-              <Card
+              <TicketCard
                 title={"Closed Tickets"}
                 titleColor={"#1E3D73"}
-                data={"15"}
+                data={ticketsFilteredData.closedTickets}
                 fontColor={"#52CE71"}
                 fontFamily={"Poppins-Bold"}
               />
@@ -78,21 +97,21 @@ const ManageTickets = () => {
               titleDataColor={"black"}
               titleData={"06"}
             >
-              <Card
+              <TicketCard
                 title={"Accepted Tickets"}
-                data={acceptedTickets.length}
+                data={ticketsFilteredData.acceptedTickets}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
                 titleColor={"#1E3D73"}
               />
-              <Card
+              <TicketCard
                 title={"Assigned Tickets"}
                 data={"01"}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
                 titleColor={"#1E3D73"}
               />
-              <Card
+              <TicketCard
                 title={"Escalated Tickets"}
                 data={"02"}
                 fontColor={"#1E3D73"}
