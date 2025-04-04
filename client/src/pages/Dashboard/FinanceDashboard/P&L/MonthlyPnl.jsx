@@ -1,15 +1,15 @@
 import React from "react";
-import Card from "../../../components/Card";
+import Card from "../../../../components/Card";
 import {
   MdFormatListBulleted,
   MdOutlineMiscellaneousServices,
 } from "react-icons/md";
 import { SiCashapp, SiGoogleadsense } from "react-icons/si";
-import WidgetSection from "../../../components/WidgetSection";
-import LayerBarGraph from "../../../components/graphs/LayerBarGraph";
+import WidgetSection from "../../../../components/WidgetSection";
+import LayerBarGraph from "../../../../components/graphs/LayerBarGraph";
 import { useNavigate } from "react-router-dom";
 
-const FinanceDashboard = () => {
+const MonthlyPnl = () => {
   const navigate = useNavigate();
   const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
   const defaultData = utilisedData.map((value) =>
@@ -90,15 +90,15 @@ const FinanceDashboard = () => {
         </WidgetSection>,
       ],
     },
-    {
-      layout: 4,
-      widgets: [
-        <Card icon={<MdFormatListBulleted />} title="Mix-Bag" />,
-        <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
-        <Card icon={<SiGoogleadsense />} title="Data" />,
-        <Card icon={<MdOutlineMiscellaneousServices />} title="Settings" />,
-      ],
-    },
+    // {
+    //   layout: 4,
+    //   widgets: [
+    //     <Card icon={<MdFormatListBulleted />} title="Mix-Bag" />,
+    //     <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
+    //     <Card icon={<SiGoogleadsense />} title="Data" />,
+    //     <Card icon={<MdOutlineMiscellaneousServices />} title="Settings" />,
+    //   ],
+    // },
   ];
 
   return (
@@ -108,54 +108,8 @@ const FinanceDashboard = () => {
           {section?.widgets}
         </WidgetSection>
       ))}
-
-      <div
-        onClick={() => {
-          navigate(`monthly-pnl`);
-        }}>
-        Monthly P&L
-      </div>
-      <div
-        onClick={() => {
-          navigate(`annual-average-pnl`);
-        }}>
-        Annual Average P&L
-      </div>
-      <div
-        onClick={() => {
-          navigate(`overall-pnl`);
-        }}>
-        Overall P&L
-      </div>
-      <div
-        onClick={() => {
-          navigate(`monthly-per-sq-ft-pnl`);
-        }}>
-        Monthly Per Sq. Ft. P&L
-      </div>
-      <hr />
-      <div
-        onClick={() => {
-          navigate(`cashflow`);
-        }}>
-        Cashflow
-      </div>
-      <hr />
-      <div
-        onClick={() => {
-          navigate(`/app/dashboard/finance-dashboard/data`);
-        }}>
-        Data
-      </div>
-      <hr />
-      <div
-        onClick={() => {
-          navigate(`/app/dashboard/finance-dashboard/settings`);
-        }}>
-        Settings
-      </div>
     </div>
   );
 };
 
-export default FinanceDashboard;
+export default MonthlyPnl;
