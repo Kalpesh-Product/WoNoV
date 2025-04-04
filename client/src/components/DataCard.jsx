@@ -6,7 +6,7 @@ const DataCard = ({ title, description, data, route }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="group transition-colors duration-200 p-6 rounded-xl text-left w-full max-w-sm shadow-md">
+    <div className="group transition-colors duration-200 p-6 rounded-xl text-left w-full  shadow-md">
       <div className="flex justify-between items-center mb-4">
         <div className="text-title font-semibold text-black ">
           {title}
