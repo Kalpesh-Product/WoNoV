@@ -96,10 +96,10 @@ const FinanceDashboard = () => {
     cardTitle: "Income",
     timePeriod: "Apr 24 – Mar 25",
     descriptionData: [
-      { title: "March 2025", value: "INR 25,00,000" },
-      { title: "Annual Average", value: "INR 27,00,000" },
-      { title: "Overall", value: "INR 3,24,00,000" },
-      { title: "Per Sq. Ft.", value: "810" },
+      { title: "March 2025", value: "INR 25,00,000", route: "monthly-profit-loss" },
+      { title: "Annual Average", value: "INR 27,00,000", route : 'annual-average-profit-loss' },
+      { title: "Overall", value: "INR 3,24,00,000", route : "overall-profit-loss" },
+      { title: "Per Sq. Ft.", value: "810", route: "sqft-wise-data" },
     ],
   };
 
@@ -153,6 +153,9 @@ const FinanceDashboard = () => {
   ];
 
   const pieMonthlyPayoutOptions = {
+    chart : {
+      fontFamily : "Poppins-Regular"
+    },
     colors: ["#4CAF50", "#F44336"],
     labels: pieMonthlyPayoutData.map((item) => item.label),
     legend: {
@@ -221,6 +224,9 @@ const FinanceDashboard = () => {
   ];
 
   const pieMonthlyCollectionOptions = {
+    chart : {
+      fontFamily : "Poppins-Regular"
+    },
     colors: ["#2196F3", "#FF9800"], // Blue for collected, orange for pending
     labels: pieMonthlyCollectionData.map((item) => item.label),
     legend: {
@@ -373,7 +379,7 @@ const FinanceDashboard = () => {
       widgets: [
         <Card icon={<MdFormatListBulleted />} title="Cashflow" />,
         <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
-        <Card icon={<SiCashapp />} title="Billing" route={"finance"} />,
+        <Card icon={<SiCashapp />} title="Billing" route={"billing"} />,
         <Card icon={<SiGoogleadsense />} title="Mix-Bag" />,
         <Card icon={<SiGoogleadsense />} title="Data" />,
         <Card icon={<MdOutlineMiscellaneousServices />} title="Settings" />,

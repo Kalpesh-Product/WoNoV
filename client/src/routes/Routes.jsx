@@ -266,6 +266,22 @@ import HousekeepingTeamMembersCalendar from "../pages/Dashboard/AdminDashboard/H
 import AdminClientMembersLayout from "../pages/Dashboard/AdminDashboard/AdminClientMembersLayout";
 import AdminClientDetails from "../pages/Dashboard/AdminDashboard/AdminClientDetails";
 import AdminClientMembers from "../pages/Dashboard/AdminDashboard/AdminClientMembers";
+import FinanceLayout from "../pages/Dashboard/FinanceDashboard/FinanceLayout";
+import MonthlyProfitLoss from "../pages/Dashboard/FinanceDashboard/MonthyProfitLoss/MonthlyProfitLoss";
+import AverageProfitLoss from "../pages/Dashboard/FinanceDashboard/AverageProfitLoss/AverageProfitLoss";
+import OverallProfitLoss from "../pages/Dashboard/FinanceDashboard/OverallProfitLoss/OverallProfitLoss";
+import SqWiseData from "../pages/Dashboard/FinanceDashboard/SqftWiseData/SqWiseData";
+import InvoiceCreation from "../pages/Dashboard/FinanceDashboard/Billing/InvoiceCreation";
+import VoucherCreation from "../pages/Dashboard/FinanceDashboard/Billing/VoucherCreation";
+import PendingApprovals from "../pages/Dashboard/FinanceDashboard/Billing/PendingApprovals";
+import BillingsLayout from "../pages/Dashboard/FinanceDashboard/Billing/BillingsLayout";
+import FinanceBudgetLayout from "../pages/Dashboard/FinanceDashboard/Finance/FinanceBudgetLayout";
+import FinanceBudget from "../pages/Dashboard/FinanceDashboard/Finance/FinanceBudget";
+import DeptWiseBudget from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudget";
+import PaymentSchedule from "../pages/Dashboard/FinanceDashboard/Finance/PaymentSchedule";
+import Collections from "../pages/Dashboard/FinanceDashboard/Finance/Collections";
+import StatutoryPayments from "../pages/Dashboard/FinanceDashboard/Finance/StatutoryPayments";
+import LandlordPayments from "../pages/Dashboard/FinanceDashboard/Finance/LandlordPayments";
 
 export const routes = createBrowserRouter([
   {
@@ -366,11 +382,79 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "finance-dashboard",
-                    element: <FrontendLayout />,
+                    element: <FinanceLayout />,
                     children: [
                       {
                         path: "",
                         element: <FinanceDashboard />,
+                      },
+                      {
+                        path: "monthly-profit-loss",
+                        element: <MonthlyProfitLoss />,
+                      },
+                      {
+                        path: "annual-average-profit-loss",
+                        element: <AverageProfitLoss />,
+                      },
+                      {
+                        path: "overall-profit-loss",
+                        element: <OverallProfitLoss />,
+                      },
+                      {
+                        path: "sqft-wise-data",
+                        element: <SqWiseData />,
+                      },
+                      {
+                        path: "billing",
+                        element: <BillingsLayout />,
+                        children: [
+                          {
+                            path: "invoice-creation",
+                            element: <InvoiceCreation />,
+                          },
+                          {
+                            path: "invoice-creation/:id",
+                            element: <ViewTemplate />,
+                          },
+                          {
+                            path: "voucher-creation",
+                            element: <VoucherCreation />,
+                          },
+                          {
+                            path: "pending-approvals",
+                            element: <PendingApprovals />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "finance",
+                        element: <FinanceBudgetLayout />,
+                        children: [
+                          {
+                            path: "budget",
+                            element: <FinanceBudget />,
+                          },
+                          {
+                            path: "dept-wise-budget",
+                            element: <DeptWiseBudget />,
+                          },
+                          {
+                            path: "payment-schedule",
+                            element: <PaymentSchedule />,
+                          },
+                          {
+                            path: "collections",
+                            element: <Collections />,
+                          },
+                          {
+                            path: "statutory-payments",
+                            element: <StatutoryPayments />,
+                          },
+                          {
+                            path: "landlord-payments",
+                            element: <LandlordPayments />,
+                          },
+                        ],
                       },
                     ],
                   },
