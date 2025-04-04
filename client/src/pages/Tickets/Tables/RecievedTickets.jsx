@@ -51,7 +51,7 @@ const RecievedTickets = ({ title }) => {
   const { mutate: rejectMutate, isPending: rejectPending } = useMutation({
     mutationKey: ["reject-ticket"],
     mutationFn: async (ticket) => {
-      const response = await axios.post(
+      const response = await axios.patch(
         `/api/tickets/reject-ticket/${ticket.id}`
       );
 
@@ -127,11 +127,14 @@ const RecievedTickets = ({ title }) => {
   };
 
   const transformTicketsData = (tickets) => {
+    if(!tickets.length){
+      return []
+    }
     return tickets.map((ticket) => ({
       id: ticket._id,
       raisedBy: ticket.raisedBy?.firstName || "Unknown",
       fromDepartment:
-        ticket.raisedBy.departments.map((dept) => dept.name) || "N/A",
+        ticket.raisedBy?.departments?.map((dept) => dept.name) || "N/A",
       ticketTitle: ticket?.ticket || "No Title",
       status: ticket.status || "Pending",
     }));

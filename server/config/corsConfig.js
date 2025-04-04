@@ -1,6 +1,6 @@
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://wono-admin-panel.vercel.app",
+  "https://wonofe.vercel.app",
 ];
 
 const corsConfig = {

@@ -1,5 +1,5 @@
 import AgTable from "../../../components/AgTable";
-import { Chip, LinearProgress, TextField, Typography } from "@mui/material";
+import { Chip, CircularProgress, LinearProgress, MenuItem, TextField, Typography } from "@mui/material";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -7,21 +7,48 @@ import { queryClient } from "../../../main";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 
 const AcceptedTickets = ({ title }) => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
+  const [esCalateModal, setEscalateModal] = useState(false);
+  const [esCalatedTicket, setEscalatedTicket] = useState(null);
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const {
-    handleSubmit,
-    reset,
-    control,
-    formState: { errors },
+    handleSubmit: handleSupportTicketSubmit,
+    reset: resetSupportTicketForm,
+    control: supportTicketControl,
+    formState: { errors: supportTicketsError },
   } = useForm({
     defaultValues: {
       reason: "",
+    },
+  });
+  const {
+    handleSubmit: handleEscalateTicketSubmit,
+    reset: resetEscalateForm,
+    control: escalateFormControl,
+    formState: { errors: escalateTicketErrors },
+  } = useForm({
+    defaultValues: {
+      departmentId: "",
+      description: "",
+    },
+  });
+
+  const { data: departments = [], isPending: isDepartmentsPending } = useQuery({
+    queryKey: ["departments"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          "api/company/get-company-data?field=selectedDepartments"
+        );
+        return response.data?.selectedDepartments;
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
     },
   });
 
@@ -33,7 +60,6 @@ const AcceptedTickets = ({ title }) => {
         const response = await axios.get(
           "/api/tickets/ticket-filter/accept-assign"
         );
-
         return response.data;
       } catch (error) {
         console.error("Error fetching tickets:", error);
@@ -69,7 +95,7 @@ const AcceptedTickets = ({ title }) => {
     onSuccess: function (data) {
       toast.success(data.message || "Support ticket created successfully");
       queryClient.invalidateQueries({ queryKey: ["accepted-tickets"] });
-      reset();
+      resetSupportTicketForm();
       setOpenModal(false);
     },
     onError: function (error) {
@@ -78,14 +104,46 @@ const AcceptedTickets = ({ title }) => {
       );
     },
   });
+  const { mutate: escalateTicket, isPending: isEscalatePending } = useMutation({
+    mutationKey: ["escalate-ticket"],
+    mutationFn: async (ticketDetails) => {
+      const response = await axios.patch("/api/tickets/escalate-ticket", {
+        ticketId: esCalatedTicket.id,
+        description: ticketDetails.description,
+        departmentId: ticketDetails.departmentId,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setEscalateModal(false)
+      resetEscalateForm()
+      toast.success(data.message || "Ticket escalated successfully");
+      queryClient.invalidateQueries({ queryKey: ["accepted-tickets"] });
+    },
+    onError: (error) => {
+      toast.error(error.response.data.message || "Failed to escalate ticket");
+    },
+  });
 
   const handleSupportTicket = (ticketId) => {
     setSelectedTicketId(ticketId);
     setOpenModal(true);
   };
+  const handleEscalateTicket = (ticketDetails) => {
+    setEscalateModal(true);
+    setEscalatedTicket(ticketDetails);
+  };
   const onSubmit = (data) => {
     if (!selectedTicketId) return;
     getSupport({ ticketId: selectedTicketId, reason: data.reason });
+  };
+  const onEscalate = (ticketDetails) => {
+    if (!ticketDetails) return;
+    escalateTicket({
+      ticketId: esCalatedTicket.id,
+      description: ticketDetails.description,
+      departmentId: ticketDetails.departmentId,
+    });
   };
 
   const recievedTicketsColumns = [
@@ -125,6 +183,10 @@ const AcceptedTickets = ({ title }) => {
                 label: "Support",
                 onClick: () => handleSupportTicket(params.data.id),
               },
+              {
+                label: "Escalate",
+                onClick: () => handleEscalateTicket(params.data),
+              },
             ]}
           />
         </div>
@@ -150,6 +212,7 @@ const AcceptedTickets = ({ title }) => {
               ...acceptedTickets.map((ticket) => ({
                 id: ticket._id,
                 raisedBy: ticket.raisedBy?.firstName || "Unknown",
+                description: ticket.description,
                 raisedToDepartment:
                   ticket.raisedBy.departments.map((dept) => dept.name) || "N/A",
                 ticketTitle: ticket?.ticket || "No Title",
@@ -166,10 +229,13 @@ const AcceptedTickets = ({ title }) => {
         onClose={() => setOpenModal(false)}
         title={"Support Ticket"}
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <form
+          onSubmit={handleSupportTicketSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+        >
           <Controller
             name="reason"
-            control={control}
+            control={supportTicketControl}
             rules={{ required: "Reason is required" }}
             render={({ field }) => (
               <TextField
@@ -177,8 +243,8 @@ const AcceptedTickets = ({ title }) => {
                 label={"Reason"}
                 multiline
                 rows={5}
-                error={!!errors.reason}
-                helperText={errors.reason?.message}
+                error={!!supportTicketsError.reason}
+                helperText={supportTicketsError.reason?.message}
               />
             )}
           />
@@ -189,6 +255,64 @@ const AcceptedTickets = ({ title }) => {
             type={"submit"}
           />
         </form>
+      </MuiModal>
+
+      <MuiModal open={esCalateModal} onClose={() => setEscalateModal(false)}>
+        <div>
+          <form
+            onSubmit={handleEscalateTicketSubmit(onEscalate)}
+            className="grid grid-cols-1 gap-4"
+          >
+            <Controller
+              name="departmentId"
+              control={escalateFormControl}
+              rules={{ required: "Department is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label={"Department"}
+                  size="small"
+                  select
+                  error={!!escalateTicketErrors.departmentId}
+                  helperText={escalateTicketErrors.departmentId?.message}
+                  fullWidth
+                >
+                  {isDepartmentsPending ? (
+                    <CircularProgress color="black" />
+                  ) : (
+                    departments?.map((dept) => (
+                      <MenuItem value={dept.department._id}>
+                        {dept.department.name}
+                      </MenuItem>
+                    ))
+                  )}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="description"
+              control={escalateFormControl}
+              rules={{ required: "Escalation description is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label={"Description"}
+                  fullWidth
+                  size="small"
+                  multiline
+                  rows={4}
+                  error={!!escalateTicketErrors.description}
+                  helperText={escalateTicketErrors.description?.message}
+                />
+              )}
+            />
+            <PrimaryButton
+              title={"Escalate Ticket"}
+              isLoading={isEscalatePending}
+              disabled={isEscalatePending}
+            />
+          </form>
+        </div>
       </MuiModal>
     </div>
   );

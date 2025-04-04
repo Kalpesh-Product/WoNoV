@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import AgTable from "../../components/AgTable";
 import useAuth from "../../hooks/useAuth";
+import { MdEventSeat } from "react-icons/md";
 
 const BookMeetings = () => {
   // ------------------------------Initializations ------------------------------------//
@@ -21,7 +22,7 @@ const BookMeetings = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const [selectedUnitId, setSelectedUnitId] = useState("");
-  const locations = auth.user.company.workLocations
+  const locations = auth.user.company.workLocations;
   // ------------------------------Initializations ------------------------------------//
 
   // ------------------------------Form Control ------------------------------------//
@@ -56,6 +57,8 @@ const BookMeetings = () => {
     },
   });
 
+  console.log("All Meeting Rooms : ", allMeetingRooms)
+  console.log("selected Unit Id : ",selectedUnitId)
 
   // Filter meeting rooms based on selected location
   const filteredMeetingRooms = selectedUnitId
@@ -63,6 +66,7 @@ const BookMeetings = () => {
         (room) => room.location?.building?._id === selectedUnitId
       )
     : [];
+  useEffect(() => console.log(filteredMeetingRooms), [filteredMeetingRooms]);
 
   useEffect(() => {
     setValue("meetingRoom", ""); // Reset meeting room selection
@@ -79,12 +83,11 @@ const BookMeetings = () => {
       }
     },
   });
- 
-  const buildings = locations.map((location)=>({
-    _id:location._id,
-    buildingName: location.buildingName
-  }))
 
+  const buildings = locations.map((location) => ({
+    _id: location._id,
+    buildingName: location.buildingName,
+  }));
 
   const myMeetingsColumn = [
     { field: "id", headerName: "SR NO", sort: "desc" },
@@ -160,7 +163,7 @@ const BookMeetings = () => {
                     }}
                   >
                     <MenuItem value="" disabled>
-                      {" "}  
+                      {" "}
                       Seletc Location
                     </MenuItem>
                     {buildings.map((building) => (
@@ -189,11 +192,17 @@ const BookMeetings = () => {
                 >
                   <MenuItem value="" disabled>
                     {" "}
-                    Seletc Room
+                    Select Room
                   </MenuItem>
                   {filteredMeetingRooms.map((room, index) => (
                     <MenuItem key={room._id} value={room._id}>
-                      {room.name}
+                      <div className="flex w-full justify-between items-center">
+                        <span>{`${room.name}`}</span>
+                        <div className="flex text-small gap-2 items-center py-1 px-2 rounded-full bg-primary bg-opacity-10 text-primary">
+                          <span>{`${room.seats}`}</span>
+                          <MdEventSeat />
+                        </div>
+                      </div>
                     </MenuItem>
                   ))}
                 </TextField>

@@ -219,15 +219,16 @@ const RaiseTicket = () => {
                       onChange={(e) => {
                         field.onChange(e.target.value);
                         handleDepartmentSelect(e.target.value);
-                      }}>
-                      <MenuItem value="">Select Department</MenuItem>
+                      }}
+                    >
+                      <MenuItem value="" disabled>
+                        Select Department
+                      </MenuItem>
                       {departmentLoading ? (
                         <CircularProgress color="black" />
                       ) : (
                         fetchedDepartments?.map((dept) => (
-                          <MenuItem
-                            key={dept.department._id}
-                            value={dept.department._id}>
+                          <MenuItem value={dept.department._id}>
                             {dept.department.name}
                           </MenuItem>
                         ))
@@ -250,7 +251,8 @@ const RaiseTicket = () => {
                       label="Issue"
                       helperText={errors.ticketTitle?.message}
                       error={!!errors.ticketTitle}
-                      disabled={!watchFields.department}>
+                      disabled={!watchFields.department}
+                    >
                       <MenuItem value="">Select Ticket Title</MenuItem>
                       {ticketIssues.length > 0 ? (
                         ticketIssues.map((issue) => (
@@ -342,7 +344,8 @@ const RaiseTicket = () => {
                           <IconButton
                             color="primary"
                             component="label"
-                            htmlFor="image-upload">
+                            htmlFor="image-upload"
+                          >
                             <LuImageUp />
                           </IconButton>
                         ),
@@ -354,13 +357,15 @@ const RaiseTicket = () => {
                       <>
                         <span
                           className="underline text-primary text-content cursor-pointer"
-                          onClick={() => setOpenModal(true)}>
+                          onClick={() => setOpenModal(true)}
+                        >
                           Preview
                         </span>
                         <MuiModal
                           open={openModal}
                           onClose={() => setOpenModal(false)}
-                          title={"Preview File"}>
+                          title={"Preview File"}
+                        >
                           <div>
                             <div className="flex flex-col">
                               <IconButton
@@ -368,7 +373,8 @@ const RaiseTicket = () => {
                                 onClick={() => {
                                   onChange(null);
                                   setPreview(null);
-                                }}>
+                                }}
+                              >
                                 <MdDelete />
                               </IconButton>
                               <div className="p-2 border-default border-borderGray rounded-md">
