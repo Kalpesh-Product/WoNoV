@@ -20,6 +20,10 @@ const budgetSchema = new mongoose.Schema({
   actualAmount: {
     type: Number,
   },
+  unit: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Department",
+  },
   status: {
     type: String,
     enum: ["Pending", "Approved", "Rejected"],

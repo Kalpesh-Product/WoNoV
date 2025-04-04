@@ -91,9 +91,10 @@ const SalesDashboard = () => {
   //-----------------------------------------------API-----------------------------------------------------------//
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
   const totalCoWorkingSeats = unitsData.reduce(
-    (sum, item) => sum + (item.openDesks + item.cabinDesks),
+    (sum, item) => sum + (item.openDesks ? item.openDesks : 0 + item.cabinDesks ?item.cabinDesks : 0),
     0
   );
+  console.log("Total available seats : ",totalCoWorkingSeats)
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
   //-----------------------------------------------Conversion of leads into graph-----------------------------------------------------------//
 
@@ -242,6 +243,8 @@ const SalesDashboard = () => {
     (sum, item) => sum + item.totalDesks,
     0
   );
+
+  console.log("Total occupied desks : ",totalClientsDesks)
 
   const totalDeskPercent = simplifiedClientsPie.map((item) => ({
     label: `${item.companyName} ${(

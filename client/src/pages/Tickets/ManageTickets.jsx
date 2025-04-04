@@ -57,9 +57,9 @@ const ManageTickets = () => {
 
   const widgets = [
     {
-      layout: 1,
+      layout: 2,
       widgets: [
-        <div className=" rounded-md flex  gap-4">
+
           <div className="border-default border-borderGray rounded-md w-full">
             <WidgetSection
               layout={3}
@@ -89,7 +89,7 @@ const ManageTickets = () => {
                 fontFamily={"Poppins-Bold"}
               />
             </WidgetSection>
-          </div>
+          </div>,
           <div className="border-default border-borderGray rounded-md w-full">
             <WidgetSection
               layout={3}
@@ -120,7 +120,7 @@ const ManageTickets = () => {
               />
             </WidgetSection>
           </div>
-        </div>,
+       
       ],
     },
   ];
