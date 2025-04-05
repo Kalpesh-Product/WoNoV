@@ -13,8 +13,10 @@ import PieChartMui from "../../../components/graphs/PieChartMui";
 import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const FinanceDashboard = () => {
+  const navigate = useNavigate();
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [
     {
@@ -96,9 +98,21 @@ const FinanceDashboard = () => {
     cardTitle: "Income",
     timePeriod: "Apr 24 – Mar 25",
     descriptionData: [
-      { title: "March 2025", value: "INR 25,00,000", route: "monthly-profit-loss" },
-      { title: "Annual Average", value: "INR 27,00,000", route : 'annual-average-profit-loss' },
-      { title: "Overall", value: "INR 3,24,00,000", route : "overall-profit-loss" },
+      {
+        title: "March 2025",
+        value: "INR 25,00,000",
+        route: "monthly-profit-loss",
+      },
+      {
+        title: "Annual Average",
+        value: "INR 27,00,000",
+        route: "annual-average-profit-loss",
+      },
+      {
+        title: "Overall",
+        value: "INR 3,24,00,000",
+        route: "overall-profit-loss",
+      },
       { title: "Per Sq. Ft.", value: "810", route: "sqft-wise-data" },
     ],
   };
@@ -153,8 +167,8 @@ const FinanceDashboard = () => {
   ];
 
   const pieMonthlyPayoutOptions = {
-    chart : {
-      fontFamily : "Poppins-Regular"
+    chart: {
+      fontFamily: "Poppins-Regular",
     },
     colors: ["#4CAF50", "#F44336"],
     labels: pieMonthlyPayoutData.map((item) => item.label),
@@ -224,8 +238,8 @@ const FinanceDashboard = () => {
   ];
 
   const pieMonthlyCollectionOptions = {
-    chart : {
-      fontFamily : "Poppins-Regular"
+    chart: {
+      fontFamily: "Poppins-Regular",
     },
     colors: ["#2196F3", "#FF9800"], // Blue for collected, orange for pending
     labels: pieMonthlyCollectionData.map((item) => item.label),
@@ -377,12 +391,24 @@ const FinanceDashboard = () => {
     {
       layout: 6,
       widgets: [
-        <Card icon={<MdFormatListBulleted />} title="Cashflow" />,
+        <Card
+          icon={<MdFormatListBulleted />}
+          title="Cashflow"
+          route={"cashflow"}
+        />,
         <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
         <Card icon={<SiCashapp />} title="Billing" route={"billing"} />,
         <Card icon={<SiGoogleadsense />} title="Mix-Bag" />,
-        <Card icon={<SiGoogleadsense />} title="Data" />,
-        <Card icon={<MdOutlineMiscellaneousServices />} title="Settings" />,
+        <Card
+          icon={<SiGoogleadsense />}
+          title="Data"
+          route={"/app/dashboard/finance-dashboard/data"}
+        />,
+        <Card
+          icon={<MdOutlineMiscellaneousServices />}
+          title="Settings"
+          route={"/app/dashboard/finance-dashboard/settings"}
+        />,
       ],
     },
     {
@@ -484,6 +510,52 @@ const FinanceDashboard = () => {
           {section?.widgets}
         </WidgetSection>
       ))}
+
+      {/* <div
+        onClick={() => {
+          navigate(`monthly-pnl`);
+        }}>
+        Monthly P&L
+      </div>
+      <div
+        onClick={() => {
+          navigate(`annual-average-pnl`);
+        }}>
+        Annual Average P&L
+      </div>
+      <div
+        onClick={() => {
+          navigate(`overall-pnl`);
+        }}>
+        Overall P&L
+      </div>
+      <div
+        onClick={() => {
+          navigate(`monthly-per-sq-ft-pnl`);
+        }}>
+        Monthly Per Sq. Ft. P&L
+      </div>
+      <hr />
+      <div
+        onClick={() => {
+          navigate(`cashflow`);
+        }}>
+        Cashflow
+      </div>
+      <hr />
+      <div
+        onClick={() => {
+          navigate(`/app/dashboard/finance-dashboard/data`);
+        }}>
+        Data
+      </div>
+      <hr />
+      <div
+        onClick={() => {
+          navigate(`/app/dashboard/finance-dashboard/settings`);
+        }}>
+        Settings
+      </div> */}
     </div>
   );
 };
