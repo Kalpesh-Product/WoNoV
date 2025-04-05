@@ -171,7 +171,6 @@ const MeetingFormLayout = () => {
       const response = await axios.get("/api/visitors/fetch-visitors");
       return response.data;
     },
-     enabled: meetingType === "External"
   });
 
   const onSubmit = (data) => {
@@ -343,7 +342,7 @@ const MeetingFormLayout = () => {
                      multiple
                      options={externalUsers} // The user list
                      getOptionLabel={(user) =>
-                       `${user.fullName}`
+                       `${user.firstName}`
                      } // Display names
                      onChange={(_, newValue) =>  field.onChange(newValue.map(user => user._id))
                      } // Sync selected users with form state
@@ -351,7 +350,7 @@ const MeetingFormLayout = () => {
                        selected.map((user, index) => (
                          <Chip
                            key={user._id}
-                           label={`${user.fullName}`}
+                           label={`${user.firstName}`}
                            {...getTagProps({ index })}
                            deleteIcon={<IoMdClose />}
                          />
