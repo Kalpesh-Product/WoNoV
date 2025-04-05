@@ -282,6 +282,22 @@ import PaymentSchedule from "../pages/Dashboard/FinanceDashboard/Finance/Payment
 import Collections from "../pages/Dashboard/FinanceDashboard/Finance/Collections";
 import StatutoryPayments from "../pages/Dashboard/FinanceDashboard/Finance/StatutoryPayments";
 import LandlordPayments from "../pages/Dashboard/FinanceDashboard/Finance/LandlordPayments";
+import MonthlyPnl from "../pages/Dashboard/FinanceDashboard/P&L/MonthlyPnl";
+import AnnualAveragePnl from "../pages/Dashboard/FinanceDashboard/P&L/AnnualAveragePnl";
+import OverallPnl from "../pages/Dashboard/FinanceDashboard/P&L/OverallPnl";
+import MonthlyPerSqFtPnl from "../pages/Dashboard/FinanceDashboard/P&L/MonthlyPerSqFtPnl";
+import Cashflow from "../pages/Dashboard/FinanceDashboard/Cashflow/Cashflow";
+import Projections from "../pages/Dashboard/FinanceDashboard/Cashflow/Projections";
+import HistoricalPnl from "../pages/Dashboard/FinanceDashboard/Cashflow/HistoricalPnl";
+import FinanceData from "../pages/Dashboard/FinanceDashboard/FinanceData/FinanceData";
+import FinanceVendorDatabase from "../pages/Dashboard/FinanceDashboard/FinanceData/FinanceVendorDatabase";
+import FinanceAssetList from "../pages/Dashboard/FinanceDashboard/FinanceData/FinanceAssetList";
+import FinanceMonthlyInvoices from "../pages/Dashboard/FinanceDashboard/FinanceData/FinanceMonthlyInvoices";
+import FinanceMonthlyVouchers from "../pages/Dashboard/FinanceDashboard/FinanceData/FinanceMonthlyVouchers";
+import FinanceSettings from "../pages/Dashboard/FinanceDashboard/FinanceSettings/FinanceSettings";
+import FinanceBulkUpload from "../pages/Dashboard/FinanceDashboard/FinanceSettings/FinanceBulkUpload";
+import FinanceSops from "../pages/Dashboard/FinanceDashboard/FinanceSettings/FinanceSops";
+import FinancePolicies from "../pages/Dashboard/FinanceDashboard/FinanceSettings/FinancePolicies";
 
 export const routes = createBrowserRouter([
   {
@@ -387,6 +403,76 @@ export const routes = createBrowserRouter([
                       {
                         path: "",
                         element: <FinanceDashboard />,
+                      },
+                      {
+                        path: "monthly-pnl",
+                        element: <MonthlyPnl />,
+                      },
+                      {
+                        path: "annual-average-pnl",
+                        element: <AnnualAveragePnl />,
+                      },
+                      {
+                        path: "overall-pnl",
+                        element: <OverallPnl />,
+                      },
+                      {
+                        path: "monthly-per-sq-ft-pnl",
+                        element: <MonthlyPerSqFtPnl />,
+                      },
+                      {
+                        path: "cashflow",
+                        element: <Cashflow />,
+                        children: [
+                          {
+                            path: "projections",
+                            element: <Projections />,
+                          },
+                          {
+                            path: "historical-pnl",
+                            element: <HistoricalPnl />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "data",
+                        element: <FinanceData />,
+                        children: [
+                          {
+                            path: "finance-vendor-database",
+                            element: <FinanceVendorDatabase />,
+                          },
+                          {
+                            path: "finance-asset-list",
+                            element: <FinanceAssetList />,
+                          },
+                          {
+                            path: "finance-monthly-invoices",
+                            element: <FinanceMonthlyInvoices />,
+                          },
+                          {
+                            path: "finance-monthly-vouchers",
+                            element: <FinanceMonthlyVouchers />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "settings",
+                        element: <FinanceSettings />,
+                        children: [
+                          {
+                            path: "bulk-upload",
+                            element: <FinanceBulkUpload />,
+                          },
+                          {
+                            path: "sops",
+                            element: <FinanceSops />,
+                          },
+                          {
+                            path: "policies",
+                            element: <FinancePolicies />,
+                          },
+                        ],
                       },
                       {
                         path: "monthly-profit-loss",

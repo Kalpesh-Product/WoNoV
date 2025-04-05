@@ -13,8 +13,10 @@ import PieChartMui from "../../../components/graphs/PieChartMui";
 import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const FinanceDashboard = () => {
+  const navigate = useNavigate();
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [
     {
@@ -389,12 +391,24 @@ const FinanceDashboard = () => {
     {
       layout: 6,
       widgets: [
-        <Card icon={<MdFormatListBulleted />} title="Cashflow" />,
+        <Card
+          icon={<MdFormatListBulleted />}
+          title="Cashflow"
+          route={"cashflow"}
+        />,
         <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
         <Card icon={<SiCashapp />} title="Billing" route={"billing"} />,
         <Card icon={<SiGoogleadsense />} title="Mix-Bag" />,
-        <Card icon={<SiGoogleadsense />} title="Data" />,
-        <Card icon={<MdOutlineMiscellaneousServices />} title="Settings" />,
+        <Card
+          icon={<SiGoogleadsense />}
+          title="Data"
+          route={"/app/dashboard/finance-dashboard/data"}
+        />,
+        <Card
+          icon={<MdOutlineMiscellaneousServices />}
+          title="Settings"
+          route={"/app/dashboard/finance-dashboard/settings"}
+        />,
       ],
     },
     {
@@ -497,7 +511,7 @@ const FinanceDashboard = () => {
         </WidgetSection>
       ))}
 
-      <div
+      {/* <div
         onClick={() => {
           navigate(`monthly-pnl`);
         }}>
@@ -541,7 +555,7 @@ const FinanceDashboard = () => {
           navigate(`/app/dashboard/finance-dashboard/settings`);
         }}>
         Settings
-      </div>
+      </div> */}
     </div>
   );
 };
