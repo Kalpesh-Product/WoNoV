@@ -226,7 +226,7 @@ const UniqueLeads = () => {
                 <AccordionDetails sx={{borderTop:'0.5px solid gray'}}>
                   <AgTable
                     data={domain.clients}
-
+                    exportData
                     columns={[
                       { field: "client", headerName: "Client Name", flex: 1 },
                       {
@@ -273,6 +273,7 @@ const UniqueLeads = () => {
                   <AccordionDetails  sx={{borderTop:'0.5px solid gray'}}>
                     <AgTable
                       data={data.clients}
+                      exportData
                       columns={[
                         { field: "client", headerName: "Client Name", flex: 1 },
                         {

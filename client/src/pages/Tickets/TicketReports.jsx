@@ -79,35 +79,34 @@ const TicketReports = () => {
       ),
     },
   ];
-  useEffect(()=>{console.log("Selected Meetings : ", selectedMeeting)},[selectedMeeting])
-
+  useEffect(()=>{console.log("Selected Meeting : ", selectedMeeting)},[selectedMeeting])
   return (
     <div className="flex flex-col gap-8 p-4">
       <div>
         {!isLoading ? (
           <AgTable
             search={true}
-            buttonTitle={"Export"}
             tableTitle={"Ticket Reports"}
             data={[
               ...ticketsData
                 .filter((item) => item.raisedBy?._id === auth.user?._id)
                 .map((item, index) => ({
                   id: index + 1,
-                  ticket: item.ticket,
-                  raisedToDepartment: item.raisedToDepartment?.name,
+                  ticket: item.ticket || "",
+                  raisedToDepartment: item.raisedToDepartment?.name || "",
                   raisedBy: `${item.raisedBy?.firstName || ""} ${
                     item.raisedBy?.lastName || ""
                   }`.trim(),
-                  description: item.description,
-                  status: item.status,
-                  assignees: item.assignees,
-                  // company: item.company,
-                  createdAt: humanDate(item.createdAt),
-                  updatedAt: humanDate(item.updatedAt),
-                  // acceptedBy: item.acceptedBy,
+                  description: item.description || "",
+                  status: item.status || "",
+                  assignees: item.assignees || "",
+                  company: item.company?.companyName,
+                  createdAt: humanDate(item.createdAt) || "",
+                  updatedAt: humanDate(item.updatedAt) || "",
+                  acceptedBy: `${item.acceptedBy?.firstName || ""} ${item.acceptedBy?.lastName || ""}`,
                 })),
             ]}
+            exportData
             columns={kraColumn}
           />
         ) : (
@@ -121,42 +120,49 @@ const TicketReports = () => {
         onClose={() => setDetailsModal(false)}
         title={"Ticket Detials"}
       >
+        {(!isLoading && selectedMeeting) ? (
+
         <div className="w-full grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
-          <DetalisFormatted title={"Ticket"} detail={selectedMeeting.ticket || ""} />
+          <DetalisFormatted title={"Ticket"} detail={selectedMeeting?.ticket || ""} />
           <DetalisFormatted
             title={"Raised To Department"}
-            detail={selectedMeeting.raisedToDepartment || ""}
+            detail={selectedMeeting?.raisedToDepartment || ""}
+          />
+          <DetalisFormatted
+            title={"Company"}
+            detail={selectedMeeting?.company || ""}
           />
           <DetalisFormatted
             title={"Raised By"}
-            detail={`${selectedMeeting.raisedBy}`}
+            detail={`${selectedMeeting?.raisedBy}`}
           />
           <DetalisFormatted
             title={"Description"}
-            detail={selectedMeeting.description || ""}
+            detail={selectedMeeting?.description || ""}
           />
-          <DetalisFormatted title={"Status"} detail={selectedMeeting.status || ""} />
+          <DetalisFormatted title={"Status"} detail={selectedMeeting?.status || ""} />
           <DetalisFormatted
             title={"Assignees"}
             detail={
-              Array.isArray(selectedMeeting.assignees)
+              Array.isArray(selectedMeeting?.assignees.length > 0 ? selectedMeeting?.assignees  : "None")
                 ? selectedMeeting.assignees.join(", ")
-                : ""
+                : "None"
             }
           />
           <DetalisFormatted
             title={"Created At"}
-            detail={humanDate(selectedMeeting.createdAt)}
+            detail={humanDate(selectedMeeting?.createdAt)}
           />
           <DetalisFormatted
             title={"Updated At"}
-            detail={humanDate(selectedMeeting.updatedAt)}
+            detail={humanDate(selectedMeeting?.updatedAt)}
           />
           <DetalisFormatted
             title={"Accepted By"}
-            detail={selectedMeeting.acceptedBy || ""}
+            detail={selectedMeeting?.acceptedBy || ""}
           />
         </div>
+        ) : <CircularProgress />}
       </MuiModal>
     </div>
   );

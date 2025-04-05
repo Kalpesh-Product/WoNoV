@@ -178,6 +178,7 @@ const ViewClients = () => {
               occupiedImage: item.occupiedImage?.imageUrl,
             })),
           ]}
+          exportData
           columns={viewEmployeeColumns}
         />
       </div>

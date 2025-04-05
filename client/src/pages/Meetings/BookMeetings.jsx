@@ -57,9 +57,6 @@ const BookMeetings = () => {
     },
   });
 
-  console.log("All Meeting Rooms : ", allMeetingRooms)
-  console.log("selected Unit Id : ",selectedUnitId)
-
   // Filter meeting rooms based on selected location
   const filteredMeetingRooms = selectedUnitId
     ? allMeetingRooms.filter(
