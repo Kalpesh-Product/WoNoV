@@ -554,12 +554,12 @@ const MeetingDashboard = () => {
         <DataCard title={"Total"} data={totalDurationInHours} description={"Hours Booked"} />,
         <DataCard
           title={"Total"}
-          data={"75"}
+          data={meetingsData.length || 0}
           description={"Unique Bookings"}
         />,
         <DataCard
           title={"Total"}
-          data={"55"}
+          data={meetingsData.filter((item)=>item.meetingType === "Internal").length || 0}
           description={"BIZ Nest Bookings"}
         />,
       ],

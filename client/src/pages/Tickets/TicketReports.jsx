@@ -1,222 +1,165 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AgTable from "../../components/AgTable";
-import { Button, TextField, MenuItem } from "@mui/material";
-import MuiAside from "../../components/MuiAside";
-import PrimaryButton from "../../components/PrimaryButton";
-import { IoFilterCircleOutline } from "react-icons/io5";
-import { Chip } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import useAuth from "../../hooks/useAuth";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import humanDate from "../../utils/humanDateForamt";
+import { Chip, CircularProgress } from "@mui/material";
+import MuiModal from "../../components/MuiModal";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../components/DetalisFormatted";
 
-const Reports = () => {
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    RaisedBy: "",
-    SelectedDepartment: "All",
-    TicketTitle: "",
-    Priority: "All",
+const TicketReports = () => {
+  const { auth } = useAuth();
+  const axios = useAxiosPrivate();
+  const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [detailsModal, setDetailsModal] = useState(false);
+
+  const handleSelectedMeeting = (meeting) => {
+    setSelectedMeeting(meeting);
+    setDetailsModal(true);
+  };
+  const { data: ticketsData = [], isLoading } = useQuery({
+    queryKey: ["tickets-data"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/tickets/department-tickets/${auth.user?.departments?.map(
+            (dept) => dept._id
+          )}`
+        );
+
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching tickets:", error);
+        throw new Error("Failed to fetch tickets");
+      }
+    },
   });
-  const [filteredRows, setFilteredRows] = useState(null); // Null to differentiate between initial state and no data
-
-  const departments = ["All", "IT", "Admin", "Tech"];
-  const priorities = ["All", "High", "Medium", "Low"];
-
-  const rows = [
+  const kraColumn = [
+    { field: "id", headerName: "ID", flex: 1 },
+    { field: "ticket", headerName: "Ticket", flex: 1 },
+    { field: "createdAt", headerName: "Date", flex: 1 },
+    { field: "raisedToDepartment", headerName: "Raised To", flex: 1 },
+    { field: "raisedBy", headerName: "Raised By", flex: 1 },
     {
-      RaisedBy: "Abrar Shaikh",
-      SelectedDepartment: "IT",
-      TicketTitle: "Wifi is not working",
-      Priority: "High",
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => {
+        const statusColorMap = {
+          "In Progress": { backgroundColor: "#FFECC5", color: "#CC8400" },
+          Closed: { backgroundColor: "#90EE90", color: "#02730a" },
+        };
+
+        const { backgroundColor, color } = statusColorMap[params.value] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+        return <Chip label={params.value} style={{ backgroundColor, color }} />;
+      },
     },
     {
-      RaisedBy: "Abrar Shaikh",
-      SelectedDepartment: "Admin",
-      TicketTitle: "Ac is not working",
-      Priority: "Medium",
-    },
-    {
-      RaisedBy: "Abrar Shaikh",
-      SelectedDepartment: "Admin",
-      TicketTitle: "Need more chairs in Baga Room",
-      Priority: "Medium",
-    },
-    {
-      RaisedBy: "Abrar Shaikh",
-      SelectedDepartment: "Admin",
-      TicketTitle: "Need water bottles on the bottle",
-      Priority: "High",
-    },
-    {
-      RaisedBy: "Abrar Shaikh",
-      SelectedDepartment: "Tech",
-      TicketTitle: "Website is taking time to load",
-      Priority: "High",
-    },
-  ];
-
-  const handleFilterChange = (field, value) => {
-    setFilters((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const applyFilters = () => {
-    const filtered = rows.filter((row) => {
-      return (
-        (!filters.RaisedBy ||
-          row.RaisedBy.toLowerCase().includes(
-            filters.RaisedBy.toLowerCase()
-          )) &&
-        (filters.SelectedDepartment === "All" ||
-          row.SelectedDepartment === filters.SelectedDepartment) &&
-        (!filters.TicketTitle ||
-          row.TicketTitle.toLowerCase().includes(
-            filters.TicketTitle.toLowerCase()
-          )) &&
-        (filters.Priority === "All" || row.Priority === filters.Priority)
-      );
-    });
-
-    setFilteredRows(filtered.length > 0 ? filtered : []); // Set to [] if no matches
-    setFilterOpen(false);
-  };
-
-  const PriorityCellRenderer = (params) => {
-    const { value } = params;
-
-    // Determine the color based on priority
-    let color = "";
-    let fontcolor = ""
-    switch (value) {
-      case "High":
-        color = "#ffbac2"
-        fontcolor = "#8B0000";
-        break;
-      case "Medium":
-        color = "#FFECC5"
-        fontcolor="#ffa500";
-        break;
-      case "Low":
-        color = "green";
-        break;
-      default:
-        color = "black"; // Fallback color
-    }
-
-    return (
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <Chip
-          label={value}
-          style={{
-             backgroundColor:color,
-             color:fontcolor,
-            
-          }}
-        />
-      </div>
-    );
-  };
-
-  const laptopColumns = [
-    { field: "RaisedBy", headerName: "Raised By", flex: 1 },
-    { field: "SelectedDepartment", headerName: "Selected Department", flex: 1 },
-    { field: "TicketTitle", headerName: "Ticket Title", flex: 1 },
-    {
-      field: "Priority",
-      headerName: "Priority",
-      flex: 1,
-      cellRenderer: PriorityCellRenderer,
+      field: "actions",
+      headerName: "Actions",
+      cellRenderer: (params) => (
+        <>
+          <div className="flex gap-2 items-center">
+            <div
+              onClick={() => {
+                handleSelectedMeeting(params.data);
+              }}
+              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+            >
+              <span className="text-subtitle">
+                <MdOutlineRemoveRedEye />
+              </span>
+            </div>
+          </div>
+        </>
+      ),
     },
   ];
-
-  const displayedRows = filteredRows !== null ? filteredRows : rows;
+  useEffect(()=>{console.log("Selected Meetings : ", selectedMeeting)},[selectedMeeting])
 
   return (
-    <div>
-      <div className="w-full rounded-md bg-white p-4 ">
-        <div className="flex justify-end items-center pb-4">
-          <Button sx={{ fontSize: "2rem" }} onClick={() => setFilterOpen(true)}>
-            <IoFilterCircleOutline />
-          </Button>
-        </div>
-        <div className="w-full">
-          {displayedRows.length > 0 ? (
-            <AgTable
-              data={displayedRows}
-              columns={laptopColumns}
-              paginationPageSize={10}
-            />
-          ) : (
-            <div className="text-center text-gray-500">No data available</div>
-          )}
-        </div>
+    <div className="flex flex-col gap-8 p-4">
+      <div>
+        {!isLoading ? (
+          <AgTable
+            search={true}
+            buttonTitle={"Export"}
+            tableTitle={"Ticket Reports"}
+            data={[
+              ...ticketsData
+                .filter((item) => item.raisedBy?._id === auth.user?._id)
+                .map((item, index) => ({
+                  id: index + 1,
+                  ticket: item.ticket,
+                  raisedToDepartment: item.raisedToDepartment?.name,
+                  raisedBy: `${item.raisedBy?.firstName || ""} ${
+                    item.raisedBy?.lastName || ""
+                  }`.trim(),
+                  description: item.description,
+                  status: item.status,
+                  assignees: item.assignees,
+                  // company: item.company,
+                  createdAt: humanDate(item.createdAt),
+                  updatedAt: humanDate(item.updatedAt),
+                  // acceptedBy: item.acceptedBy,
+                })),
+            ]}
+            columns={kraColumn}
+          />
+        ) : (
+          <div className="flex justify-center items-center">
+            <CircularProgress />
+          </div>
+        )}
       </div>
-
-      {/* Sidebar for Filtering */}
-      <MuiAside
-        title={"Filter Options"}
-        open={filterOpen}
-        onClose={() => setFilterOpen(false)}
+      <MuiModal
+        open={detailsModal}
+        onClose={() => setDetailsModal(false)}
+        title={"Ticket Detials"}
       >
-        <TextField
-          label="Raised By"
-          size="small"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          value={filters.RaisedBy}
-          onChange={(e) => handleFilterChange("RaisedBy", e.target.value)}
-        />
-        <TextField
-          label="Selected Department"
-          size="small"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          select
-          value={filters.SelectedDepartment}
-          onChange={(e) =>
-            handleFilterChange("SelectedDepartment", e.target.value)
-          }
-        >
-          {departments.map((department) => (
-            <MenuItem key={department} value={department}>
-              {department}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          label="Ticket Title"
-          size="small"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          value={filters.TicketTitle}
-          onChange={(e) => handleFilterChange("TicketTitle", e.target.value)}
-        />
-        <TextField
-          label="Priority"
-          size="small"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          select
-          value={filters.Priority}
-          onChange={(e) => handleFilterChange("Priority", e.target.value)}
-        >
-          {priorities.map((priority) => (
-            <MenuItem key={priority} value={priority}>
-              {priority}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <div className="flex justify-center w-full pt-2">
-          <PrimaryButton
-            title={"Apply Filter"}
-            externalStyles={"w-full"}
-            handleSubmit={applyFilters}
+        <div className="w-full grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+          <DetalisFormatted title={"Ticket"} detail={selectedMeeting.ticket || ""} />
+          <DetalisFormatted
+            title={"Raised To Department"}
+            detail={selectedMeeting.raisedToDepartment || ""}
+          />
+          <DetalisFormatted
+            title={"Raised By"}
+            detail={`${selectedMeeting.raisedBy}`}
+          />
+          <DetalisFormatted
+            title={"Description"}
+            detail={selectedMeeting.description || ""}
+          />
+          <DetalisFormatted title={"Status"} detail={selectedMeeting.status || ""} />
+          <DetalisFormatted
+            title={"Assignees"}
+            detail={
+              Array.isArray(selectedMeeting.assignees)
+                ? selectedMeeting.assignees.join(", ")
+                : ""
+            }
+          />
+          <DetalisFormatted
+            title={"Created At"}
+            detail={humanDate(selectedMeeting.createdAt)}
+          />
+          <DetalisFormatted
+            title={"Updated At"}
+            detail={humanDate(selectedMeeting.updatedAt)}
+          />
+          <DetalisFormatted
+            title={"Accepted By"}
+            detail={selectedMeeting.acceptedBy || ""}
           />
         </div>
-      </MuiAside>
+      </MuiModal>
     </div>
   );
 };
 
-export default Reports;
+export default TicketReports;
