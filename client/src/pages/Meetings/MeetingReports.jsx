@@ -149,7 +149,7 @@ const MeetingReports = () => {
           <AgTable
             search={true}
             exportData
-            tableTitle={"Meetings Report"}
+            tableTitle={"Meetings Reports"}
             data={[
               ...myMeetings.map((item, index) => ({
                 id: index + 1,
