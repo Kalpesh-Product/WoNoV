@@ -230,29 +230,29 @@ const getTickets = async (req, res, next) => {
 
     let matchingTickets;
 
-      matchingTickets = await Tickets.find({
-        $or: [
-          { raisedToDepartment: { $in: userDepartments } },
-          { escalatedTo: { $in: userDepartments } },
-        ],
-        acceptedBy: { $exists: false },
-        company: loggedInUser.company,
-        status: "Open",
-      })
-        .populate([
-          {
-            path: "raisedBy",
-            select: "firstName lastName departments",
-            populate: {
-              path: "departments",
-              select: "name",
-              model: "Department",
-            },
+    matchingTickets = await Tickets.find({
+      $or: [
+        { raisedToDepartment: { $in: userDepartments } },
+        { escalatedTo: { $in: userDepartments } },
+      ],
+      acceptedBy: { $exists: false },
+      company: loggedInUser.company,
+      status: "Open",
+    })
+      .populate([
+        {
+          path: "raisedBy",
+          select: "firstName lastName departments",
+          populate: {
+            path: "departments",
+            select: "name",
+            model: "Department",
           },
-          { path: "raisedToDepartment", select: "name" },
-        ])
-        .lean()
-        .exec();
+        },
+        { path: "raisedToDepartment", select: "name" },
+      ])
+      .lean()
+      .exec();
 
     if (!matchingTickets.length) {
       return res.status(200).json(matchingTickets);
@@ -570,6 +570,8 @@ const ticketData = async (req, res, next) => {
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
+        { path: "acceptedBy", select: "firstName lastName email" },
+        { path: "company", select: "companyName" },
       ])
       .lean()
       .exec();
