@@ -12,10 +12,17 @@ const vendorSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
     },
+    category: {
+      type: String,
+    },
     status: {
       type: String,
       enum: ["Pending", "Approved", "Rejected"],
       default: "Pending",
+    },
+    companyName: {
+      type: String,
+      required: true,
     },
     state: { type: String },
     country: { type: String },
