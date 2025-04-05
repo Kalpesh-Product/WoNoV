@@ -383,7 +383,7 @@ const getMeetings = async (req, res, next) => {
       })
       .populate("bookedBy", "firstName lastName")
       .populate("internalParticipants", "firstName lastName email")
-      .populate("externalParticipants", "fullName email");
+      .populate("externalParticipants", "firstName lastName email");
 
     const departments = await User.findById({ _id: user }).select(
       "departments"
@@ -465,7 +465,7 @@ const getMyMeetings = async (req, res, next) => {
       })
       .populate("bookedBy", "firstName lastName email")
       .populate("internalParticipants", "firstName lastName email _id")
-      .populate("externalParticipants", "fullName email");
+      .populate("externalParticipants", "firstName lastName email");
 
     const departments = await User.findById({ _id: user }).select(
       "departments"
