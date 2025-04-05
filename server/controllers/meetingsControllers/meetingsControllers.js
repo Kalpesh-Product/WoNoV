@@ -12,6 +12,7 @@ const Department = require("../../models/Departments");
 const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const Visitor = require("../../models/visitor/Visitor");
+const Review = require("../../models/meetings/Reviews");
 
 const addMeetings = async (req, res, next) => {
   const logPath = "meetings/MeetingLog";
@@ -393,6 +394,14 @@ const getMeetings = async (req, res, next) => {
       _id: departments.departments[0],
     });
 
+    const reviews = await Review.find().select(
+      "-createdAt -updatedAt -__v -company"
+    );
+
+    if (!reviews) {
+      return res.status(400).json({ message: "No reviews found" });
+    }
+
     const internalParticipants = meetings.map((meeting) =>
       meeting.internalParticipants.map((participant) => participant)
     );
@@ -408,6 +417,10 @@ const getMeetings = async (req, res, next) => {
           ...meeting.externalParticipants,
         ];
       }
+
+      const meetingReviews = reviews.find(
+        (review) => review.meeting.toString() === meeting._id.toString()
+      );
 
       return {
         _id: meeting._id,
@@ -433,6 +446,7 @@ const getMeetings = async (req, res, next) => {
             : internalParticipants[index].length > 0
             ? internalParticipants[index]
             : meeting.externalParticipants,
+        reviews: meetingReviews ? meetingReviews : [],
         company: meeting.company,
       };
     });
@@ -475,6 +489,14 @@ const getMyMeetings = async (req, res, next) => {
       _id: departments.departments[0],
     });
 
+    const reviews = await Review.find().select(
+      "-createdAt -updatedAt -__v -company"
+    );
+
+    if (!reviews) {
+      return res.status(400).json({ message: "No reviews found" });
+    }
+
     const internalParticipants = meetings.map((meeting) =>
       meeting.internalParticipants.map((participant) => participant)
     );
@@ -490,6 +512,10 @@ const getMyMeetings = async (req, res, next) => {
           ...meeting.externalParticipants,
         ];
       }
+
+      const meetingReviews = reviews.find(
+        (review) => review.meeting.toString() === meeting._id.toString()
+      );
 
       return {
         _id: meeting._id,
@@ -515,6 +541,7 @@ const getMyMeetings = async (req, res, next) => {
             : internalParticipants[index].length > 0
             ? internalParticipants[index]
             : meeting.externalParticipants,
+        reviews: meetingReviews ? meetingReviews : [],
         company: meeting.company,
       };
     });
