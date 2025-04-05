@@ -31,12 +31,12 @@ const MuiModal = ({ open, onClose, title, children, headerBackground }) => {
                 color: headerBackground ? "white" : "black",
               }}
             >
-              <div className="text-title w-full text-center text-primary">
+              <div className="text-subtitle w-full text-center text-primary">
                 {title}
               </div>
               <IconButton sx={{ p: 0 }} onClick={onClose}>
                 <IoMdClose
-                  className="text-white"
+                  className="text-white text-subtitle"
                   style={{ color: headerBackground ? "white" : "black" }}
                 />
               </IconButton>

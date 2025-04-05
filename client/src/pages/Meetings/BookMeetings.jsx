@@ -10,11 +10,13 @@ import PrimaryButton from "../../components/PrimaryButton";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import AgTable from "../../components/AgTable";
 import useAuth from "../../hooks/useAuth";
 import { MdEventSeat } from "react-icons/md";
+import MuiModal from "../../components/MuiModal";
+import { queryClient } from "../../main";
 
 const BookMeetings = () => {
   // ------------------------------Initializations ------------------------------------//
@@ -22,6 +24,8 @@ const BookMeetings = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const [selectedUnitId, setSelectedUnitId] = useState("");
+  const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
   const locations = auth.user.company.workLocations;
   // ------------------------------Initializations ------------------------------------//
 
@@ -39,6 +43,15 @@ const BookMeetings = () => {
     },
   });
 
+  const {
+    handleSubmit: reviewForm,
+    control: reviewControl,
+    formState: { errors: reviewErrors },
+  } = useForm({
+    defaultValues: {
+      review: "",
+    },
+  });
   const watchFields = watch();
   const selectedUnit = useWatch({ control, name: "location" });
   // ------------------------------Form Control ------------------------------------//
@@ -57,16 +70,12 @@ const BookMeetings = () => {
     },
   });
 
-  console.log("All Meeting Rooms : ", allMeetingRooms)
-  console.log("selected Unit Id : ",selectedUnitId)
-
   // Filter meeting rooms based on selected location
   const filteredMeetingRooms = selectedUnitId
     ? allMeetingRooms.filter(
         (room) => room.location?.building?._id === selectedUnitId
       )
     : [];
-  useEffect(() => console.log(filteredMeetingRooms), [filteredMeetingRooms]);
 
   useEffect(() => {
     setValue("meetingRoom", ""); // Reset meeting room selection
@@ -84,6 +93,40 @@ const BookMeetings = () => {
     },
   });
 
+  const { mutate: addReview, isPending: isAddReviewPending } = useMutation({
+    mutationKey: ["addReview"],
+    mutationFn: async (review) => {
+      const response = await axios.post("/api/meetings/create-review", review);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["myMeetings"] });
+      toast.success(data.message || "REVIEW added");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to add review");
+    },
+  });
+
+  const submitReview = (data) => {
+    addReview({
+      meetingId: selectedMeeting.meetingId,
+      review: data.review,
+      rate: 5,
+      reviewerEmail: auth.user?.email,
+      reviewerName: `${auth.user?.firstName} ${auth.user?.lastName}`,
+    });
+    setOpenModal(false);
+  };
+
+  const handleAddReview = (data) => {
+    setSelectedMeeting(data);
+    setOpenModal(true);
+  };
+  useEffect(() => {
+    console.log(selectedMeeting);
+  }, [selectedMeeting]);
+
   const buildings = locations.map((location) => ({
     _id: location._id,
     buildingName: location.buildingName,
@@ -91,12 +134,37 @@ const BookMeetings = () => {
 
   const myMeetingsColumn = [
     { field: "id", headerName: "SR NO", sort: "desc" },
-    { field: "agenda", headerName: "Agenda" },
+    { field: "agenda", headerName: "Agenda", flex: 1 },
     { field: "date", headerName: "Date" },
     { field: "roomName", headerName: "Room Name" },
     {
       field: "location",
       headerName: "Location",
+    },
+    {
+      field: "actions",
+      headerName: "Action",
+      cellRenderer: (params) => {
+        const rawReview = params.data?.reviews;
+
+        // Normalize: treat review as an array even if it's an object
+        const meetingReviews = Array.isArray(rawReview)
+          ? rawReview
+          : rawReview
+          ? [rawReview]
+          : [];
+
+        return meetingReviews.length > 0 ? (
+          "Review added"
+        ) : (
+          <div className="p-2">
+            <PrimaryButton
+              title={"Add review"}
+              handleSubmit={() => handleAddReview(params.data)}
+            />
+          </div>
+        );
+      },
     },
   ];
   // ------------------------------ API Integrations ------------------------------------//
@@ -223,9 +291,11 @@ const BookMeetings = () => {
               data={[
                 ...myMeetings.map((meeting, index) => ({
                   id: index + 1,
+                  meetingId: meeting._id,
                   agenda: meeting.agenda,
                   date: meeting.date,
                   roomName: meeting.roomName,
+                  reviews: meeting.reviews,
                   location: meeting.location
                     ? `${meeting.location?.unitName} - ${meeting.location.unitNo}`
                     : "N/A",
@@ -244,6 +314,39 @@ const BookMeetings = () => {
           />
         )}
       </div>
+      <MuiModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        title={"Add review"}
+      >
+        <form
+          onSubmit={reviewForm(submitReview)}
+          className="flex flex-col gap-4"
+        >
+          <Controller
+            name="review"
+            control={reviewControl}
+            rules={{ required: "Review is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Review"
+                fullWidth
+                multiline
+                rows={4}
+                error={!!reviewErrors.review}
+                helperText={reviewErrors.review?.message}
+              />
+            )}
+          />
+          <PrimaryButton
+            title={"Submit"}
+            type={"submit"}
+            isLoading={isAddReviewPending}
+            disabled={isAddReviewPending}
+          />
+        </form>
+      </MuiModal>
     </div>
   );
 };

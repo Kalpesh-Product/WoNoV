@@ -12,6 +12,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const AddVisitor = () => {
   const {
@@ -39,6 +40,7 @@ const AddVisitor = () => {
   });
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const axios = useAxiosPrivate();
+  const navigate = useNavigate();
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ["employees"],
     queryFn: async () => {
@@ -63,20 +65,33 @@ const AddVisitor = () => {
     item.departments?.some((dept) => dept._id === selectedDepartment)
   );
   //---------------------------------------Data processing----------------------------------------------------//
-  const {mutate : addVisitor , isPending : isMutateVisitor} = useMutation({
+  const { mutate: addVisitor, isPending: isMutateVisitor } = useMutation({
     mutationKey: ["addVisitor"],
     mutationFn: async (data) => {
       const response = await axios.post("/api/visitors/add-visitor", data);
-      return response.data
+      return response.data;
     },
-    onSuccess:(data)=>{
-      toast.success(data.message || "Visitor Added Successfully");
-      reset()
+    onSuccess: (data) => {
+      toast.custom((t) => (
+        <div className="p-4 bg-successGreen rounded shadow text-green-800 flex flex-col gap-4">
+          <span className="text-content font-pmedium">
+            {data.message || "Visitor Added Successfully"}
+          </span>
+          <PrimaryButton
+            title={"Book a Meeting"}
+            handleSubmit={() => {
+              toast.dismiss(t);
+              navigate("/app/meetings/book-meeting");
+            }}
+          />
+        </div>
+      ));
+      reset();
     },
-    onError:(data)=>{
+    onError: (data) => {
       toast.error(data.message || "Error Adding Visitor");
-    }
-  })
+    },
+  });
   const onSubmit = (data) => {
     addVisitor(data);
   };
@@ -429,7 +444,12 @@ const AddVisitor = () => {
 
         {/* Submit Button */}
         <div className="flex items-center justify-center gap-4">
-          <PrimaryButton type="submit" title={"Submit"} isLoading={isMutateVisitor} disabled={isMutateVisitor} />
+          <PrimaryButton
+            type="submit"
+            title={"Submit"}
+            isLoading={isMutateVisitor}
+            disabled={isMutateVisitor}
+          />
           <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
         </div>
       </form>

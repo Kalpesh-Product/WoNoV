@@ -83,7 +83,7 @@ const Reviews = () => {
       cellRenderer: (params) => {
         return (
           <div>
-            ⭐ {params.value} <small>Out of 5</small>
+            ⭐ {params.value.toFixed(2)} <small>Out of 5</small>
           </div>
         );
       },
@@ -153,7 +153,10 @@ const Reviews = () => {
   ];
 
   const averageRatings =
-    reviews.reduce((acc, curr) => acc + curr.rate, 0) / reviews.length;
+  reviews.length > 0
+    ? (reviews.reduce((acc, curr) => acc + curr.rate, 0) / reviews.length).toFixed(2)
+    : "0.00";
+
 
   // const averageRatings = rating
 

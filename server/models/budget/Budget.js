@@ -24,6 +24,9 @@ const budgetSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Department",
   },
+  category: {
+    type: String,
+  },
   status: {
     type: String,
     enum: ["Pending", "Approved", "Rejected"],

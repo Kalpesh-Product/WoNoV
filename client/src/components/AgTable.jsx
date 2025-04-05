@@ -21,6 +21,7 @@ const AgTableComponent = React.memo(
     columns,
     dropdownColumns = [],
     paginationPageSize,
+    exportData,
     hideFilter,
     rowSelection,
     search,
@@ -40,6 +41,8 @@ const AgTableComponent = React.memo(
     const [isTableInView, setTableInView] = useState(true); // ✅ Track table visibility
 
     const tableRef = useRef(null); // ✅ Reference to track table visibility
+    const gridRef = useRef(null);
+
     const tableRefCurrent = tableRef.current;
 
     useEffect(() => {
@@ -175,22 +178,24 @@ const AgTableComponent = React.memo(
           {hideFilter ? (
             ""
           ) : (
-            <div className="flex justify-end items-center w-full">
-              <PrimaryButton
-                title={<MdFilterAlt />}
-                handleSubmit={() => setFilterDrawerOpen(true)}
-                externalStyles={"rounded-r-none"}
-              />
-              <SecondaryButton
-                title={<MdFilterAltOff />}
-                externalStyles={"rounded-l-none"}
-                handleSubmit={() => {
-                  setFilters({});
-                  setAppliedFilters({});
-                  setSearchQuery("");
-                  setFilteredData(data);
-                }}
-              />
+            <div className="flex items-center gap-4">
+              <div className="flex justify-end items-center w-full">
+                <PrimaryButton
+                  title={<MdFilterAlt />}
+                  handleSubmit={() => setFilterDrawerOpen(true)}
+                  externalStyles={"rounded-r-none"}
+                />
+                <SecondaryButton
+                  title={<MdFilterAltOff />}
+                  externalStyles={"rounded-l-none"}
+                  handleSubmit={() => {
+                    setFilters({});
+                    setAppliedFilters({});
+                    setSearchQuery("");
+                    setFilteredData(data);
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>
@@ -209,11 +214,27 @@ const AgTableComponent = React.memo(
           <span className="font-pmedium text-title text-primary">
             {tableTitle}
           </span>
-          {buttonTitle ? (
-            <PrimaryButton title={buttonTitle} handleSubmit={handleClick} />
-          ) : (
-            ""
-          )}
+          <div className="flex items-center gap-4">
+            {exportData ? (
+              <PrimaryButton
+                title={"Export"}
+                handleSubmit={() => {
+                  if (gridRef.current) {
+                    gridRef.current.api.exportDataAsCsv({
+                      fileName: `${tableTitle || "table-data"}.csv`,
+                    });
+                  }
+                }}
+              />
+            ) : (
+              ""
+            )}
+            {buttonTitle ? (
+              <PrimaryButton title={buttonTitle} handleSubmit={handleClick} />
+            ) : (
+              ""
+            )}
+          </div>
         </div>
 
         <MuiAside
@@ -268,6 +289,7 @@ const AgTableComponent = React.memo(
           style={{ height: tableHeight || 500 }}
         >
           <AgGridReact
+            ref={gridRef}
             rowData={filteredData}
             columnDefs={modifiedColumns} // ✅ Use modified columns with checkboxes
             defaultColDef={defaultColDef}

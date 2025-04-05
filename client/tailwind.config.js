@@ -14,6 +14,7 @@ module.exports = {
         primary: '#1E3D73',
         wonoGreen : "#80bf01",
         borderGray: '#d1d5db',
+        successGreen : "#BAE4C9"
       },
       fontSize: {
         title: '1.5rem', // Equivalent to text-2xl

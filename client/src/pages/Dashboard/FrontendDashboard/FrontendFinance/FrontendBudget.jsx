@@ -382,8 +382,7 @@ const FrontendBudget = () => {
                 expandIcon={<IoIosArrowDown />}
                 aria-controls={`panel\u20B9{index}-content`}
                 id={`panel\u20B9{index}-header`}
-                className="border-b-[1px] border-borderGray"
-              >
+                className="border-b-[1px] border-borderGray">
                 <div className="flex justify-between items-center w-full px-4">
                   <span className="text-subtitle font-pmedium">
                     {data.month}
