@@ -5,9 +5,9 @@ const adminSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "AdminEvent",
   },
-  executiveSchedule: {
+  weeklyUnit: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "ExecutiveSchedule",
+    ref: "WeeklyUnit",
   },
   action: {
     type: String,

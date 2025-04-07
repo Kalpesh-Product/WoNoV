@@ -25,7 +25,7 @@ const taskSchema = new mongoose.Schema({
   ],
   description: {
     type: String,
-    required: true,
+    // required: true,
   },
   assignedDate: {
     type: Date,
@@ -42,7 +42,7 @@ const taskSchema = new mongoose.Schema({
   status: {
     type: String,
     required: true,
-    enum: ["Completed", "Pending"],
+    enum: ["InProgress", "Completed", "Pending"],
   },
   priority: {
     type: String,
@@ -53,6 +53,20 @@ const taskSchema = new mongoose.Schema({
     type: String,
     enum: ["Daily", "Monthly", "Additional"],
     required: true,
+  },
+  //workCategory, location are maintenance related fileds
+  workCategory: {
+    type: String,
+    enum: ["Internal", "External"],
+    required: true,
+  },
+  location: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Unit",
+  },
+  department: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Department",
   },
   taskTag: {
     type: String,

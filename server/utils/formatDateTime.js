@@ -48,17 +48,11 @@ const formatDuration = (startTime, endTime) => {
     end: new Date(endTime),
   });
 
-  const { hours, minutes } = duration;
+  const { hours = 0, minutes = 0 } = duration;
+  const totalMinutes = hours * 60 + minutes;
 
-  if (hours > 0 && minutes > 0) {
-    return `${hours}h ${minutes}m`;
-  } else if (hours > 0) {
-    return `${hours}h`;
-  } else if (minutes > 0) {
-    return `${minutes}m`;
-  } else {
-    return "0m";
-  }
+  return `${totalMinutes}m`;
 };
+
 
 module.exports = { formatDate, formatWithOrdinal, formatTime, formatDuration };

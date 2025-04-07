@@ -8,7 +8,7 @@ const WeeklyUnitSchema = new mongoose.Schema(
       required: true,
     },
     month: {
-      type: String, 
+      type: String,
       required: true,
     },
     startDate: {
@@ -24,37 +24,34 @@ const WeeklyUnitSchema = new mongoose.Schema(
       ref: "Unit",
       required: true,
     },
-    weeklyAssignments: [
+    employee: {
+      empID: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserData",
+        required: true,
+      },
+      isActive: {
+        type: Boolean,
+        default: true,
+      },
+    },
+    substitutions: [
       {
-        week: { type: Number, required: true },
-        employee: {
+        substitute: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "UserData",
-          required: true,
         },
-        substitutions: [
-          {
-            substitute: {
-              type: mongoose.Schema.Types.ObjectId,
-              ref: "UserData",
-              required: true,
-            },
-            fromDate: {
-              type: Date,
-              required: true,
-            },
-            toDate: {
-              type: Date,
-              required: true,
-            },
-          },
-        ],
+        fromDate: {
+          type: Date,
+        },
+        toDate: {
+          type: Date,
+        },
+        isActive: {
+          type: Boolean,
+        },
       },
     ],
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
   },
   { timestamps: true }
 );
