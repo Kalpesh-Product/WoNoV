@@ -225,13 +225,13 @@ const createUser = async (req, res, next) => {
 };
 
 const fetchUser = async (req, res, next) => {
-  const { deptId } = req.params;
+  const { deptId } = req.query;
   const company = req.company;
 
   try {
     if (deptId) {
       const users = await User.find({
-        department: { $elemMatch: { $eq: deptId } },
+        departments: deptId,
         company,
       })
         .select("-password")
@@ -252,20 +252,14 @@ const fetchUser = async (req, res, next) => {
         { path: "departments", select: "name" },
         { path: "company", select: "name" },
         { path: "role", select: "roleTitle modulePermissions" },
-        // {
-        //   path: "workLocation",
-        //   select: "_id unitName unitNo",
-        //   populate: {
-        //     path: "building",
-        //     select: "_id buildingName fullAddress",
-        //   },
-        // },
       ])
       .lean()
       .exec();
+
     if (!users) {
       return res.status(404).json({ message: "User not found" });
     }
+
     res.status(200).json(users);
   } catch (error) {
     next(error);

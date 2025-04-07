@@ -7,6 +7,13 @@ const WeeklyUnitSchema = new mongoose.Schema(
       ref: "Company",
       required: true,
     },
+<<<<<<< HEAD:server/models/admin/WeeklyUnit.js
+=======
+    month: {
+      type: String, 
+      required: true,
+    },
+>>>>>>> c5c2804c44d3981384d9a34c1e19becde4c2c755:server/models/administration/WeeklyUnit.js
     startDate: {
       type: Date,
       required: true,
