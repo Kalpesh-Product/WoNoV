@@ -9,7 +9,7 @@ const adminEventSchema = new mongoose.Schema(
     type: {
       type: String,
       enum: ["event", "birthday", "anniversary"],
-      required: true,
+      default:"event"
     },
     description: {
       type: String,
