@@ -21,6 +21,7 @@
     "@fullcalendar/timegrid": "^6.1.15",
     "@mui/icons-material": "^6.3.1",
     "@mui/material": "^7.0.1",
+    "@mui/styled-engine-sc": "^7.0.1",
     "@mui/x-charts": "^7.24.0",
     "@mui/x-data-grid": "^7.23.5",
     "@mui/x-date-pickers": "^7.28.2",
@@ -50,7 +51,8 @@
     "react-router-dom": "^7.1.1",
     "redux-persist": "^6.0.0",
     "redux-persist-transform-encrypt": "^5.1.1",
-    "sonner": "^2.0.1"
+    "sonner": "^2.0.1",
+    "styled-components": "^6.1.17"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
