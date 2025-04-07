@@ -225,7 +225,7 @@ const createUser = async (req, res, next) => {
 };
 
 const fetchUser = async (req, res, next) => {
-  const { deptId } = req.params;
+  const { deptId } = req.query;
   const company = req.company;
 
   try {
