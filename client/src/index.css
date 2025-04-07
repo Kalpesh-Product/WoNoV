@@ -65,11 +65,22 @@
     font-size: 1.5rem !important;
   }
 
+
+
 }
 /* Hide scrollbar for the specified container */
 .hideScrollbar {
   scrollbar-width: none; /* Hide scrollbar for Firefox */
   -ms-overflow-style: none; /* Hide scrollbar for Internet Explorer and Edge */
+}
+.rdrCalendarWrapper{
+  width: 100% !important;
+}
+.rdrDateRangeWrapper{
+  width: 100% !important;
+}
+.rdrMonth{
+  width: 100% !important;
 }
 
 .hideScrollBar::-webkit-scrollbar {
