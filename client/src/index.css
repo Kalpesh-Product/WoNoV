@@ -65,12 +65,41 @@
     font-size: 1.5rem !important;
   }
 
+
+
 }
 /* Hide scrollbar for the specified container */
 .hideScrollbar {
   scrollbar-width: none; /* Hide scrollbar for Firefox */
   -ms-overflow-style: none; /* Hide scrollbar for Internet Explorer and Edge */
 }
+
+/* Date Range selector */
+.rdrCalendarWrapper{
+  width: 100% !important;
+}
+.rdrDateRangeWrapper{
+  width: 100% !important;
+}
+.rdrMonth{
+  width: 100% !important;
+}
+.rdrStartEdge {
+  color: #1E3D73 !important;
+}
+.rdrEndEdge {
+  color: #1E3D73 !important;
+}
+.rdrInRange{
+  color: #d1d5db !important;
+}
+.rdrDay:not(.rdrDayPassive) .rdrInRange ~ .rdrDayNumber span, .rdrDay:not(.rdrDayPassive), .rdrDay:not(.rdrDayPassive) , .rdrDay:not(.rdrDayPassive) .rdrSelected ~ .rdrDayNumber span {
+  color: black !important;
+}
+.rdrDateDisplayItemActive{
+  border-color: #1E3D73 !important;
+}
+/* Date Range selector */
 
 .hideScrollBar::-webkit-scrollbar {
   display: none !important /* Hide scrollbar for WebKit browsers (Chrome, Safari, etc.) */
