@@ -34,9 +34,11 @@ const AdminTeamMembersSchedule = () => {
     handleSubmit,
     control,
     setValue,
+    reset,
     formState: { errors },
   } = useForm({
     defaultValues: {
+      memberId: "",
       unitId: "",
       startDate: new Date(),
       endDate: new Date(),
@@ -57,18 +59,22 @@ const AdminTeamMembersSchedule = () => {
     },
   });
 
-    const { data: employees, isLoading } = useQuery({
-      queryKey: ["employees"],
-      queryFn: async () => {
-        try {
-          const adminDepId = "6798bae6e469e809084e24a4"
-          const response = await axios.get(`/api/users/fetch-users/${adminDepId}`);
-          return response.data;
-        } catch (error) {
-          throw new Error(error.response.data.message);
-        }
-      },
-    });
+  const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
+    queryKey: ["employees"],
+    queryFn: async () => {
+      try {
+        const adminDepId = "6798bae6e469e809084e24a4";
+        const response = await axios.get(`/api/users/fetch-users`,{params:{
+          deptId : adminDepId
+        }});
+        return response.data;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
+
+  console.log("API filtered :", employees);
   //----------------------------------------API---------------------------------------//
 
   // Hardcoded data
@@ -129,16 +135,13 @@ const AdminTeamMembersSchedule = () => {
   const handleFormSubmit = (data) => {
     console.log("Form data to send:", data); // includes startDate and endDate
     toast.success("Data submitted successfully!");
+    reset()
     setIsModalOpen(false);
   };
 
   const handleDateSelect = (ranges) => {
     const { startDate, endDate } = ranges.selection;
-    console.log("Start:", startDate);
-    console.log("End:", endDate);
-
     setSelectionRange(ranges.selection);
-
     // Update form state
     setValue("startDate", startDate);
     setValue("endDate", endDate);
@@ -156,11 +159,46 @@ const AdminTeamMembersSchedule = () => {
         columns={assetColumns}
         handleClick={handleAddAsset}
       />
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={"Assign Member"}
+      >
         {modalMode === "add" && (
           <div>
-            <form onSubmit={handleSubmit(handleFormSubmit)}>
+            <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col gap-4">
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Controller
+                    name="memberId"
+                    rules={{ required: "Select a Member" }}
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Select Member"
+                        fullWidth
+                        size="small"
+                        select
+                        error={!!errors.memberId}
+                        helperText={errors.memberId?.message}
+                      >
+                        <MenuItem value="" disabled>
+                          Select a Member
+                        </MenuItem>
+                        {!isEmployeesLoading ? (
+                          employees.map((item) => (
+                            <MenuItem key={item._id} value={item._id}>
+                              {item.firstName} {item.lastName}
+                            </MenuItem>
+                          ))
+                        ) : (
+                          <CircularProgress />
+                        )}
+                      </TextField>
+                    )}
+                  />
+                </div>
                 <div className="col-span-2 w-full">
                   <DateRange
                     ranges={[selectionRange]}
@@ -200,8 +238,8 @@ const AdminTeamMembersSchedule = () => {
                   />
                 </div>
               </div>
-              <div className="flex gap-4 justify-center items-center mt-4">
-                <PrimaryButton title="Submit" />
+              <div className=" w-full">
+                <PrimaryButton title="Submit" externalStyles={"w-full"}/>
               </div>
             </form>
           </div>
