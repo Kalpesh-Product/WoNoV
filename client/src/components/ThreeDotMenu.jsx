@@ -38,7 +38,7 @@ const ThreeDotMenu = ({ rowId, menuItems, isLoading }) => {
                   onClick();
                 }
               }}
-              className={`bg-white text-primary p-4 py-2 border-b-[1px] border-borderGray cursor-pointer text-content hover:bg-gray-200 ${
+              className={`${label === "Cancel" ? "bg-red-100 text-red-600" : "bg-white text-primary"}  p-4 py-2 border-b-[1px] border-borderGray cursor-pointer text-content hover:bg-gray-200 ${
                 disabled ? "text-gray-400 cursor-not-allowed" : ""
               }`}
             >

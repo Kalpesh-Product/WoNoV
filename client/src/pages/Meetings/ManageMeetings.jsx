@@ -13,6 +13,7 @@ import {
   IconButton,
   AvatarGroup,
   Avatar,
+  CircularProgress,
 } from "@mui/material";
 import AgTable from "../../components/AgTable";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
@@ -23,6 +24,7 @@ import { useSelector } from "react-redux";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import { Controller, useForm } from "react-hook-form";
 
 const ManageMeetings = () => {
   const axios = useAxiosPrivate();
@@ -60,15 +62,30 @@ const ManageMeetings = () => {
   ];
   // const meetings = useSelector((state) => state.meetings?.data);
 
-  // Fetch meetings
-  const { data: meetings = [], isLoading } = useQuery({
+  //-----------------------------Form--------------------------------//
+  const {
+    handleSubmit: cancelMeetingSubmit,
+    control: cancelMeetingControl,
+    reset: resetCancelMeeting,
+    formState: { errors: cancelMeetingErrors },
+  } = useForm({
+    defaultValues: {
+      reason: "",
+    },
+  });
+  //-----------------------------Form--------------------------------//
+
+  //------------------------------API--------------------------------//
+  const { data: meetings = [], isLoading: isMeetingsLoading } = useQuery({
     queryKey: ["meetings"],
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings");
       return response.data;
     },
   });
-
+  const filteredMeetings = meetings.filter(
+    (item) => item.meetingStatus === "Upcoming"
+  );
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
     mutationFn: async (data) => {
@@ -84,6 +101,22 @@ const ManageMeetings = () => {
     },
   });
 
+  const { mutate: cancelMeeting, isPending: isCancelPending } = useMutation({
+    mutationFn: async (data) => {
+      console.log(data);
+      const respone = await axios.patch(
+        `/api/meetings/cancel-meeting/${selectedMeetingId}`,data
+      );
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      return respone.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+    },
+    onError: (error) => {},
+  });
+  //------------------------------API--------------------------------//
+
   // Initialize checklists when meetings are loaded
   useEffect(() => {
     if (meetings.length > 0) {
@@ -98,21 +131,29 @@ const ManageMeetings = () => {
     }
   }, [meetings]);
 
+  //---------------------------------Event handlers----------------------------------------//
+
   const handleOpenChecklistModal = (mode, meetingId) => {
     setModalMode(mode);
     setSelectedMeetingId(meetingId);
-    setChecklistModalOpen(true);
+    setDetailsModal(true);
   };
+
+  useEffect(
+    () => console.log("Selected meeting : ", selectedMeetingId),
+    [selectedMeetingId]
+  );
 
   const handleCloseChecklistModal = () => {
     setChecklistModalOpen(false);
     setSelectedMeetingId(null);
   };
-  const handleSelectedMeeting = (data) => {
+  const handleSelectedMeeting = (mode, data) => {
+    setModalMode(mode);
     setSelectedMeeting(data);
+    setSelectedMeetingId(data._id);
     setDetailsModal(true);
   };
-  useEffect(() => console.log(selectedMeeting), [selectedMeeting]);
 
   const handleAddChecklistItem = () => {
     if (!newItem.trim() || !selectedMeetingId) return;
@@ -196,6 +237,7 @@ const ManageMeetings = () => {
 
     housekeepingMutation.mutate(payload);
   };
+  //---------------------------------Event handlers----------------------------------------//
 
   const columns = [
     { field: "roomName", headerName: "Room Name" },
@@ -264,7 +306,7 @@ const ManageMeetings = () => {
         <div className="flex gap-2 items-center">
           <div
             onClick={() => {
-              handleSelectedMeeting(params.data);
+              handleSelectedMeeting("viewDetails", params.data);
             }}
             className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
           >
@@ -285,6 +327,11 @@ const ManageMeetings = () => {
                 onClick: () =>
                   handleOpenChecklistModal("view", params.data._id),
               },
+              {
+                label: "Cancel",
+                onClick: () =>
+                  handleSelectedMeeting("cancel", params.data),
+              },
             ]}
           />
         </div>
@@ -295,13 +342,17 @@ const ManageMeetings = () => {
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      <AgTable
-        key={meetings.length}
-        search
-        tableTitle={"Manage Meetings"}
-        data={meetings || []}
-        columns={columns}
-      />
+      {!isMeetingsLoading ? (
+        <AgTable
+          key={filteredMeetings.length}
+          search
+          tableTitle={"Manage Meetings"}
+          data={filteredMeetings || []}
+          columns={columns}
+        />
+      ) : (
+        <CircularProgress />
+      )}
 
       {/* Checklist Modal */}
       <MuiModal
@@ -418,38 +469,84 @@ const ManageMeetings = () => {
         open={detailsModal}
         onClose={() => setDetailsModal(false)}
       >
-        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4 w-full">
-          <DetalisFormatted
-            title={"Room Name"}
-            detail={selectedMeeting?.roomName}
-          />
-          <DetalisFormatted title={"Date"} detail={selectedMeeting?.date} />
-          <DetalisFormatted
-            title={"Start Time"}
-            detail={selectedMeeting?.startTime}
-          />
-          <DetalisFormatted
-            title={"End Time"}
-            detail={selectedMeeting?.endTime}
-          />
-          <div className="col-span-1 ">
+        {modalMode === "viewDetails" && (
+          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4 w-full">
             <DetalisFormatted
-              title={"Participants"}
-              detail={selectedMeeting?.participants.map((item) => (
-                <span>{`${item.firstName || "Unknown"} ${item.lastName || "Unknown"}`}</span>
-              ))}
+              title={"Room Name"}
+              detail={selectedMeeting?.roomName}
+            />
+            <DetalisFormatted title={"Date"} detail={selectedMeeting?.date} />
+            <DetalisFormatted
+              title={"Start Time"}
+              detail={selectedMeeting?.startTime}
+            />
+            <DetalisFormatted
+              title={"End Time"}
+              detail={selectedMeeting?.endTime}
+            />
+            <div className="col-span-1 ">
+              <DetalisFormatted
+                title={"Participants"}
+                detail={selectedMeeting?.participants.map((item) => (
+                  <span>{`${item.firstName || "Unknown"} ${
+                    item.lastName || "Unknown"
+                  }`}</span>
+                ))}
+              />
+            </div>
+            <div></div>
+            <DetalisFormatted
+              title={"House Keeping Status"}
+              detail={selectedMeeting?.housekeepingStatus}
+            />
+            <DetalisFormatted
+              title={"Department"}
+              detail={selectedMeeting?.department}
             />
           </div>
-          <div></div>
-          <DetalisFormatted
-            title={"House Keeping Status"}
-            detail={selectedMeeting?.housekeepingStatus}
-          />
-          <DetalisFormatted
-            title={"Department"}
-            detail={selectedMeeting?.department}
-          />
-        </div>
+        )}
+        {modalMode === "cancel" && (
+          <div>
+            <form
+              className="flex flex-col gap-4"
+              onSubmit={cancelMeetingSubmit((data) => {
+                cancelMeeting({
+                  meetingId: selectedMeeting?.meetingId,
+                  reason : data.reason
+                });
+                resetCancelMeeting();
+                setDetailsModal(false)
+              })}
+            >
+              <Controller
+                name="reason"
+                control={cancelMeetingControl}
+                rules={{ required: "Reason for cancellation is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label={"Reason"}
+                    fullWidth
+                    size="small"
+                    multiline
+                    rows={4}
+                    error={!!cancelMeetingErrors.reason}
+                    helperText={cancelMeetingErrors.reason?.message}
+                  />
+                )}
+              />
+              <div className="flex w-full">
+                <PrimaryButton
+                  title={"Cancel Meeting"}
+                  type={"submit"}
+                  disabled={isCancelPending}
+                  isLoading={isCancelPending}
+                  externalStyles={"w-full"}
+                />
+              </div>
+            </form>
+          </div>
+        )}
       </MuiModal>
     </div>
   );

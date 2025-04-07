@@ -129,7 +129,7 @@ const AdminTeamMembersCalendar = () => {
   };
 
   return (
-    <div className="flex flex-col bg-white">
+    <div className="flex flex-col bg-white p-4">
       <div className="flex gap-4">
         {/* Filters Section */}
         <div className="flex flex-col gap-4 w-[25%]">

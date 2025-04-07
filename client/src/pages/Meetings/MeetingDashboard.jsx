@@ -24,6 +24,7 @@ const MeetingDashboard = () => {
       return response.data;
     },
   });
+  console.log("Main Meetings Data : ",meetingsData)
   // Function to calculate total duration in hours
   const calculateTotalDurationInHours = (meetings) => {
     return meetings.reduce((total, meeting) => {
@@ -562,11 +563,6 @@ const MeetingDashboard = () => {
           data={meetingsData.filter((item)=>item.meetingType === "Internal").length || 0}
           description={"BIZ Nest Bookings"}
         />,
-      ],
-    },
-    {
-      layout: 3,
-      widgets: [
         <DataCard title={"Total"} data={"20"} description={"Hours Booked"} />,
         <DataCard
           title={"Average"}
@@ -580,6 +576,7 @@ const MeetingDashboard = () => {
         />,
       ],
     },
+
     {
       layout: 2,
       widgets: [

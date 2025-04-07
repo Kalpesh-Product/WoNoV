@@ -51,7 +51,6 @@ const AdminTeamMembersSchedule = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/company/fetch-units");
-        console.log(response.data);
         return response.data;
       } catch (error) {
         console.error("Error fetching clients data:", error);
@@ -64,17 +63,17 @@ const AdminTeamMembersSchedule = () => {
     queryFn: async () => {
       try {
         const adminDepId = "6798bae6e469e809084e24a4";
-        const response = await axios.get(`/api/users/fetch-users`,{params:{
-          deptId : adminDepId
-        }});
+        const response = await axios.get(`/api/users/fetch-users`, {
+          params: {
+            deptId: adminDepId,
+          },
+        });
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
       }
     },
   });
-
-  console.log("API filtered :", employees);
   //----------------------------------------API---------------------------------------//
 
   // Hardcoded data
@@ -105,25 +104,27 @@ const AdminTeamMembersSchedule = () => {
     },
   ];
   const assetColumns = [
-    { field: "id", headerName: "Sr. No." },
-    { field: "name", headerName: "Name", flex: 1 },
+    { field: "id", headerName: "Sr. No.",width:100 },
+    { field: "name", headerName: "Name",flex:1 },
     { field: "manager", headerName: "Manager" },
     { field: "unit", headerName: "Unit" },
     {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <PrimaryButton
-          title="View Calendar"
-          handleSubmit={() =>
-            navigate(
-              `/app/dashboard/admin-dashboard/team-members-schedule/${params.data.id}`,
-              {
-                state: { asset: params.data },
-              }
-            )
-          }
-        />
+        <div className="py-2">
+          <PrimaryButton
+            title="View Calendar"
+            handleSubmit={() =>
+              navigate(
+                `/app/dashboard/admin-dashboard/team-members-schedule/${params.data.id}`,
+                {
+                  state: { asset: params.data },
+                }
+              )
+            }
+          />
+        </div>
       ),
     },
   ];
@@ -133,9 +134,8 @@ const AdminTeamMembersSchedule = () => {
     setIsModalOpen(true);
   };
   const handleFormSubmit = (data) => {
-    console.log("Form data to send:", data); // includes startDate and endDate
     toast.success("Data submitted successfully!");
-    reset()
+    reset();
     setIsModalOpen(false);
   };
 
@@ -166,7 +166,10 @@ const AdminTeamMembersSchedule = () => {
       >
         {modalMode === "add" && (
           <div>
-            <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col gap-4">
+            <form
+              onSubmit={handleSubmit(handleFormSubmit)}
+              className="flex flex-col gap-4"
+            >
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <Controller
@@ -239,7 +242,7 @@ const AdminTeamMembersSchedule = () => {
                 </div>
               </div>
               <div className=" w-full">
-                <PrimaryButton title="Submit" externalStyles={"w-full"}/>
+                <PrimaryButton title="Submit" externalStyles={"w-full"} />
               </div>
             </form>
           </div>
