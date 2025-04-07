@@ -17,6 +17,7 @@ import useAuth from "../../hooks/useAuth";
 import { MdEventSeat } from "react-icons/md";
 import MuiModal from "../../components/MuiModal";
 import { queryClient } from "../../main";
+import CustomRating from "../../components/CustomRating";
 
 const BookMeetings = () => {
   // ------------------------------Initializations ------------------------------------//
@@ -50,6 +51,7 @@ const BookMeetings = () => {
   } = useForm({
     defaultValues: {
       review: "",
+      rating: 0,
     },
   });
   const watchFields = watch();
@@ -112,7 +114,7 @@ const BookMeetings = () => {
     addReview({
       meetingId: selectedMeeting.meetingId,
       review: data.review,
-      rate: 5,
+      rate: data.rating,
       reviewerEmail: auth.user?.email,
       reviewerName: `${auth.user?.firstName} ${auth.user?.lastName}`,
     });
@@ -323,6 +325,20 @@ const BookMeetings = () => {
           onSubmit={reviewForm(submitReview)}
           className="flex flex-col gap-4"
         >
+          <div className="flex gap-4 items-center">
+            <span className="text-content">How was your meeting room experience ?</span>
+            <Controller
+              name="rating"
+              control={reviewControl}
+              rules={{ required: "Rating is required" }}
+              render={({ field }) => <CustomRating {...field} />}
+            />
+            {reviewErrors.rating && (
+              <span className="text-small text-red-600">
+                {reviewErrors.rating.message}
+              </span>
+            )}
+          </div>
           <Controller
             name="review"
             control={reviewControl}

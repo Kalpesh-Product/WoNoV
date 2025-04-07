@@ -7,6 +7,8 @@ import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { LocalizationProvider, StaticDatePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 const AdminTeamMembersSchedule = () => {
   const navigate = useNavigate();
   const { auth } = useAuth();
@@ -53,7 +55,7 @@ const AdminTeamMembersSchedule = () => {
   ];
   const assetColumns = [
     { field: "id", headerName: "Sr. No." },
-    { field: "name", headerName: "Name" },
+    { field: "name", headerName: "Name", flex: 1 },
     { field: "manager", headerName: "Manager" },
     { field: "unit", headerName: "Unit" },
     {
@@ -64,7 +66,7 @@ const AdminTeamMembersSchedule = () => {
           title="View Calendar"
           handleSubmit={() =>
             navigate(
-              `/app/dashboard/admin-dashboard/team-members-calendar/${params.data.id}`,
+              `/app/dashboard/admin-dashboard/team-members-schedule/${params.data.id}`,
               {
                 state: { asset: params.data },
               }
@@ -85,13 +87,13 @@ const AdminTeamMembersSchedule = () => {
     setIsModalOpen(false);
   };
   return (
-    <>
+    <div className="p-4">
       <AgTable
         key={teamMembers.length}
         search={true}
         searchColumn={"Name"}
         tableTitle={"Team Members Schedule"}
-        buttonTitle={"Add Asset"}
+        buttonTitle={"Assign Member"}
         data={teamMembers}
         columns={assetColumns}
         handleClick={handleAddAsset}
@@ -100,49 +102,12 @@ const AdminTeamMembersSchedule = () => {
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
-              <div className="grid grid-cols-2 gap-4">
-                <Controller
-                  name="name"
-                  control={control}
-                  rules={{ required: "Name is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      size="small"
-                      {...field}
-                      label="Name"
-                      error={!!errors.name}
-                      helperText={errors.name?.message}
-                    />
-                  )}
-                />
-                <Controller
-                  name="manager"
-                  control={control}
-                  rules={{ required: "Manager is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      size="small"
-                      {...field}
-                      label="Manager"
-                      error={!!errors.manager}
-                      helperText={errors.manager?.message}
-                    />
-                  )}
-                />
-                <Controller
-                  name="unit"
-                  control={control}
-                  rules={{ required: "Unit is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      size="small"
-                      {...field}
-                      label="Unit"
-                      error={!!errors.unit}
-                      helperText={errors.unit?.message}
-                    />
-                  )}
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <StaticDatePicker />
+                  </LocalizationProvider>
+                  </div>
               </div>
               <div className="flex gap-4 justify-center items-center mt-4">
                 <PrimaryButton title="Submit" />
@@ -151,7 +116,7 @@ const AdminTeamMembersSchedule = () => {
           </div>
         )}
       </MuiModal>
-    </>
+    </div>
   );
 };
 export default AdminTeamMembersSchedule;

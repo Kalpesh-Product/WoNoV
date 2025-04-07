@@ -583,7 +583,7 @@ export const routes = createBrowserRouter([
                         element: <AdminTeamMembersSchedule />,
                       },
                       {
-                        path: "team-members-calendar/:id",
+                        path: "team-members-schedule/:id",
                         element: <AdminTeamMembersCalendar />,
                       },
                       {
