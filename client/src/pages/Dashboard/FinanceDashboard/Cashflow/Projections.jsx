@@ -155,7 +155,7 @@ const Projections = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4">
       {techWidgets.map((section, index) => (
         <WidgetSection key={index} layout={section?.layout} padding>
           {section?.widgets}

@@ -1,11 +1,9 @@
-import React from "react";
-import AreaGraph from "../../components/graphs/AreaGraph";
+import { lazy, Suspense } from "react";
 import { RiArchiveDrawerLine, RiPagesLine } from "react-icons/ri";
 import { MdFormatListBulleted } from "react-icons/md";
 import { CgProfile } from "react-icons/cg";
 import Card from "../../components/Card";
-import DonutChart from "../../components/graphs/DonutChart";
-import WidgetSection from "../../components/WidgetSection";
+
 import DataCard from "../../components/DataCard";
 import MuiTable from "../../components/Tables/MuiTable";
 import BarGraph from "../../components/graphs/BarGraph";
@@ -13,6 +11,7 @@ import PieChartMui from "../../components/graphs/PieChartMui";
 import HeatMap from "../../components/graphs/HeatMap";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+const WidgetSection = lazy(()=>import("../../components/WidgetSection"))
 
 const MeetingDashboard = () => {
   const axios = useAxiosPrivate();
@@ -24,7 +23,7 @@ const MeetingDashboard = () => {
       return response.data;
     },
   });
-  console.log("Main Meetings Data : ",meetingsData)
+  console.log("Main Meetings Data : ", meetingsData);
   // Function to calculate total duration in hours
   const calculateTotalDurationInHours = (meetings) => {
     return meetings.reduce((total, meeting) => {
@@ -552,7 +551,11 @@ const MeetingDashboard = () => {
     {
       layout: 3,
       widgets: [
-        <DataCard title={"Total"} data={totalDurationInHours} description={"Hours Booked"} />,
+        <DataCard
+          title={"Total"}
+          data={totalDurationInHours}
+          description={"Hours Booked"}
+        />,
         <DataCard
           title={"Total"}
           data={meetingsData.length || 0}
@@ -560,18 +563,43 @@ const MeetingDashboard = () => {
         />,
         <DataCard
           title={"Total"}
-          data={meetingsData.filter((item)=>item.meetingType === "Internal").length || 0}
+          data={
+            meetingsData.filter((item) => item.meetingType === "Internal")
+              .length || 0
+          }
           description={"BIZ Nest Bookings"}
         />,
-        <DataCard title={"Total"} data={"20"} description={"Hours Booked"} />,
+        <DataCard
+          title={"Total"}
+          data={
+            meetingsData
+              .filter((item) => item.meetingType === "External")
+              .length
+          }
+          description={"Guest Bookings"}
+        />,
         <DataCard
           title={"Average"}
-          data={"1.2Hrs"}
+          data={parseFloat(
+            (
+              meetingsData.reduce(
+                (sum, item) => sum + parseInt(item.duration.replace("m", "")),
+                0
+              ) /
+              60 /
+              meetingsData.length
+            ).toFixed(2)
+          )}
           description={"Hours Booked"}
         />,
         <DataCard
           title={"Total"}
-          data={"135"}
+          data={(meetingsData
+            .filter((item) => item.meetingStatus === "Cancelled")
+            .reduce(
+              (sum, item) => sum + parseInt(item.duration.replace("m", "")),
+              0
+            ))/60}
           description={"Hours Cancelled"}
         />,
       ],
