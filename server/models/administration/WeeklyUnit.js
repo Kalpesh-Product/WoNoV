@@ -8,7 +8,7 @@ const WeeklyUnitSchema = new mongoose.Schema(
       required: true,
     },
     month: {
-      type: String, // e.g., "April 2025"
+      type: String, 
       required: true,
     },
     startDate: {
