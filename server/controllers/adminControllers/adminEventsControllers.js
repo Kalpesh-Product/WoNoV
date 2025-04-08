@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
 const AdminEvent = require("../../models/administration/AdminEvents");
-const CustomError = require("../../utils/CustomError");
-const createLog = require("../../utils/createLog");
+const CustomError = require("../../utils/customErrorlogs");
+const { createLog } = require("../../utils/moduleLogs");
 
 // Create a new AdminEvent
 const createAdminEvent = async (req, res, next) => {
-  const logPath = "administration/AdminLog";
+  const logPath = "administration/AdministrationLog";
   const logAction = "Create Event";
   const logSourceKey = "adminEvent";
 
@@ -74,65 +74,35 @@ const createAdminEvent = async (req, res, next) => {
 
 // Get all AdminEvents for the company
 const getAdminEvents = async (req, res, next) => {
-  const logPath = "administration/AdminLog";
-  const logAction = "Fetch Events";
-  const logSourceKey = "adminEvent";
-
+  const { id } = req.params;
+  const company = req.company;
+  let adminEvents;
   try {
-    const company = req.company;
-    const adminEvents = await AdminEvent.find({ company }).sort({
-      createdAt: -1,
-    });
+    if (id) {
+      adminEvents = await AdminEvent.findOne({ _id: id, company })
+        .lean()
+        .exec();
+
+      return res.status(200).json(adminEvents);
+    }
+    adminEvents = await AdminEvent.find({ company })
+      .sort({
+        createdAt: -1,
+      })
+      .lean()
+      .exec();
     return res.status(200).json({
       message: "Admin events fetched successfully",
       adminEvents,
     });
   } catch (error) {
-    next(new CustomError(error.message, logPath, logAction, logSourceKey, 500));
-  }
-};
-
-// Get a single AdminEvent by ID
-const getAdminEventById = async (req, res, next) => {
-  const logPath = "administration/AdminLog";
-  const logAction = "Fetch Single Event";
-  const logSourceKey = "adminEvent";
-
-  try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CustomError(
-        "Invalid event Id provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-    const adminEvent = await AdminEvent.findById(id);
-    if (!adminEvent) {
-      throw new CustomError(
-        "Admin event not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-    return res.status(200).json({
-      message: "Admin event fetched successfully",
-      adminEvent,
-    });
-  } catch (error) {
-    next(
-      error instanceof CustomError
-        ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-    );
+    next(error);
   }
 };
 
 // Update an AdminEvent by ID
 const updateAdminEvent = async (req, res, next) => {
-  const logPath = "administration/AdminLog";
+  const logPath = "administration/AdministrationLog";
   const logAction = "Update Event";
   const logSourceKey = "adminEvent";
 
@@ -210,10 +180,8 @@ const updateAdminEvent = async (req, res, next) => {
   }
 };
 
-
 module.exports = {
   createAdminEvent,
   getAdminEvents,
-  getAdminEventById,
   updateAdminEvent,
 };
