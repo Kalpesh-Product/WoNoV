@@ -8,6 +8,6 @@ const {
 
 router.post("/assign-weekly-unit", assignWeeklyUnit);
 router.patch("/update-weekly-unit", updateWeeklyUnit);
-router.get("/fetch-weekly-unit", fetchWeeklyUnits);
+router.get("/fetch-weekly-unit/:department", fetchWeeklyUnits);
 
 module.exports = router;
