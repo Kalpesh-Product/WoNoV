@@ -5,7 +5,7 @@ const createLog = require("../../utils/createLog");
 
 // Create a new AdminEvent
 const createAdminEvent = async (req, res, next) => {
-  const logPath = "administration/AdminLog";
+  const logPath = "administration/AdministrationLog";
   const logAction = "Create Event";
   const logSourceKey = "adminEvent";
 
@@ -74,10 +74,6 @@ const createAdminEvent = async (req, res, next) => {
 
 // Get all AdminEvents for the company
 const getAdminEvents = async (req, res, next) => {
-  const logPath = "administration/AdminLog";
-  const logAction = "Fetch Events";
-  const logSourceKey = "adminEvent";
-
   try {
     const company = req.company;
     const adminEvents = await AdminEvent.find({ company }).sort({
@@ -88,51 +84,33 @@ const getAdminEvents = async (req, res, next) => {
       adminEvents,
     });
   } catch (error) {
-    next(new CustomError(error.message, logPath, logAction, logSourceKey, 500));
+    next(error);
   }
 };
 
 // Get a single AdminEvent by ID
 const getAdminEventById = async (req, res, next) => {
-  const logPath = "administration/AdminLog";
-  const logAction = "Fetch Single Event";
-  const logSourceKey = "adminEvent";
-
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CustomError(
-        "Invalid event Id provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Invalid event Id provided" });
     }
     const adminEvent = await AdminEvent.findById(id);
     if (!adminEvent) {
-      throw new CustomError(
-        "Admin event not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Admin event not found" });
     }
     return res.status(200).json({
       message: "Admin event fetched successfully",
       adminEvent,
     });
   } catch (error) {
-    next(
-      error instanceof CustomError
-        ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-    );
+    next(error);
   }
 };
 
 // Update an AdminEvent by ID
 const updateAdminEvent = async (req, res, next) => {
-  const logPath = "administration/AdminLog";
+  const logPath = "administration/AdministrationLog";
   const logAction = "Update Event";
   const logSourceKey = "adminEvent";
 
@@ -212,7 +190,7 @@ const updateAdminEvent = async (req, res, next) => {
 
 // Delete an AdminEvent by ID
 const deleteAdminEvent = async (req, res, next) => {
-  const logPath = "administration/AdminLog";
+  const logPath = "administration/AdministrationLog";
   const logAction = "Delete Event";
   const logSourceKey = "adminEvent";
 

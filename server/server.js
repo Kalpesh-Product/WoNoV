@@ -32,6 +32,7 @@ const salesRoutes = require("./routes/salesRoutes");
 const visitorRoutes = require("./routes/visitorRoutes");
 const websiteRoutes = require("./routes/websiteTemplatesRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
+const administrationRoutes = require("./routes/administrationRoutes");
 const getLogs = require("./controllers/logController");
 const registerEventListeners = require("./events/listeners");
 const app = express();
@@ -81,6 +82,7 @@ app.use("/api/attendance", verifyJwt, attendanceRoutes);
 app.use("/api/sales", verifyJwt, salesRoutes);
 app.use("/api/visitors", verifyJwt, visitorRoutes);
 app.use("/api/inventory", verifyJwt, inventoryRoutes);
+app.use("/api/administration", verifyJwt, administrationRoutes);
 app.use("/api/logs/:path", verifyJwt, getLogs);
 app.all("*", (req, res) => {
   if (req.accepts("html")) {
