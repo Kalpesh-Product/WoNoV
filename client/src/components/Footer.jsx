@@ -36,8 +36,8 @@ const Footer = ({ changeActiveTab }) => {
           Copyright 2024-25
         </p>
       </div>
-      <div className="py-4 px-16 flex-wrap lg:flex-nowrap items-center">
-        <div className=" w-full flex flex-col gap-2">
+      <div className="py-4 px-16 flex flex-wrap lg:flex-nowrap items-center gap-4">
+        <div className=" w-full flex flex-col gap-2 justify-center items-center md:justify-center md:items-center lg:justify-start lg:items-start">
           <div className="h-20 w-40">
             <img
               className="w-[88%] h-full object-contain"
