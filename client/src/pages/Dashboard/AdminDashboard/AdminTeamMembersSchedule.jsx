@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
@@ -126,7 +126,12 @@ const AdminTeamMembersSchedule = () => {
             <MdOutlineRemoveRedEye />
           </span>
           <span
-            onClick={() => handleAddUser()}
+            onClick={() =>
+              navigate(
+                `/app/dashboard/admin-dashboard/team-members-schedule/${params.data.id}`,
+                { state: params.data }
+              )
+            }
             className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
           >
             <FaRegCalendarAlt />
@@ -135,6 +140,9 @@ const AdminTeamMembersSchedule = () => {
       ),
     },
   ];
+
+  //---------------------------------------Event Handlers------------------------------//
+
   const handleViewUser = (user) => {
     setModalMode("view");
     setSelectedUser(user);
@@ -155,6 +163,7 @@ const AdminTeamMembersSchedule = () => {
     setValue("startDate", startDate);
     setValue("endDate", endDate);
   };
+  //---------------------------------------Event Handlers------------------------------//
 
   return (
     <div className="p-4">
@@ -298,14 +307,6 @@ const AdminTeamMembersSchedule = () => {
               detail={selectedUser.isEmployeeActive ? "Active" : "InActive"}
             />
             <DetalisFormatted
-              title="Start Date"
-              detail={humanDate(selectedUser.startDate)}
-            />
-            <DetalisFormatted
-              title="End Date"
-              detail={humanDate(selectedUser.endDate)}
-            />
-            <DetalisFormatted
               title="Unit Name"
               detail={selectedUser.unitName}
             />
@@ -315,12 +316,37 @@ const AdminTeamMembersSchedule = () => {
               detail={selectedUser.buildingName}
             />
 
+            {/* DateRange picker view-only */}
+            <div className="md:col-span-2">
+              <h3 className="text-subtitle font-pmedium text-gray-700 mb-1">
+                Date Range
+              </h3>
+              <div className="border border-borderGray rounded-2xl overflow-hidden shadow-sm">
+                <DateRange
+                  ranges={[
+                    {
+                      startDate: new Date(selectedUser.startDate),
+                      endDate: new Date(selectedUser.endDate),
+                      key: "selection",
+                    },
+                  ]}
+                  onChange={() => {
+                    "";
+                  }}
+                  editableDateInputs={false}
+                  showDateDisplay={false}
+                  moveRangeOnFirstSelection={false}
+                  disabledDay={() => true}
+                />
+              </div>
+            </div>
+
             <div className="md:col-span-2 mt-2">
               <h3 className="text-subtitle font-pmedium text-gray-700 mb-3">
                 Substitutes
               </h3>
               {selectedUser.substitutions?.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-8">
                   {selectedUser.substitutions.map((sub, index) => (
                     <div
                       key={sub.substitutionId}

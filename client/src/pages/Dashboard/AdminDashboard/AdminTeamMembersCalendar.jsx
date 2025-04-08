@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -6,10 +6,17 @@ import interactionPlugin from "@fullcalendar/interaction";
 import dayjs from "dayjs";
 import { FormGroup, FormControlLabel, Checkbox } from "@mui/material";
 import MuiModal from "../../../components/MuiModal";
+import { useLocation } from "react-router-dom";
 
 const AdminTeamMembersCalendar = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const location = useLocation();
+  const passedData = location.state; // This is the data passed via navigate()
+
+  useEffect(() => {
+    console.log("Received state from navigation:", passedData);
+  }, [passedData]);
 
   const closeDrawer = () => {
     setIsDrawerOpen(false);
@@ -173,36 +180,6 @@ const AdminTeamMembersCalendar = () => {
               </FormGroup>
             </div>
           </div>
-
-          {/* <div className="border-2 border-gray-300 rounded-md">
-            <div className="mb-2 text-content font-bold uppercase border-b-default border-borderGray p-2">
-              <span>Today's Payments</span>
-            </div>
-
-            <div className="px-2 max-h-[27.5vh] overflow-y-auto">
-              {filteredEvents.length > 0 ? (
-                filteredEvents.map((event, index) => (
-                  <div key={index} className="flex gap-2 items-start mb-2">
-                    <div
-                      className="w-3 h-3 rounded-full mt-[0.3rem]"
-                      style={{ backgroundColor: event.backgroundColor }}></div>
-                    <div className="flex flex-col">
-                      <span className="text-content font-medium">
-                        {event.title}
-                      </span>
-                      <span className="text-small text-gray-500">
-                        {event.start
-                          ? dayjs(event.start).format("h:mm A")
-                          : "All Day"}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <span>No payments today.</span>
-              )}
-            </div>
-          </div> */}
         </div>
 
         {/* Calendar Section */}
