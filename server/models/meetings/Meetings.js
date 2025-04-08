@@ -51,6 +51,11 @@ const meetingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    reason: {
+      //reason for cancelling meeting
+      type: String,
+      required: true,
+    },
     status: {
       type: String,
       default: "Upcoming",

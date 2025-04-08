@@ -1,13 +1,13 @@
 const mongoose = require("mongoose");
 
-const adminSchema = new mongoose.Schema({
+const administrationSchema = new mongoose.Schema({
   adminEvent: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "AdminEvent",
   },
-  weeklyUnit: {
+  weeklySchedule: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "WeeklyUnit",
+    ref: "WeeklySchedule",
   },
   action: {
     type: String,
@@ -38,5 +38,8 @@ const adminSchema = new mongoose.Schema({
   },
 });
 
-const AdminLog = mongoose.model("AdminLog", adminSchema);
-module.exports = AdminLog;
+const AdministrationLog = mongoose.model(
+  "AdministrationLog",
+  administrationSchema
+);
+module.exports = AdministrationLog;

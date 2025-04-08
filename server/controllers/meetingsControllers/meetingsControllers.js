@@ -780,6 +780,7 @@ const cancelMeeting = async (req, res, next) => {
   const logAction = "Cancel Meeting";
   const logSourceKey = "meeting";
   const { meetingId } = req.params;
+  const { reason } = req.body;
   const { company, user, ip } = req;
 
   try {
@@ -792,9 +793,23 @@ const cancelMeeting = async (req, res, next) => {
       );
     }
 
+    if (
+      typeof reason !== "string" ||
+      !reason.length ||
+      reason.replace(/\s/g, "").length > 100
+    ) {
+      throw new CustomError(
+        "Reason should be within 100 characters",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const cancelledMeeting = await Meeting.findByIdAndUpdate(
       meetingId,
       { status: "Cancelled" },
+      { reason },
       { new: true }
     );
 

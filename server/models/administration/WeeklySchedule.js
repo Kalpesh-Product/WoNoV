@@ -1,14 +1,10 @@
 const mongoose = require("mongoose");
 
-const WeeklyUnitSchema = new mongoose.Schema(
+const WeeklyScheduleSchema = new mongoose.Schema(
   {
     company: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
-      required: true,
-    },
-    month: {
-      type: String,
       required: true,
     },
     startDate: {
@@ -25,7 +21,7 @@ const WeeklyUnitSchema = new mongoose.Schema(
       required: true,
     },
     employee: {
-      empID: {
+      id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "UserData",
         required: true,
@@ -56,4 +52,5 @@ const WeeklyUnitSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("WeeklyUnit", WeeklyUnitSchema);
+const WeeklySchedule = mongoose.model("WeeklySchedule", WeeklyScheduleSchema);
+module.exports = WeeklySchedule;
