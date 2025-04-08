@@ -1,10 +1,12 @@
-import React from "react";
 import AgTable from "../../components/AgTable";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import humanDate from "../../utils/humanDateForamt";
 import useAuth from "../../hooks/useAuth";
 import { CircularProgress } from "@mui/material";
+import humanTime from "../../utils/humanTime";
+import dayjs from "dayjs";
+import { formatDuration } from "../../utils/dateFormat"
 
 const HrCommonAttendance = () => {
   const { auth } = useAuth();
@@ -26,6 +28,7 @@ const HrCommonAttendance = () => {
       const response = await axios.get(
         `/api/attendance/get-attendance/${auth.user.empId}`
       );
+
       return response.data;
     } catch (error) {
       throw new Error(error.response.data.message);
@@ -70,12 +73,18 @@ const HrCommonAttendance = () => {
                     ]
                   : attendance.map((record, index) => ({
                       id: index + 1,
-                      date: humanDate(record.date),
-                      inTime: record.inTime,
-                      outTime: record.outTime,
-                      workHours: record.workHours,
-                      breakHours: record.breakHours,
-                      totalHours: record.totalHours,
+                      date: humanDate(record.inTime),
+                      inTime: humanTime(record?.inTime),
+                      outTime: humanTime(record?.outTime),
+                      workHours: formatDuration(
+                        record?.inTime,
+                        record?.outTime
+                      ),
+                      breakHours: record.breakDuration,
+                      totalHours: formatDuration(
+                        record?.inTime,
+                        record?.outTime
+                      ),
                       entryType: record.entryType,
                     }))
               }

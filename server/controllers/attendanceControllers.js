@@ -1,11 +1,6 @@
 const Attendance = require("../models/hr/Attendance");
 const UserData = require("../models/hr/UserData");
 const mongoose = require("mongoose");
-const {
-  formatDate,
-  formatTime,
-  formatWithOrdinal,
-} = require("../utils/formatDateTime");
 const { createLog } = require("../utils/moduleLogs");
 const CustomError = require("../utils/customErrorlogs");
 const { Readable } = require("stream");
@@ -406,7 +401,7 @@ const getAttendance = async (req, res, next) => {
     const attendances = await Attendance.find({
       user: user._id,
       company,
-    });
+    }).lean().exec();
 
     if (!attendances || attendances.length === 0) {
       return res.status(400).json({ message: "No attendance exists" });
