@@ -39,7 +39,7 @@ const assignWeeklyUnit = async (req, res, next) => {
       );
     }
 
-    const foundUser = await UserData.findOne({ empId: employee });
+    const foundUser = await UserData.findOne({ _id: employee }).lean().exec();
 
     if (!foundUser) {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);

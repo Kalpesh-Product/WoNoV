@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const AdminEvent = require("../../models/administration/AdminEvents");
-const CustomError = require("../../utils/CustomError");
-const createLog = require("../../utils/createLog");
+const CustomError = require("../../utils/customErrorlogs");
+const { createLog } = require("../../utils/moduleLogs");
 
 // Create a new AdminEvent
 const createAdminEvent = async (req, res, next) => {
@@ -74,34 +74,26 @@ const createAdminEvent = async (req, res, next) => {
 
 // Get all AdminEvents for the company
 const getAdminEvents = async (req, res, next) => {
+  const { id } = req.params;
+  const company = req.company;
+  let adminEvents;
   try {
-    const company = req.company;
-    const adminEvents = await AdminEvent.find({ company }).sort({
-      createdAt: -1,
-    });
+    if (id) {
+      adminEvents = await AdminEvent.findOne({ _id: id, company })
+        .lean()
+        .exec();
+
+      return res.status(200).json(adminEvents);
+    }
+    adminEvents = await AdminEvent.find({ company })
+      .sort({
+        createdAt: -1,
+      })
+      .lean()
+      .exec();
     return res.status(200).json({
       message: "Admin events fetched successfully",
       adminEvents,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Get a single AdminEvent by ID
-const getAdminEventById = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid event Id provided" });
-    }
-    const adminEvent = await AdminEvent.findById(id);
-    if (!adminEvent) {
-      return res.status(400).json({ message: "Admin event not found" });
-    }
-    return res.status(200).json({
-      message: "Admin event fetched successfully",
-      adminEvent,
     });
   } catch (error) {
     next(error);
@@ -188,62 +180,8 @@ const updateAdminEvent = async (req, res, next) => {
   }
 };
 
-// Delete an AdminEvent by ID
-const deleteAdminEvent = async (req, res, next) => {
-  const logPath = "administration/AdministrationLog";
-  const logAction = "Delete Event";
-  const logSourceKey = "adminEvent";
-
-  try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CustomError(
-        "Invalid event Id provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-    const adminEvent = await AdminEvent.findByIdAndDelete(id);
-    if (!adminEvent) {
-      throw new CustomError(
-        "Admin event not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    // Log the deletion event
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Admin event deleted successfully",
-      status: "Success",
-      user: req.user,
-      ip: req.ip,
-      company: req.company,
-      sourceKey: logSourceKey,
-      sourceId: adminEvent._id,
-      changes: adminEvent,
-    });
-
-    return res.status(200).json({
-      message: "Admin event deleted successfully",
-    });
-  } catch (error) {
-    next(
-      error instanceof CustomError
-        ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-    );
-  }
-};
-
 module.exports = {
   createAdminEvent,
   getAdminEvents,
-  getAdminEventById,
   updateAdminEvent,
-  deleteAdminEvent,
 };
