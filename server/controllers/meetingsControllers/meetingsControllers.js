@@ -23,8 +23,6 @@ const addMeetings = async (req, res, next) => {
     const {
       meetingType,
       bookedRoom,
-      startDate,
-      endDate,
       startTime,
       endTime,
       subject,
@@ -39,8 +37,6 @@ const addMeetings = async (req, res, next) => {
 
     if (
       !meetingType ||
-      !startDate ||
-      !endDate ||
       !startTime ||
       !endTime ||
       !subject ||
@@ -64,14 +60,10 @@ const addMeetings = async (req, res, next) => {
     }
 
     const currDate = new Date();
-    const startDateObj = new Date(startDate);
-    const endDateObj = new Date(endDate);
     const startTimeObj = new Date(startTime);
     const endTimeObj = new Date(endTime);
 
     if (
-      isNaN(startDateObj.getTime()) ||
-      isNaN(endDateObj.getTime()) ||
       isNaN(startTimeObj.getTime()) ||
       isNaN(endTimeObj.getTime())
     ) {
@@ -83,7 +75,7 @@ const addMeetings = async (req, res, next) => {
       );
     }
 
-    if (startDateObj.getDate() < currDate.getDate()) {
+    if (startTimeObj.getTime() < currDate.getTime()) {
       throw new CustomError(
         "Please select future timing",
         logPath,
@@ -214,8 +206,6 @@ const addMeetings = async (req, res, next) => {
 
     const conflictingMeeting = await Meeting.findOne({
       bookedRoom: roomAvailable._id,
-      startDate: { $lte: endDateObj },
-      endDate: { $gte: startDateObj },
       $or: [
         {
           $and: [
@@ -250,8 +240,8 @@ const addMeetings = async (req, res, next) => {
     const meeting = new Meeting({
       meetingType,
       bookedBy: user,
-      startDate: startDateObj,
-      endDate: endDateObj,
+      startDate: startTimeObj,
+      endDate: endTimeObj,
       startTime: startTimeObj,
       endTime: endTimeObj,
       bookedRoom: roomAvailable._id,
@@ -274,8 +264,8 @@ const addMeetings = async (req, res, next) => {
       meetingType,
       bookedBy: user,
       bookedRoom: bookedRoom,
-      startDate: startDateObj,
-      endDate: endDateObj,
+      startDate: startTimeObj,
+      endDate: endTimeObj,
       startTime: startTimeObj,
       endTime: endTimeObj,
       subject,

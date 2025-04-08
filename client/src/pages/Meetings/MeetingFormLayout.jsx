@@ -75,6 +75,7 @@ const MeetingFormLayout = () => {
 
     const selectedDate = dayjs(arg.start).startOf("day");
     const startTime = dayjs(arg.start);
+    console.log("Start Time : ", startTime)
     const endTime = dayjs(arg.start).add(30, "minute");
 
     setValue("startDate", selectedDate, { shouldDirty: true });
@@ -138,10 +139,10 @@ const MeetingFormLayout = () => {
       await axios.post("/api/meetings/create-meeting", {
         bookedRoom: meetingRoomId,
         meetingType: data.meetingType,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        startTime: data.startTime,
-        endTime: data.endTime,
+        // startDate: startDate,
+        // endDate: endDate,
+        startTime: startTime,
+        endTime: endTime,
         subject: data.subject,
         agenda: data.agenda,
         internalParticipants: data.internalParticipants,
