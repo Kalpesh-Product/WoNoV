@@ -21,6 +21,7 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import humanDate from "../../utils/humanDateForamt";
 import { useSelector } from "react-redux";
 import { setMeetings } from "../../redux/slices/meetingSlice";
+import humanTime from "../../utils/humanTime";
 const Calender = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState(""); // 'view' or 'add'
@@ -40,18 +41,13 @@ const Calender = () => {
   const meetings = useSelector((state) => state.meetings.data);
 
   const transformedMeetings = meetings.map((meeting) => {
-    const formattedDate = `${meeting.date.split("/").reverse().join("-")}`;
+    const formattedStart = `${meeting.startTime.split("/").reverse().join("-")}`;
+    const formattedEnd = `${meeting.endTime.split("/").reverse().join("-")}`;
     return {
       id: meeting._id,
       title: meeting.subject,
-      start: dayjs(
-        `${formattedDate} ${meeting.startTime}`,
-        "YYYY-MM-DD hh:mm A"
-      ).toISOString(),
-      end: dayjs(
-        `${formattedDate} ${meeting.endTime}`,
-        "YYYY-MM-DD hh:mm A"
-      ).toISOString(),
+      start: `${formattedStart}`,
+      end: `${formattedEnd}`,
       extendedProps: { ...meeting },
     };
   });
@@ -246,13 +242,11 @@ const Calender = () => {
                 />
                 <DetalisFormatted
                   title={"Date"}
-                  detail={humanDate(dayjs(selectedEvent.start))}
+                  detail={humanDate(selectedEvent?.start)}
                 />
                 <DetalisFormatted
                   title={"Time"}
-                  detail={`${dayjs(selectedEvent.start).format(
-                    "hh:mm A"
-                  )} - ${dayjs(selectedEvent.end).format("hh:mm A")}`}
+                  detail={`${humanTime(selectedEvent?.start)} - ${humanTime(selectedEvent?.end)}`}
                 />
                 {selectedEvent.extendedProps?.agenda && (
                   <div className="space-y-2">
