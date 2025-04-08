@@ -11,7 +11,8 @@ import PieChartMui from "../../components/graphs/PieChartMui";
 import HeatMap from "../../components/graphs/HeatMap";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-const WidgetSection = lazy(()=>import("../../components/WidgetSection"))
+import { Skeleton } from "@mui/material";
+const WidgetSection = lazy(() => import("../../components/WidgetSection"));
 
 const MeetingDashboard = () => {
   const axios = useAxiosPrivate();
@@ -500,17 +501,27 @@ const MeetingDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection
-          layout={1}
-          border
-          title={"Average Meeting Room Bookings"}
+        <Suspense
+          fallback={
+            <div className="flex flex-col gap-2">
+              {/* Simulating chart skeleton */}
+              <Skeleton variant="text" width={200} height={30} />
+              <Skeleton variant="rectangular" width="100%" height={300} />
+            </div>
+          }
         >
-          <BarGraph
-            height={400}
-            data={averageBookingSeries}
-            options={averageBookingOptions}
-          />
-        </WidgetSection>,
+          <WidgetSection
+            layout={1}
+            border
+            title={"Average Meeting Room Bookings"}
+          >
+            <BarGraph
+              height={400}
+              data={averageBookingSeries}
+              options={averageBookingOptions}
+            />
+          </WidgetSection>
+        </Suspense>,
       ],
     },
     {
@@ -572,8 +583,7 @@ const MeetingDashboard = () => {
         <DataCard
           title={"Total"}
           data={
-            meetingsData
-              .filter((item) => item.meetingType === "External")
+            meetingsData.filter((item) => item.meetingType === "External")
               .length
           }
           description={"Guest Bookings"}
@@ -594,12 +604,14 @@ const MeetingDashboard = () => {
         />,
         <DataCard
           title={"Total"}
-          data={(meetingsData
-            .filter((item) => item.meetingStatus === "Cancelled")
-            .reduce(
-              (sum, item) => sum + parseInt(item.duration.replace("m", "")),
-              0
-            ))/60}
+          data={
+            meetingsData
+              .filter((item) => item.meetingStatus === "Cancelled")
+              .reduce(
+                (sum, item) => sum + parseInt(item.duration.replace("m", "")),
+                0
+              ) / 60
+          }
           description={"Hours Cancelled"}
         />,
       ],

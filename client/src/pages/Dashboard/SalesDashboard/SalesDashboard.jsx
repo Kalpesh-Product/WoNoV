@@ -329,6 +329,11 @@ const SalesDashboard = () => {
     chart: {
       fontFamily: "Poppins-Regular",
     },
+    stroke: {
+      show: true,
+      width: 4, // Increase for more "gap"
+      colors: ['#ffffff'], // Or match background color
+    },
     labels: filteredData.map((item) => {
       const label = item?.label || "Unknown";
       return label.length > 10 ? label.slice(0, 15) + "..." : label;
