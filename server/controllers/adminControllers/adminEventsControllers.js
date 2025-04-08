@@ -210,62 +210,10 @@ const updateAdminEvent = async (req, res, next) => {
   }
 };
 
-// Delete an AdminEvent by ID
-const deleteAdminEvent = async (req, res, next) => {
-  const logPath = "administration/AdminLog";
-  const logAction = "Delete Event";
-  const logSourceKey = "adminEvent";
-
-  try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CustomError(
-        "Invalid event Id provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-    const adminEvent = await AdminEvent.findByIdAndDelete(id);
-    if (!adminEvent) {
-      throw new CustomError(
-        "Admin event not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    // Log the deletion event
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Admin event deleted successfully",
-      status: "Success",
-      user: req.user,
-      ip: req.ip,
-      company: req.company,
-      sourceKey: logSourceKey,
-      sourceId: adminEvent._id,
-      changes: adminEvent,
-    });
-
-    return res.status(200).json({
-      message: "Admin event deleted successfully",
-    });
-  } catch (error) {
-    next(
-      error instanceof CustomError
-        ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-    );
-  }
-};
 
 module.exports = {
   createAdminEvent,
   getAdminEvents,
   getAdminEventById,
   updateAdminEvent,
-  deleteAdminEvent,
 };
