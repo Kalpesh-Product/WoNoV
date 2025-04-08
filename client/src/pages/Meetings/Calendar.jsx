@@ -41,18 +41,13 @@ const Calender = () => {
   const meetings = useSelector((state) => state.meetings.data);
 
   const transformedMeetings = meetings.map((meeting) => {
-    const formattedDate = `${meeting.date.split("/").reverse().join("-")}`;
+    const formattedStart = `${meeting.startTime.split("/").reverse().join("-")}`;
+    const formattedEnd = `${meeting.endTime.split("/").reverse().join("-")}`;
     return {
       id: meeting._id,
       title: meeting.subject,
-      start: dayjs(
-        `${formattedDate} ${meeting.startTime}`,
-        "YYYY-MM-DD hh:mm A"
-      ).toISOString(),
-      end: dayjs(
-        `${formattedDate} ${meeting.endTime}`,
-        "YYYY-MM-DD hh:mm A"
-      ).toISOString(),
+      start: `${formattedStart}`,
+      end: `${formattedEnd}`,
       extendedProps: { ...meeting },
     };
   });
