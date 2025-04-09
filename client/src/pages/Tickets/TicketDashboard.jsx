@@ -114,7 +114,7 @@ const TicketDashboard = () => {
       widgets: [
         <div className="  rounded-md">
           <div className="">
-            <WidgetSection layout={2} border title={"Basic Priority Dashboard"}>
+            <WidgetSection layout={2} border title={"Live Tickets"}>
               <TicketCard
                 title={"MT. AV. Performance"}
                 bgcolor={"#60A5F9"}
