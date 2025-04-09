@@ -105,7 +105,7 @@ const FrontendDashboard = () => {
   const siteVisitorsData = [
     {
       name: "Site Visitors",
-      data: [120, 100, 90, 110, 130, 80, 95, 105, 115, 125, 135, 140], // Monthly counts
+      data: [1200, 1000, 900, 1100, 1300, 800, 950, 1050, 1150, 1250, 1350, 1400], // Monthly counts
     },
   ];
 
@@ -137,8 +137,8 @@ const FrontendDashboard = () => {
         text: "Visitors Count",
       },
       min: 0,
-      max: 140,
-      tickAmount: 7, // 0, 20, 40, ... 140
+      max: 1700,
+      tickAmount: 5, // 0, 20, 40, ... 140
     },
     plotOptions: {
       bar: {

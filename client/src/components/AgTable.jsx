@@ -293,7 +293,7 @@ const AgTableComponent = React.memo(
             rowData={filteredData}
             columnDefs={modifiedColumns} // ✅ Use modified columns with checkboxes
             defaultColDef={defaultColDef}
-            pagination
+            pagination={false}
             paginationPageSize={paginationPageSize}
             rowHeight={50}
             rowSelection={enableCheckbox ? "multiple" : rowSelection} // ✅ Enable multiple selection only when checkboxes are on
