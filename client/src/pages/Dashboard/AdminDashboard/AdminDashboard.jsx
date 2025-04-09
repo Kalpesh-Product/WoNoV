@@ -157,6 +157,11 @@ const AdminDashboard = () => {
     chart: {
       fontFamily: "Poppins-Regular",
     },
+    stroke: {
+      show: true,
+      width: 6, // Increase for more "gap"
+      colors: ['#ffffff'], // Or match background color
+    },
     toolTip: {
       y: {
         formatter: (val) => `${((val / totalCompanyDesks) * 100).toFixed(1)}%`,
@@ -182,6 +187,11 @@ const AdminDashboard = () => {
     labels: genderData.map((item) => item.gender),
     chart: {
       fontFamily: "Poppins-Regular",
+    },
+    stroke: {
+      show: true,
+      width: 6, // Increase for more "gap"
+      colors: ['#ffffff'], // Or match background color
     },
     tooltip: {
       y: {

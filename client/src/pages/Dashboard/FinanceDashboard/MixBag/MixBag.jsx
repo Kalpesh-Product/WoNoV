@@ -1,29 +1,25 @@
 import { useState } from "react";
-import WidgetSection from "../../../components/WidgetSection";
-import { FaExternalLinkAlt } from "react-icons/fa";
+import WidgetSection from "../../../../components/WidgetSection";
 import { useNavigate } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
 import { TextField } from "@mui/material";
 
-const AdminMixBag = () => {
+const MixBag = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const routes = [
     {
-      title: "Team Members Schedule",
-      route: "/app/dashboard/admin-dashboard/team-members-schedule",
+      title: "Directors & Company KYC",
+      route:
+        "/app/dashboard/finance-dashboard/directors-company-KYC",
     },
     {
-      title: "Housekeeping Members Schedule",
-      route: "/app/dashboard/admin-dashboard/housekeeping-members-schedule",
+      title: "Compliance Documents",
+      route: "/app/dashboard/sales-dashboard/revenue",
     },
     {
-      title: "Holidays & Events",
-      route: "/app/dashboard/admin-dashboard/holidays-events",
-    },
-    {
-      title: "Client Members",
-      route: "/app/dashboard/admin-dashboard/admin-client-list",
+      title: "Landlord Agreements",
+      route: "/app/dashboard/sales-dashboard/clients",
     },
   ];
 
@@ -76,4 +72,4 @@ const AdminMixBag = () => {
   );
 };
 
-export default AdminMixBag;
+export default MixBag;

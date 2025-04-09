@@ -74,9 +74,6 @@ const FinanceDashboard = () => {
         "Feb-25",
         "Mar-25",
       ],
-      title: {
-        text: "2024-2025", // overridden by BarGraph component
-      },
     },
     yaxis: {
       title: {
@@ -379,7 +376,7 @@ const FinanceDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"}>
+        <WidgetSection border title={"Income v/s Expenses"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
@@ -398,7 +395,7 @@ const FinanceDashboard = () => {
         />,
         <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
         <Card icon={<SiCashapp />} title="Billing" route={"billing"} />,
-        <Card icon={<SiGoogleadsense />} title="Mix-Bag" />,
+        <Card icon={<SiGoogleadsense />} title="Mix-Bag" route={"mix-bag"} />,
         <Card
           icon={<SiGoogleadsense />}
           title="Data"
@@ -433,7 +430,7 @@ const FinanceDashboard = () => {
             height={350}
           />
         </WidgetSection>,
-        <WidgetSection title={"Current Month Payouts"} border>
+        <WidgetSection title={"Current Months Customer Collections"} border>
           <PieChartMui
             data={pieMonthlyCollectionData}
             options={pieMonthlyCollectionOptions}

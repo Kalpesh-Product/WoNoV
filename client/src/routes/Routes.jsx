@@ -298,6 +298,9 @@ import FinanceSettings from "../pages/Dashboard/FinanceDashboard/FinanceSettings
 import FinanceBulkUpload from "../pages/Dashboard/FinanceDashboard/FinanceSettings/FinanceBulkUpload";
 import FinanceSops from "../pages/Dashboard/FinanceDashboard/FinanceSettings/FinanceSops";
 import FinancePolicies from "../pages/Dashboard/FinanceDashboard/FinanceSettings/FinancePolicies";
+import MixBag from "../pages/Dashboard/FinanceDashboard/MixBag/MixBag";
+import DirectorsCompany from "../pages/Dashboard/FinanceDashboard/MixBag/DirectorsCompany";
+import DirectorData from "../pages/Dashboard/FinanceDashboard/MixBag/DirectorData";
 
 export const routes = createBrowserRouter([
   {
@@ -419,6 +422,18 @@ export const routes = createBrowserRouter([
                       {
                         path: "monthly-per-sq-ft-pnl",
                         element: <MonthlyPerSqFtPnl />,
+                      },
+                      {
+                        path: "mix-bag",
+                        element: <MixBag />,
+                      },
+                      {
+                        path: "directors-company-KYC",
+                        element: <DirectorsCompany />,
+                      },
+                      {
+                        path: "directors-company-KYC/:id",
+                        element: <DirectorData />,
                       },
                       {
                         path: "cashflow",

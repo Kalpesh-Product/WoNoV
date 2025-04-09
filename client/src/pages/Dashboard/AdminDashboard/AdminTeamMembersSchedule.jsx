@@ -11,7 +11,7 @@ import { DateRange } from "react-date-range";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import DetalisFormatted from "../../../components/DetalisFormatted";
-import { FaRegCalendarAlt } from "react-icons/fa";
+import { HiOutlinePencilSquare } from "react-icons/hi2";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import humanDate from "../../../utils/humanDateForamt";
 import { queryClient } from "../../../main";
@@ -42,6 +42,12 @@ const AdminTeamMembersSchedule = () => {
       endDate: new Date(),
     },
   });
+
+  const {handleSubmit:updateUser, reset: updateUserReset, control: updateUserControl} = useForm({
+    defaultValues:{
+      meetingId : "",
+    }
+  })
 
   //----------------------------------------API---------------------------------------//
   const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
@@ -76,9 +82,9 @@ const AdminTeamMembersSchedule = () => {
     queryKey: ["unitAssignees"],
     queryFn: async () => {
       try {
+        const adminDepId = "6798bae6e469e809084e24a4";
         const response = await axios.get(
-          `/api/administration/fetch-weekly-unit`,
-          {}
+          `/api/administration/fetch-weekly-unit/${adminDepId}`
         );
         return response.data;
       } catch (error) {
@@ -113,7 +119,7 @@ const AdminTeamMembersSchedule = () => {
     { field: "id", headerName: "Sr. No.", width: 100 },
     { field: "name", headerName: "Name", flex: 1 },
     { field: "manager", headerName: "Manager" },
-    { field: "unitName", headerName: "Unit" },
+    { field: "unitNo", headerName: "Unit" },
     {
       field: "actions",
       headerName: "Actions",
@@ -126,15 +132,10 @@ const AdminTeamMembersSchedule = () => {
             <MdOutlineRemoveRedEye />
           </span>
           <span
-            onClick={() =>
-              navigate(
-                `/app/dashboard/admin-dashboard/team-members-schedule/${params.data.id}`,
-                { state: params.data }
-              )
-            }
+            onClick={() => handleEditUser(params.data)}
             className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
           >
-            <FaRegCalendarAlt />
+            <HiOutlinePencilSquare />
           </span>
         </div>
       ),
@@ -150,6 +151,10 @@ const AdminTeamMembersSchedule = () => {
   };
   const handleAddUser = () => {
     setModalMode("add");
+    setIsModalOpen(true);
+  };
+  const handleEditUser = (user) => {
+    setModalMode("edit");
     setIsModalOpen(true);
   };
   const handleFormSubmit = (data) => {
@@ -175,14 +180,17 @@ const AdminTeamMembersSchedule = () => {
           buttonTitle={"Assign Member"}
           data={unitAssignees.map((item, index) => ({
             id: index + 1,
+            meetingId: item._id,
             employeeId: item.employee?.id?._id,
             name: `${item.employee?.id?.firstName} ${item.employee?.id?.lastName}`,
             isEmployeeAvailable: item.employee?.isActive,
             assignmentId: item._id,
+            manager: item.manager,
             startDate: item.startDate,
             endDate: item.endDate,
             locationId: item.location?._id,
             unitName: item.location?.unitName,
+            unitNo: item.location?.unitNo,
             buildingId: item.location?.building?._id,
             buildingName: item.location?.building?.buildingName,
             createdAt: item.createdAt,
@@ -201,7 +209,9 @@ const AdminTeamMembersSchedule = () => {
           handleClick={handleAddUser}
         />
       ) : (
-        <CircularProgress />
+        <div className="flex justify-center items-center h-[60vh]">
+          <CircularProgress />
+        </div>
       )}
 
       <MuiModal
@@ -385,6 +395,29 @@ const AdminTeamMembersSchedule = () => {
               )}
             </div>
           </div>
+        )}
+        {modalMode === "edit" && selectedUser && (
+          <>
+            <form onSubmit={""}>
+              <div className="border border-borderGray rounded-2xl overflow-hidden shadow-sm">
+                <DateRange
+                  ranges={[
+                    {
+                      startDate: new Date(selectedUser.startDate),
+                      endDate: new Date(selectedUser.endDate),
+                      key: "selection",
+                    },
+                  ]}
+                  onChange={() => {
+                    "";
+                  }}
+                  editableDateInputs={false}
+                  showDateDisplay={false}
+                  moveRangeOnFirstSelection={false}
+                />
+              </div>
+            </form>
+          </>
         )}
       </MuiModal>
     </div>

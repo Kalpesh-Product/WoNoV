@@ -16,13 +16,13 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 
 const ActualBusinessRevenue = () => {
-  const axios = useAxiosPrivate()
+  const axios = useAxiosPrivate();
   const { data: revenueData = [], isPending: isRevenuePending } = useQuery({
     queryKey: ["revenueData"],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/sales/fetch-revenues");
-        console.log("Revenue Data",response.data);
+        console.log("Revenue Data", response.data);
         return response.data;
       } catch (error) {
         console.error("Error fetching clients data:", error);
@@ -396,8 +396,7 @@ const ActualBusinessRevenue = () => {
             label="Select Month"
             value={selectedMonth}
             onChange={handleMonthChange}
-            sx={{ width: "200px" }}
-          >
+            sx={{ width: "200px" }}>
             {mockBusinessRevenueData.map((data) => (
               <MenuItem key={data.month} value={data.month}>
                 {data.month}
@@ -408,7 +407,10 @@ const ActualBusinessRevenue = () => {
       </div>
 
       {/* Bar Graph Component */}
-      <WidgetSection layout={1} title={"Domain-wise Revenue"} border>
+      <WidgetSection
+        layout={1}
+        title={"Vertical-wise Revenue - March 2025"}
+        border>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
 
@@ -420,18 +422,17 @@ const ActualBusinessRevenue = () => {
               <AccordionSummary
                 expandIcon={<IoIosArrowDown />}
                 aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}
-              >
+                id={`panel-${index}-header`}>
                 <div className="flex justify-between items-center w-full px-4">
                   <span className="text-subtitle font-pmedium">
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()}{" "}INR
+                    {domain.revenue.toLocaleString()} INR
                   </span>
                 </div>
               </AccordionSummary>
-              <AccordionDetails sx={{borderTop:'1px solid  #d1d5db'}}>
+              <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 <AgTable
                   data={domain.clients}
                   hideFilter

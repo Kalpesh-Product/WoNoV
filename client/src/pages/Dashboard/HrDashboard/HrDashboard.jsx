@@ -204,16 +204,18 @@ const HrDashboard = () => {
     },
     xaxis: {
       categories: [
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-        "January",
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
       ],
     },
     yaxis: {
@@ -284,18 +286,18 @@ const HrDashboard = () => {
     },
     xaxis: {
       categories: [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
       ],
     },
     yaxis: {
@@ -630,7 +632,7 @@ const HrDashboard = () => {
       layout: 2,
       heading: "Site Visitor Analytics",
       widgets: [
-        <WidgetSection title={"Gender Distribution"} border>
+        <WidgetSection title={"Employee Gender Distribution"} border>
           <PieChartMui
             percent={true} // Enable percentage display
             title={"Gender Distribution"}

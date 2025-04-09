@@ -143,7 +143,7 @@ const Projections = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"}>
+        <WidgetSection border title={"Projections"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
@@ -163,7 +163,7 @@ const Projections = () => {
       ))}
 
       <div>
-        <WidgetSection border title={`Total Monthly P&L : ${totalPnL}`}>
+        <WidgetSection border title={`Total Monthly P&L : ${totalPnL.toLocaleString()} INR`}>
           <AgTable
             data={monthlyProfitLossData}
             columns={monthlyProfitLossColumns}

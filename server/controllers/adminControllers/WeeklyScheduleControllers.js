@@ -4,6 +4,7 @@ const { createLog } = require("../../utils/moduleLogs");
 const WeeklySchedule = require("../../models/administration/WeeklySchedule");
 const { default: mongoose } = require("mongoose");
 const Unit = require("../../models/locations/Unit");
+const Role = require("../../models/roles/Roles");
 
 const assignWeeklyUnit = async (req, res, next) => {
   const logPath = "administration/AdministrationLog";
@@ -17,7 +18,7 @@ const assignWeeklyUnit = async (req, res, next) => {
     const startDateObj = new Date(startDate);
     const endDateObj = new Date(endDate);
 
-    if (!startDateObj || !endDateObj || !location || !employee) {
+    if (!startDate || !endDate || !location || !employee) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -91,7 +92,136 @@ const assignWeeklyUnit = async (req, res, next) => {
 
 const updateWeeklyUnit = async (req, res, next) => {
   const logPath = "administration/AdministrationLog";
-  const logAction = "Update Weekly Unit Substitution";
+  const logAction = "Update Weekly Unit";
+  const logSourceKey = "weeklySchedule";
+
+  try {
+    const { weeklyScheduleId, startDate, endDate, location, employee } =
+      req.body;
+    const { company, user, ip } = req;
+
+    if (!weeklyScheduleId || !startDate || !endDate || !location || !employee) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(weeklyScheduleId)) {
+      throw new CustomError(
+        "Invalid weeklySchedule ID provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const updatedSchedule = await WeeklySchedule.findByIdAndUpdate(
+      {
+        _id: weeklyScheduleId,
+      },
+      {
+        $set: {
+          "employee.isActive": false,
+          "employee.isReAssigned": true,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedSchedule) {
+      throw new CustomError(
+        "Failed to update the weekly schedule",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    await updatedSchedule.save();
+
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+
+    if (!startDateObj || !endDateObj || !location || !employee) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    if (isNaN(startDateObj.getDate()) || isNaN(endDateObj.getDate())) {
+      throw new CustomError(
+        "Invalid date format",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(location)) {
+      throw new CustomError(
+        "Invalid location ID provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const foundUser = await UserData.findOne({ empId: employee });
+
+    if (!foundUser) {
+      throw new CustomError("User not found", logPath, logAction, logSourceKey);
+    }
+
+    const foundUnit = await Unit.findById({ _id: location });
+
+    if (!foundUnit) {
+      throw new CustomError("Unit not found", logPath, logAction, logSourceKey);
+    }
+
+    const newAssignedUnit = new WeeklySchedule({
+      startDate: startDateObj,
+      endDate: endDateObj,
+      location,
+      employee: {
+        id: foundUser._id,
+      },
+      company,
+    });
+
+    await newAssignedUnit.save();
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Substitute added to Weekly Unit",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: updatedSchedule._id,
+      changes: {
+        oldSchedule: {
+          name: `${updatedSchedule.employee.id.firstName} ${updatedSchedule.employee.id.lastName}`,
+          isActive: false,
+          isReassigned: true,
+        },
+        newSchedule: newAssignedUnit,
+      },
+    });
+
+    res.status(200).json({
+      message: "Weekly unit updated successfully",
+      data: newAssignedUnit,
+    });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+    );
+  }
+};
+
+const addSubstitute = async (req, res, next) => {
+  const logPath = "administration/AdministrationLog";
+  const logAction = "Add Substitution";
   const logSourceKey = "weeklySchedule";
 
   try {
@@ -161,21 +291,67 @@ const updateWeeklyUnit = async (req, res, next) => {
 
 const fetchWeeklyUnits = async (req, res, next) => {
   try {
-    const { company } = req;
+    const { department } = req.params;
+    const { user, company } = req;
 
-    const data = await WeeklySchedule.find({ company })
+    const foundUser = await UserData.findOne({
+      _id: user,
+      departments: { $in: [department] },
+    }).populate("reportsTo role departments");
+
+    if (!foundUser) {
+      return res.status(400).json({
+        message: `User doesn't belong to the department`,
+      });
+    }
+
+    const userDepartment = foundUser.departments.find(
+      (dept) => dept._id.toString() === department.toString()
+    );
+
+    const managerRole = foundUser.role.some(
+      (role) =>
+        role.roleTitle.startsWith(`${userDepartment.name}`) &&
+        role.roleTitle.endsWith("Admin")
+    );
+
+    let foundManager = foundUser;
+
+    //logged-in user is an employee and not an admin
+    if (!managerRole) {
+      foundManager = await UserData.findOne({
+        role: { $in: [foundUser.reportsTo] },
+      }).select("firstName lastName");
+    }
+
+    let manager = "N/A"; //If logged-in user doesn't belong to the department
+    if (foundManager) {
+      manager = `${foundManager.firstName} ${foundManager.lastName}`;
+    }
+
+    const weeklySchedules = await WeeklySchedule.find({ company })
       .populate("employee.id", "firstName lastName")
       .populate("substitutions.substitute", "firstName lastName")
       .populate({
         path: "location",
-        select: "unitName",
+        select: "unitName unitNo",
         populate: { path: "building", select: "buildingName" },
       });
 
-    res.status(200).json(data);
+    const transformedData = weeklySchedules.map((schedule) => ({
+      ...schedule._doc,
+      manager,
+    }));
+
+    res.status(200).json(transformedData);
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = { assignWeeklyUnit, updateWeeklyUnit, fetchWeeklyUnits };
+module.exports = {
+  assignWeeklyUnit,
+  updateWeeklyUnit,
+  addSubstitute,
+  fetchWeeklyUnits,
+};

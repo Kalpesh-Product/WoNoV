@@ -98,7 +98,6 @@ const addMeetings = async (req, res, next) => {
       );
     }
 
-    let totalParticipants = [];
     let internalUsers = [];
     let externalUsers = [];
 

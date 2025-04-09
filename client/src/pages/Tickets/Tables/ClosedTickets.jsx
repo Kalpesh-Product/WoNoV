@@ -14,6 +14,7 @@ const ClosedTickets = ({ title }) => {
     },
     initialData: [], 
   });
+  console.log(data.length)
 
   const transformTicketsData = (tickets) => {
     return !tickets.length
