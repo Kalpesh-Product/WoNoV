@@ -4,6 +4,7 @@ import { FaExternalLinkAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
 import { TextField } from "@mui/material";
+import Card from "../../../components/Card";
 
 const SalesMixBag = () => {
   const navigate = useNavigate();
@@ -65,22 +66,8 @@ const SalesMixBag = () => {
         />
       </div>
       <WidgetSection key={filteredRoutes.length} layout={3} padding>
-      {filteredRoutes.map((route, index) => {
-          return (
-            <div
-              className=" shadow-md p-4 rounded-md cursor-pointer"
-              key={index}
-              onClick={() => {
-                navigate(route.route);
-              }}
-            >
-              <div>
-                <span className="text-primary text-content hover:underline w-full">
-                  {route.title}
-                </span>
-              </div>
-            </div>
-          );
+        {filteredRoutes.map((route, index) => {
+          return <Card key={index} title={route.title} route={route.route} />;
         })}
       </WidgetSection>
     </div>

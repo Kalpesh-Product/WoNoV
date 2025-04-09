@@ -4,22 +4,30 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const AdminClientMembersLayout = () => {
   const location = useLocation();
+  console.log(location.pathname)
   const navigate = useNavigate();
 
   // Map routes to tabs
   const tabs = [
     { label: "Client Details", path: "client-details" },
-    // { label: "Desks", path: "desks" },
-    // { label: "Revenue", path: "revenue" },
     { label: "Members", path: "members" },
   ];
 
   useEffect(() => {
-    const subroutes = ["client-details", "desks", "revenue", "members"];
-    if (!subroutes.some((subroute) => location.pathname.includes(subroute))) {
-      navigate(`${location.pathname}/client-details`, { replace: true });
+    const basePath = `/app/dashboard/admin-dashboard/client-members/client-members-data`;
+
+    const pathParts = location.pathname.split("/").filter(Boolean); // remove empty parts
+    const clientNameIndex = pathParts.indexOf("client-members-data") + 1;
+    const clientName = pathParts[clientNameIndex];
+
+    const isAtClientRoot =
+      location.pathname === `${basePath}/${clientName}`;
+
+    if (isAtClientRoot) {
+      navigate(`${basePath}/${clientName}/client-details`, { replace: true });
     }
   }, [location, navigate]);
+
 
   // Determine active tab based on location
   const activeTab = tabs.findIndex((tab) =>
@@ -27,7 +35,7 @@ const AdminClientMembersLayout = () => {
   );
 
   return (
-    <div>
+    <div className="p-4 flex flex-col gap-4">
       <Tabs
         value={activeTab}
         variant="fullWidth"
@@ -66,7 +74,7 @@ const AdminClientMembersLayout = () => {
         ))}
       </Tabs>
 
-      <div className="py-4">
+      <div>
         {/* Render the nested routes */}
         <Outlet />
       </div>

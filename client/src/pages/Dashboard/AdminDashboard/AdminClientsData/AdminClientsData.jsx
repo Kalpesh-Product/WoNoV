@@ -1,18 +1,12 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AgTable from "../../../components/AgTable";
-import { Chip, CircularProgress } from "@mui/material";
-import BarGraph from "../../../components/graphs/BarGraph";
-// import UniqueClients from "./ViewClients/LeadsLayout";
-// import UniqueClients from "../SalesDashboard/UniqueClients";
-import { useQuery } from "@tanstack/react-query";
-import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
-import { toast } from "sonner";
-import { setSelectedClient } from "../../../redux/slices/clientSlice";
+import AgTable from "../../../../components/AgTable";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { setClientData } from "../../../redux/slices/salesSlice";
+import { setClientData } from "../../../../redux/slices/salesSlice";
 
-const AdminClientsList = () => {
+const AdminClientsData = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
@@ -36,7 +30,7 @@ const AdminClientsList = () => {
   const handleClickRow = (clientData) => {
     dispatch(setSelectedClient(clientData));
     navigate(
-      `/app/dashboard/admin-dashboard/admin-client-list/${clientData.clientName}`
+      `/app/dashboard/admin-dashboard/client-members/client-members-data/${clientData.clientName}`
     );
   };
 
@@ -129,16 +123,11 @@ const AdminClientsList = () => {
   const transformedData = transformClientsGroupedByMonth(clientsData);
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      {/* <div>
-        <UniqueClients data={transformedData} hideAccordion />
-      </div> */}
-
+    <div className="flex flex-col gap-4">
       <div className="w-full">
         <AgTable
           search={true}
           key={clientsData.length}
-          tableTitle={"Client List"}
           data={[
             ...clientsData.map((item, index) => ({
               id: index + 1,
@@ -186,4 +175,4 @@ const AdminClientsList = () => {
   );
 };
 
-export default AdminClientsList;
+export default AdminClientsData;

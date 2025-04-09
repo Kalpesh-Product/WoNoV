@@ -22,7 +22,8 @@ const ViewEmployees = () => {
   });
 
   const viewEmployeeColumns = [
-    { field: "srno", headerName: "SR No" },
+    { field: "srno", headerName: "SR No",width:100 },
+    { field: "employmentID", headerName: "Employment ID" },
     {
       field: "employeeName",
       headerName: "Employee Name",
@@ -34,16 +35,16 @@ const ViewEmployees = () => {
             cursor: "pointer",
           }}
           onClick={() => {
-            localStorage.setItem("employeeName", params.data.employeeName);
             navigate(
-              `/app/dashboard/HR-dashboard/employee/view-employees/${params.data.employmentID}`
+              `/app/dashboard/HR-dashboard/employee/view-employees/${params.data.employeeName}/${params.data.employmentID}/edit-details`
             );
-          }}>
+          }}
+        >
           {params.value}
         </span>
       ),
     },
-    { field: "employmentID", headerName: "Employment ID" },
+    { field: "department", headerName: "Department", flex: 1 },
     { field: "email", headerName: "Email", flex: 1 },
     { field: "role", headerName: "Role", flex: 1 },
     {
@@ -86,9 +87,12 @@ const ViewEmployees = () => {
                   ...employees.map((employee, index) => ({
                     id: employee._id,
                     srno: index + 1,
-                    employeeName: employee.firstName,
+                    employeeName: `${
+                      employee.firstName ? employee.firstName : ""
+                    } ${employee.lastName ? employee.lastName : ""}`,
                     employmentID: employee.empId,
                     email: employee.email,
+                    department : employee.departments?.map((item=>item.name)),
                     role: employee.role.map((r) => r.roleTitle),
                     status: employee.isActive,
                   })),

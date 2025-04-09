@@ -14,6 +14,7 @@ import PieChartMui from "../../../components/graphs/PieChartMui";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../../hooks/useAuth";
+import BarGraph from "../../../components/graphs/BarGraph";
 
 const LayerBarGraph = lazy(() =>
   import("../../../components/graphs/LayerBarGraph")
@@ -167,12 +168,6 @@ const HrDashboard = () => {
     });
   };
 
-  // Generate colors and adjusted series
-  const colors = generateColorsWithSpacing(rawSeries);
-  const adjustedSeries = adjustDataWithSpacing(rawSeries);
-
-  // Normalize data
-  const series = normalizeToPercentage(adjustedSeries);
 
   const options = {
     chart: {
@@ -184,12 +179,8 @@ const HrDashboard = () => {
       bar: {
         horizontal: false,
         columnWidth: "65%",
-        borderRadius: [5],
-        borderRadiusWhenStacked: "all",
-        borderRadiusApplication: "end",
       },
     },
-    colors, // Use generated colors
     dataLabels: {
       enabled: true, // Enable data labels
       formatter: function (val, opts) {
@@ -199,7 +190,7 @@ const HrDashboard = () => {
       style: {
         fontSize: "9px",
         fontFamily: "Poppins-Regular, Arial, sans-serif",
-        colors: ["#00000"], // Color of the data labels
+        colors: ["#fffff"], // Color of the data labels
       },
     },
     xaxis: {
@@ -561,12 +552,14 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection
             layout={1}
             border
             padding
-            title={"Payroll Expense Graph"}>
+            title={"Payroll Expense Graph"}
+          >
             <LayerBarGraph data={data} options={optionss} />
           </WidgetSection>
         </Suspense>,
@@ -617,13 +610,19 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection
             layout={1}
             border
             padding
-            title={"Department Wise Tasks% Vs Achievements in %"}>
-            <LayerBarGraph data={series} options={options} />
+            title={"Department Wise Tasks% Vs Achievements in %"}
+          >
+            <BarGraph
+              data={rawSeries}
+              options={options}
+              departments={["Sales", "IT", "Tech", "Admin", "Maintainance"]}
+            />
           </WidgetSection>
         </Suspense>,
       ],

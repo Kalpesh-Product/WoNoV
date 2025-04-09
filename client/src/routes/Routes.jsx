@@ -301,6 +301,9 @@ import FinancePolicies from "../pages/Dashboard/FinanceDashboard/FinanceSettings
 import MixBag from "../pages/Dashboard/FinanceDashboard/MixBag/MixBag";
 import DirectorsCompany from "../pages/Dashboard/FinanceDashboard/MixBag/DirectorsCompany";
 import DirectorData from "../pages/Dashboard/FinanceDashboard/MixBag/DirectorData";
+import AdminClientLayout from "../pages/Dashboard/AdminDashboard/AdminClientLayout";
+import AdminClientsData from "../pages/Dashboard/AdminDashboard/AdminClientsData/AdminClientsData";
+import AdminClientOnboard from "../pages/Dashboard/AdminDashboard/AdminClientsData/AdminClientOnboard";
 
 export const routes = createBrowserRouter([
   {
@@ -614,35 +617,38 @@ export const routes = createBrowserRouter([
                         element: <AdminHolidaysEvents />,
                       },
                       {
-                        path: "admin-client-list",
-                        element: <AdminClientsList />,
+                        path: "client-members",
+                        element: <AdminClientLayout />,
+                        children : [
+                          {
+                            path : "client-members-data",
+                            element : <AdminClientsData />
+                          },
+                          {
+                            path : "client-members-onboard",
+                            element : <AdminClientOnboard />
+                          },
+                          {
+                            path: "client-members-data/:clientName",
+                            element: <AdminClientMembersLayout />,
+                            children: [
+                              {
+                                path: "client-details",
+                                element: <AdminClientDetails />,
+                              },
+                              {
+                                path: "members",
+                                element: <AdminClientMembers />,
+                              },
+                              {
+                                path: "members/view-member/:id",
+                                element: <MemberDetails />,
+                              },
+                            ],
+                          },
+                        ]
                       },
-                      {
-                        path: "admin-client-list/:clientName",
-                        element: <AdminClientMembersLayout />,
-                        children: [
-                          {
-                            path: "client-details",
-                            element: <AdminClientDetails />,
-                          },
-                          // {
-                          //   path: "desks",
-                          //   element: <Desks />,
-                          // },
-                          // {
-                          //   path: "revenue",
-                          //   element: <ClientRevenue />,
-                          // },
-                          {
-                            path: "members",
-                            element: <AdminClientMembers />,
-                          },
-                          {
-                            path: "members/view-member/:id",
-                            element: <MemberDetails />,
-                          },
-                        ],
-                      },
+                
 
                       {
                         path: "data",
@@ -1173,14 +1179,7 @@ export const routes = createBrowserRouter([
                             path: "shifts",
                             element: <Shifts />,
                           },
-                          {
-                            path: "vendor-onboarding",
-                            element: <VendorOnboard />,
-                          },
-                          {
-                            path: "vendor-onboarding/vendor-details/:id",
-                            element: <ViewVendors />,
-                          },
+                          
                           {
                             path: "templates",
                             element: <Templates />,
@@ -1205,7 +1204,7 @@ export const routes = createBrowserRouter([
                             element: <ViewEmployees />,
                           },
                           {
-                            path: "view-employees/:id", // Move dynamic route to the same level as view-employees
+                            path: "view-employees/:firstName/:id",
                             element: <EmployeeDetail />,
                             children: [
                               {
@@ -1259,6 +1258,14 @@ export const routes = createBrowserRouter([
                             path: "reports",
 
                             element: <HrReports />,
+                          },
+                          {
+                            path: "vendor",
+                            element: <VendorOnboard />,
+                          },
+                          {
+                            path: "vendor/:id",
+                            element: <ViewVendors />,
                           },
                         ],
                       },

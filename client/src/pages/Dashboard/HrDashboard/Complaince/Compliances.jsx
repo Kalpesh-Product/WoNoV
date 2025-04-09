@@ -18,7 +18,6 @@ const Compliances = () => {
     { label: "Employee Types", path: "employee-type" },
     { label: "Shifts", path: "shifts" },
     { label: "Templates", path: "templates" },
-    { label: "Vendor", path: "vendor-onboarding" },
   ];
 
   // Redirect to "company-logo" if the current path is "/app/dashboard/HR-dashboard/company"

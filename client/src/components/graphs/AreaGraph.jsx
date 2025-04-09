@@ -154,8 +154,15 @@ const AreaGraph = ({ responseData }) => {
     },
     yaxis: {
       min: 0,
-      max: timeFilter === "Yearly" ? 250 : 100,
+      
+      tickAmount: timeFilter === "Yearly" ? 3 : 5, // ✅ this gives ticks like 0, 10, 20, ...
+      labels: {
+        formatter: function (val) {
+          return val.toFixed(0); // Optional: ensures integers
+        },
+      },
     },
+    
     tooltip: {
       shared: true,
       intersect: false,

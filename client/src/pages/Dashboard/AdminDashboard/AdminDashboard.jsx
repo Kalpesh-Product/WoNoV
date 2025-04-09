@@ -160,7 +160,7 @@ const AdminDashboard = () => {
     stroke: {
       show: true,
       width: 6, // Increase for more "gap"
-      colors: ['#ffffff'], // Or match background color
+      colors: ["#ffffff"], // Or match background color
     },
     toolTip: {
       y: {
@@ -191,7 +191,7 @@ const AdminDashboard = () => {
     stroke: {
       show: true,
       width: 6, // Increase for more "gap"
-      colors: ['#ffffff'], // Or match background color
+      colors: ["#ffffff"], // Or match background color
     },
     tooltip: {
       y: {
@@ -551,9 +551,33 @@ const AdminDashboard = () => {
     {
       layout: 2,
       widgets: [
+        <WidgetSection border title={"Overall Gender Data"}>
+          <PieChartMui data={pieGenderData} options={pieGenderOptions} />
+        </WidgetSection>,
+        <WidgetSection border title={"Biometrics Gender Data"}>
+          <PieChartMui data={pieGenderData} options={pieGenderOptions} />
+        </WidgetSection>,
+      ],
+    },
+    {
+      layout: 2,
+      widgets: [
+        <WidgetSection border title={"Department Gender Data"}>
+          <PieChartMui data={pieGenderData} options={pieGenderOptions} />
+        </WidgetSection>,
+
+        <WidgetSection border title={"House Keeping Staff Gender Data"}>
+          <PieChartMui data={pieGenderData} options={pieGenderOptions} />
+        </WidgetSection>,
+      ],
+    },
+    {
+      layout: 1,
+      widgets: [
         <MuiTable
           Title={"Newly Joined House Keeping Members"}
           rowsToDisplay={4}
+          
           scroll
           rows={[
             ...houseKeepingMemberData.map((item, index) => ({
@@ -566,10 +590,6 @@ const AdminDashboard = () => {
           ]}
           columns={houseKeepingMemberColumns}
         />,
-
-        <WidgetSection border title={"House Keeping Staff Gender Data"}>
-          <PieChartMui data={pieGenderData} options={pieGenderOptions} />
-        </WidgetSection>,
       ],
     },
     {
