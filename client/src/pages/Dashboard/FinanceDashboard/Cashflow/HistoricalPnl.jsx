@@ -35,7 +35,7 @@ const HistoricalPnl = () => {
       month: "April",
       domains: [
         {
-          name: "2020-21",
+          name: "2024-23",
           revenue: 12000,
           clients: [
             {
@@ -59,7 +59,7 @@ const HistoricalPnl = () => {
           ],
         },
         {
-          name: "2021-22",
+          name: "2023-22",
           revenue: 8000,
           clients: [
             {
@@ -77,7 +77,7 @@ const HistoricalPnl = () => {
           ],
         },
         {
-          name: "2022-23",
+          name: "2022-21",
           revenue: 15000,
           clients: [
             { client: "Client F", revenue: 5000 },
@@ -86,7 +86,7 @@ const HistoricalPnl = () => {
           ],
         },
         {
-          name: "2023-24",
+          name: "2021-20",
           revenue: 15000,
           clients: [
             {
@@ -110,7 +110,7 @@ const HistoricalPnl = () => {
           ],
         },
         {
-          name: "2024-25",
+          name: "2020-19",
           revenue: 15000,
           clients: [
             {
@@ -385,6 +385,91 @@ const HistoricalPnl = () => {
     legend: { position: "top" },
     colors: ["#80bf01"],
   };
+  //-----------------------------------------------------Graph------------------------------------------------------//
+  const incomeExpenseData = [
+    {
+      name: "Income",
+      data: [12000, 15000, 10000, 18000, 20000, 0],
+    },
+    {
+      name: "Expense",
+      data: [8000, 10000, 7000, 12000, 13000, 0],
+    },
+  ];
+  const incomeExpenseOptions = {
+    chart: {
+      id: "income-vs-expense-bar",
+      toolbar: { show: false },
+      fontFamily: "Poppins-Regular",
+    },
+    colors: ["#4CAF50", "#F44336"], // Green for income, Red for expense
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "70%",
+        borderRadius: 6, // Adds rounded corners to the top of bars
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["transparent"],
+    },
+    xaxis: {
+      categories: [
+        "2019 - 2020",
+        "2020 - 2021",
+        "2021 - 2022",
+        "2022 - 2023",
+        "2023 - 2024",
+        "2024 - 2025",
+        // "Oct-24",
+        // "Nov-24",
+        // "Dec-24",
+        // "Jan-25",
+        // "Feb-25",
+        // "Mar-25",
+      ],
+      title: {
+        text: "2020-2025", // overridden by BarGraph component
+      },
+    },
+    yaxis: {
+      title: {
+        text: "Amount (INR)",
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `₹${val.toLocaleString()}`,
+      },
+    },
+  };
+  //-----------------------------------------------------Graph------------------------------------------------------//
+
+  const techWidgets = [
+    {
+      layout: 1,
+      widgets: [
+        <WidgetSection border title={"Historical P&L"}>
+          <BarGraph
+            data={incomeExpenseData}
+            options={incomeExpenseOptions}
+            year={true}
+          />
+        </WidgetSection>,
+      ],
+    },
+  ];
 
   return (
     <div className="p-4 flex flex-col gap-4">
@@ -407,9 +492,14 @@ const HistoricalPnl = () => {
       </div> */}
 
       {/* Bar Graph Component */}
-      <WidgetSection layout={1} title={"Historical P&L"} border>
+      {/* <WidgetSection layout={1} title={"Historical P&L"} border>
         <BarGraph data={graphData} options={options} height={400} />
-      </WidgetSection>
+      </WidgetSection> */}
+      {techWidgets.map((section, index) => (
+        <WidgetSection key={index} layout={section?.layout} padding>
+          {section?.widgets}
+        </WidgetSection>
+      ))}
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
       <div>
