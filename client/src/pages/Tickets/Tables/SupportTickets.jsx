@@ -1,7 +1,7 @@
 import  { useState } from "react";
 import AgTable from "../../../components/AgTable";
 import MuiModal from "../../../components/MuiModal";
-import { Chip, CircularProgress } from "@mui/material";
+import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
@@ -12,8 +12,11 @@ import PrimaryButton from "../../../components/PrimaryButton";
 
 const SupportTickets = ({ title }) => {
   const [openModal, setopenModal] = useState(false);
+  const [esCalateModal, setEscalateModal] = useState(false);
+  const [esCalatedTicket, setEscalatedTicket] = useState(null);
   const axios = useAxiosPrivate();
   const [selectedTicketId, setSelectedTicketId] = useState(null);
+
 
   // Fetch Supported Tickets
   const { data: supportedTickets = [], isLoading } = useQuery({
@@ -53,6 +56,7 @@ const SupportTickets = ({ title }) => {
             : ["N/A"],
         
           ticketTitle: ticket.reason || "No Title",
+          acceptedBy : `${ticket.ticket.acceptedBy?.firstName ?? ""} ${ticket.ticket.acceptedBy?.lastName ?? ""}`,
           tickets:
             ticket.ticket?.assignees.length > 0
               ? "Assigned Ticket"
@@ -144,6 +148,68 @@ const SupportTickets = ({ title }) => {
       assignedEmployees: assignedEmployeeIds,
     }); // ✅ Send array of IDs
   };
+  const { data: departments = [], isPending: isDepartmentsPending } = useQuery({
+    queryKey: ["departments"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          "api/company/get-company-data?field=selectedDepartments"
+        );
+        return response.data?.selectedDepartments;
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    },
+  });
+
+  const {
+    handleSubmit: handleEscalateTicketSubmit,
+    reset: resetEscalateForm,
+    control: escalateFormControl,
+    formState: { errors: escalateTicketErrors },
+  } = useForm({
+    defaultValues: {
+      departmentId: "",
+      description: "",
+    },
+  });
+
+  const { mutate: escalateTicket, isPending: isEscalatePending } = useMutation({
+      mutationKey: ["escalate-ticket"],
+      mutationFn: async (ticketDetails) => {
+        const response = await axios.patch("/api/tickets/escalate-ticket", {
+          ticketId: esCalatedTicket.id,
+          description: ticketDetails.description,
+          departmentId: ticketDetails.departmentId,
+        });
+        return response.data;
+      },
+      onSuccess: (data) => {
+        setEscalateModal(false)
+        resetEscalateForm()
+        toast.success(data.message || "Ticket escalated successfully");
+        queryClient.invalidateQueries({ queryKey: ["supported-tickets"] });
+      },
+      onError: (error) => {
+        toast.error(error.response.data.message || "Failed to escalate ticket");
+      },
+    });
+
+  const onEscalate = (ticketDetails) => {
+    if (!ticketDetails) return;
+    escalateTicket({
+      ticketId: esCalatedTicket.id,
+      description: ticketDetails.description,
+      departmentId: ticketDetails.departmentId,
+    });
+  };
+
+  const handleEscalateTicket = (ticketDetails) => {
+    setEscalateModal(true);
+    setEscalatedTicket(ticketDetails);
+  };
+
+
 
   const recievedTicketsColumns = [
     { field: "srno", headerName: "SR NO" },
@@ -168,7 +234,7 @@ const SupportTickets = ({ title }) => {
           color: "white",
         };
         return (
-          <>
+          <div className="flex flex-col gap-1 p-2">
             <Chip
               label={params.value}
               style={{
@@ -176,7 +242,10 @@ const SupportTickets = ({ title }) => {
                 color,
               }}
             />
-          </>
+             <span className="text-small text-borderGray text-center h-full">
+              {params.data.acceptedBy}
+            </span>
+          </div>
         );
       },
     },
@@ -184,6 +253,7 @@ const SupportTickets = ({ title }) => {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => {
+        console.log(params.data)
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
           "In Progress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
@@ -205,9 +275,7 @@ const SupportTickets = ({ title }) => {
                 color,
               }}
             />
-            <span className="text-small text-borderGray text-center h-full">
-              By ABC
-            </span>
+           
           </div>
         );
       },
@@ -230,7 +298,7 @@ const SupportTickets = ({ title }) => {
               },
               {
                 label: "Escalate",
-                onClick: () => { }
+                onClick: () => handleEscalateTicket(params.data)
               }
             ]}
           />
@@ -291,6 +359,64 @@ const SupportTickets = ({ title }) => {
           </div>
         </form>
       </MuiModal>
+
+            <MuiModal open={esCalateModal} onClose={() => setEscalateModal(false)}>
+              <div>
+                <form
+                  onSubmit={handleEscalateTicketSubmit(onEscalate)}
+                  className="grid grid-cols-1 gap-4"
+                >
+                  <Controller
+                    name="departmentId"
+                    control={escalateFormControl}
+                    rules={{ required: "Department is required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label={"Department"}
+                        size="small"
+                        select
+                        error={!!escalateTicketErrors.departmentId}
+                        helperText={escalateTicketErrors.departmentId?.message}
+                        fullWidth
+                      >
+                        {isDepartmentsPending ? (
+                          <CircularProgress color="black" />
+                        ) : (
+                          departments?.map((dept) => (
+                            <MenuItem value={dept.department._id}>
+                              {dept.department.name}
+                            </MenuItem>
+                          ))
+                        )}
+                      </TextField>
+                    )}
+                  />
+                  <Controller
+                    name="description"
+                    control={escalateFormControl}
+                    rules={{ required: "Escalation description is required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label={"Description"}
+                        fullWidth
+                        size="small"
+                        multiline
+                        rows={4}
+                        error={!!escalateTicketErrors.description}
+                        helperText={escalateTicketErrors.description?.message}
+                      />
+                    )}
+                  />
+                  <PrimaryButton
+                    title={"Escalate Ticket"}
+                    isLoading={isEscalatePending}
+                    disabled={isEscalatePending}
+                  />
+                </form>
+              </div>
+            </MuiModal>
     </div>
   );
 };
