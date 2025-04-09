@@ -4,6 +4,7 @@ const {
   assignWeeklyUnit,
   updateWeeklyUnit,
   fetchWeeklyUnits,
+  addSubstitute,
 } = require("../controllers/adminControllers/WeeklyScheduleControllers");
 const {
   createAdminEvent,
@@ -12,7 +13,8 @@ const {
 } = require("../controllers/adminControllers/adminEventsControllers");
 
 router.post("/assign-weekly-unit", assignWeeklyUnit);
-router.patch("/update-weekly-unit", updateWeeklyUnit);
+router.post("/update-weekly-unit", updateWeeklyUnit);
+router.patch("/add-substitute", addSubstitute);
 router.get("/fetch-weekly-unit/:department", fetchWeeklyUnits);
 router.get("/events/:id", getAdminEvents);
 router.post("/create-admin-event", createAdminEvent);

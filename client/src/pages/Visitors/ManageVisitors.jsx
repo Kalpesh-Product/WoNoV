@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
 import { useQuery } from "@tanstack/react-query";
@@ -15,6 +15,7 @@ import {
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 const ManageVisitors = () => {
+
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,6 +111,12 @@ const ManageVisitors = () => {
     }
   };
 
+  // useEffect(()=>{
+ 
+  //   const toMeets = selectedVisitor.map((vis)=>vis)
+  //   console.log(selectedVisitor)
+  // },[])
+
   return (
     <div className="p-4">
       <AgTable
@@ -127,7 +134,7 @@ const ManageVisitors = () => {
             phoneNumber: item.phoneNumber,
             email: item.email,
             purposeOfVisit: item.purposeOfVisit,
-            toMeet: item.toMeet,
+            toMeet: !item?.toMeet ? null: `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
             checkIn: humanTime(item.checkIn),
             checkOut: humanTime(item.checkOut),
           })),
@@ -292,7 +299,7 @@ const ManageVisitors = () => {
                 ) : (
                   <DetalisFormatted
                     title="To Meet"
-                    detail={selectedVisitor.toMeet}
+                    detail={selectedVisitor?.toMeet}
                   />
                 )}
 
