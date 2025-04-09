@@ -13,7 +13,7 @@ const {
 
 router.post("/assign-weekly-unit", assignWeeklyUnit);
 router.patch("/update-weekly-unit", updateWeeklyUnit);
-router.get("/fetch-weekly-unit", fetchWeeklyUnits);
+router.get("/fetch-weekly-unit/:department", fetchWeeklyUnits);
 router.get("/events/:id", getAdminEvents);
 router.post("/create-admin-event", createAdminEvent);
 router.patch("/update-admin-event", updateAdminEvent);

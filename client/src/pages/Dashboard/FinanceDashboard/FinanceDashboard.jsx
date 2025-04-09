@@ -74,9 +74,6 @@ const FinanceDashboard = () => {
         "Feb-25",
         "Mar-25",
       ],
-      title: {
-        text: "2024-2025", // overridden by BarGraph component
-      },
     },
     yaxis: {
       title: {
@@ -398,7 +395,7 @@ const FinanceDashboard = () => {
         />,
         <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
         <Card icon={<SiCashapp />} title="Billing" route={"billing"} />,
-        <Card icon={<SiGoogleadsense />} title="Mix-Bag" />,
+        <Card icon={<SiGoogleadsense />} title="Mix-Bag" route={"mix-bag"} />,
         <Card
           icon={<SiGoogleadsense />}
           title="Data"

@@ -4,6 +4,7 @@ const { createLog } = require("../../utils/moduleLogs");
 const WeeklySchedule = require("../../models/administration/WeeklySchedule");
 const { default: mongoose } = require("mongoose");
 const Unit = require("../../models/locations/Unit");
+const Role = require("../../models/roles/Roles");
 
 const assignWeeklyUnit = async (req, res, next) => {
   const logPath = "administration/AdministrationLog";
@@ -161,18 +162,59 @@ const updateWeeklyUnit = async (req, res, next) => {
 
 const fetchWeeklyUnits = async (req, res, next) => {
   try {
-    const { company } = req;
+    const { department } = req.params;
+    const { user, company } = req;
 
-    const data = await WeeklySchedule.find({ company })
+    const foundUser = await UserData.findOne({
+      _id: user,
+      departments: { $in: [department] },
+    }).populate("reportsTo role departments");
+
+    if (!foundUser) {
+      return res.status(400).json({
+        message: `User doesn't belong to the department`,
+      });
+    }
+
+    const userDepartment = foundUser.departments.find(
+      (dept) => dept._id.toString() === department.toString()
+    );
+
+    const managerRole = foundUser.role.some(
+      (role) =>
+        role.roleTitle.startsWith(`${userDepartment.name}`) &&
+        role.roleTitle.endsWith("Admin")
+    );
+
+    let foundManager = foundUser;
+
+    //logged-in user is an employee and not an admin
+    if (!managerRole) {
+      foundManager = await UserData.findOne({
+        role: { $in: [foundUser.reportsTo] },
+      }).select("firstName lastName");
+    }
+
+    let manager = "N/A"; //If logged-in user doesn't belong to the department
+    if (foundManager) {
+      manager = `${foundManager.firstName} ${foundManager.lastName}`;
+    }
+
+    const weeklySchedules = await WeeklySchedule.find({ company })
       .populate("employee.id", "firstName lastName")
       .populate("substitutions.substitute", "firstName lastName")
       .populate({
         path: "location",
-        select: "unitName",
+        select: "unitName unitNo",
         populate: { path: "building", select: "buildingName" },
       });
 
-    res.status(200).json(data);
+    const transformedData = weeklySchedules.map((schedule) => ({
+      ...schedule._doc,
+      manager,
+    }));
+
+    res.status(200).json(transformedData);
   } catch (error) {
     next(error);
   }
