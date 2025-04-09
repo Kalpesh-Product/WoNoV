@@ -1,3 +1,4 @@
+import dayjs from "dayjs"
 // export const convertToISOFormat = (dateStr, timeStr) => {
 //   // Convert date string to YYYY-MM-DD
 //   const [day, month, year] = dateStr.split("-").map(Number);
@@ -121,4 +122,12 @@ export const convertToISOFormat = (dateStr, timeStr) => {
   const formattedTime = `${String(hours).padStart(2, "0")}:${minutes}:00`;
 
   return `${formattedDate}T${formattedTime}`;
+};
+
+export const formatDuration = (start, end) => {
+  const diffMs = dayjs(end).diff(dayjs(start));
+  const duration = dayjs.duration(diffMs);
+  const hours = duration.hours().toString().padStart(2, "0");
+  const minutes = duration.minutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
 };
