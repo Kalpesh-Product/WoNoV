@@ -30,6 +30,10 @@ const WeeklyScheduleSchema = new mongoose.Schema(
         type: Boolean,
         default: true,
       },
+      isReassigned: {
+        type: Boolean,
+        default: false,
+      },
     },
     substitutions: [
       {
