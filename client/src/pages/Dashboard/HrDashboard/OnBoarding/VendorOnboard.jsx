@@ -63,7 +63,7 @@ const VendorOnboard = () => {
           }}
           onClick={() =>
             navigate(
-              `/app/dashboard/HR-dashboard/company/vendor-onboarding/vendor-details/${params.data.vendorID}`
+              `/app/dashboard/HR-dashboard/data/vendor/${params.data.vendorName}`
             )
           }
         >

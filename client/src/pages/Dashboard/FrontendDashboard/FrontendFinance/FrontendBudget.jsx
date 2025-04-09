@@ -399,7 +399,6 @@ const FrontendBudget = () => {
                   tableTitle={`${data.month}`}
                   data={data.tableData.rows}
                   columns={data.tableData.columns}
-                  tableHeight={250}
                 />
               </AccordionDetails>
             </Accordion>

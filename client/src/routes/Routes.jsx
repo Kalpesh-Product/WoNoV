@@ -1173,14 +1173,7 @@ export const routes = createBrowserRouter([
                             path: "shifts",
                             element: <Shifts />,
                           },
-                          {
-                            path: "vendor-onboarding",
-                            element: <VendorOnboard />,
-                          },
-                          {
-                            path: "vendor-onboarding/vendor-details/:id",
-                            element: <ViewVendors />,
-                          },
+                          
                           {
                             path: "templates",
                             element: <Templates />,
@@ -1205,7 +1198,7 @@ export const routes = createBrowserRouter([
                             element: <ViewEmployees />,
                           },
                           {
-                            path: "view-employees/:id", // Move dynamic route to the same level as view-employees
+                            path: "view-employees/:firstName/:id",
                             element: <EmployeeDetail />,
                             children: [
                               {
@@ -1259,6 +1252,14 @@ export const routes = createBrowserRouter([
                             path: "reports",
 
                             element: <HrReports />,
+                          },
+                          {
+                            path: "vendor",
+                            element: <VendorOnboard />,
+                          },
+                          {
+                            path: "vendor/:id",
+                            element: <ViewVendors />,
                           },
                         ],
                       },
