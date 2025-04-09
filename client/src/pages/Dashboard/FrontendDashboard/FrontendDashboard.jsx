@@ -16,7 +16,6 @@ import LineGraph from "../../../components/graphs/LineGraph";
 import PrimaryButton from "../../../components/PrimaryButton";
 
 const FrontendDashboard = () => {
-
   // Data and calculations
   const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
   const defaultData = utilisedData.map((value) =>
@@ -64,7 +63,7 @@ const FrontendDashboard = () => {
         ],
       },
     },
-    colors: ["#27C96A", "#275D3E", "#FF0000"], // Colors for the series
+    colors: ["#36BA98", "#275D3E", "#E83F25"], // Colors for the series //default //uti
     dataLabels: {
       enabled: true,
       formatter: (value, { seriesIndex }) => {
@@ -173,16 +172,26 @@ const FrontendDashboard = () => {
 
   const nationWiseData = [
     { id: 0, value: 30, actualCount: 300, label: "Mumbai", color: "#00274D" }, // Deep Navy Blue
-    { id: 1, value: 20, actualCount: 200, label: "Delhi", color: "#003F7F" },  // Dark Blue
-    { id: 2, value: 15, actualCount: 150, label: "Bangalore", color: "#0056B3" }, // Royal Blue
-    { id: 3, value: 10, actualCount: 100, label: "Hyderabad", color: "#0073E6" }, // Bright Blue
+    { id: 1, value: 20, actualCount: 200, label: "Delhi", color: "#003F7F" }, // Dark Blue
+    {
+      id: 2,
+      value: 15,
+      actualCount: 150,
+      label: "Bangalore",
+      color: "#0056B3",
+    }, // Royal Blue
+    {
+      id: 3,
+      value: 10,
+      actualCount: 100,
+      label: "Hyderabad",
+      color: "#0073E6",
+    }, // Bright Blue
     { id: 4, value: 8, actualCount: 80, label: "Chennai", color: "#338FFF" }, // Sky Blue
     { id: 5, value: 7, actualCount: 70, label: "Kolkata", color: "#6699FF" }, // Light Blue
     { id: 6, value: 5, actualCount: 50, label: "Pune", color: "#99B3FF" }, // Soft Blue
     { id: 7, value: 5, actualCount: 50, label: "Ahmedabad", color: "#CCD9FF" }, // Very Light Blue
   ];
-  
-  
 
   // Updated Pie Chart Configuration
   const nationWisePieChart = {
@@ -212,12 +221,11 @@ const FrontendDashboard = () => {
       horizontalAlign: "center",
     },
   };
-  
 
   //Line Graph data
 
-  const totalIssues = [50, 75, 60, 65, 55, 50, 58, 80, 67, 45, 60, 75];
-  const resolvedIssues = [40, 70, 50, 60, 45, 40, 50, 70, 60, 40, 55, 70];
+  const totalIssues = [5, 7, 6, 6, 5, 5, 5, 8, 6, 4, 6, 7];
+  const resolvedIssues = [4, 7, 5, 6, 4, 4, 5, 7, 6, 4, 5, 7];
 
   // Calculate percentage of resolved issues
   const resolvedPercentage = totalIssues.map((total, index) => {
@@ -293,12 +301,11 @@ const FrontendDashboard = () => {
 
   const goaDistrictData = [
     { id: 0, value: 40, actualCount: 400, label: "Panaji", color: "#00274D" }, // Deep Navy Blue
-    { id: 1, value: 25, actualCount: 250, label: "Margao", color: "#003F7F" },  // Dark Blue
+    { id: 1, value: 25, actualCount: 250, label: "Margao", color: "#003F7F" }, // Dark Blue
     { id: 2, value: 15, actualCount: 150, label: "Mapusa", color: "#0056B3" }, // Royal Blue
     { id: 3, value: 10, actualCount: 100, label: "Pernem", color: "#0073E6" }, // Bright Blue
     { id: 4, value: 10, actualCount: 100, label: "Vasco", color: "#338FFF" }, // Sky Blue
   ];
-  
 
   // Updated Pie Chart Configuration for Goa Districts
   const goaDistrictPieChart = {
@@ -334,11 +341,16 @@ const FrontendDashboard = () => {
       layout: 1,
       widgets: [
         <WidgetSection border title={"Budget v/s Achievements"}>
-          <LayerBarGraph
-            data={data}
-            options={options}
-          />
-        </WidgetSection>
+          <LayerBarGraph data={data} options={options} />
+        </WidgetSection>,
+      ],
+    },
+    {
+      layout: 3,
+      widgets: [
+        <Card icon={<MdRebaseEdit />} title="Create Website" />,
+        <Card icon={<LuHardDriveUpload />} title="Edit website" />,
+        <Card icon={<CgWebsite />} title="New Themes" route={"select-theme"} />,
       ],
     },
     {
@@ -349,15 +361,11 @@ const FrontendDashboard = () => {
         <Card icon={<CgWebsite />} title="New Themes" route={"select-theme"} />,
         <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
         <Card icon={<SiGoogleadsense />} title="Data" route={"data"} />,
-        <Card icon={<MdMiscellaneousServices />} title="Settings" route={"settings"} />,
-      ],
-    },
-    {
-      layout: 1,
-      widgets: [
-        <WidgetSection layout={1} title={"Website Issues Raised"} border>
-          <LineGraph options={websiteIssuesOptions} data={websiteIssuesData} />
-        </WidgetSection>,
+        <Card
+          icon={<MdMiscellaneousServices />}
+          title="Settings"
+          route={"settings"}
+        />,
       ],
     },
     {
@@ -368,22 +376,32 @@ const FrontendDashboard = () => {
         </WidgetSection>,
       ],
     },
+  
     {
-      layout: 2,
+      layout : 2,
+      widgets  : [
+        <WidgetSection layout={1} border title={"Location-wise site Visitors"}>
+      <PieChartMui
+        percent={true} // Enable percentage display
+        data={nationWiseData} // Pass processed data
+        options={nationWisePieChart}
+      />
+    </WidgetSection>,
+    <WidgetSection layout={1} border title={"Site Visitors"}>
+      <PieChartMui
+        percent={true} // Enable percentage display
+        data={goaDistrictData} // Pass processed data
+        options={goaDistrictPieChart}
+      />
+    </WidgetSection>
+      ]
+    },
+
+    {
+      layout: 1,
       widgets: [
-        <WidgetSection layout={1} border title={"Site Visitors"}>
-          <PieChartMui
-            percent={true} // Enable percentage display
-            data={nationWiseData} // Pass processed data
-            options={nationWisePieChart}
-          />
-        </WidgetSection>,
-        <WidgetSection layout={1} border title={"Site Visitors"}>
-          <PieChartMui
-            percent={true} // Enable percentage display
-            data={goaDistrictData} // Pass processed data
-            options={goaDistrictPieChart}
-          />
+        <WidgetSection layout={1} title={"Website Issues Raised"} border>
+          <LineGraph options={websiteIssuesOptions} data={websiteIssuesData} />
         </WidgetSection>,
       ],
     },
@@ -392,7 +410,6 @@ const FrontendDashboard = () => {
   return (
     <div>
       {techWidgets.map((section, index) => (
-       
         <WidgetSection key={index} layout={section?.layout}>
           {section?.widgets}
         </WidgetSection>

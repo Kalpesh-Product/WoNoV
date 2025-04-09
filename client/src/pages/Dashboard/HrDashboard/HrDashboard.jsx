@@ -632,7 +632,7 @@ const HrDashboard = () => {
       layout: 2,
       heading: "Site Visitor Analytics",
       widgets: [
-        <WidgetSection title={"Gender Distribution"} border>
+        <WidgetSection title={"Employee Gender Distribution"} border>
           <PieChartMui
             percent={true} // Enable percentage display
             title={"Gender Distribution"}

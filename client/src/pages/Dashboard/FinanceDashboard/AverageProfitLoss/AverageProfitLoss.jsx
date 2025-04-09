@@ -163,7 +163,7 @@ const AverageProfitLoss = () => {
       ))}
 
       <div>
-        <WidgetSection border title={`Total Monthly P&L : ${totalPnL}`}>
+        <WidgetSection border title={`Total Monthly P&L : ${totalPnL.toLocaleString()} INR`}>
           <AgTable
             data={monthlyProfitLossData}
             columns={monthlyProfitLossColumns}

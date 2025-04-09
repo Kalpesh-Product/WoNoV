@@ -28,28 +28,32 @@ const WidgetSection = ({
   return (
     <div className="py-0 motion-preset-slide-up-sm">
       {title && (
-        <div className=" border-default  border-[#7D7D7E] p-4 flex justify-between items-center rounded-t-md">
-          <span
-            className={`${
-              titleFont
-                ? "text-subtitle text-primary"
-                : "text-title text-primary font-pmedium"
-            }`}>
-            {title}{" "}
-            <span>
+        <div className=" border-default  border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-md">
+          <div className="flex w-full gap-8 items-center justify-between">
+            <span
+              className={`${
+                titleFont
+                  ? "text-subtitle text-primary"
+                  : "text-title text-primary font-pmedium"
+              }`}
+            >
+              {title}{" "}
+            </span>
+       
               {titleData && (
                 <span>
                   {" "}
                   :{" "}
                   <span
                     style={{ color: titleDataColor }}
-                    className="font-pbold text-title">
+                    className="font-pbold text-title"
+                  >
                     {titleData}
                   </span>
                 </span>
               )}
-            </span>
-          </span>
+       
+          </div>
           {button && (
             <PrimaryButton title={buttonTitle} handleSubmit={handleClick} />
           )}
@@ -57,10 +61,12 @@ const WidgetSection = ({
       )}
       <div
         style={border ? { border: "2px solid #d1d5db", borderTop: "0" } : {}}
-        className="h-full rounded-b-md">
+        className="h-full rounded-b-md"
+      >
         <div
           style={{ padding: padding ? "0" : "1rem" }}
-          className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>
+          className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}
+        >
           {React.Children.map(children, (child) => (
             <div>{child}</div>
           ))}
