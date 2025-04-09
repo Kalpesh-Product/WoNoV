@@ -379,7 +379,7 @@ const FinanceDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"}>
+        <WidgetSection border title={"Income v/s Expenses"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
@@ -433,7 +433,7 @@ const FinanceDashboard = () => {
             height={350}
           />
         </WidgetSection>,
-        <WidgetSection title={"Current Month Payouts"} border>
+        <WidgetSection title={"Current Months Customer Collections"} border>
           <PieChartMui
             data={pieMonthlyCollectionData}
             options={pieMonthlyCollectionOptions}

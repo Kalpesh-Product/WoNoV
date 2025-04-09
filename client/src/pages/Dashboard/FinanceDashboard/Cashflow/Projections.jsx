@@ -143,7 +143,7 @@ const Projections = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"}>
+        <WidgetSection border title={"Projections"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
