@@ -560,37 +560,38 @@ const HrDashboard = () => {
             title={"Payroll Expense Graph"}
           >
             <LayerBarGraph data={data} options={optionss} />
+            <hr />
+          <WidgetSection layout={3} padding>
+            <DataCard
+              data={"40K"}
+              title={"Projected"}
+              route={"/app/dashboard/frontend-dashboard/finance"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={"35K"}
+              title={"Actual"}
+              route={"/app/dashboard/frontend-dashboard/finance"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={6000}
+              title={"Requested"}
+              route={"/app/dashboard/frontend-dashboard/finance"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+          </WidgetSection>
           </WidgetSection>
         </Suspense>,
-      ],
-    },
-    {
-      layout: 3,
-      widgets: [
-        <DataCard
-          data={"40K"}
-          title={"Projected"}
-          route={"/app/dashboard/hr-dashboard/finance/budget"}
-          description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
-        />,
-        <DataCard
-          data={"35K"}
-          title={"Actual"}
-          route={"/app/dashboard/hr-dashboard/finance/budget"}
-          description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
-        />,
-        <DataCard
-          data={6000}
-          title={"Requested"}
-          route={"/app/dashboard/hr-dashboard/finance/budget"}
-          description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
-        />,
       ],
     },
     {

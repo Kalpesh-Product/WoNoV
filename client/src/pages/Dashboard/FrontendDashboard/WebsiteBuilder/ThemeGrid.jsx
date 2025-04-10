@@ -120,10 +120,10 @@ const ThemeGrid = () => {
     <div>
       <div className="p-4 flex flex-col gap-4">
         <div className="themePage-content-header bg-white flex flex-col gap-4">
-          <span className="text-left text-title text-primary font-pmedium">
+        <h4 className="text-4xl text-left">
             Select Themes
-          </span>
-          <hr className="h-[2px] w-full bg-black"/>
+          </h4>
+          <hr/>
         </div>
 
         {!isTemplatesPending ? (
@@ -183,9 +183,9 @@ const ThemeGrid = () => {
           <div className="themePage-featured-grid grid grid-cols-2 gap-4">
             <div className="themePage-featured-grid-1 flex flex-col justify-center">
               <div className="themePage-featured-header">
-                <span className="text-title text-left mb-8 text-primary font-pmedium">
+                <h4 className="text-4xl text-left mb-8">
                   Customize it your way
-                </span>
+                </h4>
               </div>
               <div className="themePage-featured-content mb-8 pl-2">
                 <ul className="text-lg">
