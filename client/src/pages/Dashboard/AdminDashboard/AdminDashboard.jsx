@@ -3,6 +3,7 @@ import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
   MdOutlineMiscellaneousServices,
+  MdRebaseEdit,
 } from "react-icons/md";
 import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import WidgetSection from "../../../components/WidgetSection";
@@ -14,6 +15,8 @@ import MuiTable from "../../../components/Tables/MuiTable";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import TreemapGraph from "../../../components/graphs/TreemapGraph";
+import { LuHardDriveUpload } from "react-icons/lu";
+import { CgWebsite } from "react-icons/cg";
 dayjs.extend(customParseFormat);
 const AdminDashboard = () => {
   const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
@@ -448,6 +451,26 @@ const AdminDashboard = () => {
         </WidgetSection>,
       ],
     },
+     {
+          layout: 3,
+          widgets: [
+            <Card
+              icon={<MdRebaseEdit />}
+              title="Allocated Budget"
+              route="/app/dashboard/admin-dashboard/finance/budget"
+            />,
+            <Card
+              icon={<LuHardDriveUpload />}
+              title="Used Budget"
+              route="/app/dashboard/admin-dashboard/finance/budget"
+            />,
+            <Card
+              icon={<CgWebsite />}
+              title="Remaining Budget"
+              route="/app/dashboard/admin-dashboard/finance/budget"
+            />,
+          ],
+        },
     {
       layout: 6,
       widgets: [

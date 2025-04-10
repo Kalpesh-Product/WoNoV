@@ -98,7 +98,7 @@ const HrBudget = () => {
   const financialData = Object.values(groupedData)
     .map((data) => ({
       ...data,
-      amount: data.amount.toFixed(2), // Ensuring two decimal places for total amount
+      amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
     }))
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
@@ -215,7 +215,9 @@ const HrBudget = () => {
             <span className="text-title font-pmedium text-primary">
               Allocated Budget :{" "}
             </span>
-            <span className="text-title font-pmedium">5 Lakhs</span>
+            <span className="text-title font-pmedium">
+              {"INR " + Number(500000).toLocaleString("en-IN")}
+            </span>
           </div>
           <div>
             <PrimaryButton
@@ -238,19 +240,20 @@ const HrBudget = () => {
                     {data.month}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {data.amount}
+                    {"INR "+data.amount}
                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails>
-                <AgTable
-                  search={true}
-                  searchColumn={"Department"}
-                  tableTitle={`${data.month}`}
-                  data={data.tableData.rows}
-                  columns={data.tableData.columns}
-                  tableHeight={250}
-                />
+              <div className="border-t-[1px] border-borderGray py-4">
+                  <AgTable
+                    search={data.tableData?.rows?.length >= 10}
+                    data={data.tableData.rows}
+                    columns={data.tableData.columns}
+                    tableHeight={400}
+                    hideFilter={data.tableData?.rows?.length <= 9}
+                  />
+                </div>
               </AccordionDetails>
             </Accordion>
           ))}

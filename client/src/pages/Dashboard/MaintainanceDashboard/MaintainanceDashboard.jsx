@@ -3,6 +3,7 @@ import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
   MdOutlineMiscellaneousServices,
+  MdRebaseEdit,
 } from "react-icons/md";
 import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import WidgetSection from "../../../components/WidgetSection";
@@ -12,6 +13,8 @@ import PieChartMui from "../../../components/graphs/PieChartMui";
 import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
+import { LuHardDriveUpload } from "react-icons/lu";
+import { CgWebsite } from "react-icons/cg";
 
 const MaintainanceDashboard = () => {
   const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
@@ -44,7 +47,7 @@ const MaintainanceDashboard = () => {
         borderRadiusApplication: "end",
       },
     },
-     colors: ["#36BA98", "#275D3E", "#E83F25"], // Colors for the series
+    colors: ["#36BA98", "#275D3E", "#E83F25"], // Colors for the series
     dataLabels: {
       enabled: true,
       formatter: (value, { seriesIndex }) => {
@@ -460,6 +463,26 @@ const MaintainanceDashboard = () => {
         <WidgetSection border title={"Budget v/s Achievements"}>
           <LayerBarGraph data={data} options={options} />
         </WidgetSection>,
+      ],
+    },
+    {
+      layout: 3,
+      widgets: [
+        <Card
+          icon={<MdRebaseEdit />}
+          title="Allocated Budget"
+          route="/app/dashboard/maintenance-dashboard/finance/budget"
+        />,
+        <Card
+          icon={<LuHardDriveUpload />}
+          title="Used Budget"
+          route="/app/dashboard/maintenance-dashboard/finance/budget"
+        />,
+        <Card
+          icon={<CgWebsite />}
+          title="Remaining Budget"
+          route="/app/dashboard/maintenance-dashboard/finance/budget"
+        />,
       ],
     },
     {
