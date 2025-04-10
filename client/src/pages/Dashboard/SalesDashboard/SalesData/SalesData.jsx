@@ -470,20 +470,13 @@ const locationPieChartOptions = {
 const calculateCompletedTime = (startDate) => {
   const start = dayjs(startDate);
   const today = dayjs();
-  const diff = dayjs.duration(today.diff(start));
+  const totalMonths = today.diff(start, "month", true); 
+  const years = totalMonths / 12;
 
-  const years = diff.years();
-  const months = diff.months();
-  const days = diff.days();
-
-  let result = [];
-  if (years > 0) result.push(`${years} year${years > 1 ? "s" : ""}`);
-  if (months > 0) result.push(`${months} month${months > 1 ? "s" : ""}`);
-  if (days > 0 || result.length === 0)
-    result.push(`${days} day${days > 1 ? "s" : ""}`);
-
-  return result.join(", ");
+  return `${years.toFixed(1)} years`;
 };
+
+
 
 // ✅ Format Data for Table
 const companyTableColumns = [
