@@ -415,7 +415,7 @@ const Attendance = () => {
                   // totalHours: "9",
                   totalHours: formatHours(
                     new Date(record.outTime) -
-                      new Date(record.inTime) +
+                      new Date(record.inTime) -
                       1 * 60 * 60 * 1000
                   ),
                   entryType: record.entryType,
