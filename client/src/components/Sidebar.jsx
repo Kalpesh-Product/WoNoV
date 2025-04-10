@@ -19,7 +19,7 @@ import { HiOutlineChatAlt2 } from "react-icons/hi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSidebar } from "../context/SideBarContext";
 import { MdHome } from "react-icons/md";
-import { RiAdminFill} from "react-icons/ri";
+import { RiAdminFill } from "react-icons/ri";
 import { TbCashRegister } from "react-icons/tb";
 import { FaUserTie } from "react-icons/fa6";
 import { MdMeetingRoom } from "react-icons/md";
@@ -93,22 +93,16 @@ const Sidebar = () => {
       title: "Dashboard",
       submenus: [
         {
-          id: 2,
-          title: "Frontend Dashboard",
-          icon: <FaLaptopCode />,
-          route: "/app/dashboard/frontend-dashboard",
-        },
-        {
           id: 3,
           title: "HR Dashboard",
           icon: <RiAdminFill />,
           route: "/app/dashboard/HR-dashboard",
         },
         {
-          id: 4,
-          title: "Finance Dashboard",
-          route: "/app/dashboard/finance-dashboard",
-          icon: <TbCashRegister />,
+          id: 9,
+          title: "IT Dashboard",
+          route: "/app/dashboard/IT-dashboard",
+          icon: <FaLaptopMedical />,
         },
         {
           id: 5,
@@ -122,22 +116,31 @@ const Sidebar = () => {
           route: "/app/dashboard/admin-dashboard",
           icon: <FaUserShield />,
         },
+
+        {
+          id: 4,
+          title: "Finance Dashboard",
+          route: "/app/dashboard/finance-dashboard",
+          icon: <TbCashRegister />,
+        },
+        {
+          id: 2,
+          title: "Frontend Dashboard",
+          icon: <FaLaptopCode />,
+          route: "/app/dashboard/frontend-dashboard",
+        },
+
         {
           id: 7,
           title: "Maintenance Dashboard",
           route: "/app/dashboard/maintenance-dashboard",
           icon: <GiAutoRepair />,
         },
+
         {
           id: 8,
           title: "Cafe Dashboard",
           icon: <GrCafeteria />,
-        },
-        {
-          id: 9,
-          title: "IT Dashboard",
-          route: "/app/dashboard/IT-dashboard",
-          icon: <FaLaptopMedical />,
         },
       ],
     },

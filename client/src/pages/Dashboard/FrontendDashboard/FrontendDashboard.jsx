@@ -148,6 +148,9 @@ const FrontendDashboard = () => {
         "Feb-25",
         "Mar-25",
       ], // Financial year months
+      title: {
+        text: undefined, // 👈 empty string works too
+      },
     },
     yaxis: {
       title: {

@@ -35,7 +35,6 @@ const BarGraph = ({
     ...options,
     xaxis: {
       ...options?.xaxis,
-      title: { text: selectedYear },
     },
   };
 
