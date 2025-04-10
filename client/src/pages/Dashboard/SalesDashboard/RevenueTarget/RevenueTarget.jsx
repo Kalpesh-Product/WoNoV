@@ -20,7 +20,7 @@ const RevenueTarget = () => {
       domains: [
         {
           name: "Co-Working",
-          revenue: 12000,
+          revenue: 125680,
           clients: [
             {
               client: "Zomato",
@@ -44,7 +44,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Workation",
-          revenue: 8000,
+          revenue: 83630,
           clients: [
             { client: "Client D", revenue: 4000 },
             { client: "Client E", revenue: 4000 },
@@ -52,7 +52,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Co-Living",
-          revenue: 15000,
+          revenue: 157840,
           clients: [
             { client: "Client F", revenue: 5000 },
             { client: "Client G", revenue: 7000 },
@@ -61,7 +61,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Virtual Office",
-          revenue: 15000,
+          revenue: 156380,
           clients: [
             { client: "Client F", revenue: 5000 },
             { client: "Client G", revenue: 7000 },
@@ -70,7 +70,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Other Channels",
-          revenue: 15000,
+          revenue: 156470,
           clients: [
             { client: "Client F", revenue: 5000 },
             { client: "Client G", revenue: 7000 },
@@ -207,6 +207,7 @@ const RevenueTarget = () => {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
     legend: { position: "top" },
+    // colors: ["#1E3D73"],
     colors: ["#1E3D73"],
   };
 
@@ -216,7 +217,11 @@ const RevenueTarget = () => {
       <div className="mb-4">
         <FormControl size="small">
           <InputLabel>Select Month</InputLabel>
-          <Select value={selectedMonth} onChange={handleMonthChange} sx={{ width: "200px" }}  label="Select Month">
+          <Select
+            value={selectedMonth}
+            onChange={handleMonthChange}
+            sx={{ width: "200px" }}
+            label="Select Month">
             {mockBusinessRevenueData.map((data) => (
               <MenuItem key={data.month} value={data.month}>
                 {data.month}
@@ -227,7 +232,12 @@ const RevenueTarget = () => {
       </div>
 
       {/* Bar Graph Component */}
-      <WidgetSection layout={1} border padding title={"Revenue Targets"}>
+      <WidgetSection
+        layout={1}
+        border
+        padding
+        title={"Vertical-wise Revenue Targets - April 2025"}
+        TitleAmount={"6,80,000"}>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
 
@@ -240,18 +250,17 @@ const RevenueTarget = () => {
                 expandIcon={<IoIosArrowDown />}
                 aria-controls={`panel-${index}-content`}
                 id={`panel-${index}-header`}
-                className="border-b-[1px] border-borderGray"
-              >
+                className="border-b-[1px] border-borderGray">
                 <div className="flex justify-between items-center w-full px-4">
                   <span className="text-subtitle font-pmedium">
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()}{" "}INR
+                    {domain.revenue.toLocaleString()} INR
                   </span>
                 </div>
               </AccordionSummary>
-               <AccordionDetails sx={{borderTop:'1px solid  #d1d5db'}}>
+              <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 <AgTable
                   data={domain.clients}
                   hideFilter

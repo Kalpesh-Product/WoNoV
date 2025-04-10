@@ -152,7 +152,6 @@ const monthlyLeadsOptions = {
     y: {
       formatter: (val) => `${val} Leads`,
     },
-    
   },
   colors: [
     "#1E3D73", // Dark Blue (Co-Working)
@@ -193,7 +192,14 @@ const sourcingChannelsOptions = {
     stacked: true, // Enable stacking for domains
     fontFamily: "Poppins-Regular",
   },
-  colors: ["#00cdd1"],
+  // colors: ["#00cdd1"],
+  colors: [
+    "#1E3D73", // Dark Blue (Co-Working)
+    "#2196F3", // Bright Blue (Meetings)
+    "#98F5E1", // Light Mint Green (Virtual Office)
+    "#00BCD4", // Cyan Blue (Workation)
+    "#1976D2", // Medium Blue (Alt Revenues)
+  ],
   xaxis: {
     categories: financialYearMonths,
     title: { text: "Months" },
@@ -215,7 +221,7 @@ const sourcingChannelsOptions = {
   legend: { position: "top", show: false },
   dataLabels: { enabled: true, position: "middle" },
   // tooltip: {
-  //   shared: false, 
+  //   shared: false,
   //   custom: ({ series, seriesIndex, dataPointIndex, w }) => {
   //     if (!w || !w.globals.seriesNames) return "";
 
@@ -228,9 +234,9 @@ const sourcingChannelsOptions = {
   //       .join("<br>");
 
   //     return `<div style="
-  //       background: white; 
-  //       padding: 10px; 
-  //       border-radius: 5px; 
+  //       background: white;
+  //       padding: 10px;
+  //       border-radius: 5px;
   //       box-shadow: 0px 0px 5px rgba(0,0,0,0.2);
   //       font-family: Poppins, sans-serif;
   //       font-size: 12px;
@@ -399,8 +405,6 @@ const sectorPieChartData = Object.keys(sectorMap).map((sector) => ({
   label: sector,
   value: ((sectorMap[sector] / totalSeats) * 100).toFixed(2), // Convert to percentage
 }));
-
-
 
 // -----------------------Sector categories Pie Data End--------------------
 

@@ -35,6 +35,80 @@ const SalesDashboard = () => {
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
 
+  //-----------------------------------------------------Graph------------------------------------------------------//
+  const incomeExpenseData = [
+    {
+      name: "Income",
+      data: [
+        12000, 15000, 10000, 18000, 20000, 16000, 17000, 19000, 14000, 21000,
+        22000, 25000,
+      ],
+    },
+    // {
+    //   name: "Expense",
+    //   data: [
+    //     8000, 10000, 7000, 12000, 13000, 11000, 12000, 12500, 25000, 15000,
+    //     16000, 17000,
+    //   ],
+    // },
+  ];
+  const incomeExpenseOptions = {
+    chart: {
+      id: "income-vs-expense-bar",
+      toolbar: { show: false },
+      fontFamily: "Poppins-Regular",
+    },
+    colors: ["#4CAF50", "#F44336"], // Green for income, Red for expense
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "50%",
+        borderRadius: 6, // Adds rounded corners to the top of bars
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["transparent"],
+    },
+    xaxis: {
+      categories: [
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
+      ],
+    },
+    yaxis: {
+      title: {
+        text: "Amount (INR)",
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `₹${val.toLocaleString()}`,
+      },
+    },
+  };
+  //-----------------------------------------------------Graph------------------------------------------------------//
+
   const monthShortToFull = {
     Apr: "April",
     May: "May",
@@ -91,10 +165,16 @@ const SalesDashboard = () => {
   //-----------------------------------------------API-----------------------------------------------------------//
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
   const totalCoWorkingSeats = unitsData.reduce(
-    (sum, item) => sum + (item.openDesks ? item.openDesks : 0 + item.cabinDesks ?item.cabinDesks : 0),
+    (sum, item) =>
+      sum +
+      (item.openDesks
+        ? item.openDesks
+        : 0 + item.cabinDesks
+        ? item.cabinDesks
+        : 0),
     0
   );
-  console.log("Total available seats : ",totalCoWorkingSeats)
+  console.log("Total available seats : ", totalCoWorkingSeats);
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
   //-----------------------------------------------Conversion of leads into graph-----------------------------------------------------------//
 
@@ -244,7 +324,7 @@ const SalesDashboard = () => {
     0
   );
 
-  console.log("Total occupied desks : ",totalClientsDesks)
+  console.log("Total occupied desks : ", totalClientsDesks);
 
   const totalDeskPercent = simplifiedClientsPie.map((item) => ({
     label: `${item.companyName} ${(
@@ -260,7 +340,7 @@ const SalesDashboard = () => {
     }),
     chart: {
       fontFamily: "Poppins-Regular",
-      toolbar: false
+      toolbar: false,
     },
     tooltip: {
       y: {
@@ -277,9 +357,9 @@ const SalesDashboard = () => {
 
   const sectorwiseData = Array.isArray(clientsData)
     ? clientsData.map((item) => ({
-      clientName: item.clientName,
-      sector: item.sector,
-    }))
+        clientName: item.clientName,
+        sector: item.sector,
+      }))
     : [];
 
   const totalClients = sectorwiseData.length;
@@ -332,7 +412,7 @@ const SalesDashboard = () => {
     stroke: {
       show: true,
       width: 4, // Increase for more "gap"
-      colors: ['#ffffff'], // Or match background color
+      colors: ["#ffffff"], // Or match background color
     },
     labels: filteredData.map((item) => {
       const label = item?.label || "Unknown";
@@ -662,8 +742,15 @@ const SalesDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection layout={1} border title={"Annual Monthly Revenue"}>
-          <ParentRevenue salesData={mockSalesData} falseAccordion />
+        // <WidgetSection layout={1} border title={"Annual Monthly Revenue"}>
+        //   <ParentRevenue salesData={mockSalesData} falseAccordion />
+        // </WidgetSection>,
+        <WidgetSection border title={"Annual Monthly Revenue"}>
+          <BarGraph
+            data={incomeExpenseData}
+            options={incomeExpenseOptions}
+            year={true}
+          />
         </WidgetSection>,
       ],
     },
@@ -695,7 +782,9 @@ const SalesDashboard = () => {
         <DataCard
           route={"revenue"}
           title={"Actual"}
-          data={`${((totalClientsDesks / totalCoWorkingSeats) * 100).toFixed(1)}%`}
+          data={`${((totalClientsDesks / totalCoWorkingSeats) * 100).toFixed(
+            1
+          )}%`}
           description={"Occupancy"}
         />,
         <DataCard
@@ -707,7 +796,7 @@ const SalesDashboard = () => {
         <DataCard
           route={"clients"}
           title={"Unique"}
-          data={clientsData.length || '0'}
+          data={clientsData.length || "0"}
           description={"Clients"}
         />,
         <DataCard
@@ -780,14 +869,16 @@ const SalesDashboard = () => {
               width={"100%"}
             />
           ) : (
-            <CircularProgress color="#1E3D73"/>
+            <CircularProgress color="#1E3D73" />
           )}
         </WidgetSection>,
         <WidgetSection layout={1} title={"Client-wise Occupancy"} border>
           {!isClientsDataPending ? (
-
-            <TreemapGraph data={totalDeskPercent} options={clientsDesksPieOptions} width={"100%"} />
-
+            <TreemapGraph
+              data={totalDeskPercent}
+              options={clientsDesksPieOptions}
+              width={"100%"}
+            />
           ) : (
             <CircularProgress color="#1E3D73" />
           )}

@@ -419,6 +419,7 @@ const FinanceDashboard = () => {
         />,
       ],
     },
+
     {
       layout: 2,
       widgets: [
