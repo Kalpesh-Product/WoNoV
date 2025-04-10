@@ -594,7 +594,7 @@ const HrDashboard = () => {
       ],
     },
     {
-      layout: 6,
+      layout: 5,
       widgets: [
         { icon: <CgWebsite />, title: "Employee", route: "employee" },
         { icon: <LuHardDriveUpload />, title: "Company", route: "company" },
