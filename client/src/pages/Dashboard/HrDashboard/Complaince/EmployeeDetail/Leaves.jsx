@@ -49,6 +49,8 @@ const Leaves = () => {
     ],
   };
 
+  
+
   // Prepare data for ApexCharts
   const months = leavesData.monthlyData.map((entry) => entry.month);
 

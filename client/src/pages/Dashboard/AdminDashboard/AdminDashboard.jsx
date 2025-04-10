@@ -106,6 +106,18 @@ const AdminDashboard = () => {
     value: item.tasks,
   }));
 
+  const unitPieChartOptions = {
+    labels: unitWisePieData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    toolTip: {
+      y: {
+        formatter: (val) => `${((val / totalUnitWiseTask) * 100).toFixed(1)}%`,
+      },
+    },
+  };
+
   const unitTreemapOptions = {
     labels: unitWisePieData.map((item) => item.label),
     chart: {
@@ -120,9 +132,9 @@ const AdminDashboard = () => {
   };
   //-----------------------------------------------------------------------------------------------------------------//
   const executiveTasks = [
-    { name: "Mac", tasks: 30 },
-    { name: "Anne", tasks: 10 },
-    { name: "Naaz", tasks: 20 },
+    { name: "Mac Parkar", tasks: 30 },
+    { name: "Anne Fernandes", tasks: 10 },
+    { name: "Naaz Bavannawar", tasks: 20 },
   ];
 
   const executiveTotalTasks = executiveTasks.reduce(
@@ -521,7 +533,7 @@ const AdminDashboard = () => {
       layout: 2,
       widgets: [
         <WidgetSection border title={"Unit Wise Due Tasks"}>
-          <TreemapGraph data={unitWisePieData} options={unitTreemapOptions} />
+          <PieChartMui data={unitWisePieData} options={unitPieChartOptions} />
         </WidgetSection>,
         <WidgetSection border title={"Executive Wise Due Tasks"}>
           <DonutChart
