@@ -17,6 +17,7 @@ import { Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { LuHardDriveUpload } from "react-icons/lu";
 import { CgWebsite } from "react-icons/cg";
+import DataCard from "../../../components/DataCard";
 
 const FinanceDashboard = () => {
   const navigate = useNavigate();
@@ -388,26 +389,35 @@ const FinanceDashboard = () => {
         </WidgetSection>,
       ],
     },
-    {
-      layout: 3,
-      widgets: [
-        <Card
-          icon={<MdRebaseEdit />}
-          title="Allocated Budget"
-          route="/app/dashboard/finance-dashboard/finance/budget"
-        />,
-        <Card
-          icon={<LuHardDriveUpload />}
-          title="Used Budget"
-          route="/app/dashboard/finance-dashboard/finance/budget"
-        />,
-        <Card
-          icon={<CgWebsite />}
-          title="Remaining Budget"
-          route="/app/dashboard/finance-dashboard/finance/budget"
-        />,
-      ],
-    },
+      {
+          layout: 3,
+          widgets: [
+            <DataCard
+              data={"40K"}
+              title={"Projected"}
+              route={"/app/dashboard/finance-dashboard/finance/budget"}
+              description={`Current Month: ${new Date().toLocaleString("default", {
+                month: "long",
+              })}`}
+            />,
+            <DataCard
+              data={"35K"}
+              title={"Actual"}
+              route={"/app/dashboard/finance-dashboard/finance/budget"}
+              description={`Current Month: ${new Date().toLocaleString("default", {
+                month: "long",
+              })}`}
+            />,
+            <DataCard
+              data={6000}
+              title={"Requested"}
+              route={"/app/dashboard/finance-dashboard/finance/budget"}
+              description={`Current Month: ${new Date().toLocaleString("default", {
+                month: "long",
+              })}`}
+            />,
+          ],
+        },
     {
       layout: 6,
       widgets: [
