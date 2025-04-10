@@ -411,7 +411,7 @@ const ActualBusinessRevenue = () => {
         layout={1}
         title={"Vertical-wise Revenue - March 2025"}
         // titleData={"Hi"}
-        TitleAmount={"6,80,000"}
+        TitleAmount={"INR 6,80,000"}
         border>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>

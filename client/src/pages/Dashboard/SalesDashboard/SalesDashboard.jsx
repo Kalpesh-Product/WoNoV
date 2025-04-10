@@ -70,7 +70,12 @@ const SalesDashboard = () => {
       },
     },
     dataLabels: {
-      enabled: false,
+      enabled: true, // Disable data labels for a cleaner look
+      style: {
+        fontSize: "12px",
+        colors: ["#000"], // Set label color
+      },
+      offsetY: -22, // Adjust position slightly above the bars
     },
     stroke: {
       show: true,
@@ -745,7 +750,10 @@ const SalesDashboard = () => {
         // <WidgetSection layout={1} border title={"Annual Monthly Revenue"}>
         //   <ParentRevenue salesData={mockSalesData} falseAccordion />
         // </WidgetSection>,
-        <WidgetSection border title={"Annual Monthly Revenue"}>
+        <WidgetSection
+          border
+          title={"Annual Monthly Revenue: 2024-25"}
+          TitleAmount={"INR 2,09,000"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
