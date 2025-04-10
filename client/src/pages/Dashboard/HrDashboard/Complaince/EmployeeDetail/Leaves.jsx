@@ -151,25 +151,25 @@ const Leaves = () => {
       horizontalAlign: "right"
     }
   };
-
+  
   const series = [
     {
       name: "Allocated",
       data: [
-        { x: "Privileged Leave", y: 12, taken: 0, month: "Jan" },
+        { x: "Privileged Leave", y: 12, taken: 2, month: "Jan" },
         { x: "Sick Leave", y: 10, taken: 0, month: "Jan" },
-        { x: "Abrupt Leave", y: 1, taken: 0, month: "Jan" }
+        { x: "Abrupt Leave", y: 1, taken: 1, month: "Jan" }
       ],
-      color: "#90ee90", // light green
+      color: "#54C4A7", // light green
     },
     {
       name: "Taken",
       data: [
         { x: "Privileged Leave", y: 2, allocated: 12, month: "Jan" },
         { x: "Sick Leave", y: 0, allocated: 10, month: "Jan" },
-        { x: "Abrupt Leave", y: 1, allocated: 0, month: "Jan" }
+        { x: "Abrupt Leave", y: 1, allocated: 1, month: "Jan" }
       ],
-      color: "red",
+      color: "#47755B",
     }
   ];
   
@@ -182,9 +182,9 @@ const Leaves = () => {
         </WidgetSection>
       </div>
       <div>
-        <WidgetSection layout={1} title={"Leaves Data"} border>
+        {/* <WidgetSection layout={1} title={"Leaves Data"} border>
           <CustomYAxis />
-        </WidgetSection>
+        </WidgetSection> */}
       </div>
       <div>
         <AgTable
