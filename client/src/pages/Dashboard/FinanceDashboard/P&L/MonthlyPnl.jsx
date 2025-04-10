@@ -41,7 +41,7 @@ const MonthlyPnl = () => {
         borderRadiusApplication: "end",
       },
     },
-     colors: ["#36BA98", "#275D3E", "#E83F25"],, // Colors for the series
+     colors: ["#36BA98", "#275D3E", "#E83F25"], // Colors for the series
     dataLabels: {
       enabled: true,
       formatter: (value, { seriesIndex }) => {
