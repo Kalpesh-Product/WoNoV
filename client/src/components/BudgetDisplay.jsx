@@ -19,6 +19,8 @@ import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import dayjs from "dayjs";
 import MuiModal from "../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
+import { MdTrendingUp } from "react-icons/md";
+import { BsCheckCircleFill } from "react-icons/bs";
 
 const BudgetDisplay = ({ budgetData }) => {
   const axios = useAxiosPrivate();
@@ -48,6 +50,7 @@ const BudgetDisplay = ({ budgetData }) => {
       acc[month] = {
         month,
         latestDueDate: item.dueDate, // Store latest due date for sorting
+        projectedAmount: 0,
         amount: 0,
         tableData: {
           rows: [],
@@ -55,7 +58,7 @@ const BudgetDisplay = ({ budgetData }) => {
             { field: "expanseName", headerName: "Expense Name", flex: 1 },
             // { field: "department", headerName: "Department", flex: 200 },
             { field: "expanseType", headerName: "Expense Type", flex: 1 },
-            { field: "amount", headerName: "Amount", flex: 1 },
+            { field: "projectedAmount", headerName: "Amount", flex: 1 },
             { field: "dueDate", headerName: "Due Date", flex: 1 },
             { field: "status", headerName: "Status", flex: 1 },
           ],
@@ -63,15 +66,14 @@ const BudgetDisplay = ({ budgetData }) => {
       };
     }
 
-    acc[month].amount += item.amount; // Summing the total amount per month
+    acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
+    acc[month].amount += item.projectedAmount; // Summing the total amount per month
     acc[month].tableData.rows.push({
       id: item._id,
       expanseName: item.expanseName,
       department: item.department,
       expanseType: item.expanseType,
-      amount: item.projectedAmount.toLocaleString("en-IN", {
-        maximumFractionDigits: 0,
-      }), // Ensuring two decimal places
+      projectedAmount: item.projectedAmount.toFixed(2), // Ensuring two decimal places
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       status: item.status,
     });
@@ -83,6 +85,7 @@ const BudgetDisplay = ({ budgetData }) => {
   const financialData = Object.values(groupedData)
     .map((data) => ({
       ...data,
+      projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
       amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
     }))
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
@@ -186,6 +189,13 @@ const BudgetDisplay = ({ budgetData }) => {
         </WidgetSection>
       </div>
 
+ <div className="flex justify-end">
+            <PrimaryButton
+              title={"Request Budget"}
+              padding="px-5 py-2" fontSize="text-base"
+              handleSubmit={() => setOpenModal(true)}
+            />
+          </div>
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -195,12 +205,6 @@ const BudgetDisplay = ({ budgetData }) => {
             <span className="text-title font-pmedium">
               {"INR " + Number(500000).toLocaleString("en-IN")}
             </span>
-          </div>
-          <div>
-            <PrimaryButton
-              title={"Request Budget"}
-              handleSubmit={() => setOpenModal(true)}
-            />
           </div>
         </div>
         <div>
@@ -216,9 +220,14 @@ const BudgetDisplay = ({ budgetData }) => {
                   <span className="text-subtitle font-pmedium">
                     {data.month}
                   </span>
-                  <span className="text-subtitle font-pmedium">
-                    {data.amount} 
-                  </span>
+                 <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                                   <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
+                                   {"INR "+data.projectedAmount}
+                                   </span>
+                                   <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                                   <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />
+                                    {"INR "+data.amount}
+                                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>

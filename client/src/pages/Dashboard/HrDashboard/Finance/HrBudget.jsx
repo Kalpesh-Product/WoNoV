@@ -22,6 +22,8 @@ import dayjs from "dayjs";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../../../hooks/useAuth";
+import { MdTrendingUp } from "react-icons/md";
+import { BsCheckCircleFill } from "react-icons/bs";
 
 const HrBudget = () => {
   const axios = useAxiosPrivate();
@@ -65,6 +67,7 @@ const HrBudget = () => {
       acc[month] = {
         month,
         latestDueDate: item.dueDate, // Store latest due date for sorting
+        projectedAmount: 0,
         amount: 0,
         tableData: {
           rows: [],
@@ -80,6 +83,7 @@ const HrBudget = () => {
       };
     }
 
+    acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
     acc[month].amount += item.projectedAmount; // Summing the total amount per month
     acc[month].tableData.rows.push({
       id: item._id,
@@ -98,6 +102,7 @@ const HrBudget = () => {
   const financialData = Object.values(groupedData)
     .map((data) => ({
       ...data,
+      projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
       amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
     }))
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
@@ -207,9 +212,17 @@ const HrBudget = () => {
         <WidgetSection layout={1} title={"BUDGET 2024"}>
           <LayerBarGraph options={optionss} data={data} />
         </WidgetSection>
-      </div>
-
+      </div>   
+      
+        <div className="flex justify-end">
+            <PrimaryButton
+              title={"Request Budget"}
+              padding="px-5 py-2" fontSize="text-base"
+              handleSubmit={() => setOpenModal(true)}
+            />
+          </div>
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
+        
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <span className="text-title font-pmedium text-primary">
@@ -219,12 +232,7 @@ const HrBudget = () => {
               {"INR " + Number(500000).toLocaleString("en-IN")}
             </span>
           </div>
-          <div>
-            <PrimaryButton
-              title={"Request Budget"}
-              handleSubmit={() => setOpenModal(true)}
-            />
-          </div>
+         
         </div>
         <div>
           {financialData.map((data, index) => (
@@ -237,10 +245,15 @@ const HrBudget = () => {
               >
                 <div className="flex justify-between items-center w-full px-4">
                   <span className="text-subtitle font-pmedium">
-                    {data.month}
+                  {data.month}
                   </span>
-                  <span className="text-subtitle font-pmedium">
-                    {"INR "+data.amount}
+                  <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                  <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
+                  {"INR "+data.projectedAmount}
+                  </span>
+                  <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                  <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />
+                   {"INR "+data.amount}
                   </span>
                 </div>
               </AccordionSummary>

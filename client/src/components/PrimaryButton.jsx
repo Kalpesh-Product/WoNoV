@@ -9,6 +9,7 @@ const PrimaryButton = ({
   fontSize,
   externalStyles,
   disabled,
+  padding,
   isLoading, // New prop for showing the spinner
 }) => {
   return (
@@ -17,11 +18,11 @@ const PrimaryButton = ({
       whileTap={{scale:0.9}}
       disabled={disabled || isLoading} // Disable if loading
       type={type}
-      className={`px-8 py-2 flex items-center justify-center gap-2 ${
+      className={` flex items-center justify-center gap-2 ${
         disabled || isLoading ? "bg-gray-400" : "bg-primary"
       } motion-preset-slide-up-sm text-white rounded-md ${
         fontSize ? fontSize : "text-content leading-5"
-      } ${externalStyles}`}
+      } ${externalStyles} ${padding? padding: "px-8 py-2"}`}
       onClick={handleSubmit}
     >
       {isLoading && <CircularProgress size={16} color="#1E3D73" />}{" "}
