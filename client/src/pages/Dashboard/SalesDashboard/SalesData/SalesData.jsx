@@ -152,7 +152,6 @@ const monthlyLeadsOptions = {
     y: {
       formatter: (val) => `${val} Leads`,
     },
-    
   },
   colors: [
     "#1E3D73", // Dark Blue (Co-Working)
@@ -215,7 +214,7 @@ const sourcingChannelsOptions = {
   legend: { position: "top", show: false },
   dataLabels: { enabled: true, position: "middle" },
   // tooltip: {
-  //   shared: false, 
+  //   shared: false,
   //   custom: ({ series, seriesIndex, dataPointIndex, w }) => {
   //     if (!w || !w.globals.seriesNames) return "";
 
@@ -228,9 +227,9 @@ const sourcingChannelsOptions = {
   //       .join("<br>");
 
   //     return `<div style="
-  //       background: white; 
-  //       padding: 10px; 
-  //       border-radius: 5px; 
+  //       background: white;
+  //       padding: 10px;
+  //       border-radius: 5px;
   //       box-shadow: 0px 0px 5px rgba(0,0,0,0.2);
   //       font-family: Poppins, sans-serif;
   //       font-size: 12px;
@@ -400,8 +399,6 @@ const sectorPieChartData = Object.keys(sectorMap).map((sector) => ({
   value: ((sectorMap[sector] / totalSeats) * 100).toFixed(2), // Convert to percentage
 }));
 
-
-
 // -----------------------Sector categories Pie Data End--------------------
 
 // -----------------------Sector categories Pie Data Start--------------------
@@ -470,13 +467,11 @@ const locationPieChartOptions = {
 const calculateCompletedTime = (startDate) => {
   const start = dayjs(startDate);
   const today = dayjs();
-  const totalMonths = today.diff(start, "month", true); 
+  const totalMonths = today.diff(start, "month", true);
   const years = totalMonths / 12;
 
   return `${years.toFixed(1)} years`;
 };
-
-
 
 // ✅ Format Data for Table
 const companyTableColumns = [
@@ -517,6 +512,7 @@ clientOccupancyData.forEach((company) => {
         name: member.empName,
         birthday: member.dateOfBirth,
         daysLeft: daysLeft,
+        company:company.client
       });
     }
   });
@@ -531,6 +527,7 @@ const upcomingBirthdaysColumns = [
   { id: "name", label: "Employee Name" },
   { id: "birthday", label: "Date of Birth" },
   { id: "daysLeft", label: "Days Left" },
+  { id: "company", label: "Company" },
 ];
 
 // -----------------------Client Members birthday End--------------------
