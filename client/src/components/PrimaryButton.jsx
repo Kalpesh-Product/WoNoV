@@ -26,7 +26,7 @@ const PrimaryButton = ({
     >
       {isLoading && <CircularProgress size={16} color="#1E3D73" />}{" "}
       {/* Spinner */}
-      <span>{isLoading ? `${title}ing` : title}</span>
+      <span>{isLoading ? `${title}` : title}</span>
     </motion.button>
   );
 };

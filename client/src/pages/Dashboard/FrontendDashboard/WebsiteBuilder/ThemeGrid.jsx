@@ -118,7 +118,7 @@ const ThemeGrid = () => {
   ];
   return (
     <div>
-      <div className="p-4">
+      <div className="p-4 flex flex-col gap-4">
         <div className="themePage-content-header bg-white">
           <span className="text-left text-title text-primary font-pmedium">
             Select Themes
@@ -126,11 +126,11 @@ const ThemeGrid = () => {
         </div>
 
         {!isTemplatesPending ? (
-          <div className="grid grid-cols-2 sm:grid-cols1 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols1 gap-6">
             {templates.map((template, index) => (
               <div>
                 <div
-                  className="theme-grid w-full h-full overflow-hidden shadow-lg"
+                  className="theme-grid w-full h-full overflow-hidden shadow-lg rounded-xl"
                   key={index}
                   onClick={() =>
                     navigate("/app/dashboard/frontend-dashboard/view-theme", {
@@ -152,7 +152,7 @@ const ThemeGrid = () => {
             ))}
             {themeImages.map((image, index) => (
               <div
-                className="theme-grid w-full h-full overflow-hidden shadow-lg"
+                className="theme-grid w-full h-full overflow-hidden shadow-lg rounded-xl"
                 key={index}
                 onClick={() => {
                   navigate("/app/dashboard/frontend-dashboard/view-theme", {
@@ -170,9 +170,10 @@ const ThemeGrid = () => {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-          {/* Simulating chart skeleton */}
-          <Skeleton variant="text" width={200} height={30} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols2 gap-2">
+          <Skeleton variant="rectangular" width="100%" height={300} />
+          <Skeleton variant="rectangular" width="100%" height={300} />
+          <Skeleton variant="rectangular" width="100%" height={300} />
           <Skeleton variant="rectangular" width="100%" height={300} />
         </div>
         )}

@@ -186,3 +186,87 @@
   font-family: Poppins-Bold;
   src: url("../src/assets/WONO_images/img/font/Poppins-Bold.ttf");
 }
+
+.gjs-block-categories {
+  border: 1px solid #1e3d73 !important;
+  padding: 5px;
+  background-color: white !important;
+  border-radius: 6px;
+  font-family: Poppins-Regular !important;
+  
+}
+.gjs-block {
+  background-color: white !important;
+  border: 1.5px solid !important;
+  /* border-color: #1E3D73 !important; */
+  border-radius: 10px !important;
+  color: #1e3d73 !important;
+  font-size: 0.4rem !important;
+  padding: 1rem !important;
+
+  font-family: Poppins-Regular !important;
+}
+
+.gjs-layer-title {
+  padding: 3px 10px 5px 30px;
+  display: flex;
+  font-family: Poppins-Regular !important;
+  align-items: center;
+  background-color: white !important;
+}
+
+.gjs-block__media {
+  margin-bottom: 2px !important;
+  pointer-events: none;
+  font-family: Poppins-Regular !important;
+  font-size: 0.5rem !important;
+}
+
+.gjs-four-color {
+  color: #1e3d73 !important;
+  font-family: Poppins-Regular !important;
+}
+
+.gjs-two-color {
+  background-color: white !important;
+  font-family: Poppins-Regular !important;
+  color: #1e3d73 !important;
+}
+.gjs-title {
+  background-color: white !important;
+  font-family: Poppins-Regular !important;
+  color: black !important;
+}
+.gjs-blocks-c {
+  background-color: white !important;
+  font-family: Poppins-Regular !important;
+}
+
+.gjs-sm-sector-title {
+  display: flex;
+  align-items: center;
+  background-color: white !important;
+}
+
+
+.gjs-editor-cont .sp-container button, .gjs-editor-cont .sp-container button:hover, .gjs-editor-cont .sp-container button:active {
+  background: #1e3d73;
+  border-color: rgba(0, 0, 0, .2);
+  color: white;
+  text-shadow: none;
+  font-size: 0.7rem !important;
+  font-family: Poppins-Regular !important;
+  box-shadow: none;
+  padding: 3px 5px;
+}
+
+
+.gjs-block-label {
+  line-height: normal;
+  font-size: .65rem;
+  font-weight: normal;
+  font-family: Poppins-Regular !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}

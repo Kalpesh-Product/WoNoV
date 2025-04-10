@@ -172,6 +172,7 @@ const HrDashboard = () => {
   const options = {
     chart: {
       type: "bar",
+      toolbar: { show: false },
       stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
     },
@@ -179,6 +180,7 @@ const HrDashboard = () => {
       bar: {
         horizontal: false,
         columnWidth: "65%",
+        borderRadius : 5
       },
     },
     dataLabels: {
@@ -186,11 +188,6 @@ const HrDashboard = () => {
       formatter: function (val, opts) {
         const rawData = rawSeries[opts.seriesIndex]?.data[opts.dataPointIndex];
         return rawData ? `${rawData}` : ""; // Display the raw value
-      },
-      style: {
-        fontSize: "9px",
-        fontFamily: "Poppins-Regular, Arial, sans-serif",
-        colors: ["#fffff"], // Color of the data labels
       },
     },
     xaxis: {
@@ -208,6 +205,9 @@ const HrDashboard = () => {
         "Feb-25",
         "Mar-25",
       ],
+      title : {
+        text : "  "
+      }
     },
     yaxis: {
       max: 100,

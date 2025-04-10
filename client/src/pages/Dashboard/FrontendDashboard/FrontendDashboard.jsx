@@ -133,18 +133,18 @@ const FrontendDashboard = () => {
     },
     xaxis: {
       categories: [
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-        "Jan",
-        "Feb",
-        "Mar",
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
       ], // Financial year months
     },
     yaxis: {
@@ -160,10 +160,18 @@ const FrontendDashboard = () => {
         borderRadius: 4,
         horizontal: false,
         columnWidth: "35%",
+        dataLabels: {
+          position: "top",
+        },
       },
     },
     dataLabels: {
-      enabled: false,
+      enabled: true, // Disable data labels for a cleaner look
+      style: {
+        fontSize: "12px",
+        colors: ["#000"], // Set label color
+      },
+      offsetY: -22, // Adjust position slightly above the bars
     },
     tooltip: {
       theme: "dark",
@@ -354,10 +362,9 @@ const FrontendDashboard = () => {
       ],
     },
     {
-      layout: 6,
+      layout: 5,
       widgets: [
-        <Card icon={<MdRebaseEdit />} title="Create Website" />,
-        <Card icon={<LuHardDriveUpload />} title="Edit website" />,
+        <Card icon={<LuHardDriveUpload />} title="Edit website" route={`/app/dashboard/frontend-dashboard/select-theme/edit-theme/BIZNest/Home`} />,
         <Card icon={<CgWebsite />} title="New Themes" route={"select-theme"} />,
         <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
         <Card icon={<SiGoogleadsense />} title="Data" route={"data"} />,
@@ -380,18 +387,20 @@ const FrontendDashboard = () => {
     {
       layout : 2,
       widgets  : [
-        <WidgetSection layout={1} border title={"Location-wise site Visitors"}>
+        <WidgetSection layout={1} border title={"Nation-wise site Visitors"}>
       <PieChartMui
         percent={true} // Enable percentage display
         data={nationWiseData} // Pass processed data
         options={nationWisePieChart}
+        width={500}
       />
     </WidgetSection>,
-    <WidgetSection layout={1} border title={"Site Visitors"}>
+    <WidgetSection layout={1} border title={"State-wise site Visitors"}>
       <PieChartMui
         percent={true} // Enable percentage display
         data={goaDistrictData} // Pass processed data
         options={goaDistrictPieChart}
+        width={500}
       />
     </WidgetSection>
       ]
