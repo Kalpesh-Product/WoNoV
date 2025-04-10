@@ -39,18 +39,21 @@ const ActualBusinessRevenue = () => {
           revenue: 125680,
           clients: [
             {
+              srNo: "1",
               client: "Zomato",
               representative: "John Doe",
               registerDate: "2024-01-15",
               actualRevenue: 5000,
             },
             {
+              srNo: "2",
               client: "Uber",
               representative: "Jane Smith",
               registerDate: "2024-02-10",
               actualRevenue: 4000,
             },
             {
+              srNo: "3",
               client: "Ola",
               representative: "Alice Johnson",
               registerDate: "2024-03-05",
@@ -63,13 +66,22 @@ const ActualBusinessRevenue = () => {
           revenue: 83630,
           clients: [
             {
+              srNo: "1",
               client: "Client D",
               representative: "Bob Brown",
               registerDate: "2024-01-20",
               actualRevenue: 4000,
             },
             {
+              srNo: "2",
               client: "Client E",
+              representative: "Charlie White",
+              registerDate: "2024-02-25",
+              actualRevenue: 4000,
+            },
+            {
+              srNo: "3",
+              client: "Client F",
               representative: "Charlie White",
               registerDate: "2024-02-25",
               actualRevenue: 4000,
@@ -80,9 +92,9 @@ const ActualBusinessRevenue = () => {
           name: "Meetings",
           revenue: 157840,
           clients: [
-            { client: "Client F", revenue: 5000 },
-            { client: "Client G", revenue: 7000 },
-            { client: "Client H", revenue: 3000 },
+            { srNo: "1", client: "Client F", revenue: 5000 },
+            { srNo: "2", client: "Client G", revenue: 7000 },
+            { srNo: "3", client: "Client H", revenue: 3000 },
           ],
         },
         {
@@ -90,18 +102,21 @@ const ActualBusinessRevenue = () => {
           revenue: 156380,
           clients: [
             {
+              srNo: "1",
               client: "Client F",
               representative: "Daniel Green",
               registerDate: "2024-03-12",
               actualRevenue: 5000,
             },
             {
+              srNo: "2",
               client: "Client G",
               representative: "Eva Black",
               registerDate: "2024-04-18",
               actualRevenue: 7000,
             },
             {
+              srNo: "3",
               client: "Client H",
               representative: "Frank Blue",
               registerDate: "2024-05-10",
@@ -114,18 +129,21 @@ const ActualBusinessRevenue = () => {
           revenue: 156470,
           clients: [
             {
+              srNo: "1",
               client: "Client F",
               representative: "Daniel Green",
               registerDate: "2024-03-12",
               actualRevenue: 5000,
             },
             {
+              srNo: "2",
               client: "Client G",
               representative: "Eva Black",
               registerDate: "2024-04-18",
               actualRevenue: 7000,
             },
             {
+              srNo: "3",
               client: "Client H",
               representative: "Frank Blue",
               registerDate: "2024-05-10",
@@ -143,18 +161,21 @@ const ActualBusinessRevenue = () => {
           revenue: 15654,
           clients: [
             {
+              srNo: "1",
               client: "Client I",
               representative: "Grace Orange",
               registerDate: "2024-02-11",
               actualRevenue: 6000,
             },
             {
+              srNo: "2",
               client: "Client J",
               representative: "Hank Purple",
               registerDate: "2024-03-09",
               actualRevenue: 5000,
             },
             {
+              srNo: "3",
               client: "Client K",
               representative: "Isabel Cyan",
               registerDate: "2024-04-14",
@@ -167,12 +188,14 @@ const ActualBusinessRevenue = () => {
           revenue: 9795,
           clients: [
             {
+              srNo: "1",
               client: "Client L",
               representative: "Jack Gray",
               registerDate: "2024-02-28",
               actualRevenue: 5000,
             },
             {
+              srNo: "2",
               client: "Client M",
               representative: "Kara Silver",
               registerDate: "2024-03-07",
@@ -185,18 +208,21 @@ const ActualBusinessRevenue = () => {
           revenue: 14000,
           clients: [
             {
+              srNo: "1",
               client: "Client N",
               representative: "Leo Gold",
               registerDate: "2024-05-20",
               actualRevenue: 6000,
             },
             {
+              srNo: "2",
               client: "Client O",
               representative: "Mia Platinum",
               registerDate: "2024-06-08",
               actualRevenue: 5000,
             },
             {
+              srNo: "3",
               client: "Client P",
               representative: "Noah Bronze",
               registerDate: "2024-07-15",
@@ -214,18 +240,21 @@ const ActualBusinessRevenue = () => {
           revenue: 18264,
           clients: [
             {
+              srNo: "1",
               client: "Client Q",
               representative: "Olivia Rose",
               registerDate: "2024-01-30",
               actualRevenue: 7000,
             },
             {
+              srNo: "2",
               client: "Client R",
               representative: "Peter Brown",
               registerDate: "2024-02-18",
               actualRevenue: 6000,
             },
             {
+              srNo: "3",
               client: "Client S",
               representative: "Quincy Black",
               registerDate: "2024-03-26",
@@ -238,12 +267,14 @@ const ActualBusinessRevenue = () => {
           revenue: 10000,
           clients: [
             {
+              srNo: "1",
               client: "Client T",
               representative: "Rachel Violet",
               registerDate: "2024-04-12",
               actualRevenue: 5000,
             },
             {
+              srNo: "2",
               client: "Client U",
               representative: "Sam Indigo",
               registerDate: "2024-05-07",
@@ -256,18 +287,21 @@ const ActualBusinessRevenue = () => {
           revenue: 13586,
           clients: [
             {
+              srNo: "1",
               client: "Client V",
               representative: "Tina Lilac",
               registerDate: "2024-06-05",
               actualRevenue: 6000,
             },
             {
+              srNo: "2",
               client: "Client W",
               representative: "Umar Yellow",
               registerDate: "2024-07-08",
               actualRevenue: 4000,
             },
             {
+              srNo: "3",
               client: "Client X",
               representative: "Victor Pink",
               registerDate: "2024-08-15",
@@ -285,18 +319,21 @@ const ActualBusinessRevenue = () => {
           revenue: 20000,
           clients: [
             {
+              srNo: "1",
               client: "Client Y",
               representative: "Wendy Red",
               registerDate: "2024-03-10",
               actualRevenue: 8000,
             },
             {
+              srNo: "2",
               client: "Client Z",
               representative: "Xavier Green",
               registerDate: "2024-04-14",
               actualRevenue: 7000,
             },
             {
+              srNo: "3",
               client: "Client AA",
               representative: "Yara Blue",
               registerDate: "2024-05-16",
@@ -309,12 +346,14 @@ const ActualBusinessRevenue = () => {
           revenue: 11000,
           clients: [
             {
+              srNo: "1",
               client: "Client AB",
               representative: "Zane Orange",
               registerDate: "2024-06-20",
               actualRevenue: 6000,
             },
             {
+              srNo: "2",
               client: "Client AC",
               representative: "Adam Gray",
               registerDate: "2024-07-10",
@@ -327,18 +366,21 @@ const ActualBusinessRevenue = () => {
           revenue: 16468,
           clients: [
             {
+              srNo: "1",
               client: "Client AD",
               representative: "Betty Silver",
               registerDate: "2024-08-25",
               actualRevenue: 7000,
             },
             {
+              srNo: "2",
               client: "Client AE",
               representative: "Charlie Platinum",
               registerDate: "2024-09-14",
               actualRevenue: 6000,
             },
             {
+              srNo: "3",
               client: "Client AF",
               representative: "David Bronze",
               registerDate: "2024-10-05",
@@ -412,7 +454,7 @@ const ActualBusinessRevenue = () => {
         layout={1}
         title={"Vertical-wise Revenue - March 2025"}
         // titleData={"Hi"}
-        TitleAmount={"INR 6,80,000"}
+        TitleAmount={"Total INR 6,80,000"}
         border>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
@@ -440,6 +482,7 @@ const ActualBusinessRevenue = () => {
                   data={domain.clients}
                   hideFilter
                   columns={[
+                    { header: "Sr No", field: "srNo", flex: 1 },
                     { header: "Client", field: "client", flex: 1 },
                     {
                       header: "Representative",

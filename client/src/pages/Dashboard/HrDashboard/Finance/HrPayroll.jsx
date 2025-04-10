@@ -58,7 +58,7 @@ const HrPayroll = () => {
         lastName: selectedVisitor.lastName || "KS",
         address: selectedVisitor.address || "Associate Software Engineer",
         email: selectedVisitor.email || "aiwinraj.wono@gmail.com",
-        phoneNumber: selectedVisitor.phoneNumber || "INR 40,000",
+        phoneNumber: selectedVisitor.phoneNumber || " 40,000",
         purposeOfVisit: selectedVisitor.purposeOfVisit || "EMP007",
         toMeet: selectedVisitor.toMeet || "36 Months",
         checkIn: selectedVisitor.checkIn ? selectedVisitor.checkIn : "",
@@ -94,7 +94,7 @@ const HrPayroll = () => {
     // { field: "date", headerName: "Date" },
     // { field: "role", headerName: "Role" },
     // { field: "time", headerName: "Time" },
-    { field: "totalSalary", headerName: "Total Salary" },
+    { field: "totalSalary", headerName: "Total Salary (INR)" },
     // { field: "reimbursment", headerName: "Total Salary" },
     {
       field: "status",
@@ -182,7 +182,7 @@ const HrPayroll = () => {
       role: "Software Engineer",
       date: "2025-01-01",
       time: "10:00 AM",
-      totalSalary: "INR 45,000",
+      totalSalary: " 45,000",
       reimbursment: 5000,
       status: "Completed",
       email: "aiwinraj.wono@gmail.com",
@@ -195,7 +195,7 @@ const HrPayroll = () => {
       role: "Project Manager",
       date: "2025-01-15",
       time: "11:00 AM",
-      totalSalary: "INR 95,000",
+      totalSalary: " 95,000",
       reimbursment: 8000,
       status: "Pending",
       email: "kalpesh@biznest.co.in",
@@ -208,7 +208,7 @@ const HrPayroll = () => {
       role: "HR Manager",
       date: "2025-02-01",
       time: "09:30 AM",
-      totalSalary: "INR 45,000",
+      totalSalary: " 45,000",
       reimbursment: 7000,
       status: "Completed",
       email: "sankalp.wono@gmail.com",
@@ -221,7 +221,7 @@ const HrPayroll = () => {
       role: "QA Analyst",
       date: "2025-02-15",
       time: "02:00 PM",
-      totalSalary: "INR 45,000",
+      totalSalary: " 45,000",
       reimbursment: 4500,
       status: "Pending",
       email: "allan.wono@gmail.com",
@@ -245,7 +245,7 @@ const HrPayroll = () => {
       role: "Business Analyst",
       date: "2025-03-01",
       time: "01:30 PM",
-      totalSalary: "INR 45,000",
+      totalSalary: " 45,000",
       reimbursment: 6000,
       status: "Completed",
       email: "muskan.wono@gmail.com",
@@ -349,7 +349,7 @@ const HrPayroll = () => {
                         <TextField
                           {...field}
                           size="small"
-                          label="Total Salary"
+                          label="Total Salary (INR)"
                           type="tel"
                           fullWidth
                         />
@@ -357,9 +357,9 @@ const HrPayroll = () => {
                     />
                   ) : (
                     <DetalisFormatted
-                      title="Total Salary"
+                      title="Total Salary (INR)"
                       // detail={selectedVisitor.phoneNumber}
-                      detail="INR 40,000"
+                      detail=" 40,000"
                     />
                   )}
 
