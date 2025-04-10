@@ -129,6 +129,7 @@ const HrBudget = () => {
     chart: {
       type: "bar",
       stacked: true,
+      fontFamily : "Poppins-Regular"
     },
     plotOptions: {
       bar: {
@@ -209,8 +210,8 @@ const HrBudget = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="border-default border-borderGray rounded-md">
-        <WidgetSection layout={1} title={"BUDGET 2024"}>
+      <div>
+        <WidgetSection layout={1} title={"BUDGET 2024"} border >
           <LayerBarGraph options={optionss} data={data} />
         </WidgetSection>
       </div>
