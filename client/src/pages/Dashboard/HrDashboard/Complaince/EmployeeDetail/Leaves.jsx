@@ -112,8 +112,9 @@ const Leaves = () => {
     },
     plotOptions: {
       bar: {
-        horizontal: true,
+        horizontal: false,
         barHeight: "50%",
+        columnWidth:"30%"
       }
     },
     xaxis: {
@@ -150,7 +151,7 @@ const Leaves = () => {
       horizontalAlign: "right"
     }
   };
-
+  
   const series = [
     {
       name: "Allocated",
@@ -159,7 +160,7 @@ const Leaves = () => {
         { x: "Sick Leave", y: 10, taken: 0, month: "Jan" },
         { x: "Abrupt Leave", y: 1, taken: 1, month: "Jan" }
       ],
-      color: "#90ee90", // light green
+      color: "#54C4A7", // light green
     },
     {
       name: "Taken",
@@ -168,22 +169,22 @@ const Leaves = () => {
         { x: "Sick Leave", y: 0, allocated: 10, month: "Jan" },
         { x: "Abrupt Leave", y: 1, allocated: 1, month: "Jan" }
       ],
-      color: "red",
+      color: "#47755B",
     }
   ];
   
   return (
     <div className="flex flex-col gap-8">
       <div>
-      {/* <WidgetSection layout={1} title={"Leaves Data"} border>
-      <Chart options={options} series={series} type="bar" height={300} />
+      <WidgetSection layout={1} title={"Leaves Data"} border>
+       <BarGraph data={series} options={options}/>
 
-        </WidgetSection> */}
+        </WidgetSection>
       </div>
       <div>
-        <WidgetSection layout={1} title={"Leaves Data"} border>
+        {/* <WidgetSection layout={1} title={"Leaves Data"} border>
           <CustomYAxis />
-        </WidgetSection>
+        </WidgetSection> */}
       </div>
       <div>
         <AgTable
