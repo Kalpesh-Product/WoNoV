@@ -377,8 +377,9 @@ const ActualBusinessRevenue = () => {
     chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular" },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
+      title: { text: "Verticals" },
     },
-    yaxis: { title: { text: "Revenue (in Rupees)" } },
+    yaxis: { title: { text: "Revenue (in INR)" } },
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
