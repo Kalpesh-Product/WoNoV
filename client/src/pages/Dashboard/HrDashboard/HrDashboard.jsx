@@ -266,7 +266,7 @@ const HrDashboard = () => {
         borderRadiusApplication: "end",
       },
     },
-    colors: ["#01bf50", "#01411C", "#FF0000"], // Colors for the series
+    colors: ["#36BA98", "#275D3E", "#E83F25"], // Colors for the series
     dataLabels: {
       enabled: true,
       fontSize: "10px",
