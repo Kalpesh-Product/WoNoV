@@ -1,21 +1,29 @@
 import React from "react";
 import ReactApexChart from "react-apexcharts";
 
-const DonutChart = ({ centerLabel, labels, colors, series, tooltipValue }) => {
+const DonutChart = ({
+  centerLabel,
+  labels,
+  colors,
+  series,
+  tooltipValue,
+  showLegend = true, // controls whether the legend is shown
+}) => {
   const chartData = {
-    series: series, 
+    series: series,
     labels: labels,
-    colors: colors, 
+    colors: colors,
   };
 
   const chartOptions = {
     chart: {
       type: "donut",
-      fontFamily: "Poppins-Regular"
+      fontFamily: "Poppins-Regular",
     },
     colors: chartData.colors,
     labels: chartData.labels,
     legend: {
+      show: showLegend,
       position: "right",
     },
     dataLabels: {
@@ -25,7 +33,8 @@ const DonutChart = ({ centerLabel, labels, colors, series, tooltipValue }) => {
     tooltip: {
       enabled: true,
       y: {
-        formatter: (val, { seriesIndex }) => `${tooltipValue[seriesIndex]} (${val.toFixed(1)}%)`,
+        formatter: (val, { seriesIndex }) =>
+          `${tooltipValue[seriesIndex]} (${val.toFixed(1)}%)`,
       },
     },
     plotOptions: {

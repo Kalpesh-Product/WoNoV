@@ -35,24 +35,26 @@ const AccessTree = () => {
 
   const handleSelectUser = (user) => {
     setSelectedUsers((prev) => {
-      const lastUser = prev[prev.length - 1];
-      if (lastUser && lastUser.empId === user.empId) {
-        return prev.slice(0, -1);
+      const index = prev.findIndex((u) => u.empId === user.empId);
+
+      if (index !== -1) {
+        // User is already selected, truncate the stack up to this user
+        return prev.slice(0, index + 1);
+      } else {
+        // Add the new user and remove all others after current depth
+        return [...prev, user];
       }
-      return [...prev, user];
     });
   };
-  
-
 
   const handleBack = () => {
-    setSelectedUsers((prev) => prev.slice(0, -1)); 
+    setSelectedUsers((prev) => prev.slice(0, -1));
   };
 
   if (isPending) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-blue-900">
-        <CircularProgress color="#1E3D73"/>
+        <CircularProgress color="#1E3D73" />
         <p className="text-lg font-medium">Loading hierarchy...</p>
       </div>
     );
@@ -97,7 +99,7 @@ const AccessTree = () => {
           className="w-full mt-6 p-4 border-t border-gray-300 rounded-lg"
         >
           <div className="flex items-center mb-10">
-            {index === selectedUsers.length - 1 && ( 
+            {index === selectedUsers.length - 1 && (
               <div className="w-[10%]">
                 <PrimaryButton title={"Back"} handleSubmit={handleBack} />
               </div>
@@ -131,7 +133,7 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel }) => {
     <div
       className={`bg-white flex flex-col shadow-md border border-gray-300 rounded-lg p-4 pt-0 px-0 text-center cursor-pointer relative w-60 transition ${
         isTopLevel ? "border-2 border-primary" : ""
-      }`}
+      } `}
     >
       <div className="w-full flex flex-col justify-center">
         <div className="absolute -top-7 left-[6rem] border-default border-primary rounded-full w-12 h-12 bg-red-50"></div>
