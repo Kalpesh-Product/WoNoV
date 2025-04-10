@@ -134,7 +134,7 @@ const FrontendDashboard = () => {
       toolbar: { show: false },
     },
     xaxis: {
-      categories: [
+    categories: [
         "Apr-24",
         "May-24",
         "Jun-24",
@@ -148,6 +148,9 @@ const FrontendDashboard = () => {
         "Feb-25",
         "Mar-25",
       ], // Financial year months
+      title: {
+        text: undefined, // 👈 empty string works too
+      },
     },
     yaxis: {
       title: {
@@ -261,19 +264,20 @@ const FrontendDashboard = () => {
     },
     xaxis: {
       categories: [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ],
+        "Jan-24",
+        "Feb-24",
+        "Mar-24",
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+      ]
+      
     },
     yaxis: {
       title: {
