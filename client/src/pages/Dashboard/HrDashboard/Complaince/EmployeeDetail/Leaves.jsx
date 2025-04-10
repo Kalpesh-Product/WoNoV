@@ -175,10 +175,10 @@ const Leaves = () => {
   return (
     <div className="flex flex-col gap-8">
       <div>
-      <WidgetSection layout={1} title={"Leaves Data"} border>
+      {/* <WidgetSection layout={1} title={"Leaves Data"} border>
       <Chart options={options} series={series} type="bar" height={300} />
 
-        </WidgetSection>
+        </WidgetSection> */}
       </div>
       <div>
         <WidgetSection layout={1} title={"Leaves Data"} border>

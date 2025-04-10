@@ -13,7 +13,6 @@ import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import TreemapGraph from "../../../components/graphs/TreemapGraph";
 dayjs.extend(customParseFormat);
 const AdminDashboard = () => {
   const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
@@ -56,19 +55,19 @@ const AdminDashboard = () => {
     },
     xaxis: {
       categories: [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ],
+        "Jan-24",
+        "Feb-24",
+        "Mar-24",
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+      ]
     },
     yaxis: {
       max: 150,
@@ -118,18 +117,6 @@ const AdminDashboard = () => {
     },
   };
 
-  const unitTreemapOptions = {
-    labels: unitWisePieData.map((item) => item.label),
-    chart: {
-      fontFamily: "Poppins-Regular",
-      toolbar: false,
-    },
-    toolTip: {
-      y: {
-        formatter: (val) => `${((val / totalUnitWiseTask) * 100).toFixed(1)}%`,
-      },
-    },
-  };
   //-----------------------------------------------------------------------------------------------------------------//
   const executiveTasks = [
     { name: "Mac Parkar", tasks: 30 },

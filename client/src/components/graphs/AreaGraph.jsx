@@ -26,19 +26,19 @@ const AreaGraph = ({ responseData }) => {
           { name: "Open Tickets", data: Array(12).fill(0), color: "#ff4d4d" }, // Red
         ],
         categories: [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ],
+          "Jan-24",
+          "Feb-24",
+          "Mar-24",
+          "Apr-24",
+          "May-24",
+          "Jun-24",
+          "Jul-24",
+          "Aug-24",
+          "Sep-24",
+          "Oct-24",
+          "Nov-24",
+          "Dec-24",
+        ]
       },
       Monthly: {
         series: [
