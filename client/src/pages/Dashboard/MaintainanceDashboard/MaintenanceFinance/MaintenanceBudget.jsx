@@ -102,7 +102,7 @@ const HrBudget = () => {
    const financialData = Object.values(groupedData)
      .map((data) => ({
        ...data,
-       projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+       projectedAmount: data.projectedAmount, // Ensuring two decimal places for total amount
        amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
      }))
      .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
@@ -249,7 +249,7 @@ const HrBudget = () => {
                   </span>
                    <span className="text-subtitle font-pmedium flex items-center gap-1 ">
                                     <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
-                                    {"INR "+data.projectedAmount}
+                                    {"INR "+Number(data.projectedAmount).toLocaleString("en-GB")}
                                     </span>
                    <span className="text-subtitle font-pmedium flex items-center gap-1 ">
                                     <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />

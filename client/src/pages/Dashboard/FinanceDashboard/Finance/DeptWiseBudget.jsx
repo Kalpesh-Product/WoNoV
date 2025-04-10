@@ -401,7 +401,7 @@ const DeptWiseBudget = () => {
                   </span>
                   <span className="text-subtitle font-pmedium flex items-center gap-1 ">
                                     <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
-                                    {"INR "+data.projectedAmount}
+                                    {"INR "+Number(data.projectedAmount).toLocaleString("en-GB")}
                                     </span>
                   <span className="text-subtitle font-pmedium flex items-center gap-1 ">
                                    <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />

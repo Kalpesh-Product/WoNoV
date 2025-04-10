@@ -112,8 +112,9 @@ const Leaves = () => {
     },
     plotOptions: {
       bar: {
-        horizontal: true,
+        horizontal: false,
         barHeight: "50%",
+        columnWidth:"30%"
       }
     },
     xaxis: {
@@ -155,9 +156,9 @@ const Leaves = () => {
     {
       name: "Allocated",
       data: [
-        { x: "Privileged Leave", y: 12, taken: 2, month: "Jan" },
+        { x: "Privileged Leave", y: 12, taken: 0, month: "Jan" },
         { x: "Sick Leave", y: 10, taken: 0, month: "Jan" },
-        { x: "Abrupt Leave", y: 1, taken: 1, month: "Jan" }
+        { x: "Abrupt Leave", y: 1, taken: 0, month: "Jan" }
       ],
       color: "#90ee90", // light green
     },
@@ -166,7 +167,7 @@ const Leaves = () => {
       data: [
         { x: "Privileged Leave", y: 2, allocated: 12, month: "Jan" },
         { x: "Sick Leave", y: 0, allocated: 10, month: "Jan" },
-        { x: "Abrupt Leave", y: 1, allocated: 1, month: "Jan" }
+        { x: "Abrupt Leave", y: 1, allocated: 0, month: "Jan" }
       ],
       color: "red",
     }
@@ -175,10 +176,10 @@ const Leaves = () => {
   return (
     <div className="flex flex-col gap-8">
       <div>
-      {/* <WidgetSection layout={1} title={"Leaves Data"} border>
-      <Chart options={options} series={series} type="bar" height={300} />
+      <WidgetSection layout={1} title={"Leaves Data"} border>
+       <BarGraph data={series} options={options}/>
 
-        </WidgetSection> */}
+        </WidgetSection>
       </div>
       <div>
         <WidgetSection layout={1} title={"Leaves Data"} border>
