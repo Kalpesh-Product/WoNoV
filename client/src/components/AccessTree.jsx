@@ -33,17 +33,11 @@ const AccessTree = () => {
     queryFn: fetchHierarchy,
   });
 
-  const handleSelectUser = (user) => {
+  const handleSelectUser = (user, level) => {
     setSelectedUsers((prev) => {
-      const index = prev.findIndex((u) => u.empId === user.empId);
-
-      if (index !== -1) {
-        // User is already selected, truncate the stack up to this user
-        return prev.slice(0, index + 1);
-      } else {
-        // Add the new user and remove all others after current depth
-        return [...prev, user];
-      }
+      const newPath = [...prev];
+      newPath[level] = user; // Replace or set the user at this level
+      return newPath.slice(0, level + 1); // Truncate everything beyond this level
     });
   };
 
@@ -89,7 +83,7 @@ const AccessTree = () => {
     <div className="flex flex-col items-center p-6 pt-10 min-h-screen">
       <HierarchyCard
         user={hierarchy}
-        handleSelectUser={handleSelectUser}
+        handleSelectUser={(user) => handleSelectUser(user, 0)}
         isTopLevel={true}
       />
 
@@ -99,11 +93,9 @@ const AccessTree = () => {
           className="w-full mt-6 p-4 border-t border-gray-300 rounded-lg"
         >
           <div className="flex items-center mb-10">
-            {index === selectedUsers.length - 1 && (
-              <div className="w-[10%]">
-                <PrimaryButton title={"Back"} handleSubmit={handleBack} />
-              </div>
-            )}
+            <div className="w-[10%]">
+              <PrimaryButton title={"Back"} handleSubmit={handleBack} />
+            </div>
             <div className="w-full text-center">
               <span className="text-subtitle font-semibold mr-20">
                 Subordinates of {user.name}
@@ -116,7 +108,7 @@ const AccessTree = () => {
               <HierarchyCard
                 key={subordinate.empId}
                 user={subordinate}
-                handleSelectUser={handleSelectUser}
+                handleSelectUser={(user) => handleSelectUser(user, index + 1)}
               />
             ))}
           </div>
