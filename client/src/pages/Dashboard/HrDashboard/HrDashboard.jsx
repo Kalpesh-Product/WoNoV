@@ -556,7 +556,7 @@ const HrDashboard = () => {
           <WidgetSection
             layout={1}
             border
-            padding
+            
             title={"Payroll Expense Graph"}
           >
             <LayerBarGraph data={data} options={optionss} />
