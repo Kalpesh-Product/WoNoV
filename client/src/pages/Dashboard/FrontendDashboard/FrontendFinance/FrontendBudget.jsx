@@ -355,13 +355,29 @@ const FrontendBudget = () => {
         </WidgetSection>
       </div>
 
-      <div>
-        <WidgetSection layout={3} padding>
-          <DataCard data={"40K"} title={"Projected"} />
-          <DataCard data={"35K"} title={"Actual"} />
-          <DataCard data={6000} title={"Requested"} />
-        </WidgetSection>
-      </div>
+      <WidgetSection layout={3} padding>
+        <DataCard
+          data={"40K"}
+          title={"Projected"}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "long",
+          })}`}
+        />
+        <DataCard
+          data={"35K"}
+          title={"Actual"}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "long",
+          })}`}
+        />
+        <DataCard
+          data={6000}
+          title={"Requested"}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "long",
+          })}`}
+        />
+      </WidgetSection>
 
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
         <div className="flex justify-between items-center">
@@ -370,7 +386,7 @@ const FrontendBudget = () => {
               Allocated Budget :{" "}
             </span>
             <span className="text-title font-pmedium">
-              {"INR "+Number("500000").toLocaleString("en-IN")}
+              {"INR " + Number("500000").toLocaleString("en-IN")}
             </span>
           </div>
           <div>
@@ -391,7 +407,7 @@ const FrontendBudget = () => {
                     {data.month}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {"INR "+Number(data.amount).toLocaleString("en-IN")}
+                    {"INR " + Number(data.amount).toLocaleString("en-IN")}
                   </span>
                 </div>
               </AccordionSummary>

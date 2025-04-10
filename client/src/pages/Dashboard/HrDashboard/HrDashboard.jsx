@@ -168,7 +168,6 @@ const HrDashboard = () => {
     });
   };
 
-
   const options = {
     chart: {
       type: "bar",
@@ -563,6 +562,35 @@ const HrDashboard = () => {
             <LayerBarGraph data={data} options={optionss} />
           </WidgetSection>
         </Suspense>,
+      ],
+    },
+    {
+      layout: 3,
+      widgets: [
+        <DataCard
+          data={"40K"}
+          title={"Projected"}
+          route={"/app/dashboard/hr-dashboard/finance/budget"}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "long",
+          })}`}
+        />,
+        <DataCard
+          data={"35K"}
+          title={"Actual"}
+          route={"/app/dashboard/hr-dashboard/finance/budget"}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "long",
+          })}`}
+        />,
+        <DataCard
+          data={6000}
+          title={"Requested"}
+          route={"/app/dashboard/hr-dashboard/finance/budget"}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "long",
+          })}`}
+        />,
       ],
     },
     {

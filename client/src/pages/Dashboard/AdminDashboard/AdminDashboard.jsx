@@ -452,25 +452,28 @@ const AdminDashboard = () => {
       ],
     },
      {
-          layout: 3,
-          widgets: [
-            <Card
-              icon={<MdRebaseEdit />}
-              title="Allocated Budget"
-              route="/app/dashboard/admin-dashboard/finance/budget"
-            />,
-            <Card
-              icon={<LuHardDriveUpload />}
-              title="Used Budget"
-              route="/app/dashboard/admin-dashboard/finance/budget"
-            />,
-            <Card
-              icon={<CgWebsite />}
-              title="Remaining Budget"
-              route="/app/dashboard/admin-dashboard/finance/budget"
-            />,
-          ],
-        },
+       layout: 3,
+       widgets: [
+         <DataCard
+           data={"40K"}
+           title={"Projected"}
+           route={"/app/dashboard/admin-dashboard/finance"}
+           description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
+         />,
+         <DataCard
+           data={"35K"}
+           title={"Actual"}
+           route={"/app/dashboard/admin-dashboard/finance"}
+           description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
+         />,
+         <DataCard
+           data={6000}
+           title={"Requested"}
+           route={"/app/dashboard/admin-dashboard/finance"}
+           description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
+         />,
+       ],
+     },
     {
       layout: 6,
       widgets: [
@@ -612,7 +615,6 @@ const AdminDashboard = () => {
         <MuiTable
           Title={"Newly Joined House Keeping Members"}
           rowsToDisplay={4}
-          
           scroll
           rows={[
             ...houseKeepingMemberData.map((item, index) => ({
