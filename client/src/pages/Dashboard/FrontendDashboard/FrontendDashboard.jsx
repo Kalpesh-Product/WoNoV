@@ -386,8 +386,8 @@ const FrontendDashboard = () => {
               )}`}
             />
           </WidgetSection>
-        </WidgetSection>
-      ]
+        </WidgetSection>,
+      ],
     },
     {
       layout: 5,
