@@ -120,7 +120,9 @@ const FrontendDashboard = () => {
   const siteVisitorsData = [
     {
       name: "Site Visitors",
-      data: [1200, 1000, 900, 1100, 1300, 800, 950, 1050, 1150, 1250, 1350, 1400], // Monthly counts
+      data: [
+        1200, 1000, 900, 1100, 1300, 800, 950, 1050, 1150, 1250, 1350, 1400,
+      ], // Monthly counts
     },
   ];
 
@@ -348,9 +350,21 @@ const FrontendDashboard = () => {
     {
       layout: 3,
       widgets: [
-        <Card icon={<MdRebaseEdit />} title="Create Website" />,
-        <Card icon={<LuHardDriveUpload />} title="Edit website" />,
-        <Card icon={<CgWebsite />} title="New Themes" route={"select-theme"} />,
+        <Card
+          icon={<MdRebaseEdit />}
+          title="Allocated Budget"
+          route="/app/dashboard/frontend-dashboard/finance/budget"
+        />,
+        <Card
+          icon={<LuHardDriveUpload />}
+          title="Used Budget"
+          route="/app/dashboard/frontend-dashboard/finance/budget"
+        />,
+        <Card
+          icon={<CgWebsite />}
+          title="Remaining Budget"
+          route="/app/dashboard/frontend-dashboard/finance/budget"
+        />,
       ],
     },
     {
@@ -376,25 +390,25 @@ const FrontendDashboard = () => {
         </WidgetSection>,
       ],
     },
-  
+
     {
-      layout : 2,
-      widgets  : [
+      layout: 2,
+      widgets: [
         <WidgetSection layout={1} border title={"Location-wise site Visitors"}>
-      <PieChartMui
-        percent={true} // Enable percentage display
-        data={nationWiseData} // Pass processed data
-        options={nationWisePieChart}
-      />
-    </WidgetSection>,
-    <WidgetSection layout={1} border title={"Site Visitors"}>
-      <PieChartMui
-        percent={true} // Enable percentage display
-        data={goaDistrictData} // Pass processed data
-        options={goaDistrictPieChart}
-      />
-    </WidgetSection>
-      ]
+          <PieChartMui
+            percent={true} // Enable percentage display
+            data={nationWiseData} // Pass processed data
+            options={nationWisePieChart}
+          />
+        </WidgetSection>,
+        <WidgetSection layout={1} border title={"Site Visitors"}>
+          <PieChartMui
+            percent={true} // Enable percentage display
+            data={goaDistrictData} // Pass processed data
+            options={goaDistrictPieChart}
+          />
+        </WidgetSection>,
+      ],
     },
 
     {

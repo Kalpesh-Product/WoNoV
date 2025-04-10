@@ -22,6 +22,7 @@ import dayjs from "dayjs";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../../../hooks/useAuth";
+import DataCard from "../../../../components/DataCard";
 
 const HrBudget = () => {
   const axios = useAxiosPrivate();
@@ -209,6 +210,14 @@ const HrBudget = () => {
         </WidgetSection>
       </div>
 
+      <div>
+        <WidgetSection layout={3} padding>
+          <DataCard data={"40K"} title={"Projected"} />
+          <DataCard data={"35K"} title={"Actual"} />
+          <DataCard data={6000} title={"Requested"} />
+        </WidgetSection>
+      </div>
+
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -240,7 +249,7 @@ const HrBudget = () => {
                     {data.month}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {"INR "+data.amount}
+                    {"INR " + data.amount}
                   </span>
                 </div>
               </AccordionSummary>

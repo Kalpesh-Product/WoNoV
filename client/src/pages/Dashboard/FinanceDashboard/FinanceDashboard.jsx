@@ -3,6 +3,7 @@ import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
   MdOutlineMiscellaneousServices,
+  MdRebaseEdit,
 } from "react-icons/md";
 import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import WidgetSection from "../../../components/WidgetSection";
@@ -14,6 +15,8 @@ import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { LuHardDriveUpload } from "react-icons/lu";
+import { CgWebsite } from "react-icons/cg";
 
 const FinanceDashboard = () => {
   const navigate = useNavigate();
@@ -383,6 +386,26 @@ const FinanceDashboard = () => {
             year={true}
           />
         </WidgetSection>,
+      ],
+    },
+    {
+      layout: 3,
+      widgets: [
+        <Card
+          icon={<MdRebaseEdit />}
+          title="Allocated Budget"
+          route="/app/dashboard/finance-dashboard/finance/budget"
+        />,
+        <Card
+          icon={<LuHardDriveUpload />}
+          title="Used Budget"
+          route="/app/dashboard/finance-dashboard/finance/budget"
+        />,
+        <Card
+          icon={<CgWebsite />}
+          title="Remaining Budget"
+          route="/app/dashboard/finance-dashboard/finance/budget"
+        />,
       ],
     },
     {
