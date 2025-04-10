@@ -72,8 +72,7 @@ const BarGraph = ({
                 size="small"
                 variant="outlined"
                 onClick={handlePrev}
-                disabled={departmentIndex === 0}
-              >
+                disabled={departmentIndex === 0}>
                 Prev
               </Button>
               <div className="text-sm min-w-[120px] text-center">
@@ -83,8 +82,7 @@ const BarGraph = ({
                 size="small"
                 variant="outlined"
                 onClick={handleNext}
-                disabled={departmentIndex === departments.length - 1}
-              >
+                disabled={departmentIndex === departments.length - 1}>
                 Next
               </Button>
             </>

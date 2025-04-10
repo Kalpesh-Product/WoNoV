@@ -13,6 +13,7 @@ const WidgetSection = ({
   buttonTitle,
   handleClick,
   titleFont,
+  TitleAmount,
   fun,
 }) => {
   // Tailwind grid classes for different layouts
@@ -35,24 +36,31 @@ const WidgetSection = ({
                 titleFont
                   ? "text-subtitle text-primary"
                   : "text-title text-primary font-pmedium"
-              }`}
-            >
+              }`}>
               {title}{" "}
             </span>
-       
-              {titleData && (
-                <span>
-                  {" "}
-                  :{" "}
-                  <span
-                    style={{ color: titleDataColor }}
-                    className="font-pbold text-title"
-                  >
-                    {titleData}
-                  </span>
+
+            {titleData && (
+              <span>
+                {" "}
+                :{" "}
+                <span
+                  style={{ color: titleDataColor }}
+                  className="font-pbold text-title">
+                  {titleData}
                 </span>
-              )}
-       
+              </span>
+            )}
+            <div>
+              <span
+                className={`${
+                  titleFont
+                    ? "text-subtitle text-primary"
+                    : "text-title text-primary font-pmedium"
+                }`}>
+                {TitleAmount}{" "}
+              </span>
+            </div>
           </div>
           {button && (
             <PrimaryButton title={buttonTitle} handleSubmit={handleClick} />
@@ -61,12 +69,10 @@ const WidgetSection = ({
       )}
       <div
         style={border ? { border: "2px solid #d1d5db", borderTop: "0" } : {}}
-        className="h-full rounded-b-md"
-      >
+        className="h-full rounded-b-md">
         <div
           style={{ padding: padding ? "0" : "1rem" }}
-          className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}
-        >
+          className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>
           {React.Children.map(children, (child) => (
             <div>{child}</div>
           ))}
