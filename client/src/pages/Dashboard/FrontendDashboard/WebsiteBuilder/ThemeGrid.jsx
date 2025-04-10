@@ -24,7 +24,7 @@ import Hostels_mockup from "../../../../assets/WONO_images/img/website-builder/n
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, Skeleton } from "@mui/material";
 
 const ThemeGrid = () => {
   const navigate = useNavigate();
@@ -45,12 +45,6 @@ const ThemeGrid = () => {
   });
 
   const themeImages = [
-    {
-      src: BiznestImage,
-      mockup: BiznestImageMockup,
-      alt: "BiznestImage",
-      tag: "co-working",
-    },
     {
       src: CoWorkingMewo,
       mockup: CoWorkingMewoMockup,
@@ -138,12 +132,16 @@ const ThemeGrid = () => {
                 <div
                   className="theme-grid w-full h-full overflow-hidden shadow-lg"
                   key={index}
-                  onClick={()=>navigate('/app/dashboard/frontend-dashboard/view-theme', {state: {
-                    templateName: template.templateName,
-                    pageName: template.pages[0]?.pageName,
-                  }},)}
+                  onClick={() =>
+                    navigate("/app/dashboard/frontend-dashboard/view-theme", {
+                      state: {
+                        templateName: template.templateName,
+                        pageName: template.pages[0]?.pageName,
+                        tag: "co-working",
+                      },
+                    })
+                  }
                 >
-                  <span>{template.templateName}</span>
                   <img
                     src={BiznestImage}
                     alt={template.templateName}
@@ -152,31 +150,34 @@ const ThemeGrid = () => {
                 </div>
               </div>
             ))}
+            {themeImages.map((image, index) => (
+              <div
+                className="theme-grid w-full h-full overflow-hidden shadow-lg"
+                key={index}
+                onClick={() => {
+                  navigate("/app/dashboard/frontend-dashboard/view-theme", {
+                    state: { image },
+                  }); // Pass theme data
+                  window.scrollTo({ top: 0, behavior: "instant" });
+                }}
+              >
+                <img
+                  src={image.src}
+                  alt={image.alt}
+                  className="w-full h-full object-cover transition-transform duration-200 hover:scale-110 cursor-pointer"
+                />
+              </div>
+            ))}
           </div>
         ) : (
-          <CircularProgress color="#1E3D73"/>
+          <div className="flex flex-col gap-2">
+          {/* Simulating chart skeleton */}
+          <Skeleton variant="text" width={200} height={30} />
+          <Skeleton variant="rectangular" width="100%" height={300} />
+        </div>
         )}
 
-        {/* <div className="themePage-content-grid grid grid-cols-2 gap-8 py-4 bg-white">
-          {themeImages.map((image, index) => (
-            <div
-              className="theme-grid w-full h-full overflow-hidden shadow-lg"
-              key={index}
-              onClick={() => {
-                navigate("/app/dashboard/frontend-dashboard/view-theme", {
-                  state: { image },
-                }); // Pass theme data
-                window.scrollTo({ top: 0, behavior: "instant" });
-              }}
-            >
-              <img
-                src={image.src}
-                alt={image.alt}
-                className="w-full h-full object-cover transition-transform duration-200 hover:scale-110 cursor-pointer"
-              />
-            </div>
-          ))}
-        </div> */}
+        <div className="themePage-content-grid grid grid-cols-2 gap-8 py-4 bg-white"></div>
 
         <div className="themePage-featured flex items-center justify-center py-4 bg-white">
           <div className="themePage-featured-grid grid grid-cols-2 gap-4">
