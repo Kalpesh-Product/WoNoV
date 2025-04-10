@@ -23,22 +23,25 @@ const RevenueTarget = () => {
           revenue: 125680,
           clients: [
             {
+              srNo: "1",
               client: "Zomato",
               representative: "John Doe",
-              endOfTenure: "08/04/2024",
-              targetRevenue: 5000,
+              registerDate: "2024-01-15",
+              actualRevenue: 5000,
             },
             {
-              client: "Axis Bank",
-              representative: "Jane Doe",
-              endOfTenure: "08/04/2024",
-              targetRevenue: 5000,
+              srNo: "2",
+              client: "Uber",
+              representative: "Jane Smith",
+              registerDate: "2024-02-10",
+              actualRevenue: 4000,
             },
             {
-              client: "WoNo",
-              representative: "Kalpesh Naik",
-              endOfTenure: "08/04/2024",
-              targetRevenue: 5000,
+              srNo: "3",
+              client: "Ola",
+              representative: "Alice Johnson",
+              registerDate: "2024-03-05",
+              actualRevenue: 3000,
             },
           ],
         },
@@ -46,35 +49,90 @@ const RevenueTarget = () => {
           name: "Workation",
           revenue: 83630,
           clients: [
-            { client: "Client D", revenue: 4000 },
-            { client: "Client E", revenue: 4000 },
+            {
+              srNo: "1",
+              client: "Client D",
+              representative: "Bob Brown",
+              registerDate: "2024-01-20",
+              actualRevenue: 4000,
+            },
+            {
+              srNo: "2",
+              client: "Client E",
+              representative: "Charlie White",
+              registerDate: "2024-02-25",
+              actualRevenue: 4000,
+            },
+            {
+              srNo: "3",
+              client: "Client F",
+              representative: "Charlie White",
+              registerDate: "2024-02-25",
+              actualRevenue: 4000,
+            },
           ],
         },
         {
-          name: "Co-Living",
+          name: "Meetings",
           revenue: 157840,
           clients: [
-            { client: "Client F", revenue: 5000 },
-            { client: "Client G", revenue: 7000 },
-            { client: "Client H", revenue: 3000 },
+            { srNo: "1", client: "Client F", revenue: 5000 },
+            { srNo: "2", client: "Client G", revenue: 7000 },
+            { srNo: "3", client: "Client H", revenue: 3000 },
           ],
         },
         {
           name: "Virtual Office",
           revenue: 156380,
           clients: [
-            { client: "Client F", revenue: 5000 },
-            { client: "Client G", revenue: 7000 },
-            { client: "Client H", revenue: 3000 },
+            {
+              srNo: "1",
+              client: "Client F",
+              representative: "Daniel Green",
+              registerDate: "2024-03-12",
+              actualRevenue: 5000,
+            },
+            {
+              srNo: "2",
+              client: "Client G",
+              representative: "Eva Black",
+              registerDate: "2024-04-18",
+              actualRevenue: 7000,
+            },
+            {
+              srNo: "3",
+              client: "Client H",
+              representative: "Frank Blue",
+              registerDate: "2024-05-10",
+              actualRevenue: 3000,
+            },
           ],
         },
         {
           name: "Other Channels",
           revenue: 156470,
           clients: [
-            { client: "Client F", revenue: 5000 },
-            { client: "Client G", revenue: 7000 },
-            { client: "Client H", revenue: 3000 },
+            {
+              srNo: "1",
+              client: "Client F",
+              representative: "Daniel Green",
+              registerDate: "2024-03-12",
+              actualRevenue: 5000,
+            },
+            {
+              srNo: "2",
+              client: "Client G",
+              representative: "Eva Black",
+              registerDate: "2024-04-18",
+              actualRevenue: 7000,
+            },
+            {
+              srNo: "3",
+              client: "Client H",
+              representative: "Frank Blue",
+              registerDate: "2024-05-10",
+              actualRevenue: 3000,
+            },
           ],
         },
       ],
@@ -84,28 +142,76 @@ const RevenueTarget = () => {
       domains: [
         {
           name: "Co-Working",
-          revenue: 15000,
+          revenue: 15654,
           clients: [
-            { client: "Client I", revenue: 6000 },
-            { client: "Client J", revenue: 5000 },
-            { client: "Client K", revenue: 4000 },
+            {
+              srNo: "1",
+              client: "Client I",
+              representative: "Grace Orange",
+              registerDate: "2024-02-11",
+              actualRevenue: 6000,
+            },
+            {
+              srNo: "2",
+              client: "Client J",
+              representative: "Hank Purple",
+              registerDate: "2024-03-09",
+              actualRevenue: 5000,
+            },
+            {
+              srNo: "3",
+              client: "Client K",
+              representative: "Isabel Cyan",
+              registerDate: "2024-04-14",
+              actualRevenue: 4000,
+            },
           ],
         },
         {
           name: "Workation",
-          revenue: 9000,
+          revenue: 9795,
           clients: [
-            { client: "Client L", revenue: 5000 },
-            { client: "Client M", revenue: 4000 },
+            {
+              srNo: "1",
+              client: "Client L",
+              representative: "Jack Gray",
+              registerDate: "2024-02-28",
+              actualRevenue: 5000,
+            },
+            {
+              srNo: "2",
+              client: "Client M",
+              representative: "Kara Silver",
+              registerDate: "2024-03-07",
+              actualRevenue: 4000,
+            },
           ],
         },
         {
           name: "Co-Living",
           revenue: 14000,
           clients: [
-            { client: "Client N", revenue: 6000 },
-            { client: "Client O", revenue: 5000 },
-            { client: "Client P", revenue: 3000 },
+            {
+              srNo: "1",
+              client: "Client N",
+              representative: "Leo Gold",
+              registerDate: "2024-05-20",
+              actualRevenue: 6000,
+            },
+            {
+              srNo: "2",
+              client: "Client O",
+              representative: "Mia Platinum",
+              registerDate: "2024-06-08",
+              actualRevenue: 5000,
+            },
+            {
+              srNo: "3",
+              client: "Client P",
+              representative: "Noah Bronze",
+              registerDate: "2024-07-15",
+              actualRevenue: 3000,
+            },
           ],
         },
       ],
@@ -115,28 +221,76 @@ const RevenueTarget = () => {
       domains: [
         {
           name: "Co-Working",
-          revenue: 18000,
+          revenue: 18264,
           clients: [
-            { client: "Client Q", revenue: 7000 },
-            { client: "Client R", revenue: 6000 },
-            { client: "Client S", revenue: 5000 },
+            {
+              srNo: "1",
+              client: "Client Q",
+              representative: "Olivia Rose",
+              registerDate: "2024-01-30",
+              actualRevenue: 7000,
+            },
+            {
+              srNo: "2",
+              client: "Client R",
+              representative: "Peter Brown",
+              registerDate: "2024-02-18",
+              actualRevenue: 6000,
+            },
+            {
+              srNo: "3",
+              client: "Client S",
+              representative: "Quincy Black",
+              registerDate: "2024-03-26",
+              actualRevenue: 5000,
+            },
           ],
         },
         {
           name: "Workation",
           revenue: 10000,
           clients: [
-            { client: "Client T", revenue: 5000 },
-            { client: "Client U", revenue: 5000 },
+            {
+              srNo: "1",
+              client: "Client T",
+              representative: "Rachel Violet",
+              registerDate: "2024-04-12",
+              actualRevenue: 5000,
+            },
+            {
+              srNo: "2",
+              client: "Client U",
+              representative: "Sam Indigo",
+              registerDate: "2024-05-07",
+              actualRevenue: 5000,
+            },
           ],
         },
         {
           name: "Co-Living",
-          revenue: 13000,
+          revenue: 13586,
           clients: [
-            { client: "Client V", revenue: 6000 },
-            { client: "Client W", revenue: 4000 },
-            { client: "Client X", revenue: 3000 },
+            {
+              srNo: "1",
+              client: "Client V",
+              representative: "Tina Lilac",
+              registerDate: "2024-06-05",
+              actualRevenue: 6000,
+            },
+            {
+              srNo: "2",
+              client: "Client W",
+              representative: "Umar Yellow",
+              registerDate: "2024-07-08",
+              actualRevenue: 4000,
+            },
+            {
+              srNo: "3",
+              client: "Client X",
+              representative: "Victor Pink",
+              registerDate: "2024-08-15",
+              actualRevenue: 3000,
+            },
           ],
         },
       ],
@@ -148,26 +302,74 @@ const RevenueTarget = () => {
           name: "Co-Working",
           revenue: 20000,
           clients: [
-            { client: "Client Y", revenue: 8000 },
-            { client: "Client Z", revenue: 7000 },
-            { client: "Client AA", revenue: 5000 },
+            {
+              srNo: "1",
+              client: "Client Y",
+              representative: "Wendy Red",
+              registerDate: "2024-03-10",
+              actualRevenue: 8000,
+            },
+            {
+              srNo: "2",
+              client: "Client Z",
+              representative: "Xavier Green",
+              registerDate: "2024-04-14",
+              actualRevenue: 7000,
+            },
+            {
+              srNo: "3",
+              client: "Client AA",
+              representative: "Yara Blue",
+              registerDate: "2024-05-16",
+              actualRevenue: 5000,
+            },
           ],
         },
         {
           name: "Workation",
           revenue: 11000,
           clients: [
-            { client: "Client AB", revenue: 6000 },
-            { client: "Client AC", revenue: 5000 },
+            {
+              srNo: "1",
+              client: "Client AB",
+              representative: "Zane Orange",
+              registerDate: "2024-06-20",
+              actualRevenue: 6000,
+            },
+            {
+              srNo: "2",
+              client: "Client AC",
+              representative: "Adam Gray",
+              registerDate: "2024-07-10",
+              actualRevenue: 5000,
+            },
           ],
         },
         {
           name: "Co-Living",
-          revenue: 16000,
+          revenue: 16468,
           clients: [
-            { client: "Client AD", revenue: 7000 },
-            { client: "Client AE", revenue: 6000 },
-            { client: "Client AF", revenue: 3000 },
+            {
+              srNo: "1",
+              client: "Client AD",
+              representative: "Betty Silver",
+              registerDate: "2024-08-25",
+              actualRevenue: 7000,
+            },
+            {
+              srNo: "2",
+              client: "Client AE",
+              representative: "Charlie Platinum",
+              registerDate: "2024-09-14",
+              actualRevenue: 6000,
+            },
+            {
+              srNo: "3",
+              client: "Client AF",
+              representative: "David Bronze",
+              registerDate: "2024-10-05",
+              actualRevenue: 3000,
+            },
           ],
         },
       ],
@@ -221,7 +423,8 @@ const RevenueTarget = () => {
             value={selectedMonth}
             onChange={handleMonthChange}
             sx={{ width: "200px" }}
-            label="Select Month">
+            label="Select Month"
+          >
             {mockBusinessRevenueData.map((data) => (
               <MenuItem key={data.month} value={data.month}>
                 {data.month}
@@ -237,7 +440,8 @@ const RevenueTarget = () => {
         border
         padding
         title={"Vertical-wise Revenue Targets - April 2025"}
-        TitleAmount={"Total INR 6,80,000"}>
+        TitleAmount={"Total INR 6,80,000"}
+      >
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
 
@@ -250,7 +454,8 @@ const RevenueTarget = () => {
                 expandIcon={<IoIosArrowDown />}
                 aria-controls={`panel-${index}-content`}
                 id={`panel-${index}-header`}
-                className="border-b-[1px] border-borderGray">
+                className="border-b-[1px] border-borderGray"
+              >
                 <div className="flex justify-between items-center w-full px-4">
                   <span className="text-subtitle font-pmedium">
                     {domain.name}
@@ -265,16 +470,17 @@ const RevenueTarget = () => {
                   data={domain.clients}
                   hideFilter
                   columns={[
+                    { header: "Sr.No", field: "srNo", flex: 1 },
                     { header: "Client Name", field: "client", flex: 1 },
                     {
                       header: "Representative",
                       field: "representative",
                       flex: 1,
                     },
-                    { header: "End Of Tenure", field: "endOfTenure", flex: 1 },
+                    { header: "End Of Tenure", field: "registerDate", flex: 1 },
                     {
                       header: "Target Revenue",
-                      field: "targetRevenue",
+                      field: "actualRevenue",
                       flex: 1,
                     },
                   ]}
