@@ -1,25 +1,56 @@
 import { IoMdDownload } from "react-icons/io";
 import { MdUpload } from "react-icons/md";
+import WidgetSection from "../../../../components/WidgetSection";
+import AgTable from "../../../../components/AgTable";
 
 const BulkUploadSales = () => {
   const uploadItems = [
-    "Upload Budget",
-    "Upload Budget",
-    "Upload Budget",
-    "Upload Budget",
-    "Upload Budget",
-    "Upload Budget",
+    "Upload Budget"
   ];
+  const bulkUploadDataColumns = [
+    { field: "srNo", headerName: "SR No", flex: 1 },
+    { field: "templateName", headerName: "Template Name", flex: 1 },
+    { field: "uploadedBy", headerName: "Uploaded By", flex: 1 },
+    { field: "date", headerName: "Date", flex: 1 },
+  ];
+
+  const bulkUploadData = [
+    {
+      srNo: 1,
+      templateName: "Upload Budget",
+      uploadedBy: "John Doe",
+      date: "2025-03-01"
+    },
+    {
+      srNo: 2,
+      templateName: "Upload Budget",
+      uploadedBy: "Jane Smith",
+      date: "2025-03-08"
+    },
+    {
+      srNo: 3,
+      templateName: "Upload Budget",
+      uploadedBy: "Michael Johnson",
+      date: "2025-03-15"
+    },
+    {
+      srNo: 4,
+      templateName: "Upload Budget",
+      uploadedBy: "Emily Davis",
+      date: "2025-03-22"
+    }
+  ];
+
   return (
     <div className="p-4">
       <h2 className="text-title font-pmedium text-primary pb-4">
         Bulk Upload Data
       </h2>
 
-      <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
+      <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1 pb-4">
         {uploadItems.map((index, item) => {
           return (
-            <>
+            <div>
               <div
                 className="space-y-2 border-default p-4 m-2 rounded-md"
                 key={index}>
@@ -41,9 +72,20 @@ const BulkUploadSales = () => {
                   </button>
                 </div>
               </div>
-            </>
+
+            </div>
           );
         })}
+      </div>
+
+      <div>
+              <WidgetSection border title="Bulk Upload Data">
+          <AgTable
+            data={bulkUploadData}
+            columns={bulkUploadDataColumns}
+            search={true}
+          />
+        </WidgetSection>
       </div>
     </div>
   );

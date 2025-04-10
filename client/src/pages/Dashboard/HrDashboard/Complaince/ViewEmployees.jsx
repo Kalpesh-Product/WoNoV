@@ -93,7 +93,7 @@ const ViewEmployees = () => {
                     employmentID: employee.empId,
                     email: employee.email,
                     department : employee.departments?.map((item=>item.name)),
-                    role: employee.role.map((r) => r.roleTitle),
+                    role: employee.role?.map((r) => r.roleTitle),
                     status: employee.isActive,
                   })),
                 ]

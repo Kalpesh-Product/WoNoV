@@ -1,20 +1,51 @@
 import { IoMdDownload } from "react-icons/io";
 import { MdUpload } from "react-icons/md";
+import WidgetSection from "../../../../components/WidgetSection";
+import AgTable from "../../../../components/AgTable";
 
 const ItSops = () => {
   const uploadItems = [
-    "Upload Sops",
-    "Upload Sops",
-    "Upload Sops",
-    "Upload Sops",
-    "Upload Sops",
-    "Upload Sops",
+    "Upload Sops" 
   ];
+  const sopsUploadDataColumns = [
+    { field: "srNo", headerName: "SR No", flex: 1 },
+    { field: "templateName", headerName: "Template Name", flex: 1 },
+    { field: "uploadedBy", headerName: "Uploaded By", flex: 1 },
+    { field: "date", headerName: "Date", flex: 1 },
+  ];
+
+  const sopsUploadData = [
+    {
+      srNo: 1,
+      templateName: "Upload Sops",
+      uploadedBy: "John Doe",
+      date: "2025-03-01"
+    },
+    {
+      srNo: 2,
+      templateName: "Upload Sops",
+      uploadedBy: "Jane Smith",
+      date: "2025-03-08"
+    },
+    {
+      srNo: 3,
+      templateName: "Upload Sops",
+      uploadedBy: "Michael Johnson",
+      date: "2025-03-15"
+    },
+    {
+      srNo: 4,
+      templateName: "Upload Sops",
+      uploadedBy: "Emily Davis",
+      date: "2025-03-22"
+    }
+  ];
+
   return (
     <div className="p-4">
       <h2 className="text-title font-pmedium text-primary pb-4">Upload Sops</h2>
 
-      <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
+      <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1 pb-4">
         {uploadItems.map((index, item) => {
           return (
             <>
@@ -42,6 +73,16 @@ const ItSops = () => {
             </>
           );
         })}
+      </div>
+
+      <div>
+              <WidgetSection border title="SOPs Data">
+          <AgTable
+            data={sopsUploadData}
+            columns={sopsUploadDataColumns}
+            search={true}
+          />
+        </WidgetSection>
       </div>
     </div>
   );
