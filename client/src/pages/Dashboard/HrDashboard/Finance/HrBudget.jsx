@@ -22,6 +22,7 @@ import dayjs from "dayjs";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../../../hooks/useAuth";
+import DataCard from "../../../../components/DataCard";
 import { MdTrendingUp } from "react-icons/md";
 import { BsCheckCircleFill } from "react-icons/bs";
 
@@ -212,15 +213,36 @@ const HrBudget = () => {
         <WidgetSection layout={1} title={"BUDGET 2024"}>
           <LayerBarGraph options={optionss} data={data} />
         </WidgetSection>
-      </div>   
-      
-        <div className="flex justify-end">
-            <PrimaryButton
-              title={"Request Budget"}
-              padding="px-5 py-2" fontSize="text-base"
-              handleSubmit={() => setOpenModal(true)}
-            />
-          </div>
+      </div>
+      <div>
+        <WidgetSection layout={3} padding>
+          <DataCard
+            data={"40K"}
+            title={"Projected"}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              { month: "long" }
+            )}`}
+          />
+          <DataCard
+            data={"35K"}
+            title={"Actual"}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              { month: "long" }
+            )}`}
+          />
+          <DataCard
+            data={6000}
+            title={"Requested"}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              { month: "long" }
+            )}`}
+          />
+        </WidgetSection>
+      </div>
+
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
         
         <div className="flex justify-between items-center">
@@ -258,14 +280,15 @@ const HrBudget = () => {
                 </div>
               </AccordionSummary>
               <AccordionDetails>
-                <AgTable
-                  search={true}
-                  searchColumn={"Department"}
-                  tableTitle={`${data.month}`}
-                  data={data.tableData.rows}
-                  columns={data.tableData.columns}
-                  tableHeight={250}
-                />
+              <div className="border-t-[1px] border-borderGray py-4">
+                  <AgTable
+                    search={data.tableData?.rows?.length >= 10}
+                    data={data.tableData.rows}
+                    columns={data.tableData.columns}
+                    tableHeight={400}
+                    hideFilter={data.tableData?.rows?.length <= 9}
+                  />
+                </div>
               </AccordionDetails>
             </Accordion>
           ))}

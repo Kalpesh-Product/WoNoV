@@ -10,6 +10,7 @@ import Footer from "../components/Footer";
 import { useSidebar } from "../context/SideBarContext";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { IoIosArrowForward } from "react-icons/io";
+import ScrollToTop from "../components/ScrollToTop"; // Adjust path if needed
 
 const MainLayout = () => {
   const [showFooter, setShowFooter] = useState(false);
@@ -79,7 +80,8 @@ const MainLayout = () => {
             <div className="p-4 rounded-t-md bg-white">
               <BreadCrumbComponent />
             </div>
-            <div className="bg-white h-[80vh] overflow-y-auto flex flex-col justify-between">
+            <div id="scrollable-content" className="bg-white h-[80vh] overflow-y-auto flex flex-col justify-between">
+              <ScrollToTop />
               <Outlet />
               <div
                 ref={dummyRef}

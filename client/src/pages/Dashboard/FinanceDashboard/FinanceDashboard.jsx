@@ -3,6 +3,7 @@ import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
   MdOutlineMiscellaneousServices,
+  MdRebaseEdit,
 } from "react-icons/md";
 import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import WidgetSection from "../../../components/WidgetSection";
@@ -14,6 +15,9 @@ import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { LuHardDriveUpload } from "react-icons/lu";
+import { CgWebsite } from "react-icons/cg";
+import DataCard from "../../../components/DataCard";
 
 const FinanceDashboard = () => {
   const navigate = useNavigate();
@@ -385,6 +389,35 @@ const FinanceDashboard = () => {
         </WidgetSection>,
       ],
     },
+      {
+          layout: 3,
+          widgets: [
+            <DataCard
+              data={"40K"}
+              title={"Projected"}
+              route={"/app/dashboard/finance-dashboard/finance/budget"}
+              description={`Current Month: ${new Date().toLocaleString("default", {
+                month: "long",
+              })}`}
+            />,
+            <DataCard
+              data={"35K"}
+              title={"Actual"}
+              route={"/app/dashboard/finance-dashboard/finance/budget"}
+              description={`Current Month: ${new Date().toLocaleString("default", {
+                month: "long",
+              })}`}
+            />,
+            <DataCard
+              data={6000}
+              title={"Requested"}
+              route={"/app/dashboard/finance-dashboard/finance/budget"}
+              description={`Current Month: ${new Date().toLocaleString("default", {
+                month: "long",
+              })}`}
+            />,
+          ],
+        },
     {
       layout: 6,
       widgets: [

@@ -29,7 +29,7 @@ const WidgetSection = ({
   return (
     <div className="py-0 motion-preset-slide-up-sm">
       {title && (
-        <div className=" border-default  border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-md">
+        <div className=" border-default  border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl">
           <div className="flex w-full gap-8 items-center justify-between">
             <span
               className={`${
@@ -69,7 +69,7 @@ const WidgetSection = ({
       )}
       <div
         style={border ? { border: "2px solid #d1d5db", borderTop: "0" } : {}}
-        className="h-full rounded-b-md">
+        className="h-full rounded-b-xl">
         <div
           style={{ padding: padding ? "0" : "1rem" }}
           className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>

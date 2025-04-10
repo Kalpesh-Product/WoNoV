@@ -22,6 +22,7 @@ import dayjs from "dayjs";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../../../hooks/useAuth";
+import DataCard from "../../../../components/DataCard";
 import { MdTrendingUp } from "react-icons/md";
 import { BsCheckCircleFill } from "react-icons/bs";
 
@@ -223,6 +224,30 @@ const HrBudget = () => {
             />
           </div>
 
+      <WidgetSection layout={3} padding>
+        <DataCard
+          data={"40K"}
+          title={"Projected"}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "long",
+          })}`}
+        />
+        <DataCard
+          data={"35K"}
+          title={"Actual"}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "long",
+          })}`}
+        />
+        <DataCard
+          data={6000}
+          title={"Requested"}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "long",
+          })}`}
+        />
+      </WidgetSection>
+          
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -258,14 +283,15 @@ const HrBudget = () => {
                 </div>
               </AccordionSummary>
               <AccordionDetails>
-                <AgTable
-                  search={true}
-                  searchColumn={"Department"}
-                  tableTitle={`${data.month}`}
-                  data={data.tableData.rows}
-                  columns={data.tableData.columns}
-                  tableHeight={250}
-                />
+                <div className="border-t-[1px] border-borderGray py-4">
+                  <AgTable
+                    search={data.tableData?.rows?.length >= 10}
+                    data={data.tableData.rows}
+                    columns={data.tableData.columns}
+                    tableHeight={400}
+                    hideFilter={data.tableData?.rows?.length <= 19}
+                  />
+                </div>
               </AccordionDetails>
             </Accordion>
           ))}

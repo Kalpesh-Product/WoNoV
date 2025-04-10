@@ -65,7 +65,7 @@ const FinanceBudget = () => {
         "Oct-24",
         "Nov-24",
         "Dec-24",
-      ]
+      ],
     },
     yaxis: {
       max: 150,
@@ -353,7 +353,6 @@ const FinanceBudget = () => {
       },
     },
   ];
-  
 
   return (
     <div className="flex flex-col gap-8">
@@ -365,15 +364,46 @@ const FinanceBudget = () => {
 
       <div>
         <WidgetSection layout={3} padding>
-          <DataCard data={"40K"} title={"Projected"} />
-          <DataCard data={"35K"} title={"Actual"} />
-          <DataCard data={6000} title={"Requested"} />
+          <DataCard
+            data={"40K"}
+            title={"Projected"}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "long",
+              }
+            )}`}
+          />
+          <DataCard
+            data={"35K"}
+            title={"Actual"}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "long",
+              }
+            )}`}
+          />
+          <DataCard
+            data={6000}
+            title={"Requested"}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "long",
+              }
+            )}`}
+          />
         </WidgetSection>
       </div>
 
       <div className="flex justify-end">
-            <PrimaryButton title={"Request Budget"} padding="px-5 py-2" fontSize="text-base"/>
-          </div>
+        <PrimaryButton
+          title={"Request Budget"}
+          padding="px-5 py-2"
+          fontSize="text-base"
+        />
+      </div>
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -381,7 +411,7 @@ const FinanceBudget = () => {
               Allocated Budget :{" "}
             </span>
             <span className="text-title font-pmedium">
-              {"INR "+Number("500000").toLocaleString("en-IN")}
+              {"INR " + Number("500000").toLocaleString("en-IN")}
             </span>
           </div>
         </div>
@@ -403,19 +433,22 @@ const FinanceBudget = () => {
                                     {"INR "+Number(data.projectedAmount).toLocaleString("en-GB")}
                                     </span>
                   <span className="text-subtitle font-pmedium flex items-center gap-1 ">
-                      <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />
-                    {"INR "+Number(data.amount).toLocaleString("en-GB")}
+                    <BsCheckCircleFill
+                      title="Actual"
+                      className="text-green-600 w-4 h-4"
+                    />
+                    {"INR " + Number(data.amount).toLocaleString("en-GB")}
                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails>
                 <AgTable
-                  search={true}
+                  search={data.tableData?.rows?.length > 10}
                   searchColumn={"Department"}
-                  tableTitle={`${data.month}`}
                   data={data.tableData.rows}
                   columns={data.tableData.columns}
-                  tableHeight={250}
+                  tableHeight={400}
+                  hideFilter={data.tableData.rows.length < 10}
                 />
               </AccordionDetails>
             </Accordion>

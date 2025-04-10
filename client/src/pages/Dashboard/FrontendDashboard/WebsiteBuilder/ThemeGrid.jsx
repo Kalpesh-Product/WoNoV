@@ -24,7 +24,7 @@ import Hostels_mockup from "../../../../assets/WONO_images/img/website-builder/n
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, Skeleton } from "@mui/material";
 
 const ThemeGrid = () => {
   const navigate = useNavigate();
@@ -45,12 +45,6 @@ const ThemeGrid = () => {
   });
 
   const themeImages = [
-    {
-      src: BiznestImage,
-      mockup: BiznestImageMockup,
-      alt: "BiznestImage",
-      tag: "co-working",
-    },
     {
       src: CoWorkingMewo,
       mockup: CoWorkingMewoMockup,
@@ -124,26 +118,31 @@ const ThemeGrid = () => {
   ];
   return (
     <div>
-      <div className="p-4">
-        <div className="themePage-content-header bg-white">
-          <span className="text-left text-title text-primary font-pmedium">
+      <div className="p-4 flex flex-col gap-4">
+        <div className="themePage-content-header bg-white flex flex-col gap-4">
+        <h4 className="text-4xl text-left">
             Select Themes
-          </span>
+          </h4>
+          <hr/>
         </div>
 
         {!isTemplatesPending ? (
-          <div className="grid grid-cols-2 sm:grid-cols1 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols1 gap-6">
             {templates.map((template, index) => (
               <div>
                 <div
-                  className="theme-grid w-full h-full overflow-hidden shadow-lg"
+                  className="theme-grid w-full h-full overflow-hidden shadow-lg rounded-xl"
                   key={index}
-                  onClick={()=>navigate('/app/dashboard/frontend-dashboard/view-theme', {state: {
-                    templateName: template.templateName,
-                    pageName: template.pages[0]?.pageName,
-                  }},)}
+                  onClick={() =>
+                    navigate("/app/dashboard/frontend-dashboard/view-theme", {
+                      state: {
+                        templateName: template.templateName,
+                        pageName: template.pages[0]?.pageName,
+                        tag: "co-working",
+                      },
+                    })
+                  }
                 >
-                  <span>{template.templateName}</span>
                   <img
                     src={BiznestImage}
                     alt={template.templateName}
@@ -152,39 +151,41 @@ const ThemeGrid = () => {
                 </div>
               </div>
             ))}
+            {themeImages.map((image, index) => (
+              <div
+                className="theme-grid w-full h-full overflow-hidden shadow-lg rounded-xl"
+                key={index}
+                onClick={() => {
+                  navigate("/app/dashboard/frontend-dashboard/view-theme", {
+                    state: { image },
+                  }); // Pass theme data
+                  window.scrollTo({ top: 0, behavior: "instant" });
+                }}
+              >
+                <img
+                  src={image.src}
+                  alt={image.alt}
+                  className="w-full h-full object-cover transition-transform duration-200 hover:scale-110 cursor-pointer"
+                />
+              </div>
+            ))}
           </div>
         ) : (
-          <CircularProgress color="#1E3D73"/>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols2 gap-2">
+          <Skeleton variant="rectangular" width="100%" height={300} />
+          <Skeleton variant="rectangular" width="100%" height={300} />
+          <Skeleton variant="rectangular" width="100%" height={300} />
+          <Skeleton variant="rectangular" width="100%" height={300} />
+        </div>
         )}
-
-        {/* <div className="themePage-content-grid grid grid-cols-2 gap-8 py-4 bg-white">
-          {themeImages.map((image, index) => (
-            <div
-              className="theme-grid w-full h-full overflow-hidden shadow-lg"
-              key={index}
-              onClick={() => {
-                navigate("/app/dashboard/frontend-dashboard/view-theme", {
-                  state: { image },
-                }); // Pass theme data
-                window.scrollTo({ top: 0, behavior: "instant" });
-              }}
-            >
-              <img
-                src={image.src}
-                alt={image.alt}
-                className="w-full h-full object-cover transition-transform duration-200 hover:scale-110 cursor-pointer"
-              />
-            </div>
-          ))}
-        </div> */}
 
         <div className="themePage-featured flex items-center justify-center py-4 bg-white">
           <div className="themePage-featured-grid grid grid-cols-2 gap-4">
             <div className="themePage-featured-grid-1 flex flex-col justify-center">
               <div className="themePage-featured-header">
-                <h1 className="text-4xl text-left mb-8">
+                <h4 className="text-4xl text-left mb-8">
                   Customize it your way
-                </h1>
+                </h4>
               </div>
               <div className="themePage-featured-content mb-8 pl-2">
                 <ul className="text-lg">

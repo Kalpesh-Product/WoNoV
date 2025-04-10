@@ -237,7 +237,7 @@ const RevenueTarget = () => {
         border
         padding
         title={"Vertical-wise Revenue Targets - April 2025"}
-        TitleAmount={"6,80,000"}>
+        TitleAmount={"INR 6,80,000"}>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
 

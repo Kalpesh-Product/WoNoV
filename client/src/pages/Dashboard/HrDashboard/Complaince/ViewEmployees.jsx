@@ -14,15 +14,17 @@ const ViewEmployees = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/users/fetch-users");
-        return response.data;
+        const filteredData = response.data.filter((employee) => employee.isActive);
+        return filteredData;
       } catch (error) {
-        throw new Error(error.response.data.message);
+        throw new Error(error.response?.data?.message || "Failed to fetch employees");
       }
     },
   });
+  
 
   const viewEmployeeColumns = [
-    { field: "srno", headerName: "SR No",width:100 },
+    { field: "srno", headerName: "SR No", width: 100 },
     { field: "employmentID", headerName: "Employment ID" },
     {
       field: "employeeName",
@@ -92,7 +94,7 @@ const ViewEmployees = () => {
                     } ${employee.lastName ? employee.lastName : ""}`,
                     employmentID: employee.empId,
                     email: employee.email,
-                    department : employee.departments?.map((item=>item.name)),
+                    department: employee.departments?.map((item) => item.name),
                     role: employee.role?.map((r) => r.roleTitle),
                     status: employee.isActive,
                   })),

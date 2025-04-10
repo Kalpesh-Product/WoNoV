@@ -8,14 +8,10 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { TextField } from "@mui/material";
-import {
-  LocalizationProvider,
-  TimePicker,
-} from "@mui/x-date-pickers";
+import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 const ManageVisitors = () => {
-
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -112,7 +108,7 @@ const ManageVisitors = () => {
   };
 
   // useEffect(()=>{
- 
+
   //   const toMeets = selectedVisitor.map((vis)=>vis)
   //   console.log(selectedVisitor)
   // },[])
@@ -134,7 +130,9 @@ const ManageVisitors = () => {
             phoneNumber: item.phoneNumber,
             email: item.email,
             purposeOfVisit: item.purposeOfVisit,
-            toMeet: !item?.toMeet ? null: `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
+            toMeet: !item?.toMeet
+              ? null
+              : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
             checkIn: humanTime(item.checkIn),
             checkOut: humanTime(item.checkOut),
           })),
@@ -145,8 +143,7 @@ const ManageVisitors = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={"Visitor Detail"}
-      >
+        title={"Visitor Detail"}>
         <div className="flex flex-col gap-4">
           <div className="flex justify-end">
             <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />

@@ -210,32 +210,34 @@ const AgTableComponent = React.memo(
             ) : null
           )}
         </div>
-        <div className="flex items-center justify-between py-4">
-          <span className="font-pmedium text-title text-primary">
-            {tableTitle}
-          </span>
-          <div className="flex items-center gap-4">
-            {exportData ? (
-              <PrimaryButton
-                title={"Export"}
-                handleSubmit={() => {
-                  if (gridRef.current) {
-                    gridRef.current.api.exportDataAsCsv({
-                      fileName: `${tableTitle || "table-data"}.csv`,
-                    });
-                  }
-                }}
-              />
-            ) : (
-              ""
-            )}
-            {buttonTitle ? (
-              <PrimaryButton title={buttonTitle} handleSubmit={handleClick} />
-            ) : (
-              ""
-            )}
+        {tableTitle && (
+          <div className="flex items-center justify-between py-4">
+            <span className="font-pmedium text-title text-primary">
+              {tableTitle}
+            </span>
+            <div className="flex items-center gap-4">
+              {exportData ? (
+                <PrimaryButton
+                  title={"Export"}
+                  handleSubmit={() => {
+                    if (gridRef.current) {
+                      gridRef.current.api.exportDataAsCsv({
+                        fileName: `${tableTitle || "table-data"}.csv`,
+                      });
+                    }
+                  }}
+                />
+              ) : (
+                ""
+              )}
+              {buttonTitle ? (
+                <PrimaryButton title={buttonTitle} handleSubmit={handleClick} />
+              ) : (
+                ""
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <MuiAside
           open={isFilterDrawerOpen}

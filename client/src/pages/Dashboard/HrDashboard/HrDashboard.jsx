@@ -168,10 +168,10 @@ const HrDashboard = () => {
     });
   };
 
-
   const options = {
     chart: {
       type: "bar",
+      toolbar: { show: false },
       stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
     },
@@ -179,6 +179,7 @@ const HrDashboard = () => {
       bar: {
         horizontal: false,
         columnWidth: "65%",
+        borderRadius : 5
       },
     },
     dataLabels: {
@@ -186,11 +187,6 @@ const HrDashboard = () => {
       formatter: function (val, opts) {
         const rawData = rawSeries[opts.seriesIndex]?.data[opts.dataPointIndex];
         return rawData ? `${rawData}` : ""; // Display the raw value
-      },
-      style: {
-        fontSize: "9px",
-        fontFamily: "Poppins-Regular, Arial, sans-serif",
-        colors: ["#fffff"], // Color of the data labels
       },
     },
     xaxis: {
@@ -208,6 +204,9 @@ const HrDashboard = () => {
         "Feb-25",
         "Mar-25",
       ],
+      title : {
+        text : "  "
+      }
     },
     yaxis: {
       max: 100,
@@ -557,16 +556,46 @@ const HrDashboard = () => {
           <WidgetSection
             layout={1}
             border
-            padding
+            
             title={"Payroll Expense Graph"}
           >
             <LayerBarGraph data={data} options={optionss} />
+            <hr />
+          <WidgetSection layout={3} padding>
+            <DataCard
+              data={"40K"}
+              title={"Projected"}
+              route={"/app/dashboard/frontend-dashboard/finance"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={"35K"}
+              title={"Actual"}
+              route={"/app/dashboard/frontend-dashboard/finance"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={6000}
+              title={"Requested"}
+              route={"/app/dashboard/frontend-dashboard/finance"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+          </WidgetSection>
           </WidgetSection>
         </Suspense>,
       ],
     },
     {
-      layout: 6,
+      layout: 5,
       widgets: [
         { icon: <CgWebsite />, title: "Employee", route: "employee" },
         { icon: <LuHardDriveUpload />, title: "Company", route: "company" },
