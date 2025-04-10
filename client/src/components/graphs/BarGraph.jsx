@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Chart from "react-apexcharts";
 import { Select, MenuItem, FormControl, Button } from "@mui/material";
+import SecondaryButton from "../SecondaryButton";
 
 const BarGraph = ({
   data,
@@ -54,9 +55,7 @@ const BarGraph = ({
   return (
     <div className="bg-white rounded-md">
       {/* Header with title, year dropdown and department switcher */}
-      <div className="p-4 pt-0 flex justify-between items-center">
-        <div className="text-lg">{title}</div>
-
+      <div className="p-4 flex justify-center items-center">
         <div className="flex gap-4 items-center">
           {year && (
             <FormControl size="small">
@@ -68,23 +67,20 @@ const BarGraph = ({
           )}
           {departments && (
             <>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={handlePrev}
-                disabled={departmentIndex === 0}>
-                Prev
-              </Button>
+              <SecondaryButton
+                title={"Prev"}
+                handleSubmit={handlePrev}
+                disabled={departmentIndex === 0}
+              />
               <div className="text-sm min-w-[120px] text-center">
                 {currentDepartment}
               </div>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={handleNext}
-                disabled={departmentIndex === departments.length - 1}>
-                Next
-              </Button>
+
+              <SecondaryButton
+                title={"Next"}
+                handleSubmit={handleNext}
+                disabled={departmentIndex === departments.length - 1}
+              />
             </>
           )}
         </div>

@@ -42,7 +42,7 @@ const ItBulkUpload = () => {
   ];
 
   return (
-    <div className="p-4">
+    <div className="flex flex-col gap-4">
       <h2 className="text-title font-pmedium text-primary pb-4">
         Bulk Upload Data
       </h2>
@@ -52,7 +52,7 @@ const ItBulkUpload = () => {
           return (
             <div>
               <div
-                className="space-y-2 border-default p-4 m-2 rounded-md"
+                className="space-y-2 border-default p-4  rounded-md"
                 key={index}>
                 <div className="mb-2">{index}</div>
                 <div className="flex space-x-2">

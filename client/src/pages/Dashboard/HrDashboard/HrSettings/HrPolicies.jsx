@@ -50,7 +50,7 @@ const HrPolicies = () => {
           return (
             <>
               <div
-                className="space-y-2 border-default p-4 m-2 rounded-md"
+                className="space-y-2 border-default p-4  rounded-md"
                 key={index}>
                 <div className="mb-2">{index}</div>
                 <div className="flex space-x-2">
