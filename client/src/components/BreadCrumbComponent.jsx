@@ -27,9 +27,9 @@ const BreadCrumbComponent = () => {
     const fullPath = isDirectAppPath ? `/app/${path}` : `/app/dashboard/${path}`;
 
     // Capitalize for display
-    const displayText = segment
-      .replace(/-/g, " ") // Replace hyphens with spaces
-      .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize for display
+    const displayText = decodeURIComponent(segment)
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 
     return isLast ? (
       <Typography key={index} color="text.primary">

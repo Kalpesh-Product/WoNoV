@@ -1,4 +1,4 @@
-import { Avatar, Button, Chip, TextField } from "@mui/material";
+import { TextField } from "@mui/material";
 import React, { useState } from "react";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
@@ -7,9 +7,11 @@ import { toast } from "sonner";
 import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 
 const EditDetails = () => {
-  const { id } = useParams();
+  const location = useLocation();
+  const { id, firstName } = useParams(); // both are available
   const axios = useAxiosPrivate();
   const { data: employeeData, isLoading } = useQuery({
     queryKey: ["employeeData"],

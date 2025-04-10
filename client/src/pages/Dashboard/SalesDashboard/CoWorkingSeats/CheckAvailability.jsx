@@ -65,9 +65,6 @@ const CheckAvailability = () => {
               name="location"
               control={control}
               render={({ field }) => {
-                const uniqueLocations = Array.from(
-                  new Map(workLocations.map((loc) => [loc.name, loc])).values()
-                );
                 return (
                   <Select {...field} label="Select Location">
                     <MenuItem value="" disabled>
@@ -80,9 +77,9 @@ const CheckAvailability = () => {
                     ) : locationsError ? (
                       <MenuItem disabled>Error fetching floors</MenuItem>
                     ) : (
-                      uniqueLocations.map((location) => (
-                        <MenuItem key={location._id} value={location.name}>
-                          {location.name}
+                      workLocations.map((location) => (
+                        <MenuItem key={location._id} value={location.buildingName}>
+                          {location.buildingName}
                         </MenuItem>
                       ))
                     )}

@@ -2,27 +2,25 @@ import React, { useEffect } from "react";
 import { Tab, Tabs } from "@mui/material";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
-const Data = () => {
+const AdminClientLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
   const tabs = [
-    { label: "Job Application List", path: "job-application-list" },
-    { label: "Reports", path: "reports" },
+    { label: "Members", path: "client-members-data" },
+    { label: "Client-Onboarding", path: "client-members-onboard" },
     { label: "Vendor", path: "vendor" },
   ];
-
-  // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
   useEffect(() => {
-    if (location.pathname === "/app/dashboard/HR-dashboard/data") {
-      navigate("/app/dashboard/HR-dashboard/data/job-application-list", {
+    if (location.pathname === "/app/dashboard/admin-dashboard/client-members") {
+      navigate("/app/dashboard/admin-dashboard/client-members/client-members-data", {
         replace: true,
       });
     }
   }, [location, navigate]);
 
   // Determine whether to show the tabs
-  const showTabs = !location.pathname.includes("job-application-list/");
+  const showTabs = !location.pathname.includes("client-members-data/");
 
   // Determine active tab based on location
   const activeTab = tabs.findIndex((tab) =>
@@ -78,4 +76,4 @@ const Data = () => {
   );
 };
 
-export default Data;
+export default AdminClientLayout;

@@ -1,20 +1,44 @@
 import React from "react";
 import AgTable from "../../../../components/AgTable";
-import { Chip } from "@mui/material";
+import { Chip, Skeleton } from "@mui/material";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
 
 const HrSettingsDepartments = () => {
+  const axios = useAxiosPrivate();
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(
+        "api/company/get-company-data?field=selectedDepartments"
+      );
+      return response.data?.selectedDepartments;
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+  const { data: fetchedDepartments = [], isPending: departmentLoading } =
+    useQuery({
+      queryKey: ["fetchedDepartments"],
+      queryFn: fetchDepartments,
+    });
+
   const departmentsColumn = [
-    { field:"srno",headerName:"SR NO"},
-    { field: "departmentName", headerName: "Department Name",
-      cellRenderer:(params)=>{
-        return(
+    { field: "id", headerName: "SR NO" },
+    {
+      field: "departmentName",
+      headerName: "Department Name",
+      cellRenderer: (params) => {
+        return (
           <div>
             <span className="text-primary cursor-pointer hover:underline">
               {params.value}
             </span>
           </div>
-        )
-      }, flex:1 },
+        );
+      },
+      flex: 1,
+    },
     {
       field: "status",
       headerName: "Status",
@@ -31,7 +55,7 @@ const HrSettingsDepartments = () => {
         return (
           <>
             <Chip
-              label={params.value}
+              label={"Active"}
               style={{
                 backgroundColor,
                 color,
@@ -47,59 +71,70 @@ const HrSettingsDepartments = () => {
       cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
-           <span className="text-content text-primary hover:underline cursor-pointer">
-            Make Inactive
-           </span>
+            <span className="text-content text-primary hover:underline cursor-pointer">
+              Make Inactive
+            </span>
           </div>
         </>
       ),
     },
   ];
-
   const rows = [
     {
-      srno:"1",
+      srno: "1",
       id: 1,
       departmentName: "Tech",
       status: "Active",
     },
     {
-      srno:"2",
+      srno: "2",
       id: 2,
       departmentName: "Finance",
       status: "Active",
     },
     {
-      srno:"3",
+      srno: "3",
       id: 3,
       departmentName: "Sales",
       status: "Inactive",
     },
     {
-      srno:"4",
+      srno: "4",
       id: 4,
       departmentName: "Cafe",
       status: "Active",
     },
     {
-      srno:"5",
+      srno: "5",
       id: 5,
       departmentName: "IT",
       status: "Inactive",
     },
   ];
-  
 
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <AgTable
-          search={true}
-          searchColumn={"Department Name"}
-          tableTitle={"Department List"}
-          data={rows}
-          columns={departmentsColumn}
-        />
+        {!departmentLoading ? (
+          <AgTable
+            search={true}
+            searchColumn={"Department Name"}
+            tableTitle={"Department List"}
+            data={[
+              ...fetchedDepartments.map((item, index) => ({
+                id: index + 1,
+                departmentName: item.department?.name,
+              })),
+            ]}
+            columns={departmentsColumn}
+          />
+        ) : (
+          <div className="flex flex-col gap-2">
+            {/* Simulating chart skeleton */}
+            <Skeleton variant="text" width={200} height={30} />
+            <Skeleton variant="rectangular" width="100%" height={300} />
+          </div>
+        )}
       </div>
     </div>
   );
