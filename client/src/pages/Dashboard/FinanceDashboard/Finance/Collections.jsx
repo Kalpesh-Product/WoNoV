@@ -2,6 +2,12 @@ import React from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import AgTable from "../../../../components/AgTable";
+import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+} from "@mui/material";
+import { IoIosArrowDown } from "react-icons/io";
 
 const Collections = () => {
   const collectionData = [
@@ -69,55 +75,41 @@ const Collections = () => {
         formatter: (val) => `${val}%`,
       },
     },
-    colors: ["#4CAF50", "#F44336"], // Green for paid, red for unpaid
+    colors: ["#4CAF50", "#F44336"],
   };
-  //--------------------------------------------------------TableData----------------------------------------------------//
+
   const kraColumn = [
     { field: "client", headerName: "Client", flex: 1 },
     { field: "status", headerName: "Status", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-            <span className="text-primary hover:underline text-content cursor-pointer">
-              View Details
-            </span>
-          </div>
-        </>
+      cellRenderer: () => (
+        <div className="p-2 mb-2 flex gap-2">
+          <span className="text-primary hover:underline text-content cursor-pointer">
+            View Details
+          </span>
+        </div>
       ),
     },
   ];
 
   const rows = [
-    {
-      id: 1,
-      client: "Zomato",
-      status: "Paid",
-    },
-    {
-      id: 2,
-      client: "Turtlemint",
-      status: "Paid",
-    },
-    {
-      id: 3,
-      client: "Zimetrics",
-      status: "Paid",
-    },
-    {
-      id: 4,
-      client: "SquadStack",
-      status: "Paid",
-    },
-    {
-      id: 5,
-      client: "Uber",
-      status: "Paid",
-    },
+    { id: 1, client: "Zomato", status: "Paid" },
+    { id: 2, client: "Turtlemint", status: "Paid" },
+    { id: 3, client: "Zimetrics", status: "Paid" },
+    { id: 4, client: "SquadStack", status: "Paid" },
+    { id: 5, client: "Uber", status: "Paid" },
   ];
-  //--------------------------------------------------------TableData----------------------------------------------------//
+
+  // Create dummy tableData per month — you can replace this with actual filtered rows
+  const financialData = collectionData.map((item) => ({
+    month: item.month,
+    tableData: {
+      columns: kraColumn,
+      rows,
+    },
+  }));
 
   return (
     <div className="flex flex-col gap-4">
@@ -125,13 +117,32 @@ const Collections = () => {
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
 
-      <div>
-        <AgTable
-          data={rows}
-          columns={kraColumn}
-          search
-          tableTitle={"Collections"}
-        />
+      <div className="bg-white rounded-md shadow-sm">
+        {financialData.map((data, index) => (
+          <Accordion key={index} className="py-2">
+            <AccordionSummary
+              expandIcon={<IoIosArrowDown />}
+              aria-controls={`panel${index}-content`}
+              id={`panel${index}-header`}
+              className="border-b-[1px] border-borderGray"
+            >
+              <div className="flex justify-between items-center w-full px-4">
+                <span className="text-subtitle font-pmedium">{data.month}</span>
+                <span className="text-subtitle font-pmedium">
+                  {data.amount}
+                </span>
+              </div>
+            </AccordionSummary>
+            <AccordionDetails sx={{ borderTop: "1px solid #d1d5db" }}>
+              <AgTable
+                search={true}
+                data={data.tableData.rows}
+                columns={data.tableData.columns}
+                tableHeight={250}
+              />
+            </AccordionDetails>
+          </Accordion>
+        ))}
       </div>
     </div>
   );
