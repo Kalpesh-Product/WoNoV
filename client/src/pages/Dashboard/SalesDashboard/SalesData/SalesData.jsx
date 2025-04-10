@@ -474,13 +474,11 @@ const locationPieChartOptions = {
 const calculateCompletedTime = (startDate) => {
   const start = dayjs(startDate);
   const today = dayjs();
-  const totalMonths = today.diff(start, "month", true); 
+  const totalMonths = today.diff(start, "month", true);
   const years = totalMonths / 12;
 
   return `${years.toFixed(1)} years`;
 };
-
-
 
 // ✅ Format Data for Table
 const companyTableColumns = [
@@ -521,6 +519,7 @@ clientOccupancyData.forEach((company) => {
         name: member.empName,
         birthday: member.dateOfBirth,
         daysLeft: daysLeft,
+        company:company.client
       });
     }
   });
@@ -535,6 +534,7 @@ const upcomingBirthdaysColumns = [
   { id: "name", label: "Employee Name" },
   { id: "birthday", label: "Date of Birth" },
   { id: "daysLeft", label: "Days Left" },
+  { id: "company", label: "Company" },
 ];
 
 // -----------------------Client Members birthday End--------------------
