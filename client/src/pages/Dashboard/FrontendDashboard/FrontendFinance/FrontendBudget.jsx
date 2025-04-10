@@ -52,7 +52,7 @@ const FrontendBudget = () => {
       },
     },
     xaxis: {
-      categories:[
+      categories: [
         "Jan-24",
         "Feb-24",
         "Mar-24",
@@ -65,8 +65,7 @@ const FrontendBudget = () => {
         "Oct-24",
         "Nov-24",
         "Dec-24",
-      ]
-      
+      ],
     },
     yaxis: {
       max: 150,
@@ -365,19 +364,46 @@ const FrontendBudget = () => {
 
       <div>
         <WidgetSection layout={3} padding>
-          <DataCard data={"40K"} title={"Projected"} />
-          <DataCard data={"35K"} title={"Actual"} />
-          <DataCard data={6000} title={"Requested"} />
+          <DataCard
+            data={"40K"}
+            title={"Projected"}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "long",
+              }
+            )}`}
+          />
+          <DataCard
+            data={"35K"}
+            title={"Actual"}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "long",
+              }
+            )}`}
+          />
+          <DataCard
+            data={6000}
+            title={"Requested"}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "long",
+              }
+            )}`}
+          />
         </WidgetSection>
       </div>
 
-
       <div className="flex justify-end">
-            <PrimaryButton
-              title={"Request Budget"}
-              padding="px-5 py-2" fontSize="text-base"
-            />
-          </div>
+        <PrimaryButton
+          title={"Request Budget"}
+          padding="px-5 py-2"
+          fontSize="text-base"
+        />
+      </div>
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -403,13 +429,19 @@ const FrontendBudget = () => {
                     {data.month}
                   </span>
                   <span className="text-subtitle font-pmedium flex items-center gap-1 ">
-                                                     <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
-                                                     {"INR "+data.projectedAmount}
-                                                     </span>
-                                   <span className="text-subtitle font-pmedium flex items-center gap-1 ">
-                                       <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />
-                                     {"INR "+Number(data.amount).toLocaleString("en-GB")}
-                                   </span>
+                    <MdTrendingUp
+                      title="Projected"
+                      className="text-yellow-600 w-4 h-4"
+                    />
+                    {"INR " + data.projectedAmount}
+                  </span>
+                  <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                    <BsCheckCircleFill
+                      title="Actual"
+                      className="text-green-600 w-4 h-4"
+                    />
+                    {"INR " + Number(data.amount).toLocaleString("en-GB")}
+                  </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails>
