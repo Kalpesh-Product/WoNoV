@@ -112,7 +112,7 @@ const FinanceBudget = () => {
   const financialData = [
     {
       month: "April 2025",
-      amount: "\u20B915000",
+      amount: "15000",
       tableData: {
         columns: [
           { field: "category", headerName: "Category", flex: 1 },
@@ -126,7 +126,7 @@ const FinanceBudget = () => {
             id: 1,
             category: "Hosting",
             expenseName: "Hosting Fee",
-            amount: "\u20B92500",
+            amount: "2500",
             paymentDate: "2025-04-10",
             status: "Paid",
           },
@@ -134,7 +134,7 @@ const FinanceBudget = () => {
             id: 2,
             category: "Domain",
             expenseName: "Domain Renewal",
-            amount: "\u20B91500",
+            amount: "1500",
             paymentDate: "2025-04-12",
             status: "Pending",
           },
@@ -142,7 +142,7 @@ const FinanceBudget = () => {
             id: 3,
             category: "Software",
             expenseName: "SaaS Subscription",
-            amount: "\u20B94500",
+            amount: "4500",
             paymentDate: "2025-04-15",
             status: "Paid",
           },
@@ -150,7 +150,7 @@ const FinanceBudget = () => {
             id: 4,
             category: "Marketing",
             expenseName: "Ad Campaign",
-            amount: "\u20B93500",
+            amount: "3500",
             paymentDate: "2025-04-20",
             status: "Paid",
           },
@@ -159,7 +159,7 @@ const FinanceBudget = () => {
     },
     {
       month: "May 2025",
-      amount: "\u20B920000",
+      amount: "20000",
       tableData: {
         columns: [
           { field: "category", headerName: "Category", flex: 1 },
@@ -173,7 +173,7 @@ const FinanceBudget = () => {
             id: 1,
             category: "Hosting",
             expenseName: "VPS Fee",
-            amount: "\u20B93000",
+            amount: "3000",
             paymentDate: "2025-05-05",
             status: "Paid",
           },
@@ -181,7 +181,7 @@ const FinanceBudget = () => {
             id: 2,
             category: "Software",
             expenseName: "CRM Subscription",
-            amount: "\u20B95500",
+            amount: "5500",
             paymentDate: "2025-05-07",
             status: "Pending",
           },
@@ -189,7 +189,7 @@ const FinanceBudget = () => {
             id: 3,
             category: "Marketing",
             expenseName: "Social Media Ads",
-            amount: "\u20B97000",
+            amount: "7000",
             paymentDate: "2025-05-12",
             status: "Paid",
           },
@@ -197,7 +197,7 @@ const FinanceBudget = () => {
             id: 4,
             category: "Office",
             expenseName: "Internet Bill",
-            amount: "\u20B92000",
+            amount: "2000",
             paymentDate: "2025-05-18",
             status: "Paid",
           },
@@ -206,7 +206,7 @@ const FinanceBudget = () => {
     },
     {
       month: "June 2025",
-      amount: "\u20B918500",
+      amount: "18500",
       tableData: {
         columns: [
           { field: "category", headerName: "Category", flex: 1 },
@@ -220,7 +220,7 @@ const FinanceBudget = () => {
             id: 1,
             category: "Software",
             expenseName: "Accounting Software",
-            amount: "\u20B95000",
+            amount: "5000",
             paymentDate: "2025-06-03",
             status: "Paid",
           },
@@ -228,7 +228,7 @@ const FinanceBudget = () => {
             id: 2,
             category: "Marketing",
             expenseName: "Email Marketing",
-            amount: "\u20B93000",
+            amount: "3000",
             paymentDate: "2025-06-08",
             status: "Pending",
           },
@@ -236,7 +236,7 @@ const FinanceBudget = () => {
             id: 3,
             category: "Office",
             expenseName: "Electricity Bill",
-            amount: "\u20B91500",
+            amount: "1500",
             paymentDate: "2025-06-10",
             status: "Paid",
           },
@@ -244,7 +244,7 @@ const FinanceBudget = () => {
             id: 4,
             category: "Salaries",
             expenseName: "Freelancer Payment",
-            amount: "\u20B98000",
+            amount: "8000",
             paymentDate: "2025-06-15",
             status: "Paid",
           },
@@ -253,7 +253,7 @@ const FinanceBudget = () => {
     },
     {
       month: "July 2025",
-      amount: "\u20B922000",
+      amount: "22000",
       tableData: {
         columns: [
           { field: "category", headerName: "Category", flex: 1 },
@@ -267,7 +267,7 @@ const FinanceBudget = () => {
             id: 1,
             category: "Software",
             expenseName: "Cloud Storage",
-            amount: "\u20B92000",
+            amount: "2000",
             paymentDate: "2025-07-02",
             status: "Paid",
           },
@@ -275,7 +275,7 @@ const FinanceBudget = () => {
             id: 2,
             category: "Marketing",
             expenseName: "Content Marketing",
-            amount: "\u20B94000",
+            amount: "4000",
             paymentDate: "2025-07-06",
             status: "Pending",
           },
@@ -283,7 +283,7 @@ const FinanceBudget = () => {
             id: 3,
             category: "Office",
             expenseName: "Rent",
-            amount: "\u20B912000",
+            amount: "12000",
             paymentDate: "2025-07-10",
             status: "Paid",
           },
@@ -291,7 +291,7 @@ const FinanceBudget = () => {
             id: 4,
             category: "Salaries",
             expenseName: "Employee Bonus",
-            amount: "\u20B95000",
+            amount: "5000",
             paymentDate: "2025-07-20",
             status: "Paid",
           },
@@ -300,7 +300,7 @@ const FinanceBudget = () => {
     },
     {
       month: "August 2025",
-      amount: "\u20B919500",
+      amount: "19500",
       tableData: {
         columns: [
           { field: "category", headerName: "Category", flex: 1 },
@@ -314,7 +314,7 @@ const FinanceBudget = () => {
             id: 1,
             category: "Hosting",
             expenseName: "Server Maintenance",
-            amount: "\u20B94000",
+            amount: "4000",
             paymentDate: "2025-08-04",
             status: "Paid",
           },
@@ -322,7 +322,7 @@ const FinanceBudget = () => {
             id: 2,
             category: "Software",
             expenseName: "Subscription Fee",
-            amount: "\u20B92000",
+            amount: "2000",
             paymentDate: "2025-08-08",
             status: "Pending",
           },
@@ -330,7 +330,7 @@ const FinanceBudget = () => {
             id: 3,
             category: "Marketing",
             expenseName: "PPC Ads",
-            amount: "\u20B95000",
+            amount: "5000",
             paymentDate: "2025-08-14",
             status: "Paid",
           },
@@ -338,7 +338,7 @@ const FinanceBudget = () => {
             id: 4,
             category: "Office",
             expenseName: "Water Bill",
-            amount: "\u20B91000",
+            amount: "1000",
             paymentDate: "2025-08-18",
             status: "Paid",
           },
@@ -369,7 +369,9 @@ const FinanceBudget = () => {
             <span className="text-title font-pmedium text-primary">
               Allocated Budget :{" "}
             </span>
-            <span className="text-title font-pmedium">5 Lakhs</span>
+            <span className="text-title font-pmedium">
+              {"INR "+Number("500000").toLocaleString("en-IN")}
+            </span>
           </div>
           <div>
             <PrimaryButton title={"Request Budget"} />
@@ -380,8 +382,8 @@ const FinanceBudget = () => {
             <Accordion key={index} className="py-4">
               <AccordionSummary
                 expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel\u20B9{index}-content`}
-                id={`panel\u20B9{index}-header`}
+                aria-controls={`panel{index}-content`}
+                id={`panel{index}-header`}
                 className="border-b-[1px] border-borderGray"
               >
                 <div className="flex justify-between items-center w-full px-4">
@@ -389,7 +391,7 @@ const FinanceBudget = () => {
                     {data.month}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {data.amount}
+                    {"INR "+Number(data.amount).toLocaleString("en-GB")}
                   </span>
                 </div>
               </AccordionSummary>

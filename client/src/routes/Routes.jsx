@@ -304,6 +304,7 @@ import DirectorData from "../pages/Dashboard/FinanceDashboard/MixBag/DirectorDat
 import AdminClientLayout from "../pages/Dashboard/AdminDashboard/AdminClientLayout";
 import AdminClientsData from "../pages/Dashboard/AdminDashboard/AdminClientsData/AdminClientsData";
 import AdminClientOnboard from "../pages/Dashboard/AdminDashboard/AdminClientsData/AdminClientOnboard";
+import FinanceViewVoucher from "../pages/Dashboard/FinanceDashboard/FinanceData/FinanceViewVoucher";
 
 export const routes = createBrowserRouter([
   {
@@ -471,6 +472,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "finance-monthly-vouchers",
                             element: <FinanceMonthlyVouchers />,
+                          },
+                          {
+                            path: "finance-monthly-vouchers/:id",
+                            element: <FinanceViewVoucher />,
                           },
                         ],
                       },

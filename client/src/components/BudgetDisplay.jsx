@@ -6,7 +6,6 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
 } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -25,7 +24,6 @@ const BudgetDisplay = ({ budgetData }) => {
   const axios = useAxiosPrivate();
 
   const [openModal, setOpenModal] = useState(false);
-
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -85,7 +83,7 @@ const BudgetDisplay = ({ budgetData }) => {
   const financialData = Object.values(groupedData)
     .map((data) => ({
       ...data,
-      amount: data.amount.toLocaleString("en-IN", { maximumFractionDigits: 0 }), // Ensuring two decimal places for total amount
+      amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
     }))
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
@@ -194,7 +192,9 @@ const BudgetDisplay = ({ budgetData }) => {
             <span className="text-title font-pmedium text-primary">
               Allocated Budget :{" "}
             </span>
-            <span className="text-title font-pmedium">5 Lakhs</span>
+            <span className="text-title font-pmedium">
+              {"INR " + Number(500000).toLocaleString("en-IN")}
+            </span>
           </div>
           <div>
             <PrimaryButton
@@ -217,7 +217,7 @@ const BudgetDisplay = ({ budgetData }) => {
                     {data.month}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {data.amount} INR
+                    {data.amount} 
                   </span>
                 </div>
               </AccordionSummary>

@@ -36,7 +36,7 @@ const ActualBusinessRevenue = () => {
       domains: [
         {
           name: "Co-Working",
-          revenue: 12000,
+          revenue: 125680,
           clients: [
             {
               client: "Zomato",
@@ -60,7 +60,7 @@ const ActualBusinessRevenue = () => {
         },
         {
           name: "Workation",
-          revenue: 8000,
+          revenue: 83630,
           clients: [
             {
               client: "Client D",
@@ -78,7 +78,7 @@ const ActualBusinessRevenue = () => {
         },
         {
           name: "Meetings",
-          revenue: 15000,
+          revenue: 157840,
           clients: [
             { client: "Client F", revenue: 5000 },
             { client: "Client G", revenue: 7000 },
@@ -87,7 +87,7 @@ const ActualBusinessRevenue = () => {
         },
         {
           name: "Virtual Office",
-          revenue: 15000,
+          revenue: 156380,
           clients: [
             {
               client: "Client F",
@@ -111,7 +111,7 @@ const ActualBusinessRevenue = () => {
         },
         {
           name: "Other Channels",
-          revenue: 15000,
+          revenue: 156470,
           clients: [
             {
               client: "Client F",
@@ -140,7 +140,7 @@ const ActualBusinessRevenue = () => {
       domains: [
         {
           name: "Co-Working",
-          revenue: 15000,
+          revenue: 15654,
           clients: [
             {
               client: "Client I",
@@ -164,7 +164,7 @@ const ActualBusinessRevenue = () => {
         },
         {
           name: "Workation",
-          revenue: 9000,
+          revenue: 9795,
           clients: [
             {
               client: "Client L",
@@ -211,7 +211,7 @@ const ActualBusinessRevenue = () => {
       domains: [
         {
           name: "Co-Working",
-          revenue: 18000,
+          revenue: 18264,
           clients: [
             {
               client: "Client Q",
@@ -253,7 +253,7 @@ const ActualBusinessRevenue = () => {
         },
         {
           name: "Co-Living",
-          revenue: 13000,
+          revenue: 13586,
           clients: [
             {
               client: "Client V",
@@ -324,7 +324,7 @@ const ActualBusinessRevenue = () => {
         },
         {
           name: "Co-Living",
-          revenue: 16000,
+          revenue: 16468,
           clients: [
             {
               client: "Client AD",
@@ -410,6 +410,8 @@ const ActualBusinessRevenue = () => {
       <WidgetSection
         layout={1}
         title={"Vertical-wise Revenue - March 2025"}
+        // titleData={"Hi"}
+        TitleAmount={"6,80,000"}
         border>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>

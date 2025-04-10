@@ -75,15 +75,6 @@ const addMeetings = async (req, res, next) => {
       );
     }
 
-    if (startTimeObj.getTime() < currDate.getTime()) {
-      throw new CustomError(
-        "Please select future timing",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
     const roomAvailable = await Room.findOne({
       _id: bookedRoom,
       status: "Available",

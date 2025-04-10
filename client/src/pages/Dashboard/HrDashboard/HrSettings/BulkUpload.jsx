@@ -13,7 +13,7 @@ const BulkUpload = () => {
     "Upload Policies",
   ];
   return (
-    <>
+    <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center mb-6">
         <div className="w-1/4">
           <TextField
@@ -61,7 +61,7 @@ const BulkUpload = () => {
           })}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
