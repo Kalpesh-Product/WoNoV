@@ -70,6 +70,7 @@ const Attendance = () => {
     },
   });
   const attendanceColumns = [
+    { field: "id", headerName: "Sr.No", width: 100 },
     { field: "date", headerName: "Date", width: 200 },
     { field: "inTime", headerName: "In Time" },
     { field: "outTime", headerName: "Out Time" },
