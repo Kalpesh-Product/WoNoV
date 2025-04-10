@@ -3,7 +3,7 @@ import ParentRevenue from "./ParentRevenue";
 
 const mockSalesData = [
   {
-    month: "April",
+    month: "Apr-24",
     actual: 10000,
     projected: 10000,
     adjustedProjected: 0,
@@ -14,7 +14,7 @@ const mockSalesData = [
     ]
   },
   {
-    month: "May",
+    month: "May-24",
     actual: 11000,
     projected: 11000,
     adjustedProjected: 0,
@@ -25,7 +25,7 @@ const mockSalesData = [
     ]
   },
   {
-    month: "June",
+    month: "Jun-24",
     actual: 8000,
     projected: 12000,
     adjustedProjected: 4000,
@@ -36,7 +36,7 @@ const mockSalesData = [
     ]
   },
   {
-    month: "July",
+    month: "Jul-24",
     actual: 7000,
     projected: 10500,
     adjustedProjected: 3500,
@@ -46,7 +46,7 @@ const mockSalesData = [
     ]
   },
   {
-    month: "August",
+    month: "Aug-24",
     actual: 9500,
     projected: 11500,
     adjustedProjected: 2000,
@@ -57,7 +57,7 @@ const mockSalesData = [
     ]
   },
   {
-    month: "September",
+    month: "Sep-24",
     actual: 10200,
     projected: 12500,
     adjustedProjected: 2300,
@@ -68,7 +68,7 @@ const mockSalesData = [
     ]
   },
   {
-    month: "October",
+    month: "Oct-24",
     actual: 11500,
     projected: 13500,
     adjustedProjected: 2000,
@@ -79,7 +79,7 @@ const mockSalesData = [
     ]
   },
   {
-    month: "November",
+    month: "Nov-24",
     actual: 12500,
     projected: 14500,
     adjustedProjected: 2000,
@@ -90,7 +90,7 @@ const mockSalesData = [
     ]
   },
   {
-    month: "December",
+    month: "Dec-24",
     actual: 14000,
     projected: 15500,
     adjustedProjected: 1500,
@@ -101,7 +101,7 @@ const mockSalesData = [
     ]
   },
   {
-    month: "January",
+    month: "Jan-25",
     actual: 13000,
     projected: 16500,
     adjustedProjected: 3500,
@@ -112,7 +112,7 @@ const mockSalesData = [
     ]
   },
   {
-    month: "February",
+    month: "Feb-25",
     actual: 15000,
     projected: 17500,
     adjustedProjected: 2500,
@@ -123,7 +123,7 @@ const mockSalesData = [
     ]
   },
   {
-    month: "March",
+    month: "Mar-25",
     actual: 16000,
     projected: 18500,
     adjustedProjected: 2500,
@@ -134,6 +134,7 @@ const mockSalesData = [
     ]
   }
 ];
+
 
 const AltRevenues = () => {
   return (

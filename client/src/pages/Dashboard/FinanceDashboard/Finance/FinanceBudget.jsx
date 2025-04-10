@@ -8,6 +8,8 @@ import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import DataCard from "../../../../components/DataCard";
+import { MdTrendingUp } from "react-icons/md";
+import { BsCheckCircleFill } from "react-icons/bs";
 
 const FinanceBudget = () => {
   // Data for the chart
@@ -51,19 +53,19 @@ const FinanceBudget = () => {
     },
     xaxis: {
       categories: [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ],
+        "Jan-24",
+        "Feb-24",
+        "Mar-24",
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+      ]
     },
     yaxis: {
       max: 150,
@@ -112,6 +114,7 @@ const FinanceBudget = () => {
   const financialData = [
     {
       month: "April 2025",
+      projectedAmount: 18000,
       amount: "15000",
       tableData: {
         columns: [
@@ -159,6 +162,7 @@ const FinanceBudget = () => {
     },
     {
       month: "May 2025",
+      projectedAmount: 23000,
       amount: "20000",
       tableData: {
         columns: [
@@ -206,6 +210,7 @@ const FinanceBudget = () => {
     },
     {
       month: "June 2025",
+      projectedAmount: 20000,
       amount: "18500",
       tableData: {
         columns: [
@@ -253,6 +258,7 @@ const FinanceBudget = () => {
     },
     {
       month: "July 2025",
+      projectedAmount: 25000,
       amount: "22000",
       tableData: {
         columns: [
@@ -300,6 +306,7 @@ const FinanceBudget = () => {
     },
     {
       month: "August 2025",
+      projectedAmount: 21000,
       amount: "19500",
       tableData: {
         columns: [
@@ -346,6 +353,7 @@ const FinanceBudget = () => {
       },
     },
   ];
+  
 
   return (
     <div className="flex flex-col gap-8">
@@ -355,30 +363,17 @@ const FinanceBudget = () => {
         </WidgetSection>
       </div>
 
-      <WidgetSection layout={3} padding>
-        <DataCard
-          data={"40K"}
-          title={"Projected"}
-          description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
-        />
-        <DataCard
-          data={"35K"}
-          title={"Actual"}
-          description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
-        />
-        <DataCard
-          data={6000}
-          title={"Requested"}
-          description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
-        />
-      </WidgetSection>
+      <div>
+        <WidgetSection layout={3} padding>
+          <DataCard data={"40K"} title={"Projected"} />
+          <DataCard data={"35K"} title={"Actual"} />
+          <DataCard data={6000} title={"Requested"} />
+        </WidgetSection>
+      </div>
 
+      <div className="flex justify-end">
+            <PrimaryButton title={"Request Budget"} padding="px-5 py-2" fontSize="text-base"/>
+          </div>
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -388,9 +383,6 @@ const FinanceBudget = () => {
             <span className="text-title font-pmedium">
               {"INR " + Number("500000").toLocaleString("en-IN")}
             </span>
-          </div>
-          <div>
-            <PrimaryButton title={"Request Budget"} />
           </div>
         </div>
         <div>
@@ -406,8 +398,13 @@ const FinanceBudget = () => {
                   <span className="text-subtitle font-pmedium">
                     {data.month}
                   </span>
-                  <span className="text-subtitle font-pmedium">
-                    {"INR " + Number(data.amount).toLocaleString("en-GB")}
+                    <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                                    <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
+                                    {"INR "+data.projectedAmount}
+                                    </span>
+                  <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                      <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />
+                    {"INR "+Number(data.amount).toLocaleString("en-GB")}
                   </span>
                 </div>
               </AccordionSummary>
