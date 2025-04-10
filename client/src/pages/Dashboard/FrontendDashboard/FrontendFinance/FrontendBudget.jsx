@@ -355,13 +355,29 @@ const FrontendBudget = () => {
         </WidgetSection>
       </div>
 
-      <div>
-        <WidgetSection layout={3} padding>
-          <DataCard data={"40K"} title={"Projected"} />
-          <DataCard data={"35K"} title={"Actual"} />
-          <DataCard data={6000} title={"Requested"} />
-        </WidgetSection>
-      </div>
+      <WidgetSection layout={3} padding>
+        <DataCard
+          data={"40K"}
+          title={"Projected"}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "long",
+          })}`}
+        />
+        <DataCard
+          data={"35K"}
+          title={"Actual"}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "long",
+          })}`}
+        />
+        <DataCard
+          data={6000}
+          title={"Requested"}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "long",
+          })}`}
+        />
+      </WidgetSection>
 
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
         <div className="flex justify-between items-center">

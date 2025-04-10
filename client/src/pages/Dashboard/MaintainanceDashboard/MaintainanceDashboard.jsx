@@ -468,20 +468,23 @@ const MaintainanceDashboard = () => {
     {
       layout: 3,
       widgets: [
-        <Card
-          icon={<MdRebaseEdit />}
-          title="Allocated Budget"
-          route="/app/dashboard/maintenance-dashboard/finance/budget"
+        <DataCard
+          data={"40K"}
+          title={"Projected"}
+          route={"/app/dashboard/maintainance-dashboard/finance"}
+          description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
         />,
-        <Card
-          icon={<LuHardDriveUpload />}
-          title="Used Budget"
-          route="/app/dashboard/maintenance-dashboard/finance/budget"
+        <DataCard
+          data={"35K"}
+          title={"Actual"}
+          route={"/app/dashboard/maintainance-dashboard/finance"}
+          description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
         />,
-        <Card
-          icon={<CgWebsite />}
-          title="Remaining Budget"
-          route="/app/dashboard/maintenance-dashboard/finance/budget"
+        <DataCard
+          data={6000}
+          title={"Requested"}
+          route={"/app/dashboard/maintainance-dashboard/finance"}
+          description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
         />,
       ],
     },
