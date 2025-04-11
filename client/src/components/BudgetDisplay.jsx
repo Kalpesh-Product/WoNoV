@@ -1,12 +1,7 @@
 import React, { useState } from "react";
 import LayerBarGraph from "../components/graphs/LayerBarGraph";
 import WidgetSection from "../components/WidgetSection";
-import {
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-} from "@mui/material";
+import { TextField, Select, MenuItem, FormControl } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import Accordion from "@mui/material/Accordion";
@@ -138,6 +133,7 @@ const BudgetDisplay = ({ budgetData }) => {
     chart: {
       type: "bar",
       stacked: true,
+      toolbar: false,
       fontFamily: "Poppins-Regular",
     },
     plotOptions: {
@@ -159,11 +155,20 @@ const BudgetDisplay = ({ budgetData }) => {
       },
     },
     xaxis: {
-       categories: [
-        "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
-        "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
-      ]
-      
+      categories: [
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
+      ],
     },
     yaxis: {
       max: 150,

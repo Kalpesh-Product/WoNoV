@@ -133,30 +133,25 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel }) => {
   };
   return (
     <div
-    className={`bg-white flex flex-col shadow-md border border-gray-300 rounded-lg p-4 pt-0 px-0 text-center cursor-pointer relative w-60 transition ${
-      isTopLevel ? "border-2 border-primary" : ""
-    }`}
-  >
- 
- 
-
-    <div
-      onClick={() => navigate("permissions", { state: { user } })}
-      className="bg-primary text-white p-2 pt-4 rounded-t-md"
+      className={`bg-white flex flex-col shadow-md border border-gray-300 rounded-lg p-4 pt-0 px-0 text-center cursor-pointer relative w-60 transition ${
+        isTopLevel ? "border-2 border-primary" : ""
+      } `}
     >
-        <div className="w-full flex flex-col justify-center">
-  <div className="absolute -top-7 left-[6rem] border border-primary rounded-full w-12 h-12 bg-red-50 flex items-center justify-center text-black text-subtitle font-semibold text-sm">
-    {getInitials(user.name)}
-  </div>
-</div>
-      <span className="text-subtitle font-semibold">{user.name}</span>
-    </div>
-    <span className="text-content mt-2">
-      {user.designation.length > 20
-        ? user.designation.slice(0, 20) + "..."
-        : user.designation}
-    </span>
-    <span className="text-small text-primary">{user.email}</span>
+      <div className="w-full flex flex-col justify-center">
+        <div className="absolute -top-7 left-[6rem] border-default border-primary rounded-full w-12 h-12 bg-red-50"></div>
+      </div>
+      <div
+        onClick={() => navigate("permissions", { state: { user } })}
+        className="bg-primary text-white p-2 pt-4 rounded-t-md"
+      >
+        <span className="text-subtitle font-semibold">{user.name}</span>
+      </div>
+      <span className="text-content mt-2">
+        {user.designation.length > 20
+          ? user.designation.slice(0, 20) + "..."
+          : user.designation}
+      </span>
+      <span className="text-small text-primary">{user.email}</span>
 
     {user.subordinates && user.subordinates.length > 0 && (
       <p

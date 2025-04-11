@@ -253,6 +253,7 @@ const fetchUser = async (req, res, next) => {
         { path: "company", select: "name" },
         { path: "role", select: "roleTitle modulePermissions" },
       ])
+      .sort({ firstName: 1 })
       .lean()
       .exec();
 

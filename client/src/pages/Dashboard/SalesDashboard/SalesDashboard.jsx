@@ -436,150 +436,15 @@ const SalesDashboard = () => {
 
   //-----------------------------------------------Conversion of Sector-wise Pie-graph-----------------------------------------------------------//
 
-  const mockSalesData = [
-    {
-      month: "Apr-24",
-      actual: 0,
-      projected: 10000,
-      adjustedProjected: 0,
-      revenueBreakup: [
-        { client: "Client A", revenue: 4500, region: "North", industry: "Retail" },
-        { client: "Client B", revenue: 3500, region: "South", industry: "Finance" },
-        { client: "Client C", revenue: 2000, region: "West", industry: "Technology" },
-      ],
-    },
-    {
-      month: "May-24",
-      actual: 0,
-      projected: 10000,
-      adjustedProjected: 0,
-      revenueBreakup: [
-        { client: "Client D", revenue: 5000, region: "East", industry: "Healthcare" },
-        { client: "Client E", revenue: 4000, region: "North", industry: "Retail" },
-        { client: "Client F", revenue: 2100, region: "West", industry: "Technology" },
-      ],
-    },
-    {
-      month: "Jun-24",
-      actual: 0,
-      projected: 10000,
-      adjustedProjected: 0,
-      revenueBreakup: [
-        { client: "Client G", revenue: 3000, region: "South", industry: "E-commerce" },
-        { client: "Client H", revenue: 2500, region: "West", industry: "Logistics" },
-        { client: "Client I", revenue: 2500, region: "East", industry: "Finance" },
-      ],
-    },
-    {
-      month: "Jul-24",
-      actual: 0,
-      projected: 10000,
-      adjustedProjected: 0,
-      revenueBreakup: [
-        { client: "Client J", revenue: 4000, region: "North", industry: "Retail" },
-        { client: "Client K", revenue: 3000, region: "South", industry: "Technology" },
-      ],
-    },
-    {
-      month: "Aug-24",
-      actual: 0,
-      projected: 10000,
-      adjustedProjected: 0,
-      revenueBreakup: [
-        { client: "Client L", revenue: 4500, region: "East", industry: "Healthcare" },
-        { client: "Client M", revenue: 3500, region: "West", industry: "Real Estate" },
-        { client: "Client N", revenue: 1500, region: "North", industry: "Manufacturing" },
-      ],
-    },
-    {
-      month: "Sep-24",
-      actual: 0,
-      projected: 10000,
-      adjustedProjected: 0,
-      revenueBreakup: [
-        { client: "Client O", revenue: 5200, region: "South", industry: "Automobile" },
-        { client: "Client P", revenue: 3000, region: "North", industry: "Retail" },
-        { client: "Client Q", revenue: 2000, region: "West", industry: "Banking" },
-      ],
-    },
-    {
-      month: "Oct-24",
-      actual: 0,
-      projected: 10000,
-      adjustedProjected: 0,
-      revenueBreakup: [
-        { client: "Client R", revenue: 6000, region: "East", industry: "Technology" },
-        { client: "Client S", revenue: 4000, region: "North", industry: "Logistics" },
-        { client: "Client T", revenue: 1500, region: "South", industry: "Retail" },
-      ],
-    },
-    {
-      month: "Nov-24",
-      actual: 0,
-      projected: 10000,
-      adjustedProjected: 0,
-      revenueBreakup: [
-        { client: "Client U", revenue: 5000, region: "West", industry: "E-commerce" },
-        { client: "Client V", revenue: 3500, region: "South", industry: "Banking" },
-        { client: "Client W", revenue: 4000, region: "North", industry: "Healthcare" },
-      ],
-    },
-    {
-      month: "Dec-24",
-      actual: 0,
-      projected: 10000,
-      adjustedProjected: 0,
-      revenueBreakup: [
-        { client: "Client X", revenue: 7000, region: "East", industry: "Technology" },
-        { client: "Client Y", revenue: 4000, region: "North", industry: "Retail" },
-        { client: "Client Z", revenue: 3000, region: "West", industry: "Logistics" },
-      ],
-    },
-    {
-      month: "Jan-25",
-      actual: 0,
-      projected: 10000,
-      adjustedProjected: 0,
-      revenueBreakup: [
-        { client: "Client AA", revenue: 6000, region: "South", industry: "Manufacturing" },
-        { client: "Client AB", revenue: 5000, region: "North", industry: "Banking" },
-        { client: "Client AC", revenue: 2000, region: "West", industry: "E-commerce" },
-      ],
-    },
-    {
-      month: "Feb-25",
-      actual: 0,
-      projected: 10000,
-      adjustedProjected: 0,
-      revenueBreakup: [
-        { client: "Client AD", revenue: 8000, region: "East", industry: "Technology" },
-        { client: "Client AE", revenue: 4000, region: "South", industry: "Finance" },
-        { client: "Client AF", revenue: 3000, region: "North", industry: "Retail" },
-      ],
-    },
-    {
-      month: "Mar-25",
-      actual: 0,
-      projected: 10000,
-      adjustedProjected: 0,
-      revenueBreakup: [
-        { client: "Client AG", revenue: 7000, region: "West", industry: "Logistics" },
-        { client: "Client AH", revenue: 6000, region: "North", industry: "Healthcare" },
-        { client: "Client AI", revenue: 3000, region: "South", industry: "Automobile" },
-      ],
-    },
-  ];
   
   const meetingsWidgets = [
     {
       layout: 1,
       widgets: [
-        // <WidgetSection layout={1} border title={"Annual Monthly Revenue"}>
-        //   <ParentRevenue salesData={mockSalesData} falseAccordion />
-        // </WidgetSection>,
         <WidgetSection
           border
-          title={"Annual Monthly Revenue: 2024-25"}
+          title={"Annual Monthly Revenue"}
+          titleLabel={"2024-25"}
           TitleAmount={"INR 2,09,000"}>
           <BarGraph
             data={incomeExpenseData}

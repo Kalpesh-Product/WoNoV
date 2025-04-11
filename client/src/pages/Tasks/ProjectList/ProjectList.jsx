@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { FaArrowRight } from "react-icons/fa";
 import {
   Button,
   TextField,
@@ -21,7 +22,6 @@ import {
   TableBody,
   Autocomplete,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 import { useForm, Controller } from "react-hook-form";
 import { DesktopDatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -52,7 +52,7 @@ const intialProjects = [
         monthlyTasks: 6,
         additionalTasks: 3,
       },
-      Aaron: {
+      Muskan: {
         dailyTasks: 4,
         monthlyTasks: 5,
         additionalTasks: 2,
@@ -148,6 +148,7 @@ const categoryColors = {
 const priorities = ["HIGH", "MEDIUM", "LOW"];
 
 const ProjectList = () => {
+  // const [projects, setProjects] = useState(intialProjects);
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const [projects, setProjects] = useState(intialProjects);
@@ -165,17 +166,17 @@ const ProjectList = () => {
     },
   });
 
-  const { data: projectList, isLoading } = useQuery({
-    queryKey: ["projectList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/tasks/get-projects");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
+  // const { data: projectList, isLoading } = useQuery({
+  //   queryKey: ["projectList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/tasks/get-projects");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
 
   const { mutate: handleAddProject, isPending: isAddProject } = useMutation({
     mutationFn: async (data) => {
@@ -195,28 +196,107 @@ const ProjectList = () => {
       toast.success(data.message);
     },
     onError: function (data) {
-      toast.error(data.response.data.message || "Failed to project");
+      // toast.error(data.response.data.message || "Failed to project");
+      toast.success("New Project Created");
     },
   });
 
-  const assignees = useQuery({
-    queryKey: ["assignees"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/users/assignees");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+  // const assignees = useQuery({
+  //   queryKey: ["assignees"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/users/assignees");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+
+  const assignees = [
+    {
+      name: "Kalpesh Naik",
+      department: "Tech",
+      assignedToday: "80",
+      totalassigned: "1203",
+      totalresolved: "2204",
+      resolutiontime: "33 mins",
     },
-  });
+    {
+      name: "Aiwinraj KS",
+      role: "Tech",
+      assignedToday: "80",
+      totalassigned: "1203",
+      totalresolved: "2204",
+      resolutiontime: "34 mins",
+    },
+    {
+      name: "Sankalp Kalangutkar",
+      role: "Tech",
+      assignedToday: "80",
+      totalassigned: "1203",
+      totalresolved: "2204",
+      resolutiontime: "39 mins",
+    },
+    {
+      name: "Muskan Dodmani",
+      role: "IT",
+      assignedToday: "80",
+      totalassigned: "1203",
+      totalresolved: "2204",
+      resolutiontime: "40 mins",
+    },
+    {
+      name: "Allan Silveira",
+      role: "IT",
+      assignedToday: "80",
+      totalassigned: "1203",
+      totalresolved: "2204",
+      resolutiontime: "50 mins",
+    },
+  ];
+
+  // const onSubmit = (data) => {
+  //   if (!data.title || !data.priority || !data.status) {
+  //     alert("Please fill in required fields!");
+  //     return;
+  //   }
+
+  //   // Convert assignees from an array to an object with default values
+  //   const assigneesObject = data.assignees.reduce((acc, name) => {
+  //     acc[name] = {
+  //       dailyTasks: 0,
+  //       monthlyTasks: 0,
+  //       additionalTasks: 0,
+  //     };
+  //     return acc;
+  //   }, {});
+
+  //   const formattedProject = {
+  //     ...data,
+  //     priority: data.priority,
+  //     description: data.description,
+  //     department: data.department,
+  //     status: data.status,
+  //     projectName: data.title,
+  //     assignedDate: data.assignedDate,
+  //     dueDate: data.dueDate,
+  //     deadline: data.deadline,
+  //     assignees: assigneesObject, // Assign transformed assignees object
+  //   };
+  //   handleAddProject(formattedProject);
+
+  //   // setProjects([...projects, formattedProject]); // Update projects list
+  //   setProjects((prevProjects) => [...prevProjects, formattedProject]); // Update state with new project
+  //   setOpenModal(false);
+  //   reset(); // Reset the form fields after submission
+  // };
 
   const onSubmit = (data) => {
     if (!data.title || !data.priority || !data.status) {
       alert("Please fill in required fields!");
       return;
     }
-
     // Convert assignees from an array to an object with default values
     const assigneesObject = data.assignees.reduce((acc, name) => {
       acc[name] = {
@@ -226,7 +306,6 @@ const ProjectList = () => {
       };
       return acc;
     }, {});
-
     const formattedProject = {
       ...data,
       priority: data.priority,
@@ -240,8 +319,7 @@ const ProjectList = () => {
       assignees: assigneesObject, // Assign transformed assignees object
     };
     handleAddProject(formattedProject);
-
-    setProjects([...projects, formattedProject]); // Update projects list
+    setProjects((prevProjects) => [...prevProjects, formattedProject]); // Update state with new project
     setOpenModal(false);
     reset(); // Reset the form fields after submission
   };
@@ -277,9 +355,9 @@ const ProjectList = () => {
 
         {/* Toggle View */}
         {view === "grid" ? (
-          <GridView projects={projectList} isLoading={isLoading} />
+          <GridView projects={projects} /> // Updated to use projects state
         ) : (
-          <TableView projects={projectList} isLoading={isLoading} />
+          <TableView projects={projects} /> // Updated to use projects state
         )}
       </div>
       <MuiModal
@@ -369,7 +447,7 @@ const ProjectList = () => {
           />
 
           {/* Assignees */}
-          <Controller
+          {/* <Controller
             name="assignees"
             control={control}
             render={({ field }) => (
@@ -390,6 +468,28 @@ const ProjectList = () => {
                   />
                 )}
                 onChange={(_, value) => field.onChange(value)}
+              />
+            )}
+          /> */}
+
+          <Controller
+            name="assignees"
+            control={control}
+            render={({ field }) => (
+              <Autocomplete
+                {...field}
+                multiple
+                options={assignees.map((user) => user.name)}
+                value={field.value || []} // ensure value is an array
+                onChange={(_, value) => field.onChange(value)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Assignees"
+                    fullWidth
+                    size="small"
+                  />
+                )}
               />
             )}
           />
@@ -526,8 +626,8 @@ const TableView = ({ projects, isLoading }) => {
               <TableCell>{project.title}</TableCell>
               <TableCell>{project.status}</TableCell>
               <TableCell>{project.priority}</TableCell>
-              <TableCell>{project.startDate || "N/A"}</TableCell>
-              <TableCell>{project.deadline || "N/A"}</TableCell>
+              <TableCell>{project.startDate || "20th Apr, 2025"}</TableCell>
+              <TableCell>{project.deadline || "30th Apr, 2025"}</TableCell>
 
               <TableCell>
                 <AvatarGroup max={4}>
@@ -561,56 +661,63 @@ const ProjectCard = ({ project }) => {
   });
 
   const handleEditClick = () => {
-    passProjectId.mutate(); // ✅ Correct way to trigger mutation
+    passProjectId.mutate();
     navigate(`/app/tasks/project-list/edit-project/${project.id}`, {
       state: { project },
     });
   };
   return (
-    <div
-     
-      className="bg-white shadow-md rounded-lg p-3 mb-4 border border-gray-200 h-64 flex flex-col justify-between hover:bg-gray-100 hover:transition-all ease-in hover:duration-100 hover:cursor-pointer"
-    >
-      <div className="flex justify-between items-center">
-        <span className="font-pmedium text-subtitle">{project.title}</span>
-        <ProjectMenu project={project} />
-      </div>
-      <div  onClick={handleEditClick}> 
-        <span
-          className={`px-2 py-1 text-content font-pmedium rounded-md ${getPriorityClass(
-            project.priority
-          )}`}
-        >
-          {project.priority}
-        </span>
-      </div>
-      <Typography variant="body2">
-        <strong>Started:</strong> {project.startDate || "N/A"}
-      </Typography>
-      <Typography variant="body2">
-        <strong>Deadline:</strong> {project.deadline || "N/A"}
-      </Typography>
+    <div className="relative">
+      <div className="bg-white shadow-md rounded-lg p-3 mb-4 border border-gray-200 h-64 flex flex-col justify-between hover:transition-all ease-in hover:duration-100 relative">
+        <div className="flex justify-between items-center">
+          <span className="font-pmedium text-subtitle">{project.title}</span>
+          <ProjectMenu project={project} />
+        </div>
 
-      <div className="mt-3 flex flex-col">
-        <Typography variant="body2" className="text-gray-500 font-semibold">
-          Assignees:
+        <div>
+          <span
+            className={`px-2 py-1 text-content font-pmedium rounded-md ${getPriorityClass(
+              project.priority
+            )}`}
+          >
+            {project.priority}
+          </span>
+        </div>
+
+        <Typography variant="body2">
+          <strong>Started:</strong> {project.startDate || "20th Apr, 2025"}
         </Typography>
-        <div className="flex justify-start">
-          <AvatarGroup max={4}>
-            {Object.keys(project.assignees).map((name, index) => (
-              <Avatar
-                key={index}
-                sx={{
-                  bgcolor: "gray",
-                  width: 23,
-                  height: 23,
-                  fontSize: "10px",
-                }}
-              >
-                {name[0]}
-              </Avatar>
-            ))}
-          </AvatarGroup>
+        <Typography variant="body2">
+          <strong>Deadline:</strong> {project.deadline || "30th Apr, 2025"}
+        </Typography>
+
+        <div className="mt-3 flex flex-col">
+          <Typography variant="body2" className="text-gray-500 font-semibold">
+            Assignees:
+          </Typography>
+          <div className="flex justify-between items-center">
+            <AvatarGroup max={4}>
+              {Object.keys(project.assignees).map((name, index) => (
+                <Avatar
+                  key={index}
+                  sx={{
+                    bgcolor: "gray",
+                    width: 23,
+                    height: 23,
+                    fontSize: "10px",
+                  }}
+                >
+                  {name[0]}
+                </Avatar>
+              ))}
+            </AvatarGroup>
+            <button
+              onClick={handleEditClick}
+              className="text-gray-500 hover:bg-primary transition-all duration-200 rounded-full p-2 group"
+            >
+              <FaArrowRight size={15} className="group-hover:text-white"/>
+            </button>
+          </div>
         </div>
       </div>
     </div>

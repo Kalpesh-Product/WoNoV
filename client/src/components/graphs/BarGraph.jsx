@@ -54,7 +54,7 @@ const BarGraph = ({
   return (
     <div className="bg-white rounded-md">
       {/* Header with title, year dropdown and department switcher */}
-      <div className="p-4 flex justify-center items-center">
+      <div className="flex justify-center items-center">
         <div className="flex gap-4 items-center">
           {year && (
             <FormControl size="small">

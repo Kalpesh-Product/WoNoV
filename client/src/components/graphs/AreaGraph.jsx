@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import Chart from "react-apexcharts";
-import dayjs from "dayjs"; // Import dayjs for date manipulation
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(utc);
 
 const AreaGraph = ({ responseData }) => {
   const [timeFilter, setTimeFilter] = useState("Yearly"); // State for the filter
@@ -71,7 +74,9 @@ const AreaGraph = ({ responseData }) => {
     const currentMonth = currentDate.month();
 
     data.forEach((ticket) => {
-      const createdAt = dayjs(ticket.createdAt); // Use dayjs to parse the date
+      const createdAt = dayjs(ticket.createdAt).subtract(1, "day");
+
+ // Use dayjs to parse the date
 
       // Filter for each time range
       if (filter === "Yearly" && createdAt.year() !== currentYear) return;

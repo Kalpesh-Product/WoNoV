@@ -1,5 +1,6 @@
 import React from "react";
 import PrimaryButton from "./PrimaryButton";
+import { Chip } from "@mui/material";
 
 const WidgetSection = ({
   layout = 1,
@@ -14,6 +15,7 @@ const WidgetSection = ({
   handleClick,
   titleFont,
   TitleAmount,
+  titleLabel,
   fun,
 }) => {
   // Tailwind grid classes for different layouts
@@ -31,14 +33,23 @@ const WidgetSection = ({
       {title && (
         <div className=" border-default  border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl">
           <div className="flex w-full gap-8 items-center justify-between">
-            <span
-              className={`${
-                titleFont
-                  ? "text-subtitle text-primary"
-                  : "text-title text-primary font-pmedium"
-              }`}>
-              {title}{" "}
-            </span>
+            <div className="flex items-center gap-4">
+              <span
+                className={`${
+                  titleFont
+                    ? "text-subtitle text-primary"
+                    : "text-title text-primary font-pmedium"
+                }`}
+              >
+                {title}{" "}
+              </span>
+
+              {titleLabel ? (
+              <span>
+                <Chip label={titleLabel} sx={{backgroundColor:'#1e3d73', color:'white'}} className="bg-primary text-white"/>
+              </span>
+            ) : ""}
+            </div>
 
             {titleData && (
               <span>
@@ -46,7 +57,8 @@ const WidgetSection = ({
                 :{" "}
                 <span
                   style={{ color: titleDataColor }}
-                  className="font-pbold text-title">
+                  className="font-pbold text-title"
+                >
                   {titleData}
                 </span>
               </span>
@@ -57,7 +69,8 @@ const WidgetSection = ({
                   titleFont
                     ? "text-subtitle text-primary"
                     : "text-title text-primary font-pmedium"
-                }`}>
+                }`}
+              >
                 {TitleAmount}{" "}
               </span>
             </div>
@@ -69,10 +82,12 @@ const WidgetSection = ({
       )}
       <div
         style={border ? { border: "2px solid #d1d5db", borderTop: "0" } : {}}
-        className="h-full rounded-b-xl">
+        className="h-full rounded-b-xl"
+      >
         <div
           style={{ padding: padding ? "0" : "1rem" }}
-          className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>
+          className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}
+        >
           {React.Children.map(children, (child) => (
             <div>{child}</div>
           ))}

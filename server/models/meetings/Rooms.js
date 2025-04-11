@@ -35,10 +35,6 @@ const roomSchema = new mongoose.Schema({
     },
     id: String,
   },
-  housekeepingStatus: {
-    type: String,
-    enum: ["Pending", "In Progress", "Completed"],
-  },
   assignedAssets: [
     {
       type: mongoose.Schema.Types.ObjectId,

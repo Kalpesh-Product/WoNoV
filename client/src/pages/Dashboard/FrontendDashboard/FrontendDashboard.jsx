@@ -13,7 +13,6 @@ import { MdMiscellaneousServices } from "react-icons/md";
 import BarGraph from "../../../components/graphs/BarGraph";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import LineGraph from "../../../components/graphs/LineGraph";
-import PrimaryButton from "../../../components/PrimaryButton";
 
 const FrontendDashboard = () => {
   // Data and calculations
@@ -36,6 +35,7 @@ const FrontendDashboard = () => {
     chart: {
       type: "bar",
       stacked: true,
+      toolbar: false,
       fontFamily: "Poppins-Regular",
     },
     plotOptions: {
@@ -134,7 +134,7 @@ const FrontendDashboard = () => {
       toolbar: { show: false },
     },
     xaxis: {
-    categories: [
+      categories: [
         "Apr-24",
         "May-24",
         "Jun-24",
@@ -276,8 +276,7 @@ const FrontendDashboard = () => {
         "Oct-24",
         "Nov-24",
         "Dec-24",
-      ]
-      
+      ],
     },
     yaxis: {
       title: {

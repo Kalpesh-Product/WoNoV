@@ -139,6 +139,7 @@ const HrBudget = () => {
   const optionss = {
     chart: {
       type: "bar",
+      toolbar: false,
       stacked: true,
     },
     plotOptions: {

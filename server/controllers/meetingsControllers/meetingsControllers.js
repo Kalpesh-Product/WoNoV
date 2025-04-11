@@ -35,13 +35,7 @@ const addMeetings = async (req, res, next) => {
     const user = req.user;
     const ip = req.ip;
 
-    if (
-      !meetingType ||
-      !startTime ||
-      !endTime ||
-      !subject ||
-      !agenda
-    ) {
+    if (!meetingType || !startTime || !endTime || !subject || !agenda) {
       throw new CustomError(
         "Missing required fields",
         logPath,
@@ -63,10 +57,7 @@ const addMeetings = async (req, res, next) => {
     const startTimeObj = new Date(startTime);
     const endTimeObj = new Date(endTime);
 
-    if (
-      isNaN(startTimeObj.getTime()) ||
-      isNaN(endTimeObj.getTime())
-    ) {
+    if (isNaN(startTimeObj.getTime()) || isNaN(endTimeObj.getTime())) {
       throw new CustomError(
         "Invalid date format",
         logPath,
@@ -409,7 +400,7 @@ const getMeetings = async (req, res, next) => {
         roomName: meeting.bookedRoom.name,
         location: meeting.bookedRoom.location,
         meetingType: meeting.meetingType,
-        housekeepingStatus: meeting.bookedRoom.housekeepingStatus,
+        housekeepingStatus: meeting.houeskeepingStatus,
         date: meeting.startDate,
         startTime: meeting.startTime,
         endTime: meeting.endTime,
@@ -579,7 +570,10 @@ const addHousekeepingTask = async (req, res, next) => {
 
     const foundMeeting = await Meeting.findByIdAndUpdate(
       { _id: meetingId },
-      { $push: { housekeepingChecklist: completedTasks } },
+      {
+        $set: { housekeepingChecklist: completedTasks },
+        houeskeepingStatus: "Completed",
+      },
       { new: true }
     );
 

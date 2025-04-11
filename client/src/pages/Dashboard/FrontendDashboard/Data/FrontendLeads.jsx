@@ -193,7 +193,6 @@ const FrontendLeads = () => {
     { field: "email", headerName: "Email" },
   ];
 
-
   return (
     <div className="flex flex-col gap-8">
       {/* Accordion Section for Domain-wise Revenue Breakdown */}

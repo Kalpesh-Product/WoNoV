@@ -27,7 +27,7 @@ const LayerBarGraph = ({ title, data, options }) => {
     });
   return (
     <div className="bg-white rounded-md">
-      <div className=" p-4 ">
+      <div>
         <span className="text-lg">{title}</span>
       </div>
       <div className="">
