@@ -34,7 +34,9 @@ const TeamMembers = () => {
     );
   };
   const laptopColumns = [
-    { field: "name", headerName: "Name", cellRenderer: AvatarCellRenderer },
+   
+    { field: "srNo", headerName: "Sr No" },
+    { field: "name", headerName: "Name", cellRenderer: AvatarCellRenderer, },
     { field: "role", headerName: "Role", flex: 1 },
     { field: "department", headerName: "Department", flex: 1 },
     { field: "assignedToday", headerName: "Assigned Today", flex: 1 },
@@ -45,6 +47,7 @@ const TeamMembers = () => {
   ];
   const rows = [
     {
+      srNo: 1,
       name: "Kalpesh Naik",
       department: "Tech",
       role: "Manager",
@@ -54,6 +57,7 @@ const TeamMembers = () => {
       resolutiontime: "20 mins",
     },
     {
+      srNo: 2,
       name: "Machindranath Parkar",
       department: "IT",
       role: "Manager",
@@ -63,6 +67,7 @@ const TeamMembers = () => {
       resolutiontime: "15 mins",
     },
     {
+      srNo: 3,
       name: "Narshiva Naik",
       department: "Finance",
       role: "Manager",
@@ -72,6 +77,7 @@ const TeamMembers = () => {
       resolutiontime: "18 mins",
     },
     {
+      srNo: 4,
       name: "Aaron Pires",
       department: "Sales",
       role: "Manager",
@@ -81,6 +87,7 @@ const TeamMembers = () => {
       resolutiontime: "25 mins",
     },
     {
+      srNo: 5,
       name: "Rajesh Babani",
       department: "Maintenance",
       role: "Manager",

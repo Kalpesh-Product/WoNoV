@@ -182,7 +182,7 @@ const VisitorDashboard = () => {
   const averageBookingSeries = [{ name: "Total Visitors", data }];
 
   const averageBookingOptions = {
-    chart: { type: "bar", fontFamily: "Poppins-Regular" },
+    chart: { type: "bar", fontFamily: "Poppins-Regular", toolbar: false },
     xaxis: { categories: BookingMonths },
     yaxis: {
       max: 100,

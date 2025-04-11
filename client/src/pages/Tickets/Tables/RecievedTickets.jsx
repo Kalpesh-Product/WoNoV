@@ -130,7 +130,8 @@ const RecievedTickets = ({ title }) => {
     if (!tickets.length) {
       return [];
     }
-    return tickets.map((ticket) => ({
+    return tickets.map((ticket,index) => ({
+      srNo: index+1,
       id: ticket._id,
       raisedBy: ticket.raisedBy?.firstName || "Unknown",
       fromDepartment:
@@ -154,6 +155,7 @@ const RecievedTickets = ({ title }) => {
   };
 
   const recievedTicketsColumns = [
+    { field: "srNo", headerName: "Sr No" },
     { field: "raisedBy", headerName: "Raised By" },
     { field: "fromDepartment", headerName: "From Department" },
     { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },

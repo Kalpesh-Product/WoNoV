@@ -20,7 +20,7 @@ const MyTaskReports = () => {
   });
 
   const myTaskReportsColumns = [
-    { field: "id", headerName: "ID", width: 50 },
+    { field: "srNo", headerName: "Sr No", width: 50 },
     { field: "task", headerName: "Task", width: 250 },
     { field: "project", headerName: "Project", width: 200 },
     { field: "assignedBy", headerName: "Assigned By", flex: 1 },
@@ -62,7 +62,7 @@ const MyTaskReports = () => {
 
   const myTaskReportsData = [
     {
-      id: 1,
+      srNo: 1,
       task: "Develop Authentication Module",
       project: "HR Management System",
       assignedBy: "Aiwinraj",
@@ -71,7 +71,7 @@ const MyTaskReports = () => {
       endDate: "2024-02-20",
     },
     {
-      id: 2,
+      srNo: 2,
       task: "Fix Payment Gateway Issue",
       project: "E-commerce Platform",
       assignedBy: "Kalpesh Naik",
@@ -80,7 +80,7 @@ const MyTaskReports = () => {
       endDate: "2024-02-18",
     },
     {
-      id: 3,
+      srNo: 3,
       task: "Optimize Database Queries",
       project: "Inventory Management",
       assignedBy: "Sankalp",
@@ -89,7 +89,7 @@ const MyTaskReports = () => {
       endDate: "2024-02-15",
     },
     {
-      id: 4,
+      srNo: 4,
       task: "Implement Notification System",
       project: "Social Media App",
       assignedBy: "Allan",
@@ -98,7 +98,7 @@ const MyTaskReports = () => {
       endDate: "2024-02-22",
     },
     {
-      id: 5,
+      srNo: 5,
       task: "UI/UX Design for Dashboard",
       project: "Admin Panel",
       assignedBy: "Muskan",
@@ -115,7 +115,7 @@ const MyTaskReports = () => {
           search={true}
           tableTitle={"My Task Reports"}
           data={isLoading? []:[...taskList.map((task, index)=>({
-            id : index + 1,
+            srNo : index + 1,
             task:task.taskName,
             project : task.project?.projectName,
             assignedBy : task.assignedBy.firstName,

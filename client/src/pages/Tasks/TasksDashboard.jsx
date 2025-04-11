@@ -55,7 +55,7 @@ const TasksDashboard = () => {
     },
   });
 
-  const { data: taskList, isLoading : isTaskListLoading } = useQuery({
+  const { data: taskList, isLoading: isTaskListLoading } = useQuery({
     queryKey: ["taskList"],
     queryFn: async () => {
       try {
@@ -117,8 +117,6 @@ const TasksDashboard = () => {
   const calculatePendingTasks = (tasks) => {
     // Group tasks by department
     const departmentMap = tasks.reduce((acc, task) => {
-      
-
       const department = task.project.department.name;
       const isPending = task.status === "Pending";
 
@@ -137,9 +135,9 @@ const TasksDashboard = () => {
       value: (data.pending / data.total) * 100,
     }));
   };
-  
-  const tasks = allTasksQuery.isLoading ? [] : allTasksQuery.data
-  
+
+  const tasks = allTasksQuery.isLoading ? [] : allTasksQuery.data;
+
   const departmentPendingStats = calculatePendingTasks(tasks);
 
   const departmentPieChartOptions = {
@@ -158,20 +156,25 @@ const TasksDashboard = () => {
     },
   };
 
+  const myTodayMeetingsData = !meetingsQuery.isLoading
+    ? meetingsQuery.data.map((meeting, index) => {
+        return {
+          id: index + 1,
+          meeting: meeting.subject,
+          location: meeting.roomName,
+          participants:
+            meeting?.participants?.length > 0
+              ? meeting.participants.map((participant) => ({
+                  name: participant.email,
+                  avatar:
+                    "https://ui-avatars.com/api/?name=Alice+Johnson&background=random",
+                }))
+              : [],
+          time: meeting.startTime,
+        };
+      })
+    : [];
 
-  const myTodayMeetingsData = !meetingsQuery.isLoading ? meetingsQuery.data.map((meeting, index)=>{
-    return {
-      id: index + 1,
-      meeting: meeting.subject,
-      location: meeting.roomName,
-      participants: meeting?.participants?.length > 0 ? meeting.participants.map((participant)=> ({
-        name: participant.email,
-        avatar: "https://ui-avatars.com/api/?name=Alice+Johnson&background=random"
-      })) : [],
-      time: meeting.startTime
-    }
-  }) : []
-    
   const meetingsWidgets = [
     {
       layout: 1,
@@ -179,7 +182,8 @@ const TasksDashboard = () => {
         <WidgetSection
           layout={1}
           border
-          title={"Overall Average Tasks Completion"}>
+          title={"Overall Average Tasks Completion"}
+        >
           <BarGraph
             height={400}
             data={tasksMonthlyData}
@@ -191,14 +195,10 @@ const TasksDashboard = () => {
     {
       layout: 6,
       widgets: [
+        <Card route={"KRA"} title={"KRA"} icon={<RiPagesLine />} />,
         <Card
           route={"/app/tasks/project-list"}
           title={"Project List"}
-          icon={<RiPagesLine />}
-        />,
-        <Card
-          route={"my-tasklist"}
-          title={"My Task List"}
           icon={<RiPagesLine />}
         />,
         <Card
@@ -265,7 +265,8 @@ const TasksDashboard = () => {
         <WidgetSection
           layout={1}
           title={"Overall Pending v/s Assigned Tasks"}
-          border>
+          border
+        >
           <PieChartMui
             data={tasksPieChartData}
             options={tasksPieChartOptions}
@@ -274,7 +275,8 @@ const TasksDashboard = () => {
         <WidgetSection
           layout={1}
           title={"Department-wise Pending Tasks"}
-          border>
+          border
+        >
           <PieChartMui
             data={departmentPendingStats}
             options={departmentPieChartOptions}

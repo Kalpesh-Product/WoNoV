@@ -133,7 +133,7 @@ const RaiseTicket = () => {
   };
 
   const recievedTicketsColumns = [
-    { field: "id", headerName: "id", sort: "desc" },
+    { field: "id", headerName: "Sr No", sort: "desc" },
     { field: "raisedBy", headerName: "Raised By" },
     { field: "raisedTo", headerName: "To Department" },
     { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },

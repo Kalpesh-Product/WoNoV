@@ -46,7 +46,6 @@ const EditProject = () => {
 
   const project = location.state?.project; // Extract project data
 
-  console.log(project);
 
   if (!project) {
     return <Typography variant="h6">Project not found!</Typography>;
@@ -54,6 +53,7 @@ const EditProject = () => {
 
   // ✅ Convert project data: Each assignee becomes a separate row
   const projectData = Object.keys(project.assignees).map((assignee, index) => ({
+    srNo: index+1, // Unique ID for AgGrid
     id: `${project.id}-${index}`, // Unique ID for AgGrid
     assignee, // Individual assignee
     dailyTasks: project.assignees[assignee].dailyTasks,
@@ -63,6 +63,7 @@ const EditProject = () => {
 
   // ✅ Define AgGrid columns
   const columnDefs = [
+    { field: "srNo", headerName: "Sr No", flex: 2 }, // Move Assignees to First Column
     { field: "assignee", headerName: "Assignee", flex: 2 }, // Move Assignees to First Column
     { field: "dailyTasks", headerName: "Daily Tasks", flex: 1 },
     { field: "monthlyTasks", headerName: "Monthly Tasks", flex: 1 },
@@ -147,7 +148,7 @@ const EditProject = () => {
               <Autocomplete
                 {...field}
                 multiple
-                options={["Aiwinraj", "Sankalp", "Aaron", "Kalpesh", "Muskan"]} // Example list
+                options={["Aiwinraj KS", "Sankalp Kalangutkar", "Aaron Dsouza", "Kalpesh Naik", "Muskan Dodmani"]} // Example list
                 renderInput={(params) => (
                   <TextField
                     {...params}

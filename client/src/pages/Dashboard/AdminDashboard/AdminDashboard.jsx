@@ -38,6 +38,7 @@ const AdminDashboard = () => {
     chart: {
       type: "bar",
       stacked: true,
+      toolbar: false,
       fontFamily: "Poppins-Regular",
     },
     plotOptions: {
@@ -71,7 +72,7 @@ const AdminDashboard = () => {
         "Oct-24",
         "Nov-24",
         "Dec-24",
-      ]
+      ],
     },
     yaxis: {
       max: 150,
@@ -436,32 +437,40 @@ const AdminDashboard = () => {
       widgets: [
         <WidgetSection border title={"Budget v/s Achievements"}>
           <LayerBarGraph data={data} options={options} />
+          <hr />
+          <WidgetSection layout={3} padding>
+            <DataCard
+              data={"40K"}
+              title={"Projected"}
+              route={"/app/dashboard/admin-dashboard/finance/budget"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={"35K"}
+              title={"Actual"}
+              route={"/app/dashboard/admin-dashboard/finance/budget"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={6000}
+              title={"Requested"}
+              route={"/app/dashboard/admin-dashboard/finance/budget"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+          </WidgetSection>
         </WidgetSection>,
       ],
     },
-     {
-       layout: 3,
-       widgets: [
-         <DataCard
-           data={"40K"}
-           title={"Projected"}
-           route={"/app/dashboard/admin-dashboard/finance"}
-           description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
-         />,
-         <DataCard
-           data={"35K"}
-           title={"Actual"}
-           route={"/app/dashboard/admin-dashboard/finance"}
-           description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
-         />,
-         <DataCard
-           data={6000}
-           title={"Requested"}
-           route={"/app/dashboard/admin-dashboard/finance"}
-           description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
-         />,
-       ],
-     },
+
     {
       layout: 6,
       widgets: [

@@ -149,6 +149,7 @@ const AcceptedTickets = ({ title }) => {
   };
 
   const recievedTicketsColumns = [
+    { field: "srNo", headerName: "Sr No" },
     { field: "raisedBy", headerName: "Raised By" },
     {
       field: "raisedToDepartment",
@@ -212,7 +213,8 @@ const AcceptedTickets = ({ title }) => {
           <AgTable
             key={acceptedTickets.length}
             data={[
-              ...acceptedTickets.map((ticket) => ({
+              ...acceptedTickets.map((ticket,index) => ({
+                srNo: index+1,
                 id: ticket._id,
                 raisedBy: ticket.raisedBy?.firstName || "Unknown",
                 description: ticket.description,

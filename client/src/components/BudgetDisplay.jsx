@@ -1,12 +1,7 @@
 import React, { useState } from "react";
 import LayerBarGraph from "../components/graphs/LayerBarGraph";
 import WidgetSection from "../components/WidgetSection";
-import {
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-} from "@mui/material";
+import { TextField, Select, MenuItem, FormControl } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import Accordion from "@mui/material/Accordion";
@@ -21,9 +16,26 @@ import MuiModal from "../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { MdTrendingUp } from "react-icons/md";
 import { BsCheckCircleFill } from "react-icons/bs";
+import AllocatedBudget from "./Tables/AllocatedBudget";
+import { useQuery } from "@tanstack/react-query";
 
 const BudgetDisplay = ({ budgetData }) => {
   const axios = useAxiosPrivate();
+  
+     const { data: hrFinance = [] } = useQuery({
+        queryKey: ["hrFinance"],
+        queryFn: async () => {
+          try {
+            const response = await axios.get(
+              `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
+              `
+            );
+            return response.data.allBudgets;
+          } catch (error) {
+            throw new Error("Error fetching data");
+          }
+        },
+      });
 
   const [openModal, setOpenModal] = useState(false);
 
@@ -82,13 +94,23 @@ const BudgetDisplay = ({ budgetData }) => {
   }, {});
 
   // Convert grouped data to array and sort by latest month (descending order)
-  const financialData = Object.values(groupedData)
-    .map((data) => ({
+ const financialData = Object.values(groupedData)
+    .map((data,index) => {
+       
+      const transoformedRows = data.tableData.rows.map((row,index)=>({...row,srNo:index+1,projectedAmount:Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 })}))
+      const transformedCols = [
+        { field: 'srNo', headerName: 'SR NO', flex: 1 },
+        ...data.tableData.columns
+      ];
+
+      return({
       ...data,
       projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
       amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-    }))
-    .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
+      tableData: {...data.tableData, rows:transoformedRows,columns: transformedCols}
+    })
+  })
+    .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending // Sort descending
 
   // ---------------------------------------------------------------------//
   // Data for the chart
@@ -111,6 +133,7 @@ const BudgetDisplay = ({ budgetData }) => {
     chart: {
       type: "bar",
       stacked: true,
+      toolbar: false,
       fontFamily: "Poppins-Regular",
     },
     plotOptions: {
@@ -132,11 +155,20 @@ const BudgetDisplay = ({ budgetData }) => {
       },
     },
     xaxis: {
-       categories: [
-        "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
-        "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
-      ]
-      
+      categories: [
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
+      ],
     },
     yaxis: {
       max: 150,
@@ -189,60 +221,16 @@ const BudgetDisplay = ({ budgetData }) => {
         </WidgetSection>
       </div>
 
- <div className="flex justify-end">
-            <PrimaryButton
-              title={"Request Budget"}
-              padding="px-5 py-2" fontSize="text-base"
-              handleSubmit={() => setOpenModal(true)}
-            />
-          </div>
-      <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <span className="text-title font-pmedium text-primary">
-              Allocated Budget :{" "}
-            </span>
-            <span className="text-title font-pmedium">
-              {"INR " + Number(500000).toLocaleString("en-IN")}
-            </span>
-          </div>
-        </div>
-        <div>
-          {financialData.map((data, index) => (
-            <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel\u20B9{index}-content`}
-                id={`panel\u20B9{index}-header`}
-                className="border-b-[1px] border-borderGray"
-              >
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium">
-                    {data.month}
-                  </span>
-                 <span className="text-subtitle font-pmedium flex items-center gap-1 ">
-                                   <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
-                                   {"INR "+data.projectedAmount}
-                                   </span>
-                                   <span className="text-subtitle font-pmedium flex items-center gap-1 ">
-                                   <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />
-                                    {"INR "+data.amount}
-                                   </span>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
-                <AgTable
-                  search={true}
-                  searchColumn={"Department"}
-                  data={data.tableData.rows}
-                  columns={data.tableData.columns}
-                  tableHeight={250}
-                />
-              </AccordionDetails>
-            </Accordion>
-          ))}
-        </div>
+      <div className="flex justify-end">
+        <PrimaryButton
+          title={"Request Budget"}
+          padding="px-5 py-2"
+          fontSize="text-base"
+          handleSubmit={() => setOpenModal(true)}
+        />
       </div>
+
+      <AllocatedBudget financialData={financialData}/>
       <MuiModal
         title="Request Budget"
         open={openModal}

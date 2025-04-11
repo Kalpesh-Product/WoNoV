@@ -20,11 +20,12 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { queryClient } from "../../main";
 import MuiModal from "../../components/MuiModal";
 import PrimaryButton from "../../components/PrimaryButton";
-import { useSelector } from "react-redux";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import { Controller, useForm } from "react-hook-form";
+import humanDate from "../../utils/humanDateForamt";
+import humanTime from "../../utils/humanTime";
 
 const ManageMeetings = () => {
   const axios = useAxiosPrivate();
@@ -35,6 +36,7 @@ const ManageMeetings = () => {
   const [modalMode, setModalMode] = useState("update"); // 'update', or 'view'
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [detailsModal, setDetailsModal] = useState(false);
+  const [submittedChecklists, setSubmittedChecklists] = useState({});
 
   const statusColors = {
     Upcoming: { bg: "#E3F2FD", text: "#1565C0" }, // Light Blue
@@ -83,19 +85,36 @@ const ManageMeetings = () => {
       return response.data;
     },
   });
-  const filteredMeetings = meetings.filter(
-    (item) => item.meetingStatus === "Upcoming"
-  );
+  const filteredMeetings = meetings
+    .filter((item) => item.meetingStatus === "Upcoming")
+    .map((meeting) => ({
+      ...meeting,
+      startTime: humanTime(meeting.startTime),
+      endTime: humanTime(meeting.endTime),
+      date: humanDate(meeting.date),
+    }));
+
+
+  const transformedMeetings = filteredMeetings.map((meeting,index)=>({
+    ...meeting,
+    srNo:index+1
+  }))
+
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
     mutationFn: async (data) => {
       await axios.patch("/api/meetings/create-housekeeping-tasks", data);
     },
     onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ["meetings"] }); // ✅ Refetch meetings after update
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      setSubmittedChecklists((prev) => ({
+        ...prev,
+        [selectedMeetingId]: true,
+      }));
       toast.success("Checklist completed");
       handleCloseChecklistModal();
     },
+
     onError: () => {
       toast.error("Failed to submit checklist");
     },
@@ -105,7 +124,8 @@ const ManageMeetings = () => {
     mutationFn: async (data) => {
       console.log(data);
       const respone = await axios.patch(
-        `/api/meetings/cancel-meeting/${selectedMeetingId}`,data
+        `/api/meetings/cancel-meeting/${selectedMeetingId}`,
+        data
       );
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       return respone.data;
@@ -136,13 +156,8 @@ const ManageMeetings = () => {
   const handleOpenChecklistModal = (mode, meetingId) => {
     setModalMode(mode);
     setSelectedMeetingId(meetingId);
-    setDetailsModal(true);
+    setChecklistModalOpen(true); // ✅ Open checklist modal
   };
-
-  useEffect(
-    () => console.log("Selected meeting : ", selectedMeetingId),
-    [selectedMeetingId]
-  );
 
   const handleCloseChecklistModal = () => {
     setChecklistModalOpen(false);
@@ -222,9 +237,14 @@ const ManageMeetings = () => {
     );
     if (!selectedMeeting) return;
 
-    const { customItems } = checklists[selectedMeetingId];
+    const { defaultItems = [], customItems = [] } =
+      checklists[selectedMeetingId] || {};
 
-    const housekeepingTasks = customItems.map((item) => ({
+    const allCheckedItems = [...defaultItems, ...customItems].filter(
+      (item) => item.checked
+    );
+
+    const housekeepingTasks = allCheckedItems.map((item) => ({
       name: item.name,
       status: "Completed",
     }));
@@ -237,10 +257,13 @@ const ManageMeetings = () => {
 
     housekeepingMutation.mutate(payload);
   };
+
   //---------------------------------Event handlers----------------------------------------//
 
   const columns = [
+    { field: "srNo", headerName: "Sr No" },
     { field: "roomName", headerName: "Room Name" },
+    { field: "date", headerName: "Date" },
     { field: "startTime", headerName: "Start Time" },
     { field: "endTime", headerName: "End Time" },
     {
@@ -302,52 +325,52 @@ const ManageMeetings = () => {
     {
       field: "action",
       headerName: "Action",
-      cellRenderer: (params) => (
-        <div className="flex gap-2 items-center">
-          <div
-            onClick={() => {
-              handleSelectedMeeting("viewDetails", params.data);
-            }}
-            className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-          >
-            <span className="text-subtitle">
-              <MdOutlineRemoveRedEye />
-            </span>
+      cellRenderer: (params) => {
+        const isDisabled = params.data.housekeepingStatus === "Completed";
+    
+        return (
+          <div className="flex gap-2 items-center">
+            <div
+              onClick={() => handleSelectedMeeting("viewDetails", params.data)}
+              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+            >
+              <span className="text-subtitle">
+                <MdOutlineRemoveRedEye />
+              </span>
+            </div>
+    
+            {/* ⋮ Three-dot menu - hidden if housekeeping is completed */}
+            {!isDisabled && (
+              <ThreeDotMenu
+                menuItems={[
+                  {
+                    label: "Update",
+                    onClick: () =>
+                      handleOpenChecklistModal("update", params.data._id),
+                  },
+                  {
+                    label: "Cancel",
+                    onClick: () =>
+                      handleSelectedMeeting("cancel", params.data),
+                  },
+                ]}
+              />
+            )}
           </div>
-          <ThreeDotMenu
-            menuItems={[
-              {
-                label: "Update",
-                onClick: () =>
-                  handleOpenChecklistModal("update", params.data._id),
-                disabled: params.data.housekeepingStatus === "Completed",
-              },
-              {
-                label: "View",
-                onClick: () =>
-                  handleOpenChecklistModal("view", params.data._id),
-              },
-              {
-                label: "Cancel",
-                onClick: () =>
-                  handleSelectedMeeting("cancel", params.data),
-              },
-            ]}
-          />
-        </div>
-      ),
-    },
+        );
+      },
+    }
+    
   ];
-  // ✅ Columns update whenever `meetings` changes
 
   return (
     <div className="p-4 flex flex-col gap-4">
       {!isMeetingsLoading ? (
         <AgTable
-          key={filteredMeetings.length}
+          key={transformedMeetings.length}
           search
           tableTitle={"Manage Meetings"}
-          data={filteredMeetings || []}
+          data={transformedMeetings || []}
           columns={columns}
         />
       ) : (
@@ -512,10 +535,10 @@ const ManageMeetings = () => {
               onSubmit={cancelMeetingSubmit((data) => {
                 cancelMeeting({
                   meetingId: selectedMeeting?.meetingId,
-                  reason : data.reason
+                  reason: data.reason,
                 });
                 resetCancelMeeting();
-                setDetailsModal(false)
+                setDetailsModal(false);
               })}
             >
               <Controller

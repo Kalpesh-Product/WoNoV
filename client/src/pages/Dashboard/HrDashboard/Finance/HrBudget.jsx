@@ -101,12 +101,23 @@ const HrBudget = () => {
 
   // Convert grouped data to array and sort by latest month (descending order)
   const financialData = Object.values(groupedData)
-    .map((data) => ({
+    .map((data,index) => {
+       
+      const transoformedRows = data.tableData.rows.map((row,index)=>({...row,srNo:index+1,projectedAmount:Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 })}))
+      const transformedCols = [
+        { field: 'srNo', headerName: 'SR NO', flex: 1 },
+        ...data.tableData.columns
+      ];
+
+      return({
       ...data,
       projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
       amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-    }))
+      tableData: {...data.tableData, rows:transoformedRows,columns: transformedCols}
+    })
+  })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
+
 
   // ---------------------------------------------------------------------//
   // Data for the chart
@@ -128,8 +139,9 @@ const HrBudget = () => {
   const optionss = {
     chart: {
       type: "bar",
+      toolbar: false,
       stacked: true,
-      fontFamily : "Poppins-Regular"
+      fontFamily: "Poppins-Regular",
     },
     plotOptions: {
       bar: {
@@ -150,7 +162,7 @@ const HrBudget = () => {
       },
     },
     xaxis: {
-       categories: [
+      categories: [
         "Apr-24",
         "May-24",
         "Jun-24",
@@ -211,7 +223,7 @@ const HrBudget = () => {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <WidgetSection layout={1} title={"BUDGET 2024"} border >
+        <WidgetSection layout={1} title={"BUDGET 2024"} border>
           <LayerBarGraph options={optionss} data={data} />
         </WidgetSection>
       </div>
@@ -244,7 +256,7 @@ const HrBudget = () => {
         </WidgetSection>
       </div>
 
-  <div className="flex justify-end">
+      <div className="flex justify-end">
         <PrimaryButton
           title={"Request Budget"}
           padding="px-5 py-2"
@@ -253,7 +265,7 @@ const HrBudget = () => {
         />
       </div>
 
-    <AllocatedBudget financialData={financialData}/>
+    <AllocatedBudget financialData={financialData} groupedData={groupedData} />
 
       <MuiModal
         title="Request Budget"

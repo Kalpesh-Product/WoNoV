@@ -32,6 +32,7 @@ const MeetingReports = () => {
     console.log("Selected Meeting : ", selectedMeeting);
   }, [selectedMeeting]);
   const meetingReportsColumn = [
+    { field: "srNo", headerName: "Sr No" },
     { field: "roomName", headerName: "Room Name" },
     { field: "buildingName", headerName: "Building Name" },
     { field: "unitName", headerName: "Unit Name" },
@@ -152,6 +153,7 @@ const MeetingReports = () => {
             tableTitle={"Meetings Reports"}
             data={[
               ...myMeetings.map((item, index) => ({
+                srNo: index + 1,
                 id: index + 1,
                 department: item.department,
                 roomName: item.roomName,

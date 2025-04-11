@@ -98,7 +98,7 @@ const ListOfAssets = () => {
   });
 
   const assetColumns = [
-    { field: "id", headerName: "ID" },
+    { field: "srNo", headerName: "Sr No" },
     { field: "department", headerName: "Department" },
     // { field: "assetNumber", headerName: "Asset Number" },
     { field: "category", headerName: "Category" },
@@ -159,7 +159,7 @@ const ListOfAssets = () => {
         buttonTitle={"Add Asset"}
         data={[
           ...assetsList.map((asset, index) => ({
-            id: index + 1,
+            srNo: index + 1,
             department: asset.department.name,
             category: asset.name,
             brand: asset.brand,

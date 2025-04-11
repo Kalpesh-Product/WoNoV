@@ -3,22 +3,34 @@ import AgTable from "../../../components/AgTable";
 import { Chip } from "@mui/material";
 
 const MonthlyTasks = () => {
+  const getLastDayOfMonth = () => {
+    const now = new Date();
+    return new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0
+    ).toLocaleDateString("en-GB"); // dd/mm/yyyy
+  };
+
   const dailyTaskColumns = [
     { field: "task", headerName: "Task", flex: 1 },
+    { field: "assignedBy", headerName: "Assigned By", flex: 1 },
     {
       field: "priority",
       headerName: "Priority",
-      cellRenderer: (params) => { // Map boolean to string status
+      flex: 1,
+      cellRenderer: (params) => {
         const statusColorMap = {
-          Medium: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-          Low: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+          High: { backgroundColor: "#FFB6C1", color: "#8B0000" },
+          Medium: { backgroundColor: "#FFECC5", color: "#CC8400" },
+          Low: { backgroundColor: "#90EE90", color: "#006400" },
         };
-      
+
         const { backgroundColor, color } = statusColorMap[params.value] || {
           backgroundColor: "gray",
           color: "white",
         };
-      
+
         return (
           <Chip
             label={params.value}
@@ -28,30 +40,32 @@ const MonthlyTasks = () => {
             }}
           />
         );
-      }, 
+      },
     },
     { field: "end", headerName: "End", flex: 1 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-            <span className="text-primary hover:underline text-content cursor-pointer">
-              View KRA
-            </span>
-          </div>
-        </>
-      ),
-    },
   ];
 
   const rows = [
     {
       id: "1",
       task: "Complete WoNo Frontend Module",
+      assignedBy: "Utkarsha Palkar",
       priority: "Medium",
-      end: "10:30 AM",
+      end: getLastDayOfMonth(),
+    },
+    {
+      id: "2",
+      task: "Implement Performance Graphs",
+      assignedBy: "Utkarsha Palkar",
+      priority: "High",
+      end: getLastDayOfMonth(),
+    },
+    {
+      id: "3",
+      task: "Refactor Auth Module",
+      assignedBy: "Utkarsha Palkar",
+      priority: "Low",
+      end: getLastDayOfMonth(),
     },
   ];
 
@@ -64,7 +78,6 @@ const MonthlyTasks = () => {
           tableTitle={"Monthly Tasks"}
           data={rows}
           columns={dailyTaskColumns}
-          buttonTitle={"Add My Task"}
           handleClick={() => console.log("Button clicked")}
           enableCheckbox
         />

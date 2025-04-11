@@ -29,15 +29,15 @@ const MyTaskListLayout = () => {
 
   // Map routes to tabs
   const tabs = [
-    { label: "Daily Tasks", path: "daily-tasks" },
-    { label: "Monthly Tasks", path: "monthly-tasks" },
+    { label: "Daily KRA", path: "daily-KRA" },
+    { label: "Monthly KRA", path: "monthly-KRA" },
     { label: "Additional Tasks", path: "additional-tasks" },
   ];
 
   // Redirect to "assets-categories" if the current path is "/assets/categories"
   useEffect(() => {
-    if (location.pathname === "/app/tasks/my-tasklist") {
-      navigate("/app/tasks/my-tasklist/daily-tasks", {
+    if (location.pathname === "/app/tasks/KRA") {
+      navigate("/app/tasks/KRA/daily-KRA", {
         replace: true,
       });
     }

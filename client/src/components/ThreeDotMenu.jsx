@@ -1,7 +1,6 @@
 import { Popover, IconButton, Button, CircularProgress } from "@mui/material";
 import { useState } from "react";
 import { PiDotsThreeVerticalBold } from "react-icons/pi";
-import PrimaryButton from "./PrimaryButton";
 
 const ThreeDotMenu = ({ rowId, menuItems, isLoading }) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -37,6 +36,7 @@ const ThreeDotMenu = ({ rowId, menuItems, isLoading }) => {
                 if (!disabled) {
                   onClick();
                 }
+                return;
               }}
               className={`${label === "Cancel" ? "bg-red-100 text-red-600" : "bg-white text-primary"}  p-4 py-2 border-b-[1px] border-borderGray cursor-pointer text-content hover:bg-gray-200 ${
                 disabled ? "text-gray-400 cursor-not-allowed" : ""

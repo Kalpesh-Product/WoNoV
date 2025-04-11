@@ -1596,16 +1596,16 @@ export const routes = createBrowserRouter([
                     element: <EditProject />, // Dashboard is rendered by default
                   },
                   {
-                    path: "my-tasklist",
+                    path: "KRA",
                     element: <MyTaskListLayout />, // This is your first page
                     children: [
                       {
-                        path: "daily-tasks",
+                        path: "daily-KRA",
                         index: true,
                         element: <DailyTasks />,
                       },
                       {
-                        path: "monthly-tasks",
+                        path: "monthly-KRA",
                         element: <MonthlyTasks />,
                       },
                       {

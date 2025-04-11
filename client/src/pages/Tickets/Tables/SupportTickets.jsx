@@ -213,7 +213,7 @@ const SupportTickets = ({ title }) => {
 
 
   const recievedTicketsColumns = [
-    { field: "srno", headerName: "SR NO" },
+    { field: "srno", headerName: "Sr No" },
     { field: "raisedBy", headerName: "Raised By" },
     {
       field: "selectedDepartment",

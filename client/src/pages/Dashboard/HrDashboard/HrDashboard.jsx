@@ -192,6 +192,7 @@ const HrDashboard = () => {
     chart: {
       type: "bar",
       stacked: true,
+      toolbar:false,
       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: () => {
@@ -517,7 +518,7 @@ const HrDashboard = () => {
               <DataCard
                 data={"40K"}
                 title={"Projected"}
-                route={"/app/dashboard/frontend-dashboard/finance"}
+                route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
                   "default",
                   { month: "long" }
@@ -526,7 +527,7 @@ const HrDashboard = () => {
               <DataCard
                 data={"35K"}
                 title={"Actual"}
-                route={"/app/dashboard/frontend-dashboard/finance"}
+                route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
                   "default",
                   { month: "long" }
@@ -535,7 +536,7 @@ const HrDashboard = () => {
               <DataCard
                 data={6000}
                 title={"Requested"}
-                route={"/app/dashboard/frontend-dashboard/finance"}
+                route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
                   "default",
                   { month: "long" }

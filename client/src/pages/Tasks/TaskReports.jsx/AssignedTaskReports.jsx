@@ -20,7 +20,7 @@ const AssignedTaskReports = () => {
   });
 
   const assignedTaskReportsColumns = [
-    { field: "id", headerName: "ID", width: 50 },
+    { field: "srNo", headerName: "Sr No", width: 50 },
     { field: "task", headerName: "Task", width: 250 },
     { field: "project", headerName: "Project", width: 200 },
     { field: "assignedBy", headerName: "Assigned By", flex: 1 },
@@ -63,51 +63,51 @@ const AssignedTaskReports = () => {
 
   const assignedTaskReportsData = [
     {
-      id: 1,
+      srNo: 1,
       task: "Develop Authentication Module",
       project: "HR Management System",
       assignedBy: "Kalpesh Naik",
-      assignedTo:'Sankalp',
+      assignedTo:'Sankalp Kalangutkar',
       priority: "High",
       startDate: "2024-02-10",
       endDate: "2024-02-20",
     },
     {
-      id: 2,
+      srNo: 2,
       task: "Fix Payment Gateway Issue",
       project: "E-commerce Platform",
       assignedBy: "Kalpesh Naik",
-      assignedTo:'Allan',
+      assignedTo:'Allan Mark Silvera',
       priority: "Medium",
       startDate: "2024-02-12",
       endDate: "2024-02-18",
     },
     {
-      id: 3,
+      srNo: 3,
       task: "Optimize Database Queries",
       project: "Inventory Management",
       assignedBy: "Kalpesh Naik",
-      assignedTo:'Muskan',
+      assignedTo:'Muskan Dodmani',
       priority: "High",
       startDate: "2024-02-05",
       endDate: "2024-02-15",
     },
     {
-      id: 4,
+      srNo: 4,
       task: "Implement Notification System",
       project: "Social Media App",
       assignedBy: "Kalpesh Naik",
-      assignedTo:'Aiwinraj',
+      assignedTo:'Aiwinraj KS',
       priority: "Low",
       startDate: "2024-02-08",
       endDate: "2024-02-22",
     },
     {
-      id: 5,
+      srNo: 5,
       task: "UI/UX Design for Dashboard",
       project: "Admin Panel",
       assignedBy: "Kalpesh Naik",
-      assignedTo:'Aaron',
+      assignedTo:'Aaron Dsouza',
       priority: "Medium",
       startDate: "2024-02-14",
       endDate: "2024-02-25",
@@ -121,7 +121,7 @@ const AssignedTaskReports = () => {
           search={true}
           tableTitle={"Assigned Task Reports"}
           data={isLoading? []:[...taskList.map((task, index)=>({
-            id : index + 1,
+            srNo : index + 1,
             task:task.taskName,
             project : task.project.projectName,
             assignedBy : task.assignedBy.firstName,
