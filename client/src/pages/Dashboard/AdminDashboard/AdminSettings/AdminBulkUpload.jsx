@@ -4,9 +4,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import AgTable from "../../../../components/AgTable";
 
 const AdminBulkUpload = () => {
-  const uploadItems = [
-    "Upload Expenses"
-  ];
+  const uploadItems = ["Upload Expenses"];
   const bulkUploadDataColumns = [
     { field: "srNo", headerName: "SR No", flex: 1 },
     { field: "templateName", headerName: "Template Name", flex: 1 },
@@ -19,30 +17,30 @@ const AdminBulkUpload = () => {
       srNo: 1,
       templateName: "Upload Expense",
       uploadedBy: "John Doe",
-      date: "2025-03-01"
+      date: "2025-03-01",
     },
     {
       srNo: 2,
       templateName: "Upload Expense",
       uploadedBy: "Jane Smith",
-      date: "2025-03-08"
+      date: "2025-03-08",
     },
     {
       srNo: 3,
       templateName: "Upload Expense",
       uploadedBy: "Michael Johnson",
-      date: "2025-03-15"
+      date: "2025-03-15",
     },
     {
       srNo: 4,
       templateName: "Upload Expense",
       uploadedBy: "Emily Davis",
-      date: "2025-03-22"
-    }
+      date: "2025-03-22",
+    },
   ];
 
   return (
-    <div className="p-4">
+    <div className="">
       <h2 className="text-title font-pmedium text-primary pb-4">
         Bulk Upload Data
       </h2>
@@ -72,14 +70,13 @@ const AdminBulkUpload = () => {
                   </button>
                 </div>
               </div>
-
             </div>
           );
         })}
       </div>
 
       <div>
-              <WidgetSection border title="Bulk Upload Data">
+        <WidgetSection border title="Bulk Upload Data">
           <AgTable
             data={bulkUploadData}
             columns={bulkUploadDataColumns}

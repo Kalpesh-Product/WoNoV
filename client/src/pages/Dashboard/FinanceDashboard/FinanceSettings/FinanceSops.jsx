@@ -4,9 +4,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import AgTable from "../../../../components/AgTable";
 
 const FinanceSops = () => {
-  const uploadItems = [
-    "Upload Sops" 
-  ];
+  const uploadItems = ["Upload Sops"];
   const sopsUploadDataColumns = [
     { field: "srNo", headerName: "SR No", flex: 1 },
     { field: "templateName", headerName: "Template Name", flex: 1 },
@@ -19,30 +17,30 @@ const FinanceSops = () => {
       srNo: 1,
       templateName: "Upload Sops",
       uploadedBy: "John Doe",
-      date: "2025-03-01"
+      date: "2025-03-01",
     },
     {
       srNo: 2,
       templateName: "Upload Sops",
       uploadedBy: "Jane Smith",
-      date: "2025-03-08"
+      date: "2025-03-08",
     },
     {
       srNo: 3,
       templateName: "Upload Sops",
       uploadedBy: "Michael Johnson",
-      date: "2025-03-15"
+      date: "2025-03-15",
     },
     {
       srNo: 4,
       templateName: "Upload Sops",
       uploadedBy: "Emily Davis",
-      date: "2025-03-22"
-    }
+      date: "2025-03-22",
+    },
   ];
 
   return (
-    <div className="p-4">
+    <div className="">
       <h2 className="text-title font-pmedium text-primary pb-4">Upload Sops</h2>
 
       <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1 pb-4">
@@ -76,7 +74,7 @@ const FinanceSops = () => {
       </div>
 
       <div>
-              <WidgetSection border title="SOPs Data">
+        <WidgetSection border title="SOPs Data">
           <AgTable
             data={sopsUploadData}
             columns={sopsUploadDataColumns}
