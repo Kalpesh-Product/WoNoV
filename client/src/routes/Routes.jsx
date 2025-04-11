@@ -305,6 +305,7 @@ import AdminClientLayout from "../pages/Dashboard/AdminDashboard/AdminClientLayo
 import AdminClientsData from "../pages/Dashboard/AdminDashboard/AdminClientsData/AdminClientsData";
 import AdminClientOnboard from "../pages/Dashboard/AdminDashboard/AdminClientsData/AdminClientOnboard";
 import FinanceViewVoucher from "../pages/Dashboard/FinanceDashboard/FinanceData/FinanceViewVoucher";
+import DepartmentWiseTickets from "../pages/Tickets/DepartmentWiseTickets";
 
 export const routes = createBrowserRouter([
   {
@@ -624,14 +625,14 @@ export const routes = createBrowserRouter([
                       {
                         path: "client-members",
                         element: <AdminClientLayout />,
-                        children : [
+                        children: [
                           {
-                            path : "client-members-data",
-                            element : <AdminClientsData />
+                            path: "client-members-data",
+                            element: <AdminClientsData />,
                           },
                           {
-                            path : "client-members-onboard",
-                            element : <AdminClientOnboard />
+                            path: "client-members-onboard",
+                            element: <AdminClientOnboard />,
                           },
                           {
                             path: "client-members-data/:clientName",
@@ -651,9 +652,8 @@ export const routes = createBrowserRouter([
                               },
                             ],
                           },
-                        ]
+                        ],
                       },
-                
 
                       {
                         path: "data",
@@ -1184,7 +1184,7 @@ export const routes = createBrowserRouter([
                             path: "shifts",
                             element: <Shifts />,
                           },
-                          
+
                           {
                             path: "templates",
                             element: <Templates />,
@@ -1433,6 +1433,10 @@ export const routes = createBrowserRouter([
                   {
                     path: "reports",
                     element: <TicketReports />,
+                  },
+                  {
+                    path: "department-wise-tickets",
+                    element: <DepartmentWiseTickets />,
                   },
                 ],
               },

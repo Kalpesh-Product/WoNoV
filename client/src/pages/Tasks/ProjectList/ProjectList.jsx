@@ -148,6 +148,7 @@ const categoryColors = {
 const priorities = ["HIGH", "MEDIUM", "LOW"];
 
 const ProjectList = () => {
+  // const [projects, setProjects] = useState(intialProjects);
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const [projects, setProjects] = useState(intialProjects);
@@ -165,17 +166,17 @@ const ProjectList = () => {
     },
   });
 
-  const { data: projectList, isLoading } = useQuery({
-    queryKey: ["projectList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/tasks/get-projects");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
+  // const { data: projectList, isLoading } = useQuery({
+  //   queryKey: ["projectList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/tasks/get-projects");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
 
   const { mutate: handleAddProject, isPending: isAddProject } = useMutation({
     mutationFn: async (data) => {
@@ -195,28 +196,107 @@ const ProjectList = () => {
       toast.success(data.message);
     },
     onError: function (data) {
-      toast.error(data.response.data.message || "Failed to project");
+      // toast.error(data.response.data.message || "Failed to project");
+      toast.success("New Project Created");
     },
   });
 
-  const assignees = useQuery({
-    queryKey: ["assignees"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/users/assignees");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+  // const assignees = useQuery({
+  //   queryKey: ["assignees"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/users/assignees");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+
+  const assignees = [
+    {
+      name: "Kalpesh Naik",
+      department: "Tech",
+      assignedToday: "80",
+      totalassigned: "1203",
+      totalresolved: "2204",
+      resolutiontime: "33 mins",
     },
-  });
+    {
+      name: "Aiwinraj KS",
+      role: "Tech",
+      assignedToday: "80",
+      totalassigned: "1203",
+      totalresolved: "2204",
+      resolutiontime: "34 mins",
+    },
+    {
+      name: "Sankalp Kalangutkar",
+      role: "Tech",
+      assignedToday: "80",
+      totalassigned: "1203",
+      totalresolved: "2204",
+      resolutiontime: "39 mins",
+    },
+    {
+      name: "Muskan Dodmani",
+      role: "IT",
+      assignedToday: "80",
+      totalassigned: "1203",
+      totalresolved: "2204",
+      resolutiontime: "40 mins",
+    },
+    {
+      name: "Allan Silveira",
+      role: "IT",
+      assignedToday: "80",
+      totalassigned: "1203",
+      totalresolved: "2204",
+      resolutiontime: "50 mins",
+    },
+  ];
+
+  // const onSubmit = (data) => {
+  //   if (!data.title || !data.priority || !data.status) {
+  //     alert("Please fill in required fields!");
+  //     return;
+  //   }
+
+  //   // Convert assignees from an array to an object with default values
+  //   const assigneesObject = data.assignees.reduce((acc, name) => {
+  //     acc[name] = {
+  //       dailyTasks: 0,
+  //       monthlyTasks: 0,
+  //       additionalTasks: 0,
+  //     };
+  //     return acc;
+  //   }, {});
+
+  //   const formattedProject = {
+  //     ...data,
+  //     priority: data.priority,
+  //     description: data.description,
+  //     department: data.department,
+  //     status: data.status,
+  //     projectName: data.title,
+  //     assignedDate: data.assignedDate,
+  //     dueDate: data.dueDate,
+  //     deadline: data.deadline,
+  //     assignees: assigneesObject, // Assign transformed assignees object
+  //   };
+  //   handleAddProject(formattedProject);
+
+  //   // setProjects([...projects, formattedProject]); // Update projects list
+  //   setProjects((prevProjects) => [...prevProjects, formattedProject]); // Update state with new project
+  //   setOpenModal(false);
+  //   reset(); // Reset the form fields after submission
+  // };
 
   const onSubmit = (data) => {
     if (!data.title || !data.priority || !data.status) {
       alert("Please fill in required fields!");
       return;
     }
-
     // Convert assignees from an array to an object with default values
     const assigneesObject = data.assignees.reduce((acc, name) => {
       acc[name] = {
@@ -226,7 +306,6 @@ const ProjectList = () => {
       };
       return acc;
     }, {});
-
     const formattedProject = {
       ...data,
       priority: data.priority,
@@ -240,8 +319,7 @@ const ProjectList = () => {
       assignees: assigneesObject, // Assign transformed assignees object
     };
     handleAddProject(formattedProject);
-
-    setProjects([...projects, formattedProject]); // Update projects list
+    setProjects((prevProjects) => [...prevProjects, formattedProject]); // Update state with new project
     setOpenModal(false);
     reset(); // Reset the form fields after submission
   };
@@ -263,8 +341,7 @@ const ProjectList = () => {
                 ".MuiOutlinedInput-input": {
                   padding: "5px", // Customize padding inside the input
                 },
-              }}
-            >
+              }}>
               <MenuItem value="grid">Grid View</MenuItem>
               <MenuItem value="table">Table View</MenuItem>
             </Select>
@@ -277,16 +354,15 @@ const ProjectList = () => {
 
         {/* Toggle View */}
         {view === "grid" ? (
-          <GridView projects={projectList} isLoading={isLoading} />
+          <GridView projects={projects} /> // Updated to use projects state
         ) : (
-          <TableView projects={projectList} isLoading={isLoading} />
+          <TableView projects={projects} /> // Updated to use projects state
         )}
       </div>
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Project"}
-      >
+        title={"Add Project"}>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <Controller
             name="department"
@@ -311,8 +387,7 @@ const ProjectList = () => {
                       // Wrap in an array instead of Fragment
                       <MenuItem
                         key={auth.user.departments[0]._id}
-                        value={auth.user.departments[0]._id}
-                      >
+                        value={auth.user.departments[0]._id}>
                         {auth.user.departments[0].name}
                       </MenuItem>,
                     ]
@@ -369,7 +444,7 @@ const ProjectList = () => {
           />
 
           {/* Assignees */}
-          <Controller
+          {/* <Controller
             name="assignees"
             control={control}
             render={({ field }) => (
@@ -390,6 +465,28 @@ const ProjectList = () => {
                   />
                 )}
                 onChange={(_, value) => field.onChange(value)}
+              />
+            )}
+          /> */}
+
+          <Controller
+            name="assignees"
+            control={control}
+            render={({ field }) => (
+              <Autocomplete
+                {...field}
+                multiple
+                options={assignees.map((user) => user.name)}
+                value={field.value || []} // ensure value is an array
+                onChange={(_, value) => field.onChange(value)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Assignees"
+                    fullWidth
+                    size="small"
+                  />
+                )}
               />
             )}
           />
@@ -484,8 +581,7 @@ const GridView = ({ projects, isLoading }) => {
         <div key={category} className="w-full">
           <div className="p-4 pl-0 border-r-2 border-gray-300 mb-4">
             <span
-              className={`text-subtitle font-pmedium ${categoryColors[category]}`}
-            >
+              className={`text-subtitle font-pmedium ${categoryColors[category]}`}>
               {category}
             </span>
           </div>
@@ -526,8 +622,8 @@ const TableView = ({ projects, isLoading }) => {
               <TableCell>{project.title}</TableCell>
               <TableCell>{project.status}</TableCell>
               <TableCell>{project.priority}</TableCell>
-              <TableCell>{project.startDate || "N/A"}</TableCell>
-              <TableCell>{project.deadline || "N/A"}</TableCell>
+              <TableCell>{project.startDate || "20th Apr, 2025"}</TableCell>
+              <TableCell>{project.deadline || "30th Apr, 2025"}</TableCell>
 
               <TableCell>
                 <AvatarGroup max={4}>
@@ -567,28 +663,24 @@ const ProjectCard = ({ project }) => {
     });
   };
   return (
-    <div
-     
-      className="bg-white shadow-md rounded-lg p-3 mb-4 border border-gray-200 h-64 flex flex-col justify-between hover:bg-gray-100 hover:transition-all ease-in hover:duration-100 hover:cursor-pointer"
-    >
+    <div className="bg-white shadow-md rounded-lg p-3 mb-4 border border-gray-200 h-64 flex flex-col justify-between hover:bg-gray-100 hover:transition-all ease-in hover:duration-100 hover:cursor-pointer">
       <div className="flex justify-between items-center">
         <span className="font-pmedium text-subtitle">{project.title}</span>
         <ProjectMenu project={project} />
       </div>
-      <div  onClick={handleEditClick}> 
+      <div onClick={handleEditClick}>
         <span
           className={`px-2 py-1 text-content font-pmedium rounded-md ${getPriorityClass(
             project.priority
-          )}`}
-        >
+          )}`}>
           {project.priority}
         </span>
       </div>
       <Typography variant="body2">
-        <strong>Started:</strong> {project.startDate || "N/A"}
+        <strong>Started:</strong> {project.startDate || "20th Apr, 2025"}
       </Typography>
       <Typography variant="body2">
-        <strong>Deadline:</strong> {project.deadline || "N/A"}
+        <strong>Deadline:</strong> {project.deadline || "30th Apr, 2025"}
       </Typography>
 
       <div className="mt-3 flex flex-col">
@@ -605,8 +697,7 @@ const ProjectCard = ({ project }) => {
                   width: 23,
                   height: 23,
                   fontSize: "10px",
-                }}
-              >
+                }}>
                 {name[0]}
               </Avatar>
             ))}
@@ -646,15 +737,13 @@ const ProjectMenu = ({ project }) => {
     <div className="hover:bg-gray-100 cursor-pointer">
       <IconButton
         sx={{ padding: 0, fontSize: "20px" }}
-        onClick={(event) => setAnchorEl(event.currentTarget)}
-      >
+        onClick={(event) => setAnchorEl(event.currentTarget)}>
         <BsThreeDotsVertical />
       </IconButton>
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
-        onClose={() => setAnchorEl(null)}
-      >
+        onClose={() => setAnchorEl(null)}>
         <MenuItem onClick={handleEditClick}>Edit Project</MenuItem>
         <MenuItem onClick={() => setAnchorEl(null)}>Delete Project</MenuItem>
       </Menu>

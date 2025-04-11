@@ -11,8 +11,10 @@ import { CgProfile } from "react-icons/cg";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import useAuth from "../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const TicketDashboard = () => {
+  const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const { data: ticketsData = [], isLoading } = useQuery({
@@ -40,8 +42,7 @@ const TicketDashboard = () => {
           layout={1}
           border
           padding
-          title={"Annual Tickets Raised"}
-        >
+          title={"Annual Tickets Raised"}>
           <AreaGraph responseData={ticketsData} />
         </WidgetSection>,
       ],
@@ -83,8 +84,7 @@ const TicketDashboard = () => {
           layout={1}
           padding
           border
-          title={"Total Tickets (Last Month)"}
-        >
+          title={"Total Tickets (Last Month)"}>
           <DonutChart
             series={[49, 21, 30]}
             labels={["High", "Medium", "Low"]}
@@ -95,16 +95,33 @@ const TicketDashboard = () => {
         </WidgetSection>,
         <WidgetSection
           layout={1}
+          onClick={() => navigate("/app/tickets/department-wise-tickets")}
           padding
           border
-          title={"Department Tickets (Last Month)"}
-        >
+          title={"Department Tickets - March 2025"}>
           <DonutChart
-            series={[30, 44, 50]}
-            labels={["IT", "Maintainance", "Admin"]}
-            colors={["#86D1DE", "#67B6DB", "#00CDD1"]}
+            onClick={() => navigate("/app/tickets/department-wise-tickets")}
+            series={[30, 44, 50, 41, 38, 49, 40]}
+            labels={[
+              "IT",
+              "Maintainance",
+              "Admin",
+              "Sales",
+              "Tech",
+              "HR",
+              "Finance",
+            ]}
+            colors={[
+              "#86D1DE",
+              "#67B6DB",
+              "#00CDD1",
+              "#007dd1",
+              "#00d0b8",
+              "#005bd1",
+              "#3700b9",
+            ]}
             centerLabel={"Tickets"}
-            tooltipValue={[30, 44, 50]}
+            tooltipValue={[30, 44, 50, 41, 38, 49, 40]}
           />
         </WidgetSection>,
       ],
