@@ -3,6 +3,7 @@ import { Chip } from "@mui/material";
 
 const VisitorReports = () => {
   const meetingReportsColumn = [
+    { field: "srNo", headerName: "Sr No" },
     { field: "name", headerName: "Name" },
     { field: "department", headerName: "Address" },
     { field: "date", headerName: "Email" },
@@ -42,6 +43,7 @@ const VisitorReports = () => {
 
   const rows = [
     {
+      srNo: 1,
       name: "Sam",
       department: "Mapusa",
       date: "test.email@gmail.com",
@@ -52,6 +54,7 @@ const VisitorReports = () => {
       status: "View Details",
     },
     {
+      srNo: 2,
       name: "Alice",
       department: "Mapusa",
       date: "test.email@gmail.com",
@@ -62,6 +65,7 @@ const VisitorReports = () => {
       status: "View Details",
     },
     {
+      srNo: 3,
       name: "Bob",
       department: "Mapusa",
       date: "test.email@gmail.com",
@@ -72,6 +76,7 @@ const VisitorReports = () => {
       status: "View Details",
     },
     {
+      srNo: 4,
       name: "Emma",
       department: "Mapusa",
       date: "test.email@gmail.com",
@@ -82,6 +87,7 @@ const VisitorReports = () => {
       status: "View Details",
     },
     {
+      srNo: 5,
       name: "John",
       department: "Mapusa",
       date: "test.email@gmail.com",
@@ -92,6 +98,7 @@ const VisitorReports = () => {
       status: "View Details",
     },
   ];
+  
 
   return (
     <div className="flex flex-col gap-8 p-4">
@@ -100,6 +107,7 @@ const VisitorReports = () => {
           search={true}
           searchColumn={"Name"}
           buttonTitle={"Export"}
+          tableTitle={"Visitor Reports"}
           data={rows}
           columns={meetingReportsColumn}
         />

@@ -85,7 +85,7 @@ const ManageVisitors = () => {
   });
 
   const visitorsColumns = [
-    { field: "id", headerName: "ID",sort:"desc" },
+    { field: "srNo", headerName: "Sr No",sort:"desc" },
     { field: "firstName", headerName: "First Name" },
     { field: "lastName", headerName: "Last Name" },
     { field: "email", headerName: "Email" },
@@ -153,7 +153,7 @@ const ManageVisitors = () => {
         tableTitle={"Visitors Today"}
         data={[
           ...visitorsData.map((item, index) => ({
-            id: index + 1,
+            srNo: index + 1,
             mongoId: item._id,
             firstName: item.firstName,
             lastName: item.lastName,
