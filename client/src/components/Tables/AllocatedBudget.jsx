@@ -28,12 +28,10 @@ const AllocatedBudget = ({financialData}) => {
           <div className="flex justify-between items-center w-full px-4 py-2">
             <span className="w-1/3 text-sm text-muted font-pmedium text-title" >MONTH</span>
             <span className="w-1/3 text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              <MdTrendingUp className="text-yellow-600 w-4 h-4" />
-              PROJECTED
+               PROJECTED
             </span>
             <span className="w-1/3 text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              <BsCheckCircleFill className="text-green-600 w-4 h-4" />
-              ACTUAL
+               ACTUAL
             </span>
           </div>
         </div>
@@ -48,14 +46,15 @@ const AllocatedBudget = ({financialData}) => {
               className="border-b-[1px] border-borderGray"
             >
               <div className="flex justify-between items-center w-full px-4">
-                <span className="w-1/3 text-content font-pmedium">{data.month}</span>
+                <span className="w-1/3 text-content font-pmedium">{`${new Date(data.month).toLocaleString("default", { month: "short" })}-${new Date(data.month).getFullYear()}`}
+                </span>
                 <span className="w-1/3 text-content font-pmedium flex items-center gap-1">
                   <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
-                  {"INR " + data.projectedAmount}
+                  {"INR " + Number(data.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                 </span>
                 <span className="w-1/3 text-content font-pmedium flex items-center gap-1">
                   <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />
-                  {"INR " + data.amount}
+                  {"INR " + Number(data.amount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                 </span>
               </div>
             </AccordionSummary>

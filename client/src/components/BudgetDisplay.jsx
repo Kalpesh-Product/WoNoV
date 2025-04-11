@@ -21,6 +21,7 @@ import MuiModal from "../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { MdTrendingUp } from "react-icons/md";
 import { BsCheckCircleFill } from "react-icons/bs";
+import AllocatedBudget from "./Tables/AllocatedBudget";
 
 const BudgetDisplay = ({ budgetData }) => {
   const axios = useAxiosPrivate();
@@ -189,60 +190,16 @@ const BudgetDisplay = ({ budgetData }) => {
         </WidgetSection>
       </div>
 
- <div className="flex justify-end">
-            <PrimaryButton
-              title={"Request Budget"}
-              padding="px-5 py-2" fontSize="text-base"
-              handleSubmit={() => setOpenModal(true)}
-            />
-          </div>
-      <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <span className="text-title font-pmedium text-primary">
-              Allocated Budget :{" "}
-            </span>
-            <span className="text-title font-pmedium">
-              {"INR " + Number(500000).toLocaleString("en-IN")}
-            </span>
-          </div>
-        </div>
-        <div>
-          {financialData.map((data, index) => (
-            <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel\u20B9{index}-content`}
-                id={`panel\u20B9{index}-header`}
-                className="border-b-[1px] border-borderGray"
-              >
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium">
-                    {data.month}
-                  </span>
-                 <span className="text-subtitle font-pmedium flex items-center gap-1 ">
-                                   <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
-                                   {"INR "+data.projectedAmount}
-                                   </span>
-                                   <span className="text-subtitle font-pmedium flex items-center gap-1 ">
-                                   <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />
-                                    {"INR "+data.amount}
-                                   </span>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
-                <AgTable
-                  search={true}
-                  searchColumn={"Department"}
-                  data={data.tableData.rows}
-                  columns={data.tableData.columns}
-                  tableHeight={250}
-                />
-              </AccordionDetails>
-            </Accordion>
-          ))}
-        </div>
+      <div className="flex justify-end">
+        <PrimaryButton
+          title={"Request Budget"}
+          padding="px-5 py-2"
+          fontSize="text-base"
+          handleSubmit={() => setOpenModal(true)}
+        />
       </div>
+      
+      <AllocatedBudget financialData={financialData}/>
       <MuiModal
         title="Request Budget"
         open={openModal}

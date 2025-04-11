@@ -10,6 +10,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import DataCard from "../../../../components/DataCard";
 import { MdTrendingUp } from "react-icons/md";
 import { BsCheckCircleFill } from "react-icons/bs";
+import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 
 const FinanceBudget = () => {
   // Data for the chart
@@ -113,7 +114,7 @@ const FinanceBudget = () => {
   // Data array for rendering the Accordion
   const financialData = [
     {
-      month: "April 2025",
+      month: "April 2024",
       projectedAmount: 18000,
       amount: "15000",
       tableData: {
@@ -130,7 +131,7 @@ const FinanceBudget = () => {
             category: "Hosting",
             expenseName: "Hosting Fee",
             amount: "2500",
-            paymentDate: "2025-04-10",
+            paymentDate: "2024-04-10",
             status: "Paid",
           },
           {
@@ -138,7 +139,7 @@ const FinanceBudget = () => {
             category: "Domain",
             expenseName: "Domain Renewal",
             amount: "1500",
-            paymentDate: "2025-04-12",
+            paymentDate: "2024-04-12",
             status: "Pending",
           },
           {
@@ -146,7 +147,7 @@ const FinanceBudget = () => {
             category: "Software",
             expenseName: "SaaS Subscription",
             amount: "4500",
-            paymentDate: "2025-04-15",
+            paymentDate: "2024-04-15",
             status: "Paid",
           },
           {
@@ -154,14 +155,14 @@ const FinanceBudget = () => {
             category: "Marketing",
             expenseName: "Ad Campaign",
             amount: "3500",
-            paymentDate: "2025-04-20",
+            paymentDate: "2024-04-20",
             status: "Paid",
           },
         ],
       },
     },
     {
-      month: "May 2025",
+      month: "May 2024",
       projectedAmount: 23000,
       amount: "20000",
       tableData: {
@@ -178,7 +179,7 @@ const FinanceBudget = () => {
             category: "Hosting",
             expenseName: "VPS Fee",
             amount: "3000",
-            paymentDate: "2025-05-05",
+            paymentDate: "2024-05-05",
             status: "Paid",
           },
           {
@@ -186,7 +187,7 @@ const FinanceBudget = () => {
             category: "Software",
             expenseName: "CRM Subscription",
             amount: "5500",
-            paymentDate: "2025-05-07",
+            paymentDate: "2024-05-07",
             status: "Pending",
           },
           {
@@ -194,7 +195,7 @@ const FinanceBudget = () => {
             category: "Marketing",
             expenseName: "Social Media Ads",
             amount: "7000",
-            paymentDate: "2025-05-12",
+            paymentDate: "2024-05-12",
             status: "Paid",
           },
           {
@@ -202,14 +203,14 @@ const FinanceBudget = () => {
             category: "Office",
             expenseName: "Internet Bill",
             amount: "2000",
-            paymentDate: "2025-05-18",
+            paymentDate: "2024-05-18",
             status: "Paid",
           },
         ],
       },
     },
     {
-      month: "June 2025",
+      month: "June 2024",
       projectedAmount: 20000,
       amount: "18500",
       tableData: {
@@ -226,7 +227,7 @@ const FinanceBudget = () => {
             category: "Software",
             expenseName: "Accounting Software",
             amount: "5000",
-            paymentDate: "2025-06-03",
+            paymentDate: "2024-06-03",
             status: "Paid",
           },
           {
@@ -234,7 +235,7 @@ const FinanceBudget = () => {
             category: "Marketing",
             expenseName: "Email Marketing",
             amount: "3000",
-            paymentDate: "2025-06-08",
+            paymentDate: "2024-06-08",
             status: "Pending",
           },
           {
@@ -242,7 +243,7 @@ const FinanceBudget = () => {
             category: "Office",
             expenseName: "Electricity Bill",
             amount: "1500",
-            paymentDate: "2025-06-10",
+            paymentDate: "2024-06-10",
             status: "Paid",
           },
           {
@@ -250,14 +251,14 @@ const FinanceBudget = () => {
             category: "Salaries",
             expenseName: "Freelancer Payment",
             amount: "8000",
-            paymentDate: "2025-06-15",
+            paymentDate: "2024-06-15",
             status: "Paid",
           },
         ],
       },
     },
     {
-      month: "July 2025",
+      month: "July 2024",
       projectedAmount: 25000,
       amount: "22000",
       tableData: {
@@ -274,7 +275,7 @@ const FinanceBudget = () => {
             category: "Software",
             expenseName: "Cloud Storage",
             amount: "2000",
-            paymentDate: "2025-07-02",
+            paymentDate: "2024-07-02",
             status: "Paid",
           },
           {
@@ -282,7 +283,7 @@ const FinanceBudget = () => {
             category: "Marketing",
             expenseName: "Content Marketing",
             amount: "4000",
-            paymentDate: "2025-07-06",
+            paymentDate: "2024-07-06",
             status: "Pending",
           },
           {
@@ -290,7 +291,7 @@ const FinanceBudget = () => {
             category: "Office",
             expenseName: "Rent",
             amount: "12000",
-            paymentDate: "2025-07-10",
+            paymentDate: "2024-07-10",
             status: "Paid",
           },
           {
@@ -298,14 +299,14 @@ const FinanceBudget = () => {
             category: "Salaries",
             expenseName: "Employee Bonus",
             amount: "5000",
-            paymentDate: "2025-07-20",
+            paymentDate: "2024-07-20",
             status: "Paid",
           },
         ],
       },
     },
     {
-      month: "August 2025",
+      month: "August 2024",
       projectedAmount: 21000,
       amount: "19500",
       tableData: {
@@ -322,7 +323,7 @@ const FinanceBudget = () => {
             category: "Hosting",
             expenseName: "Server Maintenance",
             amount: "4000",
-            paymentDate: "2025-08-04",
+            paymentDate: "2024-08-04",
             status: "Paid",
           },
           {
@@ -330,7 +331,7 @@ const FinanceBudget = () => {
             category: "Software",
             expenseName: "Subscription Fee",
             amount: "2000",
-            paymentDate: "2025-08-08",
+            paymentDate: "2024-08-08",
             status: "Pending",
           },
           {
@@ -338,7 +339,7 @@ const FinanceBudget = () => {
             category: "Marketing",
             expenseName: "PPC Ads",
             amount: "5000",
-            paymentDate: "2025-08-14",
+            paymentDate: "2024-08-14",
             status: "Paid",
           },
           {
@@ -346,7 +347,7 @@ const FinanceBudget = () => {
             category: "Office",
             expenseName: "Water Bill",
             amount: "1000",
-            paymentDate: "2025-08-18",
+            paymentDate: "2024-08-18",
             status: "Paid",
           },
         ],
@@ -404,57 +405,8 @@ const FinanceBudget = () => {
           fontSize="text-base"
         />
       </div>
-      <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <span className="text-title font-pmedium text-primary">
-              Allocated Budget :{" "}
-            </span>
-            <span className="text-title font-pmedium">
-              {"INR " + Number("500000").toLocaleString("en-IN")}
-            </span>
-          </div>
-        </div>
-        <div>
-          {financialData.map((data, index) => (
-            <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel{index}-content`}
-                id={`panel{index}-header`}
-                className="border-b-[1px] border-borderGray"
-              >
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium">
-                    {data.month}
-                  </span>
-                    <span className="text-subtitle font-pmedium flex items-center gap-1 ">
-                                    <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
-                                    {"INR "+Number(data.projectedAmount).toLocaleString("en-GB")}
-                                    </span>
-                  <span className="text-subtitle font-pmedium flex items-center gap-1 ">
-                    <BsCheckCircleFill
-                      title="Actual"
-                      className="text-green-600 w-4 h-4"
-                    />
-                    {"INR " + Number(data.amount).toLocaleString("en-GB")}
-                  </span>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                <AgTable
-                  search={data.tableData?.rows?.length > 10}
-                  searchColumn={"Department"}
-                  data={data.tableData.rows}
-                  columns={data.tableData.columns}
-                  tableHeight={400}
-                  hideFilter={data.tableData.rows.length < 10}
-                />
-              </AccordionDetails>
-            </Accordion>
-          ))}
-        </div>
-      </div>
+      
+      <AllocatedBudget financialData={financialData}/>
     </div>
   );
 };
