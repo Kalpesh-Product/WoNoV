@@ -1,15 +1,19 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanTime from "../../utils/humanTime";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { TextField } from "@mui/material";
-import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import { TimePicker } from "@mui/x-date-pickers";
+import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import { queryClient } from "../../main";
+import { toast } from "sonner";
 
 const ManageVisitors = () => {
   const axios = useAxiosPrivate();
@@ -39,11 +43,13 @@ const ManageVisitors = () => {
       purposeOfVisit: "",
       toMeet: "",
       checkIn: "",
+      checkOut: "",
     },
   });
   const handleEditToggle = () => {
     if (!isEditing && selectedVisitor) {
       reset({
+        id: selectedVisitor?.mongoId,
         firstName: selectedVisitor.firstName || "",
         lastName: selectedVisitor.lastName || "",
         address: selectedVisitor.address || "",
@@ -52,13 +58,34 @@ const ManageVisitors = () => {
         purposeOfVisit: selectedVisitor.purposeOfVisit || "",
         toMeet: selectedVisitor.toMeet || "",
         checkIn: selectedVisitor.checkIn ? selectedVisitor.checkIn : "",
+        checkOutRaw: selectedVisitor?.checkOutRaw
+          ? dayjs(selectedVisitor.checkOutRaw)
+          : null,
       });
     }
     setIsEditing(!isEditing);
   };
 
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (updatedData) => {
+      const response = await axios.patch(
+        `/api/visitors/update-visitor/${selectedVisitor.mongoId}`,
+        updatedData
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["visitors"] });
+      toast.success("Visitor updated successfully");
+      handleCloseModal();
+    },
+    onError: (error) => {
+      toast.error(error?.message);
+    },
+  });
+
   const visitorsColumns = [
-    { field: "id", headerName: "ID" },
+    { field: "id", headerName: "ID",sort:"desc" },
     { field: "firstName", headerName: "First Name" },
     { field: "lastName", headerName: "Last Name" },
     { field: "email", headerName: "Email" },
@@ -74,7 +101,9 @@ const ManageVisitors = () => {
         <div className="p-2">
           <PrimaryButton
             title={"View"}
-            handleSubmit={() => handleDetailsClick(params.data)}
+            handleSubmit={() => {
+              handleDetailsClick({ ...params.data });
+            }}
           />
         </div>
       ),
@@ -93,18 +122,26 @@ const ManageVisitors = () => {
     setIsModalOpen(true);
   };
 
-  const handleSumit = async (assetData) => {
-    if (modalMode === "add") {
-      try {
-      } catch (error) {
-        console.error("Error adding asset:", error);
-      }
-    } else if (modalMode === "edit") {
-      try {
-      } catch (error) {
-        console.error("Error updating asset:", error);
-      }
+  const submit = async (data) => {
+    console.log(data);
+    if (isEditing && selectedVisitor) {
+      const updatePayload = {
+        ...data,
+        checkOut: data.checkOutRaw
+          ? dayjs(data.checkOutRaw).toISOString()
+          : null,
+      };
+
+      delete updatePayload.toMeet;
+      delete updatePayload.checkIn;
+
+      mutate(updatePayload);
     }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setIsEditing(false);
   };
 
   return (
@@ -117,6 +154,7 @@ const ManageVisitors = () => {
         data={[
           ...visitorsData.map((item, index) => ({
             id: index + 1,
+            mongoId: item._id,
             firstName: item.firstName,
             lastName: item.lastName,
             address: item.address,
@@ -126,6 +164,8 @@ const ManageVisitors = () => {
             toMeet: !item?.toMeet
               ? null
               : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
+            checkInRaw: item.checkIn,
+            checkOutRaw: item.checkOut,
             checkIn: humanTime(item.checkIn),
             checkOut: item.checkOut ? humanTime(item.checkOut) : "",
           })),
@@ -135,14 +175,17 @@ const ManageVisitors = () => {
       />
       <MuiModal
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleCloseModal}
         title={"Visitor Detail"}
       >
         <div className="flex flex-col gap-4">
           <div className="flex justify-end">
-            <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
+            <PrimaryButton
+              handleSubmit={handleEditToggle}
+              title={isEditing ? "Cancel" : "Edit"}
+            />
           </div>
-          <form>
+          <form onSubmit={handleSubmit(submit)}>
             {!isVisitorsData ? (
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* First Name */}
@@ -272,9 +315,45 @@ const ManageVisitors = () => {
                     detail={selectedVisitor.purposeOfVisit}
                   />
                 )}
+                {/* Checkout time */}
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  {isEditing ? (
+                    <Controller
+                      name="checkOutRaw"
+                      control={control}
+                      render={({ field }) => (
+                        <TimePicker
+                          label="Checkout Time"
+                          value={field.value ? dayjs(field.value) : null}
+                          onChange={field.onChange}
+                          renderInput={(params) => (
+                            <TextField {...params} size="small" fullWidth />
+                          )}
+                        />
+                      )}
+                    />
+                  ) : (
+                    <DetalisFormatted
+                      title="Checkout Time"
+                      detail={
+                        selectedVisitor?.checkOutRaw
+                          ? humanTime(selectedVisitor.checkOutRaw)
+                          : ""
+                      }
+                    />
+                  )}
+                </LocalizationProvider>
               </div>
             ) : (
               []
+            )}
+            {isEditing && (
+              <PrimaryButton
+                disabled={isPending}
+                title={isPending ? "Saving..." : "Save"}
+                className="mt-2 w-full"
+                type="submit"
+              />
             )}
           </form>
         </div>

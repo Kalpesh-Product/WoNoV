@@ -273,7 +273,6 @@ const getTickets = async (req, res, next) => {
         ticketIssueTitle: ticketIssue ? ticketIssue.title : "Issue not found",
       };
     });
-
     return res.status(200).json(ticketsWithIssueTitle);
   } catch (error) {
     next(error);
