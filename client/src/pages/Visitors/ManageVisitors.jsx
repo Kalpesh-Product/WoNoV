@@ -107,12 +107,6 @@ const ManageVisitors = () => {
     }
   };
 
-  // useEffect(()=>{
-
-  //   const toMeets = selectedVisitor.map((vis)=>vis)
-  //   console.log(selectedVisitor)
-  // },[])
-
   return (
     <div className="p-4">
       <AgTable
@@ -120,7 +114,6 @@ const ManageVisitors = () => {
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"Visitors Today"}
-        // buttonTitle={"Add Asset"}
         data={[
           ...visitorsData.map((item, index) => ({
             id: index + 1,
@@ -134,7 +127,7 @@ const ManageVisitors = () => {
               ? null
               : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
             checkIn: humanTime(item.checkIn),
-            checkOut: humanTime(item.checkOut),
+            checkOut: item.checkOut ? humanTime(item.checkOut) : "",
           })),
         ]}
         columns={visitorsColumns}
@@ -143,7 +136,8 @@ const ManageVisitors = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={"Visitor Detail"}>
+        title={"Visitor Detail"}
+      >
         <div className="flex flex-col gap-4">
           <div className="flex justify-end">
             <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
@@ -278,53 +272,6 @@ const ManageVisitors = () => {
                     detail={selectedVisitor.purposeOfVisit}
                   />
                 )}
-
-                {/* To Meet */}
-                {isEditing ? (
-                  <Controller
-                    name="toMeet"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="To Meet"
-                        fullWidth
-                      />
-                    )}
-                  />
-                ) : (
-                  <DetalisFormatted
-                    title="To Meet"
-                    detail={selectedVisitor?.toMeet}
-                  />
-                )}
-
-                {/* Check In */}
-                {/* {isEditing ? (
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Controller
-                      name="checkIn"
-                      control={control}
-                      render={({ field }) => (
-                        <TimePicker
-                          {...field}
-                          size="small"
-                          label="Check In"
-                          slotProps={{
-                            textField: { fullWidth: true, size: "small" },
-                          }}
-                          render={(params) => <TextField {...params} />}
-                        />
-                      )}
-                    />
-                  </LocalizationProvider>
-                ) : (
-                  <DetalisFormatted
-                    title="Check In"
-                    detail={selectedVisitor.checkIn}
-                  />
-                )} */}
               </div>
             ) : (
               []

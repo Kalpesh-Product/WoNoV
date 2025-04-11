@@ -1,17 +1,30 @@
 import React from "react";
 import ReactApexChart from "react-apexcharts";
 
-const DonutChart = ({ centerLabel, labels, colors, series, tooltipValue }) => {
+const DonutChart = ({
+  centerLabel,
+  labels,
+  colors,
+  series,
+  tooltipValue,
+  handleClick,
+  width
+}) => {
   const chartData = {
-    series: series, 
+    series: series,
     labels: labels,
-    colors: colors, 
+    colors: colors,
   };
 
   const chartOptions = {
     chart: {
       type: "donut",
-      fontFamily: "Poppins-Regular"
+      fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => {
+          handleClick?.(); // trigger the click handler
+        }
+      }
     },
     colors: chartData.colors,
     labels: chartData.labels,
@@ -25,7 +38,8 @@ const DonutChart = ({ centerLabel, labels, colors, series, tooltipValue }) => {
     tooltip: {
       enabled: true,
       y: {
-        formatter: (val, { seriesIndex }) => `${tooltipValue[seriesIndex]} (${val.toFixed(1)}%)`,
+        formatter: (val, { seriesIndex }) =>
+          `${tooltipValue[seriesIndex]} (${val.toFixed(1)}%)`,
       },
     },
     plotOptions: {
@@ -45,7 +59,7 @@ const DonutChart = ({ centerLabel, labels, colors, series, tooltipValue }) => {
       },
     },
   };
-
+  
   return (
     <div className="rounded-md">
       <ReactApexChart
@@ -53,6 +67,7 @@ const DonutChart = ({ centerLabel, labels, colors, series, tooltipValue }) => {
         series={chartData.series}
         type="donut"
         height={350}
+        width={width || "100%"}
       />
     </div>
   );
