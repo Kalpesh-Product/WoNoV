@@ -1,13 +1,10 @@
-import React from "react";
 import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
   MdOutlineMiscellaneousServices,
-  MdRebaseEdit,
 } from "react-icons/md";
 import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import WidgetSection from "../../../components/WidgetSection";
-import LayerBarGraph from "../../../components/graphs/LayerBarGraph";
 import BarGraph from "../../../components/graphs/BarGraph";
 import FinanceCard from "../../../components/FinanceCard";
 import PieChartMui from "../../../components/graphs/PieChartMui";
@@ -15,8 +12,6 @@ import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { LuHardDriveUpload } from "react-icons/lu";
-import { CgWebsite } from "react-icons/cg";
 import DataCard from "../../../components/DataCard";
 
 const FinanceDashboard = () => {
