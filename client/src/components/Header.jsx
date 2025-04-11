@@ -143,12 +143,12 @@ const Header = () => {
                 <h1 className="text-xl font-semibold text-right">
                   {auth.user.firstName}
                 </h1>
-                {/* <span className="text-content">
+                <span className="text-content">
                   {auth.user.designation.split(" ").length > 3
                     ? auth.user.designation.split(" ").slice(0, 3).join(" ") +
                       "..."
                     : auth.user.designation}
-                </span> */}
+                </span>
                 {isHovered && auth.user.designation.split(" ").length > 1 ? (
                   <div className="motion-preset-slide-up-sm absolute top-14 right-0 bg-white border-default border-primary rounded-md p-4 w-96">
                     <span>{auth.user.designation}</span>
