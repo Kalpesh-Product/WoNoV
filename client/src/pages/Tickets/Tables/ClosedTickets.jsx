@@ -14,13 +14,13 @@ const ClosedTickets = ({ title }) => {
     },
     initialData: [], 
   });
-  console.log(data.length)
 
   const transformTicketsData = (tickets) => {
     return !tickets.length
       ? []
       : tickets.map((ticket,index) => ({
-          id: index + 1,
+          srNo: index + 1,
+          id: ticket._id,
           raisedBy: ticket.raisedBy?.firstName || "Unknown",
           fromDepartment: ticket.raisedToDepartment?.name || "N/A",
           ticketTitle: ticket?.ticket || "No Title",
@@ -30,7 +30,7 @@ const ClosedTickets = ({ title }) => {
 
   const rows = isLoading ? [] : transformTicketsData(data);
   const recievedTicketsColumns = [
-    {field : "id", headerName: "Ticket ID", sort:"desc" },
+    { field: "srNo", headerName: "Sr No" },
     { field: "raisedBy", headerName: "Raised By" },
     { field: "fromDepartment", headerName: "From Department" },
     { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },

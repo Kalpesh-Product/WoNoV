@@ -129,36 +129,42 @@ function Row(props) {
 
 const rows = [
   {
+    srNo: 1,
     raisedBy: "Abrar Shaikh",
     department: "IT",
     ticketTitle: "Wifi is not working",
     status: "Pending",
   },
   {
+    srNo: 2,
     raisedBy: "Abrar Shaikh",
     department: "IT",
     ticketTitle: "Ac is not working",
     status: "Pending",
   },
   {
+    srNo: 3,
     raisedBy: "Abrar Shaikh",
     department: "IT",
     ticketTitle: "Page is not loading",
     status: "Pending",
   },
   {
+    srNo: 4,
     raisedBy: "Abrar Shaikh",
     department: "IT",
     ticketTitle: "Need More accessories",
     status: "Pending",
   },
   {
+    srNo: 5,
     raisedBy: "Abrar Shaikh",
     department: "IT",
     ticketTitle: "Need More accessories",
     status: "Pending",
   },
 ];
+
 
 const TicketSettingsnew = () => {
   return (
@@ -206,6 +212,21 @@ const TicketSettingsnew = () => {
           <Table aria-label="collapsible table">
             <TableHead sx={{ backgroundColor: "#f8f9f9", height: "10px" }}>
               <TableRow sx={{ height: "10px" }}>
+                <TableCell
+                  align="center"
+                  sx={{
+                    backgroundColor: "#f4f4f4", // Light gray background
+                    fontWeight: "bold", // Bold font
+                    borderBottom: "2px solid #ddd", // Border at the bottom
+                    color: "#333", // Text color
+                     // Uppercase text
+                    fontSize: "14px", // Font size
+                    letterSpacing: "0.5px", // Letter spacing
+                    padding: "10px", // Padding
+                  }}
+                >
+                  Sr No
+                </TableCell>
                 <TableCell
                   align="center"
                   sx={{

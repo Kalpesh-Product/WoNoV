@@ -18,28 +18,28 @@ const BulkUpload = () => {
   const bulkUploadData = [
     {
       srNo: 1,
-      templateName: "Upload Budget",
+      templateName: "Upload Employee",
       uploadedBy: "John Doe",
-      date: "2025-03-01"
+      date: "01-03-2025",
     },
     {
       srNo: 2,
-      templateName: "Upload Budget",
+      templateName: "Upload Employee",
       uploadedBy: "Jane Smith",
-      date: "2025-03-08"
+      date: "08-03-2025",
     },
     {
       srNo: 3,
-      templateName: "Upload Budget",
+      templateName: "Upload Employee",
       uploadedBy: "Michael Johnson",
-      date: "2025-03-15"
+      date: "15-03-2025",
     },
     {
       srNo: 4,
-      templateName: "Upload Budget",
+      templateName: "Upload Employee",
       uploadedBy: "Emily Davis",
-      date: "2025-03-22"
-    }
+      date: "22-03-2025",
+    },
   ];
 
   return (

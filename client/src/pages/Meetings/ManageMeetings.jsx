@@ -255,6 +255,7 @@ const ManageMeetings = () => {
   //---------------------------------Event handlers----------------------------------------//
 
   const columns = [
+    { field: "srNo", headerName: "Sr No" },
     { field: "roomName", headerName: "Room Name" },
     { field: "date", headerName: "Date" },
     { field: "startTime", headerName: "Start Time" },
@@ -360,10 +361,10 @@ const ManageMeetings = () => {
     <div className="p-4 flex flex-col gap-4">
       {!isMeetingsLoading ? (
         <AgTable
-          key={filteredMeetings.length}
+          key={transformedMeetings.length}
           search
           tableTitle={"Manage Meetings"}
-          data={filteredMeetings || []}
+          data={transformedMeetings || []}
           columns={columns}
         />
       ) : (

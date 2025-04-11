@@ -111,6 +111,9 @@ const masterPermissions = [
         ],
       },
       {
+        name: "Mix Bag",
+      },
+      {
         name: "Data",
         submodules: [
           {
@@ -230,7 +233,7 @@ const masterPermissions = [
             actions: ["View", "Edit"],
           },
         ],
-      }
+      },
     ],
   },
 ];

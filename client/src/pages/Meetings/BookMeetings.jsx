@@ -142,7 +142,7 @@ const BookMeetings = () => {
   }));
 
   const myMeetingsColumn = [
-    { field: "id", headerName: "SR NO", sort: "desc" },
+    { field: "id", headerName: "Sr No", sort: "desc" },
     { field: "agenda", headerName: "Agenda", flex: 1 },
     { field: "date", headerName: "Date" },
     { field: "roomName", headerName: "Room Name" },
