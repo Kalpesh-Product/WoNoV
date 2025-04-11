@@ -17,6 +17,7 @@ const AccessTree = () => {
   const fetchHierarchy = async () => {
     try {
       const response = await axios.get("/api/company/company-hierarchy");
+     
       return response.data.generateHierarchy;
     } catch (error) {
       toast.error(error.message);
@@ -48,6 +49,8 @@ const AccessTree = () => {
   const handleBack = () => {
     setSelectedUsers((prev) => prev.slice(0, -1)); 
   };
+
+  
 
   if (isPending) {
     return (
@@ -124,41 +127,55 @@ const AccessTree = () => {
   );
 };
 
+
 const HierarchyCard = ({ user, handleSelectUser, isTopLevel }) => {
   const navigate = useNavigate();
 
+  const getInitials = (name) => {
+    const names = name.trim().split(" ");
+    const firstInitial = names[0]?.[0] || '';
+    const lastInitial = names.length > 1 ? names[names.length - 1]?.[0] : '';
+    return `${firstInitial} ${lastInitial}`;
+  };
   return (
     <div
-      className={`bg-white flex flex-col shadow-md border border-gray-300 rounded-lg p-4 pt-0 px-0 text-center cursor-pointer relative w-60 transition ${
-        isTopLevel ? "border-2 border-primary" : ""
-      }`}
-    >
-      <div className="w-full flex flex-col justify-center">
-        <div className="absolute -top-7 left-[6rem] border-default border-primary rounded-full w-12 h-12 bg-red-50"></div>
-      </div>
-      <div
-        onClick={() => navigate("permissions", { state: { user } })}
-        className="bg-primary text-white p-2 pt-4 rounded-t-md"
-      >
-        <span className="text-subtitle font-semibold">{user.name}</span>
-      </div>
-      <span className="text-content mt-2">
-        {user.designation.length > 20
-          ? user.designation.slice(0, 20) + "..."
-          : user.designation}
-      </span>
-      <span className="text-small text-primary">{user.email}</span>
+    className={`bg-white flex flex-col shadow-md border border-gray-300 rounded-lg p-4 pt-0 px-0 text-center cursor-pointer relative w-60 transition ${
+      isTopLevel ? "border-2 border-primary" : ""
+    }`}
+  >
+ 
+ 
 
-      {user.subordinates && user.subordinates.length > 0 && (
-        <p
-          onClick={() => handleSelectUser(user)}
-          className="mt-2 text-xs text-gray-500 hover:underline"
-        >
-          {user.subordinates.length} Subordinate
-          {user.subordinates.length > 1 ? "s" : ""}
-        </p>
-      )}
+    <div
+      onClick={() => navigate("permissions", { state: { user } })}
+      className="bg-primary text-white p-2 pt-4 rounded-t-md"
+    >
+        <div className="w-full flex flex-col justify-center">
+  <div className="absolute -top-7 left-[6rem] border border-primary rounded-full w-12 h-12 bg-red-50 flex items-center justify-center text-black text-subtitle font-semibold text-sm">
+    {getInitials(user.name)}
+  </div>
+</div>
+      <span className="text-subtitle font-semibold">{user.name}</span>
     </div>
+    <span className="text-content mt-2">
+      {user.designation.length > 20
+        ? user.designation.slice(0, 20) + "..."
+        : user.designation}
+    </span>
+    <span className="text-small text-primary">{user.email}</span>
+
+    {user.subordinates && user.subordinates.length > 0 && (
+      <p
+        onClick={() => handleSelectUser(user)}
+        className="mt-2 text-xs text-gray-500 hover:underline"
+      >
+        {user.subordinates.length} Subordinate
+        {user.subordinates.length > 1 ? "s" : ""}
+      </p>
+    )}
+  </div>
+  
+  
   );
 };
 
