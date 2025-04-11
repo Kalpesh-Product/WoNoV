@@ -6,7 +6,7 @@ const DataCard = ({ title, description, data, route }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="group transition-colors duration-200 p-6 rounded-xl text-left w-full  shadow-md">
+    <div className="transition-colors duration-200 p-6 rounded-xl text-left w-full  shadow-md">
       <div className="flex justify-between items-center mb-4">
         <div className="text-title font-semibold text-black ">
           {title}
@@ -25,12 +25,12 @@ const DataCard = ({ title, description, data, route }) => {
         <motion.div
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.8 }}
-          className="cursor-pointer p-2 rounded-full group-hover:bg-primary transition-colors duration-200"
+          className="cursor-pointer p-2 rounded-full hover:bg-primary transition-colors duration-200 group"
           onClick={() => navigate(route)}
         >
           <FaArrowRight
             size={12}
-            className="text-black group-hover:text-white transition-colors duration-200"
+            className="text-black group-hover:text-white transition-colors"
           />
         </motion.div>
       </div>

@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import useAuth from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import FinanceCard from "../../components/FinanceCard";
 
 const TicketDashboard = () => {
   const axios = useAxiosPrivate();
@@ -134,99 +135,45 @@ const TicketDashboard = () => {
       ],
     },
     {
-      layout: 2,
+      layout: 3,
       widgets: [
-        <div className="  rounded-md">
-          <div className="">
-            <WidgetSection layout={2} border title={"Live Tickets"}>
-              <TicketCard
-                title={"MT. AV. Performance"}
-                bgcolor={"#60A5F9"}
-                data={"70%"}
-                titleColor={"white"}
-                fontColor={"white"}
-                height={"10rem"}
-              />
-              <TicketCard
-                title={"Immediate Attended"}
-                data={"12"}
-                bgcolor={"#FF0000"}
-                titleColor={"white"}
-                fontColor={"white"}
-                height={"10rem"}
-              />
-              <TicketCard
-                title={"Medium Attended"}
-                data={"10"}
-                bgcolor={"#FFBF42"}
-                titleColor={"white"}
-                fontColor={"white"}
-                height={"10rem"}
-              />
-              <TicketCard
-                title={"Low Attended"}
-                data={"26"}
-                bgcolor={"#01D870"}
-                titleColor={"white"}
-                fontColor={"white"}
-                height={"10rem"}
-              />
-            </WidgetSection>
-          </div>
+        <div className="rounded-md">
+          <FinanceCard
+            cardTitle="Live Tickets"
+            timePeriod="Today"
+            highlightNegativePositive={true}
+            disableColorChange
+            descriptionData={[
+              { title: "MT. AV. Performance", value: "70%",route:"/app/tickets/manage-tickets" },
+              { title: "Immediate Attended", value: "12",route:"/app/tickets/manage-tickets" },
+              { title: "Medium Attended", value: "10",route:"/app/tickets/manage-tickets" },
+              { title: "Low Attended", value: "26",route:"/app/tickets/manage-tickets" },
+            ]}
+          />
         </div>,
 
-        <div className=" rounded-md flex flex-col gap-4">
-          <div className=" rounded-md">
-            <WidgetSection layout={3} border title={"Department Tickets List"}>
-              <TicketCard
-                title={"Open Tickets"}
-                titleColor={"#1E3D73"}
-                data={"200"}
-                fontColor={"red"}
-                fontFamily={"Poppins-Bold"}
-              />
-              <TicketCard
-                title={"Closed Tickets"}
-                titleColor={"#1E3D73"}
-                data={"75"}
-                fontColor={"#52CE71"}
-                fontFamily={"Poppins-Bold"}
-              />
-              <TicketCard
-                title={"Pending Tickets"}
-                titleColor={"#1E3D73"}
-                data={"100"}
-                fontColor={"#FFBF42"}
-                fontFamily={"Poppins-Bold"}
-              />
-            </WidgetSection>
-          </div>
-          <div className="rounded-md">
-            <WidgetSection layout={3} border title={"Personal Tickets List"}>
-              <TicketCard
-                title={"Accepted Tickets"}
-                data={"106"}
-                fontColor={"#1E3D73"}
-                fontFamily={"Poppins-Bold"}
-                titleColor={"#1E3D73"}
-              />
-              <TicketCard
-                title={"Assigned Tickets"}
-                data={"65"}
-                fontColor={"#1E3D73"}
-                fontFamily={"Poppins-Bold"}
-                titleColor={"#1E3D73"}
-              />
-              <TicketCard
-                title={"Escalated Tickets"}
-                data={"50"}
-                fontColor={"#1E3D73"}
-                fontFamily={"Poppins-Bold"}
-                titleColor={"#1E3D73"}
-              />
-            </WidgetSection>
-          </div>
-        </div>,
+          <FinanceCard
+            cardTitle="Department Tickets"
+            timePeriod="Today"
+            highlightNegativePositive={true}
+            disableColorChange
+            descriptionData={[
+              { title: "Open Tickets", value: "200",route:"/app/tickets/manage-tickets" },
+              { title: "Closed Tickets", value: "75",route:"/app/tickets/manage-tickets" },
+              { title: "Pending Tickets", value: "100",route:"/app/tickets/manage-tickets" },
+            ]}
+          />,
+          <FinanceCard
+            cardTitle="Personal Tickets"
+            timePeriod="Today"
+            highlightNegativePositive={true}
+            disableColorChange
+            descriptionData={[
+              { title: "Accepted Tickets", value: "106",route:"/app/tickets/manage-tickets" },
+              { title: "Assigned Tickets", value: "65",route:"/app/tickets/manage-tickets" },
+              { title: "Escalated Tickets", value: "50",route:"/app/tickets/manage-tickets" },
+            ]}
+          />
       ],
     },
   ];
