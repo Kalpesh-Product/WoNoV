@@ -3,7 +3,6 @@ import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
 
 const TeamMembers = () => {
-
   const AvatarCellRenderer = (props) => {
     const name = props.value;
     const initials = name
@@ -12,7 +11,7 @@ const TeamMembers = () => {
       .join("")
       .toUpperCase();
     const bgColor = `#${Math.floor(Math.random() * 16777215).toString(16)}`; // Random hex color
-  
+
     return (
       <div style={{ display: "flex", alignItems: "center" }}>
         <div
@@ -27,8 +26,7 @@ const TeamMembers = () => {
             justifyContent: "center",
             fontWeight: "bold",
             marginRight: "10px",
-          }}
-        >
+          }}>
           {initials}
         </div>
         <span>{name}</span>
@@ -46,7 +44,6 @@ const TeamMembers = () => {
 
     { field: "totalresolved", headerName: "Total Resolved", flex: 1 },
     { field: "resolutiontime", headerName: "Resolution Time", flex: 1 },
-    
   ];
   const rows = [
     {
@@ -98,21 +95,19 @@ const TeamMembers = () => {
       totalassigned: "19",
       totalresolved: "17",
       resolutiontime: "22 mins",
-    }
+    },
   ];
-  
-  
-  
+
   return (
     <div className="w-full rounded-md bg-white p-4 ">
       <div className="flex flex-row justify-between mb-4 items-center">
         <div>
           Total Team Members: <b>{rows.length}</b>
         </div>
-        <PrimaryButton title="Add New Member"></PrimaryButton>
+        {/* <PrimaryButton title="Add New Member"></PrimaryButton> */}
       </div>
       <div className=" w-full">
-        <AgTable data={rows} columns={laptopColumns} paginationPageSize={10}  />
+        <AgTable data={rows} columns={laptopColumns} paginationPageSize={10} />
       </div>
     </div>
   );

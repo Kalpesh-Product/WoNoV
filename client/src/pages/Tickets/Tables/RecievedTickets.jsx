@@ -127,8 +127,8 @@ const RecievedTickets = ({ title }) => {
   };
 
   const transformTicketsData = (tickets) => {
-    if(!tickets.length){
-      return []
+    if (!tickets.length) {
+      return [];
     }
     return tickets.map((ticket,index) => ({
       srNo: index+1,

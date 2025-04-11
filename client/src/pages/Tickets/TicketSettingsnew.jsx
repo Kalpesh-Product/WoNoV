@@ -306,7 +306,7 @@ const TicketSettingsnew = () => {
             </TableHead>
             <TableBody>
               {rows.map((row) => (
-                <Row key={row.name} row={row} />
+                <Row key={row.srNo} row={row} />
               ))}
             </TableBody>
           </Table>

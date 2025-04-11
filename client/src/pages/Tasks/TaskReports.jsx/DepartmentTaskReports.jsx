@@ -20,7 +20,7 @@ const DepartmentTaskReports = () => {
   });
 
   const departmentTaskReportsColumns = [
-    { field: "id", headerName: "ID", width: 50 },
+    { field: "srNo", headerName: "Sr No", width: 50 },
     { field: "task", headerName: "Task", width: 250 },
     { field: "project", headerName: "Project", width: 200 },
     { field: "department", headerName: "Department", width: 200 },
@@ -122,7 +122,7 @@ const DepartmentTaskReports = () => {
           search={true}
           tableTitle={"Department Task Reports"}
           data={isLoading? []:[...taskList.map((task, index)=>({
-            id : index + 1,
+            srNo : index + 1,
             task:task.taskName,
             project : task.project.projectName,
             department : task.project.department.name,

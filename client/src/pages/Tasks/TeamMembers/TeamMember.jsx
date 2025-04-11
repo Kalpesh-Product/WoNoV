@@ -19,6 +19,7 @@ const TeamMember = () => {
   });
 
   const teamMembersColumn = [
+    { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "name", headerName: "Name", flex: 1 },
     { field: "email", headerName: "Email", flex: 1 },
     { field: "role", headerName: "Role", flex: 1 },
@@ -40,7 +41,7 @@ const TeamMember = () => {
 
   const teamMembersData = [
     {
-      id: 1,
+      srNo: 1,
       name: "John Doe",
       email: "john.doe@example.com",
       role: "Frontend Dev",
@@ -49,7 +50,7 @@ const TeamMember = () => {
       status: "Active",
     },
     {
-      id: 2,
+      srNo: 2,
       name: "Jane Smith",
       email: "jane.smith@example.com",
       role: "Backend Dev",
@@ -58,7 +59,7 @@ const TeamMember = () => {
       status: "Away",
     },
     {
-      id: 3,
+      srNo: 3,
       name: "Alice Johnson",
       email: "alice.johnson@example.com",
       role: "Tester",
@@ -67,7 +68,7 @@ const TeamMember = () => {
       status: "Offline",
     },
     {
-      id: 4,
+      srNo: 4,
       name: "Robert Brown",
       email: "robert.brown@example.com",
       role: "Frontend Dev",
@@ -76,7 +77,7 @@ const TeamMember = () => {
       status: "Active",
     },
     {
-      id: 5,
+      srNo: 5,
       name: "Emily Davis",
       email: "emily.davis@example.com",
       role: "Backend Dev",
@@ -85,7 +86,7 @@ const TeamMember = () => {
       status: "Active",
     },
     {
-      id: 6,
+      srNo: 6,
       name: "Michael Wilson",
       email: "michael.wilson@example.com",
       role: "Tester",
@@ -94,7 +95,7 @@ const TeamMember = () => {
       status: "Away",
     },
     {
-      id: 7,
+      srNo: 7,
       name: "Sophia Martinez",
       email: "sophia.martinez@example.com",
       role: "Frontend Dev",
@@ -103,7 +104,7 @@ const TeamMember = () => {
       status: "Offline",
     },
     {
-      id: 8,
+      srNo: 8,
       name: "Daniel Thomas",
       email: "daniel.thomas@example.com",
       role: "Backend Dev",
@@ -112,7 +113,7 @@ const TeamMember = () => {
       status: "Active",
     },
     {
-      id: 9,
+      srNo: 9,
       name: "Olivia Harris",
       email: "olivia.harris@example.com",
       role: "Tester",
@@ -121,7 +122,7 @@ const TeamMember = () => {
       status: "Away",
     },
     {
-      id: 10,
+      srNo: 10,
       name: "William Clark",
       email: "william.clark@example.com",
       role: "Frontend Dev",

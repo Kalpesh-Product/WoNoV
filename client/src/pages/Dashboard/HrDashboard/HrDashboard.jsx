@@ -510,8 +510,7 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection layout={1} border title={"Budget v/s Achievements"}>
             <LayerBarGraph data={data} options={optionss} />
             <hr />
@@ -593,14 +592,12 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection
             layout={1}
             border
             padding
-            title={"Department Wise Tasks% Vs Achievements in %"}
-          >
+            title={"Department Wise Tasks% Vs Achievements in %"}>
             <BarGraph
               data={rawSeries}
               options={options}
