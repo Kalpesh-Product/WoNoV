@@ -11,10 +11,12 @@ import { CgProfile } from "react-icons/cg";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import useAuth from "../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import FinanceCard from "../../components/FinanceCard";
 
 const TicketDashboard = () => {
   const axios = useAxiosPrivate();
+  const navigate = useNavigate();
   const { auth } = useAuth();
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
@@ -33,6 +35,17 @@ const TicketDashboard = () => {
       }
     },
   });
+
+  const masterDepartments = [
+    "IT",
+    "Admin",
+    "Tech",
+    "HR",
+    "Finance",
+    "Sales",
+    "Maintainance",
+  ];
+
   const ticketWidgets = [
     {
       layout: 1,
@@ -84,7 +97,8 @@ const TicketDashboard = () => {
           layout={1}
           padding
           border
-          title={"Total Tickets (Last Month)"}
+          titleLabel={"Last Month"}
+          title={"Total Tickets"}
         >
           <DonutChart
             series={[49, 21, 30]}
@@ -98,14 +112,24 @@ const TicketDashboard = () => {
           layout={1}
           padding
           border
-          title={"Department Tickets (Last Month)"}
+          titleLabel={"Current month"}
+          title={"Department Tickets"}
         >
           <DonutChart
-            series={[30, 44, 50]}
-            labels={["IT", "Maintainance", "Admin"]}
-            colors={["#86D1DE", "#67B6DB", "#00CDD1"]}
+            series={[10, 4, 0, 5, 3, 2, 5]}
+            labels={masterDepartments}
+            colors={[
+              "#211C84",
+              "#4D55CC",
+              "#7A73D1",
+              "#9EC6F3",
+              "#8F87F1",
+              "#BDDDE4",
+              "#C7D9DD",
+            ]}
             centerLabel={"Tickets"}
-            tooltipValue={[30, 44, 50]}
+            tooltipValue={[30, 44, 50, 22, 14, 6, 39]}
+            handleClick={() => navigate("reports")}
           />
         </WidgetSection>,
       ],

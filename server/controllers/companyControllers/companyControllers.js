@@ -15,6 +15,7 @@ const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const buildHierarchy = require("../../utils/generateHierarchy");
 const UserData = require("../../models/hr/UserData");
+const Role = require("../../models/roles/Roles");
 
 const addCompany = async (req, res, next) => {
   const logPath = "hr/HrLog";
@@ -259,12 +260,35 @@ const getCompanyData = async (req, res, next) => {
     }
 
     const fetchedData = await query.exec();
-
+    let transformedData = fetchedData;
     if (!fetchedData || !fetchedData[field]) {
       return res.status(400).json({ message: "Couldn't fetch the data" });
     }
 
+    if (field === "selectedDepartments") {
+      const departmentsWithManagers = await Promise.all(
+        fetchedData.selectedDepartments.map(async (dep) => {
+          if (!dep.admin) return { ...dep._doc, manager: null };
+
+          const manager = await UserData.findOne({
+            role: { $in: [dep.admin] },
+          }).select("firstName lastName");
+
+          console.log(manager);
+          return {
+            ...dep._doc,
+            admin: manager ? `${manager.firstName} ${manager.lastName}` : null,
+          };
+        })
+      );
+
+      return res
+        .status(200)
+        .json({ selectedDepartments: departmentsWithManagers });
+    }
+
     return res.status(200).json({ [field]: fetchedData[field] });
+    // return res.status(200).json({ [field]: transformedData[field] });
   } catch (error) {
     next(error);
   }

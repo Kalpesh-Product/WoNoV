@@ -39,6 +39,7 @@ const Attendance = () => {
   const fetchAttendance = async () => {
     try {
       const response = await axios.get(`/api/attendance/get-attendance/${id}`);
+      console.log(response.data);
       return response.data;
     } catch (error) {
       throw new Error(error.response.data.message);
@@ -52,7 +53,10 @@ const Attendance = () => {
 
   const { mutate: correctionPost, isPending: correctionPending } = useMutation({
     mutationFn: async (data) => {
-      const response = await axios.patch("/api/attendance/correct-attendance", {...data,empId:id});
+      const response = await axios.patch("/api/attendance/correct-attendance", {
+        ...data,
+        empId: id,
+      });
       return response.data;
     },
     onSuccess: function (data) {
@@ -66,16 +70,16 @@ const Attendance = () => {
     },
   });
   const attendanceColumns = [
-    // { field: "date", headerName: "Date", width: 200 },
+    { field: "id", headerName: "Sr.No", width: 100 },
+    { field: "date", headerName: "Date", width: 200 },
     { field: "inTime", headerName: "In Time" },
     { field: "outTime", headerName: "Out Time" },
     { field: "workHours", headerName: "Work Hours" },
     { field: "breakHours", headerName: "Break Hours" },
 
     { field: "totalHours", headerName: "Total Hours" },
-    { field: "entryType", headerName: "Entry Type" },
+    // { field: "entryType", headerName: "Entry Type" },
   ];
-
 
   //Attendance graph options
 
@@ -348,6 +352,14 @@ const Attendance = () => {
     correctionPost(data);
   };
 
+  // Convert milliseconds to hours and minutes (e.g., "8:30")
+  const formatHours = (ms) => {
+    const totalMinutes = Math.floor(ms / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}:${minutes < 10 ? "0" + minutes : minutes}`;
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -358,7 +370,7 @@ const Attendance = () => {
         </WidgetSection>
       </div>
       <div className="border-default border-borderGray rounded-md">
-        <WidgetSection layout={1} title={"Current Month"}>
+        <WidgetSection layout={1} title={"Attendance - April 2025"}>
           <BarGraph data={attendanceSeries} options={options} />
         </WidgetSection>
       </div>
@@ -390,11 +402,23 @@ const Attendance = () => {
               : attendance.map((record, index) => ({
                   id: index + 1,
                   // date: humanDate(record.date),
+                  date: humanDate(record.inTime),
                   inTime: humanTime(record.inTime),
                   outTime: humanTime(record.outTime),
-                  workHours: record.workHours,
-                  breakHours: record.breakHours,
-                  totalHours: record.totalHours,
+                  // workHours: record.workHours,
+                  // workHours: "8",
+                  workHours: formatHours(
+                    new Date(record.outTime) - new Date(record.inTime)
+                  ),
+                  // breakHours: record.breakHours,
+                  breakHours: "1",
+                  // totalHours: record.totalHours,
+                  // totalHours: "9",
+                  totalHours: formatHours(
+                    new Date(record.outTime) -
+                      new Date(record.inTime) -
+                      1 * 60 * 60 * 1000
+                  ),
                   entryType: record.entryType,
                 }))
           }
@@ -406,13 +430,11 @@ const Attendance = () => {
         open={openModal}
         onClose={() => {
           setOpenModal(false);
-        }}
-      >
+        }}>
         <div>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4"
-          >
+            className="flex flex-col gap-4">
             <Controller
               name="targetedDay"
               control={control}

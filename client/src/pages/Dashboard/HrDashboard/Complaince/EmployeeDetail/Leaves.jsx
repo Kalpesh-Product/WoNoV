@@ -54,58 +54,137 @@ const Leaves = () => {
   // Prepare data for ApexCharts
   const months = leavesData.monthlyData.map((entry) => entry.month);
 
+  // const options = {
+  //   chart: {
+  //     type: 'bar',
+  //   },
+  //   xaxis: {
+  //     categories: ['Privileged Leaves', 'Sick Leaves', 'Abrupt Leaves']
+  //   }
+  // };
+
+  
   // Series data (stacked bar with allocated vs taken)
+  // const series = [
+  //   {
+  //     name: "Privileged Leaves (Taken)",
+  //     data: leavesData.monthlyData.map((entry) => entry.privilegedLeaves),
+  //     color: "#FF4560", // Red for taken leaves
+  //   },
+  //   {
+  //     name: "Privileged Leaves (Remaining)",
+  //     data: leavesData.monthlyData.map((entry) =>
+  //       Math.max(leavesData.allocated / 3 - entry.privilegedLeaves, 0)
+  //     ),
+  //     color: "#00E396", // Green for remaining allocation
+  //   },
+  //   {
+  //     name: "Sick Leaves (Taken)",
+  //     data: leavesData.monthlyData.map((entry) => entry.sickLeaves),
+  //     color: "#775DD0", // Purple for taken leaves
+  //   },
+  //   {
+  //     name: "Sick Leaves (Remaining)",
+  //     data: leavesData.monthlyData.map((entry) =>
+  //       Math.max(leavesData.allocated / 3 - entry.sickLeaves, 0)
+  //     ),
+  //     color: "#4CAF50", // Green for remaining allocation
+  //   },
+  //   {
+  //     name: "Casual Leaves (Taken)",
+  //     data: leavesData.monthlyData.map((entry) => entry.casualLeaves),
+  //     color: "#FBC02D", // Yellow for taken leaves
+  //   },
+  //   {
+  //     name: "Casual Leaves (Remaining)",
+  //     data: leavesData.monthlyData.map((entry) =>
+  //       Math.max(leavesData.allocated / 3 - entry.casualLeaves, 0)
+  //     ),
+  //     color: "#29B6F6", // Blue for remaining allocation
+  //   },
+  // ];
+  
+  const options = {
+    chart: {
+      type: "bar",
+      stacked: true,
+      toolbar: { show: false }
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        barHeight: "50%",
+        columnWidth:"30%"
+      }
+    },
+    xaxis: {
+      title: {
+        text: "Number of Leaves",
+      },
+    },
+    yaxis: {
+      labels: {
+        style: {
+          fontSize: '14px'
+        }
+      }
+    },
+    tooltip: {
+      custom: function({ series, seriesIndex, dataPointIndex, w }) {
+        const data = w.config.series[seriesIndex].data[dataPointIndex];
+        const month = data.month || "-";
+        const taken = data.taken || data.y;
+        const allocated = data.allocated || data.y;
+        const leaveType = data.x;
+  
+        return `
+          <div style="padding: 8px;">
+            <strong>Month:</strong> ${month}<br/>
+            <strong>${leaveType} (Allocated):</strong> ${allocated}<br/>
+            <strong>${leaveType} (Taken):</strong> ${taken}
+          </div>
+        `;
+      }
+    },
+    legend: {
+      position: "top",
+      horizontalAlign: "right"
+    }
+  };
+  
   const series = [
     {
-      name: "Privileged Leaves (Taken)",
-      data: leavesData.monthlyData.map((entry) => entry.privilegedLeaves),
-      color: "#FF4560", // Red for taken leaves
+      name: "Allocated",
+      data: [
+        { x: "Privileged Leave", y: 12, taken: 2, month: "Jan" },
+        { x: "Sick Leave", y: 10, taken: 0, month: "Jan" },
+        { x: "Abrupt Leave", y: 1, taken: 1, month: "Jan" }
+      ],
+      color: "#54C4A7", // light green
     },
     {
-      name: "Privileged Leaves (Remaining)",
-      data: leavesData.monthlyData.map((entry) =>
-        Math.max(leavesData.allocated / 3 - entry.privilegedLeaves, 0)
-      ),
-      color: "#00E396", // Green for remaining allocation
-    },
-    {
-      name: "Sick Leaves (Taken)",
-      data: leavesData.monthlyData.map((entry) => entry.sickLeaves),
-      color: "#775DD0", // Purple for taken leaves
-    },
-    {
-      name: "Sick Leaves (Remaining)",
-      data: leavesData.monthlyData.map((entry) =>
-        Math.max(leavesData.allocated / 3 - entry.sickLeaves, 0)
-      ),
-      color: "#4CAF50", // Green for remaining allocation
-    },
-    {
-      name: "Casual Leaves (Taken)",
-      data: leavesData.monthlyData.map((entry) => entry.casualLeaves),
-      color: "#FBC02D", // Yellow for taken leaves
-    },
-    {
-      name: "Casual Leaves (Remaining)",
-      data: leavesData.monthlyData.map((entry) =>
-        Math.max(leavesData.allocated / 3 - entry.casualLeaves, 0)
-      ),
-      color: "#29B6F6", // Blue for remaining allocation
-    },
+      name: "Taken",
+      data: [
+        { x: "Privileged Leave", y: 2, allocated: 12, month: "Jan" },
+        { x: "Sick Leave", y: 0, allocated: 10, month: "Jan" },
+        { x: "Abrupt Leave", y: 1, allocated: 1, month: "Jan" }
+      ],
+      color: "#47755B",
+    }
   ];
-
+  
   return (
     <div className="flex flex-col gap-8">
-      {/* <div>
-        <BarGraph
-          options={options}
-          data={series}
-        />
-      </div> */}
       <div>
-        <WidgetSection layout={1} title={"Leaves Data"} border>
-          <CustomYAxis />
+      <WidgetSection layout={1} title={"Leaves Data"} border>
+       <BarGraph data={series} options={options}/>
+
         </WidgetSection>
+      </div>
+      <div>
+        {/* <WidgetSection layout={1} title={"Leaves Data"} border>
+          <CustomYAxis />
+        </WidgetSection> */}
       </div>
       <div>
         <AgTable

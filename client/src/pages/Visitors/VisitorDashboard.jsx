@@ -119,18 +119,8 @@ const VisitorDashboard = () => {
   });
 
   const BookingMonths = [
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-    "Jan",
-    "Feb",
-    "Mar",
+    "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
+    "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
   ];
 
   // Example booked hours data per month

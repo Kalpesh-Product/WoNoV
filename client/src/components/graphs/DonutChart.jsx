@@ -7,7 +7,8 @@ const DonutChart = ({
   colors,
   series,
   tooltipValue,
-  showLegend = true, // controls whether the legend is shown
+  handleClick,
+  width
 }) => {
   const chartData = {
     series: series,
@@ -19,11 +20,15 @@ const DonutChart = ({
     chart: {
       type: "donut",
       fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => {
+          handleClick?.(); // trigger the click handler
+        }
+      }
     },
     colors: chartData.colors,
     labels: chartData.labels,
     legend: {
-      show: showLegend,
       position: "right",
     },
     dataLabels: {
@@ -54,7 +59,7 @@ const DonutChart = ({
       },
     },
   };
-
+  
   return (
     <div className="rounded-md">
       <ReactApexChart
@@ -62,6 +67,7 @@ const DonutChart = ({
         series={chartData.series}
         type="donut"
         height={350}
+        width={width || "100%"}
       />
     </div>
   );

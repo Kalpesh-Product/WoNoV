@@ -23,6 +23,8 @@ import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../../../hooks/useAuth";
 import DataCard from "../../../../components/DataCard";
+import { MdTrendingUp } from "react-icons/md";
+import { BsCheckCircleFill } from "react-icons/bs";
 
 const HrBudget = () => {
   const axios = useAxiosPrivate();
@@ -66,6 +68,7 @@ const HrBudget = () => {
       acc[month] = {
         month,
         latestDueDate: item.dueDate, // Store latest due date for sorting
+        projectedAmount: 0,
         amount: 0,
         tableData: {
           rows: [],
@@ -81,6 +84,7 @@ const HrBudget = () => {
       };
     }
 
+    acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
     acc[month].amount += item.projectedAmount; // Summing the total amount per month
     acc[month].tableData.rows.push({
       id: item._id,
@@ -99,6 +103,7 @@ const HrBudget = () => {
   const financialData = Object.values(groupedData)
     .map((data) => ({
       ...data,
+      projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
       amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
     }))
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
@@ -124,6 +129,7 @@ const HrBudget = () => {
     chart: {
       type: "bar",
       stacked: true,
+      fontFamily : "Poppins-Regular"
     },
     plotOptions: {
       bar: {
@@ -144,19 +150,19 @@ const HrBudget = () => {
       },
     },
     xaxis: {
-      categories: [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
+       categories: [
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
       ],
     },
     yaxis: {
@@ -204,8 +210,8 @@ const HrBudget = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="border-default border-borderGray rounded-md">
-        <WidgetSection layout={1} title={"BUDGET 2024"}>
+      <div>
+        <WidgetSection layout={1} title={"BUDGET 2024"} border >
           <LayerBarGraph options={optionss} data={data} />
         </WidgetSection>
       </div>
@@ -239,54 +245,69 @@ const HrBudget = () => {
       </div>
 
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <span className="text-title font-pmedium text-primary">
-              Allocated Budget :{" "}
-            </span>
-            <span className="text-title font-pmedium">
-              {"INR " + Number(500000).toLocaleString("en-IN")}
-            </span>
-          </div>
-          <div>
-            <PrimaryButton
-              title={"Request Budget"}
-              handleSubmit={() => setOpenModal(true)}
-            />
-          </div>
+  {/* Top Bar: Allocated Budget */}
+  <div className="flex justify-between items-center py-4">
+    <div className="flex items-center gap-4">
+      <span className="text-title font-pmedium text-primary">
+        Allocated Budget:
+      </span>
+      <span className="text-title font-pmedium">
+        {"INR " + Number(500000).toLocaleString("en-IN")}
+      </span>
+    </div>
+  </div>
+
+  {/* Header Row (Aligned with Summary) */}
+  <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+    <div className="flex justify-between items-center w-full px-4 py-2">
+      <span className="w-1/3 text-sm text-muted font-pmedium text-title" >Month</span>
+      <span className="w-1/3 text-sm text-muted font-pmedium text-title flex items-center gap-1">
+        <MdTrendingUp className="text-yellow-600 w-4 h-4" />
+        Projected
+      </span>
+      <span className="w-1/3 text-sm text-muted font-pmedium text-title flex items-center gap-1">
+        <BsCheckCircleFill className="text-green-600 w-4 h-4" />
+        Actual
+      </span>
+    </div>
+  </div>
+
+  {/* Accordion Section */}
+  {financialData.map((data, index) => (
+    <Accordion key={index} className="py-4">
+      <AccordionSummary
+        expandIcon={<IoIosArrowDown />}
+        aria-controls={`panel${index}-content`}
+        id={`panel${index}-header`}
+        className="border-b-[1px] border-borderGray"
+      >
+        <div className="flex justify-between items-center w-full px-4">
+          <span className="w-1/3 text-subtitle font-pmedium">{data.month}</span>
+          <span className="w-1/3 text-subtitle font-pmedium flex items-center gap-1">
+            <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
+            {"INR " + data.projectedAmount}
+          </span>
+          <span className="w-1/3 text-subtitle font-pmedium flex items-center gap-1">
+            <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />
+            {"INR " + data.amount}
+          </span>
         </div>
-        <div>
-          {financialData.map((data, index) => (
-            <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel\u20B9{index}-content`}
-                id={`panel\u20B9{index}-header`}
-                className="border-b-[1px] border-borderGray"
-              >
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium">
-                    {data.month}
-                  </span>
-                  <span className="text-subtitle font-pmedium">
-                    {"INR " + data.amount}
-                  </span>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                <AgTable
-                  search={true}
-                  searchColumn={"Department"}
-                  tableTitle={`${data.month}`}
-                  data={data.tableData.rows}
-                  columns={data.tableData.columns}
-                  tableHeight={250}
-                />
-              </AccordionDetails>
-            </Accordion>
-          ))}
+      </AccordionSummary>
+      <AccordionDetails>
+        <div className="border-t-[1px] border-borderGray py-4">
+          <AgTable
+            search={data.tableData?.rows?.length >= 10}
+            data={data.tableData.rows}
+            columns={data.tableData.columns}
+            tableHeight={400}
+            hideFilter={data.tableData?.rows?.length <= 9}
+          />
         </div>
-      </div>
+      </AccordionDetails>
+    </Accordion>
+  ))}
+</div>
+
       <MuiModal
         title="Request Budget"
         open={openModal}

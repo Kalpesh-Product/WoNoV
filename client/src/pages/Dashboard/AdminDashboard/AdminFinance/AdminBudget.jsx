@@ -23,6 +23,8 @@ import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../../../hooks/useAuth";
 import DataCard from "../../../../components/DataCard";
+import { MdTrendingUp } from "react-icons/md";
+import { BsCheckCircleFill } from "react-icons/bs";
 
 const HrBudget = () => {
   const axios = useAxiosPrivate();
@@ -59,13 +61,14 @@ const HrBudget = () => {
   };
 
   // Transform data into the required format
-  const groupedData = hrFinance.reduce((acc, item) => {
+ const groupedData = hrFinance.reduce((acc, item) => {
     const month = dayjs(item.dueDate).format("MMMM YYYY"); // Extracting month and year
 
     if (!acc[month]) {
       acc[month] = {
         month,
         latestDueDate: item.dueDate, // Store latest due date for sorting
+        projectedAmount: 0,
         amount: 0,
         tableData: {
           rows: [],
@@ -81,6 +84,7 @@ const HrBudget = () => {
       };
     }
 
+    acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
     acc[month].amount += item.projectedAmount; // Summing the total amount per month
     acc[month].tableData.rows.push({
       id: item._id,
@@ -96,12 +100,13 @@ const HrBudget = () => {
   }, {});
 
   // Convert grouped data to array and sort by latest month (descending order)
-  const financialData = Object.values(groupedData)
+ const financialData = Object.values(groupedData)
     .map((data) => ({
       ...data,
+      projectedAmount: data.projectedAmount, // Ensuring two decimal places for total amount
       amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
     }))
-    .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
+    .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate)));// Sort descending
 
   // ---------------------------------------------------------------------//
   // Data for the chart
@@ -145,19 +150,20 @@ const HrBudget = () => {
     },
     xaxis: {
       categories: [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ],
+        "Jan-24",
+        "Feb-24",
+        "Mar-24",
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+      ]
+      
     },
     yaxis: {
       max: 150,
@@ -210,6 +216,14 @@ const HrBudget = () => {
         </WidgetSection>
       </div>
 
+ <div className="flex justify-end">
+            <PrimaryButton
+              title={"Request Budget"}
+              padding="px-5 py-2" fontSize="text-base"
+              handleSubmit={() => setOpenModal(true)}
+            />
+          </div>
+
       <WidgetSection layout={3} padding>
         <DataCard
           data={"40K"}
@@ -233,7 +247,7 @@ const HrBudget = () => {
           })}`}
         />
       </WidgetSection>
-
+          
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -243,12 +257,6 @@ const HrBudget = () => {
             <span className="text-title font-pmedium">
               {"INR " + Number(500000).toLocaleString("en-IN")}
             </span>
-          </div>
-          <div>
-            <PrimaryButton
-              title={"Request Budget"}
-              handleSubmit={() => setOpenModal(true)}
-            />
           </div>
         </div>
         <div>
@@ -264,20 +272,26 @@ const HrBudget = () => {
                   <span className="text-subtitle font-pmedium">
                     {data.month}
                   </span>
-                  <span className="text-subtitle font-pmedium">
-                    {"INR " + data.amount}
-                  </span>
+                   <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                                    <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
+                                    {"INR "+Number(data.projectedAmount).toLocaleString("en-GB")}
+                                    </span>
+                 <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                                   <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />
+                                    {"INR "+data.amount}
+                                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails>
-                <AgTable
-                  search={true}
-                  searchColumn={"Department"}
-                  tableTitle={`${data.month}`}
-                  data={data.tableData.rows}
-                  columns={data.tableData.columns}
-                  tableHeight={250}
-                />
+                <div className="border-t-[1px] border-borderGray py-4">
+                  <AgTable
+                    search={data.tableData?.rows?.length >= 10}
+                    data={data.tableData.rows}
+                    columns={data.tableData.columns}
+                    tableHeight={400}
+                    hideFilter={data.tableData?.rows?.length <= 19}
+                  />
+                </div>
               </AccordionDetails>
             </Accordion>
           ))}

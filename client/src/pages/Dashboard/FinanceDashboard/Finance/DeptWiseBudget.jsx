@@ -8,6 +8,8 @@ import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import DataCard from "../../../../components/DataCard";
+import { MdTrendingUp } from "react-icons/md";
+import { BsCheckCircleFill } from "react-icons/bs";
 
 const DeptWiseBudget = () => {
   // Data for the chart
@@ -51,19 +53,19 @@ const DeptWiseBudget = () => {
     },
     xaxis: {
       categories: [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ],
+        "Jan-24",
+        "Feb-24",
+        "Mar-24",
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+      ]
     },
     yaxis: {
       max: 150,
@@ -112,70 +114,103 @@ const DeptWiseBudget = () => {
   const financialData = [
     {
       month: "April 2025",
+      projectedAmount: 18000,
       amount: "15000",
       tableData: {
         columns: [
-          { field: "department", headerName: "Department", flex: 1 },
+          { field: "category", headerName: "Category", flex: 1 },
+          { field: "expenseName", headerName: "Expense", flex: 1 },
           { field: "paymentDate", headerName: "Payment Date", flex: 1 },
+          { field: "amount", headerName: "Amount", flex: 1 },
+          { field: "status", headerName: "Status", flex: 1 },
         ],
         rows: [
           {
             id: 1,
-            department: "Tech",
+            category: "Hosting",
+            expenseName: "Hosting Fee",
+            amount: "2500",
             paymentDate: "2025-04-10",
+            status: "Paid",
           },
           {
             id: 2,
-            department: "Tech",
-            paymentDate: "2025-04-10",
+            category: "Domain",
+            expenseName: "Domain Renewal",
+            amount: "1500",
+            paymentDate: "2025-04-12",
+            status: "Pending",
           },
           {
             id: 3,
-            department: "Tech",
-            paymentDate: "2025-04-10",
+            category: "Software",
+            expenseName: "SaaS Subscription",
+            amount: "4500",
+            paymentDate: "2025-04-15",
+            status: "Paid",
           },
           {
             id: 4,
-            department: "Tech",
-            paymentDate: "2025-04-10",
+            category: "Marketing",
+            expenseName: "Ad Campaign",
+            amount: "3500",
+            paymentDate: "2025-04-20",
+            status: "Paid",
           },
         ],
       },
     },
     {
       month: "May 2025",
+      projectedAmount: 23000,
       amount: "20000",
       tableData: {
         columns: [
-            { field: "department", headerName: "Department", flex: 1 },
+          { field: "category", headerName: "Category", flex: 1 },
+          { field: "expenseName", headerName: "Expense", flex: 1 },
           { field: "paymentDate", headerName: "Payment Date", flex: 1 },
+          { field: "amount", headerName: "Amount", flex: 1 },
+          { field: "status", headerName: "Status", flex: 1 },
         ],
         rows: [
           {
             id: 1,
-            department: "Tech",
-            paymentDate: "2025-04-10",
+            category: "Hosting",
+            expenseName: "VPS Fee",
+            amount: "3000",
+            paymentDate: "2025-05-05",
+            status: "Paid",
           },
           {
             id: 2,
-            department: "Tech",
-            paymentDate: "2025-04-10",
+            category: "Software",
+            expenseName: "CRM Subscription",
+            amount: "5500",
+            paymentDate: "2025-05-07",
+            status: "Pending",
           },
           {
             id: 3,
-            department: "Tech",
-            paymentDate: "2025-04-10",
+            category: "Marketing",
+            expenseName: "Social Media Ads",
+            amount: "7000",
+            paymentDate: "2025-05-12",
+            status: "Paid",
           },
           {
             id: 4,
-            department: "Tech",
-            paymentDate: "2025-04-10",
+            category: "Office",
+            expenseName: "Internet Bill",
+            amount: "2000",
+            paymentDate: "2025-05-18",
+            status: "Paid",
           },
         ],
       },
     },
     {
       month: "June 2025",
+      projectedAmount: 20000,
       amount: "18500",
       tableData: {
         columns: [
@@ -223,6 +258,7 @@ const DeptWiseBudget = () => {
     },
     {
       month: "July 2025",
+      projectedAmount: 25000,
       amount: "22000",
       tableData: {
         columns: [
@@ -270,6 +306,7 @@ const DeptWiseBudget = () => {
     },
     {
       month: "August 2025",
+      projectedAmount: 21000,
       amount: "19500",
       tableData: {
         columns: [
@@ -332,7 +369,12 @@ const DeptWiseBudget = () => {
           <DataCard data={6000} title={"Requested"} />
         </WidgetSection>
       </div>
-
+      <div className="flex justify-end">
+            <PrimaryButton
+              title={"Request Budget"}
+              padding="px-5 py-2" fontSize="text-base"
+            />
+          </div>
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -342,9 +384,6 @@ const DeptWiseBudget = () => {
             <span className="text-title font-pmedium">
               {"INR "+Number("500000").toLocaleString("en-IN")}
             </span>
-          </div>
-          <div>
-            <PrimaryButton title={"Request Budget"} />
           </div>
         </div>
         <div>
@@ -360,9 +399,14 @@ const DeptWiseBudget = () => {
                   <span className="text-subtitle font-pmedium">
                     {data.month}
                   </span>
-                  <span className="text-subtitle font-pmedium">
-                  {"INR "+Number(data.amount).toLocaleString("en-GB")}
-                  </span>
+                  <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                                    <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
+                                    {"INR "+Number(data.projectedAmount).toLocaleString("en-GB")}
+                                    </span>
+                  <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                                   <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />
+                                    {"INR "+data.amount}
+                                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails>

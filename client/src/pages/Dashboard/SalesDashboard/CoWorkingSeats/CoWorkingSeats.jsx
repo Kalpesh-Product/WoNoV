@@ -18,259 +18,113 @@ const jsonData = {
   totalSeats: 1000,
   months: [
     {
-      month: "April",
+      month: "Apr-24",
       booked: 300,
       remaining: 700,
       clients: [
-        {
-          location: "DTC",
-          floor: 1,
-          totalSeats: 80,
-          booked: 75,
-          available: 5,
-          action: "view",
-        },
-        {
-          location: "DTC",
-          floor: 2,
-          totalSeats: 55,
-          booked: 50,
-          available: 5,
-          action: "view",
-        },
-        {
-          location: "ST",
-          floor: 1,
-          totalSeats: 110,
-          booked: 100,
-          available: 10,
-          action: "view",
-        },
-        {
-          location: "ST",
-          floor: 3,
-          totalSeats: 80,
-          booked: 75,
-          available: 5,
-          action: "view",
-        },
-      ],
+        { location: "DTC", floor: 1, totalSeats: 80, booked: 75, available: 5, action: "view" },
+        { location: "DTC", floor: 2, totalSeats: 55, booked: 50, available: 5, action: "view" },
+        { location: "ST", floor: 1, totalSeats: 110, booked: 100, available: 10, action: "view" },
+        { location: "ST", floor: 3, totalSeats: 80, booked: 75, available: 5, action: "view" }
+      ]
     },
     {
-      month: "May",
+      month: "May-24",
       booked: 300,
       remaining: 700,
       clients: [
-        {
-          location: "DTC",
-          floor: 1,
-          totalSeats: 80,
-          booked: 75,
-          available: 5,
-          action: "view",
-        },
-        {
-          location: "DTC",
-          floor: 2,
-          totalSeats: 55,
-          booked: 50,
-          available: 5,
-          action: "view",
-        },
-        {
-          location: "ST",
-          floor: 1,
-          totalSeats: 110,
-          booked: 100,
-          available: 10,
-          action: "view",
-        },
-        {
-          location: "ST",
-          floor: 3,
-          totalSeats: 80,
-          booked: 75,
-          available: 5,
-          action: "view",
-        },
-      ],
+        { location: "DTC", floor: 1, totalSeats: 80, booked: 75, available: 5, action: "view" },
+        { location: "DTC", floor: 2, totalSeats: 55, booked: 50, available: 5, action: "view" },
+        { location: "ST", floor: 1, totalSeats: 110, booked: 100, available: 10, action: "view" },
+        { location: "ST", floor: 3, totalSeats: 80, booked: 75, available: 5, action: "view" }
+      ]
     },
     {
-      month: "June",
+      month: "Jun-24",
       booked: 300,
       remaining: 700,
       clients: [
-        {
-          location: "DTC",
-          floor: 1,
-          totalSeats: 80,
-          booked: 75,
-          available: 5,
-          action: "view",
-        },
-        {
-          location: "DTC",
-          floor: 2,
-          totalSeats: 55,
-          booked: 50,
-          available: 5,
-          action: "view",
-        },
-        {
-          location: "ST",
-          floor: 1,
-          totalSeats: 110,
-          booked: 100,
-          available: 10,
-          action: "view",
-        },
-        {
-          location: "ST",
-          floor: 3,
-          totalSeats: 80,
-          booked: 75,
-          available: 5,
-          action: "view",
-        },
-      ],
+        { location: "DTC", floor: 1, totalSeats: 80, booked: 75, available: 5, action: "view" },
+        { location: "DTC", floor: 2, totalSeats: 55, booked: 50, available: 5, action: "view" },
+        { location: "ST", floor: 1, totalSeats: 110, booked: 100, available: 10, action: "view" },
+        { location: "ST", floor: 3, totalSeats: 80, booked: 75, available: 5, action: "view" }
+      ]
     },
     {
-      month: "July",
+      month: "Jul-24",
       booked: 400,
       remaining: 800,
       clients: [
-        {
-          location: "Office D",
-          floor: 1,
-          totalSeats: 20,
-          booked: 15,
-          available: 5,
-          action: "view",
-        },
-      ],
+        { location: "Office D", floor: 1, totalSeats: 20, booked: 15, available: 5, action: "view" }
+      ]
     },
     {
-      month: "August",
+      month: "Aug-24",
       booked: 450,
       remaining: 550,
       clients: [
-        {
-          location: "Office E",
-          floor: 2,
-          totalSeats: 20,
-          booked: 15,
-          available: 5,
-          action: "view",
-        },
-      ],
+        { location: "Office E", floor: 2, totalSeats: 20, booked: 15, available: 5, action: "view" }
+      ]
     },
     {
-      month: "September",
+      month: "Sep-24",
       booked: 600,
       remaining: 400,
       clients: [
-        {
-          location: "Office F",
-          floor: 3,
-          totalSeats: 20,
-          booked: 15,
-          available: 5,
-          action: "view",
-        },
-      ],
+        { location: "Office F", floor: 3, totalSeats: 20, booked: 15, available: 5, action: "view" }
+      ]
     },
     {
-      month: "October",
+      month: "Oct-24",
       booked: 800,
       remaining: 200,
       clients: [
-        {
-          location: "Office G",
-          floor: 1,
-          totalSeats: 20,
-          booked: 15,
-          available: 5,
-          action: "view",
-        },
-      ],
+        { location: "Office G", floor: 1, totalSeats: 20, booked: 15, available: 5, action: "view" }
+      ]
     },
     {
-      month: "November",
+      month: "Nov-24",
       booked: 900,
       remaining: 100,
       clients: [
-        {
-          location: "Office H",
-          floor: 2,
-          totalSeats: 20,
-          booked: 15,
-          available: 5,
-          action: "view",
-        },
-      ],
+        { location: "Office H", floor: 2, totalSeats: 20, booked: 15, available: 5, action: "view" }
+      ]
     },
     {
-      month: "December",
+      month: "Dec-24",
       booked: 650,
       remaining: 350,
       clients: [
-        {
-          location: "Office I",
-          floor: 3,
-          totalSeats: 20,
-          booked: 15,
-          available: 5,
-          action: "view",
-        },
-      ],
+        { location: "Office I", floor: 3, totalSeats: 20, booked: 15, available: 5, action: "view" }
+      ]
     },
     {
-      month: "January",
+      month: "Jan-25",
       booked: 500,
       remaining: 500,
       clients: [
-        {
-          location: "Office J",
-          floor: 1,
-          totalSeats: 20,
-          booked: 15,
-          available: 5,
-          action: "view",
-        },
-      ],
+        { location: "Office J", floor: 1, totalSeats: 20, booked: 15, available: 5, action: "view" }
+      ]
     },
     {
-      month: "February",
+      month: "Feb-25",
       booked: 300,
       remaining: 700,
       clients: [
-        {
-          location: "Office K",
-          floor: 2,
-          totalSeats: 20,
-          booked: 15,
-          available: 5,
-          action: "view",
-        },
-      ],
+        { location: "Office K", floor: 2, totalSeats: 20, booked: 15, available: 5, action: "view" }
+      ]
     },
     {
-      month: "March",
+      month: "Mar-25",
       booked: 400,
       remaining: 600,
       clients: [
-        {
-          location: "Office L",
-          floor: 3,
-          totalSeats: 20,
-          booked: 15,
-          available: 5,
-          action: "view",
-        },
-      ],
-    },
-  ],
+        { location: "Office L", floor: 3, totalSeats: 20, booked: 15, available: 5, action: "view" }
+      ]
+    }
+  ]
 };
+
 
 const CoWorkingSeats = () => {
   const navigate = useNavigate();

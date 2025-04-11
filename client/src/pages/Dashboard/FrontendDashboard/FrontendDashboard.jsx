@@ -134,20 +134,23 @@ const FrontendDashboard = () => {
       toolbar: { show: false },
     },
     xaxis: {
-      categories: [
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-        "Jan",
-        "Feb",
-        "Mar",
+    categories: [
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
       ], // Financial year months
+      title: {
+        text: undefined, // 👈 empty string works too
+      },
     },
     yaxis: {
       title: {
@@ -162,10 +165,18 @@ const FrontendDashboard = () => {
         borderRadius: 4,
         horizontal: false,
         columnWidth: "35%",
+        dataLabels: {
+          position: "top",
+        },
       },
     },
     dataLabels: {
-      enabled: false,
+      enabled: true, // Disable data labels for a cleaner look
+      style: {
+        fontSize: "12px",
+        colors: ["#000"], // Set label color
+      },
+      offsetY: -22, // Adjust position slightly above the bars
     },
     tooltip: {
       theme: "dark",
@@ -253,19 +264,20 @@ const FrontendDashboard = () => {
     },
     xaxis: {
       categories: [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ],
+        "Jan-24",
+        "Feb-24",
+        "Mar-24",
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+      ]
+      
     },
     yaxis: {
       title: {
@@ -342,39 +354,49 @@ const FrontendDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"}>
+        <WidgetSection layout={1} border title={"Budget v/s Achievements"}>
           <LayerBarGraph data={data} options={options} />
+          <hr />
+          <WidgetSection layout={3} padding>
+            <DataCard
+              data={"40K"}
+              title={"Projected"}
+              route={"/app/dashboard/frontend-dashboard/finance"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={"35K"}
+              title={"Actual"}
+              route={"/app/dashboard/frontend-dashboard/finance"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={6000}
+              title={"Requested"}
+              route={"/app/dashboard/frontend-dashboard/finance"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+          </WidgetSection>
         </WidgetSection>,
       ],
     },
     {
-      layout: 3,
+      layout: 5,
       widgets: [
-        <DataCard
-          data={"40K"}
-          title={"Projected"}
-          route={"/app/dashboard/frontend-dashboard/finance"}
-          description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
+        <Card
+          icon={<LuHardDriveUpload />}
+          title="Edit website"
+          route={`/app/dashboard/frontend-dashboard/select-theme/edit-theme/BIZNest/Home`}
         />,
-        <DataCard
-          data={"35K"}
-          title={"Actual"}
-          route={"/app/dashboard/frontend-dashboard/finance"}
-          description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
-        />,
-        <DataCard
-          data={6000}
-          title={"Requested"}
-          route={"/app/dashboard/frontend-dashboard/finance"}
-          description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
-        />,
-      ],
-    },
-    {
-      layout: 6,
-      widgets: [
-        <Card icon={<MdRebaseEdit />} title="Create Website" />,
-        <Card icon={<LuHardDriveUpload />} title="Edit website" />,
         <Card icon={<CgWebsite />} title="New Themes" route={"select-theme"} />,
         <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
         <Card icon={<SiGoogleadsense />} title="Data" route={"data"} />,
@@ -397,18 +419,20 @@ const FrontendDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection layout={1} border title={"Location-wise site Visitors"}>
+        <WidgetSection layout={1} border title={"Nation-wise site Visitors"}>
           <PieChartMui
             percent={true} // Enable percentage display
             data={nationWiseData} // Pass processed data
             options={nationWisePieChart}
+            width={500}
           />
         </WidgetSection>,
-        <WidgetSection layout={1} border title={"Site Visitors"}>
+        <WidgetSection layout={1} border title={"State-wise site Visitors"}>
           <PieChartMui
             percent={true} // Enable percentage display
             data={goaDistrictData} // Pass processed data
             options={goaDistrictPieChart}
+            width={500}
           />
         </WidgetSection>,
       ],

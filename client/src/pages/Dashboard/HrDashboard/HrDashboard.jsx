@@ -15,6 +15,7 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../../hooks/useAuth";
 import BarGraph from "../../../components/graphs/BarGraph";
+import { useNavigate } from "react-router-dom";
 
 const LayerBarGraph = lazy(() =>
   import("../../../components/graphs/LayerBarGraph")
@@ -23,7 +24,7 @@ const LayerBarGraph = lazy(() =>
 const HrDashboard = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
-  console.log(auth.user.permissions);
+  const navigate = useNavigate();
   const accessibleModules = new Set();
 
   auth.user.permissions?.deptWisePermissions?.forEach((department) => {
@@ -110,67 +111,10 @@ const HrDashboard = () => {
     },
   ];
 
-  // Normalize to percentage
-  const normalizeToPercentage = (series) => {
-    const months = series[0].data.length;
-    const normalizedSeries = [];
-
-    for (let i = 0; i < months; i++) {
-      const totalForMonth = series
-        .filter((s) => s.group === "total")
-        .reduce((sum, s) => sum + s.data[i], 0);
-
-      series.forEach((s) => {
-        if (!normalizedSeries.some((ns) => ns.name === s.name)) {
-          normalizedSeries.push({ name: s.name, data: [], group: s.group });
-        }
-
-        const percentage = totalForMonth
-          ? (s.data[i] / totalForMonth) * 100
-          : 0;
-
-        normalizedSeries.find((ns) => ns.name === s.name).data.push(percentage);
-      });
-    }
-    return normalizedSeries;
-  };
-
-  // Adjust data for spacing
-  const adjustDataWithSpacing = (series) => {
-    const adjustedSeries = [];
-    const groups = [...new Set(series.map((s) => s.group))];
-    groups.forEach((group) => {
-      const groupSeries = series.filter((s) => s.group === group);
-      groupSeries.forEach((s) => {
-        adjustedSeries.push({
-          ...s,
-          data: s.data.map((val) => (val === 0 ? null : val)),
-        });
-      });
-    });
-    return adjustedSeries;
-  };
-
-  // Generate colors
-  const generateColorsWithSpacing = (series) => {
-    const departmentColorMapping = {
-      Sales: "#4DA5C5",
-      IT: "#4591AD",
-      Tech: "#95B4C6", // Red
-      Admin: "#608EA9",
-      Maintainance: "#87C7DE",
-      Space: "#FFA500", // Orange
-    };
-
-    return series.map((s) => {
-      const department = s.name.split(" ")[0];
-      return departmentColorMapping[department] || "#000000";
-    });
-  };
-
   const options = {
     chart: {
       type: "bar",
+      toolbar: { show: false },
       stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
     },
@@ -178,19 +122,12 @@ const HrDashboard = () => {
       bar: {
         horizontal: false,
         columnWidth: "65%",
+        borderRadius: 2,
+        borderRadiusApplication: "none",
       },
     },
     dataLabels: {
       enabled: true, // Enable data labels
-      formatter: function (val, opts) {
-        const rawData = rawSeries[opts.seriesIndex]?.data[opts.dataPointIndex];
-        return rawData ? `${rawData}` : ""; // Display the raw value
-      },
-      style: {
-        fontSize: "9px",
-        fontFamily: "Poppins-Regular, Arial, sans-serif",
-        colors: ["#fffff"], // Color of the data labels
-      },
     },
     xaxis: {
       categories: [
@@ -207,6 +144,9 @@ const HrDashboard = () => {
         "Feb-25",
         "Mar-25",
       ],
+      title: {
+        text: "  ",
+      },
     },
     yaxis: {
       max: 100,
@@ -252,6 +192,12 @@ const HrDashboard = () => {
     chart: {
       type: "bar",
       stacked: true,
+      fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => {
+          navigate("finance");
+        },
+      },
       animations: {
         enabled: false,
       },
@@ -459,6 +405,12 @@ const HrDashboard = () => {
   const genderPieChart = {
     chart: {
       type: "pie",
+      fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => {
+          navigate("employee/view-employees");
+        },
+      },
     },
     labels: ["Male", "Female"], // Labels for the pie slices
     colors: ["#0056B3", "#FD507E"], // Pass colors as an array
@@ -511,6 +463,12 @@ const HrDashboard = () => {
   const techGoaVisitorsOptions = {
     chart: {
       type: "pie",
+      fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => {
+          navigate("employee/view-employees");
+        },
+      },
     },
     labels: techGoaVisitors.map((item) => item.label), // Labels for the pie slices
     colors: techGoaVisitors.map((item) => item.color), // Assign colors to slices
@@ -553,48 +511,44 @@ const HrDashboard = () => {
             </Box>
           }
         >
-          <WidgetSection
-            layout={1}
-            border
-            padding
-            title={"Payroll Expense Graph"}
-          >
+          <WidgetSection layout={1} border title={"Budget v/s Achievements"}>
             <LayerBarGraph data={data} options={optionss} />
+            <hr />
+            <WidgetSection layout={3} padding>
+              <DataCard
+                data={"40K"}
+                title={"Projected"}
+                route={"/app/dashboard/frontend-dashboard/finance"}
+                description={`Current Month : ${new Date().toLocaleString(
+                  "default",
+                  { month: "long" }
+                )}`}
+              />
+              <DataCard
+                data={"35K"}
+                title={"Actual"}
+                route={"/app/dashboard/frontend-dashboard/finance"}
+                description={`Current Month : ${new Date().toLocaleString(
+                  "default",
+                  { month: "long" }
+                )}`}
+              />
+              <DataCard
+                data={6000}
+                title={"Requested"}
+                route={"/app/dashboard/frontend-dashboard/finance"}
+                description={`Current Month : ${new Date().toLocaleString(
+                  "default",
+                  { month: "long" }
+                )}`}
+              />
+            </WidgetSection>
           </WidgetSection>
         </Suspense>,
       ],
     },
     {
-      layout: 3,
-      widgets: [
-        <DataCard
-          data={"40K"}
-          title={"Projected"}
-          route={"/app/dashboard/hr-dashboard/finance/budget"}
-          description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
-        />,
-        <DataCard
-          data={"35K"}
-          title={"Actual"}
-          route={"/app/dashboard/hr-dashboard/finance/budget"}
-          description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
-        />,
-        <DataCard
-          data={6000}
-          title={"Requested"}
-          route={"/app/dashboard/hr-dashboard/finance/budget"}
-          description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
-        />,
-      ],
-    },
-    {
-      layout: 6,
+      layout: 5,
       widgets: [
         { icon: <CgWebsite />, title: "Employee", route: "employee" },
         { icon: <LuHardDriveUpload />, title: "Company", route: "company" },

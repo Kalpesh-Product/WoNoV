@@ -23,6 +23,8 @@ import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../../../hooks/useAuth";
 import DataCard from "../../../../components/DataCard";
+import { MdTrendingUp } from "react-icons/md";
+import { BsCheckCircleFill } from "react-icons/bs";
 
 const HrBudget = () => {
   const axios = useAxiosPrivate();
@@ -60,48 +62,51 @@ const HrBudget = () => {
 
   // Transform data into the required format
   const groupedData = hrFinance.reduce((acc, item) => {
-    const month = dayjs(item.dueDate).format("MMMM YYYY"); // Extracting month and year
-
-    if (!acc[month]) {
-      acc[month] = {
-        month,
-        latestDueDate: item.dueDate, // Store latest due date for sorting
-        amount: 0,
-        tableData: {
-          rows: [],
-          columns: [
-            { field: "expanseName", headerName: "Expense Name", flex: 1 },
-            // { field: "department", headerName: "Department", flex: 200 },
-            { field: "expanseType", headerName: "Expense Type", flex: 1 },
-            { field: "projectedAmount", headerName: "Amount", flex: 1 },
-            { field: "dueDate", headerName: "Due Date", flex: 1 },
-            { field: "status", headerName: "Status", flex: 1 },
-          ],
-        },
-      };
-    }
-
-    acc[month].amount += item.projectedAmount; // Summing the total amount per month
-    acc[month].tableData.rows.push({
-      id: item._id,
-      expanseName: item.expanseName,
-      department: item.department,
-      expanseType: item.expanseType,
-      projectedAmount: item.projectedAmount.toFixed(2), // Ensuring two decimal places
-      dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
-      status: item.status,
-    });
-
-    return acc;
-  }, {});
-
-  // Convert grouped data to array and sort by latest month (descending order)
-  const financialData = Object.values(groupedData)
-    .map((data) => ({
-      ...data,
-      amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-    }))
-    .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
+     const month = dayjs(item.dueDate).format("MMMM YYYY"); // Extracting month and year
+ 
+     if (!acc[month]) {
+       acc[month] = {
+         month,
+         latestDueDate: item.dueDate, // Store latest due date for sorting
+         projectedAmount: 0,
+         amount: 0,
+         tableData: {
+           rows: [],
+           columns: [
+             { field: "expanseName", headerName: "Expense Name", flex: 1 },
+             // { field: "department", headerName: "Department", flex: 200 },
+             { field: "expanseType", headerName: "Expense Type", flex: 1 },
+             { field: "projectedAmount", headerName: "Amount", flex: 1 },
+             { field: "dueDate", headerName: "Due Date", flex: 1 },
+             { field: "status", headerName: "Status", flex: 1 },
+           ],
+         },
+       };
+     }
+ 
+     acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
+     acc[month].amount += item.projectedAmount; // Summing the total amount per month
+     acc[month].tableData.rows.push({
+       id: item._id,
+       expanseName: item.expanseName,
+       department: item.department,
+       expanseType: item.expanseType,
+       projectedAmount: item.projectedAmount.toFixed(2), // Ensuring two decimal places
+       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
+       status: item.status,
+     });
+ 
+     return acc;
+   }, {});
+ 
+   // Convert grouped data to array and sort by latest month (descending order)
+   const financialData = Object.values(groupedData)
+     .map((data) => ({
+       ...data,
+       projectedAmount: data.projectedAmount, // Ensuring two decimal places for total amount
+       amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+     }))
+     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
   // ---------------------------------------------------------------------//
   // Data for the chart
@@ -210,29 +215,13 @@ const HrBudget = () => {
         </WidgetSection>
       </div>
 
-      <WidgetSection layout={3} padding>
-        <DataCard
-          data={"40K"}
-          title={"Projected"}
-          description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
-        />
-        <DataCard
-          data={"35K"}
-          title={"Actual"}
-          description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
-        />
-        <DataCard
-          data={6000}
-          title={"Requested"}
-          description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
-        />
-      </WidgetSection>
+ <div className="flex justify-end">
+            <PrimaryButton
+              title={"Request Budget"}
+              padding="px-5 py-2" fontSize="text-base"
+              handleSubmit={() => setOpenModal(true)}
+            />
+          </div>
 
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
         <div className="flex justify-between items-center">
@@ -244,12 +233,7 @@ const HrBudget = () => {
               {"INR " + Number(500000).toLocaleString("en-IN")}
             </span>
           </div>
-          <div>
-            <PrimaryButton
-              title={"Request Budget"}
-              handleSubmit={() => setOpenModal(true)}
-            />
-          </div>
+    
         </div>
         <div>
           {financialData.map((data, index) => (
@@ -264,9 +248,14 @@ const HrBudget = () => {
                   <span className="text-subtitle font-pmedium">
                     {data.month}
                   </span>
-                  <span className="text-subtitle font-pmedium">
-                    {"INR " + data.amount}
-                  </span>
+                   <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                                    <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
+                                    {"INR "+Number(data.projectedAmount).toLocaleString("en-GB")}
+                                    </span>
+                   <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                                    <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />
+                                     {"INR "+data.amount}
+                                    </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails>

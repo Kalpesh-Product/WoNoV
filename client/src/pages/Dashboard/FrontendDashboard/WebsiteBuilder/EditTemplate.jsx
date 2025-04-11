@@ -8,6 +8,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
 import { useSidebar } from "../../../../context/SideBarContext";
 import { toast } from "sonner";
+import PrimaryButton from "../../../../components/PrimaryButton";
+import { CircularProgress } from "@mui/material";
 
 const EditTemplate = () => {
   const { templateName, pageName } = useParams();
@@ -116,7 +118,7 @@ const EditTemplate = () => {
   };
 
   // 🔹 Function to Save Editor Data to MongoDB
-  const saveEditorData = async () => {
+  const saveEditorDatas = async () => {
     if (!editor) return;
 
     const data = {
@@ -127,14 +129,21 @@ const EditTemplate = () => {
       assets: editor.AssetManager.getAll().toArray(),
     };
 
-    try {
-      await axios.post("/api/editor/save", data);
-      toast.success("Changes saved to cloud")
-    } catch (error) {
-      toast.error("Error saving editor data")
-      console.error("Error saving editor data:", error);
-    }
+    const response = await axios.post("/api/editor/save", data);
+    return response.data;
   };
+
+  const { mutate: saveEditorData, isPending: isSaveEditorData } = useMutation({
+    mutationFn: async () => {
+      await saveEditorDatas();
+    },
+    onSuccess: () => {
+      toast.success("Changes saved");
+    },
+    onError: () => {
+      toast.error("Error saving data");
+    },
+  });
 
   // 🔹 Function to Add Blocks
   const addBlocks = (editorInstance) => {
@@ -164,7 +173,7 @@ const EditTemplate = () => {
     <div
       style={{
         display: "flex",
-        height: "97vh",
+        height: "75vh",
         background: "#ffff",
         overflowY: "auto",
       }}
@@ -193,27 +202,26 @@ const EditTemplate = () => {
         </h3>
         <div
           id="blocks"
-          style={{ flex: 1, overflowY: "auto", padding: "10px" }}
-        >
-          
-        </div>
+          style={{ flex: 1, overflowY: "auto" }}
+        ></div>
       </div>
 
       {/* Main Editor Area */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         <div
           style={{
-            background: "#212529",
-            padding: "10px",
+            background: "white",
+            color:'black',
+            padding: "5px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
           }}
         >
-          <h3 style={{ color: "#fff", margin: 0 }}>Editor</h3>
+          <h3>Editor</h3>
           {/* 🔹 Page Selection Dropdown */}
           {isLoading ? (
-            <span style={{ color: "white" }}>Loading pages...</span>
+            <div className=""><CircularProgress size={10} /></div>
           ) : error ? (
             <span style={{ color: "red" }}>Error loading pages</span>
           ) : (
@@ -259,22 +267,18 @@ const EditTemplate = () => {
           ) : (
             ""
           )}
-          <button
-            onClick={saveEditorData}
-            style={{
-              background: "#007bff",
-              color: "white",
-              border: "none",
-              padding: "8px 15px",
-              borderRadius: "5px",
-              cursor: "pointer",
-              fontSize: "14px",
-            }}
-          >
-            Save
-          </button>
+          <PrimaryButton
+            title={"Save"}
+            handleSubmit={saveEditorData}
+            isLoading={isSaveEditorData}
+            disabled={isSaveEditorData}
+          />
         </div>
-        <div id="editor-canvas" style={{ flex: 1, background: "#fff", height:'70vh' }}></div>
+        
+        <div
+          id="editor-canvas"
+          style={{ flex: 1, background: "#fff", height: "75vh" }}
+        ></div>
       </div>
     </div>
   );

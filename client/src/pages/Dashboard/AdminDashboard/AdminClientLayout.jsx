@@ -9,7 +9,6 @@ const AdminClientLayout = () => {
   const tabs = [
     { label: "Members", path: "client-members-data" },
     { label: "Client-Onboarding", path: "client-members-onboard" },
-    { label: "Vendor", path: "vendor" },
   ];
   useEffect(() => {
     if (location.pathname === "/app/dashboard/admin-dashboard/client-members") {

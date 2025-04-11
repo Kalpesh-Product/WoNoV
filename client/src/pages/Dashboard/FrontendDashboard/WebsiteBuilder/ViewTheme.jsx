@@ -20,6 +20,7 @@ import CoWorkingMewoMockup from "../../../../assets/WONO_images/img/website-buil
 import Hostels from "../../../../assets/WONO_images/img/website-builder/new-layout/hostels.png";
 import Hostels_mockup from "../../../../assets/WONO_images/img/website-builder/new-layout/mobile/mockups/hostels.png";
 import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 
 const ViewTheme = () => {
   const [showAll, setShowAll] = useState(false);
@@ -117,12 +118,10 @@ const ViewTheme = () => {
     { src: Hostels, mockup: Hostels_mockup, alt: "Hostels", tag: "hostels" },
   ];
   const location = useLocation();
-  const {templateName, pageName} = location.state
-  useEffect(()=>{console.log(pageName, templateName)},[pageName])
+  const { templateName, pageName, tag } = location.state;
 
   const navigate = useNavigate();
 
-  
   const { image: initialImage } = location.state || {
     image: { src: BiznestImage, tag: "co-working", alt: "Product Image" },
   };
@@ -130,9 +129,9 @@ const ViewTheme = () => {
   const [currentImage, setCurrentImage] = useState(initialImage);
 
   // Filter the recommendations based on the current image's tag
-  // const filteredRecommendations = recommendations.filter(
-  //   (rec) => rec.tag === currentImage.tag
-  // );
+  const filteredRecommendations = recommendations.filter(
+    (rec) => rec.tag || tag === currentImage.tag || ""
+  );
 
   const handleViewMore = () => {
     setShowAll(true); // Show all recommendations
@@ -150,7 +149,9 @@ const ViewTheme = () => {
             <div className="product-page-grid grid grid-cols-[30%_1fr] gap-64">
               <div className="product-page-left-container">
                 <div className="product-page-grid-item">
-                  <h1 className="uppercase mb-8 font-medium text-4xl">Inclusions</h1>
+                  <h1 className="uppercase mb-8 font-medium text-4xl">
+                    Inclusions
+                  </h1>
                   <div className="product-page-feature">
                     {features.map((feature, index) => (
                       <div
@@ -167,18 +168,25 @@ const ViewTheme = () => {
                   <div className="product-page-button-space flex gap-4 items-center">
                     <button
                       className="product-page-button bg-white text-black mb-8 w-full py-2 px-8 rounded-full"
-                      onClick={()=>navigate(`/app/dashboard/frontend-dashboard/select-theme/edit-theme/${templateName}/${pageName}`)}
+                      onClick={() => {
+                        if (templateName && pageName) {
+                          navigate(`/app/dashboard/frontend-dashboard/select-theme/edit-theme/${templateName}/${pageName}`);
+                        } else {
+                          toast.success("Coming Soon.");
+                        }
+                      }}
+                      
                     >
                       Edit theme
                     </button>
                     <button
                       className="product-page-button bg-white text-black mb-8 w-full py-2 px-8 rounded-full"
-                      onClick={() => navigate("/app/dashboard/frontend-dashboard/live-demo")}
+                      onClick={() =>
+                        navigate("/app/dashboard/frontend-dashboard/live-demo")
+                      }
                     >
                       Live Demo
                     </button>
-
-
                   </div>
                   <div className="product-page-update-text text-gray-500 flex flex-col items-center">
                     <span>Last updated on Sep 11, 2024</span>
@@ -189,8 +197,12 @@ const ViewTheme = () => {
 
               <div className="product-page-image-container overflow-hidden mb-8">
                 <img
-                  src={BiznestImage}
+                  src={currentImage?.mockup || BiznestImageMockup}
                   alt={templateName}
+                  onError={(e) => {
+                    e.target.onerror = null; // prevent infinite loop if fallback also fails
+                    e.target.src = BiznestImageMockup;
+                  }}
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -213,7 +225,9 @@ const ViewTheme = () => {
                   <div className="product-page-perks-grid-2-item-layout grid grid-cols-[10%_1fr]">
                     <i className={perk.icon}></i>
                     <div className="product-page-perks-description">
-                      <h4 className="mb-4 text-lg font-semibold">{perk.title}</h4>
+                      <h4 className="mb-4 text-lg font-semibold">
+                        {perk.title}
+                      </h4>
                       <span className="text-base tracking-wide">
                         {perk.description}
                       </span>
@@ -231,7 +245,7 @@ const ViewTheme = () => {
           <div className="product-page-reccomendations-header mb-8">
             <span className="text-title">Few more suggestions for you</span>
           </div>
-          {/* <div className="product-page-reccomendations-grid grid grid-cols-2 gap-8">
+          <div className="product-page-reccomendations-grid grid grid-cols-2 gap-8">
             {filteredRecommendations
               .slice(0, showAll ? filteredRecommendations.length : 4)
               .map((rec, index) => (
@@ -259,7 +273,7 @@ const ViewTheme = () => {
                 Load More
               </button>
             )}
-          </div> */}
+          </div>
         </div>
       </div>
     </div>

@@ -62,8 +62,8 @@ const ManageTickets = () => {
       layout: 2,
       widgets: [
 
-          <div className="border-default border-borderGray rounded-md w-full">
-            <WidgetSection
+          <div>
+            <WidgetSection border 
               layout={3}
               title={"Department Pending Tickets"}
               titleDataColor={"red"}
@@ -92,8 +92,9 @@ const ManageTickets = () => {
               />
             </WidgetSection>
           </div>,
-          <div className="border-default border-borderGray rounded-md w-full">
+          <div>
             <WidgetSection
+            border
               layout={3}
               title={"Personal Pending Tickets"}
               titleDataColor={"black"}
