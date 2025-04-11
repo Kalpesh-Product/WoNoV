@@ -117,6 +117,7 @@ const ExperienceLetter = () => {
           </div>
         </div>
       </div>
+
       <div className="h-[67vh] w-1/3 p-4 border flex flex-col justify-between">
         <div className="h-[50vh] overflow-y-auto">
           <h2 className="text-subtitle font-pregular">Edit Fields</h2>
