@@ -38,7 +38,8 @@ const TeamMembers = () => {
   const laptopColumns = [
    
     { field: "name", headerName: "Name", cellRenderer: AvatarCellRenderer, },
-    { field: "Department", headerName: "Role", flex: 1 },
+    { field: "role", headerName: "Role", flex: 1 },
+    { field: "department", headerName: "Department", flex: 1 },
     { field: "assignedToday", headerName: "Assigned Today", flex: 1 },
     { field: "totalassigned", headerName: "Total Assigned", flex: 1 },
 
@@ -48,47 +49,53 @@ const TeamMembers = () => {
   ];
   const rows = [
     {
-      name:"Kalpesh Naik",
-      department:"Tech",
-      assignedToday: "80",
-      totalassigned: "1203",
-      totalresolved: "2204",
-      resolutiontime: "33 mins",
-      
+      name: "Kalpesh Naik",
+      department: "Tech",
+      role: "Manager",
+      assignedToday: "3",
+      totalassigned: "23",
+      totalresolved: "18",
+      resolutiontime: "20 mins",
     },
     {
-      name:"Aiwin",
-      role:"Tech",
-      assignedToday: "80",
-      totalassigned: "1203",
-      totalresolved: "2204",
-      resolutiontime: "34 mins",
+      name: "Machindranath Parkar",
+      department: "IT",
+      role: "Manager",
+      assignedToday: "5",
+      totalassigned: "27",
+      totalresolved: "22",
+      resolutiontime: "15 mins",
     },
     {
-      name:"Sankalp Kalangutkar",
-      role:"Tech",
-      assignedToday: "80",
-      totalassigned: "1203",
-      totalresolved: "2204",
-      resolutiontime: "39 mins",
+      name: "Narshiva Naik",
+      department: "Finance",
+      role: "Manager",
+      assignedToday: "4",
+      totalassigned: "34",
+      totalresolved: "30",
+      resolutiontime: "18 mins",
     },
     {
-      name:"Anushri Bhagat",
-      role:"IT",
-      assignedToday: "80",
-      totalassigned: "1203",
-      totalresolved: "2204",
-      resolutiontime: "40 mins",
+      name: "Aaron Pires",
+      department: "Sales",
+      role: "Manager",
+      assignedToday: "6",
+      totalassigned: "35",
+      totalresolved: "28",
+      resolutiontime: "25 mins",
     },
     {
-      name:"Allen Silvera",
-      role:"IT",
-      assignedToday: "80",
-      totalassigned: "1203",
-      totalresolved: "2204",
-      resolutiontime: "50 mins",
+      name: "Rajesh Babani",
+      department: "Maintenance",
+      role: "Manager",
+      assignedToday: "2",
+      totalassigned: "19",
+      totalresolved: "17",
+      resolutiontime: "22 mins",
     }
   ];
+  
+  
   return (
     <div className="w-full rounded-md bg-white p-4 ">
       <div className="flex flex-row justify-between mb-4 items-center">
