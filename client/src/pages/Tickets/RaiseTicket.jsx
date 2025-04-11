@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
 import {
@@ -27,6 +27,7 @@ const RaiseTicket = () => {
   const [ticketIssues, setTicketIssues] = useState([]); // State for ticket issues
   const [openModal, setOpenModal] = useState(false);
   const axios = useAxiosPrivate();
+  const imageRef = useRef();
 
   // Fetch departments and ticket issues in the same useEffect
 
@@ -93,6 +94,8 @@ const RaiseTicket = () => {
     onSuccess: function (data) {
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ["my-tickets"] });
+      imageRef.current.value = "";
+      setPreview(null);
       reset();
     },
     onError: function (data) {
@@ -317,6 +320,7 @@ const RaiseTicket = () => {
                   <Box className="flex flex-col gap-2">
                     {/* File Input */}
                     <input
+                      ref={imageRef}
                       type="file"
                       accept="image/*"
                       hidden
