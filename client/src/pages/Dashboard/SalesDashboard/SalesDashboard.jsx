@@ -714,7 +714,6 @@ const SalesDashboard = () => {
               options={clientsDesksPieOptions}
               width={"100%"}
             />
-            // <TreemapGraph data={totalDeskPercent} options={clientsDesksPieOptions} width={"100%"} />
 
           ) : (
             <CircularProgress color="#1E3D73" />
