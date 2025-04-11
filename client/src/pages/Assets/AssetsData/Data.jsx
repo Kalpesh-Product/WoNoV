@@ -268,6 +268,7 @@ const assetCategoriesData = {
   colors: ["#FF5733", "#FFC300", "#36A2EB", "#4CAF50"], // Example colors for each category
   centerLabel: "Assets",
   title: "Asset Categories Distribution",
+  tooltipValue:[30, 25, 20, 25]
 };
 
 // -----------------------Asset categories Donut Data End--------------------
