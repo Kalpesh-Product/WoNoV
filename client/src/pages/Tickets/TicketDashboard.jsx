@@ -17,7 +17,6 @@ import FinanceCard from "../../components/FinanceCard";
 const TicketDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
-  const navigate = useNavigate();
   const { auth } = useAuth();
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
@@ -110,7 +109,6 @@ const TicketDashboard = () => {
         </WidgetSection>,
         <WidgetSection
           layout={1}
-          onClick={() => navigate("/app/tickets/department-wise-tickets")}
           padding
           border
           titleLabel={"Current month"}
@@ -130,7 +128,7 @@ const TicketDashboard = () => {
             ]}
             centerLabel={"Tickets"}
             tooltipValue={[30, 44, 50, 22, 14, 6, 39]}
-            handleClick={() => navigate("reports")}
+            handleClick={() => navigate("department-wise-tickets")}
           />
         </WidgetSection>,
       ],
