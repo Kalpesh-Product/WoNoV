@@ -22,9 +22,25 @@ import { Controller, useForm } from "react-hook-form";
 import { MdTrendingUp } from "react-icons/md";
 import { BsCheckCircleFill } from "react-icons/bs";
 import AllocatedBudget from "./Tables/AllocatedBudget";
+import { useQuery } from "@tanstack/react-query";
 
 const BudgetDisplay = ({ budgetData }) => {
   const axios = useAxiosPrivate();
+  
+     const { data: hrFinance = [] } = useQuery({
+        queryKey: ["hrFinance"],
+        queryFn: async () => {
+          try {
+            const response = await axios.get(
+              `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
+              `
+            );
+            return response.data.allBudgets;
+          } catch (error) {
+            throw new Error("Error fetching data");
+          }
+        },
+      });
 
   const [openModal, setOpenModal] = useState(false);
 
@@ -83,13 +99,23 @@ const BudgetDisplay = ({ budgetData }) => {
   }, {});
 
   // Convert grouped data to array and sort by latest month (descending order)
-  const financialData = Object.values(groupedData)
-    .map((data) => ({
+ const financialData = Object.values(groupedData)
+    .map((data,index) => {
+       
+      const transoformedRows = data.tableData.rows.map((row,index)=>({...row,srNo:index+1,projectedAmount:Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 })}))
+      const transformedCols = [
+        { field: 'srNo', headerName: 'SR NO', flex: 1 },
+        ...data.tableData.columns
+      ];
+
+      return({
       ...data,
       projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
       amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-    }))
-    .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
+      tableData: {...data.tableData, rows:transoformedRows,columns: transformedCols}
+    })
+  })
+    .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending // Sort descending
 
   // ---------------------------------------------------------------------//
   // Data for the chart
@@ -198,7 +224,7 @@ const BudgetDisplay = ({ budgetData }) => {
           handleSubmit={() => setOpenModal(true)}
         />
       </div>
-      
+
       <AllocatedBudget financialData={financialData}/>
       <MuiModal
         title="Request Budget"

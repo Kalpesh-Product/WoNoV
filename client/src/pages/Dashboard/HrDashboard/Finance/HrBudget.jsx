@@ -101,12 +101,23 @@ const HrBudget = () => {
 
   // Convert grouped data to array and sort by latest month (descending order)
   const financialData = Object.values(groupedData)
-    .map((data) => ({
+    .map((data,index) => {
+       
+      const transoformedRows = data.tableData.rows.map((row,index)=>({...row,srNo:index+1,projectedAmount:Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 })}))
+      const transformedCols = [
+        { field: 'srNo', headerName: 'SR NO', flex: 1 },
+        ...data.tableData.columns
+      ];
+
+      return({
       ...data,
       projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
       amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-    }))
+      tableData: {...data.tableData, rows:transoformedRows,columns: transformedCols}
+    })
+  })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
+
 
   // ---------------------------------------------------------------------//
   // Data for the chart
@@ -252,7 +263,7 @@ const HrBudget = () => {
         />
       </div>
 
-    <AllocatedBudget financialData={financialData}/>
+    <AllocatedBudget financialData={financialData} groupedData={groupedData} />
 
       <MuiModal
         title="Request Budget"

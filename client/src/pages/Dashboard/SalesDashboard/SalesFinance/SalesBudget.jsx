@@ -1,5 +1,6 @@
 import React from "react";
 import LayerBarGraph from "../../../../components/graphs/LayerBarGraph";
+import dayjs from "dayjs";
 import WidgetSection from "../../../../components/WidgetSection";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -9,8 +10,27 @@ import AgTable from "../../../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import DataCard from "../../../../components/DataCard";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 
 const SalesBudget = () => {
+ const axios = useAxiosPrivate();
+
+   const { data: hrFinance = [] } = useQuery({
+      queryKey: ["hrFinance"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
+            `
+          );
+          return response.data.allBudgets;
+        } catch (error) {
+          throw new Error("Error fetching data");
+        }
+      },
+    });
+
   // Data for the chart
   const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
   const defaultData = utilisedData.map((value) =>
@@ -110,248 +130,193 @@ const SalesBudget = () => {
   };
 
   // Data array for rendering the Accordion
-  const financialData = [
-    {
-      month: "April 2024",
-      projectedAmount: 18000,
-      amount: "15000",
-      tableData: {
-        columns: [
-          { field: "category", headerName: "Category", flex: 1 },
-          { field: "expenseName", headerName: "Expense", flex: 1 },
-          { field: "paymentDate", headerName: "Payment Date", flex: 1 },
-          { field: "amount", headerName: "Amount", flex: 1 },
-          { field: "status", headerName: "Status", flex: 1 },
-        ],
-        rows: [
-          {
-            id: 1,
-            category: "Hosting",
-            expenseName: "Hosting Fee",
-            amount: "2500",
-            paymentDate: "2024-04-10",
-            status: "Paid",
-          },
-          {
-            id: 2,
-            category: "Domain",
-            expenseName: "Domain Renewal",
-            amount: "1500",
-            paymentDate: "2024-04-12",
-            status: "Pending",
-          },
-          {
-            id: 3,
-            category: "Software",
-            expenseName: "SaaS Subscription",
-            amount: "4500",
-            paymentDate: "2024-04-15",
-            status: "Paid",
-          },
-          {
-            id: 4,
-            category: "Marketing",
-            expenseName: "Ad Campaign",
-            amount: "3500",
-            paymentDate: "2024-04-20",
-            status: "Paid",
-          },
-        ],
-      },
-    },
-    {
-      month: "May 2024",
-      projectedAmount: 23000,
-      amount: "20000",
-      tableData: {
-        columns: [
-          { field: "category", headerName: "Category", flex: 1 },
-          { field: "expenseName", headerName: "Expense", flex: 1 },
-          { field: "paymentDate", headerName: "Payment Date", flex: 1 },
-          { field: "amount", headerName: "Amount", flex: 1 },
-          { field: "status", headerName: "Status", flex: 1 },
-        ],
-        rows: [
-          {
-            id: 1,
-            category: "Hosting",
-            expenseName: "VPS Fee",
-            amount: "3000",
-            paymentDate: "2024-05-05",
-            status: "Paid",
-          },
-          {
-            id: 2,
-            category: "Software",
-            expenseName: "CRM Subscription",
-            amount: "5500",
-            paymentDate: "2024-05-07",
-            status: "Pending",
-          },
-          {
-            id: 3,
-            category: "Marketing",
-            expenseName: "Social Media Ads",
-            amount: "7000",
-            paymentDate: "2024-05-12",
-            status: "Paid",
-          },
-          {
-            id: 4,
-            category: "Office",
-            expenseName: "Internet Bill",
-            amount: "2000",
-            paymentDate: "2024-05-18",
-            status: "Paid",
-          },
-        ],
-      },
-    },
-    {
-      month: "June 2024",
-      projectedAmount: 20000,
-      amount: "18500",
-      tableData: {
-        columns: [
-          { field: "category", headerName: "Category", flex: 1 },
-          { field: "expenseName", headerName: "Expense", flex: 1 },
-          { field: "paymentDate", headerName: "Payment Date", flex: 1 },
-          { field: "amount", headerName: "Amount", flex: 1 },
-          { field: "status", headerName: "Status", flex: 1 },
-        ],
-        rows: [
-          {
-            id: 1,
-            category: "Software",
-            expenseName: "Accounting Software",
-            amount: "5000",
-            paymentDate: "2024-06-03",
-            status: "Paid",
-          },
-          {
-            id: 2,
-            category: "Marketing",
-            expenseName: "Email Marketing",
-            amount: "3000",
-            paymentDate: "2024-06-08",
-            status: "Pending",
-          },
-          {
-            id: 3,
-            category: "Office",
-            expenseName: "Electricity Bill",
-            amount: "1500",
-            paymentDate: "2024-06-10",
-            status: "Paid",
-          },
-          {
-            id: 4,
-            category: "Salaries",
-            expenseName: "Freelancer Payment",
-            amount: "8000",
-            paymentDate: "2024-06-15",
-            status: "Paid",
-          },
-        ],
-      },
-    },
-    {
-      month: "July 2024",
-      projectedAmount: 25000,
-      amount: "22000",
-      tableData: {
-        columns: [
-          { field: "category", headerName: "Category", flex: 1 },
-          { field: "expenseName", headerName: "Expense", flex: 1 },
-          { field: "paymentDate", headerName: "Payment Date", flex: 1 },
-          { field: "amount", headerName: "Amount", flex: 1 },
-          { field: "status", headerName: "Status", flex: 1 },
-        ],
-        rows: [
-          {
-            id: 1,
-            category: "Software",
-            expenseName: "Cloud Storage",
-            amount: "2000",
-            paymentDate: "2024-07-02",
-            status: "Paid",
-          },
-          {
-            id: 2,
-            category: "Marketing",
-            expenseName: "Content Marketing",
-            amount: "4000",
-            paymentDate: "2024-07-06",
-            status: "Pending",
-          },
-          {
-            id: 3,
-            category: "Office",
-            expenseName: "Rent",
-            amount: "12000",
-            paymentDate: "2024-07-10",
-            status: "Paid",
-          },
-          {
-            id: 4,
-            category: "Salaries",
-            expenseName: "Employee Bonus",
-            amount: "5000",
-            paymentDate: "2024-07-20",
-            status: "Paid",
-          },
-        ],
-      },
-    },
-    {
-      month: "August 2024",
-      projectedAmount: 21000,
-      amount: "19500",
-      tableData: {
-        columns: [
-          { field: "category", headerName: "Category", flex: 1 },
-          { field: "expenseName", headerName: "Expense", flex: 1 },
-          { field: "paymentDate", headerName: "Payment Date", flex: 1 },
-          { field: "amount", headerName: "Amount", flex: 1 },
-          { field: "status", headerName: "Status", flex: 1 },
-        ],
-        rows: [
-          {
-            id: 1,
-            category: "Hosting",
-            expenseName: "Server Maintenance",
-            amount: "4000",
-            paymentDate: "2024-08-04",
-            status: "Paid",
-          },
-          {
-            id: 2,
-            category: "Software",
-            expenseName: "Subscription Fee",
-            amount: "2000",
-            paymentDate: "2024-08-08",
-            status: "Pending",
-          },
-          {
-            id: 3,
-            category: "Marketing",
-            expenseName: "PPC Ads",
-            amount: "5000",
-            paymentDate: "2024-08-14",
-            status: "Paid",
-          },
-          {
-            id: 4,
-            category: "Office",
-            expenseName: "Water Bill",
-            amount: "1000",
-            paymentDate: "2024-08-18",
-            status: "Paid",
-          },
-        ],
-      },
-    },
-  ];
+//   const financialData = [
+//     {
+//       month: "April 2024",
+//       projectedAmount: 18000,
+//       amount: "15000",
+//       tableData: {
+//         columns: [
+//           { field: "srNo", headerName: "SR NO", flex: 1 },
+//           { field: "category", headerName: "Category", flex: 1 },
+//           { field: "expenseName", headerName: "Expense", flex: 1 },
+//           { field: "dueDate", headerName: "Due Date", flex: 1 },
+//           { field: "amount", headerName: "Amount", flex: 1 },
+//           { field: "status", headerName: "Status", flex: 1 },
+//         ],
+//         rows: [
+//           {
+//             srNo: 1,
+//             category: "Hosting",
+//             expenseName: "Hosting Fee",
+//             amount: "2500",
+//             dueDate: "2024-04-10",
+//             status: "Paid",
+//           },
+//           {
+//             srNo: 2,
+//             category: "Domain",
+//             expenseName: "Domain Renewal",
+//             amount: "1500",
+//             dueDate: "2024-04-12",
+//             status: "Pending",
+//           },
+//           {
+//             srNo: 3,
+//             category: "Software",
+//             expenseName: "SaaS Subscription",
+//             amount: "4500",
+//             dueDate: "2024-04-15",
+//             status: "Paid",
+//           },
+//           {
+//             srNo: 4,
+//             category: "Marketing",
+//             expenseName: "Ad Campaign",
+//             amount: "3500",
+//             dueDate: "2024-04-20",
+//             status: "Paid",
+//           },
+//           {
+//             srNo: 5,
+//             category: "Office",
+//             expenseName: "Printer Paper",
+//             amount: "300",
+//             dueDate: "2024-04-22",
+//             status: "Paid",
+//           },
+//           {
+//             srNo: 6,
+//             category: "Utilities",
+//             expenseName: "Water Supply",
+//             amount: "200",
+//             dueDate: "2024-04-24",
+//             status: "Paid",
+//           },
+//           {
+//             srNo: 7,
+//             category: "Software",
+//             expenseName: "Bug Tracking Tool",
+//             amount: "1000",
+//             dueDate: "2024-04-25",
+//             status: "Pending",
+//           },
+//           {
+//             srNo: 8,
+//             category: "Salaries",
+//             expenseName: "Part-time Developer",
+//             amount: "3000",
+//             dueDate: "2024-04-26",
+//             status: "Paid",
+//           },
+//           {
+//             srNo: 9,
+//             category: "Marketing",
+//             expenseName: "Design Templates",
+//             amount: "500",
+//             dueDate: "2024-04-28",
+//             status: "Paid",
+//           },
+//           {
+//             srNo: 10,
+//             category: "Office",
+//             expenseName: "Cleaning Supplies",
+//             amount: "400",
+//             dueDate: "2024-04-30",
+//             status: "Pending",
+//           },
+//         ],
+//       },
+//     },
+//     // Same structure to be repeated for May–August with unique data.
+//   ];
+  
+
+// const transformedFinancialData = financialData.map((data) => {
+//   const transformedRows = data.tableData.rows.map((row, index) => ({
+//     srNo: index + 1,
+//     category: row.category,
+//     expenseName: row.expenseName,
+//     amount: Number(row.amount).toLocaleString("en-IN", {
+//       minimumFractionDigits: 0
+//     }),
+//     dueDate: dayjs(row.dueDate).format("DD-MM-YYYY"),
+//     status: row.status,
+//   }));
+
+//   return {
+//     ...data,
+//     projectedAmount: Number(data.projectedAmount).toLocaleString("en-IN", {
+//       minimumFractionDigits: 0,
+//       maximumFractionDigits: 2,
+//     }),
+//     amount: Number(data.amount).toLocaleString("en-IN", {
+//       minimumFractionDigits: 0,
+//       maximumFractionDigits: 2,
+//     }),
+//     tableData: {
+//       columns: data.tableData.columns,
+//       rows: transformedRows,
+//     },
+//   };
+// });
+
+ const groupedData = hrFinance.reduce((acc, item) => {
+    const month = dayjs(item.dueDate).format("MMM-YYYY"); // Extracting month and year
+
+    if (!acc[month]) {
+      acc[month] = {
+        month,
+        latestDueDate: item.dueDate, // Store latest due date for sorting
+        projectedAmount: 0,
+        amount: 0,
+        tableData: {
+          rows: [],
+          columns: [
+            { field: "expanseName", headerName: "Expense Name", flex: 1 },
+            // { field: "department", headerName: "Department", flex: 200 },
+            { field: "expanseType", headerName: "Expense Type", flex: 1 },
+            { field: "projectedAmount", headerName: "Amount", flex: 1 },
+            { field: "dueDate", headerName: "Due Date", flex: 1 },
+            { field: "status", headerName: "Status", flex: 1 },
+          ],
+        },
+      };
+    }
+
+    acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
+    acc[month].amount += item.projectedAmount; // Summing the total amount per month
+    acc[month].tableData.rows.push({
+      id: item._id,
+      expanseName: item.expanseName,
+      department: item.department,
+      expanseType: item.expanseType,
+      projectedAmount: item.projectedAmount.toFixed(2), // Ensuring two decimal places
+      dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
+      status: item.status,
+    });
+
+    return acc;
+  }, {});
+
+  // Convert grouped data to array and sort by latest month (descending order)
+   const financialData = Object.values(groupedData)
+      .map((data,index) => {
+         
+        const transoformedRows = data.tableData.rows.map((row,index)=>({...row,srNo:index+1,projectedAmount:Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 })}))
+        const transformedCols = [
+          { field: 'srNo', headerName: 'SR NO', flex: 1 },
+          ...data.tableData.columns
+        ];
+  
+        return({
+        ...data,
+        projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        tableData: {...data.tableData, rows:transoformedRows,columns: transformedCols}
+      })
+    })
+      .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
   return (
     <div className="flex flex-col gap-8">
