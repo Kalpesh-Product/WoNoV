@@ -3,7 +3,6 @@ import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
   MdOutlineMiscellaneousServices,
-  MdRebaseEdit,
 } from "react-icons/md";
 import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import WidgetSection from "../../../components/WidgetSection";
@@ -13,8 +12,6 @@ import PieChartMui from "../../../components/graphs/PieChartMui";
 import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
-import { LuHardDriveUpload } from "react-icons/lu";
-import { CgWebsite } from "react-icons/cg";
 
 const MaintainanceDashboard = () => {
   const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
@@ -35,6 +32,7 @@ const MaintainanceDashboard = () => {
   const options = {
     chart: {
       type: "bar",
+      toolbar: false,
       stacked: true,
       fontFamily: "Poppins-Regular",
     },
@@ -69,7 +67,7 @@ const MaintainanceDashboard = () => {
         "Oct-24",
         "Nov-24",
         "Dec-24",
-      ]
+      ],
     },
     yaxis: {
       max: 150,
@@ -462,30 +460,37 @@ const MaintainanceDashboard = () => {
       widgets: [
         <WidgetSection border title={"Budget v/s Achievements"}>
           <LayerBarGraph data={data} options={options} />
+          <hr />
+          <WidgetSection layout={3} padding>
+            <DataCard
+              data={"40K"}
+              title={"Projected"}
+              route={"/app/dashboard/maintenance-dashboard/finance/budget"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={"35K"}
+              title={"Actual"}
+              route={"/app/dashboard/maintenance-dashboard/finance/budget"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={6000}
+              title={"Requested"}
+              route={"/app/dashboard/maintenance-dashboard/finance/budget"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+          </WidgetSection>
         </WidgetSection>,
-      ],
-    },
-    {
-      layout: 3,
-      widgets: [
-        <DataCard
-          data={"40K"}
-          title={"Projected"}
-          route={"/app/dashboard/maintainance-dashboard/finance"}
-          description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
-        />,
-        <DataCard
-          data={"35K"}
-          title={"Actual"}
-          route={"/app/dashboard/maintainance-dashboard/finance"}
-          description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
-        />,
-        <DataCard
-          data={6000}
-          title={"Requested"}
-          route={"/app/dashboard/maintainance-dashboard/finance"}
-          description={`Current Month: ${new Date().toLocaleString('default', { month: 'long' })}`}
-        />,
       ],
     },
     {

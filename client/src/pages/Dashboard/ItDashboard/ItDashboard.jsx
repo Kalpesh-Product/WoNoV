@@ -33,6 +33,7 @@ const ItDashboard = () => {
     chart: {
       type: "bar",
       stacked: true,
+      toolbar: false,
       fontFamily: "Poppins-Regular",
     },
     plotOptions: {
@@ -44,7 +45,7 @@ const ItDashboard = () => {
         borderRadiusApplication: "end",
       },
     },
-     colors: ["#36BA98", "#275D3E", "#E83F25"], // Colors for the series
+    colors: ["#36BA98", "#275D3E", "#E83F25"], // Colors for the series
     dataLabels: {
       enabled: true,
       formatter: (value, { seriesIndex }) => {
@@ -53,7 +54,7 @@ const ItDashboard = () => {
       },
     },
     xaxis: {
-        categories: [
+      categories: [
         "Jan-24",
         "Feb-24",
         "Mar-24",
@@ -66,7 +67,7 @@ const ItDashboard = () => {
         "Oct-24",
         "Nov-24",
         "Dec-24",
-      ]
+      ],
     },
     yaxis: {
       max: 150,
@@ -300,6 +301,36 @@ const ItDashboard = () => {
       widgets: [
         <WidgetSection border title={"Budget v/s Achievements"}>
           <LayerBarGraph data={data} options={options} />
+          <hr />
+          <WidgetSection layout={3} padding>
+            <DataCard
+              data={"40K"}
+              title={"Projected"}
+              route={"/app/dashboard/it-dashboard/finance/budget"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={"35K"}
+              title={"Actual"}
+              route={"/app/dashboard/it-dashboard/finance/budget"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={6000}
+              title={"Requested"}
+              route={"/app/dashboard/it-dashboard/finance/budget"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+          </WidgetSection>
         </WidgetSection>,
       ],
     },

@@ -323,7 +323,6 @@ const ManageMeetings = () => {
     
         return (
           <div className="flex gap-2 items-center">
-            {/* 👁️ View icon - always enabled */}
             <div
               onClick={() => handleSelectedMeeting("viewDetails", params.data)}
               className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"

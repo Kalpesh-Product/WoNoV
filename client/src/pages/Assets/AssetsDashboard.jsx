@@ -122,22 +122,6 @@ const AssetsDashboard = () => {
       ],
     },
     {
-      layout: 1,
-      widgets: [
-        <WidgetSection layout={1} padding>
-          <MuiTable
-            Title="Recently Added Assets"
-            columns={recentAssetsColumns}
-            rows={recentAssetsData}
-            rowKey="id"
-            rowsToDisplay={10}
-            scroll={true}
-            className="h-full"
-          />
-        </WidgetSection>,
-      ],
-    },
-    {
       layout: 2,
       widgets: [
         <WidgetSection layout={1} title={"Department Wise Asset Usage"} border>
@@ -148,6 +132,21 @@ const AssetsDashboard = () => {
         </WidgetSection>,
         <WidgetSection layout={1} title={"Asset Categories"} border>
           <DonutChart {...assetCategoriesData} />
+        </WidgetSection>,
+      ],
+    },
+    {
+      layout: 1,
+      widgets: [
+        <WidgetSection layout={1} padding>
+            <MuiTable
+              Title="Recently Added Assets"
+              columns={recentAssetsColumns}
+              rows={recentAssetsData}
+              rowKey="id"
+              rowsToDisplay={8}
+              className="h-full"
+            />
         </WidgetSection>,
       ],
     },

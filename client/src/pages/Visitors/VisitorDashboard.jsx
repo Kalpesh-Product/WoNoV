@@ -119,8 +119,18 @@ const VisitorDashboard = () => {
   });
 
   const BookingMonths = [
-    "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
-    "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
+    "Apr-24",
+    "May-24",
+    "Jun-24",
+    "Jul-24",
+    "Aug-24",
+    "Sep-24",
+    "Oct-24",
+    "Nov-24",
+    "Dec-24",
+    "Jan-25",
+    "Feb-25",
+    "Mar-25",
   ];
 
   // Example booked hours data per month
@@ -149,7 +159,7 @@ const VisitorDashboard = () => {
   const averageBookingSeries = [{ name: "Total Visitors", data }];
 
   const averageBookingOptions = {
-    chart: { type: "bar", fontFamily: "Poppins-Regular" },
+    chart: { type: "bar", fontFamily: "Poppins-Regular", toolbar: false },
     xaxis: { categories: BookingMonths },
     yaxis: {
       max: 100,
@@ -370,7 +380,9 @@ const VisitorDashboard = () => {
                   phoneNumber: item.phoneNumber,
                   email: item.email,
                   purposeOfVisit: item.purposeOfVisit,
-                  toMeet: item.toMeet?.firstName ? item.toMeet?.firstName : "Unknown",
+                  toMeet: item.toMeet?.firstName
+                    ? item.toMeet?.firstName
+                    : "Unknown",
                   checkIn: humanTime(item.checkIn),
                   checkOut: humanTime(item.checkOut),
                 })),

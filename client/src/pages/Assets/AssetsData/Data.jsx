@@ -3,8 +3,18 @@ import PrimaryButton from "../../../components/PrimaryButton";
 
 // Asset Value data start
 const financialYearMonths = [
-  "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
-  "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
+  "Apr-24",
+  "May-24",
+  "Jun-24",
+  "Jul-24",
+  "Aug-24",
+  "Sep-24",
+  "Oct-24",
+  "Nov-24",
+  "Dec-24",
+  "Jan-25",
+  "Feb-25",
+  "Mar-25",
 ];
 
 const totalAssetValues = {
@@ -66,7 +76,6 @@ const assetsDamaged = {
   "Feb-25": 10,
   "Mar-25": 5,
 };
- 
 
 const assetUtilizationData = financialYearMonths.map((month) => {
   return ((usedAssetValues[month] / totalAssetValues[month]) * 100).toFixed(2);
@@ -77,7 +86,7 @@ const assetUtilizationSeries = [
 ];
 
 const assetUtilizationOptions = {
-  chart: { type: "bar", fontFamily: "Poppins-Regular" },
+  chart: { type: "bar", fontFamily: "Poppins-Regular", toolbar: false },
   xaxis: { categories: financialYearMonths },
   yaxis: {
     max: 100,
@@ -268,7 +277,7 @@ const assetCategoriesData = {
   colors: ["#FF5733", "#FFC300", "#36A2EB", "#4CAF50"], // Example colors for each category
   centerLabel: "Assets",
   title: "Asset Categories Distribution",
-  tooltipValue:[30, 25, 20, 25]
+  tooltipValue: [30, 25, 20, 25],
 };
 
 // -----------------------Asset categories Donut Data End--------------------
