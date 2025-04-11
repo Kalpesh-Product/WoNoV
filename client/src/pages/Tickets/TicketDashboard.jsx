@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import FinanceCard from "../../components/FinanceCard";
 
 const TicketDashboard = () => {
+  const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const { auth } = useAuth();
@@ -54,8 +55,7 @@ const TicketDashboard = () => {
           layout={1}
           border
           padding
-          title={"Annual Tickets Raised"}
-        >
+          title={"Annual Tickets Raised"}>
           <AreaGraph responseData={ticketsData} />
         </WidgetSection>,
       ],
@@ -110,6 +110,7 @@ const TicketDashboard = () => {
         </WidgetSection>,
         <WidgetSection
           layout={1}
+          onClick={() => navigate("/app/tickets/department-wise-tickets")}
           padding
           border
           titleLabel={"Current month"}
