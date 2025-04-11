@@ -12,6 +12,7 @@ import {
 import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
+import dayjs from "dayjs";
 
 const RevenueTarget = () => {
   const mockBusinessRevenueData = [
@@ -439,7 +440,8 @@ const RevenueTarget = () => {
         layout={1}
         border
         padding
-        title={"Vertical-wise Revenue Targets - April 2025"}
+        title={"Vertical-wise Revenue Targets"}
+        titleLabel={dayjs().format("MMMM YYYY") }
         TitleAmount={"Total INR 6,80,000"}
       >
         <BarGraph data={graphData} options={options} height={400} />

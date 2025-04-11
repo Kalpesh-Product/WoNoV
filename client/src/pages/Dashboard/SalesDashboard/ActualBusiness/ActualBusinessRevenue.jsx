@@ -14,6 +14,7 @@ import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import dayjs from "dayjs";
 
 const ActualBusinessRevenue = () => {
   const axios = useAxiosPrivate();
@@ -452,8 +453,8 @@ const ActualBusinessRevenue = () => {
       {/* Bar Graph Component */}
       <WidgetSection
         layout={1}
-        title={"Vertical-wise Revenue - March 2025"}
-        // titleData={"Hi"}
+        title={"Vertical-wise Revenue"}
+        titleLabel={dayjs().format("MMMM YYYY")}
         TitleAmount={"Total INR 6,80,000"}
         border>
         <BarGraph data={graphData} options={options} height={400} />
