@@ -1447,7 +1447,7 @@ export const routes = createBrowserRouter([
                     index: true,
                   },
                   {
-                    path: "month-meetings",
+                    path: ":meetings",
                     element: <MonthMeetings />, 
                   },
                   {

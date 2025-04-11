@@ -29,32 +29,67 @@ const Calender = () => {
     start: "",
     description: "",
   });
-  const [eventFilter, setEventFilter] = useState(["holiday", "event"]);
+  const [eventFilter, setEventFilter] = useState(["holiday", "event", "meeting"]);
   const axios = useAxiosPrivate();
 
-  const { data: events = [], isPending: isEventsPending } = useQuery({
-    queryKey: ["events"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/events/all-events");
+  //---------------------------------API------------------------------------------//
+  
+    const { data: events = [], isPending: isEventsPending } = useQuery({
+      queryKey: ["events"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/events/all-events");
+          return response.data;
+        } catch (error) {
+          toast.error(error.message);
+          return [];
+        }
+      },
+    });
+
+    const { data: meetings = [], isLoading: isMeetingsLoading } = useQuery({
+      queryKey: ["meetings"],
+      queryFn: async () => {
+        const response = await axios.get("/api/meetings/get-meetings");
         return response.data;
-      } catch (error) {
-        toast.error(error.message);
-        return [];
-      }
-    },
-  });
+      },
+    });
+
+    const transformedMeetings = meetings.map((meeting) => ({
+      id: meeting._id,
+      title: meeting.subject || "Meeting",
+      start: meeting.startTime,
+      end: meeting.endTime,
+      allDay: false,
+      backgroundColor: "#2196f3", // blue for meetings
+      extendedProps: {
+        type: "meeting", // so it can be filtered
+        agenda: meeting.agenda,
+        roomName: meeting.roomName,
+        department: meeting.department,
+        participants: meeting.participants,
+        meetingStatus: meeting.meetingStatus,
+        housekeepingStatus: meeting.housekeepingStatus,
+      },
+    }));
+    
+  //---------------------------------API------------------------------------------//
+
+
 
   useEffect(() => {
+    const allCombinedEvents = [...events, ...transformedMeetings];
+  
     if (eventFilter.length === 0) {
-      setFilteredEvents(events);
+      setFilteredEvents(allCombinedEvents);
     } else {
-      const filtered = events.filter((event) =>
-        eventFilter.includes(event.extendedProps?.type.toLowerCase())
+      const filtered = allCombinedEvents.filter((event) =>
+        eventFilter.includes(event.extendedProps?.type?.toLowerCase())
       );
       setFilteredEvents(filtered);
     }
-  }, [eventFilter, events]);
+  }, [eventFilter, events, meetings]);
+  
 
   const getTodaysEvents = () => {
     const today = dayjs().startOf("day");
@@ -77,6 +112,7 @@ const Calender = () => {
     const colors = {
       holiday: "#4caf50",
       event: "#ff9800",
+      meeting : "#2196f3"
     };
 
     const headerBackground = colors[type] || ""; // Fallback to empty if type doesn't match
@@ -97,6 +133,8 @@ const Calender = () => {
     });
   };
 
+  useEffect(()=>console.log(filteredEvents),[filteredEvents])
+
   return (
     <div className="flex w-[70%] md:w-full">
       <div className="flex-1 p-4 bg-white">
@@ -111,10 +149,11 @@ const Calender = () => {
               <div className="flex justify-start text-content px-2">
                 {!isEventsPending ? (
                   <FormGroup column>
-                    {["holiday", "event"].map((type) => {
+                    {["holiday", "event","meeting"].map((type) => {
                       const colors = {
                         holiday: "#4caf50",
                         event: "#ff9800",
+                        meetings : "#2196f3"
                       };
                       return (
                         <FormControlLabel
@@ -167,6 +206,7 @@ const Calender = () => {
                     const colors = {
                       holiday: "#4caf50",
                       event: "#ff9800",
+                      meeting : "#2196f3"
                     };
                     return (
                       <div key={index} className="flex gap-2 items-center mb-2">
@@ -204,6 +244,9 @@ const Calender = () => {
               }}
               dayMaxEvents={2}
               eventDisplay="block"
+              eventContent={(meeting) => (
+                <span className="text-content">{meeting.event.title}</span>
+              )}
               eventClick={handleEventClick}
               contentHeight={520}
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}

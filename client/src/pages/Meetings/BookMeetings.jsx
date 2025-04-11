@@ -275,14 +275,23 @@ const BookMeetings = () => {
                     .sort((a, b) => a.seats - b.seats)
                     .map((room) => (
                       <MenuItem key={room._id} value={room._id}>
-                        <div className="flex w-full items-center">
-                          <>
-                          <span>{room.name}</span>
-                          <div className="flex text-small gap-2 items-center py-1 px-2 rounded-full bg-primary bg-opacity-10 text-primary">
-                            <span>{room.seats}</span>
-                            <MdEventSeat />
+                        <div className="flex w-full items-center justify-between">
+                          <div className="flex items-center w-[30%] justify-between">
+                            <span>{room.name}</span>
+                            <div className="flex text-small gap-2 items-center py-1 px-2 rounded-full bg-primary bg-opacity-10 text-primary">
+                              <span>{room.seats}</span>
+                              <MdEventSeat />
+                            </div>
                           </div>
-                          </>
+                          <div>
+                            <div
+                              className={` w-2 h-2 rounded-full  ${
+                                room.status === "Available"
+                                  ? "bg-green-400"
+                                  : "bg-red-600"
+                              }`}
+                            ></div>
+                          </div>
                         </div>
                       </MenuItem>
                     ))}
