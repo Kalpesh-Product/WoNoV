@@ -87,8 +87,7 @@ const Header = () => {
               {!isMobile && (
                 <button
                   onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="p-2 text-gray-500 text-xl"
-                >
+                  className="p-2 text-gray-500 text-xl">
                   {isSidebarOpen ? <GiHamburgerMenu /> : <IoIosArrowForward />}
                 </button>
               )}
@@ -98,7 +97,7 @@ const Header = () => {
         {!isMobile && (
           <>
             <div className="w-full flex items-center pl-20">
-              <TextField
+              {/* <TextField
                 fullWidth
                 size="small"
                 type="search"
@@ -114,7 +113,7 @@ const Header = () => {
                     ),
                   },
                 }}
-              />
+              /> */}
             </div>
 
             <div className="flex w-full justify-end gap-4">
@@ -127,7 +126,7 @@ const Header = () => {
             </div>
           </>
         )}
-        <div className="flex items-center gap-4 w-[40%]">
+        <div className="flex items-center gap-4 ">
           <Avatar onClick={handleAvatarClick} className="cursor-pointer">
             {auth.user.name === "Abrar Shaikh" ? (
               <img src={Abrar} alt="" />
@@ -138,17 +137,18 @@ const Header = () => {
           <div
             className="w-full relative"
             onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-          >
+            onMouseLeave={() => setIsHovered(false)}>
             {!isMobile && (
               <>
-                <h1 className="text-xl font-semibold">{auth.user.firstName}</h1>
-                <span className="text-content">
+                <h1 className="text-xl font-semibold text-right">
+                  {auth.user.firstName}
+                </h1>
+                {/* <span className="text-content">
                   {auth.user.designation.split(" ").length > 3
                     ? auth.user.designation.split(" ").slice(0, 3).join(" ") +
                       "..."
                     : auth.user.designation}
-                </span>
+                </span> */}
                 {isHovered && auth.user.designation.split(" ").length > 1 ? (
                   <div className="motion-preset-slide-up-sm absolute top-14 right-0 bg-white border-default border-primary rounded-md p-4 w-96">
                     <span>{auth.user.designation}</span>
@@ -175,16 +175,14 @@ const Header = () => {
         transformOrigin={{
           vertical: "top",
           horizontal: "center",
-        }}
-      >
+        }}>
         <div className="p-4 w-48">
           <List>
             {/* Profile Option */}
             <ListItem
               button
               onClick={handleProfileClick}
-              className="hover:text-primary transition-all duration-100 text-gray-500 cursor-pointer"
-            >
+              className="hover:text-primary transition-all duration-100 text-gray-500 cursor-pointer">
               <ListItemIcon>
                 <FaUserTie className="text-gray-500" />
               </ListItemIcon>
@@ -197,8 +195,7 @@ const Header = () => {
             <ListItem
               button
               onClick={handleSignOut}
-              className="hover:text-red-600 transition-all duration-100 text-gray-500 cursor-pointer"
-            >
+              className="hover:text-red-600 transition-all duration-100 text-gray-500 cursor-pointer">
               <ListItemIcon>
                 <FiLogOut className="text-gray-500" />
               </ListItemIcon>

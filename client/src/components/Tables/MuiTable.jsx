@@ -17,7 +17,7 @@ const MuiTable = ({
   rowsToDisplay,
   scroll = false,
 }) => {
-  const displayedRows = rowsToDisplay ? rows.slice(0, rowsToDisplay) : rows; // Default to all rows if not provided
+  const displayedRows = rowsToDisplay ? rows.slice(0, rowsToDisplay) : rows;
 
   return (
     <div className="border-default border-borderGray rounded-md">
@@ -27,11 +27,11 @@ const MuiTable = ({
       <Paper>
         <TableContainer
           style={{
-            height: scroll && rowsToDisplay ? 385 : "none", // Enable scrolling if scroll is true
+            // height: scroll && rowsToDisplay ? 385 : "none",
+            height: scroll && rowsToDisplay ? 480 : "none",
             overflowY: scroll && rowsToDisplay ? "auto" : "hidden",
             overflowX: "auto",
-          }}
-        >
+          }}>
           <Table stickyHeader={scroll && rowsToDisplay}>
             <TableHead>
               <TableRow>
@@ -39,8 +39,11 @@ const MuiTable = ({
                   <TableCell
                     key={column.id}
                     align={column.align || "left"}
-                    style={{ fontWeight: "bold" }}
-                  >
+                    style={{
+                      fontWeight: "bold",
+                      minWidth: column.minWidth,
+                      width: column.width,
+                    }}>
                     {column.label}
                   </TableCell>
                 ))}
@@ -50,9 +53,15 @@ const MuiTable = ({
               {(scroll && rowsToDisplay ? rows : displayedRows).map((row) => (
                 <TableRow key={row[rowKey]}>
                   {columns.map((column) => (
-                    <TableCell key={column.id} align={column.align || "left"} style={{ minWidth: column.minWidth || 120, }}>
+                    <TableCell
+                      key={column.id}
+                      align={column.align || "left"}
+                      style={{
+                        minWidth: column.minWidth,
+                        width: column.width,
+                      }}>
                       {column.renderCell
-                        ? column.renderCell(row)
+                        ? column.renderCell(row) // Now row is properly passed
                         : row[column.id]}
                     </TableCell>
                   ))}

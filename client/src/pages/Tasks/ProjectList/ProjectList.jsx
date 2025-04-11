@@ -52,7 +52,7 @@ const intialProjects = [
         monthlyTasks: 6,
         additionalTasks: 3,
       },
-      Muskan: {
+      Allan: {
         dailyTasks: 4,
         monthlyTasks: 5,
         additionalTasks: 2,
