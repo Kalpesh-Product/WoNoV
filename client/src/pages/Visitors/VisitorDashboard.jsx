@@ -24,8 +24,10 @@ import {
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import { CircularProgress } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const VisitorDashboard = () => {
+  const navigate = useNavigate();
   const axios = useAxiosPrivate();
 
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
@@ -77,22 +79,43 @@ const VisitorDashboard = () => {
   const colors = ["#1E3D73", "#4C66A1", "#637BB8"];
   //---------------------------------------------------Category Wise Visitors Donut Data---------------------------------------------------//
   //---------------------------------------------------Visitors Table Data---------------------------------------------------//
+  // const visitorsColumns = [
+  //   { id: "id", label: "Sr No" },
+  //   { id: "firstName", label: "First Name" },
+  //   { id: "lastName", label: "Last Name" },
+  //   { id: "email", label: "Email" },
+  //   { id: "phoneNumber", label: "Phone No" },
+  //   {
+  //     id: "purposeOfVisit",
+  //     label: "Purpose",
+  //     align: "right",
+  //   },
+  //   { id: "toMeet", label: "To Meet", align: "right" },
+  //   { id: "checkIn", label: "Check In" },
+  //   { id: "checkOut", label: "Checkout" },
+  //   //   {
+  //   //     id: "actions",
+  //   //     label: "Actions",
+  //   //     align: "center",
+  //   //     renderCell: () => <PrimaryButton title={"View"} />,
+  //   //   },
+  // ];
+
   const visitorsColumns = [
-    { id: "id", label: "Sr No" },
-    { id: "firstName", label: "First Name" },
-    { id: "lastName", label: "Last Name" },
-    { id: "email", label: "Email" },
-    { id: "phoneNumber", label: "Phone No" },
-    { id: "purposeOfVisit", label: "Purpose", align: "right" },
-    { id: "toMeet", label: "To Meet", align: "right" },
-    { id: "checkIn", label: "Check In" },
-    { id: "checkOut", label: "Checkout" },
-    //   {
-    //     id: "actions",
-    //     label: "Actions",
-    //     align: "center",
-    //     renderCell: () => <PrimaryButton title={"View"} />,
-    //   },
+    { id: "id", label: "Sr No", minWidth: 100 }, // Fixed width
+    { id: "firstName", label: "First Name", minWidth: 80 }, // Minimum width
+    { id: "lastName", label: "Last Name", minWidth: 120 },
+    { id: "email", label: "Email", minWidth: 80 },
+    { id: "phoneNumber", label: "Phone No", minWidth: 100 },
+    {
+      id: "purposeOfVisit",
+      label: "Purpose",
+      align: "left",
+      minWidth: 300,
+    },
+    { id: "toMeet", label: "To Meet", align: "left", minWidth: 150 },
+    { id: "checkIn", label: "Check In", minWidth: 120 },
+    { id: "checkOut", label: "Checkout", width: 80 },
   ];
   //---------------------------------------------------Visitors Table Data---------------------------------------------------//
 
@@ -119,8 +142,18 @@ const VisitorDashboard = () => {
   });
 
   const BookingMonths = [
-    "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
-    "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
+    "Apr-24",
+    "May-24",
+    "Jun-24",
+    "Jul-24",
+    "Aug-24",
+    "Sep-24",
+    "Oct-24",
+    "Nov-24",
+    "Dec-24",
+    "Jan-25",
+    "Feb-25",
+    "Mar-25",
   ];
 
   // Example booked hours data per month
@@ -201,6 +234,95 @@ const VisitorDashboard = () => {
     //   ],
     // },
   };
+
+  const usersQuery = useQuery({
+    queryKey: ["users"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/users/fetch-users");
+        return response.data;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
+
+  // Calculate total and gender-specific counts
+  const totalUsers = usersQuery.isLoading ? [] : usersQuery.data.length;
+
+  const maleCount = usersQuery.isLoading
+    ? []
+    : usersQuery.data.filter((user) => user.gender === "Male").length;
+
+  const femaleCount = usersQuery.isLoading
+    ? []
+    : usersQuery.data.filter((user) => user.gender === "Female").length;
+
+  const genderData = [
+    {
+      id: 0,
+      value: ((maleCount / totalUsers) * 100).toFixed(2),
+      actualCount: maleCount,
+      label: "Male",
+      color: "#0056B3",
+    },
+    {
+      id: 1,
+      value: ((femaleCount / totalUsers) * 100).toFixed(2),
+      actualCount: femaleCount,
+      label: "Female",
+      color: "#FD507E",
+    },
+  ];
+
+  const genderPieChart = {
+    chart: {
+      type: "pie",
+      fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => {
+          navigate("employee/view-employees");
+        },
+      },
+    },
+    labels: ["Male", "Female"], // Labels for the pie slices
+    colors: ["#0056B3", "#FD507E"], // Pass colors as an array
+    dataLabels: {
+      enabled: true,
+      position: "center",
+      style: {
+        fontSize: "14px", // Adjust the font size of the labels
+        fontWeight: "bold",
+      },
+      dropShadow: {
+        enabled: true,
+        top: 1,
+        left: 1,
+        blur: 1,
+        color: "#000",
+        opacity: 0.45,
+      },
+      formatter: function (val) {
+        return `${val.toFixed(0)}%`; // Show percentage value in the center
+      },
+    },
+    tooltip: {
+      enabled: true,
+      custom: function ({ series, seriesIndex }) {
+        const item = genderData[seriesIndex]; // Use genderData to fetch the correct item
+        return `
+          <div style="padding: 5px; font-size: 12px;">
+            ${item.label}: ${item.actualCount} Visitors
+          </div>`;
+      },
+    },
+    legend: {
+      position: "right",
+      horizontalAlign: "center",
+    },
+  };
+
+  //First pie-chart config data end
   const meetingsWidgets = [
     {
       layout: 1,
@@ -297,8 +419,7 @@ const VisitorDashboard = () => {
         <WidgetSection
           layout={1}
           title={"Visitor Categories This Month"}
-          border
-        >
+          border>
           <DonutChart
             centerLabel="Visitors"
             labels={labels}
@@ -310,8 +431,7 @@ const VisitorDashboard = () => {
         <WidgetSection
           layout={1}
           title={"Checked In v/s Checked Out Visitors Today"}
-          border
-        >
+          border>
           <PieChartMui
             data={assetAvailabilityDataV}
             options={assetAvailabilityOptionsV}
@@ -337,14 +457,14 @@ const VisitorDashboard = () => {
     {
       layout: 2,
       widgets: [
-        // <WidgetSection title={"Visitor Gender Data"} border>
-        //   <PieChartMui
-        //     percent={true}
-        //     title={"Visitor Gender Data"}
-        //     data={genderData}
-        //     options={genderPieChart}
-        //   />
-        // </WidgetSection>,
+        <WidgetSection title={"Visitor Gender Data"} border>
+          <PieChartMui
+            percent={true}
+            title={"Visitor Gender Data"}
+            data={genderData}
+            options={genderPieChart}
+          />
+        </WidgetSection>,
         <WidgetSection layout={1} title={"Department Wise Visits"} border>
           <PieChartMui
             data={departmentPieDataVX}
@@ -370,7 +490,9 @@ const VisitorDashboard = () => {
                   phoneNumber: item.phoneNumber,
                   email: item.email,
                   purposeOfVisit: item.purposeOfVisit,
-                  toMeet: item.toMeet?.firstName ? item.toMeet?.firstName : "Unknown",
+                  toMeet: item.toMeet?.firstName
+                    ? item.toMeet?.firstName
+                    : "Kalpesh Naik",
                   checkIn: humanTime(item.checkIn),
                   checkOut: humanTime(item.checkOut),
                 })),

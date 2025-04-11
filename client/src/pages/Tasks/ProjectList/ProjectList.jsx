@@ -52,7 +52,7 @@ const intialProjects = [
         monthlyTasks: 6,
         additionalTasks: 3,
       },
-      Aaron: {
+      Allan: {
         dailyTasks: 4,
         monthlyTasks: 5,
         additionalTasks: 2,

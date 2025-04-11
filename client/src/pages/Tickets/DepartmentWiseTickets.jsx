@@ -1,525 +1,223 @@
 import React, { useState } from "react";
-import BarGraph from "../../components/graphs/BarGraph";
-import {
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Chip,
-} from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../components/AgTable";
-import WidgetSection from "../../components/WidgetSection";
-import { useQuery } from "@tanstack/react-query";
+import { Chip, CircularProgress } from "@mui/material";
+import MuiModal from "../../components/MuiModal";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import { toast } from "sonner";
+import PrimaryButton from "../../components/PrimaryButton";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../main";
+import ThreeDotMenu from "../../components/ThreeDotMenu";
+import { Controller, useForm } from "react-hook-form";
+import useAuth from "../../hooks/useAuth";
 
-const DepartmentWiseTickets = () => {
+const DepartmentWiseTickets = ({ title }) => {
+  const [open, setOpen] = useState(false);
+  const { auth } = useAuth();
   const axios = useAxiosPrivate();
-  const { data: revenueData = [], isPending: isRevenuePending } = useQuery({
-    queryKey: ["revenueData"],
+  const [selectedTicketId, setSelectedTicketId] = useState(null);
+
+  // Add this dummy data variable above your component
+  const dummyTicketsData = [
+    {
+      _id: "1",
+      raisedBy: { firstName: "Utkarsha Palkar", departments: [{ name: "HR" }] },
+      ticket: "Printer is not working",
+      status: "Closed",
+    },
+    {
+      _id: "2",
+      raisedBy: {
+        firstName: "Narshiva Naik",
+        departments: [{ name: "Finance" }],
+      },
+      ticket: "Wifi is too slow",
+      status: "Pending",
+    },
+    {
+      _id: "3",
+      raisedBy: {
+        firstName: "Faizan Shaikh",
+        departments: [{ name: "IT" }],
+      },
+      ticket: "Website cannot be viewed",
+      status: "Pending",
+    },
+    {
+      _id: "4",
+      raisedBy: {
+        firstName: "Aiwinraj KS",
+        departments: [{ name: "Tech" }],
+      },
+      ticket: "Wifi is too slow",
+      status: "Pending",
+    },
+    {
+      _id: "5",
+      raisedBy: {
+        firstName: "Muskan Dodmani",
+        departments: [{ name: "Tech" }],
+      },
+      ticket: "Leave correction required",
+      status: "Closed",
+    },
+  ];
+
+  const { data: tickets = [], isLoading } = useQuery({
+    queryKey: ["tickets"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/sales/fetch-revenues");
-        console.log("Revenue Data", response.data);
+        const response = await axios.get("/api/tickets/get-tickets");
+
         return response.data;
       } catch (error) {
-        console.error("Error fetching clients data:", error);
+        throw new Error(error.response.data.message);
       }
     },
   });
 
-  const mockBusinessRevenueData = [
-    {
-      month: "April",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 19,
-          clients: [
-            {
-              srNo: 1,
-              date: "2025-04-01",
-              time: "10:00",
-              name: "Aarav Thakur",
-              phone: "9811208753",
-              status: "Pending",
-            },
-            {
-              srNo: 2,
-              date: "2025-04-02",
-              time: "14:30",
-              name: "Bhavna Joshi",
-              phone: "9487337194",
-              status: "Follow-up",
-            },
-            {
-              srNo: 3,
-              date: "2025-04-03",
-              time: "09:15",
-              name: "Chetan Rawal",
-              phone: "9828899290",
-              status: "Pending",
-            },
-            {
-              srNo: 4,
-              date: "2025-04-04",
-              time: "11:45",
-              name: "Divya Saini",
-              phone: "9751382616",
-              status: "Follow-up",
-            },
-            {
-              srNo: 5,
-              date: "2025-04-05",
-              time: "15:00",
-              name: "Eshan Dubey",
-              phone: "9894331626",
-              status: "Pending",
-            },
-            {
-              srNo: 6,
-              date: "2025-04-06",
-              time: "13:30",
-              name: "Falguni Mehra",
-              phone: "9741777376",
-              status: "Follow-up",
-            },
-            {
-              srNo: 7,
-              date: "2025-04-07",
-              time: "12:15",
-              name: "Gaurav Kulkarni",
-              phone: "9837373505",
-              status: "Pending",
-            },
-            {
-              srNo: 8,
-              date: "2025-04-08",
-              time: "16:00",
-              name: "Hina Parmar",
-              phone: "9404873976",
-              status: "Follow-up",
-            },
-            {
-              srNo: 9,
-              date: "2025-04-09",
-              time: "10:45",
-              name: "Ishaan Vyas",
-              phone: "9487337194",
-              status: "Pending",
-            },
-            {
-              srNo: 10,
-              date: "2025-04-10",
-              time: "14:15",
-              name: "Jaya Sen",
-              phone: "9811208753",
-              status: "Follow-up",
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 8,
-          clients: [
-            {
-              srNo: 1,
-              date: "2025-04-01",
-              time: "11:00",
-              name: "Kiran Bedi",
-              phone: "9487337194",
-              status: "Pending",
-            },
-            {
-              srNo: 2,
-              date: "2025-04-02",
-              time: "15:30",
-              name: "Lalit Shukla",
-              phone: "9828899290",
-              status: "Follow-up",
-            },
-            {
-              srNo: 3,
-              date: "2025-04-03",
-              time: "09:45",
-              name: "Meera Nair",
-              phone: "9404873976",
-              status: "Pending",
-            },
-            {
-              srNo: 4,
-              date: "2025-04-04",
-              time: "13:15",
-              name: "Nitin Garg",
-              phone: "9894331626",
-              status: "Follow-up",
-            },
-            {
-              srNo: 5,
-              date: "2025-04-05",
-              time: "10:30",
-              name: "Ojasvi Rana",
-              phone: "9751382616",
-              status: "Pending",
-            },
-            {
-              srNo: 6,
-              date: "2025-04-06",
-              time: "14:45",
-              name: "Poonam Desai",
-              phone: "9741777376",
-              status: "Follow-up",
-            },
-            {
-              srNo: 7,
-              date: "2025-04-07",
-              time: "12:00",
-              name: "Qadir Khan",
-              phone: "9837373505",
-              status: "Pending",
-            },
-            {
-              srNo: 8,
-              date: "2025-04-08",
-              time: "16:30",
-              name: "Rhea Malhotra",
-              phone: "9811208753",
-              status: "Follow-up",
-            },
-            {
-              srNo: 9,
-              date: "2025-04-09",
-              time: "11:15",
-              name: "Sachin Tomar",
-              phone: "9487337194",
-              status: "Pending",
-            },
-            {
-              srNo: 10,
-              date: "2025-04-10",
-              time: "15:00",
-              name: "Tanvi Arora",
-              phone: "9828899290",
-              status: "Follow-up",
-            },
-          ],
-        },
-        {
-          name: "Meetings",
-          revenue: 14,
-          clients: [
-            {
-              srNo: 1,
-              date: "2025-04-01",
-              time: "12:30",
-              name: "Umesh Yadav",
-              phone: "9751382616",
-              status: "Pending",
-            },
-            {
-              srNo: 2,
-              date: "2025-04-02",
-              time: "16:15",
-              name: "Vandana Sethi",
-              phone: "9837373505",
-              status: "Follow-up",
-            },
-            {
-              srNo: 3,
-              date: "2025-04-03",
-              time: "10:15",
-              name: "Waseem Ali",
-              phone: "9828899290",
-              status: "Pending",
-            },
-            {
-              srNo: 4,
-              date: "2025-04-04",
-              time: "14:00",
-              name: "Xena Gupta",
-              phone: "9487337194",
-              status: "Follow-up",
-            },
-            {
-              srNo: 5,
-              date: "2025-04-05",
-              time: "11:30",
-              name: "Yashwant Rao",
-              phone: "9894331626",
-              status: "Pending",
-            },
-            {
-              srNo: 6,
-              date: "2025-04-06",
-              time: "15:45",
-              name: "Zara Sheikh",
-              phone: "9741777376",
-              status: "Follow-up",
-            },
-            {
-              srNo: 7,
-              date: "2025-04-07",
-              time: "13:00",
-              name: "Aditi Pathak",
-              phone: "9404873976",
-              status: "Pending",
-            },
-            {
-              srNo: 8,
-              date: "2025-04-08",
-              time: "17:00",
-              name: "Bhuvan Chawla",
-              phone: "9811208753",
-              status: "Follow-up",
-            },
-            {
-              srNo: 9,
-              date: "2025-04-09",
-              time: "12:45",
-              name: "Chitra Bose",
-              phone: "9751382616",
-              status: "Pending",
-            },
-            {
-              srNo: 10,
-              date: "2025-04-10",
-              time: "16:30",
-              name: "Dhruv Menon",
-              phone: "9837373505",
-              status: "Follow-up",
-            },
-          ],
-        },
-        {
-          name: "Virtual Office",
-          revenue: 21,
-          clients: [
-            {
-              srNo: 1,
-              date: "2025-04-01",
-              time: "13:45",
-              name: "Esha Trivedi",
-              phone: "9751382616",
-              status: "Pending",
-            },
-            {
-              srNo: 2,
-              date: "2025-04-02",
-              time: "17:30",
-              name: "Farooq Siddiqui",
-              phone: "9741777376",
-              status: "Follow-up",
-            },
-            {
-              srNo: 3,
-              date: "2025-04-03",
-              time: "11:00",
-              name: "Gitanjali Roy",
-              phone: "9837373505",
-              status: "Pending",
-            },
-            {
-              srNo: 4,
-              date: "2025-04-04",
-              time: "15:15",
-              name: "Harsh Vardhan",
-              phone: "9487337194",
-              status: "Follow-up",
-            },
-            {
-              srNo: 5,
-              date: "2025-04-05",
-              time: "12:15",
-              name: "Indira Kaul",
-              phone: "9828899290",
-              status: "Pending",
-            },
-            {
-              srNo: 6,
-              date: "2025-04-06",
-              time: "16:45",
-              name: "Jatin Puri",
-              phone: "9894331626",
-              status: "Follow-up",
-            },
-            {
-              srNo: 7,
-              date: "2025-04-07",
-              time: "14:00",
-              name: "Kavita Luthra",
-              phone: "9404873976",
-              status: "Pending",
-            },
-            {
-              srNo: 8,
-              date: "2025-04-08",
-              time: "18:00",
-              name: "Lakshmi Nair",
-              phone: "9811208753",
-              status: "Follow-up",
-            },
-            {
-              srNo: 9,
-              date: "2025-04-09",
-              time: "13:30",
-              name: "Manish Tandon",
-              phone: "9751382616",
-              status: "Pending",
-            },
-            {
-              srNo: 10,
-              date: "2025-04-10",
-              time: "17:15",
-              name: "Neelam Rathi",
-              phone: "9741777376",
-              status: "Follow-up",
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 17,
-          clients: [
-            {
-              srNo: 1,
-              date: "2025-04-01",
-              time: "14:15",
-              name: "Omkar Patil",
-              phone: "9894331626",
-              status: "Pending",
-            },
-            {
-              srNo: 2,
-              date: "2025-04-02",
-              time: "18:30",
-              name: "Pallavi Dutta",
-              phone: "9487337194",
-              status: "Follow-up",
-            },
-            {
-              srNo: 3,
-              date: "2025-04-03",
-              time: "12:00",
-              name: "Qasim Rizvi",
-              phone: "9811208753",
-              status: "Pending",
-            },
-            {
-              srNo: 4,
-              date: "2025-04-04",
-              time: "16:30",
-              name: "Rekha Sharma",
-              phone: "9828899290",
-              status: "Follow-up",
-            },
-            {
-              srNo: 5,
-              date: "2025-04-05",
-              time: "13:15",
-              name: "Siddhant Jain",
-              phone: "9751382616",
-              status: "Pending",
-            },
-            {
-              srNo: 6,
-              date: "2025-04-06",
-              time: "17:45",
-              name: "Tanya Kohli",
-              phone: "9741777376",
-              status: "Follow-up",
-            },
-            {
-              srNo: 7,
-              date: "2025-04-07",
-              time: "15:00",
-              name: "Ujjwal Das",
-              phone: "9837373505",
-              status: "Pending",
-            },
-            {
-              srNo: 8,
-              date: "2025-04-08",
-              time: "19:00",
-              name: "Vaishali More",
-              phone: "9404873976",
-              status: "Follow-up",
-            },
-            {
-              srNo: 9,
-              date: "2025-04-09",
-              time: "14:45",
-              name: "Yuvraj Singh",
-              phone: "9487337194",
-              status: "Pending",
-            },
-            {
-              srNo: 10,
-              date: "2025-04-10",
-              time: "18:15",
-              name: "Zoya Akhtar",
-              phone: "9894331626",
-              status: "Follow-up",
-            },
-          ],
-        },
-      ],
+  const { mutate: acceptMutate } = useMutation({
+    mutationKey: ["accept-ticket"],
+    mutationFn: async (ticket) => {
+      console.log("ticket is : ", ticket);
+      const response = await axios.patch(
+        `/api/tickets/accept-ticket/${ticket.id}`
+      );
+
+      return response.data.message;
     },
-  ];
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      toast.success(data);
+    },
+    onError: (error) => {
+      toast.error(error.response.data.message);
+    },
+  });
+  const { mutate: rejectMutate, isPending: rejectPending } = useMutation({
+    mutationKey: ["reject-ticket"],
+    mutationFn: async (ticket) => {
+      const response = await axios.patch(
+        `/api/tickets/reject-ticket/${ticket.id}`
+      );
 
-  const [selectedMonth, setSelectedMonth] = useState(
-    mockBusinessRevenueData[0].month
-  ); // Default to first month
+      return response.data.message;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      toast.success(data);
+    },
+    onError: (error) => {
+      toast.error(error.response.data.message);
+    },
+  });
 
-  // Function to update selected month
-  const handleMonthChange = (event) => {
-    setSelectedMonth(event.target.value);
+  const { mutate: assignMutate } = useMutation({
+    mutationKey: ["assign-ticket"],
+    mutationFn: async (data) => {
+      const response = await axios.patch(
+        `/api/tickets/assign-ticket/${data.ticketId}`,
+        {
+          assignees: data.assignedEmployees,
+        }
+      );
+
+      return response.data.message;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      toast.success(data);
+      handleClose(); // Close modal on success
+      reset(); // Reset form after submission
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Something went wrong");
+    },
+  });
+
+  const fetchSubOrdinates = async () => {
+    try {
+      const response = await axios.get("/api/users/assignees");
+
+      return response.data;
+    } catch (error) {
+      toast.error(error.message || "Failed to fetch users");
+    }
   };
 
-  // Filter data based on selected month
-  const selectedMonthData = mockBusinessRevenueData.find(
-    (data) => data.month === selectedMonth
-  );
+  const { data: subOrdinates = [], isPending: isSubOrdinates } = useQuery({
+    queryKey: ["sub-ordinates"],
+    queryFn: fetchSubOrdinates,
+  });
 
-  // Prepare Bar Graph Data
-  const graphData = [
-    {
-      name: "Revenue",
-      data: selectedMonthData.domains.map((domain) => domain.revenue),
+  const { control, handleSubmit, reset } = useForm({
+    defaultValues: {
+      selectedEmployees: {},
     },
-  ];
+  });
 
-  // Graph Options
-  const options = {
-    chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular" },
-    xaxis: {
-      categories: selectedMonthData.domains.map((domain) => domain.name),
-    },
-    yaxis: { title: { text: "Revenue (in Rupees)" } },
-    plotOptions: {
-      bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
-    },
-    legend: { position: "top" },
-    colors: ["#80bf01"],
+  const onSubmit = (formData) => {
+    const assignedEmployeeIds = Object.keys(formData.selectedEmployees).filter(
+      (id) => formData.selectedEmployees[id]
+    ); // ✅ Keep only selected IDs
+
+    if (assignedEmployeeIds.length === 0) {
+      toast.error("Please select at least one employee.");
+      return;
+    }
+
+    assignMutate({
+      ticketId: selectedTicketId,
+      assignedEmployees: assignedEmployeeIds,
+    }); // ✅ Send array of IDs
   };
 
-  const leadsColumn = [
-    { field: "enquiryFor", headerName: "Enquiry For" },
-    {
-      field: "date",
-      headerName: "Date",
-    },
-    { field: "time", headerName: "Time" },
+  const transformTicketsData = (tickets) => {
+    if (!tickets.length) {
+      return [];
+    }
+    return tickets.map((ticket) => ({
+      id: ticket._id,
+      raisedBy: ticket.raisedBy?.firstName || "Aiwinraj KS",
+      fromDepartment:
+        ticket.raisedBy?.departments?.map((dept) => dept.name) || "Tech",
+      ticketTitle: ticket?.ticket || "Wifi is too slow",
+      status: ticket.status || "Pending",
+    }));
+  };
+
+  // Example usage
+  // const rows = isLoading ? [] : transformTicketsData(tickets);
+  // Then modify your rows assignment to use either API data or dummy data
+  const rows = transformTicketsData(dummyTicketsData); // Always use dummy data
+
+  const handleOpenAssignModal = (ticketId) => {
+    setSelectedTicketId(ticketId);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setSelectedTicketId(null);
+  };
+
+  const recievedTicketsColumns = [
+    { field: "raisedBy", headerName: "Raised By" },
+    { field: "fromDepartment", headerName: "From Department" },
+    { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
+
     {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => {
         const statusColorMap = {
-          Called: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+          "in-progress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+          resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+          open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
+          completed: { backgroundColor: "#D3D3D3", color: "#696969" }, // Light gray bg, dark gray font
         };
+
         const { backgroundColor, color } = statusColorMap[params.value] || {
           backgroundColor: "gray",
           color: "white",
@@ -537,56 +235,92 @@ const DepartmentWiseTickets = () => {
         );
       },
     },
-    { field: "name", headerName: "Name" },
-    { field: "phoneNo", headerName: "Phone No" },
-    { field: "email", headerName: "Email" },
+    {
+      field: "actions",
+      headerName: "Actions",
+      cellRenderer: (params) => (
+        <>
+          <ThreeDotMenu
+            rowId={params.data.id}
+            menuItems={[
+              {
+                label: "Accept",
+                onClick: () => acceptMutate(params.data),
+                isLoading: isLoading,
+              },
+              // Conditionally add "Assign"
+              ...(auth.user.role.length > 0 &&
+              (auth.user.role[0].roleTitle === "Master Admin" ||
+                auth.user.role[0].roleTitle === "Super Admin" ||
+                auth.user.role[0].roleTitle.endsWith("Admin"))
+                ? [
+                    {
+                      label: "Assign",
+                      onClick: () => handleOpenAssignModal(params.data.id),
+                    },
+                    {
+                      label: "Reject",
+                      onClick: () => rejectMutate(params.data),
+                      isLoading: isLoading,
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        </>
+      ),
+    },
   ];
 
   return (
-    <div className="flex flex-col gap-8 p-4">
-      {/* Accordion Section for Domain-wise Revenue Breakdown */}
-      <div className="flex flex-col gap-4 justify-between">
-        <span className="font-pmedium text-title text-primary">
-          Department Wise Tickets - April 2025
-        </span>
-        <hr />
+    <div className="p-4 border-default border-borderGray rounded-md">
+      <div className="pb-4">
+        <span className="text-subtitle">{title}</span>
       </div>
-      <div>
-        {selectedMonthData.domains.map((domain, index) => {
-          return (
-            <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}>
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium">
-                    {domain.name}
-                  </span>
-                  <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()}
-                  </span>
+      <div className="w-full">
+        {isLoading ? (
+          <div className="w-full h-full flex justify-center items-center">
+            <CircularProgress color="black" />
+          </div>
+        ) : (
+          <AgTable
+            key={rows.length}
+            data={rows ? rows : []}
+            tableHeight={350}
+            columns={recievedTicketsColumns}
+          />
+        )}
+      </div>
+      <MuiModal open={open} onClose={handleClose} title="Assign Tickets">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <ul>
+            {!isSubOrdinates ? (
+              subOrdinates.map((employee) => (
+                <div key={employee.id} className="flex flex-row gap-6">
+                  <Controller
+                    name={`selectedEmployees.${employee.id}`}
+                    control={control}
+                    render={({ field }) => (
+                      <input
+                        type="checkbox"
+                        {...field}
+                        checked={!!field.value}
+                      />
+                    )}
+                  />
+                  <li>{employee.name}</li>
                 </div>
-              </AccordionSummary>
-              <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
-                <AgTable
-                  data={domain.clients}
-                  hideFilter
-                  columns={[
-                    { header: "Sr. No.", field: "srNo", flex: 0.5 },
-                    { header: "Date", field: "date", flex: 1 },
-                    { header: "Time", field: "time", flex: 1 },
-                    { header: "Name", field: "name", flex: 1 },
-                    { header: "Phone No.", field: "phone", flex: 1 },
-                    { header: "Status", field: "status", flex: 1 },
-                  ]}
-                  tableHeight={400}
-                />
-              </AccordionDetails>
-            </Accordion>
-          );
-        })}
-      </div>
+              ))
+            ) : (
+              <CircularProgress color="#1E3D73" />
+            )}
+          </ul>
+
+          <div className="flex items-center justify-center mb-4">
+            <PrimaryButton title="Assign" type="submit" />
+          </div>
+        </form>
+      </MuiModal>
     </div>
   );
 };
