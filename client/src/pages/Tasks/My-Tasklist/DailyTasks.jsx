@@ -14,8 +14,8 @@ const DailyTasks = () => {
       cellRenderer: (params) => {
         // Map boolean to string status
         const statusColorMap = {
-          Medium: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-          Low: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+          Medium: { backgroundColor: "#FFECC5", color: "#CC8400" },
+          Low: { backgroundColor: "#90EE90", color: "#006400" }, 
         };
 
         const { backgroundColor, color } = statusColorMap[params.value] || {
@@ -138,7 +138,7 @@ const DailyTasks = () => {
         <AgTable
           search={true}
           searchColumn={"kra"}
-          tableTitle={"Daily Tasks"}
+          tableTitle={"Daily KRA"}
           data={rows}
           columns={dailyTaskColumns}
           handleClick={() => console.log("Button clicked")}
