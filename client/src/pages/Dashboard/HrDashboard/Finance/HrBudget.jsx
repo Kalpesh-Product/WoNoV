@@ -128,8 +128,9 @@ const HrBudget = () => {
   const optionss = {
     chart: {
       type: "bar",
+      toolbar: false,
       stacked: true,
-      fontFamily : "Poppins-Regular"
+      fontFamily: "Poppins-Regular",
     },
     plotOptions: {
       bar: {
@@ -150,7 +151,7 @@ const HrBudget = () => {
       },
     },
     xaxis: {
-       categories: [
+      categories: [
         "Apr-24",
         "May-24",
         "Jun-24",
@@ -211,7 +212,7 @@ const HrBudget = () => {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <WidgetSection layout={1} title={"BUDGET 2024"} border >
+        <WidgetSection layout={1} title={"BUDGET 2024"} border>
           <LayerBarGraph options={optionss} data={data} />
         </WidgetSection>
       </div>
@@ -244,7 +245,7 @@ const HrBudget = () => {
         </WidgetSection>
       </div>
 
-  <div className="flex justify-end">
+      <div className="flex justify-end">
         <PrimaryButton
           title={"Request Budget"}
           padding="px-5 py-2"
@@ -253,7 +254,7 @@ const HrBudget = () => {
         />
       </div>
 
-    <AllocatedBudget financialData={financialData}/>
+      <AllocatedBudget financialData={financialData} />
 
       <MuiModal
         title="Request Budget"

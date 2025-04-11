@@ -1,12 +1,7 @@
 import React, { useState } from "react";
 import LayerBarGraph from "../components/graphs/LayerBarGraph";
 import WidgetSection from "../components/WidgetSection";
-import {
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-} from "@mui/material";
+import { TextField, Select, MenuItem, FormControl } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import Accordion from "@mui/material/Accordion";
@@ -111,6 +106,7 @@ const BudgetDisplay = ({ budgetData }) => {
     chart: {
       type: "bar",
       stacked: true,
+      toolbar: false,
       fontFamily: "Poppins-Regular",
     },
     plotOptions: {
@@ -132,11 +128,20 @@ const BudgetDisplay = ({ budgetData }) => {
       },
     },
     xaxis: {
-       categories: [
-        "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
-        "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
-      ]
-      
+      categories: [
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
+      ],
     },
     yaxis: {
       max: 150,
@@ -189,13 +194,14 @@ const BudgetDisplay = ({ budgetData }) => {
         </WidgetSection>
       </div>
 
- <div className="flex justify-end">
-            <PrimaryButton
-              title={"Request Budget"}
-              padding="px-5 py-2" fontSize="text-base"
-              handleSubmit={() => setOpenModal(true)}
-            />
-          </div>
+      <div className="flex justify-end">
+        <PrimaryButton
+          title={"Request Budget"}
+          padding="px-5 py-2"
+          fontSize="text-base"
+          handleSubmit={() => setOpenModal(true)}
+        />
+      </div>
       <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -220,14 +226,20 @@ const BudgetDisplay = ({ budgetData }) => {
                   <span className="text-subtitle font-pmedium">
                     {data.month}
                   </span>
-                 <span className="text-subtitle font-pmedium flex items-center gap-1 ">
-                                   <MdTrendingUp title="Projected" className="text-yellow-600 w-4 h-4" />
-                                   {"INR "+data.projectedAmount}
-                                   </span>
-                                   <span className="text-subtitle font-pmedium flex items-center gap-1 ">
-                                   <BsCheckCircleFill title="Actual" className="text-green-600 w-4 h-4" />
-                                    {"INR "+data.amount}
-                                   </span>
+                  <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                    <MdTrendingUp
+                      title="Projected"
+                      className="text-yellow-600 w-4 h-4"
+                    />
+                    {"INR " + data.projectedAmount}
+                  </span>
+                  <span className="text-subtitle font-pmedium flex items-center gap-1 ">
+                    <BsCheckCircleFill
+                      title="Actual"
+                      className="text-green-600 w-4 h-4"
+                    />
+                    {"INR " + data.amount}
+                  </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>

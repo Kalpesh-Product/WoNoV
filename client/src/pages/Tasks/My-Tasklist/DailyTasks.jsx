@@ -141,7 +141,6 @@ const DailyTasks = () => {
           tableTitle={"Daily Tasks"}
           data={rows}
           columns={dailyTaskColumns}
-          buttonTitle={"Add My Task"}
           handleClick={() => console.log("Button clicked")}
           enableCheckbox
         />

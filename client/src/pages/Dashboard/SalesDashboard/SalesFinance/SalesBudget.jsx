@@ -29,6 +29,7 @@ const SalesBudget = () => {
   const optionss = {
     chart: {
       type: "bar",
+      toolbar: false,
       stacked: true,
     },
     plotOptions: {
@@ -370,7 +371,7 @@ const SalesBudget = () => {
               Allocated Budget :{" "}
             </span>
             <span className="text-title font-pmedium">
-              {"INR "+Number("500000").toLocaleString("en-IN")}
+              {"INR " + Number("500000").toLocaleString("en-IN")}
             </span>
           </div>
           <div>
@@ -391,12 +392,12 @@ const SalesBudget = () => {
                     {data.month}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {"INR "+Number(data.amount).toLocaleString("en-GB")}
+                    {"INR " + Number(data.amount).toLocaleString("en-GB")}
                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails>
-              <AgTable
+                <AgTable
                   search={data.tableData?.rows?.length > 10}
                   searchColumn={"Department"}
                   data={data.tableData.rows}

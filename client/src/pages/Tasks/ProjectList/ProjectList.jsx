@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { FaArrowRight } from "react-icons/fa";
 import {
   Button,
   TextField,
@@ -21,7 +22,6 @@ import {
   TableBody,
   Autocomplete,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 import { useForm, Controller } from "react-hook-form";
 import { DesktopDatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -52,7 +52,7 @@ const intialProjects = [
         monthlyTasks: 6,
         additionalTasks: 3,
       },
-      Aaron: {
+      Muskan: {
         dailyTasks: 4,
         monthlyTasks: 5,
         additionalTasks: 2,
@@ -341,7 +341,8 @@ const ProjectList = () => {
                 ".MuiOutlinedInput-input": {
                   padding: "5px", // Customize padding inside the input
                 },
-              }}>
+              }}
+            >
               <MenuItem value="grid">Grid View</MenuItem>
               <MenuItem value="table">Table View</MenuItem>
             </Select>
@@ -362,7 +363,8 @@ const ProjectList = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Project"}>
+        title={"Add Project"}
+      >
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <Controller
             name="department"
@@ -387,7 +389,8 @@ const ProjectList = () => {
                       // Wrap in an array instead of Fragment
                       <MenuItem
                         key={auth.user.departments[0]._id}
-                        value={auth.user.departments[0]._id}>
+                        value={auth.user.departments[0]._id}
+                      >
                         {auth.user.departments[0].name}
                       </MenuItem>,
                     ]
@@ -581,7 +584,8 @@ const GridView = ({ projects, isLoading }) => {
         <div key={category} className="w-full">
           <div className="p-4 pl-0 border-r-2 border-gray-300 mb-4">
             <span
-              className={`text-subtitle font-pmedium ${categoryColors[category]}`}>
+              className={`text-subtitle font-pmedium ${categoryColors[category]}`}
+            >
               {category}
             </span>
           </div>
@@ -657,51 +661,63 @@ const ProjectCard = ({ project }) => {
   });
 
   const handleEditClick = () => {
-    passProjectId.mutate(); // ✅ Correct way to trigger mutation
+    passProjectId.mutate();
     navigate(`/app/tasks/project-list/edit-project/${project.id}`, {
       state: { project },
     });
   };
   return (
-    <div className="bg-white shadow-md rounded-lg p-3 mb-4 border border-gray-200 h-64 flex flex-col justify-between hover:bg-gray-100 hover:transition-all ease-in hover:duration-100 hover:cursor-pointer">
-      <div className="flex justify-between items-center">
-        <span className="font-pmedium text-subtitle">{project.title}</span>
-        <ProjectMenu project={project} />
-      </div>
-      <div onClick={handleEditClick}>
-        <span
-          className={`px-2 py-1 text-content font-pmedium rounded-md ${getPriorityClass(
-            project.priority
-          )}`}>
-          {project.priority}
-        </span>
-      </div>
-      <Typography variant="body2">
-        <strong>Started:</strong> {project.startDate || "20th Apr, 2025"}
-      </Typography>
-      <Typography variant="body2">
-        <strong>Deadline:</strong> {project.deadline || "30th Apr, 2025"}
-      </Typography>
+    <div className="relative">
+      <div className="bg-white shadow-md rounded-lg p-3 mb-4 border border-gray-200 h-64 flex flex-col justify-between hover:transition-all ease-in hover:duration-100 relative">
+        <div className="flex justify-between items-center">
+          <span className="font-pmedium text-subtitle">{project.title}</span>
+          <ProjectMenu project={project} />
+        </div>
 
-      <div className="mt-3 flex flex-col">
-        <Typography variant="body2" className="text-gray-500 font-semibold">
-          Assignees:
+        <div>
+          <span
+            className={`px-2 py-1 text-content font-pmedium rounded-md ${getPriorityClass(
+              project.priority
+            )}`}
+          >
+            {project.priority}
+          </span>
+        </div>
+
+        <Typography variant="body2">
+          <strong>Started:</strong> {project.startDate || "20th Apr, 2025"}
         </Typography>
-        <div className="flex justify-start">
-          <AvatarGroup max={4}>
-            {Object.keys(project.assignees).map((name, index) => (
-              <Avatar
-                key={index}
-                sx={{
-                  bgcolor: "gray",
-                  width: 23,
-                  height: 23,
-                  fontSize: "10px",
-                }}>
-                {name[0]}
-              </Avatar>
-            ))}
-          </AvatarGroup>
+        <Typography variant="body2">
+          <strong>Deadline:</strong> {project.deadline || "30th Apr, 2025"}
+        </Typography>
+
+        <div className="mt-3 flex flex-col">
+          <Typography variant="body2" className="text-gray-500 font-semibold">
+            Assignees:
+          </Typography>
+          <div className="flex justify-between items-center">
+            <AvatarGroup max={4}>
+              {Object.keys(project.assignees).map((name, index) => (
+                <Avatar
+                  key={index}
+                  sx={{
+                    bgcolor: "gray",
+                    width: 23,
+                    height: 23,
+                    fontSize: "10px",
+                  }}
+                >
+                  {name[0]}
+                </Avatar>
+              ))}
+            </AvatarGroup>
+            <button
+              onClick={handleEditClick}
+              className="text-gray-500 hover:bg-primary transition-all duration-200 rounded-full p-2 group"
+            >
+              <FaArrowRight size={15} className="group-hover:text-white"/>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -737,13 +753,15 @@ const ProjectMenu = ({ project }) => {
     <div className="hover:bg-gray-100 cursor-pointer">
       <IconButton
         sx={{ padding: 0, fontSize: "20px" }}
-        onClick={(event) => setAnchorEl(event.currentTarget)}>
+        onClick={(event) => setAnchorEl(event.currentTarget)}
+      >
         <BsThreeDotsVertical />
       </IconButton>
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
-        onClose={() => setAnchorEl(null)}>
+        onClose={() => setAnchorEl(null)}
+      >
         <MenuItem onClick={handleEditClick}>Edit Project</MenuItem>
         <MenuItem onClick={() => setAnchorEl(null)}>Delete Project</MenuItem>
       </Menu>
