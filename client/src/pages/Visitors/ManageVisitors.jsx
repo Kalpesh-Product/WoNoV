@@ -8,11 +8,6 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { TextField } from "@mui/material";
-import {
-  LocalizationProvider,
-  TimePicker,
-} from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 const ManageVisitors = () => {
 

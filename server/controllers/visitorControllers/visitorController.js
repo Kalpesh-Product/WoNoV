@@ -109,13 +109,10 @@ const addVisitor = async (req, res, next) => {
 
     const visitDate = new Date(dateOfVisit);
     const clockIn = new Date(checkIn);
-    const clockOut = new Date(checkOut);
+    const clockOut = checkOut ? new Date(checkOut) : null;
+    console.log(clockOut);
 
-    if (
-      isNaN(visitDate.getTime()) ||
-      isNaN(clockIn.getTime()) ||
-      isNaN(clockOut.getTime())
-    ) {
+    if (isNaN(visitDate.getTime()) || isNaN(clockIn.getTime())) {
       throw new CustomError(
         "Invalid date format",
         logPath,

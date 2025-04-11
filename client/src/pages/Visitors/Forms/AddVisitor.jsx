@@ -100,12 +100,6 @@ const AddVisitor = () => {
     reset();
   };
 
-  const [selectedValue, setSelectedValue] = useState("Walk In");
-
-  const handleChange = (event) => {
-    setSelectedValue(event.target.value);
-  };
-
   return (
     <div className="h-[65vh] overflow-y-auto p-4">
       <form onSubmit={handleSubmit(onSubmit)} className="">
@@ -420,7 +414,6 @@ const AddVisitor = () => {
                 <Controller
                   name="checkOut"
                   control={control}
-                  rules={{ required: "Check-Out time is required" }}
                   render={({ field }) => (
                     <TimePicker
                       {...field}
