@@ -332,18 +332,24 @@ const MeetingDashboard = () => {
       events: {
         dataPointSelection: function (event, chartContext, config) {
           const clickedMonthName = config.w.config.xaxis.categories[config.dataPointIndex];
-          const monthIndex = new Date(`${clickedMonthName} 1, 2024`).getMonth();  
-          console.log(clickedMonthName)
        
-          const monthMeetings = meetingsData.filter(
-            (meeting) => {
-              new Date(meeting.date).getMonth()
-            } 
-          );
-          console.log(monthMeetings)
-      
-          navigate("/app/meetings/month-meetings", {
-            state: { meetings: monthMeetings, month: clickedMonthName },
+       
+          const [clickedMonth, clickedYearSuffix] = clickedMonthName.split("-");
+
+          const monthMeetings = meetingsData.filter((meeting) => {
+            const date = new Date(meeting.date);
+            
+            const meetingMonthAbbr = date.toLocaleString("default", { month: "short" });  
+            const meetingYearSuffix = date.getFullYear().toString().slice(-2);  
+          
+            return meetingMonthAbbr === clickedMonth && meetingYearSuffix === clickedYearSuffix;
+          });
+          
+          const month = new Date(monthMeetings[0].date).toLocaleString("default", { month: "long" });
+          const year = new Date(monthMeetings[0].date).toLocaleString("default", { year: "numeric" });
+
+          navigate(`/app/meetings/${month}-${year}-meetings`, {
+            state: { meetings: monthMeetings},
           });
         }
       },
