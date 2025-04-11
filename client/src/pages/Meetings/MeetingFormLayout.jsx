@@ -57,8 +57,8 @@ const MeetingFormLayout = () => {
       endTime: null,
       subject: "",
       agenda: "",
-      internalParticipants:[],
-      externalParticipants:[]
+      internalParticipants: [],
+      externalParticipants: [],
     },
   });
 
@@ -75,7 +75,7 @@ const MeetingFormLayout = () => {
 
     const selectedDate = dayjs(arg.start).startOf("day");
     const startTime = dayjs(arg.start);
-    console.log("Start Time : ", startTime)
+    console.log("Start Time : ", startTime);
     const endTime = dayjs(arg.start).add(30, "minute");
 
     setValue("startDate", selectedDate, { shouldDirty: true });
@@ -86,7 +86,7 @@ const MeetingFormLayout = () => {
     setOpen(true);
   };
 
-  const { data: employees=[], isLoading } = useQuery({
+  const { data: employees = [], isLoading } = useQuery({
     queryKey: ["employees"],
     queryFn: async () => {
       try {
@@ -146,7 +146,7 @@ const MeetingFormLayout = () => {
         subject: data.subject,
         agenda: data.agenda,
         internalParticipants: data.internalParticipants,
-        externalParticipants: data.externalParticipants
+        externalParticipants: data.externalParticipants,
       });
     },
     onSuccess: () => {
@@ -157,7 +157,7 @@ const MeetingFormLayout = () => {
     },
     onError: (error) => {
       const errorMessage =
-      error?.response?.data?.message || "Failed to book meeting";
+        error?.response?.data?.message || "Failed to book meeting";
       toast.error(errorMessage);
     },
   });
@@ -177,8 +177,6 @@ const MeetingFormLayout = () => {
   const onSubmit = (data) => {
     createMeeting(data);
   };
-
- 
 
   return (
     <div className="p-4">
@@ -222,12 +220,10 @@ const MeetingFormLayout = () => {
       <MuiModal
         open={open}
         onClose={() => setOpen(false)}
-        title={`${meetingType} Meeting`}
-      >
+        title={`${meetingType} Meeting`}>
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col w-full gap-4"
-        >
+          className="flex flex-col w-full gap-4">
           <div className="w-full flex justify-between items-center">
             <span className="text-content">
               Selected Date : {humanDate(startDate)}
@@ -259,8 +255,7 @@ const MeetingFormLayout = () => {
                     label="Meeting Type"
                     select
                     fullWidth
-                    size="small"
-                  >
+                    size="small">
                     <MenuItem value="">Select a Meeting Type</MenuItem>
                     <MenuItem value="Internal">Internal</MenuItem>
                     <MenuItem value="External">External</MenuItem>
@@ -298,79 +293,119 @@ const MeetingFormLayout = () => {
               />
             </LocalizationProvider>
             <div className="col-span-2 sm:col-span-1 md:col-span-2">
-             <div className="mb-6">
-             <Controller
-                name="internalParticipants"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete
-                    multiple  
-                    options={employees} // The user list
-                    getOptionLabel={(user) =>
-                      `${user.firstName} ${user.lastName}`
-                    } 
-                    onChange={(_, newValue) => (field.onChange(newValue.map(user => user._id)))
-                    } 
-                    renderTags={(selected, getTagProps) =>
-                      selected.map((user, index) => (
-                        <Chip
-                          key={user._id}
-                          label={`${user.firstName} ${user.lastName}`}
-                          {...getTagProps({ index })}
-                          deleteIcon={<IoMdClose />}
+              <div className="mb-6">
+                <Controller
+                  name="internalParticipants"
+                  control={control}
+                  render={({ field }) => (
+                    <Autocomplete
+                      multiple
+                      options={employees} // The user list
+                      getOptionLabel={(user) =>
+                        `${user.firstName} ${user.lastName}`
+                      }
+                      onChange={(_, newValue) =>
+                        field.onChange(newValue.map((user) => user._id))
+                      }
+                      renderTags={(selected, getTagProps) =>
+                        selected.map((user, index) => (
+                          <Chip
+                            key={user._id}
+                            label={`${user.firstName} ${user.lastName}`}
+                            {...getTagProps({ index })}
+                            deleteIcon={<IoMdClose />}
+                          />
+                        ))
+                      }
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Select Internal Participants"
+                          size="small"
+                          fullWidth
                         />
-                      ))
-                    }
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Internal Participants"
-                        size="small"
-                        fullWidth
+                      )}
+                    />
+                  )}
+                />
+              </div>
+              {meetingType === "External" ? (
+                <div>
+                  <Controller
+                    name="externalParticipants"
+                    control={control}
+                    render={({ field }) => (
+                      <Autocomplete
+                        multiple
+                        options={externalUsers} // The user list
+                        getOptionLabel={(user) => `${user.firstName}`} // Display names
+                        onChange={(_, newValue) =>
+                          field.onChange(newValue.map((user) => user._id))
+                        } // Sync selected users with form state
+                        renderTags={(selected, getTagProps) =>
+                          selected.map((user, index) => (
+                            <Chip
+                              key={user._id}
+                              label={`${user.firstName}`}
+                              {...getTagProps({ index })}
+                              deleteIcon={<IoMdClose />}
+                            />
+                          ))
+                        }
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Select External Participants"
+                            size="small"
+                            fullWidth
+                          />
+                        )}
                       />
                     )}
                   />
-                )}
-              />
-             </div>
-             {
-              meetingType === "External" ? <div>
-              <Controller
-                 name="externalParticipants"
-                 control={control}
-                 render={({ field }) => (
-                   <Autocomplete
-                     multiple
-                     options={externalUsers} // The user list
-                     getOptionLabel={(user) =>
-                       `${user.firstName}`
-                     } // Display names
-                     onChange={(_, newValue) =>  field.onChange(newValue.map(user => user._id))
-                     } // Sync selected users with form state
-                     renderTags={(selected, getTagProps) =>
-                       selected.map((user, index) => (
-                         <Chip
-                           key={user._id}
-                           label={`${user.firstName}`}
-                           {...getTagProps({ index })}
-                           deleteIcon={<IoMdClose />}
-                         />
-                       ))
-                     }
-                     renderInput={(params) => (
-                       <TextField
-                         {...params}
-                         label="Select External Participants"
-                         size="small"
-                         fullWidth
-                       />
-                     )}
-                   />
-                 )}
-               />
-              </div> : <></>
-             }
+                </div>
+              ) : (
+                <></>
+              )}
             </div>
+            {/* New Start */}
+            {meetingType === "External" ? (
+              <>
+                <div className=" flex justify-between col-span-1 sm:col-span-1 md:col-span-1 w-full">
+                  <Controller
+                    name="name"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        label={"Name"}
+                        placeholder="John Doe"
+                        {...field}
+                        fullWidth
+                        size="small"
+                      />
+                    )}
+                  />
+                </div>
+                <div className=" flex justify-between col-span-1 sm:col-span-1 md:col-span-1 w-full">
+                  <Controller
+                    name="mob"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        label={"Mobile Number"}
+                        placeholder="+919876543201"
+                        {...field}
+                        fullWidth
+                        size="small"
+                      />
+                    )}
+                  />
+                </div>
+              </>
+            ) : (
+              <></>
+            )}
+            {/* New End */}
             <div className="col-span-2 sm:col-span-1 md:col-span-2">
               <Controller
                 name="subject"

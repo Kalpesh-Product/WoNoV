@@ -12,10 +12,12 @@ import HeatMap from "../../components/graphs/HeatMap";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { Skeleton } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 const WidgetSection = lazy(() => import("../../components/WidgetSection"));
 
 const MeetingDashboard = () => {
   const axios = useAxiosPrivate();
+  const navigate = useNavigate();
 
   const { data: meetingsData = [], isLoading } = useQuery({
     queryKey: ["meetings"],
@@ -24,7 +26,7 @@ const MeetingDashboard = () => {
       return response.data;
     },
   });
-  console.log("Main Meetings Data : ", meetingsData);
+  
   // Function to calculate total duration in hours
   const calculateTotalDurationInHours = (meetings) => {
     return meetings.reduce((total, meeting) => {
@@ -326,7 +328,32 @@ const MeetingDashboard = () => {
   const averageBookingSeries = [{ name: "Booking Utilization", data }];
 
   const averageBookingOptions = {
-    chart: { type: "bar", fontFamily: "Poppins-Regular" },
+    chart: { type: "bar", fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: function (event, chartContext, config) {
+          const clickedMonthName = config.w.config.xaxis.categories[config.dataPointIndex];
+       
+       
+          const [clickedMonth, clickedYearSuffix] = clickedMonthName.split("-");
+
+          const monthMeetings = meetingsData.filter((meeting) => {
+            const date = new Date(meeting.date);
+            
+            const meetingMonthAbbr = date.toLocaleString("default", { month: "short" });  
+            const meetingYearSuffix = date.getFullYear().toString().slice(-2);  
+          
+            return meetingMonthAbbr === clickedMonth && meetingYearSuffix === clickedYearSuffix;
+          });
+          
+          const month = new Date(monthMeetings[0].date).toLocaleString("default", { month: "long" });
+          const year = new Date(monthMeetings[0].date).toLocaleString("default", { year: "numeric" });
+
+          navigate(`/app/meetings/${month}-${year}-meetings`, {
+            state: { meetings: monthMeetings},
+          });
+        }
+      },
+     },
     xaxis: { categories: BookingMonths },
     yaxis: {
       max: 100,

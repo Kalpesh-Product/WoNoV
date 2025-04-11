@@ -85,7 +85,7 @@ const ManageVisitors = () => {
   });
 
   const visitorsColumns = [
-    { field: "id", headerName: "ID" },
+    { field: "id", headerName: "ID",sort:"desc" },
     { field: "firstName", headerName: "First Name" },
     { field: "lastName", headerName: "Last Name" },
     { field: "email", headerName: "Email" },

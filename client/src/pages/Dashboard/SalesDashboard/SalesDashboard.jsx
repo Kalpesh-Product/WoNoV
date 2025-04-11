@@ -443,7 +443,8 @@ const SalesDashboard = () => {
       widgets: [
         <WidgetSection
           border
-          title={"Annual Monthly Revenue: 2024-25"}
+          title={"Annual Monthly Revenue"}
+          titleLabel={"2024-25"}
           TitleAmount={"INR 2,09,000"}>
           <BarGraph
             data={incomeExpenseData}
@@ -578,7 +579,6 @@ const SalesDashboard = () => {
               options={clientsDesksPieOptions}
               width={"100%"}
             />
-            // <TreemapGraph data={totalDeskPercent} options={clientsDesksPieOptions} width={"100%"} />
 
           ) : (
             <CircularProgress color="#1E3D73" />

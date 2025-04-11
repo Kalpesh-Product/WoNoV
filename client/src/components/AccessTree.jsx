@@ -17,6 +17,7 @@ const AccessTree = () => {
   const fetchHierarchy = async () => {
     try {
       const response = await axios.get("/api/company/company-hierarchy");
+     
       return response.data.generateHierarchy;
     } catch (error) {
       toast.error(error.message);
@@ -44,6 +45,8 @@ const AccessTree = () => {
   const handleBack = () => {
     setSelectedUsers((prev) => prev.slice(0, -1));
   };
+
+  
 
   if (isPending) {
     return (
@@ -118,9 +121,16 @@ const AccessTree = () => {
   );
 };
 
+
 const HierarchyCard = ({ user, handleSelectUser, isTopLevel }) => {
   const navigate = useNavigate();
 
+  const getInitials = (name) => {
+    const names = name.trim().split(" ");
+    const firstInitial = names[0]?.[0] || '';
+    const lastInitial = names.length > 1 ? names[names.length - 1]?.[0] : '';
+    return `${firstInitial} ${lastInitial}`;
+  };
   return (
     <div
       className={`bg-white flex flex-col shadow-md border border-gray-300 rounded-lg p-4 pt-0 px-0 text-center cursor-pointer relative w-60 transition ${
@@ -143,16 +153,18 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel }) => {
       </span>
       <span className="text-small text-primary">{user.email}</span>
 
-      {user.subordinates && user.subordinates.length > 0 && (
-        <p
-          onClick={() => handleSelectUser(user)}
-          className="mt-2 text-xs text-gray-500 hover:underline"
-        >
-          {user.subordinates.length} Subordinate
-          {user.subordinates.length > 1 ? "s" : ""}
-        </p>
-      )}
-    </div>
+    {user.subordinates && user.subordinates.length > 0 && (
+      <p
+        onClick={() => handleSelectUser(user)}
+        className="mt-2 text-xs text-gray-500 hover:underline"
+      >
+        {user.subordinates.length} Subordinate
+        {user.subordinates.length > 1 ? "s" : ""}
+      </p>
+    )}
+  </div>
+  
+  
   );
 };
 

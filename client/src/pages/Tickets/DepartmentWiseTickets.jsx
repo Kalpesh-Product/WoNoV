@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import BarGraph from "../../../../components/graphs/BarGraph";
+import BarGraph from "../../components/graphs/BarGraph";
 import {
   Select,
   MenuItem,
@@ -11,12 +11,12 @@ import {
   Chip,
 } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
-import AgTable from "../../../../components/AgTable";
-import WidgetSection from "../../../../components/WidgetSection";
+import AgTable from "../../components/AgTable";
+import WidgetSection from "../../components/WidgetSection";
 import { useQuery } from "@tanstack/react-query";
-import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 
-const FrontendLeads = () => {
+const DepartmentWiseTickets = () => {
   const axios = useAxiosPrivate();
   const { data: revenueData = [], isPending: isRevenuePending } = useQuery({
     queryKey: ["revenueData"],
@@ -543,11 +543,11 @@ const FrontendLeads = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 p-4">
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
       <div className="flex flex-col gap-4 justify-between">
         <span className="font-pmedium text-title text-primary">
-          New Leads - April 2025
+          Department Wise Tickets - April 2025
         </span>
         <hr />
       </div>
@@ -591,4 +591,4 @@ const FrontendLeads = () => {
   );
 };
 
-export default FrontendLeads;
+export default DepartmentWiseTickets;

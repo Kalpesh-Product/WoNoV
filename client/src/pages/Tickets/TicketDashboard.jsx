@@ -15,8 +15,8 @@ import { useNavigate } from "react-router-dom";
 import FinanceCard from "../../components/FinanceCard";
 
 const TicketDashboard = () => {
-  const axios = useAxiosPrivate();
   const navigate = useNavigate();
+  const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
@@ -54,8 +54,7 @@ const TicketDashboard = () => {
           layout={1}
           border
           padding
-          title={"Annual Tickets Raised"}
-        >
+          title={"Annual Tickets Raised"}>
           <AreaGraph responseData={ticketsData} />
         </WidgetSection>,
       ],
@@ -129,7 +128,7 @@ const TicketDashboard = () => {
             ]}
             centerLabel={"Tickets"}
             tooltipValue={[30, 44, 50, 22, 14, 6, 39]}
-            handleClick={() => navigate("reports")}
+            handleClick={() => navigate("department-wise-tickets")}
           />
         </WidgetSection>,
       ],
