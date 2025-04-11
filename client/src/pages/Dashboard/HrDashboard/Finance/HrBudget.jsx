@@ -265,7 +265,7 @@ const HrBudget = () => {
         />
       </div>
 
-      <AllocatedBudget financialData={financialData} groupedData={groupedData}  />
+    <AllocatedBudget financialData={financialData} groupedData={groupedData} />
 
       <MuiModal
         title="Request Budget"

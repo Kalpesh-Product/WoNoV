@@ -94,6 +94,12 @@ const ManageMeetings = () => {
       date: humanDate(meeting.date),
     }));
 
+
+  const transformedMeetings = filteredMeetings.map((meeting,index)=>({
+    ...meeting,
+    srNo:index+1
+  }))
+
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
     mutationFn: async (data) => {
