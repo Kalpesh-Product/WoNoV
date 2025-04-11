@@ -33,19 +33,6 @@ const AdditionalTasks = () => {
       },
     },
     { field: "end", headerName: "End", flex: 1 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-            <span className="text-primary hover:underline text-content cursor-pointer">
-              View KRA
-            </span>
-          </div>
-        </>
-      ),
-    },
   ];
 
   const rows = [
@@ -66,7 +53,6 @@ const AdditionalTasks = () => {
           tableTitle={"Additional Tasks"}
           data={rows}
           columns={dailyTaskColumns}
-          buttonTitle={"Add My Task"}
           handleClick={() => console.log("Button clicked")}
           enableCheckbox
         />

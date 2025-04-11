@@ -1,7 +1,6 @@
 import React from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip } from "@mui/material";
-import { BsThreeDotsVertical } from "react-icons/bs";
 
 const DailyTasks = () => {
   const dailyTaskColumns = [
@@ -12,10 +11,10 @@ const DailyTasks = () => {
       headerName: "Priority",
       flex: 1,
       cellRenderer: (params) => {
-        // Map boolean to string status
         const statusColorMap = {
+          High: { backgroundColor: "#FFB6C1", color: "#8B0000" },
           Medium: { backgroundColor: "#FFECC5", color: "#CC8400" },
-          Low: { backgroundColor: "#90EE90", color: "#006400" }, 
+          Low: { backgroundColor: "#90EE90", color: "#006400" },
         };
 
         const { backgroundColor, color } = statusColorMap[params.value] || {
@@ -34,101 +33,79 @@ const DailyTasks = () => {
         );
       },
     },
-    { field: "project", headerName: "Project", flex: 1 },
     { field: "end", headerName: "End", flex: 1 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-              <BsThreeDotsVertical />
-          </div>
-        </>
-      ),
-    },
   ];
 
   const rows = [
     {
       id: "1",
-      task: "Fix API Integration",
-      assignedBy: "John Doe",
+      task: "Conduct Employee Satisfaction Survey",
+      assignedBy: "Utkarsha Palkar",
       priority: "High",
-      project: "E-Commerce App",
-      end: "10:30 AM",
+      end: "06:30 PM",
     },
     {
       id: "2",
-      task: "Design Landing Page",
-      assignedBy: "Jane Smith",
+      task: "Organize Monthly HR Report",
+      assignedBy: "Utkarsha Palkar",
       priority: "Medium",
-      project: "Marketing Website",
-      end: "12:00 PM",
+      end: "06:30 PM",
     },
     {
       id: "3",
-      task: "Update Database Schema",
-      assignedBy: "Alice Johnson",
+      task: "Update Recruitment Tracker",
+      assignedBy: "Utkarsha Palkar",
       priority: "High",
-      project: "CRM System",
-      end: "02:00 PM",
+      end: "06:30 PM",
     },
     {
       id: "4",
-      task: "Write Unit Tests",
-      assignedBy: "Michael Scott",
+      task: "Plan Employee Onboarding Session",
+      assignedBy: "Utkarsha Palkar",
       priority: "Low",
-      project: "Task Management App",
-      end: "03:00 PM",
+      end: "06:30 PM",
     },
     {
       id: "5",
-      task: "Setup CI/CD Pipeline",
-      assignedBy: "David Lee",
+      task: "Follow-up on Exit Interviews",
+      assignedBy: "Utkarsha Palkar",
       priority: "High",
-      project: "Internal Tools",
-      end: "04:30 PM",
+      end: "06:30 PM",
     },
     {
       id: "6",
-      task: "Research on GraphQL",
-      assignedBy: "Emma Watson",
+      task: "Draft New Leave Policy",
+      assignedBy: "Utkarsha Palkar",
       priority: "Medium",
-      project: "API Development",
-      end: "05:00 PM",
+      end: "06:30 PM",
     },
     {
       id: "7",
-      task: "Resolve Merge Conflicts",
-      assignedBy: "Chris Brown",
+      task: "Review Training Feedback Forms",
+      assignedBy: "Utkarsha Palkar",
       priority: "High",
-      project: "HR System",
-      end: "06:00 PM",
+      end: "06:30 PM",
     },
     {
       id: "8",
-      task: "Optimize Page Load Speed",
-      assignedBy: "Rachel Green",
+      task: "Schedule Team Bonding Activity",
+      assignedBy: "Utkarsha Palkar",
       priority: "Medium",
-      project: "Company Website",
-      end: "07:00 PM",
+      end: "06:30 PM",
     },
     {
       id: "9",
-      task: "Write Technical Documentation",
-      assignedBy: "Monica Geller",
+      task: "Audit Payroll Records",
+      assignedBy: "Utkarsha Palkar",
       priority: "Low",
-      project: "Open Source Project",
-      end: "08:00 PM",
+      end: "06:30 PM",
     },
     {
       id: "10",
-      task: "Schedule Team Meeting",
-      assignedBy: "Chandler Bing",
+      task: "Prepare Compliance Checklist",
+      assignedBy: "Utkarsha Palkar",
       priority: "Low",
-      project: "Team Collaboration",
-      end: "09:00 PM",
+      end: "06:30 PM",
     },
   ];
 

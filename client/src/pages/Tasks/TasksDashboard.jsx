@@ -195,7 +195,7 @@ const TasksDashboard = () => {
     {
       layout: 6,
       widgets: [
-        <Card route={"my-tasklist"} title={"KRA"} icon={<RiPagesLine />} />,
+        <Card route={"KRA"} title={"KRA"} icon={<RiPagesLine />} />,
         <Card
           route={"/app/tasks/project-list"}
           title={"Project List"}
