@@ -305,6 +305,7 @@ import AdminClientLayout from "../pages/Dashboard/AdminDashboard/AdminClientLayo
 import AdminClientsData from "../pages/Dashboard/AdminDashboard/AdminClientsData/AdminClientsData";
 import AdminClientOnboard from "../pages/Dashboard/AdminDashboard/AdminClientsData/AdminClientOnboard";
 import FinanceViewVoucher from "../pages/Dashboard/FinanceDashboard/FinanceData/FinanceViewVoucher";
+import MonthMeetings from "../pages/MonthMeetings";
 
 export const routes = createBrowserRouter([
   {
@@ -1444,6 +1445,10 @@ export const routes = createBrowserRouter([
                     path: "", // Default route for /app/tickets
                     element: <MeetingDashboard />, // Dashboard is rendered by default
                     index: true,
+                  },
+                  {
+                    path: "month-meetings",
+                    element: <MonthMeetings />, 
                   },
                   {
                     path: "book-meeting",

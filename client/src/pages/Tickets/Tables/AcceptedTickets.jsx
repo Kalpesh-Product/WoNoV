@@ -1,5 +1,5 @@
 import AgTable from "../../../components/AgTable";
-import { Chip, CircularProgress, LinearProgress, MenuItem, TextField, Typography } from "@mui/material";
+import { Autocomplete, Chip, CircularProgress, LinearProgress, MenuItem, TextField, Typography } from "@mui/material";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -7,8 +7,9 @@ import { queryClient } from "../../../main";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import { IoMdClose } from "react-icons/io";
 
 const AcceptedTickets = ({ title }) => {
   const axios = useAxiosPrivate();
@@ -33,7 +34,7 @@ const AcceptedTickets = ({ title }) => {
     formState: { errors: escalateTicketErrors },
   } = useForm({
     defaultValues: {
-      departmentId: "",
+      departmentIds: [],
       description: "",
     },
   });
@@ -110,7 +111,7 @@ const AcceptedTickets = ({ title }) => {
       const response = await axios.patch("/api/tickets/escalate-ticket", {
         ticketId: esCalatedTicket.id,
         description: ticketDetails.description,
-        departmentId: ticketDetails.departmentId,
+        departmentIds: ticketDetails.departmentIds,
       });
       return response.data;
     },
@@ -138,11 +139,12 @@ const AcceptedTickets = ({ title }) => {
     getSupport({ ticketId: selectedTicketId, reason: data.reason });
   };
   const onEscalate = (ticketDetails) => {
+    console.log(ticketDetails)
     if (!ticketDetails) return;
     escalateTicket({
       ticketId: esCalatedTicket.id,
       description: ticketDetails.description,
-      departmentId: ticketDetails.departmentId,
+      departmentIds: ticketDetails.departmentIds,
     });
   };
 
@@ -193,6 +195,7 @@ const AcceptedTickets = ({ title }) => {
       ),
     },
   ];
+
 
   return (
     <div className="p-4 border-default border-borderGray rounded-md">
@@ -263,32 +266,42 @@ const AcceptedTickets = ({ title }) => {
             onSubmit={handleEscalateTicketSubmit(onEscalate)}
             className="grid grid-cols-1 gap-4"
           >
-            <Controller
-              name="departmentId"
-              control={escalateFormControl}
-              rules={{ required: "Department is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label={"Department"}
-                  size="small"
-                  select
-                  error={!!escalateTicketErrors.departmentId}
-                  helperText={escalateTicketErrors.departmentId?.message}
-                  fullWidth
-                >
-                  {isDepartmentsPending ? (
-                    <CircularProgress color="black" />
-                  ) : (
-                    departments?.map((dept) => (
-                      <MenuItem value={dept.department._id}>
-                        {dept.department.name}
-                      </MenuItem>
-                    ))
-                  )}
-                </TextField>
-              )}
-            />
+          <Controller
+  name="departmentIds"
+  control={escalateFormControl}
+  rules={{ required: "Department is required" }}
+  render={({ field }) => (
+    <Autocomplete
+      multiple
+      options={departments}
+      getOptionLabel={(dept) => `${dept.department.name}`}
+      onChange={(_, newValue) =>
+        field.onChange(newValue.map((dept) => dept.department._id))
+      }
+      renderTags={(selected, getTagProps) =>
+        selected.map((dept, index) => (
+          <Chip
+            key={dept.department._id}
+            label={`${dept.department.name}`}
+            {...getTagProps({ index })}
+            deleteIcon={<IoMdClose />}
+          />
+        ))
+      }
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Select Departments"
+          size="small"
+          fullWidth
+          error={!!escalateTicketErrors.departmentIds}
+          helperText={escalateTicketErrors.departmentIds?.message}
+        />
+      )}
+    />
+  )}
+/>
+
             <Controller
               name="description"
               control={escalateFormControl}
