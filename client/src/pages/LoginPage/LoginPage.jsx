@@ -24,7 +24,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (auth.accessToken) {
-      navigate("/app/dashboard/frontend-dashboard");
+      navigate("/app/dashboard/HR-dashboard");
     } else {
       refresh();
     }
