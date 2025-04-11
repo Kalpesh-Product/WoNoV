@@ -23,7 +23,7 @@ const MonthMeetings = () => {
       };
 
     const columns = [
-        { field: "srNo", headerName: "SR NO" },
+        { field: "srNo", headerName: "Sr No" },
         { field: "roomName", headerName: "Room Name" },
         { field: "startDate", headerName: "Date" },
         { field: "startTime", headerName: "Start Time" },

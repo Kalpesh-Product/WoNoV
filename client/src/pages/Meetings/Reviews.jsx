@@ -65,7 +65,7 @@ const Reviews = () => {
 
 
   const departmentsColumn = [
-    { field: "srno", headerName: "SR No" },
+    { field: "srno", headerName: "Sr No" },
     {
       field: "nameofreview",
       headerName: "User",

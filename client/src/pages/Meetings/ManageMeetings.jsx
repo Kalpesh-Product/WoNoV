@@ -86,6 +86,12 @@ const ManageMeetings = () => {
   const filteredMeetings = meetings.filter(
     (item) => item.meetingStatus === "Upcoming"
   );
+
+  const transformedMeetings = filteredMeetings.map((meeting,index)=>({
+    ...meeting,
+    srNo:index+1
+  }))
+
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
     mutationFn: async (data) => {
@@ -240,6 +246,7 @@ const ManageMeetings = () => {
   //---------------------------------Event handlers----------------------------------------//
 
   const columns = [
+    { field: "srNo", headerName: "Sr No" },
     { field: "roomName", headerName: "Room Name" },
     { field: "startTime", headerName: "Start Time" },
     { field: "endTime", headerName: "End Time" },
@@ -344,10 +351,10 @@ const ManageMeetings = () => {
     <div className="p-4 flex flex-col gap-4">
       {!isMeetingsLoading ? (
         <AgTable
-          key={filteredMeetings.length}
+          key={transformedMeetings.length}
           search
           tableTitle={"Manage Meetings"}
-          data={filteredMeetings || []}
+          data={transformedMeetings || []}
           columns={columns}
         />
       ) : (

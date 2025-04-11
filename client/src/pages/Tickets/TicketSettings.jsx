@@ -10,6 +10,7 @@ import { Chip } from "@mui/material";
 const TicketSettings = () => {
   const [expandedRow, setExpandedRow] = useState({});
 
+  console.log('ticket settings')
   const toggleRowExpansion = (rowId) => {
 
     ('RowId',rowId);
@@ -19,6 +20,7 @@ const TicketSettings = () => {
     })); // Toggle expanded row
   };
   const laptopColumns = [
+    { field:"srNo",headerName:"Sr No",},
     { field:"Id",headerName:"ID",},
     { field: "RaisedBy", headerName: "Raised By", flex: 1 },
     { field: "FromDepartment", headerName: "From Department", flex: 1 },
@@ -70,35 +72,35 @@ const TicketSettings = () => {
 
   const rows = [
     { 
-      Id:"1",
+      srNo:"1",
       RaisedBy: "Abrar Shaikh",
       FromDepartment: "IT",
       TicketTitle: "Laptop Screen Malfunctioning",
       Status: "Pending",
     },
     {
-      Id:"2",
+      srNo:"2",
       RaisedBy: "Abrar Shaikh",
       FromDepartment: "IT",
       TicketTitle: "Laptop Screen Malfunctioning",
       Status: "Pending",
     },
     {
-      Id:"3",
+      srNo:"3",
       RaisedBy: "Abrar Shaikh",
       FromDepartment: "IT",
       TicketTitle: "Laptop is not working",
       Status: "Pending",
     },
     {
-      Id:"4",
+      srNo:"4",
       RaisedBy: "Abrar Shaikh",
       FromDepartment: "IT",
       TicketTitle: "Wifi is slow",
       Status: "Pending",
     },
     {
-      Id:"5",
+      srNo:"5",
       RaisedBy: "Abrar Shaikh",
       FromDepartment: "IT",
       TicketTitle: "Laptop Screen Malfunctioning",

@@ -8,7 +8,7 @@ const ItBulkUpload = () => {
     "Upload Expenses" 
   ];
   const bulkUploadDataColumns = [
-    { field: "srNo", headerName: "SR No", flex: 1 },
+    { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "templateName", headerName: "Template Name", flex: 1 },
     { field: "uploadedBy", headerName: "Uploaded By", flex: 1 },
     { field: "date", headerName: "Date", flex: 1 },
@@ -17,28 +17,28 @@ const ItBulkUpload = () => {
   const bulkUploadData = [
     {
       srNo: 1,
-      templateName: "Upload Expense",
+      templateName: "Upload Employee",
       uploadedBy: "John Doe",
-      date: "2025-03-01"
+      date: "01-03-2025",
     },
     {
       srNo: 2,
-      templateName: "Upload Expense",
+      templateName: "Upload Employee",
       uploadedBy: "Jane Smith",
-      date: "2025-03-08"
+      date: "08-03-2025",
     },
     {
       srNo: 3,
-      templateName: "Upload Expense",
+      templateName: "Upload Employee",
       uploadedBy: "Michael Johnson",
-      date: "2025-03-15"
+      date: "15-03-2025",
     },
     {
       srNo: 4,
-      templateName: "Upload Expense",
+      templateName: "Upload Employee",
       uploadedBy: "Emily Davis",
-      date: "2025-03-22"
-    }
+      date: "22-03-2025",
+    },
   ];
 
   return (

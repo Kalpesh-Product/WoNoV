@@ -37,7 +37,7 @@ const TicketReports = () => {
     },
   });
   const kraColumn = [
-    { field: "id", headerName: "ID", flex: 1 },
+    { field: "id", headerName: "Sr No", flex: 1 },
     { field: "ticket", headerName: "Ticket", flex: 1 },
     { field: "createdAt", headerName: "Date", flex: 1 },
     { field: "raisedToDepartment", headerName: "Raised To", flex: 1 },

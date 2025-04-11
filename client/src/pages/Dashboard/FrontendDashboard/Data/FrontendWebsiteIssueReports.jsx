@@ -3,7 +3,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 
 const FrontendWebsiteIssueReports = () => {
   const websiteIssueReportsColumn = [
-    { field: "id", headerName: "Serial No." },
+    { field: "id", headerName: "Sr No" },
     { field: "dueBy", headerName: "Due By" },
     { field: "clientName", headerName: "Client Name" },
     { field: "issue", headerName: "Issue" },
@@ -45,7 +45,7 @@ const FrontendWebsiteIssueReports = () => {
   const rows = [
     {
       id: 1,
-      dueBy: "2025-02-07",
+      dueBy: "07-02-2025",
       clientName: "Dane John",
       issue: "Website is down",
       department: "IT",
@@ -54,7 +54,7 @@ const FrontendWebsiteIssueReports = () => {
     },
     {
       id: 2,
-      dueBy: "2025-02-08",
+      dueBy: "08-02-2025",
       clientName: "Alice Smith",
       issue: "Links are not working",
       department: "HR",
@@ -63,7 +63,7 @@ const FrontendWebsiteIssueReports = () => {
     },
     {
       id: 3,
-      dueBy: "2025-02-09",
+      dueBy: "09-02-2025",
       clientName: "Bob Brown",
       issue: "Domain is expired",
       department: "Administration",
@@ -72,7 +72,7 @@ const FrontendWebsiteIssueReports = () => {
     },
     {
       id: 4,
-      dueBy: "2025-02-10",
+      dueBy: "10-02-2025",
       clientName: "Charlie Davis",
       issue: "Website is down",
       department: "Sales",
@@ -81,7 +81,7 @@ const FrontendWebsiteIssueReports = () => {
     },
     {
       id: 5,
-      dueBy: "2025-02-11",
+      dueBy: "11-02-2025",
       clientName: "Eve Foster",
       issue: "Domain is expired",
       department: "Finance",
@@ -90,7 +90,7 @@ const FrontendWebsiteIssueReports = () => {
     },
     {
       id: 6,
-      dueBy: "2025-02-12",
+      dueBy: "12-02-2025",
       clientName: "Frank Green",
       issue: "Website is down",
       department: "IT",
@@ -99,7 +99,7 @@ const FrontendWebsiteIssueReports = () => {
     },
     {
       id: 7,
-      dueBy: "2025-02-13",
+      dueBy: "13-02-2025",
       clientName: "Grace Hill",
       issue: "Links are not working",
       department: "Sales",
@@ -108,7 +108,7 @@ const FrontendWebsiteIssueReports = () => {
     },
     {
       id: 8,
-      dueBy: "2025-02-14",
+      dueBy: "14-02-2025",
       clientName: "Henry Ivy",
       issue: "Domain is expired",
       department: "IT",
@@ -117,7 +117,7 @@ const FrontendWebsiteIssueReports = () => {
     },
     {
       id: 9,
-      dueBy: "2025-02-15",
+      dueBy: "15-02-2025",
       clientName: "Irene Jacobs",
       issue: "Website is down",
       department: "Administration",
@@ -126,7 +126,7 @@ const FrontendWebsiteIssueReports = () => {
     },
     {
       id: 10,
-      dueBy: "2025-02-16",
+      dueBy: "16-02-2025",
       clientName: "Jack King",
       issue: "Website is down",
       department: "HR",
@@ -135,7 +135,7 @@ const FrontendWebsiteIssueReports = () => {
     },
     {
       id: 11,
-      dueBy: "2025-02-17",
+      dueBy: "17-02-2025",
       clientName: "Karen Lewis",
       issue: "Links are not working",
       department: "Finance",
@@ -144,7 +144,7 @@ const FrontendWebsiteIssueReports = () => {
     },
     {
       id: 12,
-      dueBy: "2025-02-18",
+      dueBy: "18-02-2025",
       clientName: "Leo Martin",
       issue: "Domain is expired",
       department: "Administration",
@@ -153,7 +153,7 @@ const FrontendWebsiteIssueReports = () => {
     },
     {
       id: 13,
-      dueBy: "2025-02-19",
+      dueBy: "19-02-2025",
       clientName: "Mona Nash",
       issue: "Domain is expired",
       department: "Sales",
@@ -161,6 +161,7 @@ const FrontendWebsiteIssueReports = () => {
       priority: "Low",
     },
   ];
+  
 
   return (
     <div className="flex flex-col gap-8">

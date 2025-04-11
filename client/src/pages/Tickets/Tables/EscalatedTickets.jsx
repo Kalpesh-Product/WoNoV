@@ -83,7 +83,7 @@ const EscalatedTickets = ({ title }) => {
   const rows = isLoading ? [] : transformTicketsData(escalatedTickets);
 
   const recievedTicketsColumns = [
-    { field: "srno", headerName: "SR NO" },
+    { field: "srno", headerName: "Sr No" },
     { field: "raisedBy", headerName: "Raised By" },
     {
       field: "selectedDepartment",
