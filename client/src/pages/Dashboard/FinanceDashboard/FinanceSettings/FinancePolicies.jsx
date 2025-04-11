@@ -4,9 +4,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import AgTable from "../../../../components/AgTable";
 
 const FinancePolicies = () => {
-  const uploadItems = [
-    "Upload Policies" 
-  ];
+  const uploadItems = ["Upload Policies"];
   const policiesUploadDataColumns = [
     { field: "srNo", headerName: "SR No", flex: 1 },
     { field: "templateName", headerName: "Template Name", flex: 1 },
@@ -19,31 +17,33 @@ const FinancePolicies = () => {
       srNo: 1,
       templateName: "Upload Policies",
       uploadedBy: "John Doe",
-      date: "2025-03-01"
+      date: "2025-03-01",
     },
     {
       srNo: 2,
       templateName: "Upload Policies",
       uploadedBy: "Jane Smith",
-      date: "2025-03-08"
+      date: "2025-03-08",
     },
     {
       srNo: 3,
       templateName: "Upload Policies",
       uploadedBy: "Michael Johnson",
-      date: "2025-03-15"
+      date: "2025-03-15",
     },
     {
       srNo: 4,
       templateName: "Upload Policies",
       uploadedBy: "Emily Davis",
-      date: "2025-03-22"
-    }
+      date: "2025-03-22",
+    },
   ];
 
   return (
-    <div className="p-4">
-      <h2 className="text-title font-pmedium text-primary pb-4">Upload Policies</h2>
+    <div className="">
+      <h2 className="text-title font-pmedium text-primary pb-4">
+        Upload Policies
+      </h2>
 
       <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1 pb-4">
         {uploadItems.map((index, item) => {
@@ -74,15 +74,15 @@ const FinancePolicies = () => {
           );
         })}
       </div>
-       <div>
-             <WidgetSection border title="Policies Data">
-                <AgTable
-                  data={policiesUploadData}
-                  columns={policiesUploadDataColumns}
-                  search={true}
-                />
-              </WidgetSection>
-            </div>
+      <div>
+        <WidgetSection border title="Policies Data">
+          <AgTable
+            data={policiesUploadData}
+            columns={policiesUploadDataColumns}
+            search={true}
+          />
+        </WidgetSection>
+      </div>
     </div>
   );
 };

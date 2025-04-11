@@ -77,13 +77,13 @@ const AddVisitor = () => {
           <span className="text-content font-pmedium">
             {data.message || "Visitor Added Successfully"}
           </span>
-          <PrimaryButton
+          {/* <PrimaryButton
             title={"Book a Meeting"}
             handleSubmit={() => {
               toast.dismiss(t);
               navigate("/app/meetings/book-meeting");
             }}
-          />
+          /> */}
         </div>
       ));
       reset();
@@ -123,14 +123,13 @@ const AddVisitor = () => {
                     select
                     label="Select Visitor Type"
                     error={!!errors.visitorType}
-                    helperText={errors.visitorType?.message}
-                  >
+                    helperText={errors.visitorType?.message}>
                     <MenuItem value="" disabled>
                       Select Visitor Type
                     </MenuItem>
                     <MenuItem value="Walk In">Walk In</MenuItem>
                     <MenuItem value="Scheduled">Scheduled</MenuItem>
-                    <MenuItem value="Meeting Booking">Meeting Booking</MenuItem>
+                    {/* <MenuItem value="Meeting Booking">Meeting Booking</MenuItem> */}
                   </TextField>
                 )}
               />
@@ -204,8 +203,7 @@ const AddVisitor = () => {
                     helperText={errors.gender?.message}
                     size="small"
                     label="Gender"
-                    fullWidth
-                  >
+                    fullWidth>
                     <MenuItem value="" disabled>
                       Select Gender
                     </MenuItem>
@@ -282,8 +280,7 @@ const AddVisitor = () => {
                       field.onChange(e);
                       setSelectedDepartment(e.target.value);
                     }}
-                    select
-                  >
+                    select>
                     <MenuItem value="">Select Department</MenuItem>
                     {uniqueDepartments.map((department) => (
                       <MenuItem key={department._id} value={department._id}>
@@ -303,15 +300,15 @@ const AddVisitor = () => {
                     select
                     size="small"
                     fullWidth
-                    label={"Select Person"}
-                  >
+                    label={"Select Person"}>
                     <MenuItem value="">Select the person to meet</MenuItem>
                     {!isLoading ? (
                       departmentEmployees.map((employee) => (
                         <MenuItem
                           key={employee._id}
-                          value={employee._id}
-                        >{`${employee.firstName} ${employee.lastName}`}</MenuItem>
+                          value={
+                            employee._id
+                          }>{`${employee.firstName} ${employee.lastName}`}</MenuItem>
                       ))
                     ) : (
                       <CircularProgress />
@@ -331,8 +328,7 @@ const AddVisitor = () => {
                     select
                     error={!!errors.idProof?.idType}
                     helperText={errors.idProof?.idType?.message}
-                    fullWidth
-                  >
+                    fullWidth>
                     <MenuItem value="" disabled>
                       Select Id Type
                     </MenuItem>

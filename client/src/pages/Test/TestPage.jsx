@@ -31,26 +31,14 @@ const TestPage = () => {
       <div className="mt-20">
         <div className="grid grid-cols-2 w-[100%]">
           <div className="flex flex-col gap-16 border-default border-borderGray p-4">
-              <div className="h-32 border-default border-borderGray">
-
-              </div>
-              <div className="h-64 border-default border-borderGray">
-
-              </div>
-              <div className="h-64 border-default border-borderGray">
-
-              </div>
+            <div className="h-32 border-default border-borderGray"></div>
+            <div className="h-64 border-default border-borderGray"></div>
+            <div className="h-64 border-default border-borderGray"></div>
           </div>
           <div className="flex flex-col gap-16 border-default border-borderGray p-4">
-              <div className="h-64 border-default border-borderGray">
-
-              </div>
-              <div className="h-64 border-default border-borderGray">
-
-              </div>
-              <div className="h-64 border-default border-borderGray">
-
-              </div>
+            <div className="h-64 border-default border-borderGray"></div>
+            <div className="h-64 border-default border-borderGray"></div>
+            <div className="h-64 border-default border-borderGray"></div>
           </div>
           <div></div>
         </div>

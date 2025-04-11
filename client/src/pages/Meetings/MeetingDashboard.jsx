@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { Skeleton } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import DonutChart from "../../components/graphs/DonutChart";
 const WidgetSection = lazy(() => import("../../components/WidgetSection"));
 
 const MeetingDashboard = () => {
@@ -26,7 +27,7 @@ const MeetingDashboard = () => {
       return response.data;
     },
   });
-  
+
   // Function to calculate total duration in hours
   const calculateTotalDurationInHours = (meetings) => {
     return meetings.reduce((total, meeting) => {
@@ -276,8 +277,7 @@ const MeetingDashboard = () => {
                 style={{
                   backgroundColor:
                     room.status === "Available" ? "#28a745" : "#dc3545",
-                }}
-              ></span>
+                }}></span>
               <span className="text-content text-gray-400">
                 {room.roomName}
               </span>
@@ -300,7 +300,7 @@ const MeetingDashboard = () => {
     "Oct-24",
     "Nov-24",
     "Dec-24",
-  ]
+  ];
 
   // Example booked hours data per month
   const actualBookedHoursPerMonth = {
@@ -328,32 +328,45 @@ const MeetingDashboard = () => {
   const averageBookingSeries = [{ name: "Booking Utilization", data }];
 
   const averageBookingOptions = {
-    chart: { type: "bar", fontFamily: "Poppins-Regular",
+    chart: {
+      type: "bar",
+      fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: function (event, chartContext, config) {
-          const clickedMonthName = config.w.config.xaxis.categories[config.dataPointIndex];
-       
-       
+          const clickedMonthName =
+            config.w.config.xaxis.categories[config.dataPointIndex];
+
           const [clickedMonth, clickedYearSuffix] = clickedMonthName.split("-");
 
           const monthMeetings = meetingsData.filter((meeting) => {
             const date = new Date(meeting.date);
-            
-            const meetingMonthAbbr = date.toLocaleString("default", { month: "short" });  
-            const meetingYearSuffix = date.getFullYear().toString().slice(-2);  
-          
-            return meetingMonthAbbr === clickedMonth && meetingYearSuffix === clickedYearSuffix;
+
+            const meetingMonthAbbr = date.toLocaleString("default", {
+              month: "short",
+            });
+            const meetingYearSuffix = date.getFullYear().toString().slice(-2);
+
+            return (
+              meetingMonthAbbr === clickedMonth &&
+              meetingYearSuffix === clickedYearSuffix
+            );
           });
-          
-          const month = new Date(monthMeetings[0].date).toLocaleString("default", { month: "long" });
-          const year = new Date(monthMeetings[0].date).toLocaleString("default", { year: "numeric" });
+
+          const month = new Date(monthMeetings[0].date).toLocaleString(
+            "default",
+            { month: "long" }
+          );
+          const year = new Date(monthMeetings[0].date).toLocaleString(
+            "default",
+            { year: "numeric" }
+          );
 
           navigate(`/app/meetings/${month}-${year}-meetings`, {
-            state: { meetings: monthMeetings},
+            state: { meetings: monthMeetings },
           });
-        }
+        },
       },
-     },
+    },
     xaxis: { categories: BookingMonths },
     yaxis: {
       max: 100,
@@ -542,13 +555,11 @@ const MeetingDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </div>
-          }
-        >
+          }>
           <WidgetSection
             layout={1}
             border
-            title={"Average Meeting Room Bookings"}
-          >
+            title={"Average Meeting Room Bookings"}>
             <BarGraph
               height={400}
               data={averageBookingSeries}
@@ -694,16 +705,14 @@ const MeetingDashboard = () => {
           layout={1}
           border
           title={"External Guests Visited"}
-          padding
-        >
+          padding>
           <BarGraph data={externalGuestsData} options={externalGuestsOptions} />
         </WidgetSection>,
         <WidgetSection
           layout={1}
           border
           title={"Average Occupancy Of Rooms in %"}
-          padding
-        >
+          padding>
           <BarGraph
             data={averageOccupancySeries}
             options={averageOccupancyOptions}
@@ -735,6 +744,20 @@ const MeetingDashboard = () => {
             options={RoomOptions}
             customLegend={CustomLegend}
             width={300}
+          />
+        </WidgetSection>,
+        <WidgetSection
+          layout={1}
+          padding
+          border
+          titleLabel={"Today"}
+          title={"Cleaning & Hygiene Status"}>
+          <DonutChart
+            series={[5, 4, 3]}
+            labels={["Dirty", "Cleaning", "Clean"]}
+            colors={["#ff4d4d", "#ffc107", "#28a745"]}
+            centerLabel={"Meeting Rooms"}
+            tooltipValue={[5, 4, 3]}
           />
         </WidgetSection>,
       ],

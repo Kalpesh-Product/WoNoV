@@ -150,7 +150,7 @@ const AdminAnnualExpenses = () => {
   };
 
   return (
-    <>
+    <div className="p-4">
       <AgTable
         key={assetsList.length}
         search={true}
@@ -462,7 +462,7 @@ const AdminAnnualExpenses = () => {
           </div>
         )}
       </MuiModal>
-    </>
+    </div>
   );
 };
 

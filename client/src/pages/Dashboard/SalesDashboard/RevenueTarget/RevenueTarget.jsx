@@ -415,7 +415,7 @@ const RevenueTarget = () => {
   };
 
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className="py-4 flex flex-col gap-4">
       {/* Month Selection Dropdown */}
       <div className="mb-4">
         <FormControl size="small">
@@ -424,8 +424,7 @@ const RevenueTarget = () => {
             value={selectedMonth}
             onChange={handleMonthChange}
             sx={{ width: "200px" }}
-            label="Select Month"
-          >
+            label="Select Month">
             {mockBusinessRevenueData.map((data) => (
               <MenuItem key={data.month} value={data.month}>
                 {data.month}
@@ -441,9 +440,8 @@ const RevenueTarget = () => {
         border
         padding
         title={"Vertical-wise Revenue Targets"}
-        titleLabel={dayjs().format("MMMM YYYY") }
-        TitleAmount={"Total INR 6,80,000"}
-      >
+        titleLabel={dayjs().format("MMMM YYYY")}
+        TitleAmount={"Total INR 6,80,000"}>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
 
@@ -456,8 +454,7 @@ const RevenueTarget = () => {
                 expandIcon={<IoIosArrowDown />}
                 aria-controls={`panel-${index}-content`}
                 id={`panel-${index}-header`}
-                className="border-b-[1px] border-borderGray"
-              >
+                className="border-b-[1px] border-borderGray">
                 <div className="flex justify-between items-center w-full px-4">
                   <span className="text-subtitle font-pmedium">
                     {domain.name}

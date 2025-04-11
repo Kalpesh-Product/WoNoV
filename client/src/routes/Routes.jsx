@@ -307,6 +307,8 @@ import AdminClientOnboard from "../pages/Dashboard/AdminDashboard/AdminClientsDa
 import FinanceViewVoucher from "../pages/Dashboard/FinanceDashboard/FinanceData/FinanceViewVoucher";
 import MonthMeetings from "../pages/MonthMeetings";
 import DepartmentWiseTickets from "../pages/Tickets/DepartmentWiseTickets";
+import CafeLayout from "../pages/Dashboard/CafeDashboard/CafeLayout";
+import CafeDashboard from "../pages/Dashboard/CafeDashboard/CafeDashboard";
 
 export const routes = createBrowserRouter([
   {
@@ -1322,6 +1324,16 @@ export const routes = createBrowserRouter([
                       },
                     ],
                   },
+                  {
+                    path: "cafe-dashboard",
+                    element: <CafeLayout />,
+                    children: [
+                      {
+                        path: "",
+                        element: <CafeDashboard />,
+                      },
+                    ],
+                  },
                 ],
               },
 
@@ -1452,7 +1464,7 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: ":meetings",
-                    element: <MonthMeetings />, 
+                    element: <MonthMeetings />,
                   },
                   {
                     path: "book-meeting",

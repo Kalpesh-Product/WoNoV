@@ -97,8 +97,7 @@ const TicketDashboard = () => {
           padding
           border
           titleLabel={"Last Month"}
-          title={"Total Tickets"}
-        >
+          title={"Total Tickets"}>
           <DonutChart
             series={[49, 21, 30]}
             labels={["High", "Medium", "Low"]}
@@ -112,8 +111,7 @@ const TicketDashboard = () => {
           padding
           border
           titleLabel={"Current month"}
-          title={"Department Tickets"}
-        >
+          title={"Department Tickets"}>
           <DonutChart
             series={[10, 4, 0, 5, 3, 2, 5]}
             labels={masterDepartments}
@@ -143,36 +141,76 @@ const TicketDashboard = () => {
             highlightNegativePositive={true}
             disableColorChange
             descriptionData={[
-              { title: "MT. AV. Performance", value: "70%",route:"/app/tickets/manage-tickets" },
-              { title: "Immediate Attended", value: "12",route:"/app/tickets/manage-tickets" },
-              { title: "Medium Attended", value: "10",route:"/app/tickets/manage-tickets" },
-              { title: "Low Attended", value: "26",route:"/app/tickets/manage-tickets" },
+              {
+                title: "MT. AV. Performance",
+                value: "70%",
+                route: "/app/tickets/manage-tickets",
+              },
+              {
+                title: "Immediate Attended",
+                value: "12",
+                route: "/app/tickets/manage-tickets",
+              },
+              {
+                title: "Medium Attended",
+                value: "10",
+                route: "/app/tickets/manage-tickets",
+              },
+              {
+                title: "Low Attended",
+                value: "26",
+                route: "/app/tickets/manage-tickets",
+              },
             ]}
           />
         </div>,
 
-          <FinanceCard
-            cardTitle="Department Tickets"
-            timePeriod="Today"
-            highlightNegativePositive={true}
-            disableColorChange
-            descriptionData={[
-              { title: "Open Tickets", value: "200",route:"/app/tickets/manage-tickets" },
-              { title: "Closed Tickets", value: "75",route:"/app/tickets/manage-tickets" },
-              { title: "Pending Tickets", value: "100",route:"/app/tickets/manage-tickets" },
-            ]}
-          />,
-          <FinanceCard
-            cardTitle="Personal Tickets"
-            timePeriod="Today"
-            highlightNegativePositive={true}
-            disableColorChange
-            descriptionData={[
-              { title: "Accepted Tickets", value: "106",route:"/app/tickets/manage-tickets" },
-              { title: "Assigned Tickets", value: "65",route:"/app/tickets/manage-tickets" },
-              { title: "Escalated Tickets", value: "50",route:"/app/tickets/manage-tickets" },
-            ]}
-          />
+        <FinanceCard
+          cardTitle="Department Tickets"
+          timePeriod="Today"
+          highlightNegativePositive={true}
+          disableColorChange
+          descriptionData={[
+            {
+              title: "Open Tickets",
+              value: "200",
+              route: "/app/tickets/manage-tickets",
+            },
+            {
+              title: "Closed Tickets",
+              value: "75",
+              route: "/app/tickets/manage-tickets",
+            },
+            {
+              title: "Pending Tickets",
+              value: "100",
+              route: "/app/tickets/manage-tickets",
+            },
+          ]}
+        />,
+        <FinanceCard
+          cardTitle="Personal Tickets"
+          timePeriod="Today"
+          highlightNegativePositive={true}
+          disableColorChange
+          descriptionData={[
+            {
+              title: "Accepted Tickets",
+              value: "106",
+              route: "/app/tickets/manage-tickets",
+            },
+            {
+              title: "Assigned Tickets",
+              value: "65",
+              route: "/app/tickets/manage-tickets",
+            },
+            {
+              title: "Escalated Tickets",
+              value: "50",
+              route: "/app/tickets/manage-tickets",
+            },
+          ]}
+        />,
       ],
     },
   ];
