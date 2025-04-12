@@ -418,6 +418,11 @@ const HrDashboard = () => {
         },
       },
     },
+    stroke: {
+      show: true,
+      width: 6, // Increase for more "gap"
+      colors: ["#ffffff"], // Or match background color
+    },
     labels: ["Male", "Female"], // Labels for the pie slices
     colors: ["#0056B3", "#FD507E"], // Pass colors as an array
     dataLabels: {
@@ -475,6 +480,11 @@ const HrDashboard = () => {
           navigate("employee/view-employees");
         },
       },
+    },
+    stroke: {
+      show: true,
+      width: 6, // Increase for more "gap"
+      colors: ["#ffffff"], // Or match background color
     },
     labels: techGoaVisitors.map((item) => item.label), // Labels for the pie slices
     colors: techGoaVisitors.map((item) => item.color), // Assign colors to slices
@@ -675,9 +685,9 @@ const HrDashboard = () => {
           columns={columns}
           rows={[
             ...birthdays.map((bd, index) => ({
-              id: index + 1, // Auto-increment Sr No
-              title: bd.title, // Birthday Name
-              start: new Date(bd.start).toLocaleDateString(), // Format as readable date
+              id: index + 1, 
+              title: bd.title,
+              start: new Date(bd.start).toLocaleDateString(), 
             })),
           ]}
           rowsToDisplay={5}
