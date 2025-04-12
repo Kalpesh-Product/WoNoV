@@ -65,7 +65,7 @@ const LoginPage = () => {
         </div>
         <div className="flex items-center uppercase">
           <ul className="flex gap-5 text-white uppercase font-thin">
-            <li>SaaS</li>
+            <li>Modules</li>
             <li>Leads</li>
             <li>Themes</li>
             <li>Capital</li>

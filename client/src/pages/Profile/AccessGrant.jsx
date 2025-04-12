@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Avatar, Chip } from "@mui/material";
 import PermissionsTable from "../../components/PermissionsTable";
 import useAuth from "../../hooks/useAuth";
+import { toast } from "sonner";
 
 const AccessGrant = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -102,6 +103,12 @@ const AccessGrant = () => {
   const handlePermissionUpdate = (updatedPermissions) => {
     console.log("Updated Permissions:", updatedPermissions);
   };
+
+  const handleSavePermissions = () => {
+  toast.success("Permissions saved successfully");
+  // You can also trigger your API call here
+};
+
 
   return (
     <div className="bg-white p-4">
