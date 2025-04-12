@@ -81,6 +81,7 @@ const Projections = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const monthlyProfitLossColumns = [
+    { field: "id", headerName: "ID", flex: 1 },
     { field: "month", headerName: "Month", flex: 1 },
     { field: "income", headerName: "Income", flex: 1 },
     { field: "expense", headerName: "Expense", flex: 1 },
@@ -102,36 +103,42 @@ const Projections = () => {
 
   const monthlyProfitLossData = [
     {
+      id: 1,
       month: "April",
       income: "1,20,000",
       expense: "80,000",
       pnl: "40,000",
     },
     {
+      id: 2,
       month: "May",
       income: "1,10,000",
       expense: "90,000",
       pnl: "20,000",
     },
     {
+      id: 3,
       month: "June",
       income: "95,000",
       expense: "1,05,000",
       pnl: "-10,000",
     },
     {
+      id: 4,
       month: "July",
       income: "1,50,000",
       expense: "70,000",
       pnl: "80,000",
     },
     {
+      id: 5,
       month: "August",
       income: "1,00,000",
       expense: "1,20,000",
       pnl: "-20,000",
     },
   ];
+  
 
   const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
     const numericalPnL = parseInt(item.pnl.replace(/,/g, ""), 10);
@@ -165,7 +172,8 @@ const Projections = () => {
       <div>
         <WidgetSection
           border
-          title={`Total Monthly P&L : 2024 - 2025`}
+          title={`Total Monthly P&L`}
+          titleLabel={"2024 - 2025"}
           TitleAmount={`INR ${totalPnL.toLocaleString()}`}>
           <AgTable
             data={monthlyProfitLossData}

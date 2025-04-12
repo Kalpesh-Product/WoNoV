@@ -15,8 +15,8 @@ const ItSettings = () => {
 
   // Redirect to "bulk-upload" if the current path is "/maintenance-dashboard/settings"
   useEffect(() => {
-    if (location.pathname === "/app/dashboard/it-dashboard/settings") {
-      navigate("/app/dashboard/it-dashboard/settings/bulk-upload", {
+    if (location.pathname === "/app/dashboard/IT-dashboard/settings") {
+      navigate("/app/dashboard/IT-dashboard/settings/bulk-upload", {
         replace: true,
       });
     }
