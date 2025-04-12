@@ -163,7 +163,10 @@ const Projections = () => {
       ))}
 
       <div>
-        <WidgetSection border title={`Total Monthly P&L : ${totalPnL.toLocaleString()} INR`}>
+        <WidgetSection
+          border
+          title={`Total Monthly P&L : 2024 - 2025`}
+          TitleAmount={`INR ${totalPnL.toLocaleString()}`}>
           <AgTable
             data={monthlyProfitLossData}
             columns={monthlyProfitLossColumns}

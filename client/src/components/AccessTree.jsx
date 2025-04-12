@@ -84,7 +84,8 @@ const AccessTree = () => {
   }
 
   return (
-    <div className="flex flex-col items-center p-6 pt-10 min-h-screen">
+    // <div className="flex flex-col items-center p-6 pt-10 min-h-screen">
+    <div className="flex flex-col items-center p-6 pt-10 min-h-[30vh]">
       <HierarchyCard
         user={hierarchy}
         handleSelectUser={(user) => handleSelectUser(user, 0)}

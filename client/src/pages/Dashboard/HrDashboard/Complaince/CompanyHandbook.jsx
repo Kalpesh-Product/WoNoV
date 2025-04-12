@@ -66,52 +66,282 @@ const CompanyHandbook = () => {
     {
       id: 3,
       title: "Finance",
-      content: "Content for Accordion 3",
+      content: (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">SOP's</span>
+            </div>
+            <div className="flex-row">
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">Policies</span>
+            </div>
+            <div>
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+        </div>
+      ),
     },
     {
       id: 4,
       title: "Human Resource & EA",
-      content: "Content for Accordion 3",
+      content: (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">SOP's</span>
+            </div>
+            <div className="flex-row">
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">Policies</span>
+            </div>
+            <div>
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+        </div>
+      ),
     },
     {
       id: 5,
       title: "Sales & Business Development",
-      content: "Content for Accordion 3",
+      content: (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">SOP's</span>
+            </div>
+            <div className="flex-row">
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">Policies</span>
+            </div>
+            <div>
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+        </div>
+      ),
     },
     {
       id: 6,
       title: "Marketing",
-      content: "Content for Accordion 3",
+      content: (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">SOP's</span>
+            </div>
+            <div className="flex-row">
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">Policies</span>
+            </div>
+            <div>
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+        </div>
+      ),
     },
     {
       id: 7,
       title: "Civil & Maintainance",
-      content: "Content for Accordion 3",
+      content: (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">SOP's</span>
+            </div>
+            <div className="flex-row">
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">Policies</span>
+            </div>
+            <div>
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+        </div>
+      ),
     },
     {
       id: 8,
       title: "Legal",
-      content: "Content for Accordion 3",
+      content: (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">SOP's</span>
+            </div>
+            <div className="flex-row">
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">Policies</span>
+            </div>
+            <div>
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+        </div>
+      ),
     },
     {
       id: 9,
       title: "Administartion & Front Office",
-      content: "Content for Accordion 3",
+      content: (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">SOP's</span>
+            </div>
+            <div className="flex-row">
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">Policies</span>
+            </div>
+            <div>
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+        </div>
+      ),
     },
     {
       id: 10,
       title: "Service & Maintainance",
-      content: "Content for Accordion 3",
+      content: (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">SOP's</span>
+            </div>
+            <div className="flex-row">
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">Policies</span>
+            </div>
+            <div>
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+        </div>
+      ),
     },
     {
       id: 11,
       title: "Kaffe & Operation",
-      content: "Content for Accordion 3",
+      content: (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">SOP's</span>
+            </div>
+            <div className="flex-row">
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">Policies</span>
+            </div>
+            <div>
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+        </div>
+      ),
     },
     {
       id: 12,
       title: "Kaffe Kitchen",
-      content: "Content for Accordion 3",
+      content: (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">SOP's</span>
+            </div>
+            <div className="flex-row">
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-content">Policies</span>
+            </div>
+            <div>
+              <button className="p-2 border-default border-black rounded-md text-content">
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+        </div>
+      ),
     },
   ];
   const accordionDataGeneral = [
