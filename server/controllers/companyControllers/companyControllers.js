@@ -15,7 +15,7 @@ const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const buildHierarchy = require("../../utils/generateHierarchy");
 const UserData = require("../../models/hr/UserData");
-const Role = require("../../models/roles/Roles");
+const Unit = require("../../models/locations/Unit");
 
 const addCompany = async (req, res, next) => {
   const logPath = "hr/HrLog";
@@ -250,14 +250,23 @@ const getCompanyData = async (req, res, next) => {
       shifts: "",
     };
 
+    if (field === "workLocations") {
+      // query = query.populate({ path: "workLocations", select: "-company" });
+      const workLocations = await Unit.find({ company: companyId })
+        .populate({ path: "building", select: "buildingName" })
+        .select("unitNo unitName isActive");
+
+      if (!workLocations) {
+        return res.status(400).json({ message: "No worklocations found" });
+      }
+
+      return res.status(200).json(workLocations);
+    }
     let query = Company.findOne({ _id: companyId })
       .populate(fieldsToPopulate[field])
       .select(field);
 
     // Populate if the field is in the fieldsToPopulate map
-    if (field === "workLocations") {
-      query = query.populate({ path: "workLocations", select: "-company" });
-    }
 
     const fetchedData = await query.exec();
     let transformedData = fetchedData;
@@ -272,9 +281,8 @@ const getCompanyData = async (req, res, next) => {
 
           const manager = await UserData.findOne({
             role: { $in: [dep.admin] },
-          }).select("firstName lastName");
+          }).select("firstName lastName role");
 
-          console.log(manager);
           return {
             ...dep._doc,
             admin: manager ? `${manager.firstName} ${manager.lastName}` : null,
