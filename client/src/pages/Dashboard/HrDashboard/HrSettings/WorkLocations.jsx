@@ -129,7 +129,7 @@ console.log(workLocations)
           data={[
             ...workLocations.map((location, index) => ({
               id: index + 1, // Auto-increment Sr No
-              name: location.buildingName, // Birthday Name
+              name: location.building?.buildingName, // Birthday Name
               status: location.isActive,
             })),
           ]}

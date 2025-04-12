@@ -46,7 +46,7 @@ const Attendance = () => {
     }
   };
 
-  const { data: attendance, isLoading } = useQuery({
+  const { data: attendance=[], isLoading } = useQuery({
     queryKey: ["attendance"],
     queryFn: fetchAttendance,
   });
