@@ -128,6 +128,7 @@ const AssetsDashboard = () => {
           <PieChartMui
             data={departmentPieData}
             options={departmentPieOptions}
+            width={550}
           />
         </WidgetSection>,
         <WidgetSection layout={1} title={"Asset Categories"} border>
