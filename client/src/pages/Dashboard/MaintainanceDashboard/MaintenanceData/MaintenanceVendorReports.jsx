@@ -97,16 +97,15 @@ const MaintenanceVendorReports = () => {
     },
   });
 
-  const assetColumns = [
+  const vendorColumns = [
     { field: "id", headerName: "Sr No" },
-    { field: "department", headerName: "Department" },
-    // { field: "assetNumber", headerName: "Asset Number" },
-    { field: "category", headerName: "Category" },
-    { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
-    { field: "quantity", headerName: "Quantity" },
-    { field: "purchaseDate", headerName: "Purchase Date" },
-    { field: "warranty", headerName: "Warranty (Months)" },
+    { field: "vendorName", headerName: "Vendor Name" },
+    { field: "contactPerson", headerName: "Contact Person" },
+    { field: "email", headerName: "Email" },
+    { field: "phone", headerName: "Phone" },
+    { field: "company", headerName: "Company" },
+    { field: "address", headerName: "Address" },
+    { field: "gstNumber", headerName: "GST Number" },
     {
       field: "actions",
       headerName: "Actions",
@@ -118,18 +117,61 @@ const MaintenanceVendorReports = () => {
       ),
     },
   ];
+  
 
-  const { data: assetsList = [] } = useQuery({
-    queryKey: ["assetsList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-assets");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+  // const { data: assetsList = [] } = useQuery({
+  //   queryKey: ["assetsList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-assets");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+
+  const vendorData = [
+    {
+      vendorName: "Elite Furnishings",
+      contactPerson: "Amit Verma",
+      email: "amit@elitefurnishings.com",
+      phone: "9988776655",
+      company: "Elite Furnishings Co.",
+      address: "78, Residency Road, Bangalore",
+      gstNumber: "29AMITX7654D7Z9",
     },
-  });
+    {
+      vendorName: "Godrej Interio",
+      contactPerson: "Rohan Khanna",
+      email: "rohan.khanna@godrejinterio.com",
+      phone: "9988776655",
+      company: "Godrej & Boyce Mfg. Co. Ltd.",
+      address: "Vikhroli, Mumbai, Maharashtra",
+      gstNumber: "27AABCG1111J1Z5",
+    },
+    {
+      vendorName: "Dell Technologies",
+      contactPerson: "Vikram Patel",
+      email: "vikram.patel@dell.com",
+      phone: "9012345678",
+      company: "Dell India Pvt. Ltd.",
+      address: "Domlur, Bangalore, Karnataka",
+      gstNumber: "29AACCD1111L1Z4",
+    },
+    {
+      vendorName: "Urban Ladder",
+      contactPerson: "Priya Sharma",
+      email: "priya.sharma@urbanladder.com",
+      phone: "9988001122",
+      company: "Urban Ladder Home Décor Solutions Pvt. Ltd.",
+      address: "Koramangala, Bangalore, Karnataka",
+      gstNumber: "29AAACU4567M1Z9",
+    },
+  ];
+  
+  
+  
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -152,29 +194,24 @@ const MaintenanceVendorReports = () => {
   return (
     <>
       <AgTable
-        key={assetsList.length}
+        key={vendorData.length}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"Vendor Database"}
         buttonTitle={"Add Vendor"}
         data={[
-          ...assetsList.map((asset, index) => ({
+          ...vendorData.map((item, index) => ({
             id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price: Number(asset.price.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-            quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
+            vendorName: item.vendorName,
+            contactPerson: item.contactPerson,
+            email: item.email,
+            phone: item.phone,
+            company: item.company,
+            address: item.address,
+            gstNumber: item.gstNumber,
           })),
         ]}
-        columns={assetColumns}
+        columns={vendorColumns}
         handleClick={handleAddAsset}
       />
 

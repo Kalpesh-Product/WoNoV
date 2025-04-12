@@ -11,6 +11,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
+import dayjs from "dayjs";
 
 const MaintenanceInventory = () => {
   const { auth } = useAuth();
@@ -100,7 +101,7 @@ const MaintenanceInventory = () => {
   const assetColumns = [
     { field: "id", headerName: "Sr No" },
     { field: "department", headerName: "Department" },
-    // { field: "assetNumber", headerName: "Asset Number" },
+    { field: "inventoryNumber", headerName: "Inventory Number" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
     { field: "price", headerName: "Price" },
@@ -118,18 +119,100 @@ const MaintenanceInventory = () => {
       ),
     },
   ];
+  
 
-  const { data: assetsList = [] } = useQuery({
-    queryKey: ["assetsList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-assets");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+  // const { data: assetsList = [] } = useQuery({
+  //   queryKey: ["assetsList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-assets");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+
+  const inventoryData = [
+    {
+      srNo: 1,
+      department: "Maintenance",
+      inventoryNumber: "0001",
+      category: "Cleaning",
+      brand: "Lizol",
+      price: "45000",
+      quantity: 2,
+      purchaseDate: "11-11-2024",
+      warranty: 12,
     },
-  });
+    {
+      srNo: 2,
+      department: "Maintenance",
+      inventoryNumber: "0002",
+      category: "Battery",
+      brand: "Duracell",
+      price: "50000",
+      quantity: 3,
+      purchaseDate: "10-10-2024",
+      warranty: 24,
+    },
+    {
+      srNo: 3,
+      department: "Maintenance",
+      inventoryNumber: "0003",
+      category: "Battery",
+      brand: "Duracell",
+      price: "120000",
+      quantity: 1,
+      purchaseDate: "12-09-2024",
+      warranty: 36,
+    },
+    {
+      srNo: 4,
+      department: "Maintenance",
+      inventoryNumber: "0004",
+      category: "Battery",
+      brand: "Duracell",
+      price: "40000",
+      quantity: 4,
+      purchaseDate: "01-08-2024",
+      warranty: 12,
+    },
+    {
+      srNo: 5,
+      department: "Maintenance",
+      inventoryNumber: "0005",
+      category: "Battery",
+      brand: "Duracell",
+      price: "60000",
+      quantity: 5,
+      purchaseDate: "15-07-2024",
+      warranty: 18,
+    },
+    {
+      srNo: 6,
+      department: "Maintenance",
+      inventoryNumber: "0001",
+      category: "Battery",
+      brand: "Duracell",
+      price: "65000",
+      quantity: 2,
+      purchaseDate: "27-11-2024",
+      warranty: 12,
+    },
+    {
+      srNo: 7,
+      department: "Maintenance",
+      inventoryNumber: "0001",
+      category: "Battery",
+      brand: "Duracell",
+      price: "65000",
+      quantity: 2,
+      purchaseDate: "21-11-2024",
+      warranty: 12,
+    },
+  ];
+  
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -152,28 +235,27 @@ const MaintenanceInventory = () => {
   return (
     <div className="p-4">
       <AgTable
-        key={assetsList.length}
+        key={inventoryData.length}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"List Of Inventory"}
         buttonTitle={"Add Inventory"}
         data={[
-          ...assetsList.map((asset, index) => ({
+          ...inventoryData.map((item, index) => ({
             id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price: Number(asset.price.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-            quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
+            department: item.department,
+            inventoryNumber: item.inventoryNumber,
+            category: item.category,
+            brand: item.brand,
+            price: Number(item.price.toString().replace(/,/g, "")).toLocaleString("en-IN", {
+              maximumFractionDigits: 0,
+            }),
+            quantity: item.quantity,
+            purchaseDate: dayjs(item.purchaseDate).format("DD-MM-YYYY") ,
+            warranty: item.warranty,
           })),
         ]}
+        
         columns={assetColumns}
         handleClick={handleAddAsset}
       />

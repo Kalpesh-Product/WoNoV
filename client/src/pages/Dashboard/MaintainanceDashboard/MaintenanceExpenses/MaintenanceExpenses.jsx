@@ -13,6 +13,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
 
 const MaintenanceExpenses = () => {
   const navigate = useNavigate();
@@ -350,6 +351,18 @@ const MaintenanceExpenses = () => {
     (data) => data.month === selectedMonth
   );
 
+   if (selectedMonthData) {
+      selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
+        const updatedClients = domain.clients.map((client, index) => ({
+          ...client,
+          srNo: index + 1,
+          registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
+          actualRevenue:Number(client.actualRevenue).toLocaleString("en-IN")
+        }));
+        return { ...domain, clients: updatedClients };
+      });
+    }
+
   // Prepare Bar Graph Data
   const graphData = [
     {
@@ -411,7 +424,7 @@ const MaintenanceExpenses = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()}
+                    INR {domain.revenue.toLocaleString()}
                   </span>
                 </div>
               </AccordionSummary>
@@ -446,6 +459,11 @@ const MaintenanceExpenses = () => {
                   hideFilter
                   columns={[
                     {
+                      header: "Sr No",
+                      field: "srNo",
+                      flex: 1,
+                    },
+                    {
                       header: "Sr. No.",
                       field: "client",
                       flex: 1,
@@ -476,27 +494,7 @@ const MaintenanceExpenses = () => {
                       header: "Unit Name",
                       field: "actualRevenue",
                       flex: 1,
-                    },
-                    {
-                      header: "Building",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
-                    {
-                      header: "Location",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
-                    {
-                      header: "Annual Expense",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
-                    {
-                      header: "Action",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
+                    } 
                   ]}
                   tableHeight={300}
                 />
@@ -506,7 +504,7 @@ const MaintenanceExpenses = () => {
                       Total Revenue for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                      ₹{domain.revenue.toLocaleString()}
+                      INR {domain.revenue.toLocaleString()}
                     </span>{" "}
                   </div>
                 </div>
