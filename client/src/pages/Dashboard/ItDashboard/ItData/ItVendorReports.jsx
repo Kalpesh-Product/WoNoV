@@ -257,7 +257,8 @@ const ItVendorReports = () => {
             vendorName: asset.vendor.name,
           })),
         ]}
-        columns={assetColumns}
+        // columns={assetColumns}
+        columns={vendorColumns}
         handleClick={handleAddAsset}
       />
 
