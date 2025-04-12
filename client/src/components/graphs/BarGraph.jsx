@@ -65,7 +65,7 @@ const BarGraph = ({
             </FormControl>
           )}
           {departments && (
-            <>
+            <div className="pt-2">
               <SecondaryButton
                 title={"Prev"}
                 handleSubmit={handlePrev}
@@ -80,7 +80,7 @@ const BarGraph = ({
                 handleSubmit={handleNext}
                 disabled={departmentIndex === departments.length - 1}
               />
-            </>
+            </div>
           )}
         </div>
       </div>

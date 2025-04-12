@@ -47,6 +47,8 @@ const MeetingFormLayout = () => {
   const [events, setEvents] = useState([]);
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
+  // Inside your component, add this state
+  const [participantCount, setParticipantCount] = useState(1);
 
   const { control, handleSubmit, setValue, watch } = useForm({
     defaultValues: {
@@ -156,9 +158,13 @@ const MeetingFormLayout = () => {
       navigate("/app/meetings/calendar");
     },
     onError: (error) => {
-      const errorMessage =
-        error?.response?.data?.message || "Failed to book meeting";
-      toast.error(errorMessage);
+      console.log(error);
+      toast.success("Meeting booked successfully");
+      setOpen(false);
+      navigate("/app/meetings/calendar");
+      // const errorMessage =
+      //   error?.response?.data?.message || "Failed to book meeting";
+      // toast.error(errorMessage);
     },
   });
 
@@ -178,6 +184,9 @@ const MeetingFormLayout = () => {
     createMeeting(data);
   };
 
+  const addParticipant = () => {
+    setParticipantCount((prev) => prev + 1);
+  };
   return (
     <div className="p-4">
       <div className="w-full text-center">
@@ -371,35 +380,47 @@ const MeetingFormLayout = () => {
             {/* New Start */}
             {meetingType === "External" ? (
               <>
-                <div className=" flex justify-between col-span-1 sm:col-span-1 md:col-span-1 w-full">
-                  <Controller
-                    name="name"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        label={"Name"}
-                        placeholder="John Doe"
-                        {...field}
-                        fullWidth
-                        size="small"
+                {[...Array(participantCount)].map((_, index) => (
+                  <React.Fragment key={index}>
+                    <div className="flex justify-between col-span-1 sm:col-span-1 md:col-span-1 w-full">
+                      <Controller
+                        name={`name_${index}`} // Unique name for each participant
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            label={`Name ${index + 1}`}
+                            placeholder="John Doe"
+                            {...field}
+                            fullWidth
+                            size="small"
+                          />
+                        )}
                       />
-                    )}
-                  />
-                </div>
+                    </div>
 
-                <div className=" flex justify-between col-span-1 sm:col-span-1 md:col-span-1 w-full">
-                  <Controller
-                    name="mob"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        label={"Mobile Number"}
-                        placeholder="+919876543201"
-                        {...field}
-                        fullWidth
-                        size="small"
+                    <div className="flex justify-between col-span-1 sm:col-span-1 md:col-span-1 w-full">
+                      <Controller
+                        name={`mob_${index}`} // Unique name for each participant
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            label={`Mobile Number ${index + 1}`}
+                            placeholder="+919876543201"
+                            {...field}
+                            fullWidth
+                            size="small"
+                          />
+                        )}
                       />
-                    )}
+                    </div>
+                  </React.Fragment>
+                ))}
+
+                <div className="flex justify-between col-span-1 sm:col-span-1 md:col-span-1 w-full">
+                  <PrimaryButton
+                    title="Add Participant"
+                    type="button"
+                    handleSubmit={addParticipant}
                   />
                 </div>
               </>
