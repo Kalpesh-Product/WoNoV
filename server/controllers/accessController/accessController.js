@@ -31,10 +31,8 @@ const userPermissions = async (req, res, next) => {
       userPermissions.deptWisePermissions.forEach((deptPerm) => {
         const deptId = deptPerm.department.toString();
         grantedPermissionsMap[deptId] = {};
-
         deptPerm.modules.forEach((mod) => {
           grantedPermissionsMap[deptId][mod.moduleName] = {};
-
           mod.submodules.forEach((sub) => {
             grantedPermissionsMap[deptId][mod.moduleName][sub.submoduleName] =
               sub.actions;
