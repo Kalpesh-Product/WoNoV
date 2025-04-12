@@ -48,34 +48,34 @@ const Profile = () => {
       <div className="py-4 bg-white">
         {activeTab === 0 && (
           <div className="">
-            <MyProfile pageTitle={"Profile settings"}/>
+            <MyProfile pageTitle={"Profile settings"} />
           </div>
         )}
         {activeTab === 1 && (
           <div>
             <ChangePassword pageTitle={"Change password"} />
-            </div>
-          )}
+          </div>
+        )}
         {activeTab === 2 && (
           <div>
             <AccessGrant pageTitle={"Access grant"} />
           </div>
-          )}
-           {activeTab === 3 && (
+        )}
+        {activeTab === 3 && (
           <div>
-            <MyAssets pageTitle={'My Assets'} />
+            <MyAssets pageTitle={"My Assets"} />
           </div>
-          )}
-          {activeTab === 4 && (
+        )}
+        {activeTab === 4 && (
           <div>
-            <MeetingRoomCredits pageTitle={'Meeting Room Credits'} />
+            <MeetingRoomCredits pageTitle={"Meeting Room Credits"} />
           </div>
-          )}
-          {activeTab === 5 && (
+        )}
+        {activeTab === 5 && (
           <div>
-            <TicketsHistory pageTitle={'Tickets History'} />
+            <TicketsHistory pageTitle={"Tickets History"} />
           </div>
-          )}
+        )}
       </div>
     </div>
   );
