@@ -3,11 +3,12 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import AgTable from "../../../../components/AgTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
 
 const HoildaysEvents = ({ title }) => {
   const axios = useAxiosPrivate();
   const holdiayEvents = [
-    { field: "id", headerName: "SR No", flex: 1 },
+    { field: "id", headerName: "Sr No", flex: 1 },
     { field: "title", headerName: "Holiday / Event Name", flex: 1 },
     { field: "start", headerName: "Date", flex: 1 },
   ];
@@ -91,10 +92,10 @@ const HoildaysEvents = ({ title }) => {
           searchColumn={"Holiday / Event Name"}
           columns={holdiayEvents}
           data={[
-            ...holidayEvents.map((holidays, index) => ({
+            ...holidayEvents.map((holiday, index) => ({
               id: index + 1, // Auto-increment Sr No
-              title: holidays.title, // Birthday Name
-              start: new Date(holidays.start).toLocaleDateString(), // Format as readable date
+              title: holiday.title, // Birthday Name
+              start: dayjs(holiday.startDate).format("DD-MM-YYYY"), // Format as readable date
             })),
           ]}
         />

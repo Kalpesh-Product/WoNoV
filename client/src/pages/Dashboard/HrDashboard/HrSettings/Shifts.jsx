@@ -65,7 +65,7 @@ const Shifts = () => {
   });
 
   const departmentsColumn = [
-    { field: "id", headerName: "SR NO" },
+    { field: "id", headerName: "Sr No" },
     {
       field: "shift",
       headerName: "Shift List",

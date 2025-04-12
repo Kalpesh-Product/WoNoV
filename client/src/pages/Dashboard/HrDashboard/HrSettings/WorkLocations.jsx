@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import { Chip, MenuItem, TextField } from "@mui/material";
 import MuiModal from "../../../../components/MuiModal";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { Controller, useForm } from "react-hook-form";
@@ -19,26 +19,26 @@ const WorkLocations = () => {
   });
 
   const onSubmit = (data) => {
-    console.log("Form Data:", data);
     setOpenModal(false)
   };
 
   const { data: workLocations = [] } = useQuery({
-    queryKey: ["workLocations"],
+    queryKey: ["workLocation"],
     queryFn: async () => {
       try {
         const response = await axios.get(
           "/api/company/get-company-data?field=workLocations"
         );
-        return response.data.workLocations;
+        return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
       }
     },
+    
   });
 
   const departmentsColumn = [
-    { field: "id", headerName: "SR NO" },
+    { field: "id", headerName: "Sr No" },
     {
       field: "name",
       headerName: "Work Location Name",
@@ -132,6 +132,10 @@ const WorkLocations = () => {
     setOpenModal(true);
   };
 
+  useEffect(()=>{
+console.log(workLocations)
+  },[workLocations])
+
   return (
     <>
       <div>
@@ -145,8 +149,8 @@ const WorkLocations = () => {
           columns={departmentsColumn}
           data={[
             ...workLocations.map((location, index) => ({
-              id: index + 1, // Auto-increment Sr No
-              name: location.name, // Birthday Name
+              id: index + 1,  
+              name: `${location.building.buildingName}  ${location.unitNo}`,  
               status: location.isActive,
             })),
           ]}

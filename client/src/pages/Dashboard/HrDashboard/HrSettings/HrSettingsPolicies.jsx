@@ -22,7 +22,7 @@ const HrSettingsPolicies = () => {
   });
 
    const departmentsColumn = [
-        { field:"id", headerName:"SR No",width:"100"},
+        { field:"id", headerName:"Sr No",width:"100"},
         { field: "policyname", headerName: "POLICY NAME",
           cellRenderer:(params)=>{
             return(

@@ -42,7 +42,7 @@ const EmployeeType = () => {
   });
 
   const departmentsColumn = [
-    { field:"id",headerName:"SR NO"},
+    { field:"id",headerName:"Sr No"},
     { field: "name", headerName: "Employee Type",
       cellRenderer:(params)=>{
         return(

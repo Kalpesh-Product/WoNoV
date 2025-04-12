@@ -22,7 +22,7 @@ const HrSOP = () => {
   });
 
   const departmentsColumn = [
-          { field:"id" , headerName:"SR NO"},
+          { field:"id" , headerName:"Sr No"},
           { field: "sopname", headerName: "SOP NAME",
             cellRenderer:(params)=>{
               return(
