@@ -4,9 +4,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import AgTable from "../../../../components/AgTable";
 
 const Sops = () => {
-  const uploadItems = [
-    "Upload Sops" 
-  ];
+  const uploadItems = ["Upload Sops"];
   const sopsUploadDataColumns = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "templateName", headerName: "Template Name", flex: 1 },
@@ -43,7 +41,7 @@ const Sops = () => {
   
 
   return (
-    <div className="p-4">
+    <div className="">
       <h2 className="text-title font-pmedium text-primary pb-4">Upload Sops</h2>
 
       <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1 pb-4">
@@ -77,7 +75,7 @@ const Sops = () => {
       </div>
 
       <div>
-              <WidgetSection border title="SOPs Data">
+        <WidgetSection border title="SOPs Data">
           <AgTable
             data={sopsUploadData}
             columns={sopsUploadDataColumns}

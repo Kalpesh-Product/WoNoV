@@ -34,8 +34,8 @@ const FrontendDashboard = () => {
   const options = {
     chart: {
       type: "bar",
+      toolbar : false,
       stacked: true,
-      toolbar: false,
       fontFamily: "Poppins-Regular",
     },
     plotOptions: {

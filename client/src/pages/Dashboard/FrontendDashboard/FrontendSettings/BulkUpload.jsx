@@ -43,7 +43,7 @@ const BulkUpload = () => {
   ];
 
   return (
-    <div className="p-4">
+    <div className="">
       <h2 className="text-title font-pmedium text-primary pb-4">
         Bulk Upload Data
       </h2>

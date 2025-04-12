@@ -1,5 +1,5 @@
 import React from "react";
-import cafeImage from "../../../assets/cafe-dashboard-img.png"; // Import your image file
+import cafeImage from "../../../assets/cafe-dashboard-2.png"; // Import your image file
 
 const CafeDashboard = () => {
   return (

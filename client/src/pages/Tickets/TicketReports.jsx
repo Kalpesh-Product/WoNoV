@@ -79,7 +79,7 @@ const TicketReports = () => {
       ),
     },
   ];
-  useEffect(()=>{console.log("Selected Meeting : ", selectedMeeting)},[selectedMeeting])
+  
   return (
     <div className="flex flex-col gap-8 p-4">
       <div>

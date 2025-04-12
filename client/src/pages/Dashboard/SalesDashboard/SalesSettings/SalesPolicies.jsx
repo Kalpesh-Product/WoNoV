@@ -4,9 +4,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import AgTable from "../../../../components/AgTable";
 
 const SalesPolicies = () => {
-  const uploadItems = [
-    "Upload Policies" 
-  ];
+  const uploadItems = ["Upload Policies"];
   const policiesUploadDataColumns = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "templateName", headerName: "Template Name", flex: 1 },
@@ -44,8 +42,10 @@ const SalesPolicies = () => {
   
 
   return (
-    <div className="p-4">
-      <h2 className="text-title font-pmedium text-primary pb-4">Upload Policies</h2>
+    <div className="">
+      <h2 className="text-title font-pmedium text-primary pb-4">
+        Upload Policies
+      </h2>
 
       <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1 pb-4">
         {uploadItems.map((index, item) => {
@@ -76,15 +76,15 @@ const SalesPolicies = () => {
           );
         })}
       </div>
-       <div>
-             <WidgetSection border title="Policies Data">
-                <AgTable
-                  data={policiesUploadData}
-                  columns={policiesUploadDataColumns}
-                  search={true}
-                />
-              </WidgetSection>
-            </div>
+      <div>
+        <WidgetSection border title="Policies Data">
+          <AgTable
+            data={policiesUploadData}
+            columns={policiesUploadDataColumns}
+            search={true}
+          />
+        </WidgetSection>
+      </div>
     </div>
   );
 };

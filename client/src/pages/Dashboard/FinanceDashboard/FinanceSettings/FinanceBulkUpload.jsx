@@ -4,9 +4,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import AgTable from "../../../../components/AgTable";
 
 const FinanceBulkUpload = () => {
-  const uploadItems = [
-    "Upload Expenses"
-  ];
+  const uploadItems = ["Upload Expenses"];
 
   const bulkUploadDataColumns = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
@@ -43,7 +41,7 @@ const FinanceBulkUpload = () => {
   ];
 
   return (
-    <div className="p-4">
+    <div className="">
       <h2 className="text-title font-pmedium text-primary pb-4">
         Bulk Upload Data
       </h2>
@@ -73,14 +71,13 @@ const FinanceBulkUpload = () => {
                   </button>
                 </div>
               </div>
-
             </div>
           );
         })}
       </div>
 
       <div>
-              <WidgetSection border title="Bulk Upload Data">
+        <WidgetSection border title="Bulk Upload Data">
           <AgTable
             data={bulkUploadData}
             columns={bulkUploadDataColumns}

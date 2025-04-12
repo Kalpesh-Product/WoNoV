@@ -1,17 +1,17 @@
 import React, { useState } from "react";
-import HierarchyTree from '../../components/HierarchyTree'
+import HierarchyTree from "../../components/HierarchyTree";
 import AccessTree from "../../components/AccessTree";
 
 const Access = () => {
-  return(
+  return (
     <>
-    <div>
       <div>
-        <AccessTree />
+        <div>
+          <AccessTree />
+        </div>
       </div>
-    </div>
     </>
-  ) ;
+  );
 };
 
 export default Access;

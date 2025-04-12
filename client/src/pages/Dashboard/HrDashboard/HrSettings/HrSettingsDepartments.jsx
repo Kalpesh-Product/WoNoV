@@ -24,7 +24,7 @@ const HrSettingsDepartments = () => {
     });
 
   const departmentsColumn = [
-    { field: "id", headerName: "SR NO" },
+    { field: "id", headerName: "Sr No" },
     {
       field: "departmentName",
       headerName: "Department Name",
@@ -39,6 +39,7 @@ const HrSettingsDepartments = () => {
       },
       flex: 1,
     },
+    { field: "manager", headerName: "Manager" },
     {
       field: "status",
       headerName: "Status",
@@ -48,7 +49,7 @@ const HrSettingsDepartments = () => {
           Active: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
         };
 
-        const { backgroundColor, color } = statusColorMap[params.value] || {
+        const { backgroundColor, color } = statusColorMap["Active"] || {
           backgroundColor: "gray",
           color: "white",
         };
@@ -124,6 +125,7 @@ const HrSettingsDepartments = () => {
               ...fetchedDepartments.map((item, index) => ({
                 id: index + 1,
                 departmentName: item.department?.name,
+                manager: item?.admin ,
               })),
             ]}
             columns={departmentsColumn}
