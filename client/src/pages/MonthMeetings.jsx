@@ -3,6 +3,7 @@ import AgTable from '../components/AgTable'
 import { useLocation } from 'react-router-dom';
 import { Avatar, AvatarGroup, Chip } from '@mui/material';
 import { MdOutlineRemoveRedEye } from 'react-icons/md';
+import dayjs from 'dayjs';
 
 const MonthMeetings = () => {
 
@@ -82,11 +83,7 @@ const MonthMeetings = () => {
           ...meeting,
       
           startDate: !isNaN(parsedStartDate)
-            ? new Intl.DateTimeFormat("en-GB", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",  
-              }).format(parsedStartDate)
+            ? dayjs(parsedStartDate).format("DD-MM-YYYY")
             : "Invalid Date",
       
           startTime: !isNaN(parsedStartTime)

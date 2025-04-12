@@ -277,7 +277,8 @@ const MeetingDashboard = () => {
                 style={{
                   backgroundColor:
                     room.status === "Available" ? "#28a745" : "#dc3545",
-                }}></span>
+                }}
+              ></span>
               <span className="text-content text-gray-400">
                 {room.roomName}
               </span>
@@ -330,6 +331,7 @@ const MeetingDashboard = () => {
   const averageBookingOptions = {
     chart: {
       type: "bar",
+      toolbar: false,
       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: function (event, chartContext, config) {
@@ -555,11 +557,13 @@ const MeetingDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </div>
-          }>
+          }
+        >
           <WidgetSection
             layout={1}
             border
-            title={"Average Meeting Room Bookings"}>
+            title={"Average Meeting Room Bookings"}
+          >
             <BarGraph
               height={400}
               data={averageBookingSeries}
@@ -705,14 +709,16 @@ const MeetingDashboard = () => {
           layout={1}
           border
           title={"External Guests Visited"}
-          padding>
+          padding
+        >
           <BarGraph data={externalGuestsData} options={externalGuestsOptions} />
         </WidgetSection>,
         <WidgetSection
           layout={1}
           border
           title={"Average Occupancy Of Rooms in %"}
-          padding>
+          padding
+        >
           <BarGraph
             data={averageOccupancySeries}
             options={averageOccupancyOptions}
@@ -751,7 +757,8 @@ const MeetingDashboard = () => {
           padding
           border
           titleLabel={"Today"}
-          title={"Cleaning & Hygiene Status"}>
+          title={"Cleaning & Hygiene Status"}
+        >
           <DonutChart
             series={[5, 4, 3]}
             labels={["Dirty", "Cleaning", "Clean"]}

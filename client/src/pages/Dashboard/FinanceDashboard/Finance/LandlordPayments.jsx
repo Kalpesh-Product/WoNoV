@@ -360,39 +360,46 @@ const LandlordPayments = () => {
       <WidgetSection title="Unit Wise Landlord Payments">
         {unitData.map((unit, index) => (
           <Accordion key={index} className="py-4">
-          <AccordionSummary
-            expandIcon={<IoIosArrowDown />}
-            aria-controls={`panel-${index}-content`}
-            id={`panel-${index}-header`}
-            className="border-b-[1px] border-borderGray"
-          >
-            <div className="flex justify-between items-center w-full px-4">
-              <span className="text-subtitle font-pmedium">{unit.unitNo}</span>
-              <span className="text-subtitle font-pmedium">
-                {
-                  // Calculate total sum of 'total' values (convert ₹ strings to numbers first)
-                  unit.tableData.rows.reduce((acc, row) => {
-                    const amount = parseInt(row.total.replace(/[₹,]/g, ""), 10);
-                    return acc + (isNaN(amount) ? 0 : amount);
-                  }, 0).toLocaleString("en-IN", {
-                    style: "currency",
-                    currency: "INR",
-                    maximumFractionDigits: 0,
-                  })
-                }
-              </span>
-            </div>
-          </AccordionSummary>
-          <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
-            <AgTable
-              search
-              data={unit.tableData.rows}
-              columns={unit.tableData.columns}
-              tableHeight={250}
-            />
-          </AccordionDetails>
-        </Accordion>
-        
+            <AccordionSummary
+              expandIcon={<IoIosArrowDown />}
+              aria-controls={`panel-${index}-content`}
+              id={`panel-${index}-header`}
+              className="border-b-[1px] border-borderGray"
+            >
+              <div className="flex justify-between items-center w-full px-4">
+                <span className="text-subtitle font-pmedium">
+                  {unit.unitNo}
+                </span>
+                <span className="text-subtitle font-pmedium">
+                  {(() => {
+                    const total = unit.tableData.rows.reduce((acc, row) => {
+                      const amount = parseInt(
+                        row.total.replace(/[₹,]/g, ""),
+                        10
+                      );
+                      return acc + (isNaN(amount) ? 0 : amount);
+                    }, 0);
+
+                    return total
+                      .toLocaleString("en-IN", {
+                        style: "currency",
+                        currency: "INR",
+                        maximumFractionDigits: 0,
+                      })
+                      .replace("₹", "INR ");
+                  })()}
+                </span>
+              </div>
+            </AccordionSummary>
+            <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
+              <AgTable
+                search
+                data={unit.tableData.rows}
+                columns={unit.tableData.columns}
+                tableHeight={250}
+              />
+            </AccordionDetails>
+          </Accordion>
         ))}
       </WidgetSection>
     </div>

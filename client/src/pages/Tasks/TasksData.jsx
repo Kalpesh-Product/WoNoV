@@ -1,11 +1,21 @@
-import { Avatar, AvatarGroup, Chip } from "@mui/material"
+import { Avatar, AvatarGroup, Chip } from "@mui/material";
 
 // ----------------------------- Bar Graph Task allocation Start --------------------------- //
 
 // Parent Component - Data Preparation
 const financialMonths = [
-  "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
-  "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
+  "Apr-24",
+  "May-24",
+  "Jun-24",
+  "Jul-24",
+  "Aug-24",
+  "Sep-24",
+  "Oct-24",
+  "Nov-24",
+  "Dec-24",
+  "Jan-25",
+  "Feb-25",
+  "Mar-25",
 ];
 
 const departments = [
@@ -52,6 +62,7 @@ const tasksMonthlyOptions = {
   chart: {
     type: "bar",
     height: 350,
+    toolbar: false,
     stacked: true,
     fontFamily: "Poppins-regular",
   },
@@ -272,10 +283,17 @@ const departmentPieChartOptions = {
 const myTasksColumns = [
   { id: "id", label: "ID" },
   { id: "task", label: "Task" },
-  { id: "type", label: "Type", renderCell: (row) => (
-    <Chip label={row.type}  sx={{backgroundColor:'#d1d5db', color:'#1E3D73'}}/>    
-  ), },
-  
+  {
+    id: "type",
+    label: "Type",
+    renderCell: (row) => (
+      <Chip
+        label={row.type}
+        sx={{ backgroundColor: "#d1d5db", color: "#1E3D73" }}
+      />
+    ),
+  },
+
   { id: "due", label: "Due" },
 ];
 
@@ -451,13 +469,22 @@ const myTodayMeetingsData = [
 
 // -----------------------My Todays Meetings End--------------------//
 
-
 // -----------------------Recently Added Tasks Start--------------------//
 
 const recentlyAddedTasksCol = [
   { id: "id", label: "ID" },
   { id: "task", label: "Task" },
-  { id: "type", label: "Type", align:'center', renderCell : (row)=>(<Chip sx={{backgroundColor:'#d1d5db', color:'#1E3D73'}} label={row.type} />) },
+  {
+    id: "type",
+    label: "Type",
+    align: "center",
+    renderCell: (row) => (
+      <Chip
+        sx={{ backgroundColor: "#d1d5db", color: "#1E3D73" }}
+        label={row.type}
+      />
+    ),
+  },
   { id: "due", label: "Due" },
 ];
 
@@ -474,7 +501,12 @@ const recentlyAddedTasksData = [
     type: "Additional",
     due: "11:30 AM",
   },
-  { id: "3", task: "Complete Onboarding Module", type: "Monthly", due: "02:00 PM" },
+  {
+    id: "3",
+    task: "Complete Onboarding Module",
+    type: "Monthly",
+    due: "02:00 PM",
+  },
   {
     id: "4",
     task: "Push to GitHub",
@@ -496,7 +528,6 @@ const recentlyAddedTasksData = [
 // -----------------------Asset categories Donut Data End--------------------
 // -----------------------Recently Added Assets Start--------------------
 
-
 // -----------------------Recently Added Assets End--------------------
 
 export {
@@ -514,5 +545,5 @@ export {
   myTodayMeetingsColumns,
   myTodayMeetingsData,
   recentlyAddedTasksCol,
-  recentlyAddedTasksData
+  recentlyAddedTasksData,
 };
