@@ -50,6 +50,10 @@ const FinanceDashboard = () => {
         },
       },
     },
+    legend: {
+      show: true,
+      position: "top",
+    },
     dataLabels: {
       enabled: false,
     },
@@ -379,7 +383,6 @@ const FinanceDashboard = () => {
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
-            year={true}
           />
         </WidgetSection>,
       ],

@@ -6,6 +6,7 @@ import { Chip } from "@mui/material";
 
 const Agreements = () => {
   const axios = useAxiosPrivate()
+  const name = localStorage.getItem("employeeName") || "Employee";
   const agreementColumn = [
     { field: "name", headerName: "Agreement Name", flex:1 },
     {
@@ -57,7 +58,7 @@ const Agreements = () => {
         key={agreements.length}
           search={true}
           searchColumn={"Agreement Name"}
-          tableTitle={"Aiwin's Agreement List"}
+          tableTitle={`${name}'s Agreement List`}
           buttonTitle={"Add Agreement"}
           data={[
             ...agreements.map((agreement, index) => ({

@@ -37,6 +37,7 @@ const ViewEmployees = () => {
             cursor: "pointer",
           }}
           onClick={() => {
+            localStorage.setItem("employeeName", params.data.employeeName);
             navigate(
               `/app/dashboard/HR-dashboard/employee/view-employees/${params.data.employeeName}/${params.data.employmentID}/edit-details`
             );

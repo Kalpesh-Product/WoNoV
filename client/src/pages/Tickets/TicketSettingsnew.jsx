@@ -30,7 +30,7 @@ function Row(props) {
   const [open, setOpen] = React.useState(false);
 
   return (
-    <>
+    <div className="">
       <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
         {/* <TableCell component="th" scope="row">
           
@@ -123,7 +123,7 @@ function Row(props) {
           </Collapse>
         </TableCell>
       </TableRow>
-    </>
+    </div>
   );
 }
 
@@ -169,8 +169,8 @@ const rows = [
 const TicketSettingsnew = () => {
   return (
     <>
-      <div>
-        <WidgetSection layout={4}>
+      <div className="p-4 flex flex-col gap-4">
+        <WidgetSection layout={4} padding>
           <Card
             title={"New Tickets"}
             bgcolor={"white"}

@@ -21,27 +21,23 @@ const AreaGraph = ({ responseData }) => {
 
   // Function to transform the data based on the selected time filter
   const transformData = (data, filter) => {
+    // Determine FY start and end based on currentDate
+    const isBeforeApril = currentDate.month() < 3; // Jan/Feb/Mar
+    const fyStartYear = isBeforeApril ? currentDate.year() - 1 : currentDate.year();
+    const fyStart = dayjs(`${fyStartYear}-04-01`);
+    const fyEnd = fyStart.add(1, "year").subtract(1, "day");
+  
     const transformed = {
       Yearly: {
         series: [
-          { name: "Total Tickets", data: Array(12).fill(0), color: "#007bff" }, // Blue
-          { name: "Closed Tickets", data: Array(12).fill(0), color: "#28a745" }, // Green
-          { name: "Open Tickets", data: Array(12).fill(0), color: "#ff4d4d" }, // Red
+          { name: "Total Tickets", data: Array(12).fill(0), color: "#007bff" },
+          { name: "Closed Tickets", data: Array(12).fill(0), color: "#28a745" },
+          { name: "Open Tickets", data: Array(12).fill(0), color: "#ff4d4d" },
         ],
         categories: [
-          "Jan-25",
-          "Feb-25",
-          "Mar-25",
-          "Apr-25",
-          "May-25",
-          "Jun-25",
-          "Jul-25",
-          "Aug-25",
-          "Sep-25",
-          "Oct-25",
-          "Nov-25",
-          "Dec-25",
-        ]
+          "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+          "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"
+        ],
       },
       Monthly: {
         series: [
@@ -50,70 +46,49 @@ const AreaGraph = ({ responseData }) => {
           { name: "Open Tickets", data: Array(7).fill(0), color: "#ff4d4d" },
         ],
         categories: [
-          "Week 1",
-          "Week 2",
-          "Week 3",
-          "Week 4",
-          "Week 5",
-          "Week 6",
-          "Week 7",
+          "Week 1", "Week 2", "Week 3", "Week 4",
+          "Week 5", "Week 6", "Week 7",
         ],
       },
-
       Weekly: {
         series: [
-          { name: "Total Tickets", data: Array(7).fill(0), color: "#007bff" }, // Blue
-          { name: "Closed Tickets", data: Array(7).fill(0), color: "#28a745" }, // Green
-          { name: "Open Tickets", data: Array(7).fill(0), color: "#ff4d4d" }, // Red
+          { name: "Total Tickets", data: Array(7).fill(0), color: "#007bff" },
+          { name: "Closed Tickets", data: Array(7).fill(0), color: "#28a745" },
+          { name: "Open Tickets", data: Array(7).fill(0), color: "#ff4d4d" },
         ],
         categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
       },
     };
-
-    const currentYear = currentDate.year();
-    const currentMonth = currentDate.month();
-
+  
     data.forEach((ticket) => {
-      const createdAt = dayjs(ticket.createdAt).subtract(1, "day");
-
- // Use dayjs to parse the date
-
-      // Filter for each time range
-      if (filter === "Yearly" && createdAt.year() !== currentYear) return;
-      if (
-        filter === "Monthly" &&
-        (createdAt.year() !== currentYear || createdAt.month() !== currentMonth)
-      )
-        return;
+      const createdAt = dayjs(ticket.createdAt);
+  
+      if (filter === "Yearly") {
+        if (!(createdAt.isSameOrAfter(fyStart) && createdAt.isSameOrBefore(fyEnd))) return;
+      }
+  
+      if (filter === "Monthly") {
+        if (createdAt.year() !== currentDate.year() || createdAt.month() !== currentDate.month()) return;
+      }
+  
       if (filter === "Weekly") {
         const startOfWeek = currentDate.startOf("week");
         const endOfWeek = currentDate.endOf("week");
-        if (
-          !(
-            createdAt.isAfter(startOfWeek.subtract(1, "day")) &&
-            createdAt.isBefore(endOfWeek.add(1, "day"))
-          )
-        )
-          return;
+        if (!(createdAt.isSameOrAfter(startOfWeek) && createdAt.isSameOrBefore(endOfWeek))) return;
       }
-
-      // Depending on the filter, categorize and count the tickets
+  
       let categoryIndex = null;
-      switch (filter) {
-        case "Yearly":
-          categoryIndex = createdAt.month();
-          break;
-        case "Monthly":
-          categoryIndex = Math.min(Math.floor((createdAt.date() - 1) / 7), 6);
-          break;
-        case "Weekly":
-          categoryIndex = createdAt.day(); // 0 (Sun) - 6 (Sat)
-          break;
-        default:
-          break;
+  
+      if (filter === "Yearly") {
+        // Fiscal month offset: Apr = 0, Mar = 11
+        const month = createdAt.month(); // 0-11
+        categoryIndex = (month + 12 - 3) % 12; // April is 3 → 0
+      } else if (filter === "Monthly") {
+        categoryIndex = Math.min(Math.floor((createdAt.date() - 1) / 7), 6);
+      } else if (filter === "Weekly") {
+        categoryIndex = (createdAt.day() + 6) % 7; // Mon = 0
       }
-
-      // Count total, closed, and open tickets for each category
+  
       if (categoryIndex !== null) {
         transformed[filter].series[0].data[categoryIndex] += 1;
         if (ticket.status === "Closed") {
@@ -123,10 +98,11 @@ const AreaGraph = ({ responseData }) => {
         }
       }
     });
-
+  
     return transformed[filter];
   };
-
+  
+  
   // Use effect to transform response data when it changes
   useEffect(() => {
     const transformedData = transformData(responseData, timeFilter);

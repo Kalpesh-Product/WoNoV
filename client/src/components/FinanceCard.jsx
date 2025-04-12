@@ -16,7 +16,7 @@ const FinanceCard = ({
       </div>
       <hr className="h-[1px] w-full" />
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         {descriptionData.map((item, index) => {
           const numericValue = parseInt(item.value.replace(/[^0-9-]/g, ""));
           const dynamicColor =

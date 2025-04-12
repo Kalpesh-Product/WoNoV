@@ -2,6 +2,7 @@ import React from "react";
 import AgTable from "../../../../../components/AgTable";
 
 const KRA = () => {
+  const name = localStorage.getItem("employeeName") || "Employee";
   const kraColumn = [
     { field: "kra", headerName: "KRAs" ,flex:1},
     {
@@ -49,7 +50,7 @@ const KRA = () => {
           search={true}
           buttonTitle={"Add KRA"}
           searchColumn={"kra"}
-          tableTitle={"Aiwin's KRA List"}
+          tableTitle={`${name}'s KRA List`}
           data={rows}
           columns={kraColumn}
         />

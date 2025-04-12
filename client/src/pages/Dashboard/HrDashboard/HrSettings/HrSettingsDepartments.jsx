@@ -48,7 +48,7 @@ const HrSettingsDepartments = () => {
           Active: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
         };
 
-        const { backgroundColor, color } = statusColorMap[params.value] || {
+        const { backgroundColor, color } = statusColorMap["Active"] || {
           backgroundColor: "gray",
           color: "white",
         };

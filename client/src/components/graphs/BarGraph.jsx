@@ -54,7 +54,7 @@ const BarGraph = ({
   return (
     <div className="bg-white rounded-md">
       {/* Header with title, year dropdown and department switcher */}
-      <div className="flex justify-center items-center">
+      <div className="flex justify-center items-center w-full">
         <div className="flex gap-4 items-center">
           {year && (
             <FormControl size="small">
@@ -65,7 +65,7 @@ const BarGraph = ({
             </FormControl>
           )}
           {departments && (
-            <div className="pt-2">
+            <div className="flex items-center pt-2">
               <SecondaryButton
                 title={"Prev"}
                 handleSubmit={handlePrev}
