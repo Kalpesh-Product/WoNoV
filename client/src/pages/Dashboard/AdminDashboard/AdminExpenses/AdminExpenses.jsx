@@ -13,6 +13,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
 
 const AdminExpenses = () => {
   const navigate = useNavigate();
@@ -66,9 +67,15 @@ const AdminExpenses = () => {
           name: "ST-601A",
           revenue: 10,
           clients: [
-            { client: "Client F", revenue: 5000 },
-            { client: "Client G", revenue: 7000 },
-            { client: "Client H", revenue: 3000 },
+            { client: "Client F",  representative: "Daniel Green",
+              registerDate: "2024-03-12",
+              actualRevenue: 5000, },
+            { client: "Client G",  representative: "Eva Black",
+              registerDate: "2024-04-18",
+              actualRevenue: 7000, },
+            { client: "Client H",  representative: "Frank Blue",
+              registerDate: "2024-05-10",
+              actualRevenue: 3000, },
           ],
         },
         {
@@ -347,8 +354,20 @@ const AdminExpenses = () => {
 
   // Filter data based on selected month
   const selectedMonthData = mockBusinessRevenueData.find(
-    (data) => data.month === selectedMonth
-  );
+     (data) => data.month === selectedMonth
+   );
+   
+   if (selectedMonthData) {
+     selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
+       const updatedClients = domain.clients.map((client, index) => ({
+         ...client,
+         srNo: index + 1,
+         registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
+         actualRevenue:Number(client.actualRevenue).toLocaleString("en-IN")
+       }));
+       return { ...domain, clients: updatedClients };
+     });
+   }
 
   // Prepare Bar Graph Data
   const graphData = [
@@ -411,7 +430,7 @@ const AdminExpenses = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()}
+                    INR {domain.revenue.toLocaleString()}
                   </span>
                 </div>
               </AccordionSummary>
@@ -420,11 +439,12 @@ const AdminExpenses = () => {
                 <div className="flex justify-between">
                   <div className="flex justify-between items-center w-80 px-4">
                     <span
-                      className="text-subtitle font-pmedium underline text-primary"
+                      className="text-subtitle font-pmedium underline text-primary
+                      cursor-pointer"
                       onClick={() => {
                         localStorage.setItem("client", domain.name);
                         navigate(
-                          `/app/dashboard/admin-dashboard/admin-expenses/admin-expenses-layout/${domain.name}`
+                          `/app/dashboard/admin-dashboard/admin-offices/admin-offices-layout/${domain.name}`
                         );
                       }}>
                       View Layout {domain.name}
@@ -446,8 +466,8 @@ const AdminExpenses = () => {
                   hideFilter
                   columns={[
                     {
-                      header: "Sr. No.",
-                      field: "client",
+                      header: "Sr No",
+                      field: "srNo",
                       flex: 1,
                       // cellRenderer: (params) => (
                       //   <span
@@ -459,12 +479,17 @@ const AdminExpenses = () => {
                       //     onClick={() => {
                       //       localStorage.setItem("client", params.data.client);
                       //       navigate(
-                      //         `/app/dashboard/admin-dashboard/admin-expenses/admin-expenses-layout/${params.data.client}`
+                      //         `/app/dashboard/admin-dashboard/admin-offices/admin-offices-layout/${params.data.client}`
                       //       );
                       //     }}>
                       //     {params.value}
                       //   </span>
                       // ),
+                    },
+                    {
+                      header: "Client",
+                      field: "client",
+                      flex: 1,
                     },
                     {
                       header: "Unit No.",
@@ -477,26 +502,7 @@ const AdminExpenses = () => {
                       field: "actualRevenue",
                       flex: 1,
                     },
-                    {
-                      header: "Building",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
-                    {
-                      header: "Location",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
-                    {
-                      header: "Annual Expense",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
-                    {
-                      header: "Action",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
+                   
                   ]}
                   tableHeight={300}
                 />
@@ -506,7 +512,7 @@ const AdminExpenses = () => {
                       Total Revenue for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                      ₹{domain.revenue.toLocaleString()}
+                    INR {domain.revenue.toLocaleString()}
                     </span>{" "}
                   </div>
                 </div>

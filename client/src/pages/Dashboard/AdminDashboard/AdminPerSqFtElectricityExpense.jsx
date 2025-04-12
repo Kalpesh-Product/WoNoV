@@ -12,6 +12,7 @@ import {
 import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
+import dayjs from "dayjs";
 
 const AdminPerSqFtElectricityExpense = () => {
   const mockBusinessRevenueData = [
@@ -23,7 +24,7 @@ const AdminPerSqFtElectricityExpense = () => {
           revenue: 12000,
           clients: [
             {
-              unitNo: "Zomato",
+              client: "Zomato",
               representative: "John Doe",
               registerDate: "2024-01-15",
               actualRevenue: 5000,
@@ -64,9 +65,15 @@ const AdminPerSqFtElectricityExpense = () => {
           name: "ST-601A",
           revenue: 15000,
           clients: [
-            { client: "Client F", revenue: 5000 },
-            { client: "Client G", revenue: 7000 },
-            { client: "Client H", revenue: 3000 },
+            { client: "Client F",  representative: "Daniel Green",
+              registerDate: "2024-03-12",
+              actualRevenue: 5000, },
+            { client: "Client G",  representative: "Eva Black",
+              registerDate: "2024-04-18",
+              actualRevenue: 7000, },
+            { client: "Client H",  representative: "Frank Blue",
+              registerDate: "2024-05-10",
+              actualRevenue: 3000, },
           ],
         },
         {
@@ -348,6 +355,18 @@ const AdminPerSqFtElectricityExpense = () => {
     (data) => data.month === selectedMonth
   );
 
+   if (selectedMonthData) {
+      selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
+        const updatedClients = domain.clients.map((client, index) => ({
+          ...client,
+          srNo: index + 1,
+          registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
+          actualRevenue:Number(client.actualRevenue).toLocaleString("en-IN")
+        }));
+        return { ...domain, clients: updatedClients };
+      });
+    }
+
   // Prepare Bar Graph Data
   const graphData = [
     {
@@ -409,7 +428,7 @@ const AdminPerSqFtElectricityExpense = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()} INR
+                  INR {domain.revenue.toLocaleString()} 
                   </span>
                 </div>
               </AccordionSummary>
@@ -418,6 +437,7 @@ const AdminPerSqFtElectricityExpense = () => {
                   data={domain.clients}
                   hideFilter
                   columns={[
+                    { header: "Sr No", field: "srNo", flex: 1 },
                     { header: "Client", field: "client", flex: 1 },
                     {
                       header: "Representative",
@@ -439,7 +459,7 @@ const AdminPerSqFtElectricityExpense = () => {
                       Total Revenue for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                      ₹{domain.revenue.toLocaleString()}
+                      INR {domain.revenue.toLocaleString()}
                     </span>{" "}
                   </div>
                 </div>
