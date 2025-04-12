@@ -89,16 +89,15 @@ const ManageMeetings = () => {
     .filter((item) => item.meetingStatus === "Upcoming")
     .map((meeting) => ({
       ...meeting,
-      startTime: humanTime(meeting.startTime),
-      endTime: humanTime(meeting.endTime),
+      // startTime: humanTime(meeting.startTime),
+      // endTime: humanTime(meeting.endTime),
       date: humanDate(meeting.date),
     }));
 
-
-  const transformedMeetings = filteredMeetings.map((meeting,index)=>({
+  const transformedMeetings = filteredMeetings.map((meeting, index) => ({
     ...meeting,
-    srNo:index+1
-  }))
+    srNo: index + 1,
+  }));
 
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
@@ -327,18 +326,17 @@ const ManageMeetings = () => {
       headerName: "Action",
       cellRenderer: (params) => {
         const isDisabled = params.data.housekeepingStatus === "Completed";
-    
+
         return (
           <div className="flex gap-2 items-center">
             <div
               onClick={() => handleSelectedMeeting("viewDetails", params.data)}
-              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-            >
+              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
               <span className="text-subtitle">
                 <MdOutlineRemoveRedEye />
               </span>
             </div>
-    
+
             {/* ⋮ Three-dot menu - hidden if housekeeping is completed */}
             {!isDisabled && (
               <ThreeDotMenu
@@ -350,8 +348,7 @@ const ManageMeetings = () => {
                   },
                   {
                     label: "Cancel",
-                    onClick: () =>
-                      handleSelectedMeeting("cancel", params.data),
+                    onClick: () => handleSelectedMeeting("cancel", params.data),
                   },
                 ]}
               />
@@ -359,8 +356,7 @@ const ManageMeetings = () => {
           </div>
         );
       },
-    }
-    
+    },
   ];
 
   return (
@@ -381,8 +377,7 @@ const ManageMeetings = () => {
       <MuiModal
         open={checklistModalOpen}
         onClose={handleCloseChecklistModal}
-        title={"Checklist"}
-      >
+        title={"Checklist"}>
         <Box
           sx={{
             maxHeight: "80vh",
@@ -391,8 +386,7 @@ const ManageMeetings = () => {
             overflow: "hidden",
             justifyContent: "start",
             alignItems: "start",
-          }}
-        >
+          }}>
           {/* Scrollable Checklist Section */}
           <div className="h-[60vh] overflow-y-auto w-full">
             <span className="text-subtitle text-primary font-pmedium">
@@ -439,8 +433,7 @@ const ManageMeetings = () => {
                             {modalMode === "update" && (
                               <IconButton
                                 onClick={() => handleRemoveChecklistItem(index)}
-                                color="error"
-                              >
+                                color="error">
                                 <Delete />
                               </IconButton>
                             )}
@@ -479,8 +472,7 @@ const ManageMeetings = () => {
               <Button
                 variant="contained"
                 disabled={isSubmitDisabled()}
-                onClick={handleSubmitChecklist}
-              >
+                onClick={handleSubmitChecklist}>
                 Submit
               </Button>
             </div>
@@ -490,8 +482,7 @@ const ManageMeetings = () => {
       <MuiModal
         title={"Meeting Details"}
         open={detailsModal}
-        onClose={() => setDetailsModal(false)}
-      >
+        onClose={() => setDetailsModal(false)}>
         {modalMode === "viewDetails" && (
           <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4 w-full">
             <DetalisFormatted
@@ -539,8 +530,7 @@ const ManageMeetings = () => {
                 });
                 resetCancelMeeting();
                 setDetailsModal(false);
-              })}
-            >
+              })}>
               <Controller
                 name="reason"
                 control={cancelMeetingControl}
