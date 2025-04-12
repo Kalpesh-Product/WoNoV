@@ -11,6 +11,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
+import dayjs from "dayjs";
 
 const AdminAnnualExpenses = () => {
   const { auth } = useAuth();
@@ -97,27 +98,14 @@ const AdminAnnualExpenses = () => {
     },
   });
 
-  const assetColumns = [
-    { field: "id", headerName: "ID" },
-    { field: "department", headerName: "Department" },
-    // { field: "assetNumber", headerName: "Asset Number" },
+  const annualExpenseColumns = [
+    { field: "id", headerName: "Sr No" },
     { field: "category", headerName: "Category" },
-    { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
-    { field: "quantity", headerName: "Quantity" },
-    { field: "purchaseDate", headerName: "Purchase Date" },
-    { field: "warranty", headerName: "Warranty (Months)" },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <PrimaryButton
-          title="Details"
-          handleSubmit={() => handleDetailsClick(params.data)}
-        />
-      ),
-    },
+    { field: "expenseName", headerName: "Expense Name" },
+    { field: "date", headerName: "Date" },
+    { field: "amount", headerName: "Amount" }
   ];
+  
 
   const { data: assetsList = [] } = useQuery({
     queryKey: ["assetsList"],
@@ -130,6 +118,40 @@ const AdminAnnualExpenses = () => {
       }
     },
   });
+
+  const annualExpenses = [
+    {
+      category: "Stationery",
+      expenseName: "Diaries",
+      date: "08/04/2024",
+      amount: 5000,
+    },
+    {
+      category: "Furniture",
+      expenseName: "Desks",
+      date: "08/04/2024",
+      amount: 10000,
+    },
+    {
+      category: "Food & Beverages",
+      expenseName: "Bottles",
+      date: "08/04/2024",
+      amount: 10000,
+    },
+    {
+      category: "Bills",
+      expenseName: "Electricity Bill",
+      date: "08/04/2024",
+      amount: 10100,
+    },
+    {
+      category: "Miscellaneous",
+      expenseName: "Event Decoration",
+      date: "08/04/2024",
+      amount: 10000,
+    },
+  ];
+  
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -152,29 +174,22 @@ const AdminAnnualExpenses = () => {
   return (
     <div className="p-4">
       <AgTable
-        key={assetsList.length}
+        key={annualExpenses.length}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"Annual Expenses"}
         buttonTitle={"Add Expense"}
         data={[
-          ...assetsList.map((asset, index) => ({
+          ...annualExpenses.map((asset, index) => ({
             id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price: asset.price,
-            quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
+            category: asset.category,
+            expenseName: asset.expenseName,
+            date:  dayjs(asset.date).format("DD-MM-YYYY"),
+            amount: Number(asset.amount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
           })),
         ]}
-        columns={assetColumns}
+        
+        columns={annualExpenseColumns}
         handleClick={handleAddAsset}
       />
 
