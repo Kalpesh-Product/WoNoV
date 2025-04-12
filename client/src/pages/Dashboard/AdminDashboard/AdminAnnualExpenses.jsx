@@ -101,7 +101,7 @@ const AdminAnnualExpenses = () => {
   const annualExpenseColumns = [
     { field: "id", headerName: "Sr No" },
     { field: "category", headerName: "Category" },
-    { field: "expenseName", headerName: "Expense Name" },
+    { field: "expenseName", headerName: "Expense Name",flex:1 },
     { field: "date", headerName: "Date" },
     { field: "amount", headerName: "Amount" }
   ];
