@@ -15,17 +15,16 @@ const PrimaryButton = ({
 }) => {
   return (
     <motion.button
-      whileHover={{scale:1.050}}
-      whileTap={{scale:0.9}}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.9 }}
       disabled={disabled || isLoading} // Disable if loading
       type={type}
       className={` flex items-center justify-center gap-2 ${
         disabled || isLoading ? "bg-gray-400" : "bg-primary"
       } motion-preset-slide-up-sm text-white rounded-md ${
         fontSize ? fontSize : "text-content leading-5"
-      } ${externalStyles} ${padding? padding: "px-8 py-2"} ${className}`}
-      onClick={handleSubmit}
-    >
+      } ${externalStyles} ${padding ? padding : "px-8 py-2"} ${className}`}
+      onClick={handleSubmit}>
       {isLoading && <CircularProgress size={16} color="#1E3D73" />}{" "}
       {/* Spinner */}
       <span>{isLoading ? `${title}` : title}</span>

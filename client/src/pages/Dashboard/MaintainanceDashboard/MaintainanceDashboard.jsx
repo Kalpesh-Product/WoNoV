@@ -278,6 +278,7 @@ const MaintainanceDashboard = () => {
           `${((val / totalMonthlyDueTasksCount) * 100).toFixed(1)}%`,
       },
     },
+    colors: ["#00ba09", "#ff4545"],
   };
   //----------------------------------------------------------------------------------------------------------//
   // YearlyDueTasks Data
@@ -307,6 +308,7 @@ const MaintainanceDashboard = () => {
           `${((val / totalYearlyDueTasksCount) * 100).toFixed(1)}%`,
       },
     },
+    colors: ["#00ba09", "#ff4545"],
   };
 
   //----------------------------------------------------------------------------------------------------------//
