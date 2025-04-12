@@ -46,7 +46,7 @@ const ExperienceLetter = () => {
   return (
     <div className="flex items-start gap-4">
       <div>
-        <div className="h-[67vh] overflow-y-auto" ref={letterRef}>
+        <div className="h-full overflow-y-auto" ref={letterRef}>
           <div className="border bg-[#fa0606] w-[50rem] h-[70rem] mx-auto">
             <div className="bg-white ml-10 h-full">
               <div className="bg-white mx-10 h-full flex flex-col justify-between">
@@ -117,60 +117,63 @@ const ExperienceLetter = () => {
           </div>
         </div>
       </div>
-
-      <div className="h-[67vh] w-1/3 p-4 border flex flex-col justify-between">
-        <div className="h-[50vh] overflow-y-auto">
-          <h2 className="text-subtitle font-pregular">Edit Fields</h2>
-          <div className="flex flex-col gap-4">
-            {Object.keys(letterData).map((field) => (
-              <div key={field} className="my-2">
-                {field === "doj" || field === "lwd" || field === "date" ? (
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Controller
-                      name={field}
-                      control={control}
-                      render={({ field: controllerField }) => (
-                        <DatePicker
-                          label={field.charAt(0).toUpperCase() + field.slice(1)}
-                          value={dayjs(controllerField.value, "DD/MM/YYYY")}
-                          slotProps={{
-                            textField: {
-                              size: "small",
-                              fullWidth: true,
-                              error: "",
-                            },
-                          }}
-                          onChange={(newValue) =>
-                            controllerField.onChange(
-                              dayjs(newValue).format("DD/MM/YYYY")
-                            )
-                          }
-                          format="DD/MM/YYYY"
-                          size="small"
-                        />
-                      )}
-                    />
-                  </LocalizationProvider>
-                ) : (
-                  <Controller
-                    name={field}
-                    control={control}
-                    render={({ field: controllerField }) => (
-                      <TextField
-                        label={field.charAt(0).toUpperCase() + field.slice(1)}
-                        {...controllerField}
-                        fullWidth
-                        size="small"
-                      />
-                    )}
+      <div className="h-[67vh] w-1/3 p-4 border flex flex-col">
+  <div className="flex-1 overflow-y-auto">
+    <h2 className="text-subtitle font-pregular mb-2">Edit Fields</h2>
+    <div className="flex flex-col gap-4">
+      {Object.keys(letterData).map((field) => (
+        <div key={field} className="my-2">
+          {field === "doj" || field === "lwd" || field === "date" ? (
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Controller
+                name={field}
+                control={control}
+                render={({ field: controllerField }) => (
+                  <DatePicker
+                    label={field.charAt(0).toUpperCase() + field.slice(1)}
+                    value={dayjs(controllerField.value, "DD/MM/YYYY")}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: "",
+                      },
+                    }}
+                    onChange={(newValue) =>
+                      controllerField.onChange(
+                        dayjs(newValue).format("DD/MM/YYYY")
+                      )
+                    }
+                    format="DD/MM/YYYY"
+                    size="small"
                   />
                 )}
-              </div>
-            ))}
-          </div>
+              />
+            </LocalizationProvider>
+          ) : (
+            <Controller
+              name={field}
+              control={control}
+              render={({ field: controllerField }) => (
+                <TextField
+                  label={field.charAt(0).toUpperCase() + field.slice(1)}
+                  {...controllerField}
+                  fullWidth
+                  size="small"
+                />
+              )}
+            />
+          )}
         </div>
-        <PrimaryButton title={"Export"} handleSubmit={exportToPDF} />
-      </div>
+      ))}
+    </div>
+  </div>
+
+  <div className="pt-4">
+    <PrimaryButton title={"Export"} handleSubmit={exportToPDF} />
+  </div>
+</div>
+
     </div>
   );
 };

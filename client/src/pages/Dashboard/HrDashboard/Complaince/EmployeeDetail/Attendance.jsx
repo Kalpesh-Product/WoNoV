@@ -46,7 +46,7 @@ const Attendance = () => {
     }
   };
 
-  const { data: attendance, isLoading } = useQuery({
+  const { data: attendance=[], isLoading } = useQuery({
     queryKey: ["attendance"],
     queryFn: fetchAttendance,
   });
@@ -240,7 +240,7 @@ const Attendance = () => {
     {
       name: "Gray (Late Check-In)",
       data: attendanceData.map((entry) => entry.sections[0].value), // Gray section values
-      color: "#d3d3d3",
+      color: "#1E3D73",
     },
     {
       name: "Green (Completed)",
@@ -260,7 +260,7 @@ const Attendance = () => {
       stacked: true,
       fontFamily: "Poppins-Regular",
       toolbar: {
-        show: true,
+        show: false,
       },
     },
     plotOptions: {
@@ -287,6 +287,8 @@ const Attendance = () => {
         formatter: (value) => `${value} hr`, // Display as whole hours
       },
     },
+    colors: ["#A9A9A9", "#28a745", "#ff4d4d"], // DarkGray, Green, Red
+
     tooltip: {
       custom: function ({ series, seriesIndex, dataPointIndex }) {
         const gray = attendanceData[dataPointIndex].sections[0].value;
@@ -363,15 +365,39 @@ const Attendance = () => {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <WidgetSection layout={3} padding>
-          <DataCard data={"18"} title={"Accurate Checkins"} />
-          <DataCard data={"8"} title={"Late Checkins"} />
-          <DataCard data={"10"} title={"Late Checkouts"} />
-        </WidgetSection>
-      </div>
-      <div className="border-default border-borderGray rounded-md">
-        <WidgetSection layout={1} title={"Attendance - April 2025"}>
+        <WidgetSection
+          layout={1}
+          titleLabel={"April 2025"}
+          title={"Attendance"}
+          border
+        >
           <BarGraph data={attendanceSeries} options={options} />
+          <WidgetSection layout={3} padding>
+            <DataCard
+              data={"18"}
+              title={"Accurate Checkins"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={"8"}
+              title={"Late Checkins"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+            <DataCard
+              data={"10"}
+              title={"Late Checkouts"}
+              description={`Current Month : ${new Date().toLocaleString(
+                "default",
+                { month: "long" }
+              )}`}
+            />
+          </WidgetSection>
         </WidgetSection>
       </div>
 
@@ -430,11 +456,13 @@ const Attendance = () => {
         open={openModal}
         onClose={() => {
           setOpenModal(false);
-        }}>
+        }}
+      >
         <div>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4">
+            className="flex flex-col gap-4"
+          >
             <Controller
               name="targetedDay"
               control={control}

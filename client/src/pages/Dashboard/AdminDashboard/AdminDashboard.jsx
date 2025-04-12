@@ -319,118 +319,190 @@ const AdminDashboard = () => {
     { id: "location", label: "Location", align: "left" },
   ];
   //-----------------------------------------------------------------------------------------------------------------//
+  // const clientMemberBirthdays = [
+  //   {
+  //     name: "John Doe",
+  //     company: "Zomato",
+  //     dateOfJoin: "02-02-2024",
+  //     dateOfBirth: "18-03-2001",
+  //   },
+  //   {
+  //     name: "Anita Rao",
+  //     company: "Swiggy",
+  //     dateOfJoin: "12-05-2021",
+  //     dateOfBirth: "25-03-1995",
+  //   },
+  //   {
+  //     name: "Ravi Patel",
+  //     company: "Paytm",
+  //     dateOfJoin: "01-01-2020",
+  //     dateOfBirth: "01-04-1988",
+  //   },
+  //   {
+  //     name: "Sneha Shah",
+  //     company: "Byju's",
+  //     dateOfJoin: "10-07-2022",
+  //     dateOfBirth: "22-03-1990",
+  //   },
+  //   {
+  //     name: "Vikram Singh",
+  //     company: "Nykaa",
+  //     dateOfJoin: "15-08-2019",
+  //     dateOfBirth: "29-03-1993",
+  //   },
+  //   {
+  //     name: "Meena Iyer",
+  //     company: "Flipkart",
+  //     dateOfJoin: "20-09-2023",
+  //     dateOfBirth: "20-03-1997",
+  //   },
+  // ];
+
   const clientMemberBirthdays = [
     {
-      name: "John Doe",
+      srNo: 1,
+      name: "Aarav Mehta",
+      upcomingIn: "3 days",
+      dateOfBirth: "1996-04-15",
       company: "Zomato",
-      dateOfJoin: "02-02-2024",
-      dateOfBirth: "18-03-2001",
     },
     {
-      name: "Anita Rao",
-      company: "Swiggy",
-      dateOfJoin: "12-05-2021",
-      dateOfBirth: "25-03-1995",
+      srNo: 2,
+      name: "Riya Sharma",
+      upcomingIn: "5 days",
+      dateOfBirth: "1992-04-17",
+      company: "SquadStack",
     },
     {
-      name: "Ravi Patel",
-      company: "Paytm",
-      dateOfJoin: "01-01-2020",
-      dateOfBirth: "01-04-1988",
+      srNo: 3,
+      name: "Kabir Singh",
+      upcomingIn: "1 week",
+      dateOfBirth: "1994-04-20",
+      company: "Zimetrics",
     },
     {
-      name: "Sneha Shah",
-      company: "Byju's",
-      dateOfJoin: "10-07-2022",
-      dateOfBirth: "22-03-1990",
-    },
-    {
-      name: "Vikram Singh",
-      company: "Nykaa",
-      dateOfJoin: "15-08-2019",
-      dateOfBirth: "29-03-1993",
-    },
-    {
-      name: "Meena Iyer",
-      company: "Flipkart",
-      dateOfJoin: "20-09-2023",
-      dateOfBirth: "20-03-1997",
+      srNo: 4,
+      name: "Sneha Patel",
+      upcomingIn: "2 weeks",
+      dateOfBirth: "1997-04-26",
+      company: "IBDO",
     },
   ];
+  
   const clientMemberBirthdaysColumns = [
+    { id: "srNo", label: "Sr No", align: "left" },
     { id: "name", label: "Name", align: "left" },
-    { id: "name", label: "Name", align: "left" },
+    { id: "dateOfBirth", label: "DOB", align: "left" },
     { id: "upComingIn", label: "Upcoming In", align: "left" },
-    { id: "completedYears", label: "Completed Years", align: "left" },
     { id: "company", label: "Company", align: "left" },
   ];
 
   const today = dayjs();
   const cutOff = today.add(15, "day");
-  const upcomingBirthdays = clientMemberBirthdays
-    .map((item) => {
-      const dob = dayjs(item.dateOfBirth, "DD-MM-YYYY");
-      const thisYearBirthday = dob.set("year", today.year());
 
-      const birthday = thisYearBirthday.isBefore(today)
-        ? thisYearBirthday.add(1, "year")
-        : thisYearBirthday;
+ const upcomingBirthdays = clientMemberBirthdays
+  .map((item) => {
+    const dob = dayjs(item.dateOfBirth, "YYYY-MM-DD");
+    const thisYearBirthday = dob.set("year", today.year());
 
-      //completed years
+    const birthday = thisYearBirthday.isBefore(today)
+      ? thisYearBirthday.add(1, "year")
+      : thisYearBirthday;
 
-      const doj = dayjs(item.dateOfJoin, "DD-MM-YYYY");
-      const completedYears = today.diff(doj, "year");
-      const upComingIn = birthday.diff(today, "days");
+    const doj = dayjs(item.dateOfJoin, "YYYY-MM-DD");
+    const completedYears = today.diff(doj, "year");
+    const upComingIn = birthday.diff(today, "days");
 
-      return {
-        ...item,
-        upComingIn: upComingIn,
-        completedYears,
-        isUpcoming:
-          birthday.isBefore(cutOff) &&
-          birthday.isAfter(today.subtract(1, "day")),
-      };
-    })
+    return {
+      ...item,
+      dateOfBirth:dayjs(item.dateOfBirth, "YYYY-MM-DD").format("DD-MM-YYYY"),
+      upComingIn: `${upComingIn} days`,
+      isUpcoming:
+        birthday.isBefore(cutOff) &&
+        birthday.isAfter(today.subtract(1, "day")),
+    };
+  })
     .filter((item) => item.isUpcoming);
+ 
   //-----------------------------------------------------------------------------------------------------------------//
   const clientAnniversaryData = [
-    { client: "Zomato", dateOfJoin: "21-03-2023" },
-    { client: "Flipkart", dateOfJoin: "20-09-2023" },
-    { client: "Nykaa", dateOfJoin: "15-08-2019" },
-    { client: "SquadStack", dateOfJoin: "25-03-2024" },
+    {
+      srNo: 1,
+      client: "Zomato",
+      dateOfJoin: "22-03-2020", // Anniversary on 22 Apr 2025 → in 10 days
+      completedYears: 5,
+      upComingIn: "10 days",
+    },
+    {
+      srNo: 2,
+      client: "Flipkart",
+      dateOfJoin: "19-01-2023", // Anniversary on 19 Apr 2025 → in 7 days
+      completedYears: 2,
+      upComingIn: "7 days",
+    },
+    {
+      srNo: 3,
+      client: "Nykaa",
+      dateOfJoin: "18-03-2022", // Anniversary on 18 Apr 2025 → in 6 days
+      completedYears: 3,
+      upComingIn: "6 days",
+    },
+    {
+      srNo: 4,
+      client: "SquadStack",
+      dateOfJoin: "16-04-2021", // Anniversary on 16 Apr 2025 → in 4 days
+      completedYears: 4,
+      upComingIn: "4 days",
+    },
+    {
+      srNo: 5,
+      client: "Paytm",
+      dateOfJoin: "14-02-2024", // Anniversary on 14 Apr 2025 → in 2 days
+      completedYears: 1,
+      upComingIn: "2 days",
+    },
   ];
+  
+  
 
   const upComingClientAnniversary = clientAnniversaryData
-    .map((item) => {
-      const doj = dayjs(item.dateOfJoin, "DD-MM-YYYY");
-      const thisYearAnniversary = doj.set("year", today.year());
-      const anniversary = thisYearAnniversary.isBefore(today)
-        ? thisYearAnniversary.add(1, "year")
-        : thisYearAnniversary;
-      const completedYears = today.diff(doj, "years");
-      const upComingIn = anniversary.diff(today, "days");
+  .map((item, index) => {
+    const doj = dayjs(item.dateOfJoin, "DD-MM-YYYY");
+    const thisYearAnniversary = doj.set("year", today.year());
+    const anniversary = thisYearAnniversary.isBefore(today)
+      ? thisYearAnniversary.add(1, "year")
+      : thisYearAnniversary;
 
-      return {
-        ...item,
-        upComingIn: upComingIn,
-        completedYears: completedYears,
-        thisYearAnniversary: thisYearAnniversary.format("DD-MM-YYYY"),
-        isUpcoming:
-          anniversary.isBefore(cutOff) &&
-          anniversary.isAfter(today.subtract(1, "day")),
-      };
-    })
+    const completedYears = today.diff(doj, "year");
+    const upComingInDays = anniversary.diff(today, "day");
+
+    return {
+      srNo: index + 1,
+      client: item.client,
+      dateOfJoin: item.dateOfJoin,
+      completedYears: completedYears,
+      upComingIn:
+        upComingInDays === 0
+          ? "Today"
+          : upComingInDays === 1
+          ? "Tomorrow"
+          : `${upComingInDays} days`,
+      isUpcoming:
+        anniversary.isBefore(cutOff) &&
+        anniversary.isAfter(today.subtract(1, "day")),
+    };
+  })
     .filter((item) => item.isUpcoming);
 
+
   const upComingClientAnniversaryColumns = [
-    { id: "id", label: "ID", align: "left" },
+    { id: "srNo", label: "Sr No", align: "left" },
     { id: "client", label: "Client", align: "left" },
     { id: "dateOfJoin", label: "Date of Join", align: "left" },
     { id: "completedYears", label: "Completed Years", align: "left" },
     { id: "upComingIn", label: "Upcoming in", align: "left" },
   ];
 
-  console.log("upcomingClientAnniversary : ", upComingClientAnniversary);
   //-----------------------------------------------------------------------------------------------------------------//
   const techWidgets = [
     {
@@ -660,11 +732,11 @@ const AdminDashboard = () => {
             ...upcomingBirthdays
               .sort((a, b) => a.upComingIn - b.upComingIn)
               .map((item, index) => ({
-                id: index + 1,
+                srNo: index + 1,
                 name: item.name,
                 upComingIn: item.upComingIn === 0 ? "Today" : item.upComingIn,
                 company: item.company,
-                completedYears: item.completedYears,
+                dateOfBirth:item.dateOfBirth
               })),
           ]}
         />,
@@ -674,10 +746,10 @@ const AdminDashboard = () => {
           rowsToDisplay={3}
           Title={"Upcoming Client Anniversaries"}
           rows={[
-            ...upComingClientAnniversary
+            ...clientAnniversaryData
               .sort((a, b) => a.upComingIn - b.upComingIn)
               .map((item, index) => ({
-                id: index + 1,
+                srNo: index + 1,
                 client: item.client,
                 dateOfJoin: item.dateOfJoin,
                 upComingIn:

@@ -2,6 +2,7 @@ import React from "react";
 import AgTable from "../../../../../components/AgTable";
 
 const Payslip = () => {
+  const name = localStorage.getItem("employeeName") || "Employee";
   const payslipColumns = [
     { field: "payslips", headerName: "Payslip" ,flex:1},
     {
@@ -41,7 +42,7 @@ const Payslip = () => {
         key={rows.length}
           search={true}
           searchColumn={"payslips"}
-          tableTitle={"Aiwin's Payslips"}
+          tableTitle={`${name}'s Payslip List`}
           data={rows}
           columns={payslipColumns}
         />

@@ -198,6 +198,37 @@ const tasksPieChartOptions = {
   },
 };
 
+const genderData = [
+  { gender: "Completed", count: "35" },
+  { gender: "Remaining", count: "40" },
+];
+const totalGenderCount = genderData.reduce(
+  (sum, item) => sum + item.count,
+  0
+);
+const pieGenderData = genderData.map((item) => ({
+  label: `${item.gender} ${((item.count / totalGenderCount) * 100).toFixed(
+    1
+  )}%`,
+  value: item.count,
+}));
+const pieGenderOptions = {
+  labels: genderData.map((item) => item.gender),
+  chart: {
+    fontFamily: "Poppins-Regular",
+  },
+  stroke: {
+    show: true,
+    width: 6, // Increase for more "gap"
+    colors: ["#ffffff"], // Or match background color
+  },
+  tooltip: {
+    y: {
+      formatter: (val) => `${((val / totalGenderCount) * 100).toFixed(1)}%`,
+    },
+  },
+};
+
 // Custom Legend
 const tasksPieCustomLegend = (
   <div className="flex flex-col items-start">
@@ -505,6 +536,8 @@ export {
   tasksPieChartData,
   tasksPieChartOptions,
   tasksPieCustomLegend,
+  pieGenderData,
+  pieGenderOptions,
   myTasksColumns,
   myTasksData,
   departmentPendingData,

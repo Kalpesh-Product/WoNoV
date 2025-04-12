@@ -109,7 +109,7 @@ const TicketSettings = () => {
   ];
 
   return (
-    <div>
+    <div className="p-4" >
       <WidgetSection layout={4}>
         <Card
           title={"New Tickets"}

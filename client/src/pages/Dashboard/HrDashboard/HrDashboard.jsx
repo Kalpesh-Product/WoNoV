@@ -574,12 +574,12 @@ const HrDashboard = () => {
     {
       layout: 3,
       widgets: [
-        <DataCard title="Active" data="28" description="Current Headcount" />,
-        <DataCard title="Average" data="52K" description="salary" />,
-        <DataCard title="Average" data="25" description="Monthly Employees" />,
-        <DataCard title="Average" data="4%" description="Monthly Iteration" />,
-        <DataCard title="Average" data="92%" description="Attendance" />,
-        <DataCard title="Average" data="8.1hr" description="Working Hours" />,
+        <DataCard title="Active" data="28" description="Current Headcount" route={"employee/view-employees"} />,
+        <DataCard title="Average" data="52K" description="salary" route={"employee/view-employees"}/>,
+        <DataCard title="Average" data="25" description="Monthly Employees" route={"employee/view-employees"}/>,
+        <DataCard title="Average" data="4%" description="Monthly Iteration" route={"employee/view-employees"}/>,
+        <DataCard title="Average" data="92%" description="Attendance" route={"employee/view-employees"} />,
+        <DataCard title="Average" data="8.1hr" description="Working Hours" route={"employee/view-employees"} />,
       ],
     },
     {

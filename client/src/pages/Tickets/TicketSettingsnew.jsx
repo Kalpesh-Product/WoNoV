@@ -34,7 +34,7 @@ function Row({ row }) {
   const [open, setOpen] = React.useState(false);
 
   return (
-    <>
+    <div className="">
       <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
         <TableCell align="center">{row.srNo}</TableCell>
         <TableCell align="center">{row.raisedBy}</TableCell>
@@ -117,7 +117,7 @@ function Row({ row }) {
           </Collapse>
         </TableCell>
       </TableRow>
-    </>
+    </div>
   );
 }
 

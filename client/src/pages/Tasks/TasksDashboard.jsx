@@ -10,16 +10,13 @@ import MuiTable from "../../components/Tables/MuiTable";
 import BarGraph from "../../components/graphs/BarGraph";
 import PieChartMui from "../../components/graphs/PieChartMui";
 import {
-  tasksPieChartData,
   tasksPieChartOptions,
   tasksMonthlyData,
   tasksMonthlyOptions,
-  departmentPendingData,
-  departmentPieChartOptions,
+  pieGenderData,
+  pieGenderOptions,
   myTasksColumns,
-  myTasksData,
   myTodayMeetingsColumns,
-  myTodayMeetingsData,
   recentlyAddedTasksCol,
   recentlyAddedTasksData,
 } from "./TasksData";

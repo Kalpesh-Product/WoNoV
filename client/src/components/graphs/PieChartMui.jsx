@@ -17,7 +17,7 @@ const PieChartMui = ({ data, options, customLegend, width, height }) => {
             options={options} // Use options passed directly from parent
             series={chartData} // Data values for the pie slices
             type="pie"
-            width={isMobile ? "100%" : width ? width : 550}
+            width={isMobile ? "100%" : width ? width : 500}
             height={height ? height : 350}
           />
         </div>

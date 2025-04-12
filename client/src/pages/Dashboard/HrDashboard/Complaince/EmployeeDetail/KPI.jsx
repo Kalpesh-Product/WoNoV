@@ -2,6 +2,7 @@ import React from "react";
 import AgTable from "../../../../../components/AgTable";
 
 const KPI = () => {
+  const name = localStorage.getItem("employeeName") || "Employee";
   const kpiColumn = [
     { field: "kpi", headerName: "KPIs" ,flex:1},
     {
@@ -49,7 +50,7 @@ const KPI = () => {
           search={true}
           buttonTitle={"Add KPI"}
           searchColumn={"KPIs"}
-          tableTitle={"Aiwin's KPI List"}
+          tableTitle={`${name}'s KPI List`}
           data={rows}
           columns={kpiColumn}
         />

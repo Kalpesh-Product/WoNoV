@@ -7,11 +7,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 const WorkLocations = () => {
   const axios = useAxiosPrivate();
 
-  const { handleSubmit, control } = useForm({
+  const {
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm({
     defaultValues: {
       building: "",
       workLocation: "",
@@ -19,7 +24,8 @@ const WorkLocations = () => {
   });
 
   const onSubmit = (data) => {
-    setOpenModal(false)
+    console.log("Form Data:", data);
+    setOpenModal(false);
   };
 
   const { data: workLocations = [] } = useQuery({
@@ -95,33 +101,6 @@ const WorkLocations = () => {
     },
   ];
 
-  const rows = [
-    {
-      srno: "1",
-      id: 1,
-      worklocationname: "ST 701A",
-      status: "Active",
-    },
-    {
-      srno: "2",
-      id: 2,
-      worklocationname: "ST 701B",
-      status: "Active",
-    },
-    {
-      srno: "3",
-      id: 3,
-      worklocationname: "ST 601A",
-      status: "Inactive",
-    },
-    {
-      srno: "4",
-      id: 4,
-      worklocationname: "ST 701B",
-      status: "Active",
-    },
-  ];
-
   const [openModal, setOpenModal] = useState(false);
 
   const handleCloseModal = () => {
@@ -149,8 +128,8 @@ console.log(workLocations)
           columns={departmentsColumn}
           data={[
             ...workLocations.map((location, index) => ({
-              id: index + 1,  
-              name: `${location.building.buildingName}  ${location.unitNo}`,  
+              id: index + 1, // Auto-increment Sr No
+              name: location.building?.buildingName, // Birthday Name
               status: location.isActive,
             })),
           ]}
@@ -163,9 +142,13 @@ console.log(workLocations)
         title={"Add Work Location"}
       >
         <div>
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-            <Controller
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
+          >
+            {/* <Controller
               name="building"
+              rules={{required: 'Building is required'}}
               control={control}
               render={({ field }) => (
                 <TextField
@@ -173,16 +156,18 @@ console.log(workLocations)
                   select
                   size="small"
                   label="Building"
+                  error={!!errors.building}
+                  helperText={errors.building?.message}
                   fullWidth
                 >
-                  <MenuItem value="Building A">Building A</MenuItem>
-                  <MenuItem value="Building B">Building B</MenuItem>
-                  <MenuItem value="Building C">Building C</MenuItem>
+                  <MenuItem value="Building A">Sunteck Kaneka</MenuItem>
+                  <MenuItem value="Building B">Dempo Trade Center</MenuItem>
                 </TextField>
               )}
-            />
+            /> */}
             <Controller
               name="workLocation"
+              rules={{required:"Work location is required"}}
               control={control}
               render={({ field }) => (
                 <TextField
@@ -190,6 +175,8 @@ console.log(workLocations)
                   size="small"
                   label="Work Location"
                   fullWidth
+                  error={!!errors.workLocation}
+                  helperText={errors.workLocation?.message}
                 />
               )}
             />
@@ -204,7 +191,7 @@ console.log(workLocations)
                 type={"submit"}
                 title={"Submit"}
                 handleSubmit={() => {
-                  alert("Button Clicked");
+                  toast.success("Location added successfully");
                 }}
               />
             </div>
