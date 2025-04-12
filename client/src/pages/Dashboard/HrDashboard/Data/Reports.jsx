@@ -30,6 +30,7 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
       headerName: "",
       width: 50,
     },
+    { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "payrollid", headerName: "Payroll Id", flex: 1 },
     { field: "employeename", headerName: "Employee Name", flex: 1 },
     { field: "role", headerName: "Role", width: "200" },
@@ -67,6 +68,7 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
 
   const rows = [
     {
+      srNo:1,
       payrollid: "PYRL120124",
       employeename: "Kalpesh Naik",
       role: "Lead UI/UX Developer",
@@ -76,6 +78,7 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
       status: "completed",
     },
     {
+      srNo:2,
       payrollid: "PYRL120130",
       employeename: "AiwinRaj",
       role: "Jr UI/UX Developer",
@@ -85,6 +88,7 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
       status: "completed",
     },
     {
+      srNo:3,
       payrollid: "PYRL120131",
       employeename: "Anushri Bhagat",
       role: "Jr UI/UX Developer",
@@ -94,6 +98,7 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
       status: "Pending",
     },
     {
+      srNo:4,
       payrollid: "PYRL120132",
       employeename: "Allen Silvera",
       role: "Jr UI/UX Developer",
@@ -103,6 +108,7 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
       status: "Pending",
     },
     {
+      srNo:5,
       payrollid: "PYRL120133",
       employeename: "Sankalp Kalangutkar",
       role: "Jr backed Develper",
@@ -112,6 +118,7 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
       status: "completed",
     },
     {
+      srNo:6,
       payrollid: "PYRL120134",
       employeename: "Muskan Dodmani",
       role: "Jr backend Developer",

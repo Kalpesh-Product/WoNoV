@@ -238,11 +238,26 @@ const ItVendorReports = () => {
         searchColumn={"Asset Number"}
         tableTitle={"Vendor Database"}
         buttonTitle={"Add Vendor"}
-        data={vendorsList.map((vendor, index) => ({
-          id: index + 1,
-          ...vendor,
-        }))}
-        columns={vendorColumns}
+        data={[
+          ...assetsList.map((asset, index) => ({
+            id: index + 1,
+            department: asset.department.name,
+            category: asset.name,
+            brand: asset.brand,
+            price: Number(
+              asset.price.toLocaleString("en-IN").replace(/,/g, "")
+            ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+            quantity: asset.quantity,
+            purchaseDate: new Intl.DateTimeFormat("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }).format(new Date(asset.purchaseDate)),
+            warranty: asset.warranty,
+            vendorName: asset.vendor.name,
+          })),
+        ]}
+        columns={assetColumns}
         handleClick={handleAddAsset}
       />
 
@@ -263,8 +278,7 @@ const ItVendorReports = () => {
                           errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                        } `}
-                      >
+                        } `}>
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -274,8 +288,7 @@ const ItVendorReports = () => {
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}
-                        >
+                          }}>
                           <Button
                             variant="outlined"
                             component="label"
@@ -290,8 +303,7 @@ const ItVendorReports = () => {
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}
-                          >
+                            }}>
                             Select Image
                             <input
                               type="file"
@@ -317,8 +329,7 @@ const ItVendorReports = () => {
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}
-                          >
+                            }}>
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -335,8 +346,7 @@ const ItVendorReports = () => {
                       {...field}
                       label="Asset Type"
                       helperText={!!errors.assetType?.message}
-                      select
-                    >
+                      select>
                       <MenuItem value="">Select an Asset Type</MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
@@ -356,8 +366,7 @@ const ItVendorReports = () => {
                       {...field}
                       select
                       label="Department"
-                      size="small"
-                    >
+                      size="small">
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -378,8 +387,7 @@ const ItVendorReports = () => {
                       fullWidth
                       select
                       label="Category"
-                      size="small"
-                    >
+                      size="small">
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -399,8 +407,7 @@ const ItVendorReports = () => {
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small"
-                    >
+                      size="small">
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}

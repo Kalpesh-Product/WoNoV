@@ -12,6 +12,7 @@ import PieChartMui from "../../../components/graphs/PieChartMui";
 import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const MaintainanceDashboard = () => {
   const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
@@ -22,7 +23,7 @@ const MaintainanceDashboard = () => {
   const exceededData = utilisedData.map((value) =>
     value > 100 ? value - 100 : 0
   );
-
+  const navigate = useNavigate()
   const data = [
     { name: "Utilised Budget", data: utilisedStack },
     { name: "Default Budget", data: defaultData },
@@ -243,6 +244,11 @@ const MaintainanceDashboard = () => {
     labels: genderData.map((item) => item.gender),
     chart: {
       fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/dashboard/admin-dashboard/client-members/client-members-data");
+        },
+      },
     },
     tooltip: {
       y: {
@@ -368,7 +374,7 @@ const MaintainanceDashboard = () => {
   ];
 
   const priorityTasksColumns = [
-    { id: "id", label: "ID", align: "left" },
+    { id: "id", label: "Sr No", align: "left" },
     { id: "taskName", label: "Task Name", align: "left" },
     {
       id: "type",
@@ -385,17 +391,59 @@ const MaintainanceDashboard = () => {
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
+ 
+
   const executiveTimings = [
     {
-      name: "Mac",
+      srNo: 1,
+      id:2,
+      name: "Machindranath Parkar",
       building: "DTC",
       unitNo: "002",
       startTime: "9:00AM",
       endTime: "06:00PM",
     },
+    {
+      srNo: 2,
+      id: 2,
+      name: "Melisa Fernandes",
+      building: "ST",
+      unitNo: "501(B)",
+      startTime: "09:30 AM",
+      endTime: "06:30 PM"
+    },
+    {
+      srNo: 3,
+      id: 3,
+      name: "Naaz Bawannavar",
+      building: "ST",
+      unitNo: "701(A)",
+      startTime: "09:00 AM",
+      endTime: "06:00 PM"
+    },
+    {
+      srNo: 4,
+      id: 4,
+      name: "Anne Fernandes",
+      building: "DTC",
+      unitNo: "007",
+      startTime: "09:00 AM",
+      endTime: "06:00 PM"
+    },
+    {
+      srNo: 5,
+      id: 5,
+      name: "Urjita Kankonkar",
+      building: "DTC",
+      unitNo: "004",
+      startTime: "09:00 AM",
+      endTime: "06:00 PM"
+    }
   ];
+  
+
   const executiveTimingsColumns = [
-    { id: "id", label: "ID", align: "left" },
+    { id: "srNo", label: "Sr No", align: "left" },
     { id: "name", label: "Name", align: "left" },
     { id: "building", label: "Building", align: "left" },
     { id: "unitNo", label: "Unit No", align: "left" },
@@ -665,7 +713,7 @@ const MaintainanceDashboard = () => {
           Title={"Weekly Executive Shift Timing"}
           rows={[
             ...executiveTimings.map((timing, index) => ({
-              id: index + 1,
+              srNo: index + 1,
               name: timing.name,
               building: timing.building,
               unitNo: timing.unitNo,

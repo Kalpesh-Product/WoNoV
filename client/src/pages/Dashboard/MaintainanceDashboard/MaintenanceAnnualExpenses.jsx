@@ -11,6 +11,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
+import dayjs from "dayjs";
 
 const MaintenanceAnnualExpenses = () => {
   const { auth } = useAuth();
@@ -98,39 +99,74 @@ const MaintenanceAnnualExpenses = () => {
   });
 
   const assetColumns = [
-    { field: "id", headerName: "ID" },
-    { field: "department", headerName: "Department" },
-    // { field: "assetNumber", headerName: "Asset Number" },
-    { field: "category", headerName: "Category" },
-    { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
-    { field: "quantity", headerName: "Quantity" },
-    { field: "purchaseDate", headerName: "Purchase Date" },
-    { field: "warranty", headerName: "Warranty (Months)" },
+  { field: "id", headerName: "Sr No" },
+  { field: "category", headerName: "Category" },
+  { field: "expenseName", headerName: "Expense Name" },
+  { field: "amount", headerName: "Amount" },
+  { field: "date", headerName: "Date" },
+  {
+    field: "actions",
+    headerName: "Actions",
+    cellRenderer: (params) => (
+      <PrimaryButton
+        title="Details"
+        handleSubmit={() => handleDetailsClick(params.data)}
+      />
+    ),
+  },
+];
+
+
+  // const { data: assetsList = [] } = useQuery({
+  //   queryKey: ["assetsList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-assets");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+
+  const annualExpenses = [
     {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <PrimaryButton
-          title="Details"
-          handleSubmit={() => handleDetailsClick(params.data)}
-        />
-      ),
+      srNo: 1,
+      category: "AC",
+      expenseName: "Baga AC",
+      date: "08/04/2024",
+      amount: "5,000"
     },
+    {
+      srNo: 2,
+      category: "Furniture",
+      expenseName: "5th Floor Chairs",
+      date: "08/04/2024",
+      amount: "10,000"
+    },
+    {
+      srNo: 3,
+      category: "Carpets",
+      expenseName: "7th Floor Carpet",
+      date: "08/04/2024",
+      amount: "10,000"
+    },
+    {
+      srNo: 4,
+      category: "Plumbing",
+      expenseName: "Cafe Washroom Tap",
+      date: "08/04/2024",
+      amount: "10,100"
+    },
+    {
+      srNo: 5,
+      category: "Miscellaneous",
+      expenseName: "Elevator Repair",
+      date: "08/04/2024",
+      amount: "10,000"
+    }
   ];
-
-  const { data: assetsList = [] } = useQuery({
-    queryKey: ["assetsList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-assets");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
-
+  
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
     setModalMode("view");
@@ -152,26 +188,20 @@ const MaintenanceAnnualExpenses = () => {
   return (
     <div className="p-4">
       <AgTable
-        key={assetsList.length}
+        key={annualExpenses.length}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"Annual Expenses"}
         buttonTitle={"Add Expense"}
         data={[
-          ...assetsList.map((asset, index) => ({
+          ...annualExpenses.map((asset, index) => ({
             id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price: asset.price,
-            quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
+            category: asset.category,
+            expenseName: asset.expenseName,
+            amount: Number(asset.amount.replace(/,/g, "")).toLocaleString("en-IN", {
+              maximumFractionDigits: 0,
+            }),
+            date: dayjs(asset.date).format("DD-MM-YYYY"),
           })),
         ]}
         columns={assetColumns}

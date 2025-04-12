@@ -343,7 +343,7 @@ const FinanceDashboard = () => {
   ];
 
   const priorityTasksColumns = [
-    { id: "id", label: "ID", align: "left" },
+    { id: "id", label: "Sr No", align: "left" },
     { id: "taskName", label: "Task Name", align: "left" },
     {
       id: "type",

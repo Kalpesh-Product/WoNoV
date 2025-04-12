@@ -11,6 +11,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
+import dayjs from "dayjs";
 
 const MaintenanceMonthlyInvoice = () => {
   const { auth } = useAuth();
@@ -97,16 +98,14 @@ const MaintenanceMonthlyInvoice = () => {
     },
   });
 
-  const assetColumns = [
+  const invoiceColumns = [
     { field: "id", headerName: "Sr No" },
-    { field: "department", headerName: "Department" },
-    // { field: "assetNumber", headerName: "Asset Number" },
-    { field: "category", headerName: "Category" },
-    { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
-    { field: "quantity", headerName: "Quantity" },
-    { field: "purchaseDate", headerName: "Purchase Date" },
-    { field: "warranty", headerName: "Warranty (Months)" },
+    { field: "invoiceNumber", headerName: "Invoice Number" },
+    { field: "vendor", headerName: "Vendor" },
+    { field: "amount", headerName: "Amount" },
+    { field: "invoiceDate", headerName: "Invoice Date" },
+    { field: "dueDate", headerName: "Due Date" },
+    { field: "status", headerName: "Status" },
     {
       field: "actions",
       headerName: "Actions",
@@ -118,18 +117,63 @@ const MaintenanceMonthlyInvoice = () => {
       ),
     },
   ];
+  
 
-  const { data: assetsList = [] } = useQuery({
-    queryKey: ["assetsList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-assets");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+  // const { data: assetsList = [] } = useQuery({
+  //   queryKey: ["assetsList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-assets");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+
+  const monthlyInvoiceData = [
+    {
+      invoiceNumber: "INV-MNT-2401",
+      vendor: "Godrej Interio",
+      amount: 74000,
+      invoiceDate: "05-04-2025",
+      dueDate: "20-04-2025",
+      status: "Unpaid",
     },
-  });
+    {
+      invoiceNumber: "INV-MNT-2402",
+      vendor: "Urban Ladder",
+      amount: 56000,
+      invoiceDate: "08-04-2025",
+      dueDate: "23-04-2025",
+      status: "Paid",
+    },
+    {
+      invoiceNumber: "INV-MNT-2403",
+      vendor: "Vijay Sales",
+      amount: 48000,
+      invoiceDate: "10-04-2025",
+      dueDate: "25-04-2025",
+      status: "Unpaid",
+    },
+    {
+      invoiceNumber: "INV-MNT-2404",
+      vendor: "Amazon Business",
+      amount: 63000,
+      invoiceDate: "12-04-2025",
+      dueDate: "27-04-2025",
+      status: "Paid",
+    },
+    {
+      invoiceNumber: "INV-MNT-2405",
+      vendor: "Ergo Supplies",
+      amount: 51000,
+      invoiceDate: "14-04-2025",
+      dueDate: "29-04-2025",
+      status: "Unpaid",
+    },
+  ];
+  
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -152,29 +196,23 @@ const MaintenanceMonthlyInvoice = () => {
   return (
     <>
       <AgTable
-        key={assetsList.length}
+        key={monthlyInvoiceData.length}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"Monthly Invoice Reports"}
         buttonTitle={"Add Invoice"}
         data={[
-          ...assetsList.map((asset, index) => ({
+          ...monthlyInvoiceData.map((item, index) => ({
             id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price: asset.price,
-            quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
+            invoiceNumber: item.invoiceNumber,
+            vendor: item.vendor,
+            amount: Number(item.amount).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+            invoiceDate: dayjs(item.invoiceDate, "DD-MM-YYYY").format("DD-MM-YYYY"),
+            dueDate: dayjs(item.dueDate, "DD-MM-YYYY").format("DD-MM-YYYY"),
+            status: item.status,
           })),
         ]}
-        columns={assetColumns}
+        columns={invoiceColumns}
         handleClick={handleAddAsset}
       />
 

@@ -64,7 +64,6 @@ const AdminAnnualExpenses = () => {
     },
   });
 
-  console.log(vendorDetials);
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],

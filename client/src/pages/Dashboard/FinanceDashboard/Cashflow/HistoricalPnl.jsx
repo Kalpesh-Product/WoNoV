@@ -14,6 +14,7 @@ import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import dayjs from "dayjs";
 
 const HistoricalPnl = () => {
   const axios = useAxiosPrivate();
@@ -80,9 +81,24 @@ const HistoricalPnl = () => {
           name: "2022-21",
           revenue: 15000,
           clients: [
-            { client: "Client F", revenue: 5000 },
-            { client: "Client G", revenue: 7000 },
-            { client: "Client H", revenue: 3000 },
+            {
+              client: "Client AD",
+              representative: "Betty Silver",
+              registerDate: "2024-08-25",
+              actualRevenue: 7000,
+            },
+            {
+              client: "Client AE",
+              representative: "Charlie Platinum",
+              registerDate: "2024-09-14",
+              actualRevenue: 6000,
+            },
+            {
+              client: "Client AF",
+              representative: "David Bronze",
+              registerDate: "2024-10-05",
+              actualRevenue: 3000,
+            },
           ],
         },
         {
@@ -364,6 +380,18 @@ const HistoricalPnl = () => {
     (data) => data.month === selectedMonth
   );
 
+     if (selectedMonthData) {
+        selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
+          const updatedClients = domain.clients.map((client, index) => ({
+            ...client,
+            srNo: index + 1,
+            registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
+            actualRevenue:Number(client.actualRevenue).toLocaleString("en-IN")
+          }));
+          return { ...domain, clients: updatedClients };
+        });
+      }
+
   // Prepare Bar Graph Data
   const graphData = [
     {
@@ -464,7 +492,6 @@ const HistoricalPnl = () => {
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
-            year={true}
           />
         </WidgetSection>,
       ],
@@ -515,7 +542,7 @@ const HistoricalPnl = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()} INR
+                    INR {domain.revenue.toLocaleString()}  
                   </span>
                 </div>
               </AccordionSummary>
@@ -524,6 +551,7 @@ const HistoricalPnl = () => {
                   data={domain.clients}
                   hideFilter
                   columns={[
+                    { header: "Sr No", field: "srNo", flex: 1 },
                     { header: "Client", field: "client", flex: 1 },
                     {
                       header: "Representative",
@@ -545,7 +573,7 @@ const HistoricalPnl = () => {
                       Total Revenue for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                      ₹{domain.revenue.toLocaleString()}
+                      INR {domain.revenue.toLocaleString()}
                     </span>{" "}
                   </div>
                 </div>

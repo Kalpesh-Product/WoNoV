@@ -13,6 +13,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
 
 const MaintenanceOffices = () => {
   const navigate = useNavigate();
@@ -340,6 +341,7 @@ const MaintenanceOffices = () => {
     mockBusinessRevenueData[0].month
   ); // Default to first month
 
+
   // Function to update selected month
   const handleMonthChange = (event) => {
     setSelectedMonth(event.target.value);
@@ -349,6 +351,18 @@ const MaintenanceOffices = () => {
   const selectedMonthData = mockBusinessRevenueData.find(
     (data) => data.month === selectedMonth
   );
+
+  if (selectedMonthData) {
+    selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
+      const updatedClients = domain.clients.map((client, index) => ({
+        ...client,
+        srNo: index + 1,
+        registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
+        actualRevenue:Number(client.actualRevenue).toLocaleString("en-IN")
+      }));
+      return { ...domain, clients: updatedClients };
+    });
+  }
 
   // Prepare Bar Graph Data
   const graphData = [
@@ -396,7 +410,7 @@ const MaintenanceOffices = () => {
       <WidgetSection layout={1} title={"Maintenance Offices"} border>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
-
+      
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
       <div>
         {selectedMonthData.domains.map((domain, index) => {
@@ -411,7 +425,7 @@ const MaintenanceOffices = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()}
+                    INR {domain.revenue.toLocaleString()}
                   </span>
                 </div>
               </AccordionSummary>
@@ -420,11 +434,12 @@ const MaintenanceOffices = () => {
                 <div className="flex justify-between">
                   <div className="flex justify-between items-center w-80 px-4">
                     <span
-                      className="text-subtitle font-pmedium underline text-primary"
+                      className="text-subtitle font-pmedium underline text-primary
+                      cursor-pointer"
                       onClick={() => {
                         localStorage.setItem("client", domain.name);
                         navigate(
-                          `/app/dashboard/maintenance-dashboard/maintenance-offices/maintenance-offices-layout/${domain.name}`
+                          `/app/dashboard/admin-dashboard/admin-offices/admin-offices-layout/${domain.name}`
                         );
                       }}>
                       View Layout {domain.name}
@@ -446,8 +461,8 @@ const MaintenanceOffices = () => {
                   hideFilter
                   columns={[
                     {
-                      header: "Sr. No.",
-                      field: "client",
+                      header: "Sr No",
+                      field: "srNo",
                       flex: 1,
                       // cellRenderer: (params) => (
                       //   <span
@@ -459,12 +474,17 @@ const MaintenanceOffices = () => {
                       //     onClick={() => {
                       //       localStorage.setItem("client", params.data.client);
                       //       navigate(
-                      //         `/app/dashboard/maintenance-dashboard/maintenance-offices/maintenance-offices-layout/${params.data.client}`
+                      //         `/app/dashboard/admin-dashboard/admin-offices/admin-offices-layout/${params.data.client}`
                       //       );
                       //     }}>
                       //     {params.value}
                       //   </span>
                       // ),
+                    },
+                    {
+                      header: "Client",
+                      field: "client",
+                      flex: 1,
                     },
                     {
                       header: "Unit No.",
@@ -477,26 +497,7 @@ const MaintenanceOffices = () => {
                       field: "actualRevenue",
                       flex: 1,
                     },
-                    {
-                      header: "Building",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
-                    {
-                      header: "Location",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
-                    {
-                      header: "Annual Expense",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
-                    {
-                      header: "Action",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
+                   
                   ]}
                   tableHeight={300}
                 />
@@ -506,7 +507,7 @@ const MaintenanceOffices = () => {
                       Total Revenue for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                      ₹{domain.revenue.toLocaleString()}
+                    INR {domain.revenue.toLocaleString()}
                     </span>{" "}
                   </div>
                 </div>
