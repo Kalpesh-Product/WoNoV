@@ -40,6 +40,29 @@ const ItAssetList = () => {
     },
   });
 
+  const dummyAssets = [
+    {
+      department: { name: "IT" },
+      name: "Laptop",
+      brand: "Dell",
+      price: 75000,
+      quantity: 5,
+      purchaseDate: "2024-12-15T00:00:00.000Z",
+      warranty: 24,
+      vendor: { name: "ABC Electronics" },
+    },
+    {
+      department: { name: "IT" },
+      name: "Router",
+      brand: "TP-Link",
+      price: 3000,
+      quantity: 2,
+      purchaseDate: "2023-11-05T00:00:00.000Z",
+      warranty: 12,
+      vendor: { name: "Tech World" },
+    },
+  ];
+
   const { data: assetsCategories = [], isPending: assetPending } = useQuery({
     queryKey: ["assetsCategories"],
     queryFn: async () => {
@@ -158,20 +181,22 @@ const ItAssetList = () => {
         tableTitle={"Asset List"}
         buttonTitle={"Add Asset"}
         data={[
-          ...assetsList.map((asset, index) => ({
+          ...[...(assetsList || []), ...dummyAssets].map((asset, index) => ({
             id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price: asset.price,
-            quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
+            department: asset.department?.name || "-",
+            category: asset.name || "-",
+            brand: asset.brand || "-",
+            price: asset.price || "-",
+            quantity: asset.quantity || "-",
+            purchaseDate: asset.purchaseDate
+              ? new Intl.DateTimeFormat("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                }).format(new Date(asset.purchaseDate))
+              : "-",
+            warranty: asset.warranty || "-",
+            vendorName: asset.vendor?.name || "-",
           })),
         ]}
         columns={assetColumns}
@@ -195,7 +220,8 @@ const ItAssetList = () => {
                           errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                        } `}>
+                        } `}
+                      >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -205,7 +231,8 @@ const ItAssetList = () => {
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}>
+                          }}
+                        >
                           <Button
                             variant="outlined"
                             component="label"
@@ -220,7 +247,8 @@ const ItAssetList = () => {
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}>
+                            }}
+                          >
                             Select Image
                             <input
                               type="file"
@@ -246,7 +274,8 @@ const ItAssetList = () => {
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}>
+                            }}
+                          >
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -263,7 +292,8 @@ const ItAssetList = () => {
                       {...field}
                       label="Asset Type"
                       helperText={!!errors.assetType?.message}
-                      select>
+                      select
+                    >
                       <MenuItem value="">Select an Asset Type</MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
@@ -283,7 +313,8 @@ const ItAssetList = () => {
                       {...field}
                       select
                       label="Department"
-                      size="small">
+                      size="small"
+                    >
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -304,7 +335,8 @@ const ItAssetList = () => {
                       fullWidth
                       select
                       label="Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -324,7 +356,8 @@ const ItAssetList = () => {
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}
