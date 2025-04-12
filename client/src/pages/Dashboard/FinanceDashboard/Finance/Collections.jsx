@@ -79,6 +79,7 @@ const Collections = () => {
   };
 
   const kraColumn = [
+    { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "client", headerName: "Client", flex: 1 },
     { field: "status", headerName: "Status", flex: 1 },
     {
@@ -95,11 +96,11 @@ const Collections = () => {
   ];
 
   const rows = [
-    { id: 1, client: "Zomato", status: "Paid" },
-    { id: 2, client: "Turtlemint", status: "Paid" },
-    { id: 3, client: "Zimetrics", status: "Paid" },
-    { id: 4, client: "SquadStack", status: "Paid" },
-    { id: 5, client: "Uber", status: "Paid" },
+    { srNo: 1, client: "Zomato", status: "Paid" },
+    { srNo: 2, client: "Turtlemint", status: "Paid" },
+    { srNo: 3, client: "Zimetrics", status: "Paid" },
+    { srNo: 4, client: "SquadStack", status: "Paid" },
+    { srNo: 5, client: "Uber", status: "Paid" },
   ];
 
   // Create dummy tableData per month — you can replace this with actual filtered rows

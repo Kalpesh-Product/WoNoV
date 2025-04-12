@@ -368,7 +368,7 @@ const MaintainanceDashboard = () => {
   ];
 
   const priorityTasksColumns = [
-    { id: "id", label: "ID", align: "left" },
+    { id: "id", label: "Sr No", align: "left" },
     { id: "taskName", label: "Task Name", align: "left" },
     {
       id: "type",
@@ -395,7 +395,7 @@ const MaintainanceDashboard = () => {
     },
   ];
   const executiveTimingsColumns = [
-    { id: "id", label: "ID", align: "left" },
+    { id: "id", label: "Sr No", align: "left" },
     { id: "name", label: "Name", align: "left" },
     { id: "building", label: "Building", align: "left" },
     { id: "unitNo", label: "Unit No", align: "left" },

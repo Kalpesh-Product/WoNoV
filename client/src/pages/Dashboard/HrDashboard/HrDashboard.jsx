@@ -320,6 +320,7 @@ const HrDashboard = () => {
   });
 
   const columns3 = [
+    { id: "srNo", label: "Sr No", align: "left" },
     { id: "ranks", label: "Rank", align: "left" },
     { id: "employeeName", label: "Employee name", align: "left" },
     { id: "department", label: "Department", align: "center" },
@@ -327,6 +328,7 @@ const HrDashboard = () => {
   ];
 
   const columns4 = [
+    { id: "srNo", label: "Sr No", align: "left" },
     { id: "ranks", label: "Rank", align: "left" },
     { id: "employeeName", label: "Employee name", align: "left" },
     { id: "department", label: "Department", align: "center" },
@@ -335,18 +337,21 @@ const HrDashboard = () => {
 
   const rows3 = [
     {
+      srNo:1,
       ranks: "1",
       employeeName: "Aiwin",
       department: "Tech",
       "Performance (%)": "97",
     },
     {
+      srNo:2,
       ranks: "2",
       employeeName: "Allen Silvera",
       department: "Tech",
       "Performance (%)": "90",
     },
     {
+      srNo:3,
       ranks: 3,
       employeeName: "Sankalp Kalangutkar",
       department: "Tech",
@@ -356,18 +361,21 @@ const HrDashboard = () => {
 
   const rows4 = [
     {
+      srNo:1,
       ranks: 30,
       employeeName: "Anushri Bhagat",
       department: "Tech",
       "Performance (%)": "40",
     },
     {
+      srNo:2,
       ranks: 25,
       employeeName: "Sumera Naik",
       department: "Tech",
       "Performance (%)": "43",
     },
     {
+      srNo:3,
       ranks: 28,
       employeeName: "Sunaina Bharve",
       department: "Tech",

@@ -167,9 +167,6 @@ const TicketSettingsNew = () => {
 
   return (
     <div>
-
-
-
      <TableContainer component={Paper}>
         <Table aria-label="collapsible table">
           <TableHead>

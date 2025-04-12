@@ -81,7 +81,7 @@ const Projections = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const monthlyProfitLossColumns = [
-    { field: "id", headerName: "ID", flex: 1 },
+    { field: "id", headerName: "Sr No", flex: 1 },
     { field: "month", headerName: "Month", flex: 1 },
     { field: "income", headerName: "Income", flex: 1 },
     { field: "expense", headerName: "Expense", flex: 1 },
@@ -154,7 +154,6 @@ const Projections = () => {
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
-            year={true}
           />
         </WidgetSection>,
       ],

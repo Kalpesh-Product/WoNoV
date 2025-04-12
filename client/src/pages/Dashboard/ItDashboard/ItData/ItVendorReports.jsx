@@ -163,7 +163,7 @@ const ItVendorReports = () => {
             department: asset.department.name,
             category: asset.name,
             brand: asset.brand,
-            price: asset.price,
+            price: Number(asset.price.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
             quantity: asset.quantity,
             purchaseDate: new Intl.DateTimeFormat("en-GB", {
               day: "numeric",

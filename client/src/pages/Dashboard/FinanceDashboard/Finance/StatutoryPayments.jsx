@@ -73,6 +73,7 @@ const StatutoryPayments = () => {
   };
   //--------------------------------------------------------TableData----------------------------------------------------//
   const kraColumn = [
+    { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "client", headerName: "Client", flex: 1 },
     { field: "status", headerName: "Status", flex: 1 },
     {
@@ -92,17 +93,17 @@ const StatutoryPayments = () => {
 
   const rows = [
     {
-      id: 1,
+      srNo: 1,
       client: "GST",
       status: "Paid",
     },
     {
-      id: 2,
+      srNo: 2,
       client: "TDS",
       status: "Paid",
     },
     {
-      id: 3,
+      srNo: 3,
       client: "Income Tax",
       status: "Paid",
     },
