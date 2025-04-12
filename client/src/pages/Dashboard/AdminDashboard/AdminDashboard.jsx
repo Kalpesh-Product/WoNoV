@@ -220,7 +220,7 @@ const AdminDashboard = () => {
     },
   ];
   const houseKeepingMemberColumns = [
-    { id: "id", label: "ID", align: "left" },
+    { id: "id", label: "Sr No", align: "left" },
     { id: "name", label: "Name", align: "left" },
     { id: "dateOfJoin", label: "Date Of Join", align: "left" },
     { id: "building", label: "Building", align: "left" },
@@ -287,7 +287,7 @@ const AdminDashboard = () => {
   ];
 
   const executiveShiftColumns = [
-    { id: "id", label: "ID", align: "left" },
+    { id: "id", label: "Sr No", align: "left" },
     { id: "name", label: "Name", align: "left" },
     { id: "building", label: "Building", align: "left" },
     { id: "unitNo", label: "Unit No", align: "left" },
@@ -313,7 +313,7 @@ const AdminDashboard = () => {
     },
   ];
   const upcomingEventsColumns = [
-    { id: "id", label: "ID", align: "left" },
+    { id: "id", label: "Sr No", align: "left" },
     { id: "event", label: "Event", align: "left" },
     { id: "date", label: "Date", align: "left" },
     { id: "location", label: "Location", align: "left" },
@@ -358,6 +358,7 @@ const AdminDashboard = () => {
     },
   ];
   const clientMemberBirthdaysColumns = [
+    { id: "name", label: "Name", align: "left" },
     { id: "name", label: "Name", align: "left" },
     { id: "upComingIn", label: "Upcoming In", align: "left" },
     { id: "completedYears", label: "Completed Years", align: "left" },

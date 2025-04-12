@@ -40,8 +40,6 @@ const ManageTickets = () => {
     },
   });
 
-  console.log("Closed tickets : ", ticketsData.filter((item)=>item.status === "Closed").length)
-
   const ticketsFilteredData = {
     openTickets: ticketsData.filter((item) => item.status === "Open").length,
     closedTickets: ticketsData.filter((item) => item.status === "Closed")
@@ -51,11 +49,6 @@ const ManageTickets = () => {
     acceptedTickets: ticketsData
     .filter((item) => item.acceptedBy === auth.user?._id).filter((item)=>item.status === "In Progress").length,
   };
-  console.log(
-    ticketsData
-      .filter((item) => item.acceptedBy === auth.user?._id).filter((item)=>item.status === "In Progress")
-
-  );
 
   const widgets = [
     {

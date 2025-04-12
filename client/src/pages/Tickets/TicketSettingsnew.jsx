@@ -24,6 +24,11 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 
 import WidgetSection from "../../components/WidgetSection";
 import Card from "../../components/Card";
+import SecondaryButton from "../../components/SecondaryButton";
+import PrimaryButton from "../../components/PrimaryButton";
+import { IoIosSearch } from "react-icons/io";
+import { MdFilterAlt, MdFilterAltOff } from "react-icons/md";
+import MuiAside from "../../components/MuiAside";
 
 function Row({ row }) {
   const [open, setOpen] = React.useState(false);
@@ -162,46 +167,10 @@ const TicketSettingsNew = () => {
 
   return (
     <div>
-      <WidgetSection layout={4}>
-        <Card
-          title={"New Tickets"}
-          bgcolor={"white"}
-          data={"25"}
-          titleColor={"#1E3D73"}
-          fontColor={"#1E3D73"}
-          height={"10rem"}
-          fontFamily={"Poppins-Bold"}
-        />
-        <Card
-          title={"Rejected Tickets"}
-          data={"10"}
-          bgcolor={"White"}
-          titleColor={"red"}
-          fontColor={"red"}
-          height={"10rem"}
-          fontFamily={"Poppins-Bold"}
-        />
-        <Card
-          title={"Pending Tickets"}
-          data={"10"}
-          bgcolor={"white"}
-          titleColor={"#FFBF42"}
-          fontColor={"#FFBF42"}
-          height={"10rem"}
-          fontFamily={"Poppins-Bold"}
-        />
-        <Card
-          title={"Approved Tickets"}
-          bgcolor={"white"}
-          data={"05"}
-          titleColor={"green"}
-          fontColor={"green"}
-          height={"10rem"}
-          fontFamily={"Poppins-Bold"}
-        />
-      </WidgetSection>
 
-      <TableContainer component={Paper}>
+
+
+     <TableContainer component={Paper}>
         <Table aria-label="collapsible table">
           <TableHead>
             <TableRow>
@@ -219,7 +188,8 @@ const TicketSettingsNew = () => {
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
+      </TableContainer> 
+
     </div>
   );
 };
