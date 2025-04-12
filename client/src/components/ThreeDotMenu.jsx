@@ -1,6 +1,7 @@
 import { Popover, IconButton, Button, CircularProgress } from "@mui/material";
 import { useState } from "react";
-import { PiDotsThreeVerticalBold } from "react-icons/pi";
+// import { PiDotsThreeVerticalBold } from "react-icons/pi";
+import { MdMoreHoriz } from 'react-icons/md'; 
 
 const ThreeDotMenu = ({ rowId, menuItems, isLoading }) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -17,7 +18,7 @@ const ThreeDotMenu = ({ rowId, menuItems, isLoading }) => {
     <div>
       {/* Three-dot menu button */}
       <IconButton onClick={handleOpen}>
-        <PiDotsThreeVerticalBold />
+        <MdMoreHoriz  />
       </IconButton>
 
       {/* Popover Dropdown */}

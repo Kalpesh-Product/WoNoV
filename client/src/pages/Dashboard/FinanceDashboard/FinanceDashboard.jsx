@@ -88,7 +88,7 @@ const FinanceDashboard = () => {
     },
     tooltip: {
       y: {
-        formatter: (val) => `₹${val.toLocaleString()}`,
+        formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
   };
@@ -192,7 +192,7 @@ const FinanceDashboard = () => {
             (client) =>
               `<div style="display: flex; justify-content: space-between;">
                 <span>${client.clientName}</span>
-                <span>₹${client.amount.toLocaleString()}</span>
+                <span>INR ${client.amount.toLocaleString()}</span>
               </div>`
           )
           .join("");
@@ -263,7 +263,7 @@ const FinanceDashboard = () => {
             (client) =>
               `<div style="display: flex; justify-content: space-between;">
               <span>${client.clientName}</span>
-              <span>₹${client.amount.toLocaleString()}</span>
+              <span>INR ${client.amount.toLocaleString()}</span>
             </div>`
           )
           .join("");
@@ -290,7 +290,7 @@ const FinanceDashboard = () => {
   const donutStatutorylabels = statutoryPayments.map((item) => item.label);
   const donutStatutorySeries = statutoryPayments.map((item) => item.amount);
   const donutStatutoryTooltipValue = statutoryPayments.map(
-    (item) => `₹${item.amount.toLocaleString()}`
+    (item) => `INR ${item.amount.toLocaleString()}`
   );
   const donutStatutoryColors = ["#4CAF50", "#2196F3", "#FFC107", "#FF5722"]; // Custom color palette
   //-----------------------------------------------------Donut Statutory Payments------------------------------------------------------//
@@ -322,8 +322,8 @@ const FinanceDashboard = () => {
   const donutRentalLabels = ["Paid", "Unpaid"];
   const donutRentalSeries = [totalPaid, totalUnpaid];
   const donutRentalTooltipValue = [
-    `Paid - ₹${totalPaid.toLocaleString()}`,
-    `Unpaid - ₹${totalUnpaid.toLocaleString()}`,
+    `Paid - INR${totalPaid.toLocaleString()}`,
+    `Unpaid - INR${totalUnpaid.toLocaleString()}`,
   ];
   const donutRentalColors = ["#4CAF50", "#F44336"];
 
@@ -366,9 +366,40 @@ const FinanceDashboard = () => {
       department: "Tech",
       amount: "5,000",
     },
+    {
+      paymentName: "AWS Subscription",
+      department: "Tech",
+      amount: "12,000",
+    },
+    {
+      paymentName: "Zoom Enterprise",
+      department: "Operations",
+      amount: "3,500",
+    },
+    {
+      paymentName: "Notion Team Plan",
+      department: "Management",
+      amount: "2,400",
+    },
+    {
+      paymentName: "Figma Professional",
+      department: "Design",
+      amount: "4,200",
+    },
+    {
+      paymentName: "Slack Premium",
+      department: "Communication",
+      amount: "3,000",
+    },
+    {
+      paymentName: "Google Workspace",
+      department: "IT",
+      amount: "6,800",
+    },
   ];
+  
   const executiveTimingsColumns = [
-    { id: "id", label: "ID", align: "left" },
+    { id: "id", label: "Sr No", align: "left" },
     { id: "paymentName", label: "Payment Name", align: "left" },
     { id: "department", label: "Department", align: "left" },
     { id: "amount", label: "Amount", align: "left" },

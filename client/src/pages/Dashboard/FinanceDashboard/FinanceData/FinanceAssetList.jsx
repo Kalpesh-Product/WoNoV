@@ -11,6 +11,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
+import dayjs from "dayjs";
 
 const FinanceAssetList = () => {
   const { auth } = useAuth();
@@ -98,8 +99,8 @@ const FinanceAssetList = () => {
   });
 
   const assetColumns = [
-    { field: "id", headerName: "ID" },
-    { field: "department", headerName: "Department" },
+    { field: "id", headerName: "Sr No" },
+    // { field: "department", headerName: "Department" },
     // { field: "assetNumber", headerName: "Asset Number" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
@@ -119,17 +120,110 @@ const FinanceAssetList = () => {
     },
   ];
 
-  const { data: assetsList = [] } = useQuery({
-    queryKey: ["assetsList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-assets");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+  // const { data: assetsList = [] } = useQuery({
+  //   queryKey: ["assetsList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-assets");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+
+  const assetsList = [
+    {
+      id: 1,
+      department: { name: "Finance" },
+      name: "Dell Latitude 7420",
+      brand: "Dell",
+      price: 85000,
+      quantity: 5,
+      purchaseDate: "2023-04-10",
+      warranty: 24,
+      vendor: { name: "Dell Technologies" },
     },
-  });
+    {
+      id: 2,
+      department: { name: "Finance" },
+      name: "Tally ERP 9 License",
+      brand: "Tally Solutions",
+      price: 18000,
+      quantity: 2,
+      purchaseDate: "2023-06-15",
+      warranty: 12,
+      vendor: { name: "Tally Solutions Pvt. Ltd." },
+    },
+    {
+      id: 3,
+      department: { name: "Finance" },
+      name: "QuickBooks License",
+      brand: "Intuit",
+      price: 24000,
+      quantity: 1,
+      purchaseDate: "2023-05-20",
+      warranty: 12,
+      vendor: { name: "QuickBooks India" },
+    },
+    {
+      id: 4,
+      department: { name: "Finance" },
+      name: "Canon D1620 Printer",
+      brand: "Canon",
+      price: 32000,
+      quantity: 1,
+      purchaseDate: "2023-03-30",
+      warranty: 18,
+      vendor: { name: "Canon India" },
+    },
+    {
+      id: 5,
+      department: { name: "Finance" },
+      name: "NAS Storage Server",
+      brand: "Synology",
+      price: 65000,
+      quantity: 1,
+      purchaseDate: "2023-07-05",
+      warranty: 36,
+      vendor: { name: "TechServe Solutions" },
+    },
+    {
+      id: 6,
+      department: { name: "Finance" },
+      name: "UPS Backup Unit",
+      brand: "APC",
+      price: 18000,
+      quantity: 2,
+      purchaseDate: "2023-08-01",
+      warranty: 24,
+      vendor: { name: "APC Power Solutions" },
+    },
+    {
+      id: 7,
+      department: { name: "Finance" },
+      name: "HP EliteDesk Desktop",
+      brand: "HP",
+      price: 72000,
+      quantity: 4,
+      purchaseDate: "2023-09-10",
+      warranty: 36,
+      vendor: { name: "HP World" },
+    },
+    {
+      id: 8,
+      department: { name: "Finance" },
+      name: "MS Excel Pro Plus License",
+      brand: "Microsoft",
+      price: 12000,
+      quantity: 5,
+      purchaseDate: "2023-10-25",
+      warranty: 12,
+      vendor: { name: "Microsoft India" },
+    },
+  ];
+  
+  
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -160,16 +254,12 @@ const FinanceAssetList = () => {
         data={[
           ...assetsList.map((asset, index) => ({
             id: index + 1,
-            department: asset.department.name,
+            // department: asset.department.name,
             category: asset.name,
             brand: asset.brand,
-            price: asset.price,
+            price: Number(asset.price.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
             quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
+            purchaseDate: dayjs(asset.purchaseDate).format("DD-MM-YYYY"),
             warranty: asset.warranty,
             vendorName: asset.vendor.name,
           })),
