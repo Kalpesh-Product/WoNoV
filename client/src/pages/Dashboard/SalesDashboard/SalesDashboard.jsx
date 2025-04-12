@@ -250,7 +250,7 @@ const SalesDashboard = () => {
     },
     xaxis: {
       categories: financialYearMonths,
-      title: { text: "Months" },
+      title: { text: "" },
     },
     yaxis: {
       title: { text: "Lead Count" },
@@ -449,7 +449,6 @@ const SalesDashboard = () => {
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
-            year={true}
           />
         </WidgetSection>,
       ],

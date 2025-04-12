@@ -117,6 +117,11 @@ const HrDashboard = () => {
       toolbar: { show: false },
       stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/tasks");
+        },
+      },
     },
     plotOptions: {
       bar: {
@@ -192,7 +197,7 @@ const HrDashboard = () => {
     chart: {
       type: "bar",
       stacked: true,
-      toolbar:false,
+      toolbar: false,
       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: () => {
@@ -510,7 +515,8 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection layout={1} border title={"Budget v/s Achievements"}>
             <LayerBarGraph data={data} options={optionss} />
             <hr />
@@ -574,12 +580,42 @@ const HrDashboard = () => {
     {
       layout: 3,
       widgets: [
-        <DataCard title="Active" data="28" description="Current Headcount" route={"employee/view-employees"} />,
-        <DataCard title="Average" data="52K" description="salary" route={"employee/view-employees"}/>,
-        <DataCard title="Average" data="25" description="Monthly Employees" route={"employee/view-employees"}/>,
-        <DataCard title="Average" data="4%" description="Monthly Iteration" route={"employee/view-employees"}/>,
-        <DataCard title="Average" data="92%" description="Attendance" route={"employee/view-employees"} />,
-        <DataCard title="Average" data="8.1hr" description="Working Hours" route={"employee/view-employees"} />,
+        <DataCard
+          title="Active"
+          data="28"
+          description="Current Headcount"
+          route={"employee/view-employees"}
+        />,
+        <DataCard
+          title="Average"
+          data="52K"
+          description="salary"
+          route={"employee/view-employees"}
+        />,
+        <DataCard
+          title="Average"
+          data="25"
+          description="Monthly Employees"
+          route={"employee/view-employees"}
+        />,
+        <DataCard
+          title="Average"
+          data="4%"
+          description="Monthly Iteration"
+          route={"employee/view-employees"}
+        />,
+        <DataCard
+          title="Average"
+          data="92%"
+          description="Attendance"
+          route={"employee/view-employees"}
+        />,
+        <DataCard
+          title="Average"
+          data="8.1hr"
+          description="Working Hours"
+          route={"employee/view-employees"}
+        />,
       ],
     },
     {
@@ -592,12 +628,14 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection
             layout={1}
             border
             padding
-            title={"Department Wise Tasks% Vs Achievements in %"}>
+            title={"Department Wise Tasks% Vs Achievements in %"}
+          >
             <BarGraph
               data={rawSeries}
               options={options}

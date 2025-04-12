@@ -17,8 +17,10 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import TreemapGraph from "../../../components/graphs/TreemapGraph";
 import { LuHardDriveUpload } from "react-icons/lu";
 import { CgWebsite } from "react-icons/cg";
+import { useNavigate } from "react-router-dom";
 dayjs.extend(customParseFormat);
 const AdminDashboard = () => {
+  const navigate = useNavigate()
   const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
   const defaultData = utilisedData.map((value) =>
     Math.max(100 - Math.min(value, 100), 0)
@@ -114,6 +116,11 @@ const AdminDashboard = () => {
     labels: unitWisePieData.map((item) => item.label),
     chart: {
       fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/tasks");
+        },
+      },
     },
     toolTip: {
       y: {
@@ -160,6 +167,11 @@ const AdminDashboard = () => {
     labels: companyWiseDesk.map((item) => item.company),
     chart: {
       fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/dashboard/admin-dashboard/client-members/client-members-data");
+        },
+      },
     },
     stroke: {
       show: true,
@@ -191,6 +203,11 @@ const AdminDashboard = () => {
     labels: genderData.map((item) => item.gender),
     chart: {
       fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/dashboard/admin-dashboard/client-members/client-members-data");
+        },
+      },
     },
     stroke: {
       show: true,
