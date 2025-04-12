@@ -1374,7 +1374,7 @@ export const routes = createBrowserRouter([
                     element: <ChangePassword />,
                   },
                   {
-                    path: "access-grant",
+                    path: "permissions",
                     element: <AccessGrant />,
                   },
                   {
