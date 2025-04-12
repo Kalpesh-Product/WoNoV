@@ -13,144 +13,116 @@ const FrontendPayment = () => {
 
   const closeDrawer = () => {
     setIsDrawerOpen(false);
-    setSelectedEvent(null); // Clear the selected event on close
+    setSelectedEvent(null);
   };
 
-  // Dummy data for department payments
+  // Updated dummy data for April 2025
   const dummyData = [
     {
-      payment: "Google Workspace",
-      color: "#FF5733",
-      transactions: [
-        {
-          title: "Google Workspace Renewal - Basic",
-          date: "2025-04-05",
-          amount: "$1200",
-        },
-        {
-          title: "Google Workspace Renewal - Business",
-          date: "2025-01-12",
-          amount: "$2500",
-        },
-      ],
+      title: "Salary Disbursement",
+      date: "2025-04-03",
+      amount: "4000",
+      status: "paid",
     },
     {
-      payment: "Domain Renewal",
-      color: "#33FF57",
-      transactions: [
-        {
-          title: "Domain Renewal - example.com",
-          date: "2025-02-10",
-          amount: "$500",
-        },
-        {
-          title: "Domain Renewal - mybusiness.org",
-          date: "2025-02-18",
-          amount: "$300",
-        },
-      ],
+      title: "Freelancer Payment",
+      date: "2025-04-05",
+      amount: "1200",
+      status: "unpaid",
     },
     {
-      payment: "SSL Certificate",
-      color: "#3357FF",
-      transactions: [
-        {
-          title: "SSL Certificate - Single Domain",
-          date: "2025-02-08",
-          amount: "$250",
-        },
-        {
-          title: "SSL Certificate - Wildcard",
-          date: "2025-02-22",
-          amount: "$600",
-        },
-      ],
+      title: "Team Bonus",
+      date: "2025-04-10",
+      amount: "900",
+      status: "paid",
     },
     {
-      payment: "SEO Analysis",
-      color: "#FF33A1",
-      transactions: [
-        {
-          title: "SEO Analysis - Website Audit",
-          date: "2025-01-07",
-          amount: "$900",
-        },
-        {
-          title: "SEO Monthly Optimization",
-          date: "2025-01-15",
-          amount: "$1500",
-        },
-      ],
+      title: "Medical Reimbursement",
+      date: "2025-04-15",
+      amount: "300",
+      status: "paid",
+    },
+    {
+      title: "Travel Allowance",
+      date: "2025-04-20",
+      amount: "600",
+      status: "unpaid",
     },
   ];
 
-  // State for event filtering
-  const [filteredPayments, setFilteredPayments] = useState(
-    dummyData.map((p) => p.payment)
-  );
-  // Combine all payments into a single array for FullCalendar
-  const events = dummyData.flatMap((paymentType) =>
-    paymentType.transactions.map((transaction) => ({
-      title: transaction.title,
-      start: transaction.date,
-      backgroundColor: paymentType.color,
-      borderColor: paymentType.color,
-      extendedProps: {
-        payment: paymentType.payment,
-        amount: transaction.amount,
-        color: paymentType.color,
-      },
-    }))
-  );
+  // Payment status colors
+  const statusColorMap = {
+    paid: "#28a745", // green
+    unpaid: "#dc3545", // red
+  };
 
-  // Filtering based on selected payments
+  const [statusFilters, setStatusFilters] = useState(["paid", "unpaid"]);
+
+  const events = dummyData.map((payment) => ({
+    title: payment.title,
+    start: payment.date,
+    backgroundColor: statusColorMap[payment.status],
+    borderColor: statusColorMap[payment.status],
+    extendedProps: {
+      amount: payment.amount,
+      status: payment.status,
+    },
+  }));
+
   const filteredEvents = events.filter((event) =>
-    filteredPayments.includes(event.extendedProps.payment)
+    statusFilters.includes(event.extendedProps.status)
   );
 
   const handleEventClick = (clickInfo) => {
-    setSelectedEvent(clickInfo.event); // Set the selected event
-    setIsDrawerOpen(true); // Open the modal
+    setSelectedEvent(clickInfo.event);
+    setIsDrawerOpen(true);
   };
 
   return (
-    <div className="flex flex-col bg-white">
+    <div className="flex flex-col p-4 bg-white">
       <div className="flex gap-4">
         {/* Filters Section */}
         <div className="flex flex-col gap-4 w-[25%]">
           <div className="border-2 border-gray-300 rounded-md">
             <div className="w-full flex justify-start border-b-default border-borderGray p-2">
               <span className="text-content font-bold uppercase">
-                Department Filters
+                Payment Status
               </span>
             </div>
             <div className="flex justify-start text-content px-2">
-              <FormGroup>
-                {dummyData.map((p) => (
+              <FormGroup column>
+                {["paid", "unpaid"].map((status) => (
                   <FormControlLabel
-                    key={p.payment}
+                    key={status}
                     control={
                       <Checkbox
                         sx={{
-                          color: p.color,
-                          "&.Mui-checked": { color: p.color },
+                          fontSize: "0.75rem",
+                          transform: "scale(0.8)",
+                          color: statusColorMap[status],
+                          "&.Mui-checked": { color: statusColorMap[status] },
                         }}
-                        checked={filteredPayments.includes(p.payment)}
+                        checked={statusFilters.includes(status)}
                         onChange={(e) => {
-                          const selectedPayment = e.target.value;
-                          setFilteredPayments((prevFilter) =>
+                          const selectedStatus = e.target.value;
+                          setStatusFilters((prev) =>
                             e.target.checked
-                              ? [...prevFilter, selectedPayment]
-                              : prevFilter.filter((p) => p !== selectedPayment)
+                              ? [...prev, selectedStatus]
+                              : prev.filter((s) => s !== selectedStatus)
                           );
                         }}
-                        value={p.payment}
+                        value={status}
                       />
                     }
                     label={
                       <span
-                        style={{ fontSize: "0.875rem", fontWeight: "bold" }}>
-                        {p.payment}
+                        style={{
+                          fontSize: "0.875rem",
+                          fontWeight: "bold",
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {status}
                       </span>
                     }
                   />
@@ -164,27 +136,35 @@ const FrontendPayment = () => {
               <span>Today's Payments</span>
             </div>
 
-            <div className="px-2 max-h-[27.5vh] overflow-y-auto">
-              {filteredEvents.length > 0 ? (
-                filteredEvents.map((event, index) => (
-                  <div key={index} className="flex gap-2 items-start mb-2">
-                    <div
-                      className="w-3 h-3 rounded-full mt-[0.3rem]"
-                      style={{ backgroundColor: event.backgroundColor }}></div>
-                    <div className="flex flex-col">
-                      <span className="text-content font-medium">
-                        {event.title}
-                      </span>
-                      <span className="text-small text-gray-500">
-                        {event.start
-                          ? dayjs(event.start).format("h:mm A")
-                          : "All Day"}
-                      </span>
+            <div className="px-2 max-h-[33.5vh] overflow-y-auto">
+              {filteredEvents.filter((e) =>
+                dayjs(e.start).isSame(dayjs(), "day")
+              ).length > 0 ? (
+                filteredEvents
+                  .filter((e) => dayjs(e.start).isSame(dayjs(), "day"))
+                  .map((event, index) => (
+                    <div key={index} className="flex gap-2 items-start mb-2">
+                      <div
+                        className="w-3 h-3 rounded-full mt-[0.3rem]"
+                        style={{ backgroundColor: event.backgroundColor }}
+                      ></div>
+                      <div className="flex flex-col">
+                        <span className="text-content font-medium">
+                          {event.title}
+                        </span>
+                        <span className="text-small text-gray-500">
+                          {event.start
+                            ? dayjs(event.start).format("h:mm A")
+                            : "All Day"}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))
               ) : (
-                <span>No payments today.</span>
+                <div className="flex items-center gap-2 text-gray-500">
+                  <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                  <span className="text-sm">No payments today.</span>
+                </div>
               )}
             </div>
           </div>
@@ -194,7 +174,8 @@ const FrontendPayment = () => {
         <div className="w-full h-full overflow-y-auto">
           <FullCalendar
             headerToolbar={{
-              left: "prev title next",
+              left: "today",
+              center: "prev title next",
               right: "dayGridMonth,timeGridWeek,timeGridDay",
             }}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -202,7 +183,7 @@ const FrontendPayment = () => {
             events={filteredEvents}
             contentHeight={425}
             eventClick={handleEventClick}
-            dayMaxEvents={2} // Limits the number of events displayed per day
+            dayMaxEvents={2}
             eventDisplay="block"
           />
         </div>
@@ -213,33 +194,44 @@ const FrontendPayment = () => {
         open={isDrawerOpen}
         onClose={closeDrawer}
         title="Payment Details"
-        headerBackground={selectedEvent?.extendedProps.color}>
+        headerBackground={
+          selectedEvent
+            ? statusColorMap[selectedEvent.extendedProps.status]
+            : ""
+        }
+      >
         {selectedEvent && (
           <div>
             <div className="flex flex-col gap-2">
               <span className="text-content flex items-center">
-                <span className="w-[30%]">Title</span> <span>:</span>
-                <span className="text-content font-pmedium w-full pl-4">
+                <span className="w-[30%]">Title</span>
+                <span>:</span>
+                <span className="text-content font-pmedium w-full justify-start pl-4">
                   {selectedEvent.title}
                 </span>
               </span>
               <span className="text-content flex items-center">
-                <span className="w-[30%]">Date</span> <span>:</span>
-                <span className="text-content font-pmedium w-full pl-4">
-                  {dayjs(selectedEvent.start).format("MMM D, YYYY")}
+                <span className="w-[30%]">Date</span>
+                <span>:</span>
+                <span className="text-content font-pmedium w-full justify-start pl-4">
+                  {dayjs(selectedEvent.start).format("YYYY-MM-DD")}
                 </span>
               </span>
               <span className="text-content flex items-center">
-                <span className="w-[30%]">Payment Type</span> <span>:</span>
-                <span className="text-content font-pmedium w-full pl-4">
-                  {selectedEvent.extendedProps.payment}
+                <span className="w-[30%]">Status</span>
+                <span>:</span>
+                <span className="text-content font-pmedium w-full justify-start pl-4 capitalize">
+                  {selectedEvent.extendedProps.status}
                 </span>
               </span>
               <span className="text-content flex items-center">
-                <span className="w-[30%]">Amount</span> <span>:</span>
-                <span className="text-content font-pmedium w-full pl-4">
-                  {selectedEvent.extendedProps.amount}
-                </span>
+                <span className="w-[30%]">Amount</span>
+                <span>:</span>
+                <span className="text-content font-pmedium w-full justify-start pl-4">
+                  {Number(selectedEvent.extendedProps.amount).toLocaleString(
+                    "en-IN"
+                  )}
+                &nbsp;INR</span>
               </span>
             </div>
           </div>
