@@ -104,19 +104,6 @@ const FrontendDashboard = () => {
     },
   };
 
-  const users = [
-    { name: "John", gender: "Male" },
-    { name: "Alice", gender: "Female" },
-    { name: "Bob", gender: "Male" },
-    { name: "Eve", gender: "Female" },
-    { name: "Charlie", gender: "Male" },
-    { name: "Charlie", gender: "Male" },
-    { name: "Diana", gender: "Female" },
-    { name: "Diana", gender: "Female" },
-    { name: "Mark", gender: "Male" },
-    { name: "James", gender: "Male" },
-  ];
-
   const siteVisitorsData = [
     {
       name: "Site Visitors",
