@@ -1,138 +1,188 @@
 import React, { useState } from "react";
-import WidgetSection from "../../components/WidgetSection";
+import { Avatar, Chip } from "@mui/material";
+import PermissionsTable from "../../components/PermissionsTable";
+import useAuth from "../../hooks/useAuth";
 
-import PrimaryButton from "../../components/PrimaryButton";
-import AccessGrantTable from "../../components/Tables/AccessGrantTable";
+const AccessGrant = () => {
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const { auth } = useAuth();
 
-const AccessGrant = ({ pageTitle }) => {
-  const [selectedCard, setSelectedCard] = useState(null);
-  const [selectAll, setSelectAll] = useState(false);
-  // Define the array of navigation card objects
-  const navigationCards = [
-    { name: "Frontend", icon: "📊" },
-    { name: "HR", icon: "⚙️" },
-    { name: "Finance", icon: "👤" },
+  const user = {
+    name: `${auth?.user?.firstName} ${auth?.user?.lastName}`,
+    email: auth?.user?.email,
+    designation: auth?.user?.designation,
+    status: true,
+    avatarColor: "#1976d2",
+    workLocation:
+      auth?.user?.company?.workLocations?.[0]?.buildingName ??
+      "Unknown Location",
+  };
+
+  const departments = [
+    {
+      departmentId: "hr",
+      departmentName: "HR",
+      modules: [
+        {
+          name: "Attendance",
+          submodules: [
+            {
+              submoduleName: "Clock In / Clock Out",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "My Timeclock",
+              grantedActions: ["View"],
+            },
+            {
+              submoduleName: "Correction Request",
+              grantedActions: ["View"],
+            },
+            {
+              submoduleName: "Approve Timeclock",
+              grantedActions: ["View", "Edit"],
+            },
+          ],
+        },
+        {
+          name: "Payroll",
+          submodules: [
+            {
+              submoduleName: "Salary Processing",
+              grantedActions: ["View"],
+            },
+            {
+              submoduleName: "Generate Payslip",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      departmentId: "finance",
+      departmentName: "Finance",
+      modules: [
+        {
+          name: "Budgets",
+          submodules: [
+            {
+              submoduleName: "Manage Budgets",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "View Expenses",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      departmentId: "frontend",
+      departmentName: "Frontend",
+      modules: [
+        {
+          name: "UI",
+          submodules: [
+            {
+              submoduleName: "UI Updates",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "Frontend Testing",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
   ];
 
-  const HrModules = {
-    attendance: [
-      { name: "Clock In / Clock Out", read: false, write: false },
-      { name: "My Timeclock", read: false, write: false },
-      { name: "Correction Request", read: false, write: false },
-      { name: "Approve Timeclock", read: false, write: false },
-    ],
-    payroll: [
-      { name: "P1", read: false, write: false },
-      { name: "P2", read: false, write: false },
-    ],
-  };
-
-  const FinanceModules = {
-    budgets: [
-      { name: "Manage Budgets", read: false, write: false },
-      { name: "View Expenses", read: false, write: false },
-    ],
-  };
-
-  const FrontendModules = {
-    ui: [
-      { name: "UI Updates", read: false, write: false },
-      { name: "Frontend Testing", read: false, write: false },
-    ],
-  };
-
-  const moduleMapping = {
-    HR: HrModules,
-    Finance: FinanceModules,
-    Frontend: FrontendModules,
-  };
-
-  const [depModules, setDepModules] = useState([]);
-
-  const handleSelectedCard = (department) => {
-    setSelectedCard(department);
-    const modules = moduleMapping[department];
-    const modulesArray = Object.values(modules);
-    setDepModules(modulesArray);
-
-    // Initialize selectAll state for each module array
-    const initialSelectAllState = modulesArray.map(() => false);
-    setSelectAll(initialSelectAllState);
-  };
-
-  const handleSelectAll = (checked, moduleIndex) => {
-    setSelectAll((prev) =>
-      prev.map((item, index) => (index === moduleIndex ? checked : item))
-    );
-
-    setDepModules((prev) =>
-      prev.map((module, index) =>
-        index === moduleIndex
-          ? module.map((perm) => ({ ...perm, read: checked, write: checked }))
-          : module
-      )
-    );
-  };
-
-  const handlePermissionChange = (moduleIndex, index, field, checked) => {
-    setDepModules((prev) =>
-      prev.map((module, modIdx) =>
-        modIdx === moduleIndex
-          ? module.map((perm, permIdx) =>
-              permIdx === index ? { ...perm, [field]: checked } : perm
-            )
-          : module
-      )
-    );
+  const handlePermissionUpdate = (updatedPermissions) => {
+    console.log("Updated Permissions:", updatedPermissions);
   };
 
   return (
-    <div>
-      {/* Page Title */}
-      <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary">Access Grant</span>
+    <div className="bg-white p-4">
+      {/* User Info */}
+      <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-md">
+        <div className="flex gap-6 items-center">
+          <div className="w-40 h-40">
+            <Avatar
+              style={{
+                backgroundColor: user.avatarColor,
+                width: "100%",
+                height: "100%",
+                fontSize: "5rem",
+              }}
+            >
+              {user.name?.charAt(0)}
+            </Avatar>
+          </div>
+          <div className="flex flex-col gap-6">
+            <span className="text-title flex items-center gap-3">
+              {user.name}{" "}
+              <Chip
+                label={user.status ? "Active" : "Inactive"}
+                sx={{
+                  backgroundColor: user.status ? "green" : "grey",
+                  color: "white",
+                }}
+              />
+            </span>
+            <span className="text-subtitle">{user.designation}</span>
+          </div>
+        </div>
+        <div className="flex flex-col gap-4 flex-1">
+          <div className="flex justify-between">
+            <div className="flex flex-col gap-4 text-gray-600">
+              <span className="capitalize">User Name</span>
+              <span className="capitalize">Email</span>
+              <span className="capitalize">Designation</span>
+              <span className="capitalize">Work Location</span>
+            </div>
+            <div className="flex flex-col gap-4 text-gray-500">
+              <span>{user.name}</span>
+              <span>{user.email}</span>
+              <span>{user.designation}</span>
+              <span>{user.workLocation}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Grid Layout for Navigation Cards */}
-      <div>
-        <WidgetSection layout={navigationCards.length} padding={"0rem 0 1rem 0"}>
-          {navigationCards.map((card, index) => (
+      {/* Department Cards */}
+      <div className="mt-6">
+        <h2 className="text-title font-pmedium">Grant Access To</h2>
+        <div className="grid grid-cols-3 gap-4 mt-4">
+          {departments.map((department) => (
             <div
-              key={index}
-              className="border text-center rounded-lg p-4 shadow hover:shadow-md transition-shadow duration-200 cursor-pointer bg-white"
-              onClick={() => handleSelectedCard(card.name)}
+              key={department.departmentId}
+              className={`cursor-pointer rounded-md shadow-md transition-all duration-200 p-4 ${
+                selectedDepartment?.departmentId === department.departmentId
+                  ? "border-default border-primary"
+                  : "hover:shadow-lg"
+              }`}
+              onClick={() => setSelectedDepartment(department)}
             >
-              <div className="text-3xl mb-2">{card.icon}</div>
-              <div className="text-lg font-medium">{card.name}</div>
+              <span className="text-subtitle">{department.departmentName}</span>
             </div>
           ))}
-        </WidgetSection>
-      </div>
+        </div>
 
-      <div>
-        {selectedCard && (
-          <>
-            <div className="flex items-center justify-between py-4">
-              <span className="text-subtitle font-pregular ">
-                Role Permissions
-              </span>
-              <PrimaryButton title={"Edit"} />
-            </div>
-            <WidgetSection layout={depModules.length} padding>
-              {depModules.map((module, index) => (
-                <AccessGrantTable
-                  key={index}
-                  title={`Module ${index + 1}`}
-                  permissions={module}
-                  selectAll={selectAll[index]}
-                  handleSelectAll={(checked) => handleSelectAll(checked, index)}
-                  handlePermissionChange={(permIndex, field, checked) =>
-                    handlePermissionChange(index, permIndex, field, checked)
-                  }
-                />
-              ))}
-            </WidgetSection>
-          </>
+        {/* Permissions Table */}
+        {selectedDepartment && (
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold">
+              {selectedDepartment.departmentName} Permissions
+            </h3>
+            <PermissionsTable
+              key={selectedDepartment.departmentId}
+              modules={selectedDepartment.modules}
+              onPermissionChange={handlePermissionUpdate}
+            />
+          </div>
         )}
       </div>
     </div>

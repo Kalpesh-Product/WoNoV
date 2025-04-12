@@ -12,8 +12,10 @@ import PieChartMui from "../../../components/graphs/PieChartMui";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
 import DonutChart from "../../../components/graphs/DonutChart";
+import { useNavigate } from "react-router-dom";
 
 const ItDashboard = () => {
+  const navigate = useNavigate()
   const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
   const defaultData = utilisedData.map((value) =>
     Math.max(100 - Math.min(value, 100), 0)
@@ -103,6 +105,11 @@ const ItDashboard = () => {
     labels: unitWisePieData.map((item) => item.label),
     chart: {
       fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/tasks");
+        },
+      },
     },
     toolTip: {
       y: {
@@ -150,6 +157,11 @@ const ItDashboard = () => {
     labels: unitWiseExpense.map((item) => item.unit),
     chart: {
       fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/dashboard/IT-dashboard/annual-expenses");
+        },
+      },
     },
     toolTip: {
       y: {

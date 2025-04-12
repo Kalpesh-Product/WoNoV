@@ -1,4 +1,4 @@
-import { Tab, Tabs } from "@mui/material";
+import { Tabs } from "@mui/material";
 import React, { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
@@ -10,7 +10,7 @@ const ProfileLayout = () => {
   const tabs = [
     { label: "My Profile", path: "my-profile" },
     { label: "Change Password", path: "change-password" },
-    { label: "Access Grant", path: "access-grant" },
+    { label: "Permissions", path: "permissions" },
     { label: "HR", path: "HR" },
     { label: "My Assets", path: "my-assets" },
     { label: "Meetings", path: "my-meetings" },

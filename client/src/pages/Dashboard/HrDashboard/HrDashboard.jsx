@@ -117,6 +117,11 @@ const HrDashboard = () => {
       toolbar: { show: false },
       stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/tasks");
+        },
+      },
     },
     plotOptions: {
       bar: {
@@ -192,7 +197,7 @@ const HrDashboard = () => {
     chart: {
       type: "bar",
       stacked: true,
-      toolbar:false,
+      toolbar: false,
       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: () => {
@@ -421,6 +426,11 @@ const HrDashboard = () => {
         },
       },
     },
+    stroke: {
+      show: true,
+      width: 6, // Increase for more "gap"
+      colors: ["#ffffff"], // Or match background color
+    },
     labels: ["Male", "Female"], // Labels for the pie slices
     colors: ["#0056B3", "#FD507E"], // Pass colors as an array
     dataLabels: {
@@ -479,6 +489,11 @@ const HrDashboard = () => {
         },
       },
     },
+    stroke: {
+      show: true,
+      width: 6, // Increase for more "gap"
+      colors: ["#ffffff"], // Or match background color
+    },
     labels: techGoaVisitors.map((item) => item.label), // Labels for the pie slices
     colors: techGoaVisitors.map((item) => item.color), // Assign colors to slices
     dataLabels: {
@@ -518,7 +533,8 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection layout={1} border title={"Budget v/s Achievements"}>
             <LayerBarGraph data={data} options={optionss} />
             <hr />
@@ -582,12 +598,42 @@ const HrDashboard = () => {
     {
       layout: 3,
       widgets: [
-        <DataCard title="Active" data="28" description="Current Headcount" route={"employee/view-employees"} />,
-        <DataCard title="Average" data="52K" description="salary" route={"employee/view-employees"}/>,
-        <DataCard title="Average" data="25" description="Monthly Employees" route={"employee/view-employees"}/>,
-        <DataCard title="Average" data="4%" description="Monthly Iteration" route={"employee/view-employees"}/>,
-        <DataCard title="Average" data="92%" description="Attendance" route={"employee/view-employees"} />,
-        <DataCard title="Average" data="8.1hr" description="Working Hours" route={"employee/view-employees"} />,
+        <DataCard
+          title="Active"
+          data="28"
+          description="Current Headcount"
+          route={"employee/view-employees"}
+        />,
+        <DataCard
+          title="Average"
+          data="52K"
+          description="salary"
+          route={"employee/view-employees"}
+        />,
+        <DataCard
+          title="Average"
+          data="25"
+          description="Monthly Employees"
+          route={"employee/view-employees"}
+        />,
+        <DataCard
+          title="Average"
+          data="4%"
+          description="Monthly Iteration"
+          route={"employee/view-employees"}
+        />,
+        <DataCard
+          title="Average"
+          data="92%"
+          description="Attendance"
+          route={"employee/view-employees"}
+        />,
+        <DataCard
+          title="Average"
+          data="8.1hr"
+          description="Working Hours"
+          route={"employee/view-employees"}
+        />,
       ],
     },
     {
@@ -600,12 +646,14 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection
             layout={1}
             border
             padding
-            title={"Department Wise Tasks% Vs Achievements in %"}>
+            title={"Department Wise Tasks% Vs Achievements in %"}
+          >
             <BarGraph
               data={rawSeries}
               options={options}
@@ -645,9 +693,9 @@ const HrDashboard = () => {
           columns={columns}
           rows={[
             ...birthdays.map((bd, index) => ({
-              id: index + 1, // Auto-increment Sr No
-              title: bd.title, // Birthday Name
-              start: new Date(bd.start).toLocaleDateString(), // Format as readable date
+              id: index + 1, 
+              title: bd.title,
+              start: new Date(bd.start).toLocaleDateString(), 
             })),
           ]}
           rowsToDisplay={5}

@@ -18,7 +18,7 @@ const buildHierarchy = (users) => {
     userMap.set(user._id.toString(), {
       _id: user._id,
       empId: user.empId,
-      name: `${user.firstName} ${user.middleName || ""} ${
+      name: `${user.firstName} ${
         user.lastName
       }`.trim(),
       email: user.email,
