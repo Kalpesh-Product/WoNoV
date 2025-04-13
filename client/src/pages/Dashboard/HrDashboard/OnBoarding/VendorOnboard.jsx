@@ -72,45 +72,42 @@ const VendorOnboard = () => {
       ),
     },
     {
-      field: "actions",
-      headerName: "Action",
-      cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-            <span className="text-primary hover:underline text-content cursor-pointer">
-              View Details
-            </span>
-          </div>
-        </>
-      ),
-    },
-    {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => {
         const statusColorMap = {
-          Active: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-          "In Active": { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+          Active: { backgroundColor: "#90EE90", color: "#006400" },
+          "In Active": { backgroundColor: "#FFECC5", color: "#CC8400" },
         };
-
+  
         const { backgroundColor, color } = statusColorMap[params.value] || {
           backgroundColor: "gray",
           color: "white",
         };
         return (
-          <>
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-          </>
+          <Chip
+            label={params.value}
+            style={{
+              backgroundColor,
+              color,
+            }}
+          />
         );
       },
     },
+    {
+      field: "actions",
+      headerName: "Action",
+      cellRenderer: (params) => (
+        <div className="p-2 mb-2 flex gap-2">
+          <span className="text-primary hover:underline text-content cursor-pointer">
+            View Details
+          </span>
+        </div>
+      ),
+    },
   ];
+  
 
   const rows = [
     {
@@ -127,7 +124,7 @@ const VendorOnboard = () => {
     },
     {
       id: 3,
-      vendorName: "John Doe",
+      vendorName: "Bakery",
       vendorID: "V003",
       status: "Active",
     },

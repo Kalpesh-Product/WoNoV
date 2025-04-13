@@ -40,6 +40,29 @@ const ItAssetList = () => {
     },
   });
 
+  const dummyAssets = [
+    {
+      department: { name: "IT" },
+      name: "Laptop",
+      brand: "Dell",
+      price: 75000,
+      quantity: 5,
+      purchaseDate: "2024-12-15T00:00:00.000Z",
+      warranty: 24,
+      vendor: { name: "ABC Electronics" },
+    },
+    {
+      department: { name: "IT" },
+      name: "Router",
+      brand: "TP-Link",
+      price: 3000,
+      quantity: 2,
+      purchaseDate: "2023-11-05T00:00:00.000Z",
+      warranty: 12,
+      vendor: { name: "Tech World" },
+    },
+  ];
+
   const { data: assetsCategories = [], isPending: assetPending } = useQuery({
     queryKey: ["assetsCategories"],
     queryFn: async () => {
@@ -158,12 +181,14 @@ const ItAssetList = () => {
         tableTitle={"Asset List"}
         buttonTitle={"Add Asset"}
         data={[
-          ...assetsList.map((asset, index) => ({
+          ...[...(assetsList || []), ...dummyAssets].map((asset, index) => ({
             id: index + 1,
             department: asset.department.name,
             category: asset.name,
             brand: asset.brand,
-            price: Number(asset.price.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+            price: Number(
+              asset.price.toLocaleString("en-IN").replace(/,/g, "")
+            ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
             quantity: asset.quantity,
             purchaseDate: new Intl.DateTimeFormat("en-GB", {
               day: "numeric",

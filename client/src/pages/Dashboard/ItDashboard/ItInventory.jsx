@@ -63,6 +63,40 @@ const ItInventory = () => {
     },
   });
 
+  const assetsList = [
+    {
+      department: { name: "IT" },
+      name: "Laptop",
+      brand: "Dell",
+      price: 60000,
+      quantity: 5,
+      purchaseDate: new Date().toISOString(),
+      warranty: 24,
+      vendor: { name: "TechVendor Pvt Ltd" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Printer",
+      brand: "HP",
+      price: 15000,
+      quantity: 2,
+      purchaseDate: new Date("2024-12-01").toISOString(),
+      warranty: 12,
+      vendor: { name: "OfficeNeeds Co" },
+    },
+    {
+      department: { name: "Finance" },
+      name: "Monitor",
+      brand: "LG",
+      price: 12000,
+      quantity: 10,
+      purchaseDate: new Date("2023-06-15").toISOString(),
+      warranty: 18,
+      vendor: { name: "GadgetWorld" },
+    },
+  ];
+  
+
   console.log(vendorDetials);
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
@@ -119,17 +153,17 @@ const ItInventory = () => {
     },
   ];
 
-  const { data: assetsList = [] } = useQuery({
-    queryKey: ["assetsList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-assets");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
+  // const { data: assetsList = [] } = useQuery({
+  //   queryKey: ["assetsList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-assets");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
