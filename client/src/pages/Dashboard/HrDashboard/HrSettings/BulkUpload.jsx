@@ -18,15 +18,21 @@ const BulkUpload = () => {
   const bulkUploadData = [
     {
       srNo: 1,
-      templateName: "Upload Employee",
-      uploadedBy: "Kalpesh Naik",
-      date: "01-03-2025",
+      templateName: "Employee Data",
+      uploadedBy: "Utkarsha Palkar",
+      date: "08-03-2025",
     },
     {
       srNo: 2,
-      templateName: "Upload Employee",
-      uploadedBy: "Kalpesh Naik",
-      date: "08-03-2025",
+      templateName: "Employee Data",
+      uploadedBy: "Utkarsha Palkar",
+      date: "01-01-2025",
+    },
+    {
+      srNo: 3,
+      templateName: "Employee Data",
+      uploadedBy: "Utkarsha Palkar",
+      date: "08-10-2024",
     },
   ];
 

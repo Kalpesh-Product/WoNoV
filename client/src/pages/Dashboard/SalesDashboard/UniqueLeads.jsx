@@ -28,10 +28,9 @@ const UniqueLeads = () => {
 
   const leadsData = useSelector((state) => state.sales.leadsData);
 
-
   const [searchParams] = useSearchParams();
   const queryMonth = searchParams.get("month");
-  const [modalOpen,setModalOpen]= useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState([]);
 
   const [selectedMonth, setSelectedMonth] = useState(queryMonth || "April");
@@ -100,7 +99,6 @@ const UniqueLeads = () => {
     };
   }, [selectedMonth, leadsData]);
 
-
   // 🧠 Yearly Revenue Data
   const yearlyRevenueData = useMemo(() => {
     const revenueMap = {};
@@ -127,12 +125,14 @@ const UniqueLeads = () => {
     return revenueMap;
   }, [leadsData]);
 
-  const handleViewClient = (lead)=>{
-    const selectedLeadData = leadsData.find((item) => item.client === lead.companyname);
-    console.log("Selected lead Data : ",selectedLeadData)
+  const handleViewClient = (lead) => {
+    const selectedLeadData = leadsData.find(
+      (item) => item.client === lead.companyname
+    );
+    console.log("Selected lead Data : ", selectedLeadData);
     setSelectedLead(selectedLeadData);
-    setModalOpen(true)
-  }
+    setModalOpen(true);
+  };
   const graphData = [
     {
       name: "Leads",
@@ -159,7 +159,7 @@ const UniqueLeads = () => {
       bar: { horizontal: false, columnWidth: "20%", borderRadius: 3 },
     },
     legend: { position: "top" },
-    dataLabels: { enabled: false },
+    dataLabels: { enabled: true, positiom: "top" },
     colors: ["#00cdd1"],
   };
 
@@ -169,6 +169,8 @@ const UniqueLeads = () => {
     );
     return Array.from(uniqueMonths);
   }, [leadsData]);
+
+  useEffect(()=>console.log(selectedMonthData), [selectedMonthData])
 
   return (
     <div className="p-4 flex flex-col gap-4">
@@ -214,20 +216,25 @@ const UniqueLeads = () => {
         {viewType === "month"
           ? selectedMonthData?.domains.map((domain, index) => (
               <Accordion key={index} className="py-4">
-                <AccordionSummary
-                  expandIcon={<IoIosArrowDown />}
-                >
+                <AccordionSummary expandIcon={<IoIosArrowDown />}>
                   <div className="flex justify-between items-center w-full px-4">
                     <span className="text-subtitle font-medium">
                       {domain.name}
                     </span>
+                    <span className="text-subtitle font-medium">
+                      {domain.clients?.length} Leads
+                    </span>
                   </div>
                 </AccordionSummary>
-                <AccordionDetails sx={{borderTop:'0.5px solid gray'}}>
+                <AccordionDetails sx={{ borderTop: "0.5px solid gray" }}>
                   <AgTable
-                    data={domain.clients}
+                    data={domain.clients.map((client, index) => ({
+                      id: index + 1,
+                      ...client,
+                    }))}
                     exportData
                     columns={[
+                      { field: "id", headerName: "ID", flex: 1 },
                       { field: "client", headerName: "Client Name", flex: 1 },
                       {
                         field: "representative",
@@ -246,13 +253,15 @@ const UniqueLeads = () => {
                         headerName: "Actions",
                         cellRenderer: (params) => {
                           return (
-                          <div className="p-2">
-                            <PrimaryButton title={"View More"}  />
-                          </div>
-                        )},
+                            <div className="p-2">
+                              <PrimaryButton title={"View More"} />
+                            </div>
+                          );
+                        },
                       },
                     ]}
                     tableHeight={500}
+                    hideFilter
                   />
                 </AccordionDetails>
               </Accordion>
@@ -260,17 +269,14 @@ const UniqueLeads = () => {
           : Object.entries(yearlyRevenueData).map(
               ([domainName, data], index) => (
                 <Accordion key={index} className="py-4">
-                  <AccordionSummary
-                    expandIcon={<IoIosArrowDown />}
-                   
-                  >
+                  <AccordionSummary expandIcon={<IoIosArrowDown />}>
                     <div className="flex justify-between items-center w-full px-4">
                       <span className="text-subtitle font-medium">
                         {domainName}
                       </span>
                     </div>
                   </AccordionSummary>
-                  <AccordionDetails  sx={{borderTop:'0.5px solid gray'}}>
+                  <AccordionDetails sx={{ borderTop: "0.5px solid gray" }}>
                     <AgTable
                       data={data.clients}
                       exportData
@@ -291,8 +297,8 @@ const UniqueLeads = () => {
               )
             )}
       </div>
-      <MuiModal open={modalOpen} onClose={()=>setModalOpen(false)}>
-            <span>{selectedLead}</span>
+      <MuiModal open={modalOpen} onClose={() => setModalOpen(false)}>
+        <span>{selectedLead}</span>
       </MuiModal>
     </div>
   );

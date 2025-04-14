@@ -13,6 +13,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import dayjs from "dayjs";
+import { inrFormat } from "../../../../utils/currencyFormat";
 
 const RevenueTarget = () => {
   const mockBusinessRevenueData = [
@@ -21,118 +22,139 @@ const RevenueTarget = () => {
       domains: [
         {
           name: "Co-Working",
-          revenue: 125680,
+          revenue: 1256800,
           clients: [
             {
               srNo: "1",
               client: "Zomato",
-              representative: "John Doe",
+              representative: "Dipiksha Gawas",
               registerDate: "2024-01-15",
-              actualRevenue: 5000,
+              actualRevenue: inrFormat(540000),
             },
             {
               srNo: "2",
-              client: "Uber",
-              representative: "Jane Smith",
+              client: "Lancesoft",
+              representative: "Samarth Wagrekar",
               registerDate: "2024-02-10",
-              actualRevenue: 4000,
+              actualRevenue: inrFormat(403000),
             },
             {
               srNo: "3",
-              client: "Ola",
-              representative: "Alice Johnson",
+              client: "Zimetrics",
+              representative: "Shrey Vernaker",
               registerDate: "2024-03-05",
-              actualRevenue: 3000,
+              actualRevenue: inrFormat(306000),
             },
           ],
         },
         {
           name: "Workation",
-          revenue: 83630,
+          revenue: 836300,
           clients: [
             {
               srNo: "1",
-              client: "Client D",
+              client: "Turtlemint",
               representative: "Bob Brown",
               registerDate: "2024-01-20",
-              actualRevenue: 4000,
+              actualRevenue: inrFormat(480040),
             },
             {
               srNo: "2",
-              client: "Client E",
+              client: "Infuse",
               representative: "Charlie White",
               registerDate: "2024-02-25",
-              actualRevenue: 4000,
+              actualRevenue: inrFormat(780076),
             },
             {
               srNo: "3",
-              client: "Client F",
+              client: "91HR",
               representative: "Charlie White",
               registerDate: "2024-02-25",
-              actualRevenue: 4000,
+              actualRevenue: inrFormat(345600),
             },
+
           ],
         },
         {
           name: "Meetings",
-          revenue: 157840,
+          revenue: 1578400,
           clients: [
-            { srNo: "1", client: "Client F", revenue: 5000 },
-            { srNo: "2", client: "Client G", revenue: 7000 },
-            { srNo: "3", client: "Client H", revenue: 3000 },
+            {
+              srNo: "4",
+              client: "Capillary",
+              representative: "Diana Prince",
+              registerDate: "2024-03-18",
+              actualRevenue: inrFormat(725000),
+            },
+            {
+              srNo: "5",
+              client: "CredAble",
+              representative: "Bruce Wayne",
+              registerDate: "2024-04-02",
+              actualRevenue: inrFormat(890000),
+            },
+            {
+              srNo: "6",
+              client: "FarEye",
+              representative: "Clark Kent",
+              registerDate: "2024-04-10",
+              actualRevenue: inrFormat(615000),
+            },
+
           ],
         },
         {
           name: "Virtual Office",
-          revenue: 156380,
+          revenue: 1463800,
           clients: [
             {
-              srNo: "1",
-              client: "Client F",
-              representative: "Daniel Green",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000,
+              srNo: "7",
+              client: "Yellow.ai",
+              representative: "Peter Hoffman",
+              registerDate: "2024-04-12",
+              actualRevenue: inrFormat(760000),
             },
             {
-              srNo: "2",
-              client: "Client G",
-              representative: "Eva Black",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000,
+              srNo: "8",
+              client: "Ninjacart",
+              representative: "Tony Perez",
+              registerDate: "2024-04-14",
+              actualRevenue: inrFormat(925000),
             },
             {
-              srNo: "3",
-              client: "Client H",
-              representative: "Frank Blue",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000,
+              srNo: "9",
+              client: "Porter",
+              representative: "Natasha Malik",
+              registerDate: "2024-04-13",
+              actualRevenue: inrFormat(830000),
             },
+
           ],
         },
         {
           name: "Other Channels",
-          revenue: 156470,
+          revenue: 1264700,
           clients: [
             {
-              srNo: "1",
-              client: "Client F",
-              representative: "Daniel Green",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000,
+              srNo: "10",
+              client: "Delhivery",
+              representative: "Steve Pascal",
+              registerDate: "2024-04-15",
+              actualRevenue: inrFormat(980000),
             },
             {
-              srNo: "2",
-              client: "Client G",
-              representative: "Eva Black",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000,
+              srNo: "11",
+              client: "Moglix",
+              representative: "Melissa Barera",
+              registerDate: "2024-04-16",
+              actualRevenue: inrFormat(645000),
             },
             {
-              srNo: "3",
-              client: "Client H",
-              representative: "Frank Blue",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000,
+              srNo: "12",
+              client: "Razorpay",
+              representative: "Stephen Gomez",
+              registerDate: "2024-04-17",
+              actualRevenue: inrFormat(715000),
             },
           ],
         },
@@ -401,11 +423,16 @@ const RevenueTarget = () => {
 
   // Graph Options
   const options = {
-    chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular" },
+    chart: { type: "bar", toolbar: false, stacked: false, fontFamily: "Poppins-Regular" },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
-    yaxis: { title: { text: "Revenue (in Rupees)" } },
+    yaxis: {
+      title: { text: "Revenue (in INR)" },
+      labels: {
+        formatter: (value) => `INR ${value.toLocaleString("en-IN")}`
+      }
+    },
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },

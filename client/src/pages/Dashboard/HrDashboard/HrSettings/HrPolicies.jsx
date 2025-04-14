@@ -18,29 +18,31 @@ const HrPolicies = () => {
   const policiesUploadData = [
     {
       srNo: 1,
-      templateName: "Upload Policies",
-      uploadedBy: "John Doe",
-      date: "01-03-2025"
+      templateName: "Code of Conduct Policy",
+      uploadedBy: "Utkarsha Palkar",
+      date: "18-11-2024"
     },
     {
       srNo: 2,
-      templateName: "Upload Policies",
-      uploadedBy: "Jane Smith",
-      date: "08-03-2025"
+      templateName: "Equal Employment Opportunity Policy",
+      uploadedBy: "Utkarsha Palkar",
+      date: "07-12-2024"
     },
     {
       srNo: 3,
-      templateName: "Upload Policies",
-      uploadedBy: "Michael Johnson",
-      date: "15-03-2025"
+      templateName: "Workplace Harassment Policy",
+      uploadedBy: "Utkarsha Palkar",
+      date: "19-01-2025"
     },
     {
       srNo: 4,
-      templateName: "Upload Policies",
-      uploadedBy: "Emily Davis",
-      date: "22-03-2025"
+      templateName: "Remote Work & Flexibility Policy",
+      uploadedBy: "Utkarsha Palkar",
+      date: "11-03-2025"
     }
   ];
+  
+  
 
 
   return (

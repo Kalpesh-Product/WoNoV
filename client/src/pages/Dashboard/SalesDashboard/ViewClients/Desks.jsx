@@ -61,7 +61,7 @@ const Desks = () => {
     },
   ];
   const currentRoomData = [
-    { id: 1, title: "Occupied", image: selectedClient.occupiedImage, type: "occupiedImage" },
+    { id: 1, title: "Occupied", image: selectedClient?.occupiedImage ? selectedClient.occupiedImage : occupiedImage, type: "occupiedImage" },
     { id: 2, title: "Available", image: clearImage, type: "clearImage" },
   ];
 
