@@ -6,30 +6,21 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
 } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import Accordion from "@mui/material/Accordion";
-import AccordionSummary from "@mui/material/AccordionSummary";
-import AccordionDetails from "@mui/material/AccordionDetails";
-import { IoIosArrowDown } from "react-icons/io";
-import AgTable from "../../../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import useAuth from "../../../../hooks/useAuth";
 import DataCard from "../../../../components/DataCard";
-import { MdTrendingUp } from "react-icons/md";
-import { BsCheckCircleFill } from "react-icons/bs";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
+import { toast } from "sonner";
 
 const HrBudget = () => {
   const axios = useAxiosPrivate();
-  const { auth } = useAuth();
   const [openModal, setOpenModal] = useState(false);
   const { data: hrFinance = [] } = useQuery({
     queryKey: ["hrFinance"],
@@ -57,6 +48,7 @@ const HrBudget = () => {
 
   const onSubmit = (data) => {
     setOpenModal(false);
+     toast.success("Budget Requested succesfully");
     reset();
   };
 
