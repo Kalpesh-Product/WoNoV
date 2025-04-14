@@ -530,7 +530,7 @@ const AdminDashboard = () => {
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard
-              data={"40K"}
+              data={"45K"}
               title={"Projected"}
               route={"/app/dashboard/admin-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
@@ -539,7 +539,7 @@ const AdminDashboard = () => {
               )}`}
             />
             <DataCard
-              data={"35K"}
+              data={"40K"}
               title={"Actual"}
               route={"/app/dashboard/admin-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
@@ -548,7 +548,7 @@ const AdminDashboard = () => {
               )}`}
             />
             <DataCard
-              data={6000}
+              data={5000}
               title={"Requested"}
               route={"/app/dashboard/admin-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(

@@ -12,6 +12,7 @@ import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import dayjs from "dayjs";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const FinanceAssetList = () => {
   const { auth } = useAuth();
@@ -112,10 +113,18 @@ const FinanceAssetList = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <PrimaryButton
-          title="Details"
-          handleSubmit={() => handleDetailsClick(params.data)}
-        />
+        <>
+        <div className="flex gap-2 items-center">
+          <div
+             
+            className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+          >
+            <span className="text-subtitle">
+              <MdOutlineRemoveRedEye />
+            </span>
+          </div>
+        </div>
+      </>
       ),
     },
   ];

@@ -230,21 +230,21 @@ const HrBudget = () => {
 
       <WidgetSection layout={3} padding>
         <DataCard
-          data={"40K"}
+          data={"45K"}
           title={"Projected"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "long",
           })}`}
         />
         <DataCard
-          data={"35K"}
+          data={"40K"}
           title={"Actual"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "long",
           })}`}
         />
         <DataCard
-          data={6000}
+          data={5000}
           title={"Requested"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "long",

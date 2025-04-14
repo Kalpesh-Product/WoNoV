@@ -132,7 +132,7 @@ const FinanceDashboard = () => {
     cardTitle: "Net Savings",
     timePeriod: "Apr 24 – Mar 25",
     descriptionData: [
-      { title: "March 2025", value: "INR -7,00,000" },
+      { title: "March 2025", value: "INR 7,00,000" },
       { title: "Annual Average", value: "INR 5,00,000" },
       { title: "Overall", value: "INR 60,00,000" },
       { title: "Per Sq. Ft.", value: "150" },
@@ -422,7 +422,7 @@ const FinanceDashboard = () => {
           layout: 3,
           widgets: [
             <DataCard
-              data={"40K"}
+              data={"INR 5,00,000"}
               title={"Projected"}
               route={"/app/dashboard/finance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString("default", {
@@ -430,7 +430,7 @@ const FinanceDashboard = () => {
               })}`}
             />,
             <DataCard
-              data={"35K"}
+              data={"INR 4,00,000"}
               title={"Actual"}
               route={"/app/dashboard/finance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString("default", {
@@ -438,7 +438,7 @@ const FinanceDashboard = () => {
               })}`}
             />,
             <DataCard
-              data={6000}
+              data={"INR 17,000"}
               title={"Requested"}
               route={"/app/dashboard/finance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString("default", {

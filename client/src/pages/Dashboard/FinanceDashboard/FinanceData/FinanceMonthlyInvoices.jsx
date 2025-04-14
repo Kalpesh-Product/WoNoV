@@ -12,6 +12,7 @@ import { Button, Chip, FormHelperText, MenuItem, TextField } from "@mui/material
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import dayjs from "dayjs";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const FinanceMonthlyInvoices = () => {
   const { auth } = useAuth();
@@ -136,10 +137,18 @@ const FinanceMonthlyInvoices = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <PrimaryButton
-          title="View"
-          handleSubmit={() => handleDetailsClick(params.data)}
-        />
+        <>
+        <div className="flex gap-2 items-center">
+          <div
+             
+            className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+          >
+            <span className="text-subtitle">
+              <MdOutlineRemoveRedEye />
+            </span>
+          </div>
+        </div>
+      </>
       ),
     },
   ];

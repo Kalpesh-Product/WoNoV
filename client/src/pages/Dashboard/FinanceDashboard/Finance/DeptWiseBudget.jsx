@@ -192,24 +192,24 @@ const DeptWiseBudget = () => {
 
   return (
     <div className="flex flex-col gap-8">
-        <WidgetSection layout={1} title={"BUDGET 2024-25"} border>
+        <WidgetSection layout={1} title={"DEPARTMENT BUDGET 2024-25"} border>
           <LayerBarGraph options={optionss} data={data} />
         </WidgetSection>
       <div>
         <WidgetSection layout={3} padding>
-          <DataCard data={"40K"} title={"Projected"} description={`Current Month: ${new Date().toLocaleString(
+          <DataCard data={"50K"} title={"Projected"} description={`Current Month: ${new Date().toLocaleString(
               "default",
               {
                 month: "long",
               }
             )}`}/>
-          <DataCard data={"35K"} title={"Actual"}description={`Current Month: ${new Date().toLocaleString(
+          <DataCard data={"45K"} title={"Actual"}description={`Current Month: ${new Date().toLocaleString(
               "default",
               {
                 month: "long",
               }
             )}`} />
-          <DataCard data={6000} title={"Requested"} description={`Current Month: ${new Date().toLocaleString(
+          <DataCard data={7000} title={"Requested"} description={`Current Month: ${new Date().toLocaleString(
               "default",
               {
                 month: "long",

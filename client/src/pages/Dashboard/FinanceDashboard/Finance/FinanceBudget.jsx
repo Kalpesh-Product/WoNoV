@@ -199,7 +199,7 @@ const FinanceBudget = () => {
       <div>
         <WidgetSection layout={3} padding>
           <DataCard
-            data={"40K"}
+            data={"50K"}
             title={"Projected"}
             description={`Current Month: ${new Date().toLocaleString(
               "default",
@@ -209,7 +209,7 @@ const FinanceBudget = () => {
             )}`}
           />
           <DataCard
-            data={"35K"}
+            data={"45K"}
             title={"Actual"}
             description={`Current Month: ${new Date().toLocaleString(
               "default",
@@ -219,7 +219,7 @@ const FinanceBudget = () => {
             )}`}
           />
           <DataCard
-            data={6000}
+            data={7000}
             title={"Requested"}
             description={`Current Month: ${new Date().toLocaleString(
               "default",
