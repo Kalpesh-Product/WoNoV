@@ -51,7 +51,7 @@ const LandlordPayments = () => {
     },
     xaxis: {
       categories: collectionData.map((item) => item.month),
-      title: { text: "2024-2025" },
+
     },
     yaxis: {
       max: 100,
@@ -70,7 +70,7 @@ const LandlordPayments = () => {
         formatter: (val) => `${val}%`,
       },
     },
-    colors: ["#4CAF50", "#F44336"], // Green for paid, red for unpaid
+    colors: ["#54C4A7", "#EB5C45"], // Green for paid, red for unpaid
   };
 
   const unitData = [
@@ -88,13 +88,13 @@ const LandlordPayments = () => {
             srNo: 1,
             month: "Apr-24",
             landlordName: "Ravi Kumar",
-            total: "₹25,000",
+            total: "INR 25,000",
           },
           {
             srNo: 2,
             month: "May-24",
             landlordName: "Ravi Kumar",
-            total: "₹26,000",
+            total: "INR 26,000",
           },
         ],
       },
@@ -113,13 +113,13 @@ const LandlordPayments = () => {
             srNo: 1,
             month: "Apr-24",
             landlordName: "Sneha Mehta",
-            total: "₹24,500",
+            total: "INR 24,500",
           },
           {
             srNo: 2,
             month: "May-24",
             landlordName: "Sneha Mehta",
-            total: "₹25,100",
+            total: "INR 25,100",
           },
         ],
       },
@@ -138,13 +138,13 @@ const LandlordPayments = () => {
             srNo: 1,
             month: "Apr-24",
             landlordName: "Amit Shah",
-            total: "₹28,000",
+            total: "INR 28,000",
           },
           {
             srNo: 2,
             month: "May-24",
             landlordName: "Amit Shah",
-            total: "₹27,800",
+            total: "INR 27,800",
           },
         ],
       },
@@ -163,13 +163,13 @@ const LandlordPayments = () => {
             srNo: 1,
             month: "Apr-24",
             landlordName: "Priya Das",
-            total: "₹27,000",
+            total: "INR 27,000",
           },
           {
             srNo: 2,
             month: "May-24",
             landlordName: "Priya Das",
-            total: "₹27,500",
+            total: "INR 27,500",
           },
         ],
       },
@@ -188,13 +188,13 @@ const LandlordPayments = () => {
             srNo: 1,
             month: "Apr-24",
             landlordName: "Vikram Singh",
-            total: "₹29,500",
+            total: "INR 29,500",
           },
           {
             srNo: 2,
             month: "May-24",
             landlordName: "Vikram Singh",
-            total: "₹30,000",
+            total: "INR 30,000",
           },
         ],
       },
@@ -213,13 +213,13 @@ const LandlordPayments = () => {
             srNo: 1,
             month: "Apr-24",
             landlordName: "Neha Rathi",
-            total: "₹29,000",
+            total: "INR 29,000",
           },
           {
             srNo: 2,
             month: "May-24",
             landlordName: "Neha Rathi",
-            total: "₹29,200",
+            total: "INR 29,200",
           },
         ],
       },
@@ -238,13 +238,13 @@ const LandlordPayments = () => {
             srNo: 1,
             month: "Apr-24",
             landlordName: "Manish Verma",
-            total: "₹23,000",
+            total: "INR 23,000",
           },
           {
             srNo: 2,
             month: "May-24",
             landlordName: "Manish Verma",
-            total: "₹23,400",
+            total: "INR 23,400",
           },
         ],
       },
@@ -263,13 +263,13 @@ const LandlordPayments = () => {
             srNo: 1,
             month: "Apr-24",
             landlordName: "Ritika Sinha",
-            total: "₹22,500",
+            total: "INR 22,500",
           },
           {
             srNo: 2,
             month: "May-24",
             landlordName: "Ritika Sinha",
-            total: "₹23,000",
+            total: "INR 23,000",
           },
         ],
       },
@@ -288,13 +288,13 @@ const LandlordPayments = () => {
             srNo: 1,
             month: "Apr-24",
             landlordName: "Rohan Desai",
-            total: "₹26,300",
+            total: "INR 26,300",
           },
           {
             srNo: 2,
             month: "May-24",
             landlordName: "Rohan Desai",
-            total: "₹26,800",
+            total: "INR 26,800",
           },
         ],
       },
@@ -313,13 +313,13 @@ const LandlordPayments = () => {
             srNo: 1,
             month: "Apr-24",
             landlordName: "Tina Malhotra",
-            total: "₹31,000",
+            total: "INR 31,000",
           },
           {
             srNo: 2,
             month: "May-24",
             landlordName: "Tina Malhotra",
-            total: "₹31,500",
+            total: "INR 31,500",
           },
         ],
       },
@@ -338,13 +338,13 @@ const LandlordPayments = () => {
             srNo: 1,
             month: "Apr-24",
             landlordName: "Kunal Joshi",
-            total: "₹30,200",
+            total: "INR 30,200",
           },
           {
             srNo: 2,
             month: "May-24",
             landlordName: "Kunal Joshi",
-            total: "₹30,700",
+            total: "INR 30,700",
           },
         ],
       },
@@ -353,11 +353,11 @@ const LandlordPayments = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <WidgetSection title={"Landlord Payments 2024-25".toUpperCase()} border>
+      <WidgetSection titleLabel={"FY 2024-25"} title={"Landlord Payments".toUpperCase()} border>
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
 
-      <WidgetSection title="Unit Wise Landlord Payments">
+      <WidgetSection title="Unit Wise Landlord Payments" border>
         {unitData.map((unit, index) => (
           <Accordion key={index} className="py-4">
             <AccordionSummary
@@ -374,19 +374,14 @@ const LandlordPayments = () => {
                   {(() => {
                     const total = unit.tableData.rows.reduce((acc, row) => {
                       const amount = parseInt(
-                        row.total.replace(/[₹,]/g, ""),
+                        row.total.replace(/[INR ,]/g, ""),
                         10
                       );
                       return acc + (isNaN(amount) ? 0 : amount);
                     }, 0);
 
-                    return total
-                      .toLocaleString("en-IN", {
-                        style: "currency",
-                        currency: "INR",
-                        maximumFractionDigits: 0,
-                      })
-                      .replace("₹", "INR ");
+                    return "INR " + total.toLocaleString("en-IN")
+                       
                   })()}
                 </span>
               </div>

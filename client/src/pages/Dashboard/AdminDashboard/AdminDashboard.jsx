@@ -525,12 +525,12 @@ const AdminDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"}>
-          <LayerBarGraph data={data} options={options} />
+        <WidgetSection border titleLabel={"FY 2024-25"} title={"Budget v/s Achievements"}>
+          <LayerBarGraph data={data} options={options} route={'finance/budget'}/>
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard
-              data={"45K"}
+              data={"INR 45,00,000"}
               title={"Projected"}
               route={"/app/dashboard/admin-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
@@ -539,7 +539,7 @@ const AdminDashboard = () => {
               )}`}
             />
             <DataCard
-              data={"40K"}
+              data={"INR 40,00,000"}
               title={"Actual"}
               route={"/app/dashboard/admin-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
@@ -548,7 +548,7 @@ const AdminDashboard = () => {
               )}`}
             />
             <DataCard
-              data={5000}
+              data={"INR 15,000"}
               title={"Requested"}
               route={"/app/dashboard/admin-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(

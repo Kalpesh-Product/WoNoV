@@ -39,7 +39,7 @@ const FinanceDashboard = () => {
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#4CAF50", "#F44336"], // Green for income, Red for expense
+    colors: ["#54C4A7", "#EB5C45"], // Green for income, Red for expense
     plotOptions: {
       bar: {
         horizontal: false,
@@ -410,7 +410,7 @@ const FinanceDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Income v/s Expenses"}>
+        <WidgetSection border titleLabel={"FY 2024-25"} title={"Income v/s Expenses"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
@@ -422,7 +422,7 @@ const FinanceDashboard = () => {
           layout: 3,
           widgets: [
             <DataCard
-              data={"INR 5,00,000"}
+              data={"INR 50,00,000"}
               title={"Projected"}
               route={"/app/dashboard/finance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString("default", {
@@ -430,7 +430,7 @@ const FinanceDashboard = () => {
               })}`}
             />,
             <DataCard
-              data={"INR 4,00,000"}
+              data={"INR 40,00,000"}
               title={"Actual"}
               route={"/app/dashboard/finance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString("default", {

@@ -151,7 +151,7 @@ const HrBudget = () => {
         borderRadiusApplication: "end",
       },
     },
-    colors: ["#01bf50", "#01411C", "#FF0000"], // Colors for the series
+    colors: ["#54C4A7", "#47755B", "#EB5C45"], // Colors for the series
     dataLabels: {
       enabled: true,
       fontSize: "10px",
@@ -223,28 +223,28 @@ const HrBudget = () => {
   return (
     <div className="flex flex-col gap-8">
       <div className="border-default border-borderGray rounded-md">
-        <WidgetSection layout={1} title={"BUDGET 2024-25"}>
+        <WidgetSection layout={1} titleLabel={"FY 2024-25"} title={"BUDGET"}>
           <LayerBarGraph options={optionss} data={data} />
         </WidgetSection>
       </div>
 
       <WidgetSection layout={3} padding>
         <DataCard
-          data={"45K"}
+          data={"INR 45,00,000"}
           title={"Projected"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "long",
           })}`}
         />
         <DataCard
-          data={"40K"}
+          data={"INR 40,00,000"}
           title={"Actual"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "long",
           })}`}
         />
         <DataCard
-          data={5000}
+          data={"INR 15,000"}
           title={"Requested"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "long",

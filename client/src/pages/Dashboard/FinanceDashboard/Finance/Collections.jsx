@@ -57,7 +57,7 @@ const Collections = () => {
     },
     xaxis: {
       categories: collectionData.map((item) => item.month),
-      title: { text: "2024-2025" },
+       
     },
     yaxis: {
       max: 100,
@@ -76,7 +76,7 @@ const Collections = () => {
         formatter: (val) => `${val}%`,
       },
     },
-    colors: ["#4CAF50", "#F44336"],
+    colors: ["#54C4A7", "#EB5C45"],
   };
 
   const kraColumn = [
@@ -117,12 +117,12 @@ const Collections = () => {
   }));
 
   return (
-    <div className="flex flex-col gap-4">
-      <WidgetSection title={"Collections 2024-25".toUpperCase()} border>
+    <div className="flex flex-col gap-8">
+      <WidgetSection title={"COLLECTIONS"} titleLabel={"FY 2024-25"} border>
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
 
-      <div className="bg-white rounded-md shadow-sm">
+      <WidgetSection border title="Collections" className="bg-white rounded-md shadow-sm">
         {financialData.map((data, index) => (
           <Accordion key={index} className="py-2">
             <AccordionSummary
@@ -148,7 +148,7 @@ const Collections = () => {
             </AccordionDetails>
           </Accordion>
         ))}
-      </div>
+      </WidgetSection>
     </div>
   );
 };

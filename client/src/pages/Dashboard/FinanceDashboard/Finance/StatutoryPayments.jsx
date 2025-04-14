@@ -51,7 +51,7 @@ const StatutoryPayments = () => {
     },
     xaxis: {
       categories: collectionData.map((item) => item.month),
-      title: { text: "2024-2025" },
+    
     },
     yaxis: {
       max: 100,
@@ -70,7 +70,7 @@ const StatutoryPayments = () => {
         formatter: (val) => `${val}%`,
       },
     },
-    colors: ["#4CAF50", "#F44336"], // Green for paid, red for unpaid
+    colors: ["#54C4A7", "#EB5C45"], // Green for paid, red for unpaid
   };
   //--------------------------------------------------------TableData----------------------------------------------------//
   const kraColumn = [
@@ -117,7 +117,7 @@ const StatutoryPayments = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection title={"Statutory Payments 2024-25".toUpperCase()} border>
+      <WidgetSection titleLabel={"FY 2024-25"} title={"Statutory Payments".toUpperCase()} border>
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
 

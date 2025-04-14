@@ -1,7 +1,7 @@
 import React from "react";
 import Chart from "react-apexcharts";
 
-const LayerBarGraph = ({ title, data, options }) => {
+const LayerBarGraph = ({ title, data, options,route }) => {
   // Generate the custom legend items dynamically
   const customLegend = data
     .filter((series) => series.group === "total") // Only include "Total" series
