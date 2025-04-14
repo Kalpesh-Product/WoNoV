@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../../hooks/useAuth";
 import BarGraph from "../../../components/graphs/BarGraph";
 import { useNavigate } from "react-router-dom";
+import BudgetGraph from "../../../components/graphs/BudgetGraph";
 
 const LayerBarGraph = lazy(() =>
   import("../../../components/graphs/LayerBarGraph")
@@ -559,7 +560,8 @@ const HrDashboard = () => {
           }
         >
           <WidgetSection layout={1} border title={"Budget v/s Achievements"} titleLabel={"FY 2024-25"}>
-            <LayerBarGraph data={data} options={optionss} />
+            <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
+
             <hr />
             <WidgetSection layout={3} padding>
               <DataCard
@@ -605,7 +607,7 @@ const HrDashboard = () => {
         {
           icon: <MdMiscellaneousServices />,
           title: "Settings",
-          route: "settings",
+          route: "settings/bulk-upload",
         },
       ]
         .filter((widget) => accessibleModules.has(widget.title)) // ✅ Filter widgets

@@ -1,4 +1,4 @@
-import { Tab, Tabs } from "@mui/material";
+import { Tabs } from "@mui/material";
 import React, { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
