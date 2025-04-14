@@ -193,7 +193,6 @@ const MaintenanceOffices = () => {
         },
       ],
     },
-
   ];
 
   const [selectedMonth, setSelectedMonth] = useState(
@@ -227,7 +226,7 @@ const MaintenanceOffices = () => {
   const graphData = [
     {
       name: "Revenue",
-      data: selectedMonthData.domains.map((domain) => domain.revenue),
+      data: selectedMonthData.domains.map((domain) => domain.clients.length),
     },
   ];
 
@@ -237,7 +236,7 @@ const MaintenanceOffices = () => {
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
-    yaxis: { title: { text: "Number Of Offices" } },
+    yaxis: { title: { text: "Number Of Offices" }, tickAmount : 3 },
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
