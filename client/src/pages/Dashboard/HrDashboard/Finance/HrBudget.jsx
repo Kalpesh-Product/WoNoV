@@ -18,6 +18,7 @@ import { Controller, useForm } from "react-hook-form";
 import DataCard from "../../../../components/DataCard";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 import { toast } from "sonner";
+import BudgetGraph from "../../../../components/graphs/BudgetGraph";
 
 const HrBudget = () => {
   const axios = useAxiosPrivate();
@@ -113,110 +114,20 @@ const HrBudget = () => {
 
   // ---------------------------------------------------------------------//
   // Data for the chart
-  const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
-  const defaultData = utilisedData.map((value) =>
-    Math.max(100 - Math.min(value, 100), 0)
-  );
-  const utilisedStack = utilisedData.map((value) => Math.min(value, 100));
-  const exceededData = utilisedData.map((value) =>
-    value > 100 ? value - 100 : 0
-  );
-
-  const data = [
-    { name: "Utilised Budget", data: utilisedStack },
-    { name: "Default Budget", data: defaultData },
-    { name: "Exceeded Budget", data: exceededData },
+  const utilisedData = [
+    125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
+    50000, 120000,
   ];
 
-  const optionss = {
-    chart: {
-      type: "bar",
-      toolbar: false,
-      stacked: true,
-      fontFamily: "Poppins-Regular",
-    },
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "35%",
-        borderRadius: 3,
-        borderRadiusWhenStacked: "all",
-        borderRadiusApplication: "end",
-      },
-    },
-    colors: ["#01bf50", "#01411C", "#FF0000"], // Colors for the series
-    dataLabels: {
-      enabled: true,
-      fontSize: "10px",
-      formatter: (value, { seriesIndex }) => {
-        if (seriesIndex === 1) return "";
-        return `${value}%`;
-      },
-    },
-    xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
-    },
-    yaxis: {
-      max: 150,
-      labels: {
-        formatter: (value) => `${value}%`,
-      },
-    },
-    tooltip: {
-      shared: true, // Ensure all series values are shown together
-      intersect: false, // Avoid showing individual values for each series separately
-      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-        const utilised = utilisedData[dataPointIndex] || 0;
-        const exceeded = exceededData[dataPointIndex] || 0;
-        const defaultVal = defaultData[dataPointIndex] || 0;
-
-        // Custom tooltip HTML
-        return `
-        <div style="padding: 10px; font-size: 12px; line-height: 1.5; text-align: left;">
-          <strong style="display: block; text-align: center; margin-bottom: 8px;">
-            ${w.globals.labels[dataPointIndex]}
-          </strong>
-          <div style="display: flex; gap:3rem;">
-            <span style="flex: 1; text-align: left;">Default Budget:</span>
-            <span style="flex: 1; text-align: right;">100%</span>
-          </div>
-          <div style="display: flex; gap:3rem;">
-            <span style="flex: 1; text-align: left;">Utilized Budget:</span>
-            <span style="flex: 1; text-align: right;">${utilised}%</span>
-          </div>
-          <div style="display: flex; gap:3rem;">
-            <span style="flex: 1; text-align: left;">Exceeded Budget:</span>
-            <span style="flex: 1; text-align: right;">${exceeded}%</span>
-          </div>
-        </div>
-      `;
-      },
-    },
-
-    legend: {
-      show: true,
-      position: "top",
-    },
-  };
-
+  const maxBudget = [
+    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
+    60000, 110000,
+  ];
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <WidgetSection layout={1} title={"BUDGET 2024-25"} border>
-          <LayerBarGraph options={optionss} data={data} />
+        <WidgetSection layout={1} title={"BUDGET 2024"} border>
+          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget}/>
         </WidgetSection>
       </div>
       <div>

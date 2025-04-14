@@ -15,25 +15,25 @@ const VisitorBulkUpload = () => {
   const bulkUploadData = [
     {
       srNo: 1,
-      templateName: "Upload Employee",
+      templateName: "Upload Visitors",
       uploadedBy: "John Doe",
       date: "01-03-2025",
     },
     {
       srNo: 2,
-      templateName: "Upload Employee",
+      templateName: "Upload Visitors",
       uploadedBy: "Jane Smith",
       date: "08-03-2025",
     },
     {
       srNo: 3,
-      templateName: "Upload Employee",
+      templateName: "Upload Visitors",
       uploadedBy: "Michael Johnson",
       date: "15-03-2025",
     },
     {
       srNo: 4,
-      templateName: "Upload Employee",
+      templateName: "Upload Visitors",
       uploadedBy: "Emily Davis",
       date: "22-03-2025",
     },

@@ -93,16 +93,10 @@ const Sidebar = () => {
       title: "Dashboard",
       submenus: [
         {
-          id: 3,
-          title: "HR Dashboard",
-          icon: <RiAdminFill />,
-          route: "/app/dashboard/HR-dashboard",
-        },
-        {
-          id: 9,
-          title: "IT Dashboard",
-          route: "/app/dashboard/IT-dashboard",
-          icon: <FaLaptopMedical />,
+          id: 4,
+          title: "Finance Dashboard",
+          route: "/app/dashboard/finance-dashboard",
+          icon: <TbCashRegister />,
         },
         {
           id: 5,
@@ -111,18 +105,12 @@ const Sidebar = () => {
           route: "/app/dashboard/sales-dashboard",
         },
         {
-          id: 6,
-          title: "Admin Dashboard",
-          route: "/app/dashboard/admin-dashboard",
-          icon: <FaUserShield />,
+          id: 3,
+          title: "HR Dashboard",
+          icon: <RiAdminFill />,
+          route: "/app/dashboard/HR-dashboard",
         },
 
-        {
-          id: 4,
-          title: "Finance Dashboard",
-          route: "/app/dashboard/finance-dashboard",
-          icon: <TbCashRegister />,
-        },
         {
           id: 2,
           title: "Frontend Dashboard",
@@ -131,10 +119,23 @@ const Sidebar = () => {
         },
 
         {
+          id: 6,
+          title: "Admin Dashboard",
+          route: "/app/dashboard/admin-dashboard",
+          icon: <FaUserShield />,
+        },
+
+        {
           id: 7,
           title: "Maintenance Dashboard",
           route: "/app/dashboard/maintenance-dashboard",
           icon: <GiAutoRepair />,
+        },
+        {
+          id: 9,
+          title: "IT Dashboard",
+          route: "/app/dashboard/IT-dashboard",
+          icon: <FaLaptopMedical />,
         },
 
         {
@@ -163,13 +164,15 @@ const Sidebar = () => {
       <div
         className={`${
           isSidebarOpen ? "w-60" : "w-16"
-        } bg-white  text-black flex flex-shrink-0 h-[90vh] hideScrollBar overflow-y-auto transition-all duration-100 z-[1]`}>
+        } bg-white  text-black flex flex-shrink-0 h-[90vh] hideScrollBar overflow-y-auto transition-all duration-100 z-[1]`}
+      >
         <div className="flex relative w-full">
           <div className="p-0 flex flex-col gap-2 w-full">
             <div
               className={`rounded-md  ${
                 expandedModule === 0 ? "bg-gray-200" : "bg-white"
-              }`}>
+              }`}
+            >
               {defaultModules.map((module, index) => (
                 <div key={index} className="">
                   <div
@@ -189,14 +192,16 @@ const Sidebar = () => {
                     }`}
                     onClick={() => {
                       module.submenus && toggleModule(index);
-                    }}>
+                    }}
+                  >
                     <div className="flex justify-start items-center">
                       <div
                         className={`flex items-center justify-center text-sm h-9 w-9 ${
                           expandedModule === 0
                             ? "bg-primary text-white rounded-md"
                             : ""
-                        }`}>
+                        }`}
+                      >
                         {module.icon}
                       </div>
                       {isSidebarOpen && (
@@ -207,7 +212,8 @@ const Sidebar = () => {
                       <span
                         className={`transition-transform duration-300 ease-in-out ${
                           expandedModule === index ? "rotate-180" : "rotate-0"
-                        }`}>
+                        }`}
+                      >
                         {expandedModule === index ? (
                           <FaChevronUp />
                         ) : (
@@ -219,7 +225,8 @@ const Sidebar = () => {
                   <div
                     className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${
                       expandedModule === index ? "max-h-[500px]" : "max-h-0"
-                    }`}>
+                    }`}
+                  >
                     {module.submenus && (
                       <div>
                         {module.submenus.map((submenu, idx) => (
@@ -230,17 +237,20 @@ const Sidebar = () => {
                                 ? "text-[#1E3D73]"
                                 : "text-gray-500"
                             }  py-3`}
-                            onClick={() => navigate(submenu.route)}>
+                            onClick={() => navigate(submenu.route)}
+                          >
                             <div
                               className={`flex items-center ${
                                 isSidebarOpen
                                   ? "justify-start"
                                   : "justify-center"
-                              }`}>
+                              }`}
+                            >
                               <div
                                 className={`flex justify-center  items-center w-8 ${
                                   isSidebarOpen ? "text-sm" : "text-sm"
-                                }`}>
+                                }`}
+                              >
                                 {submenu.icon}
                               </div>
                               {isSidebarOpen && (
@@ -270,13 +280,15 @@ const Sidebar = () => {
                       : "text-gray-500"
                   } flex ${
                     isSidebarOpen ? "" : "justify-center"
-                  } items-center py-0 `}>
+                  } items-center py-0 `}
+                >
                   <div
                     className={`flex justify-center items-center w-9 h-9 ${
                       isAppsActive(item.route)
                         ? "bg-primary text-white rounded-md"
                         : ""
-                    } text-sm`}>
+                    } text-sm`}
+                  >
                     {item.icon}
                   </div>
                   {isSidebarOpen && (
@@ -298,13 +310,15 @@ const Sidebar = () => {
                       : "text-gray-500"
                   } flex ${
                     isSidebarOpen ? "" : "justify-center"
-                  } items-center py-0 `}>
+                  } items-center py-0 `}
+                >
                   <div
                     className={`flex justify-center items-center w-9 h-9 ${
                       isAppsActive(item.route)
                         ? "bg-primary text-white rounded-md"
                         : ""
-                    } text-sm`}>
+                    } text-sm`}
+                  >
                     {item.icon}
                   </div>
                   {isSidebarOpen && (

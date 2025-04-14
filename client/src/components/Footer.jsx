@@ -68,7 +68,7 @@ const Footer = ({ changeActiveTab }) => {
       </div>
       <div className="flex flex-col justify-center items-center border-t border-gray-600 pt-4">
         <p className="text-content text-gray-400 text-center">
-          Powered by WONOCO PRIVATE LIMITED - SINGAPORE. All Rights Reserved. © Copyright {getFiscalYearString()}
+        © Copyright {getFiscalYearString()}. Powered by WONOCO PRIVATE LIMITED - SINGAPORE. All Rights Reserved.
         </p>
       </div>
     </div>

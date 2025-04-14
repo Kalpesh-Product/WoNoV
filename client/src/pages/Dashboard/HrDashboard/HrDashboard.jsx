@@ -744,7 +744,7 @@ const HrDashboard = () => {
           scroll
         />,
 
-        <MuiTable Title="Top 3 Performers" columns={columns3} rows={rows3} />,
+        <MuiTable Title="Top 3 Performers List" columns={columns3} rows={rows3} />,
         <MuiTable
           Title="Under 3 Performed List"
           columns={columns4}

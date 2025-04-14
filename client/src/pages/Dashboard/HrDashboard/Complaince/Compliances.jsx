@@ -54,6 +54,9 @@ const Compliances = () => {
           backgroundColor: "white",
           borderRadius: 2,
           border: "1px solid #d1d5db",
+          "&:hover": {
+            backgroundColor: "#fffff",
+          },
           "& .MuiTab-root": {
             textTransform: "none",
             fontWeight: "medium",

@@ -12,6 +12,7 @@ import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import dayjs from "dayjs";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 
 const MaintenanceInventory = () => {
   const { auth } = useAuth();
@@ -64,8 +65,6 @@ const MaintenanceInventory = () => {
     },
   });
 
-  console.log(vendorDetials);
-
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
     mutationFn: async (data) => {
@@ -99,12 +98,12 @@ const MaintenanceInventory = () => {
   });
 
   const assetColumns = [
-    { field: "id", headerName: "Sr No" },
+    { field: "id", headerName: "Sr No", width: 100 },
     { field: "department", headerName: "Department" },
     { field: "inventoryNumber", headerName: "Inventory Number" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
+    { field: "price", headerName: "Price (INR)" },
     { field: "quantity", headerName: "Quantity" },
     { field: "purchaseDate", headerName: "Purchase Date" },
     { field: "warranty", headerName: "Warranty (Months)" },
@@ -112,27 +111,15 @@ const MaintenanceInventory = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <PrimaryButton
-          title="Details"
-          handleSubmit={() => handleDetailsClick(params.data)}
-        />
+        <div className="p-2">
+          <PrimaryButton
+            title="Details"
+            handleSubmit={() => handleDetailsClick(params.data)}
+          />
+        </div>
       ),
     },
   ];
-  
-
-  // const { data: assetsList = [] } = useQuery({
-  //   queryKey: ["assetsList"],
-  //   queryFn: async () => {
-  //     try {
-  //       const response = await axios.get("/api/assets/get-assets");
-  //       return response.data;
-  //     } catch (error) {
-  //       throw new Error(error.response.data.message);
-  //     }
-  //   },
-  // });
-
   const inventoryData = [
     {
       srNo: 1,
@@ -212,7 +199,6 @@ const MaintenanceInventory = () => {
       warranty: 12,
     },
   ];
-  
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -247,20 +233,25 @@ const MaintenanceInventory = () => {
             inventoryNumber: item.inventoryNumber,
             category: item.category,
             brand: item.brand,
-            price: Number(item.price.toString().replace(/,/g, "")).toLocaleString("en-IN", {
+            price: Number(
+              item.price.toString().replace(/,/g, "")
+            ).toLocaleString("en-IN", {
               maximumFractionDigits: 0,
             }),
             quantity: item.quantity,
-            purchaseDate: dayjs(item.purchaseDate).format("DD-MM-YYYY") ,
+            purchaseDate: dayjs(item.purchaseDate).format("DD-MM-YYYY"),
             warranty: item.warranty,
           })),
         ]}
-        
         columns={assetColumns}
         handleClick={handleAddAsset}
       />
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalMode === "view" ? "View Details" : "Add Inventory"}
+      >
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -277,7 +268,8 @@ const MaintenanceInventory = () => {
                           errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                        } `}>
+                        } `}
+                      >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -287,7 +279,8 @@ const MaintenanceInventory = () => {
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}>
+                          }}
+                        >
                           <Button
                             variant="outlined"
                             component="label"
@@ -302,7 +295,8 @@ const MaintenanceInventory = () => {
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}>
+                            }}
+                          >
                             Select Image
                             <input
                               type="file"
@@ -328,7 +322,8 @@ const MaintenanceInventory = () => {
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}>
+                            }}
+                          >
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -344,9 +339,11 @@ const MaintenanceInventory = () => {
                     <TextField
                       {...field}
                       label="Asset Type"
+                      size="small"
                       helperText={!!errors.assetType?.message}
-                      select>
-                      <MenuItem value="">Select an Asset Type</MenuItem>
+                      select
+                    >
+                      <MenuItem value="" disabled>Select an Asset Type</MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
                     </TextField>
@@ -365,7 +362,8 @@ const MaintenanceInventory = () => {
                       {...field}
                       select
                       label="Department"
-                      size="small">
+                      size="small"
+                    >
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -386,7 +384,8 @@ const MaintenanceInventory = () => {
                       fullWidth
                       select
                       label="Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -406,7 +405,8 @@ const MaintenanceInventory = () => {
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}
@@ -541,6 +541,39 @@ const MaintenanceInventory = () => {
                 {/* Cancel button for edit mode */}
               </div>
             </form>
+          </div>
+        )}
+        {modalMode === "view" && selectedAsset && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3 px-2 py-4">
+            <DetalisFormatted
+              title="Department"
+              detail={selectedAsset.department}
+            />
+            <DetalisFormatted
+              title="Inventory Number"
+              detail={selectedAsset.inventoryNumber}
+            />
+            <DetalisFormatted
+              title="Category"
+              detail={selectedAsset.category}
+            />
+            <DetalisFormatted title="Brand" detail={selectedAsset.brand} />
+            <DetalisFormatted
+              title="Price"
+              detail={`${selectedAsset.price} INR`}
+            />
+            <DetalisFormatted
+              title="Quantity"
+              detail={selectedAsset.quantity}
+            />
+            <DetalisFormatted
+              title="Purchase Date"
+              detail={selectedAsset.purchaseDate}
+            />
+            <DetalisFormatted
+              title="Warranty (Months)"
+              detail={selectedAsset.warranty}
+            />
           </div>
         )}
       </MuiModal>

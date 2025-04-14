@@ -6,87 +6,25 @@ import {
 } from "react-icons/md";
 import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import WidgetSection from "../../../components/WidgetSection";
-import LayerBarGraph from "../../../components/graphs/LayerBarGraph";
 import DataCard from "../../../components/DataCard";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
 import DonutChart from "../../../components/graphs/DonutChart";
 import { useNavigate } from "react-router-dom";
+import BudgetGraph from "../../../components/graphs/BudgetGraph";
 
 const ItDashboard = () => {
   const navigate = useNavigate()
-  const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
-  const defaultData = utilisedData.map((value) =>
-    Math.max(100 - Math.min(value, 100), 0)
-  );
-  const utilisedStack = utilisedData.map((value) => Math.min(value, 100));
-  const exceededData = utilisedData.map((value) =>
-    value > 100 ? value - 100 : 0
-  );
-
-  const data = [
-    { name: "Utilised Budget", data: utilisedStack },
-    { name: "Default Budget", data: defaultData },
-    { name: "Exceeded Budget", data: exceededData },
+  const utilisedData = [
+    125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
+    50000, 120000,
   ];
 
-  const options = {
-    chart: {
-      type: "bar",
-      stacked: true,
-      toolbar: false,
-      fontFamily: "Poppins-Regular",
-    },
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "35%",
-        borderRadius: 3,
-        borderRadiusWhenStacked: "all",
-        borderRadiusApplication: "end",
-      },
-    },
-    colors: ["#36BA98", "#275D3E", "#E83F25"], // Colors for the series
-    dataLabels: {
-      enabled: true,
-      formatter: (value, { seriesIndex }) => {
-        if (seriesIndex === 1) return "";
-        return `${value}%`;
-      },
-    },
-    xaxis: {
-      categories: [
-        "Jan-24",
-        "Feb-24",
-        "Mar-24",
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-      ],
-    },
-    yaxis: {
-      max: 150,
-      labels: {
-        formatter: (value) => `${value}%`,
-      },
-    },
-    tooltip: {
-      y: {
-        formatter: (value) => `${value}%`,
-      },
-    },
-    legend: {
-      show: true,
-      position: "top",
-    },
-  };
+  const maxBudget = [
+    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
+    60000, 110000,
+  ];
 
   const taskData = [
     { unit: "ST-701A", tasks: 25 },
@@ -312,7 +250,7 @@ const ItDashboard = () => {
       layout: 1,
       widgets: [
         <WidgetSection border title={"Budget v/s Achievements"}>
-          <LayerBarGraph data={data} options={options} />
+          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Country, State } from "country-state-city";
 import { useMutation } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import  useAuth  from "../../../../hooks/useAuth";
+import useAuth from "../../../../hooks/useAuth";
 
 const VendorOnboard = () => {
   const { auth } = useAuth();
@@ -49,6 +49,11 @@ const VendorOnboard = () => {
   });
 
   const vendorColumns = [
+    {
+      headerName: "S.No",
+      valueGetter: (params) => params.node.rowIndex + 1,
+      width: 80,
+    },
     { field: "vendorID", headerName: "Vendor ID", width: 100 },
     {
       field: "vendorName",
@@ -79,7 +84,7 @@ const VendorOnboard = () => {
           Active: { backgroundColor: "#90EE90", color: "#006400" },
           "In Active": { backgroundColor: "#FFECC5", color: "#CC8400" },
         };
-  
+
         const { backgroundColor, color } = statusColorMap[params.value] || {
           backgroundColor: "gray",
           color: "white",
@@ -107,7 +112,7 @@ const VendorOnboard = () => {
       ),
     },
   ];
-  
+
 
   const rows = [
     {
