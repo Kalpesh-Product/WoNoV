@@ -28,7 +28,11 @@ const AssetsDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection layout={1} border title={"Assets Value"}>
+        <WidgetSection
+          layout={1}
+          border
+          title={"Assets Value"}
+          titleLabel={"FY 2024-25"}>
           <BarGraph
             height={400}
             data={assetUtilizationSeries}
@@ -106,8 +110,7 @@ const AssetsDashboard = () => {
         <WidgetSection
           layout={1}
           title={"Assigned v/s Unassigned Assets"}
-          border
-        >
+          border>
           <PieChartMui
             data={assetAvailabilityData}
             options={assetAvailabilityOptions}
@@ -117,6 +120,7 @@ const AssetsDashboard = () => {
           <PieChartMui
             data={physicalDigitalPieData}
             options={physicalDigitalOptions}
+            width={475}
           />
         </WidgetSection>,
       ],
@@ -132,7 +136,7 @@ const AssetsDashboard = () => {
           />
         </WidgetSection>,
         <WidgetSection layout={1} title={"Asset Categories"} border>
-          <DonutChart {...assetCategoriesData} />
+          <DonutChart {...assetCategoriesData} width={440} />
         </WidgetSection>,
       ],
     },
@@ -140,14 +144,14 @@ const AssetsDashboard = () => {
       layout: 1,
       widgets: [
         <WidgetSection layout={1} padding>
-            <MuiTable
-              Title="Recently Added Assets"
-              columns={recentAssetsColumns}
-              rows={recentAssetsData}
-              rowKey="id"
-              rowsToDisplay={8}
-              className="h-full"
-            />
+          <MuiTable
+            Title="Recently Added Assets"
+            columns={recentAssetsColumns}
+            rows={recentAssetsData}
+            rowKey="id"
+            rowsToDisplay={8}
+            className="h-full"
+          />
         </WidgetSection>,
       ],
     },

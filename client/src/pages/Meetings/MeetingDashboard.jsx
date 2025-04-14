@@ -304,9 +304,6 @@ const MeetingDashboard = () => {
 
   // Example booked hours data per month
   const actualBookedHoursPerMonth = {
-    Jan: 1500,
-    Feb: 1600,
-    Mar: 1750,
     Apr: 1300,
     May: 1400,
     Jun: 1550,
@@ -316,6 +313,9 @@ const MeetingDashboard = () => {
     Oct: 1900,
     Nov: 1850,
     Dec: 1950,
+    Jan: 1500,
+    Feb: 1600,
+    Mar: 1750,
   };
 
   // Calculate percentage utilization
