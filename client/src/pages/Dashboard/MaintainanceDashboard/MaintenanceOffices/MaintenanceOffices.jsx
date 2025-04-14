@@ -23,7 +23,7 @@ const MaintenanceOffices = () => {
       domains: [
         {
           name: "ST-701A",
-          revenue: 10,
+          revenue: 5,
           clients: [
             {
               client: "Zomato",
@@ -47,7 +47,7 @@ const MaintenanceOffices = () => {
         },
         {
           name: "ST-701B",
-          revenue: 10,
+          revenue: 4,
           clients: [
             {
               client: "Client D",
@@ -65,7 +65,7 @@ const MaintenanceOffices = () => {
         },
         {
           name: "ST-601A",
-          revenue: 10,
+          revenue: 6,
           clients: [
             { client: "Client F", revenue: 5000 },
             { client: "Client G", revenue: 7000 },
@@ -98,7 +98,7 @@ const MaintenanceOffices = () => {
         },
         {
           name: "ST-501A",
-          revenue: 10,
+          revenue: 5,
           clients: [
             {
               client: "Client F",
@@ -199,7 +199,6 @@ const MaintenanceOffices = () => {
     mockBusinessRevenueData[0].month
   ); // Default to first month
 
-
   // Function to update selected month
   const handleMonthChange = (event) => {
     setSelectedMonth(event.target.value);
@@ -216,7 +215,7 @@ const MaintenanceOffices = () => {
         ...client,
         srNo: index + 1,
         registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
-        actualRevenue: Number(client.actualRevenue).toLocaleString("en-IN")
+        actualRevenue: Number(client.actualRevenue).toLocaleString("en-IN"),
       }));
       return { ...domain, clients: updatedClients };
     });
@@ -225,14 +224,20 @@ const MaintenanceOffices = () => {
   // Prepare Bar Graph Data
   const graphData = [
     {
-      name: "Revenue",
-      data: selectedMonthData.domains.map((domain) => domain.clients.length),
+      // name: "Revenue",
+      name: "Offices",
+      data: selectedMonthData.domains.map((domain) => domain.revenue),
     },
   ];
 
   // Graph Options
   const options = {
-    chart: { type: "bar", toolbar: false, stacked: false, fontFamily: "Poppins-Regular" },
+    chart: {
+      type: "bar",
+      toolbar: false,
+      stacked: false,
+      fontFamily: "Poppins-Regular",
+    },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
@@ -355,7 +360,6 @@ const MaintenanceOffices = () => {
                       field: "actualRevenue",
                       flex: 1,
                     },
-
                   ]}
                   tableHeight={300}
                 />
