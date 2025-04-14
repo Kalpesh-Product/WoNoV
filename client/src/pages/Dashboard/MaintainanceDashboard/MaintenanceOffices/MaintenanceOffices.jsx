@@ -126,7 +126,7 @@ const MaintenanceOffices = () => {
       month: "May",
       domains: [
         {
-          name: "Co-Working",
+          name: "ST-701A",
           revenue: 10,
           clients: [
             {
@@ -150,7 +150,7 @@ const MaintenanceOffices = () => {
           ],
         },
         {
-          name: "Workation",
+          name: "ST-701B",
           revenue: 9000,
           clients: [
             {
@@ -168,7 +168,7 @@ const MaintenanceOffices = () => {
           ],
         },
         {
-          name: "Co-Living",
+          name: "ST-601A",
           revenue: 14000,
           clients: [
             {
@@ -193,148 +193,7 @@ const MaintenanceOffices = () => {
         },
       ],
     },
-    {
-      month: "June",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 18000,
-          clients: [
-            {
-              client: "Client Q",
-              representative: "Olivia Rose",
-              registerDate: "2024-01-30",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client R",
-              representative: "Peter Brown",
-              registerDate: "2024-02-18",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client S",
-              representative: "Quincy Black",
-              registerDate: "2024-03-26",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 10000,
-          clients: [
-            {
-              client: "Client T",
-              representative: "Rachel Violet",
-              registerDate: "2024-04-12",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client U",
-              representative: "Sam Indigo",
-              registerDate: "2024-05-07",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 13000,
-          clients: [
-            {
-              client: "Client V",
-              representative: "Tina Lilac",
-              registerDate: "2024-06-05",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client W",
-              representative: "Umar Yellow",
-              registerDate: "2024-07-08",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Client X",
-              representative: "Victor Pink",
-              registerDate: "2024-08-15",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "July",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 20000,
-          clients: [
-            {
-              client: "Client Y",
-              representative: "Wendy Red",
-              registerDate: "2024-03-10",
-              actualRevenue: 8000,
-            },
-            {
-              client: "Client Z",
-              representative: "Xavier Green",
-              registerDate: "2024-04-14",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client AA",
-              representative: "Yara Blue",
-              registerDate: "2024-05-16",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 11000,
-          clients: [
-            {
-              client: "Client AB",
-              representative: "Zane Orange",
-              registerDate: "2024-06-20",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client AC",
-              representative: "Adam Gray",
-              registerDate: "2024-07-10",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 16000,
-          clients: [
-            {
-              client: "Client AD",
-              representative: "Betty Silver",
-              registerDate: "2024-08-25",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client AE",
-              representative: "Charlie Platinum",
-              registerDate: "2024-09-14",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client AF",
-              representative: "David Bronze",
-              registerDate: "2024-10-05",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
+
   ];
 
   const [selectedMonth, setSelectedMonth] = useState(

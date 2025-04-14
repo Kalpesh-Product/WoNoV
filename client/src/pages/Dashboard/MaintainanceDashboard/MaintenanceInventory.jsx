@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import dayjs from "dayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const MaintenanceInventory = () => {
   const { auth } = useAuth();
@@ -111,11 +112,15 @@ const MaintenanceInventory = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <div className="p-2">
-          <PrimaryButton
-            title="Details"
-            handleSubmit={() => handleDetailsClick(params.data)}
-          />
+        <div
+          onClick={() => {
+            handleDetailsClick(params.data);
+          }}
+          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
+        >
+          <span className="text-subtitle">
+            <MdOutlineRemoveRedEye />
+          </span>
         </div>
       ),
     },
@@ -343,7 +348,9 @@ const MaintenanceInventory = () => {
                       helperText={!!errors.assetType?.message}
                       select
                     >
-                      <MenuItem value="" disabled>Select an Asset Type</MenuItem>
+                      <MenuItem value="" disabled>
+                        Select an Asset Type
+                      </MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
                     </TextField>
