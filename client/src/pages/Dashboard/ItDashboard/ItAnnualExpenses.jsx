@@ -3,7 +3,7 @@ import PrimaryButton from "../../../components/PrimaryButton";
 
 const ItAnnualExpenses = () => {
   const expenseColumns = [
-    { field: "id", headerName: "ID" },
+    { field: "id", headerName: "Sr.No" }, // Updated here
     { field: "category", headerName: "Category" },
     { field: "expenseName", headerName: "Expense Name" },
     { field: "date", headerName: "Date" },
@@ -14,6 +14,7 @@ const ItAnnualExpenses = () => {
       cellRenderer: (params) => <PrimaryButton title="Details" />,
     },
   ];
+
   const expenseData = [
     {
       category: "Bills",
