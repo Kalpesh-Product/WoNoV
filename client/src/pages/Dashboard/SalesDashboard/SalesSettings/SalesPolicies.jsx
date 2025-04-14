@@ -3,9 +3,12 @@ import { MdUpload } from "react-icons/md";
 import WidgetSection from "../../../../components/WidgetSection";
 import AgTable from "../../../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
+import PrimaryButton from "../../../../components/PrimaryButton";
 
 const SalesPolicies = () => {
-  const uploadItems = ["Upload Policies"];
+  const uploadItems = [
+    "Upload Policies"
+  ];
   const policiesUploadDataColumns = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "templateName", headerName: "Template Name", flex: 1 },
@@ -48,11 +51,18 @@ const SalesPolicies = () => {
       <hr />
 
       <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
+      <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
         {uploadItems.map((index, item) => {
           return (
             <>
               <div
                 className="space-y-2 border-default p-4  rounded-md"
+                key={index}
+              >
+                <div className="mb-2">
+                  <span className="text-subtitle text-primary">{index}</span>
+                </div>
+                <div className="flex gap-4">
                 key={index}
               >
                 <div className="mb-2">
@@ -70,6 +80,16 @@ const SalesPolicies = () => {
                     <div className="bg-borderGray text-black p-2 rounded-md cursor-pointer hover:bg-gray-200 transition-all">
                       <IoMdDownload style={{ fill: "black" }} />
                     </div>
+                  <div className="flex items-end w-full border justify-end border-gray-200 rounded-md">
+                    <PrimaryButton title={"Choose File"} />
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <div className="bg-borderGray text-black p-2 rounded-md cursor-pointer hover:bg-gray-200 transition-all">
+                      <MdUpload style={{ fill: "black" }} />
+                    </div>
+                    <div className="bg-borderGray text-black p-2 rounded-md cursor-pointer hover:bg-gray-200 transition-all">
+                      <IoMdDownload style={{ fill: "black" }} />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -77,8 +97,9 @@ const SalesPolicies = () => {
           );
         })}
       </div>
+
       <div>
-        <WidgetSection border title="Policies Data">
+        <WidgetSection border title="Bulk Upload Data">
           <AgTable
             data={policiesUploadData}
             columns={policiesUploadDataColumns}

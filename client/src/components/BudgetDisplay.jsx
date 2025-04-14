@@ -18,24 +18,27 @@ import { MdTrendingUp } from "react-icons/md";
 import { BsCheckCircleFill } from "react-icons/bs";
 import AllocatedBudget from "./Tables/AllocatedBudget";
 import { useQuery } from "@tanstack/react-query";
+import { inrFormat } from "../utils/currencyFormat";
+import DataCard from "./DataCard";
+import BudgetGraph from "./graphs/BudgetGraph";
 
 const BudgetDisplay = ({ budgetData }) => {
   const axios = useAxiosPrivate();
-  
-     const { data: hrFinance = [] } = useQuery({
-        queryKey: ["hrFinance"],
-        queryFn: async () => {
-          try {
-            const response = await axios.get(
-              `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
+
+  const { data: hrFinance = [] } = useQuery({
+    queryKey: ["hrFinance"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
               `
-            );
-            return response.data.allBudgets;
-          } catch (error) {
-            throw new Error("Error fetching data");
-          }
-        },
-      });
+        );
+        return response.data.allBudgets;
+      } catch (error) {
+        throw new Error("Error fetching data");
+      }
+    },
+  });
 
   const [openModal, setOpenModal] = useState(false);
 
@@ -94,132 +97,71 @@ const BudgetDisplay = ({ budgetData }) => {
   }, {});
 
   // Convert grouped data to array and sort by latest month (descending order)
- const financialData = Object.values(groupedData)
-    .map((data,index) => {
-       
-      const transoformedRows = data.tableData.rows.map((row,index)=>({...row,srNo:index+1,projectedAmount:Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 })}))
+  const financialData = Object.values(groupedData)
+    .map((data, index) => {
+
+      const transoformedRows = data.tableData.rows.map((row, index) => ({ ...row, srNo: index + 1, projectedAmount: Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }) }))
       const transformedCols = [
         { field: 'srNo', headerName: 'SR NO', flex: 1 },
         ...data.tableData.columns
       ];
 
-      return({
-      ...data,
-      projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-      amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-      tableData: {...data.tableData, rows:transoformedRows,columns: transformedCols}
+      return ({
+        ...data,
+        projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        tableData: { ...data.tableData, rows: transoformedRows, columns: transformedCols }
+      })
     })
-  })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending // Sort descending
 
   // ---------------------------------------------------------------------//
   // Data for the chart
-  const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
-  const defaultData = utilisedData.map((value) =>
-    Math.max(100 - Math.min(value, 100), 0)
-  );
-  const utilisedStack = utilisedData.map((value) => Math.min(value, 100));
-  const exceededData = utilisedData.map((value) =>
-    value > 100 ? value - 100 : 0
-  );
-
-  const data = [
-    { name: "Utilised Budget", data: utilisedStack },
-    { name: "Default Budget", data: defaultData },
-    { name: "Exceeded Budget", data: exceededData },
+  const utilisedData = [
+    125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
+    50000, 120000,
   ];
 
-  const optionss = {
-    chart: {
-      type: "bar",
-      stacked: true,
-      toolbar: false,
-      fontFamily: "Poppins-Regular",
-    },
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "35%",
-        borderRadius: 3,
-        borderRadiusWhenStacked: "all",
-        borderRadiusApplication: "end",
-      },
-    },
-    colors: ["#01bf50", "#01411C", "#FF0000"], // Colors for the series
-    dataLabels: {
-      enabled: true,
-      fontSize: "10px",
-      formatter: (value, { seriesIndex }) => {
-        if (seriesIndex === 1) return "";
-        return `${value}%`;
-      },
-    },
-    xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
-    },
-    yaxis: {
-      max: 150,
-      labels: {
-        formatter: (value) => `${value}%`,
-      },
-    },
-    tooltip: {
-      shared: true, // Ensure all series values are shown together
-      intersect: false, // Avoid showing individual values for each series separately
-      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-        const utilised = utilisedData[dataPointIndex] || 0;
-        const exceeded = exceededData[dataPointIndex] || 0;
-        const defaultVal = defaultData[dataPointIndex] || 0;
-
-        // Custom tooltip HTML
-        return `
-        <div style="padding: 10px; font-size: 12px; line-height: 1.5; text-align: left;">
-          <strong style="display: block; text-align: center; margin-bottom: 8px;">
-            ${w.globals.labels[dataPointIndex]}
-          </strong>
-          <div style="display: flex; gap:3rem;">
-            <span style="flex: 1; text-align: left;">Default Budget:</span>
-            <span style="flex: 1; text-align: right;">100%</span>
-          </div>
-          <div style="display: flex; gap:3rem;">
-            <span style="flex: 1; text-align: left;">Utilized Budget:</span>
-            <span style="flex: 1; text-align: right;">${utilised}%</span>
-          </div>
-          <div style="display: flex; gap:3rem;">
-            <span style="flex: 1; text-align: left;">Exceeded Budget:</span>
-            <span style="flex: 1; text-align: right;">${exceeded}%</span>
-          </div>
-        </div>
-      `;
-      },
-    },
-
-    legend: {
-      show: true,
-      position: "top",
-    },
-  };
-
+  const maxBudget = [
+    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
+    60000, 110000,
+  ];
   return (
     <div className="flex flex-col gap-8">
-      <div className="rounded-md">
+      <div>
         <WidgetSection border layout={1} title={"BUDGET 2024-25"}>
-          <LayerBarGraph options={optionss} data={data} />
+          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget}/>
         </WidgetSection>
       </div>
+      <WidgetSection layout={3} padding>
+        <DataCard
+          data={"INR " + inrFormat("4000000")}
+          title={"Projected"}
+          route={"/app/dashboard/it-dashboard/finance/budget"}
+          description={`Current Month : ${new Date().toLocaleString(
+            "default",
+            { month: "long" }
+          )}`}
+        />
+        <DataCard
+          data={"INR " + inrFormat("3500000")}
+          title={"Actual"}
+          route={"/app/dashboard/it-dashboard/finance/budget"}
+          description={`Current Month : ${new Date().toLocaleString(
+            "default",
+            { month: "long" }
+          )}`}
+        />
+        <DataCard
+          data={"INR " + inrFormat(60000)}
+          title={"Requested"}
+          route={"/app/dashboard/it-dashboard/finance/budget"}
+          description={`Current Month : ${new Date().toLocaleString(
+            "default",
+            { month: "long" }
+          )}`}
+        />
+      </WidgetSection>
 
       <div className="flex justify-end">
         <PrimaryButton
@@ -230,7 +172,7 @@ const BudgetDisplay = ({ budgetData }) => {
         />
       </div>
 
-      <AllocatedBudget financialData={financialData}/>
+      <AllocatedBudget financialData={financialData} />
       <MuiModal
         title="Request Budget"
         open={openModal}

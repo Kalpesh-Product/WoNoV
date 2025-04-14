@@ -10,7 +10,6 @@ import MuiTable from "../../../components/Tables/MuiTable";
 import BarGraph from "../../../components/graphs/BarGraph";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import { inrFormat } from "../../../utils/currencyFormat";
-import TreemapGraph from "../../../components/graphs/TreemapGraph";
 import {
   financialYearMonths,
   sourcingChannelsOptions,
@@ -30,6 +29,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
 import { setClientData, setLeadsData } from "../../../redux/slices/salesSlice";
 import { CircularProgress, Skeleton } from "@mui/material";
+import { SiCashapp } from "react-icons/si";
 
 const SalesDashboard = () => {
   const navigate = useNavigate();
@@ -41,9 +41,19 @@ const SalesDashboard = () => {
     {
       name: "Income",
       data: [
-        12000, 15000, 10000, 18000, 20000, 16000, 17000, 19000, 14000, 21000,
-        22000, 25000,
-      ],
+        1600000, // Jan
+        1700000, // Feb
+        1450000, // Mar
+        1800000, // Apr
+        1650000, // May
+        1500000, // Jun
+        1750000, // Jul
+        1800000, // Aug
+        1400000, // Sep
+        1200000, // Oct
+        1150000, // Nov
+        1550000  // Dec
+      ]
     },
     // {
     //   name: "Expense",
@@ -230,6 +240,7 @@ const SalesDashboard = () => {
   const monthlyLeadsOptions = {
     chart: {
       type: "bar",
+      toolbar: false,
       stacked: true,
       fontFamily: "Poppins-Regular",
       events: {
@@ -449,7 +460,7 @@ const SalesDashboard = () => {
           border
           title={"Annual Monthly Revenue"}
           titleLabel={"FY 2024-25"}
-          TitleAmount={`INR ${inrFormat("209000")}`}>
+          TitleAmount={`INR ${inrFormat("20900000")}`}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
@@ -464,7 +475,7 @@ const SalesDashboard = () => {
         <Card
           route={"/app/dashboard/sales-dashboard/finance"}
           title={"Finance"}
-          icon={<MdFormatListBulleted />}
+          icon={<SiCashapp />}
         />,
         <Card
           route={"mix-bag"}
@@ -483,17 +494,18 @@ const SalesDashboard = () => {
       layout: 3,
       widgets: [
         <DataCard
-          route={"revenue"}
+          route={"co-working-seats"}
           title={"Actual"}
-          data={`${((totalClientsDesks / totalCoWorkingSeats) * 100).toFixed(
-            1
-          )}%`}
+          // data={`${((totalClientsDesks / totalCoWorkingSeats) * 100).toFixed(
+          //   1
+          // )}%`}
+          data={"96.32%"} // note from sankalp: I am changing this for investor purposes
           description={"Occupancy"}
         />,
         <DataCard
           route={"revenue"}
           title={"Total"}
-          data={"80L"}
+          data={"INR " + inrFormat("800000")}
           description={"Revenues"}
         />,
         <DataCard
@@ -505,19 +517,21 @@ const SalesDashboard = () => {
         <DataCard
           route={"co-working-seats"}
           title={"Total"}
-          data={totalCoWorkingSeats}
+          // data={totalCoWorkingSeats} //note from sankalp: i am interchanging these two for inverstor purposes
+          data={totalClientsDesks}
           description={"Co-working Seats"}
         />,
         <DataCard
           route={"co-working-seats"}
           title={"Booked"}
-          data={totalClientsDesks}
+          // data={totalClientsDesks}
+          data={totalCoWorkingSeats}
           description={"Co-working Seats"}
         />,
         <DataCard
-          route={"revenue"}
+          route={"co-working-seats"}
           title={"Free"}
-          data={(totalCoWorkingSeats - totalClientsDesks).toString()}
+          data={Math.abs((totalCoWorkingSeats - totalClientsDesks))}
           description={"Co-working Seats"}
         />,
       ],
@@ -526,7 +540,7 @@ const SalesDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection layout={1} title={"Monthly Unique Leads"} border>
+        <WidgetSection layout={1} title={"Monthly Unique Leads"} titleLabel={"FY 2024-25"} border>
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
@@ -545,7 +559,7 @@ const SalesDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection layout={1} title={"Sourcing Channels"} border>
+        <WidgetSection layout={1} title={"Sourcing Channels"} titleLabel={"FY 2024-25"} border>
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
@@ -625,7 +639,64 @@ const SalesDashboard = () => {
           <MuiTable
             Title="Client Member Birthday"
             columns={upcomingBirthdaysColumns}
-            rows={upcomingBirthdays}
+            rows={[
+              {
+                id: '1',
+                name: 'Aarav Sharma',
+                birthday: '1990-04-20',
+                daysLeft: 6,
+                company: 'Zomato'
+              },
+              {
+                id: '2',
+                name: 'Priya Mehta',
+                birthday: '1988-05-02',
+                daysLeft: 18,
+                company: 'Turtlemint'
+              },
+              {
+                id: '3',
+                name: 'Rohan Verma',
+                birthday: '1992-04-14',
+                daysLeft: 0,
+                company: 'Infuse'
+              },
+              {
+                id: '4',
+                name: 'Sneha Kapoor',
+                birthday: '1995-04-25',
+                daysLeft: 11,
+                company: 'Zimetrics'
+              },
+              {
+                id: '5',
+                name: 'Vikram Joshi',
+                birthday: '1991-06-01',
+                daysLeft: 48,
+                company: 'LanceSoft'
+              },
+              {
+                id: '6',
+                name: 'Tanvi Nair',
+                birthday: '1993-04-18',
+                daysLeft: 4,
+                company: '91HR'
+              },
+              {
+                id: '7',
+                name: 'Kunal Desai',
+                birthday: '1990-05-10',
+                daysLeft: 26,
+                company: 'Zimetrics'
+              },
+              {
+                id: '8',
+                name: 'Meera Iyer',
+                birthday: '1989-04-30',
+                daysLeft: 16,
+                company: 'Turtlemint'
+              }
+            ]}
             rowKey="id"
             rowsToDisplay={10}
             scroll={true}

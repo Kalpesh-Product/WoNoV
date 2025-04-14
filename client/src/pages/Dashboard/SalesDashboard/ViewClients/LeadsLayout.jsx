@@ -8,7 +8,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import { useNavigate } from "react-router-dom";
 
 const LeadsLayout = ({ hideAccordion, data }) => {
-    const navigate = useNavigate()
+  const navigate = useNavigate()
   // ✅ Dynamically Count Clients Per Domain
   const transformedData = data.map((monthData) => {
     const domainCounts = {
@@ -53,11 +53,12 @@ const LeadsLayout = ({ hideAccordion, data }) => {
   const barChartOptions = {
     chart: {
       type: "bar",
+      toolbar: false,
       stacked: true, // ✅ Stacked bars for better comparison
       fontFamily: "Poppins-Regular",
       events: {
-        dataPointSelection : ()=>{
-            navigate("/app/dashboard/sales-dashboard/unique-clients")
+        dataPointSelection: () => {
+          navigate("/app/dashboard/sales-dashboard/unique-clients")
         }
       }
     },
@@ -91,7 +92,8 @@ const LeadsLayout = ({ hideAccordion, data }) => {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <WidgetSection layout={1} border padding title={"Unique Clients"}>
+      <WidgetSection layout={1} border padding title={"Unique Clients"} titleLabel="FY 2024-25">
+        <div className="p-1"></div>
         <BarGraph
           data={uniqueClientsData}
           title=""
