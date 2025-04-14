@@ -173,7 +173,7 @@ const Projections = () => {
         <WidgetSection
           border
           title={`Total Monthly P&L`}
-          titleLabel={"2024 - 2025"}
+          titleLabel={"FY 2024-25"}
           TitleAmount={`INR ${totalPnL.toLocaleString()}`}>
           <AgTable
             data={monthlyProfitLossData}

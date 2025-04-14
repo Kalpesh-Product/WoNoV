@@ -523,6 +523,7 @@ const FinanceDashboard = () => {
             colors={donutRentalColors}
             series={donutRentalSeries}
             tooltipValue={donutRentalTooltipValue}
+            isMonetary={true}
           />
         </WidgetSection>,
       ],
