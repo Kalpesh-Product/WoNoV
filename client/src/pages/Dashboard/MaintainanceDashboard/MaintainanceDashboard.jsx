@@ -13,79 +13,20 @@ import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import BudgetGraph from "../../../components/graphs/BudgetGraph";
+import {inrFormat} from '../../../utils/currencyFormat'
 
 const MaintainanceDashboard = () => {
-  const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
-  const defaultData = utilisedData.map((value) =>
-    Math.max(100 - Math.min(value, 100), 0)
-  );
-  const utilisedStack = utilisedData.map((value) => Math.min(value, 100));
-  const exceededData = utilisedData.map((value) =>
-    value > 100 ? value - 100 : 0
-  );
-  const navigate = useNavigate()
-  const data = [
-    { name: "Utilised Budget", data: utilisedStack },
-    { name: "Default Budget", data: defaultData },
-    { name: "Exceeded Budget", data: exceededData },
+  const navigate= useNavigate()
+  const utilisedData = [
+    125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
+    50000, 120000,
   ];
 
-  const options = {
-    chart: {
-      type: "bar",
-      toolbar: false,
-      stacked: true,
-      fontFamily: "Poppins-Regular",
-    },
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "35%",
-        borderRadius: 3,
-        borderRadiusWhenStacked: "all",
-        borderRadiusApplication: "end",
-      },
-    },
-    colors: ["#36BA98", "#275D3E", "#E83F25"], // Colors for the series
-    dataLabels: {
-      enabled: true,
-      formatter: (value, { seriesIndex }) => {
-        if (seriesIndex === 1) return "";
-        return `${value}%`;
-      },
-    },
-    xaxis: {
-      categories: [
-        "Jan-24",
-        "Feb-24",
-        "Mar-24",
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-      ],
-    },
-    yaxis: {
-      max: 150,
-      labels: {
-        formatter: (value) => `${value}%`,
-      },
-    },
-    tooltip: {
-      y: {
-        formatter: (value) => `${value}%`,
-      },
-    },
-    legend: {
-      show: true,
-      position: "top",
-    },
-  };
+  const maxBudget = [
+    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
+    60000, 110000,
+  ];
 
   const taskData = [
     { unit: "ST-701A", tasks: 25 },
@@ -176,17 +117,6 @@ const MaintainanceDashboard = () => {
     ).toFixed(1)}%)`,
     value: item.expense,
   }));
-  const pieUnitWiseExpenseOptions = {
-    labels: unitWiseExpense.map((item) => item.unit),
-    chart: {
-      fontFamily: "Poppins-Regular",
-    },
-    toolTip: {
-      y: {
-        formatter: (val) => `${((val / totalUnitWiseTask) * 100).toFixed(1)}%`,
-      },
-    },
-  };
 
   //----------------------------------------------------------------------------------------------------------//
   // Categoty Wise Maintenance
@@ -218,6 +148,21 @@ const MaintainanceDashboard = () => {
     chart: {
       fontFamily: "Poppins-Regular",
     },
+    stroke: {
+      show: true,
+      width: 5, // Increase for more "gap"
+      colors: ["#ffffff"], // Or match background color
+    },
+    colors: [
+      "#0D47A1", // Dark Blue
+      "#1565C0",
+      "#1976D2",
+      "#1E88E5",
+      "#2196F3",
+      "#42A5F5",
+      "#64B5F6",
+      "#90CAF9", // Lightest
+    ],
     toolTip: {
       y: {
         formatter: (val) => `${((val / totalUnitWiseTask) * 100).toFixed(1)}%`,
@@ -278,6 +223,11 @@ const MaintainanceDashboard = () => {
     chart: {
       fontFamily: "Poppins-Regular",
     },
+    stroke: {
+      show: true,
+      width: 6, // Increase for more "gap"
+      colors: ["#ffffff"], // Or match background color
+    },
     tooltip: {
       y: {
         formatter: (val) =>
@@ -313,6 +263,12 @@ const MaintainanceDashboard = () => {
         formatter: (val) =>
           `${((val / totalYearlyDueTasksCount) * 100).toFixed(1)}%`,
       },
+
+    },
+    stroke: {
+      show: true,
+      width: 6, // Increase for more "gap"
+      colors: ["#ffffff"], // Or match background color
     },
     colors: ["#00ba09", "#ff4545"],
   };
@@ -338,6 +294,11 @@ const MaintainanceDashboard = () => {
     labels: executionChannelData.map((item) => item.executionChannel),
     chart: {
       fontFamily: "Poppins-Regular",
+    },
+    stroke: {
+      show: true,
+      width: 6, // Increase for more "gap"
+      colors: ["#ffffff"], // Or match background color
     },
     tooltip: {
       y: {
@@ -478,6 +439,21 @@ const MaintainanceDashboard = () => {
     chart: {
       fontFamily: "Poppins-Regular",
     },
+    colors: [
+      "#0D47A1", // Dark Blue
+      "#1565C0",
+      "#1976D2",
+      "#1E88E5",
+      "#2196F3",
+      "#42A5F5",
+      "#64B5F6",
+      "#90CAF9", // Lightest
+    ],
+    stroke: {
+      show: true,
+      width: 6, // Increase for more "gap"
+      colors: ["#ffffff"], // Or match background color
+    },
     tooltip: {
       y: {
         formatter: (val) =>
@@ -486,30 +462,15 @@ const MaintainanceDashboard = () => {
     },
   };
   //----------------------------------------------------------------------------------------------------------//
-  const complaintTypes = [
-    { type: "WiFi", count: 8 },
-    { type: "Assets", count: 12 },
-    { type: "Biometrics", count: 6 },
-    { type: "Others", count: 12 },
-  ];
-
-  const totalComplaintTypes = complaintTypes.reduce(
-    (sum, item) => sum + item.count,
-    0
-  );
-  const donutComplaintTypeData = complaintTypes.map((item) =>
-    parseFloat(((item.count / totalComplaintTypes) * 100).toFixed(1))
-  );
-  const complaintCounts = complaintTypes.map((item) => item.count);
-  const complaintTypeLabels = complaintTypes.map((item) => item.type);
+ 
   //----------------------------------------------------------------------------------------------------------//
 
   const techWidgets = [
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"}>
-          <LayerBarGraph data={data} options={options} />
+        <WidgetSection border title={"Budget v/s Achievements"} titleLabel={"FY 2024-25"}>
+          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard
@@ -531,7 +492,7 @@ const MaintainanceDashboard = () => {
               )}`}
             />
             <DataCard
-              data={6000}
+              data={inrFormat("6000")}
               title={"Requested"}
               route={"/app/dashboard/maintenance-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
@@ -592,7 +553,7 @@ const MaintainanceDashboard = () => {
         <DataCard
           route={"maintenance-expenses"}
           title={"Average"}
-          data={"60000"}
+          data={inrFormat("61000")}
           description={"Monthly Expense"}
         />,
       ],
@@ -641,21 +602,7 @@ const MaintainanceDashboard = () => {
         </WidgetSection>,
       ],
     },
-    // {
-    //   layout: 2,
-    //   widgets: [
-    //     <WidgetSection border title={"Unit Wise IT Expenses"}>
-    //       <PieChartMui
-    //         data={pieUnitWiseExpenseData}
-    //         options={pieUnitWiseExpenseOptions}
-    //       />
-    //     </WidgetSection>,
-    //     <WidgetSection border title={"Biometrics Gender Data"}>
-    //       <PieChartMui data={pieGenderData} options={pieGenderOptions} />
-    //     </WidgetSection>,
-    //   ],
-    // },
-    //Last section
+
     {
       layout: 2,
       widgets: [
