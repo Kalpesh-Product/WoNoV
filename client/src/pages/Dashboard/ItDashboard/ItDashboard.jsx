@@ -13,17 +13,18 @@ import { Chip } from "@mui/material";
 import DonutChart from "../../../components/graphs/DonutChart";
 import { useNavigate } from "react-router-dom";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const ItDashboard = () => {
   const navigate = useNavigate()
   const utilisedData = [
-    125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
-    50000, 120000,
+    1250000, 1500000, 990000, 850000, 700000, 500000, 800000, 950000, 1000000, 650000,
+    500000, 1200000,
   ];
 
   const maxBudget = [
-    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
-    60000, 110000,
+    1000000, 1200000, 1000000, 1000000, 800000, 600000, 850000, 950000, 1000000, 700000,
+    600000, 1100000,
   ];
 
   const taskData = [
@@ -186,7 +187,57 @@ const ItDashboard = () => {
       startTime: "9:00AM",
       endTime: "06:00PM",
     },
+    {
+      name: "Faizan",
+      building: "DTC",
+      unitNo: "004",
+      startTime: "10:00AM",
+      endTime: "07:00PM",
+    },
+    {
+      name: "Faizan",
+      building: "ST",
+      unitNo: "601(A)",
+      startTime: "8:30AM",
+      endTime: "05:30PM",
+    },
+    {
+      name: "Dasmond",
+      building: "ST",
+      unitNo: "701(A)",
+      startTime: "9:15AM",
+      endTime: "06:15PM",
+    },
+    {
+      name: "Dasmond",
+      building: "DTC",
+      unitNo: "501(B)",
+      startTime: "10:00AM",
+      endTime: "07:00PM",
+    },
+    {
+      name: "Rajeev",
+      building: "DTC",
+      unitNo: "601(B)",
+      startTime: "8:00AM",
+      endTime: "04:00PM",
+    },
+    {
+      name: "Rajeev",
+      building: "ST",
+      unitNo: "701(A)",
+      startTime: "11:00AM",
+      endTime: "08:00PM",
+    },
+    {
+      name: "Faizan",
+      building: "ST",
+      unitNo: "005",
+      startTime: "9:45AM",
+      endTime: "06:45PM",
+    },
   ];
+  
   const executiveTimingsColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "name", label: "Name", align: "left" },
@@ -254,7 +305,7 @@ const ItDashboard = () => {
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard
-              data={"40K"}
+              data={"INR " + inrFormat("4000000")}
               title={"Projected"}
               route={"/app/dashboard/it-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
@@ -263,7 +314,7 @@ const ItDashboard = () => {
               )}`}
             />
             <DataCard
-              data={"35K"}
+              data={"INR " + inrFormat("3500000")}
               title={"Actual"}
               route={"/app/dashboard/it-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
@@ -272,7 +323,7 @@ const ItDashboard = () => {
               )}`}
             />
             <DataCard
-              data={6000}
+              data={"INR " + inrFormat(60000)}
               title={"Requested"}
               route={"/app/dashboard/it-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
@@ -344,11 +395,11 @@ const ItDashboard = () => {
         <DataCard
           route={"it-expenses"}
           title={"Average"}
-          data={"60000"}
+          data={"INR " + inrFormat("600000")}
           description={"Monthly Expense"}
         />,
         <DataCard
-          data={"80K"}
+          data={"INR " + inrFormat("8000000")}
           title={"Average"}
           description={"Yearly Expense"}
         />,

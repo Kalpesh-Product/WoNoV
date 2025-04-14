@@ -17,6 +17,7 @@ import useAuth from "../../../hooks/useAuth";
 import BarGraph from "../../../components/graphs/BarGraph";
 import { useNavigate } from "react-router-dom";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const LayerBarGraph = lazy(() =>
   import("../../../components/graphs/LayerBarGraph")
@@ -184,13 +185,13 @@ const HrDashboard = () => {
   //firstgraph
 
   const utilisedData = [
-    125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
-    50000, 120000,
+    1250000, 1500000, 990000, 850000, 700000, 500000, 800000, 950000, 1000000, 650000,
+    500000, 1200000,
   ];
 
   const maxBudget = [
-    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
-    60000, 110000,
+    1000000, 1200000, 1000000, 1000000, 800000, 600000, 850000, 950000, 1000000, 700000,
+    600000, 1100000,
   ];
   const defaultData = utilisedData.map((value) =>
     Math.max(100 - Math.min(value, 100), 0)
@@ -565,7 +566,7 @@ const HrDashboard = () => {
             <hr />
             <WidgetSection layout={3} padding>
               <DataCard
-                data={"40K"}
+                data={"INR "+inrFormat("2000000")}
                 title={"Projected"}
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
@@ -574,7 +575,7 @@ const HrDashboard = () => {
                 )}`}
               />
               <DataCard
-                data={"35K"}
+                data={"INR "+inrFormat("150000")}
                 title={"Actual"}
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
@@ -583,7 +584,7 @@ const HrDashboard = () => {
                 )}`}
               />
               <DataCard
-                data={6000}
+                data={"INR "+inrFormat(12000)}
                 title={"Requested"}
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(

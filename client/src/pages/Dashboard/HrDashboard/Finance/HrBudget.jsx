@@ -19,6 +19,7 @@ import DataCard from "../../../../components/DataCard";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 import { toast } from "sonner";
 import BudgetGraph from "../../../../components/graphs/BudgetGraph";
+import { inrFormat } from "../../../../utils/currencyFormat";
 
 const HrBudget = () => {
   const axios = useAxiosPrivate();
@@ -133,25 +134,28 @@ const HrBudget = () => {
       <div>
         <WidgetSection layout={3} padding>
           <DataCard
-            data={"40K"}
+            data={"INR " + inrFormat("2000000")}
             title={"Projected"}
-            description={`Current Month: ${new Date().toLocaleString(
+            route={"/app/dashboard/hr-dashboard/finance/budget"}
+            description={`Current Month : ${new Date().toLocaleString(
               "default",
               { month: "long" }
             )}`}
           />
           <DataCard
-            data={"35K"}
+            data={"INR " + inrFormat("150000")}
             title={"Actual"}
-            description={`Current Month: ${new Date().toLocaleString(
+            route={"/app/dashboard/hr-dashboard/finance/budget"}
+            description={`Current Month : ${new Date().toLocaleString(
               "default",
               { month: "long" }
             )}`}
           />
           <DataCard
-            data={6000}
+            data={"INR " + inrFormat(12000)}
             title={"Requested"}
-            description={`Current Month: ${new Date().toLocaleString(
+            route={"/app/dashboard/hr-dashboard/finance/budget"}
+            description={`Current Month : ${new Date().toLocaleString(
               "default",
               { month: "long" }
             )}`}
