@@ -483,16 +483,16 @@ const ActualBusinessRevenue = () => {
                   data={domain.clients}
                   hideFilter
                   columns={[
-                    { header: "Sr No", field: "srNo", flex: 1 },
-                    { header: "Client", field: "client", flex: 1 },
+                    { headerName: "Sr No", field: "srNo", flex: 1 },
+                    { headerName: "Client", field: "client", flex: 1 },
                     {
-                      header: "Representative",
+                      headerName: "Representative",
                       field: "representative",
                       flex: 1,
                     },
-                    { header: "Register Date", field: "registerDate", flex: 1 },
+                    { headerName: "Register Date", field: "registerDate", flex: 1 },
                     {
-                      header: "Actual Revenue",
+                      headerName: "Actual Revenue",
                       field: "actualRevenue",
                       flex: 1,
                     },

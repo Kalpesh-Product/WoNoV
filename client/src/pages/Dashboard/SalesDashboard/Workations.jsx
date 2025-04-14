@@ -1,146 +1,626 @@
-import React from "react";
-import ParentRevenue from "./ParentRevenue";
-import { inrFormat } from "../../../utils/currencyFormat";
-
-const mockSalesData = [
-  {
-    month: "Apr-24",
-    actual: 10000,
-    projected: 10000,
-    adjustedProjected: 0,
-    revenueBreakup: [
-      { client: "Client A", revenue: inrFormat(4500), region: "North", industry: "Retail" },
-      { client: "Client B", revenue: inrFormat(3500), region: "South", industry: "Finance" },
-      { client: "Client C", revenue: inrFormat(2000), region: "West", industry: "Technology" },
-    ],
-  },
-  {
-    month: "May-24",
-    actual: 11000,
-    projected: 11000,
-    adjustedProjected: 0,
-    revenueBreakup: [
-      { client: "Client D", revenue: inrFormat(5000), region: "East", industry: "Healthcare" },
-      { client: "Client E", revenue: inrFormat(4000), region: "North", industry: "Retail" },
-      { client: "Client F", revenue: inrFormat(2100), region: "West", industry: "Technology" },
-    ],
-  },
-  {
-    month: "Jun-24",
-    actual: 8000,
-    projected: 12000,
-    adjustedProjected: 4000,
-    revenueBreakup: [
-      { client: "Client G", revenue: inrFormat(3000), region: "South", industry: "E-commerce" },
-      { client: "Client H", revenue: inrFormat(2500), region: "West", industry: "Logistics" },
-      { client: "Client I", revenue: inrFormat(2500), region: "East", industry: "Finance" },
-    ],
-  },
-  {
-    month: "Jul-24",
-    actual: 7000,
-    projected: 10500,
-    adjustedProjected: 3500,
-    revenueBreakup: [
-      { client: "Client J", revenue: inrFormat(4000), region: "North", industry: "Retail" },
-      { client: "Client K", revenue: inrFormat(3000), region: "South", industry: "Technology" },
-    ],
-  },
-  {
-    month: "Aug-24",
-    actual: 9500,
-    projected: 11500,
-    adjustedProjected: 2000,
-    revenueBreakup: [
-      { client: "Client L", revenue: inrFormat(4500), region: "East", industry: "Healthcare" },
-      { client: "Client M", revenue: inrFormat(3500), region: "West", industry: "Real Estate" },
-      { client: "Client N", revenue: inrFormat(1500), region: "North", industry: "Manufacturing" },
-    ],
-  },
-  {
-    month: "Sep-24",
-    actual: 10200,
-    projected: 12500,
-    adjustedProjected: 2300,
-    revenueBreakup: [
-      { client: "Client O", revenue: inrFormat(5200), region: "South", industry: "Automobile" },
-      { client: "Client P", revenue: inrFormat(3000), region: "North", industry: "Retail" },
-      { client: "Client Q", revenue: inrFormat(2000), region: "West", industry: "Banking" },
-    ],
-  },
-  {
-    month: "Oct-24",
-    actual: 11500,
-    projected: 13500,
-    adjustedProjected: 2000,
-    revenueBreakup: [
-      { client: "Client R", revenue: inrFormat(6000), region: "East", industry: "Technology" },
-      { client: "Client S", revenue: inrFormat(4000), region: "North", industry: "Logistics" },
-      { client: "Client T", revenue: inrFormat(1500), region: "South", industry: "Retail" },
-    ],
-  },
-  {
-    month: "Nov-24",
-    actual: 12500,
-    projected: 14500,
-    adjustedProjected: 2000,
-    revenueBreakup: [
-      { client: "Client U", revenue: inrFormat(5000), region: "West", industry: "E-commerce" },
-      { client: "Client V", revenue: inrFormat(3500), region: "South", industry: "Banking" },
-      { client: "Client W", revenue: inrFormat(4000), region: "North", industry: "Healthcare" },
-    ],
-  },
-  {
-    month: "Dec-24",
-    actual: 14000,
-    projected: 15500,
-    adjustedProjected: 1500,
-    revenueBreakup: [
-      { client: "Client X", revenue: inrFormat(7000), region: "East", industry: "Technology" },
-      { client: "Client Y", revenue: inrFormat(4000), region: "North", industry: "Retail" },
-      { client: "Client Z", revenue: inrFormat(3000), region: "West", industry: "Logistics" },
-    ],
-  },
-  {
-    month: "Jan-25",
-    actual: 13000,
-    projected: 16500,
-    adjustedProjected: 3500,
-    revenueBreakup: [
-      { client: "Client AA", revenue: inrFormat(6000), region: "South", industry: "Manufacturing" },
-      { client: "Client AB", revenue: inrFormat(5000), region: "North", industry: "Banking" },
-      { client: "Client AC", revenue: inrFormat(2000), region: "West", industry: "E-commerce" },
-    ],
-  },
-  {
-    month: "Feb-25",
-    actual: 15000,
-    projected: 17500,
-    adjustedProjected: 2500,
-    revenueBreakup: [
-      { client: "Client AD", revenue: inrFormat(8000), region: "East", industry: "Technology" },
-      { client: "Client AE", revenue: inrFormat(4000), region: "South", industry: "Finance" },
-      { client: "Client AF", revenue: inrFormat(3000), region: "North", industry: "Retail" },
-    ],
-  },
-  {
-    month: "Mar-25",
-    actual: 16000,
-    projected: 18500,
-    adjustedProjected: 2500,
-    revenueBreakup: [
-      { client: "Client AG", revenue: inrFormat(7000), region: "West", industry: "Logistics" },
-      { client: "Client AH", revenue: inrFormat(6000), region: "North", industry: "Healthcare" },
-      { client: "Client AI", revenue: inrFormat(3000), region: "South", industry: "Automobile" },
-    ],
-  },
-];
-
+import BarGraph from "../../../components/graphs/BarGraph";
+import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
+import { IoIosArrowDown } from "react-icons/io";
+import AgTable from "../../../components/AgTable";
+import WidgetSection from "../../../components/WidgetSection";
 
 const Workations = () => {
+  const monthlyRevenueData = [
+    {
+      month: "Apr-24",
+      projected: 3000000,
+      clients: [
+        {
+          clientName: "Zomato",
+          revenue: 1000000,
+          status: "Paid",
+          noOfDays: 5,
+          occupancy: 1.6,
+          term: 12,
+          expiry: 2,
+          recievedDate: "01/01/2025",
+          dueDate: "02/02/2025",
+        },
+        {
+          clientName: "UrbanClap",
+          revenue: 800000,
+          status: "Unpaid",
+          noOfDays: 5,
+          occupancy: 1.6,
+          term: 12,
+          expiry: 2,
+          recievedDate: "01/01/2025",
+          dueDate: "02/02/2025",
+        },
+        {
+          clientName: "Cred",
+          revenue: 1000000,
+          status: "Paid",
+          noOfDays: 5,
+          occupancy: 1.6,
+          term: 12,
+          expiry: 2,
+          recievedDate: "01/01/2025",
+          dueDate: "02/02/2025",
+        },
+      ],
+    },
+    {
+      month: "May-24",
+      projected: 2800000,
+      clients: [
+        {
+          clientName: "Swiggy",
+          revenue: 1500000,
+          status: "Paid",
+          noOfDays: 8,
+          occupancy: 2.1,
+          term: 12,
+          expiry: 4,
+          recievedDate: "03/01/2025",
+          dueDate: "04/02/2025",
+        },
+        {
+          clientName: "Freshworks",
+          revenue: 1250000,
+          status: "Unpaid",
+          noOfDays: 6,
+          occupancy: 1.8,
+          term: 9,
+          expiry: 3,
+          recievedDate: "03/01/2025",
+          dueDate: "04/02/2025",
+        },
+      ],
+    },
+    {
+      month: "Jun-24",
+      projected: 2900000,
+      clients: [
+        {
+          clientName: "Zoho",
+          revenue: 1200000,
+          status: "Paid",
+          noOfDays: 10,
+          occupancy: 2.5,
+          term: 12,
+          expiry: 6,
+          recievedDate: "05/01/2025",
+          dueDate: "06/02/2025",
+        },
+        {
+          clientName: "Paytm",
+          revenue: 900000,
+          status: "Paid",
+          noOfDays: 7,
+          occupancy: 1.9,
+          term: 6,
+          expiry: 2,
+          recievedDate: "05/01/2025",
+          dueDate: "06/02/2025",
+        },
+        {
+          clientName: "Myntra",
+          revenue: 750000,
+          status: "Unpaid",
+          noOfDays: 5,
+          occupancy: 1.6,
+          term: 9,
+          expiry: 3,
+          recievedDate: "05/01/2025",
+          dueDate: "06/02/2025",
+        },
+      ],
+    },
+    {
+      month: "Jul-24",
+      projected: 3100000,
+      clients: [
+        {
+          clientName: "Tata 1mg",
+          revenue: 1600000,
+          status: "Paid",
+          noOfDays: 9,
+          occupancy: 2.3,
+          term: 12,
+          expiry: 7,
+          recievedDate: "07/01/2025",
+          dueDate: "08/02/2025",
+        },
+        {
+          clientName: "Meesho",
+          revenue: 800000,
+          status: "Unpaid",
+          noOfDays: 6,
+          occupancy: 1.8,
+          term: 6,
+          expiry: 2,
+          recievedDate: "07/01/2025",
+          dueDate: "08/02/2025",
+        },
+        {
+          clientName: "Delhivery",
+          revenue: 600000,
+          status: "Paid",
+          noOfDays: 5,
+          occupancy: 1.7,
+          term: 9,
+          expiry: 3,
+          recievedDate: "07/01/2025",
+          dueDate: "08/02/2025",
+        },
+      ],
+    },
+
+    {
+      month: "Aug-24",
+      projected: 3200000,
+      clients: [
+        {
+          clientName: "CureFit",
+          revenue: 1000000,
+          status: "Paid",
+          noOfDays: 7,
+          occupancy: 2.0,
+          term: 12,
+          expiry: 8,
+          recievedDate: "08/01/2025",
+          dueDate: "09/02/2025",
+        },
+        {
+          clientName: "Bounce",
+          revenue: 900000,
+          status: "Paid",
+          noOfDays: 6,
+          occupancy: 1.9,
+          term: 6,
+          expiry: 3,
+          recievedDate: "08/01/2025",
+          dueDate: "09/02/2025",
+        },
+        {
+          clientName: "Flipkart",
+          revenue: 1250000,
+          status: "Unpaid",
+          noOfDays: 10,
+          occupancy: 2.7,
+          term: 12,
+          expiry: 9,
+          recievedDate: "08/01/2025",
+          dueDate: "09/02/2025",
+        },
+      ],
+    },
+    {
+      month: "Sep-24",
+      projected: 3000000,
+      clients: [
+        {
+          clientName: "BigBasket",
+          revenue: 1300000,
+          status: "Paid",
+          noOfDays: 8,
+          occupancy: 2.2,
+          term: 12,
+          expiry: 10,
+          recievedDate: "09/01/2025",
+          dueDate: "10/02/2025",
+        },
+        {
+          clientName: "Lenskart",
+          revenue: 900000,
+          status: "Unpaid",
+          noOfDays: 5,
+          occupancy: 1.5,
+          term: 6,
+          expiry: 3,
+          recievedDate: "09/01/2025",
+          dueDate: "10/02/2025",
+        },
+        {
+          clientName: "Byju's",
+          revenue: 750000,
+          status: "Paid",
+          noOfDays: 7,
+          occupancy: 2.0,
+          term: 9,
+          expiry: 4,
+          recievedDate: "09/01/2025",
+          dueDate: "10/02/2025",
+        },
+      ],
+    },
+    {
+      month: "Oct-24",
+      projected: 3300000,
+      clients: [
+        {
+          clientName: "Nykaa",
+          revenue: 1500000,
+          status: "Paid",
+          noOfDays: 9,
+          occupancy: 2.4,
+          term: 12,
+          expiry: 11,
+          recievedDate: "10/01/2025",
+          dueDate: "11/02/2025",
+        },
+        {
+          clientName: "Razorpay",
+          revenue: 900000,
+          status: "Paid",
+          noOfDays: 6,
+          occupancy: 1.9,
+          term: 6,
+          expiry: 3,
+          recievedDate: "10/01/2025",
+          dueDate: "11/02/2025",
+        },
+        {
+          clientName: "Udaan",
+          revenue: 850000,
+          status: "Unpaid",
+          noOfDays: 7,
+          occupancy: 2.0,
+          term: 9,
+          expiry: 5,
+          recievedDate: "10/01/2025",
+          dueDate: "11/02/2025",
+        },
+      ],
+    },
+
+    {
+      month: "Nov-24",
+      projected: 3400000,
+      clients: [
+        {
+          clientName: "InMobi",
+          revenue: 1200000,
+          status: "Paid",
+          noOfDays: 8,
+          occupancy: 2.1,
+          term: 12,
+          expiry: 12,
+          recievedDate: "11/01/2025",
+          dueDate: "12/02/2025",
+        },
+        {
+          clientName: "CoinDCX",
+          revenue: 1000000,
+          status: "Unpaid",
+          noOfDays: 6,
+          occupancy: 1.8,
+          term: 6,
+          expiry: 3,
+          recievedDate: "11/01/2025",
+          dueDate: "12/02/2025",
+        },
+        {
+          clientName: "Dream11",
+          revenue: 1200000,
+          status: "Paid",
+          noOfDays: 7,
+          occupancy: 2.3,
+          term: 9,
+          expiry: 5,
+          recievedDate: "11/01/2025",
+          dueDate: "12/02/2025",
+        },
+      ],
+    },
+    {
+      month: "Dec-24",
+      projected: 3500000,
+      clients: [
+        {
+          clientName: "Unacademy",
+          revenue: 1100000,
+          status: "Paid",
+          noOfDays: 7,
+          occupancy: 2.0,
+          term: 12,
+          expiry: 12,
+          recievedDate: "12/01/2025",
+          dueDate: "01/02/2026",
+        },
+        {
+          clientName: "Groww",
+          revenue: 1300000,
+          status: "Paid",
+          noOfDays: 6,
+          occupancy: 1.9,
+          term: 6,
+          expiry: 3,
+          recievedDate: "12/01/2025",
+          dueDate: "01/02/2026",
+        },
+        {
+          clientName: "CRED",
+          revenue: 1100000,
+          status: "Unpaid",
+          noOfDays: 8,
+          occupancy: 2.2,
+          term: 9,
+          expiry: 5,
+          recievedDate: "12/01/2025",
+          dueDate: "01/02/2026",
+        },
+      ],
+    },
+    {
+      month: "Jan-25",
+      projected: 3600000,
+      clients: [
+        {
+          clientName: "Zepto",
+          revenue: 1800000,
+          status: "Paid",
+          noOfDays: 9,
+          occupancy: 2.4,
+          term: 12,
+          expiry: 12,
+          recievedDate: "01/01/2026",
+          dueDate: "02/02/2026",
+        },
+        {
+          clientName: "Oyo",
+          revenue: 900000,
+          status: "Paid",
+          noOfDays: 7,
+          occupancy: 2.0,
+          term: 6,
+          expiry: 3,
+          recievedDate: "01/01/2026",
+          dueDate: "02/02/2026",
+        },
+        {
+          clientName: "Pharmeasy",
+          revenue: 850000,
+          status: "Unpaid",
+          noOfDays: 6,
+          occupancy: 1.7,
+          term: 9,
+          expiry: 4,
+          recievedDate: "01/01/2026",
+          dueDate: "02/02/2026",
+        },
+      ],
+    },
+    {
+      month: "Feb-25",
+      projected: 3700000,
+      clients: [
+        {
+          clientName: "Cars24",
+          revenue: 1300000,
+          status: "Unpaid",
+          noOfDays: 8,
+          occupancy: 2.1,
+          term: 12,
+          expiry: 12,
+          recievedDate: "02/01/2026",
+          dueDate: "03/02/2026",
+        },
+        {
+          clientName: "Boat",
+          revenue: 1100000,
+          status: "Paid",
+          noOfDays: 7,
+          occupancy: 2.0,
+          term: 6,
+          expiry: 3,
+          recievedDate: "02/01/2026",
+          dueDate: "03/02/2026",
+        },
+        {
+          clientName: "Zerodha",
+          revenue: 1250000,
+          status: "Paid",
+          noOfDays: 6,
+          occupancy: 1.9,
+          term: 9,
+          expiry: 4,
+          recievedDate: "02/01/2026",
+          dueDate: "03/02/2026",
+        },
+      ],
+    },
+    {
+      month: "Mar-25",
+      projected: 3800000,
+      clients: [
+        {
+          clientName: "RedBus",
+          revenue: 1300000,
+          status: "Paid",
+          noOfDays: 8,
+          occupancy: 2.2,
+          term: 12,
+          expiry: 12,
+          recievedDate: "03/01/2026",
+          dueDate: "04/02/2026",
+        },
+        {
+          clientName: "PolicyBazaar",
+          revenue: 1200000,
+          status: "Unpaid",
+          noOfDays: 6,
+          occupancy: 1.8,
+          term: 6,
+          expiry: 3,
+          recievedDate: "03/01/2026",
+          dueDate: "04/02/2026",
+        },
+        {
+          clientName: "Swiggy",
+          revenue: 1250000,
+          status: "Paid",
+          noOfDays: 9,
+          occupancy: 2.5,
+          term: 9,
+          expiry: 5,
+          recievedDate: "03/01/2026",
+          dueDate: "04/02/2026",
+        },
+      ],
+    },
+  ];
+  const series = [
+    {
+      name: "Projected Revenue",
+      data: monthlyRevenueData.map((item) => item.projected),
+    },
+    {
+      name: "Actual Revenue",
+      data: monthlyRevenueData.map((item) =>
+        item.clients.reduce((sum, c) => sum + c.revenue, 0)
+      ),
+    },
+  ];
+
+  const options = {
+    chart: {
+      stacked: false,
+      toolbar: false,
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
+    dataLabels: {
+      enabled: false,
+      formatter: function (val) {
+        return `${val}%`;
+      },
+      style: {
+        fontSize: "10px",
+        fontWeight: "bold",
+        colors: ["#fff"],
+      },
+    },
+    xaxis: {
+      categories: monthlyRevenueData.map((item) => item.month),
+    },
+    yaxis: {
+      labels: {
+        formatter: (val) => `₹${val.toLocaleString()}`,
+      },
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `${val.toLocaleString()} INR`,
+      },
+    },
+    plotOptions: {
+      bar: {
+        columnWidth: "75%",
+        borderRadius: 5,
+      },
+    },
+    colors: ["#1E3D73", "#80bf01"],
+  };
+  const totalActual = monthlyRevenueData.reduce((sum, month) => {
+    return (
+      sum +
+      month.clients.reduce((monthSum, client) => monthSum + client.revenue, 0)
+    );
+  }, 0);
+
+  const totalProjected = monthlyRevenueData.reduce(
+    (sum, month) => sum + (month.projected ?? 0),
+    0
+  );
   return (
-    <div>
-      <ParentRevenue salesData={mockSalesData} financialYear="2024-2025" />
+    <div className="p-4 flex flex-col gap-4">
+      <WidgetSection
+        title={"Annual Monthly Workations Revenues"}
+        titleLabel={"FY 2024-25"}
+        border
+      >
+        <BarGraph
+          data={series}
+          options={options}
+          height={400}
+          customLegend
+          firstParam={{
+            title: "Actual",
+            data: `${totalActual.toLocaleString()} INR`,
+          }}
+          secondParam={{
+            title: "Projected",
+            data: `${totalProjected.toLocaleString()} INR`,
+          }}
+        />
+      </WidgetSection>
+      <div>
+        {monthlyRevenueData.map((monthData, index) => {
+          const totalActual = monthData.clients.reduce(
+            (sum, c) => sum + c.revenue,
+            0
+          );
+
+          const rows = monthData.clients.map((client, index) => ({
+            id: index + 1,
+            clientName: client.clientName,
+            revenue: `${client.revenue.toLocaleString()}`,
+            status: client.status,
+            noOfDays: client.noOfDays,
+            occupancy: client.occupancy,
+            term: client.term,
+            expiry: client.expiry,
+            recievedDate: client.recievedDate,
+            dueDate: client.dueDate,
+          }));
+
+          const columns = [
+            { headerName: "ID", field: "id", width: 80 },
+            { headerName: "Client Name", field: "clientName" },
+            { headerName: "Revenue (INR)", field: "revenue" },
+            { headerName: "No. Of Days", field: "noOfDays" },
+            // { headerName: "Occupancy", field: "occupancy" },
+            // { headerName: "Term (months)", field: "term" },
+            // { headerName: "Expiry (months)", field: "expiry" },
+            { headerName: "Payment Date", field: "recievedDate" },
+            { headerName: "Due Date", field: "dueDate" },
+            { headerName: "Status", field: "status" },
+          ];
+
+          return (
+            <Accordion key={index} className="py-4">
+              <AccordionSummary
+                expandIcon={<IoIosArrowDown />}
+                aria-controls={`panel-${index}-content`}
+                id={`panel-${index}-header`}
+                className="border-b-[1px] border-borderGray"
+              >
+                <div className="flex justify-between items-center w-full px-4">
+                  <span className="text-subtitle font-pmedium">
+                    {monthData.month}
+                  </span>
+                  <span className="text-subtitle font-pmedium">
+                    {totalActual.toLocaleString()} INR
+                  </span>
+                </div>
+              </AccordionSummary>
+              <AccordionDetails>
+                <AgTable
+                  search={rows.length > 5}
+                  hideFilter={rows.length < 5}
+                  data={rows}
+                  columns={columns}
+                  tableHeight={300}
+                />
+                <span className="text-sm font-medium mt-2 block">
+                  Total Actual Revenue for {monthData.month}:
+                  {totalActual.toLocaleString()} INR
+                </span>
+              </AccordionDetails>
+            </Accordion>
+          );
+        })}
+      </div>
     </div>
   );
 };

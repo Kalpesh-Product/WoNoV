@@ -1,146 +1,550 @@
-import React from "react";
-import ParentRevenue from "./ParentRevenue";
-import { inrFormat } from "../../../utils/currencyFormat";
-
-const mockSalesData = [
-  {
-    month: "Apr-24",
-    actual: 10000,
-    projected: 10000,
-    adjustedProjected: 0,
-    revenueBreakup: [
-      { client: "Client A", revenue: inrFormat(4500), region: "North", industry: "Retail" },
-      { client: "Client B", revenue: inrFormat(3500), region: "South", industry: "Finance" },
-      { client: "Client C", revenue: inrFormat(2000), region: "West", industry: "Technology" },
-    ],
-  },
-  {
-    month: "May-24",
-    actual: 11000,
-    projected: 11000,
-    adjustedProjected: 0,
-    revenueBreakup: [
-      { client: "Client D", revenue: inrFormat(5000), region: "East", industry: "Healthcare" },
-      { client: "Client E", revenue: inrFormat(4000), region: "North", industry: "Retail" },
-      { client: "Client F", revenue: inrFormat(2100), region: "West", industry: "Technology" },
-    ],
-  },
-  {
-    month: "Jun-24",
-    actual: 8000,
-    projected: 12000,
-    adjustedProjected: 4000,
-    revenueBreakup: [
-      { client: "Client G", revenue: inrFormat(3000), region: "South", industry: "E-commerce" },
-      { client: "Client H", revenue: inrFormat(2500), region: "West", industry: "Logistics" },
-      { client: "Client I", revenue: inrFormat(2500), region: "East", industry: "Finance" },
-    ],
-  },
-  {
-    month: "Jul-24",
-    actual: 7000,
-    projected: 10500,
-    adjustedProjected: 3500,
-    revenueBreakup: [
-      { client: "Client J", revenue: inrFormat(4000), region: "North", industry: "Retail" },
-      { client: "Client K", revenue: inrFormat(3000), region: "South", industry: "Technology" },
-    ],
-  },
-  {
-    month: "Aug-24",
-    actual: 9500,
-    projected: 11500,
-    adjustedProjected: 2000,
-    revenueBreakup: [
-      { client: "Client L", revenue: inrFormat(4500), region: "East", industry: "Healthcare" },
-      { client: "Client M", revenue: inrFormat(3500), region: "West", industry: "Real Estate" },
-      { client: "Client N", revenue: inrFormat(1500), region: "North", industry: "Manufacturing" },
-    ],
-  },
-  {
-    month: "Sep-24",
-    actual: 10200,
-    projected: 12500,
-    adjustedProjected: 2300,
-    revenueBreakup: [
-      { client: "Client O", revenue: inrFormat(5200), region: "South", industry: "Automobile" },
-      { client: "Client P", revenue: inrFormat(3000), region: "North", industry: "Retail" },
-      { client: "Client Q", revenue: inrFormat(2000), region: "West", industry: "Banking" },
-    ],
-  },
-  {
-    month: "Oct-24",
-    actual: 11500,
-    projected: 13500,
-    adjustedProjected: 2000,
-    revenueBreakup: [
-      { client: "Client R", revenue: inrFormat(6000), region: "East", industry: "Technology" },
-      { client: "Client S", revenue: inrFormat(4000), region: "North", industry: "Logistics" },
-      { client: "Client T", revenue: inrFormat(1500), region: "South", industry: "Retail" },
-    ],
-  },
-  {
-    month: "Nov-24",
-    actual: 12500,
-    projected: 14500,
-    adjustedProjected: 2000,
-    revenueBreakup: [
-      { client: "Client U", revenue: inrFormat(5000), region: "West", industry: "E-commerce" },
-      { client: "Client V", revenue: inrFormat(3500), region: "South", industry: "Banking" },
-      { client: "Client W", revenue: inrFormat(4000), region: "North", industry: "Healthcare" },
-    ],
-  },
-  {
-    month: "Dec-24",
-    actual: 14000,
-    projected: 15500,
-    adjustedProjected: 1500,
-    revenueBreakup: [
-      { client: "Client X", revenue: 7000, region: "East", industry: "Technology" },
-      { client: "Client Y", revenue: 4000, region: "North", industry: "Retail" },
-      { client: "Client Z", revenue: 3000, region: "West", industry: "Logistics" },
-    ],
-  },
-  {
-    month: "Jan-25",
-    actual: 13000,
-    projected: 16500,
-    adjustedProjected: 3500,
-    revenueBreakup: [
-      { client: "Client AA", revenue: inrFormat(6000), region: "South", industry: "Manufacturing" },
-      { client: "Client AB", revenue: inrFormat(5000), region: "North", industry: "Banking" },
-      { client: "Client AC", revenue: inrFormat(2000), region: "West", industry: "E-commerce" },
-    ],
-  },
-  {
-    month: "Feb-25",
-    actual: 15000,
-    projected: 17500,
-    adjustedProjected: 2500,
-    revenueBreakup: [
-      { client: "Client AD", revenue: inrFormat(8000), region: "East", industry: "Technology" },
-      { client: "Client AE", revenue: inrFormat(4000), region: "South", industry: "Finance" },
-      { client: "Client AF", revenue: inrFormat(3000), region: "North", industry: "Retail" },
-    ],
-  },
-  {
-    month: "Mar-25",
-    actual: 16000,
-    projected: 18500,
-    adjustedProjected: 2500,
-    revenueBreakup: [
-      { client: "Client AG", revenue: inrFormat(7000), region: "West", industry: "Logistics" },
-      { client: "Client AH", revenue: inrFormat(6000), region: "North", industry: "Healthcare" },
-      { client: "Client AI", revenue: inrFormat(3000), region: "South", industry: "Automobile" },
-    ],
-  },
-];
-
+import BarGraph from "../../../components/graphs/BarGraph";
+import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
+import { IoIosArrowDown } from "react-icons/io";
+import AgTable from "../../../components/AgTable";
+import WidgetSection from "../../../components/WidgetSection";
 
 const MeetingRevenue = () => {
+  const monthlyMeetingeData = [
+    {
+      month: "Apr-24",
+      projected: 3000000,
+      clients: [
+        {
+          clientName: "Zomato",
+          revenue: 1000000,
+          status: "Paid",
+          totalCredits: 100,
+          usedCredits: 80,
+          extraCredits: 10,
+          bookingHours: 150,
+        },
+        {
+          clientName: "UrbanClap",
+          revenue: 800000,
+          status: "Unpaid",
+          totalCredits: 100,
+          usedCredits: 80,
+          extraCredits: 10,
+          bookingHours: 150,
+        },
+        {
+          clientName: "Cred",
+          revenue: 1000000,
+          status: "Paid",
+          totalCredits: 100,
+          usedCredits: 80,
+          extraCredits: 10,
+          bookingHours: 150,
+        },
+      ],
+    },
+    {
+      month: "May-24",
+      projected: 2800000,
+      clients: [
+        {
+          clientName: "Swiggy",
+          revenue: 1500000,
+          status: "Paid",
+          totalCredits: 120,
+          usedCredits: 90,
+          extraCredits: 15,
+          bookingHours: 170,
+        },
+        {
+          clientName: "Freshworks",
+          revenue: 1250000,
+          status: "Unpaid",
+          totalCredits: 100,
+          usedCredits: 85,
+          extraCredits: 10,
+          bookingHours: 160,
+        },
+      ],
+    },
+    {
+      month: "Jun-24",
+      projected: 2900000,
+      clients: [
+        {
+          clientName: "Zoho",
+          revenue: 1200000,
+          status: "Paid",
+          totalCredits: 110,
+          usedCredits: 95,
+          extraCredits: 12,
+          bookingHours: 175,
+        },
+        {
+          clientName: "Paytm",
+          revenue: 900000,
+          status: "Paid",
+          totalCredits: 100,
+          usedCredits: 80,
+          extraCredits: 8,
+          bookingHours: 140,
+        },
+        {
+          clientName: "Myntra",
+          revenue: 750000,
+          status: "Unpaid",
+          totalCredits: 90,
+          usedCredits: 70,
+          extraCredits: 5,
+          bookingHours: 130,
+        },
+      ],
+    },
+    {
+      month: "Jul-24",
+      projected: 3100000,
+      clients: [
+        {
+          clientName: "Tata 1mg",
+          revenue: 1600000,
+          status: "Paid",
+          totalCredits: 130,
+          usedCredits: 110,
+          extraCredits: 10,
+          bookingHours: 190,
+        },
+        {
+          clientName: "Meesho",
+          revenue: 800000,
+          status: "Unpaid",
+          totalCredits: 100,
+          usedCredits: 85,
+          extraCredits: 7,
+          bookingHours: 165,
+        },
+        {
+          clientName: "Delhivery",
+          revenue: 600000,
+          status: "Paid",
+          totalCredits: 95,
+          usedCredits: 80,
+          extraCredits: 6,
+          bookingHours: 155,
+        },
+      ],
+    },
+    {
+      month: "Aug-24",
+      projected: 3200000,
+      clients: [
+        {
+          clientName: "CureFit",
+          revenue: 1000000,
+          status: "Paid",
+          totalCredits: 110,
+          usedCredits: 95,
+          extraCredits: 5,
+          bookingHours: 160,
+        },
+        {
+          clientName: "Bounce",
+          revenue: 900000,
+          status: "Paid",
+          totalCredits: 100,
+          usedCredits: 85,
+          extraCredits: 6,
+          bookingHours: 155,
+        },
+        {
+          clientName: "Flipkart",
+          revenue: 1250000,
+          status: "Unpaid",
+          totalCredits: 130,
+          usedCredits: 100,
+          extraCredits: 15,
+          bookingHours: 180,
+        },
+      ],
+    },
+    {
+      month: "Sep-24",
+      projected: 3000000,
+      clients: [
+        {
+          clientName: "BigBasket",
+          revenue: 1300000,
+          status: "Paid",
+          totalCredits: 120,
+          usedCredits: 105,
+          extraCredits: 10,
+          bookingHours: 170,
+        },
+        {
+          clientName: "Lenskart",
+          revenue: 900000,
+          status: "Unpaid",
+          totalCredits: 100,
+          usedCredits: 90,
+          extraCredits: 7,
+          bookingHours: 165,
+        },
+        {
+          clientName: "Byju's",
+          revenue: 750000,
+          status: "Paid",
+          totalCredits: 90,
+          usedCredits: 80,
+          extraCredits: 5,
+          bookingHours: 150,
+        },
+      ],
+    },
+    {
+      month: "Oct-24",
+      projected: 3300000,
+      clients: [
+        {
+          clientName: "Nykaa",
+          revenue: 1500000,
+          status: "Paid",
+          totalCredits: 140,
+          usedCredits: 120,
+          extraCredits: 12,
+          bookingHours: 190,
+        },
+        {
+          clientName: "Razorpay",
+          revenue: 900000,
+          status: "Paid",
+          totalCredits: 100,
+          usedCredits: 90,
+          extraCredits: 6,
+          bookingHours: 160,
+        },
+        {
+          clientName: "Udaan",
+          revenue: 850000,
+          status: "Unpaid",
+          totalCredits: 110,
+          usedCredits: 95,
+          extraCredits: 10,
+          bookingHours: 170,
+        },
+      ],
+    },
+    {
+      month: "Nov-24",
+      projected: 3400000,
+      clients: [
+        {
+          clientName: "InMobi",
+          revenue: 1200000,
+          status: "Paid",
+          totalCredits: 120,
+          usedCredits: 100,
+          extraCredits: 10,
+          bookingHours: 175,
+        },
+        {
+          clientName: "CoinDCX",
+          revenue: 1000000,
+          status: "Unpaid",
+          totalCredits: 100,
+          usedCredits: 85,
+          extraCredits: 8,
+          bookingHours: 160,
+        },
+        {
+          clientName: "Dream11",
+          revenue: 1200000,
+          status: "Paid",
+          totalCredits: 130,
+          usedCredits: 110,
+          extraCredits: 12,
+          bookingHours: 180,
+        },
+      ],
+    },
+    {
+      month: "Dec-24",
+      projected: 3500000,
+      clients: [
+        {
+          clientName: "Unacademy",
+          revenue: 1100000,
+          status: "Paid",
+          totalCredits: 115,
+          usedCredits: 90,
+          extraCredits: 5,
+          bookingHours: 165,
+        },
+        {
+          clientName: "Groww",
+          revenue: 1300000,
+          status: "Paid",
+          totalCredits: 125,
+          usedCredits: 100,
+          extraCredits: 8,
+          bookingHours: 170,
+        },
+        {
+          clientName: "CRED",
+          revenue: 1100000,
+          status: "Unpaid",
+          totalCredits: 110,
+          usedCredits: 95,
+          extraCredits: 10,
+          bookingHours: 160,
+        },
+      ],
+    },
+    {
+      month: "Jan-25",
+      projected: 3600000,
+      clients: [
+        {
+          clientName: "Zepto",
+          revenue: 1800000,
+          status: "Paid",
+          totalCredits: 140,
+          usedCredits: 120,
+          extraCredits: 15,
+          bookingHours: 190,
+        },
+        {
+          clientName: "Oyo",
+          revenue: 900000,
+          status: "Paid",
+          totalCredits: 110,
+          usedCredits: 95,
+          extraCredits: 8,
+          bookingHours: 165,
+        },
+        {
+          clientName: "Pharmeasy",
+          revenue: 850000,
+          status: "Unpaid",
+          totalCredits: 100,
+          usedCredits: 85,
+          extraCredits: 7,
+          bookingHours: 155,
+        },
+      ],
+    },
+    {
+      month: "Feb-25",
+      projected: 3700000,
+      clients: [
+        {
+          clientName: "Cars24",
+          revenue: 1300000,
+          status: "Unpaid",
+          totalCredits: 120,
+          usedCredits: 100,
+          extraCredits: 10,
+          bookingHours: 170,
+        },
+        {
+          clientName: "Boat",
+          revenue: 1100000,
+          status: "Paid",
+          totalCredits: 110,
+          usedCredits: 95,
+          extraCredits: 8,
+          bookingHours: 160,
+        },
+        {
+          clientName: "Zerodha",
+          revenue: 1250000,
+          status: "Paid",
+          totalCredits: 130,
+          usedCredits: 115,
+          extraCredits: 12,
+          bookingHours: 185,
+        },
+      ],
+    },
+    {
+      month: "Mar-25",
+      projected: 3800000,
+      clients: [
+        {
+          clientName: "RedBus",
+          revenue: 1300000,
+          status: "Paid",
+          totalCredits: 125,
+          usedCredits: 105,
+          extraCredits: 10,
+          bookingHours: 175,
+        },
+        {
+          clientName: "PolicyBazaar",
+          revenue: 1200000,
+          status: "Unpaid",
+          totalCredits: 115,
+          usedCredits: 100,
+          extraCredits: 8,
+          bookingHours: 165,
+        },
+        {
+          clientName: "Swiggy",
+          revenue: 1250000,
+          status: "Paid",
+          totalCredits: 130,
+          usedCredits: 110,
+          extraCredits: 10,
+          bookingHours: 180,
+        },
+      ],
+    },
+  ];
+  const series = [
+    {
+      name: "Projected Revenue",
+      data: monthlyMeetingeData.map((item) => item.projected),
+    },
+    {
+      name: "Actual Revenue",
+      data: monthlyMeetingeData.map((item) =>
+        item.clients.reduce((sum, c) => sum + c.revenue, 0)
+      ),
+    },
+  ];
+
+  const options = {
+    chart: {
+      stacked: false,
+      toolbar: false,
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
+    dataLabels: {
+      enabled: false,
+      formatter: function (val) {
+        return `${val}%`;
+      },
+      style: {
+        fontSize: "10px",
+        fontWeight: "bold",
+        colors: ["#fff"],
+      },
+    },
+    xaxis: {
+      categories: monthlyMeetingeData.map((item) => item.month),
+    },
+    yaxis: {
+      labels: {
+        formatter: (val) => `₹${val.toLocaleString()}`,
+      },
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `${val.toLocaleString()} INR`,
+      },
+    },
+    plotOptions: {
+      bar: {
+        columnWidth: "75%",
+        borderRadius: 5,
+      },
+    },
+    colors: ["#1E3D73", "#80bf01"],
+  };
+  const totalActual = monthlyMeetingeData.reduce((sum, month) => {
+    return (
+      sum +
+      month.clients.reduce((monthSum, client) => monthSum + client.revenue, 0)
+    );
+  }, 0);
+
+  const totalProjected = monthlyMeetingeData.reduce(
+    (sum, month) => sum + (month.projected ?? 0),
+    0
+  );
   return (
-    <div>
-      <ParentRevenue salesData={mockSalesData} financialYear="2024-2025" />
+    <div className="p-4 flex flex-col gap-4">
+      <WidgetSection
+        title={"Annual Monthly Meetings Revenues"}
+        titleLabel={"FY 2024-25"}
+        border
+      >
+        <BarGraph
+          data={series}
+          options={options}
+          height={400}
+          customLegend
+          firstParam={{
+            title: "Actual",
+            data: `${totalActual.toLocaleString()} INR`,
+          }}
+          secondParam={{
+            title: "Projected",
+            data: `${totalProjected.toLocaleString()} INR`,
+          }}
+        />
+      </WidgetSection>
+
+      <div>
+        {monthlyMeetingeData.map((monthData, index) => {
+          const totalActual = monthData.clients.reduce(
+            (sum, c) => sum + c.revenue,
+            0
+          );
+
+          const rows = monthData.clients.map((client, index) => ({
+            id: index + 1,
+            clientName: client.clientName,
+            revenue: `${client.revenue.toLocaleString()}`,
+            status: client.status,
+            totalCredits: client.totalCredits,
+            usedCredits: client.usedCredits,
+            extraCredits: client.extraCredits,
+            bookingHours: client.bookingHours,
+          }));
+
+          const columns = [
+            { headerName: "ID", field: "id", width: 80 },
+            { headerName: "Client Name", field: "clientName", flex: 1 },
+            { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
+            { headerName: "Total Credits", field: "totalCredits", flex: 1 },
+            { headerName: "Used Credits", field: "usedCredits", flex: 1 },
+            { headerName: "Extra Credits", field: "extraCredits", flex: 1 },
+            { headerName: "Booking Hours", field: "bookingHours", flex: 1 },
+            { headerName: "Status", field: "status", flex: 1 },
+          ];
+
+          return (
+            <Accordion key={index} className="py-4">
+              <AccordionSummary
+                expandIcon={<IoIosArrowDown />}
+                aria-controls={`panel-${index}-content`}
+                id={`panel-${index}-header`}
+                className="border-b-[1px] border-borderGray"
+              >
+                <div className="flex justify-between items-center w-full px-4">
+                  <span className="text-subtitle font-pmedium">
+                    {monthData.month}
+                  </span>
+                  <span className="text-subtitle font-pmedium">
+                    {totalActual.toLocaleString()} INR
+                  </span>
+                </div>
+              </AccordionSummary>
+              <AccordionDetails>
+                <AgTable
+                  search={rows.length > 5}
+                  data={rows}
+                  columns={columns}
+                  tableHeight={300}
+                />
+                <span className="text-sm font-medium mt-2 block">
+                  Total Actual Revenue for {monthData.month}:
+                  {totalActual.toLocaleString()} INR
+                </span>
+              </AccordionDetails>
+            </Accordion>
+          );
+        })}
+      </div>
     </div>
   );
 };

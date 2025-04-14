@@ -118,19 +118,20 @@ const SalesDashboard = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
 
   const monthShortToFull = {
-    Apr: "April",
-    May: "May",
-    Jun: "June",
-    Jul: "July",
-    Aug: "August",
-    Sep: "September",
-    Oct: "October",
-    Nov: "November",
-    Dec: "December",
-    Jan: "January",
-    Feb: "February",
-    Mar: "March",
+    "Apr-24": "April",
+    "May-24": "May",
+    "Jun-24": "June",
+    "Jul-24": "July",
+    "Aug-24": "August",
+    "Sep-24": "September",
+    "Oct-24": "October",
+    "Nov-24": "November",
+    "Dec-24": "December",
+    "Jan-25": "January",
+    "Feb-25": "February",
+    "Mar-25": "March",
   };
+  
 
   //-----------------------------------------------API-----------------------------------------------------------//
   const { data: leadsData, isPending: isLeadsPending } = useQuery({
