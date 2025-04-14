@@ -45,10 +45,10 @@ const WidgetSection = ({
               </span>
 
               {titleLabel ? (
-              <span>
-                <Chip label={titleLabel} sx={{backgroundColor:'#1e3d73', color:'white'}} className="bg-primary text-white"/>
-              </span>
-            ) : ""}
+                <span className="text-title text-primary font-pmedium">{titleLabel}</span>
+              ) : (
+                ""
+              )}
             </div>
 
             {titleData && (
