@@ -47,7 +47,7 @@ const Policies = () => {
       </span>
       <hr />
 
-      <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1 pb-4">
+      <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
         {uploadItems.map((index, item) => {
           return (
             <>

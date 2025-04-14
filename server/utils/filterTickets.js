@@ -193,7 +193,7 @@ async function filterSupportTickets(user, roles, userDepartments) {
   try {
     const supportTickets = await SupportTicket.find({
       ticket: {
-        $in: await Ticket.find({ status: "Open" }).distinct("_id"),
+        $in: await Ticket.find().distinct("_id"),
       },
     })
       .populate({
@@ -228,7 +228,7 @@ async function filterSupportTickets(user, roles, userDepartments) {
       })
       .select("-company");
 
-    if (matchedRole === "Master Admin" || !matchedRole === "Super Admin") {
+    if (matchedRole === "Master Admin" || matchedRole === "Super Admin") {
       return supportTickets;
     } else if (matchedRole === "Admin") {
       let adminTickets = supportTickets.filter((ticket) => {
@@ -255,12 +255,12 @@ async function filterSupportTickets(user, roles, userDepartments) {
 async function filterEscalatedTickets(roles, userDepartments) {
   const queryMapping = {
     "Master Admin": {
-      escalatedTo: { $exists: true, $ne: [] },
-      status: { $ne: "Closed" },
+      // escalatedTo: { $exists: true, $ne: [] },
+      status: "Escalated",
     },
     "Super Admin": {
-      escalatedTo: { $exists: true, $ne: [] },
-      status: { $ne: "Closed" },
+      // escalatedTo: { $exists: true, $ne: [] },
+      status: "Escalated",
     },
     Admin: {
       $and: [
@@ -268,12 +268,13 @@ async function filterEscalatedTickets(roles, userDepartments) {
           raisedToDepartment: { $in: userDepartments },
           status: { $ne: "Closed" },
         },
-        {
-          escalatedTo: {
-            $exists: true,
-            $ne: [],
-          },
-        },
+        // {
+        //   escalatedTo: {
+        //     $exists: true,
+        //     $ne: [],
+        //   },
+        // },
+        { status: "Escalated" },
       ],
     },
   };

@@ -81,6 +81,7 @@ const OverallProfitLoss = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const monthlyProfitLossColumns = [
+    { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "month", headerName: "Month", flex: 1 },
     { field: "income", headerName: "Income", flex: 1 },
     { field: "expense", headerName: "Expense", flex: 1 },
@@ -102,30 +103,35 @@ const OverallProfitLoss = () => {
 
   const monthlyProfitLossData = [
     {
+      srNo: 1,
       month: "April",
       income: "1,20,000",
       expense: "80,000",
       pnl: "40,000",
     },
     {
+      srNo: 2,
       month: "May",
       income: "1,10,000",
       expense: "90,000",
       pnl: "20,000",
     },
     {
+      srNo: 3,
       month: "June",
       income: "95,000",
       expense: "1,05,000",
       pnl: "-10,000",
     },
     {
+      srNo: 4,
       month: "July",
       income: "1,50,000",
       expense: "70,000",
       pnl: "80,000",
     },
     {
+      srNo: 5,
       month: "August",
       income: "1,00,000",
       expense: "1,20,000",
@@ -147,7 +153,7 @@ const OverallProfitLoss = () => {
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
-            year={true}
+            
           />
         </WidgetSection>,
       ],

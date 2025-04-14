@@ -35,8 +35,8 @@ const AreaGraph = ({ responseData }) => {
           { name: "Open Tickets", data: Array(12).fill(0), color: "#ff4d4d" },
         ],
         categories: [
-          "Apr", "May", "Jun", "Jul", "Aug", "Sep",
-          "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"
+          "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
+          "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
         ],
       },
       Monthly: {
@@ -162,7 +162,7 @@ const AreaGraph = ({ responseData }) => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-title font-pregular"></h2>
 
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <button
             className="text-sm px-2 py-1 border rounded bg-gray-100 hover:bg-gray-200"
             onClick={() => {
@@ -199,7 +199,7 @@ const AreaGraph = ({ responseData }) => {
           >
             Next
           </button>
-        </div>
+        </div> */}
 
         <div className="flex gap-2">
           {["Yearly", "Monthly", "Weekly"].map((filter) => (

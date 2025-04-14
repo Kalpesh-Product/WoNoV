@@ -97,39 +97,78 @@ const FinanceVendorDatabase = () => {
     },
   });
 
-  const assetColumns = [
-    { field: "id", headerName: "Sr No" },
-    { field: "department", headerName: "Department" },
-    // { field: "assetNumber", headerName: "Asset Number" },
-    { field: "category", headerName: "Category" },
-    { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
-    { field: "quantity", headerName: "Quantity" },
-    { field: "purchaseDate", headerName: "Purchase Date" },
-    { field: "warranty", headerName: "Warranty (Months)" },
+  const vendorColumns = [
+     { field: "id", headerName: "Sr No" },
+     { field: "vendorName", headerName: "Vendor Name" },
+     { field: "contactPerson", headerName: "Contact Person" },
+     { field: "email", headerName: "Email" },
+     { field: "phone", headerName: "Phone" },
+     { field: "company", headerName: "Company" },
+     { field: "address", headerName: "Address" },
+     { field: "gstNumber", headerName: "GST Number" },
+     {
+       field: "actions",
+       headerName: "Actions",
+       cellRenderer: (params) => (
+         <PrimaryButton
+           title="Details"
+           handleSubmit={() => handleDetailsClick(params.data)}
+         />
+       ),
+     },
+   ];
+
+  // const { data: assetsList = [] } = useQuery({
+  //   queryKey: ["assetsList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-assets");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+
+  const vendorData = [
     {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <PrimaryButton
-          title="Details"
-          handleSubmit={() => handleDetailsClick(params.data)}
-        />
-      ),
+      vendorName: "FinAudit Consultants",
+      contactPerson: "Amit Verma",
+      email: "amit@finaudit.com",
+      phone: "9988776655",
+      company: "FinAudit & Associates LLP",
+      address: "78, Residency Road, Bangalore",
+      gstNumber: "29AMITX7654D7Z9",
+    },
+    {
+      vendorName: "Tally Solutions",
+      contactPerson: "Rohan Khanna",
+      email: "rohan.khanna@tallysolutions.com",
+      phone: "9988776655",
+      company: "Tally Solutions Pvt. Ltd.",
+      address: "Richmond Circle, Bangalore, Karnataka",
+      gstNumber: "29AABCT1234D1Z8",
+    },
+    {
+      vendorName: "ClearTax",
+      contactPerson: "Vikram Patel",
+      email: "vikram.patel@cleartax.in",
+      phone: "9012345678",
+      company: "Defmacro Software Pvt. Ltd.",
+      address: "HSR Layout, Bangalore, Karnataka",
+      gstNumber: "29AACCD1111L1Z4",
+    },
+    {
+      vendorName: "QuickBooks India",
+      contactPerson: "Priya Sharma",
+      email: "priya.sharma@quickbooks.in",
+      phone: "9988001122",
+      company: "Intuit India Software Solutions Pvt. Ltd.",
+      address: "Whitefield, Bangalore, Karnataka",
+      gstNumber: "29AAACU4567M1Z9",
     },
   ];
-
-  const { data: assetsList = [] } = useQuery({
-    queryKey: ["assetsList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-assets");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
+  
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -152,29 +191,24 @@ const FinanceVendorDatabase = () => {
   return (
     <>
       <AgTable
-        key={assetsList.length}
+        key={vendorData.length}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"Vendor Database"}
         buttonTitle={"Add Vendor"}
         data={[
-          ...assetsList.map((asset, index) => ({
+          ...vendorData.map((item, index) => ({
             id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price: asset.price,
-            quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
+            vendorName: item.vendorName,
+            contactPerson: item.contactPerson,
+            email: item.email,
+            phone: item.phone,
+            company: item.company,
+            address: item.address,
+            gstNumber: item.gstNumber,
           })),
         ]}
-        columns={assetColumns}
+        columns={vendorColumns}
         handleClick={handleAddAsset}
       />
 

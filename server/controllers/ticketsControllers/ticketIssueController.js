@@ -213,6 +213,50 @@ const rejectTicketIssue = async (req, res, n) => {
   }
 };
 
+const TicketSettings = async (req, res, next) => {
+  const { user, company } = req;
+  try {
+    // Fetch today's tickets for the logged-in user
+    const tickets = await Ticket.find({
+      company,
+    })
+      .select("raisedBy raisedToDepartment status ticket description")
+      .populate([
+        { path: "raisedBy", select: "firstName lastName" },
+        { path: "raisedToDepartment", select: "name" },
+      ])
+      .lean()
+      .exec();
+
+    if (!tickets.length) {
+      return res.status(200).json([]);
+    }
+
+    // Fetch the company's selected departments with ticket issues
+    const foundCompany = await Company.findOne({ _id: company })
+      .select("selectedDepartments")
+      .lean()
+      .exec();
+
+    if (!foundCompany) {
+      return res.status(400).josn({ message: "Company not found" });
+    }
+
+    // Extract the ticket priority from the company's selected departments
+    const updatedTickets = tickets.map((ticket) => {
+      const newTicket = foundCompany.selectedDepartments.find((ticket) =>
+        ticket.ticketIssues.map((t) => t.title !== ticket)
+      );
+
+      return newTicket;
+    });
+
+    return res.status(200).json(updatedTickets);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   addTicketIssue,
   getTicketIssues,

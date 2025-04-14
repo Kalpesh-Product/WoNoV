@@ -8,9 +8,10 @@ import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
+import { Button, Chip, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
+import dayjs from "dayjs";
 
 const FinanceMonthlyInvoices = () => {
   const { auth } = useAuth();
@@ -97,40 +98,124 @@ const FinanceMonthlyInvoices = () => {
     },
   });
 
-  const assetColumns = [
-    { field: "id", headerName: "ID" },
-    { field: "department", headerName: "Department" },
-    // { field: "assetNumber", headerName: "Asset Number" },
-    { field: "category", headerName: "Category" },
-    { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
-    { field: "quantity", headerName: "Quantity" },
-    { field: "purchaseDate", headerName: "Purchase Date" },
-    { field: "warranty", headerName: "Warranty (Months)" },
+  const invoiceColumns = [
+    { field: "srNo", headerName: "Sr No" },
+    { field: "month", headerName: "Month" },
+    { field: "invoiceNumber", headerName: "Invoice Number" },
+    { field: "vendor", headerName: "Vendor" },
+    { field: "service", headerName: "Service" },
+    { field: "invoiceDate", headerName: "Invoice Date" },
+    { field: "dueDate", headerName: "Due Date" },
+    { field: "amount", headerName: "Amount" },
+    { field: "status", headerName: "Status",
+      cellRenderer: (params) => {
+        const status = params.value ? "Paid" : "Unpaid";
+        const statusColorMap = {
+          UnPaid: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+          Paid: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+        };
+
+        const { backgroundColor, color } = statusColorMap[status] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+        return (
+          <>
+            <Chip
+              label={status}
+              style={{
+                backgroundColor,
+                color,
+              }}
+            />
+          </>
+        );
+      },
+    },
     {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
         <PrimaryButton
-          title="Details"
+          title="View"
           handleSubmit={() => handleDetailsClick(params.data)}
         />
       ),
     },
   ];
+  
 
-  const { data: assetsList = [] } = useQuery({
-    queryKey: ["assetsList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-assets");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+  // const { data: assetsList = [] } = useQuery({
+  //   queryKey: ["assetsList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-assets");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+
+  const monthlyInvoices = [
+    {
+      srNo: 1,
+      month: "April",
+      invoiceNumber: "INV-2024-001",
+      vendor: "FinAudit Consultants",
+      service: "Quarterly Audit",
+      invoiceDate: "2024-04-05",
+      dueDate: "2024-04-20",
+      amount: 45000,
+      status: "Paid",
     },
-  });
+    {
+      srNo: 2,
+      month: "May",
+      invoiceNumber: "INV-2024-002",
+      vendor: "ClearTax",
+      service: "GST Filing",
+      invoiceDate: "2024-05-03",
+      dueDate: "2024-05-18",
+      amount: 18000,
+      status: "Unpaid",
+    },
+    {
+      srNo: 3,
+      month: "June",
+      invoiceNumber: "INV-2024-003",
+      vendor: "Tally Solutions",
+      service: "Accounting Software License",
+      invoiceDate: "2024-06-01",
+      dueDate: "2024-06-15",
+      amount: 12000,
+      status: "Paid",
+    },
+    {
+      srNo: 4,
+      month: "July",
+      invoiceNumber: "INV-2024-004",
+      vendor: "QuickBooks India",
+      service: "Bookkeeping Services",
+      invoiceDate: "2024-07-10",
+      dueDate: "2024-07-25",
+      amount: 30000,
+      status: "Unpaid",
+    },
+    {
+      srNo: 5,
+      month: "August",
+      invoiceNumber: "INV-2024-005",
+      vendor: "FinAudit Consultants",
+      service: "Compliance Review",
+      invoiceDate: "2024-08-07",
+      dueDate: "2024-08-22",
+      amount: 25000,
+      status: "Paid",
+    },
+  ];
 
+  
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
     setModalMode("view");
@@ -152,29 +237,29 @@ const FinanceMonthlyInvoices = () => {
   return (
     <>
       <AgTable
-        key={assetsList.length}
+        key={monthlyInvoices.length}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"Monthly Invoices"}
         // buttonTitle={"Add Asset"}
-        data={[
-          ...assetsList.map((asset, index) => ({
-            id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price: asset.price,
-            quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
+        data={ [
+          ...monthlyInvoices.map((invoice, index) => ({
+            srNo: index + 1,
+            month: invoice.month || "-",
+            invoiceNumber: invoice.invoiceNumber || "-",
+            vendor: invoice.vendor || "-",
+            service: invoice.service || "-",
+            invoiceDate: invoice.invoiceDate
+              ? dayjs(invoice.invoiceDate).format("DD-MM-YYYY")
+              : "-",
+            dueDate: invoice.dueDate
+              ? dayjs(invoice.dueDate).format("DD-MM-YYYY")
+              : "-",
+            amount: Number(invoice.amount)?.toLocaleString("en-IN") || "0",
+            status: invoice.status || "-",
           })),
         ]}
-        columns={assetColumns}
+        columns={invoiceColumns}
         handleClick={handleAddAsset}
       />
 

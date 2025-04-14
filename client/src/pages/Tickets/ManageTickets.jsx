@@ -16,7 +16,8 @@ const ManageTickets = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
-
+  const ticketLabel = auth.user.designation === "Founder & CEO" || auth.user.designation === "Co-Founder & COO" ? "Department " : "Personal"
+ 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
@@ -26,10 +27,13 @@ const ManageTickets = () => {
     queryKey: ["tickets-data"],
     queryFn: async () => {
       try {
+        // const response = await axios.get(
+        //   `/api/tickets/department-tickets/${auth.user?.departments?.map(
+        //     (dept) => dept._id
+        //   )}`
+        // );
         const response = await axios.get(
-          `/api/tickets/department-tickets/${auth.user?.departments?.map(
-            (dept) => dept._id
-          )}`
+          `/api/tickets/get-all-tickets`
         );
 
         return response.data;
@@ -46,8 +50,11 @@ const ManageTickets = () => {
       .length,
     pendingTickets: ticketsData.filter((item) => item.status === "Pending")
       .length,
-    acceptedTickets: ticketsData
-    .filter((item) => item.acceptedBy === auth.user?._id).filter((item)=>item.status === "In Progress").length,
+    // acceptedTickets: ticketsData
+    // .filter((item) => item.acceptedBy === auth.user?._id).filter((item)=>item.status === "In Progress").length,
+    acceptedTickets: ticketsData.filter((item) => item.acceptedBy && item.status !== "Escalated").length,
+    assignedTickets: ticketsData.filter((item) => item.assignees.length > 0 && item.status !== "Escalated").length,
+    escalatedTickets: ticketsData.filter((item)=>item.status === "Escalated").length,
   };
 
   const widgets = [
@@ -91,7 +98,7 @@ const ManageTickets = () => {
               layout={3}
               title={"Personal Pending Tickets"}
               titleDataColor={"black"}
-              titleData={"06"}
+              titleData={"0"}
             >
               <TicketCard
                 title={"Accepted Tickets"}
@@ -102,14 +109,14 @@ const ManageTickets = () => {
               />
               <TicketCard
                 title={"Assigned Tickets"}
-                data={"01"}
+                data={ticketsFilteredData.assignedTickets}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
                 titleColor={"#1E3D73"}
               />
               <TicketCard
                 title={"Escalated Tickets"}
-                data={"02"}
+                data={ticketsFilteredData.escalatedTickets}
                 fontColor={"#1E3D73"}
                 fontFamily={"Poppins-Bold"}
                 titleColor={"#1E3D73"}
@@ -167,7 +174,7 @@ const ManageTickets = () => {
             label={
               <div className="flex flex-col gap-2 text-center">
                 <span className="text-content">Accepted Tickets</span>
-                <span className="text-small">Personal</span>
+                <span className="text-small">{ticketLabel}</span>
               </div>
             }
           />
@@ -175,7 +182,7 @@ const ManageTickets = () => {
             label={
               <div className="flex flex-col gap-2 text-center">
                 <span className="text-content">Support Tickets</span>
-                <span className="text-small">Personal</span>
+                <span className="text-small">{ticketLabel}</span>
               </div>
             }
           />
@@ -183,7 +190,7 @@ const ManageTickets = () => {
             label={
               <div className="flex flex-col gap-2 text-center">
                 <span className="text-content">Escalated Tickets</span>
-                <span className="text-small">Personal</span>
+                <span className="text-small">{ticketLabel}</span>
               </div>
             }
           />
@@ -192,7 +199,7 @@ const ManageTickets = () => {
             label={
               <div className="flex flex-col gap-2 text-center">
                 <span className="text-content">Closed Tickets</span>
-                <span className="text-small">Personal</span>
+                <span className="text-small">{ticketLabel}</span>
               </div>
             }
           />

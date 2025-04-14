@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import TextField from "@mui/material/TextField"; // Assuming you're using Material-UI for TextField
 import PrimaryButton from "../../components/PrimaryButton";
 import useAuth from "../../hooks/useAuth";
-import { api } from "../../utils/axios";
 import { toast } from "sonner";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 
 const ChangePassword = ({ pageTitle }) => {
   const { auth } = useAuth();
+    const axios = useAxiosPrivate();
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -31,9 +32,8 @@ const ChangePassword = ({ pageTitle }) => {
         setErrorMessage("Please provide your current password");
         return;
       }
-      const response = await api.post("/api/auth/check-password", {
-        currentPassword: formData.currentPassword,
-        id: auth.user._id,
+      const response = await axios.post("/api/users/check-password", {
+        currentPassword: formData.currentPassword
       });
       toast.success(response.data.message);
       setPasswordVerified(true);
@@ -61,8 +61,7 @@ const ChangePassword = ({ pageTitle }) => {
       }
 
       // Simulate password change success
-      await api.post("/api/auth/update-password", {
-        id: auth.user._id,
+      await axios.post("/api/users/update-password", {
         newPassword: formData.newPassword,
         confirmPassword: formData.confirmPassword,
       });

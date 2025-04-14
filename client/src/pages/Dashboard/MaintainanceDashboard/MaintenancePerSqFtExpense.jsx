@@ -15,343 +15,176 @@ import WidgetSection from "../../../components/WidgetSection";
 import dayjs from "dayjs";
 
 const MaintenancePerSqFtExpense = () => {
-  const mockBusinessRevenueData = [
+  const mockExpensePerSqFtData = [
     {
       month: "April",
       domains: [
         {
-          name: "ST-701A",
-          revenue: 12000,
+          name: "Sunteck Kanaka - 5th Floor",
+          expense: 112500,
           clients: [
             {
-              client: "Zomato",
-              representative: "John Doe",
-              registerDate: "2024-01-15",
-              actualRevenue: 5000,
+              buildingName: "Sunteck Kanaka",
+              unitNo: "501(A)",
+              occupant: "Nykaa",
+              squareFeet: 450,
+              actualExpense: 22000,
             },
             {
-              client: "Uber",
-              representative: "Jane Smith",
-              registerDate: "2024-02-10",
-              actualRevenue: 4000,
+              buildingName: "Sunteck Kanaka",
+              unitNo: "501(B)",
+              occupant: "Blinkit",
+              squareFeet: 550,
+              actualExpense: 27500,
             },
             {
-              client: "Ola",
-              representative: "Alice Johnson",
-              registerDate: "2024-03-05",
-              actualRevenue: 3000,
+              buildingName: "Sunteck Kanaka",
+              unitNo: "501(A)",
+              occupant: "Flipkart",
+              squareFeet: 700,
+              actualExpense: 32000,
+            },
+            {
+              buildingName: "Sunteck Kanaka",
+              unitNo: "501(B)",
+              occupant: "Myntra",
+              squareFeet: 680,
+              actualExpense: 31000,
             },
           ],
         },
         {
-          name: "ST-701B",
-          revenue: 8000,
+          name: "Sunteck Kanaka - 6th Floor",
+          expense: 121000,
           clients: [
             {
-              client: "Client D",
-              representative: "Bob Brown",
-              registerDate: "2024-01-20",
-              actualRevenue: 4000,
+              buildingName: "Sunteck Kanaka",
+              unitNo: "601(A)",
+              occupant: "Reliance Trends",
+              squareFeet: 750,
+              actualExpense: 35000,
             },
             {
-              client: "Client E",
-              representative: "Charlie White",
-              registerDate: "2024-02-25",
-              actualRevenue: 4000,
+              buildingName: "Sunteck Kanaka",
+              unitNo: "602(B)",
+              occupant: "Tata Cliq",
+              squareFeet: 640,
+              actualExpense: 29000,
+            },
+            {
+              buildingName: "Sunteck Kanaka",
+              unitNo: "601(A)",
+              occupant: "Ajio",
+              squareFeet: 660,
+              actualExpense: 30000,
+            },
+            {
+              buildingName: "Sunteck Kanaka",
+              unitNo: "602(B)",
+              occupant: "Zivame",
+              squareFeet: 600,
+              actualExpense: 27000,
             },
           ],
         },
         {
-          name: "ST-601A",
-          revenue: 15000,
+          name: "Sunteck Kanaka - 7th Floor",
+          expense: 152000,
           clients: [
             {
-              client: "Client F",
-              representative: "Daniel Green",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000,
+              buildingName: "Sunteck Kanaka",
+              unitNo: "701(A)",
+              occupant: "Byju's",
+              squareFeet: 800,
+              actualExpense: 40000,
             },
             {
-              client: "Client G",
-              representative: "Eva Black",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000,
+              buildingName: "Sunteck Kanaka",
+              unitNo: "702(B)",
+              occupant: "Unacademy",
+              squareFeet: 780,
+              actualExpense: 39000,
             },
             {
-              client: "Client H",
-              representative: "Frank Blue",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000,
+              buildingName: "Sunteck Kanaka",
+              unitNo: "701(A)",
+              occupant: "Toppr",
+              squareFeet: 720,
+              actualExpense: 36000,
+            },
+            {
+              buildingName: "Sunteck Kanaka",
+              unitNo: "702(B)",
+              occupant: "Khan Academy",
+              squareFeet: 750,
+              actualExpense: 37000,
             },
           ],
         },
         {
-          name: "ST-601B",
-          revenue: 15000,
+          name: "Dempo Trade Centre - Ground Floor",
+          expense: 55000,
           clients: [
             {
-              client: "Client F",
-              representative: "Daniel Green",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000,
+              buildingName: "Dempo Trade Centre",
+              unitNo: "002",
+              occupant: "Zomato",
+              squareFeet: 500,
+              actualExpense: 25000,
             },
             {
-              client: "Client G",
-              representative: "Eva Black",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client H",
-              representative: "Frank Blue",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000,
+              buildingName: "Dempo Trade Centre",
+              unitNo: "004",
+              occupant: "Swiggy",
+              squareFeet: 600,
+              actualExpense: 30000,
             },
           ],
         },
         {
-          name: "ST-501A",
-          revenue: 15000,
+          name: "Dempo Trade Centre - 7th Floor",
+          expense: 148500,
           clients: [
             {
-              client: "Client F",
-              representative: "Daniel Green",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000,
+              buildingName: "Dempo Trade Centre",
+              unitNo: "706",
+              occupant: "Vedantu",
+              squareFeet: 760,
+              actualExpense: 38000,
             },
             {
-              client: "Client G",
-              representative: "Eva Black",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000,
+              buildingName: "Dempo Trade Centre",
+              unitNo: "703",
+              occupant: "WhiteHat Jr",
+              squareFeet: 700,
+              actualExpense: 35000,
             },
             {
-              client: "Client H",
-              representative: "Frank Blue",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "May",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 15000,
-          clients: [
-            {
-              client: "Client I",
-              representative: "Grace Orange",
-              registerDate: "2024-02-11",
-              actualRevenue: 6000,
+              buildingName: "Dempo Trade Centre",
+              unitNo: "703",
+              occupant: "Simplilearn",
+              squareFeet: 780,
+              actualExpense: 39000,
             },
             {
-              client: "Client J",
-              representative: "Hank Purple",
-              registerDate: "2024-03-09",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client K",
-              representative: "Isabel Cyan",
-              registerDate: "2024-04-14",
-              actualRevenue: 4000,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 9000,
-          clients: [
-            {
-              client: "Client L",
-              representative: "Jack Gray",
-              registerDate: "2024-02-28",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client M",
-              representative: "Kara Silver",
-              registerDate: "2024-03-07",
-              actualRevenue: 4000,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 14000,
-          clients: [
-            {
-              client: "Client N",
-              representative: "Leo Gold",
-              registerDate: "2024-05-20",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client O",
-              representative: "Mia Platinum",
-              registerDate: "2024-06-08",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client P",
-              representative: "Noah Bronze",
-              registerDate: "2024-07-15",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "June",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 18000,
-          clients: [
-            {
-              client: "Client Q",
-              representative: "Olivia Rose",
-              registerDate: "2024-01-30",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client R",
-              representative: "Peter Brown",
-              registerDate: "2024-02-18",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client S",
-              representative: "Quincy Black",
-              registerDate: "2024-03-26",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 10000,
-          clients: [
-            {
-              client: "Client T",
-              representative: "Rachel Violet",
-              registerDate: "2024-04-12",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client U",
-              representative: "Sam Indigo",
-              registerDate: "2024-05-07",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 13000,
-          clients: [
-            {
-              client: "Client V",
-              representative: "Tina Lilac",
-              registerDate: "2024-06-05",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client W",
-              representative: "Umar Yellow",
-              registerDate: "2024-07-08",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Client X",
-              representative: "Victor Pink",
-              registerDate: "2024-08-15",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "July",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 20000,
-          clients: [
-            {
-              client: "Client Y",
-              representative: "Wendy Red",
-              registerDate: "2024-03-10",
-              actualRevenue: 8000,
-            },
-            {
-              client: "Client Z",
-              representative: "Xavier Green",
-              registerDate: "2024-04-14",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client AA",
-              representative: "Yara Blue",
-              registerDate: "2024-05-16",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 11000,
-          clients: [
-            {
-              client: "Client AB",
-              representative: "Zane Orange",
-              registerDate: "2024-06-20",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client AC",
-              representative: "Adam Gray",
-              registerDate: "2024-07-10",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 16000,
-          clients: [
-            {
-              client: "Client AD",
-              representative: "Betty Silver",
-              registerDate: "2024-08-25",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client AE",
-              representative: "Charlie Platinum",
-              registerDate: "2024-09-14",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client AF",
-              representative: "David Bronze",
-              registerDate: "2024-10-05",
-              actualRevenue: 3000,
+              buildingName: "Dempo Trade Centre",
+              unitNo: "706",
+              occupant: "UpGrad",
+              squareFeet: 740,
+              actualExpense: 36500,
             },
           ],
         },
       ],
     },
   ];
-
+  
+  
+  
+  
+  
   const [selectedMonth, setSelectedMonth] = useState(
-    mockBusinessRevenueData[0].month
+    mockExpensePerSqFtData[0].month
   ); // Default to first month
 
   // Function to update selected month
@@ -360,27 +193,40 @@ const MaintenancePerSqFtExpense = () => {
   };
 
   // Filter data based on selected month
-  const selectedMonthData = mockBusinessRevenueData.find(
+  const selectedMonthData = mockExpensePerSqFtData.find(
     (data) => data.month === selectedMonth
   );
 
+
   if (selectedMonthData) {
     selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
-      const updatedClients = domain.clients.map((client, index) => ({
-        ...client,
-        srNo: index + 1,
-        registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
-        actualRevenue: Number(client.actualRevenue).toLocaleString("en-IN")
-      }));
-      return { ...domain, clients: updatedClients };
+      const updatedClients = domain.clients.map((client, index) => {
+        const expense = Number(client.actualExpense);
+        const sqft = Number(client.squareFeet);
+        const expensePerSqFt = sqft ? expense / sqft : 0;
+  
+        return {
+          ...client,
+          srNo: index + 1,
+          actualExpense: expense, // Ensure number for calculations
+          expensePerSqFt: expensePerSqFt.toFixed(0), // Rounded value
+        };
+      });
+  
+      return {
+        ...domain,
+        clients: updatedClients,
+      };
     });
   }
+  
+  
 
   // Prepare Bar Graph Data
   const graphData = [
     {
       name: "Revenue",
-      data: selectedMonthData.domains.map((domain) => domain.revenue),
+      data: selectedMonthData.domains.map((domain) => domain.expense),
     },
   ];
 
@@ -390,7 +236,7 @@ const MaintenancePerSqFtExpense = () => {
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
-    yaxis: { title: { text: "Revenue (in Rupees)" } },
+    yaxis: { title: { text: "Expense (in Rupees)" } },
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
@@ -409,7 +255,7 @@ const MaintenancePerSqFtExpense = () => {
             value={selectedMonth}
             onChange={handleMonthChange}
             sx={{ width: "200px" }}>
-            {mockBusinessRevenueData.map((data) => (
+            {mockExpensePerSqFtData.map((data) => (
               <MenuItem key={data.month} value={data.month}>
                 {data.month}
               </MenuItem>
@@ -437,7 +283,7 @@ const MaintenancePerSqFtExpense = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    INR {domain.revenue.toLocaleString()}
+                  INR {Number(domain.expense).toLocaleString()}
                   </span>
                 </div>
               </AccordionSummary>
@@ -447,17 +293,17 @@ const MaintenancePerSqFtExpense = () => {
                   hideFilter
                   columns={[
                     { header: "Sr No", field: "srNo", flex: 1 },
-                    { header: "Client", field: "client", flex: 1 },
+                    { header: "Building Name", field: "buildingName", flex: 1 },
+                    { header: "Unit No", field: "unitNo", flex: 1 },
+                    { header: "Occupant", field: "occupant", flex: 1 },
+                    { header: "Square Feet", field: "squareFeet", flex: 1 },
+                    { header: "Actual Expense", field: "actualExpense", flex: 1 },
                     {
-                      header: "Representative",
-                      field: "representative",
+                      header: "Expense / Sq Ft",
+                      field: "expensePerSqFt",
                       flex: 1,
-                    },
-                    { header: "Register Date", field: "registerDate", flex: 1 },
-                    {
-                      header: "Actual Revenue",
-                      field: "actualRevenue",
-                      flex: 1,
+                      valueFormatter: (params) =>
+                        Number(params.value).toLocaleString("en-IN"),
                     },
                   ]}
                   tableHeight={300}
@@ -468,7 +314,7 @@ const MaintenancePerSqFtExpense = () => {
                       Total Revenue for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                      INR {domain.revenue.toLocaleString()}
+                    INR {Number(domain.expense).toLocaleString()}
                     </span>{" "}
                   </div>
                 </div>

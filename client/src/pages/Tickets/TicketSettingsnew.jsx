@@ -10,6 +10,7 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Chip,
 
 } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
@@ -17,17 +18,34 @@ import { IoIosArrowDown } from "react-icons/io";
 const Row = ({ row }) => {
   const [open, setOpen] = React.useState(false);
 
+  const statusColorMap = {
+    "In Progress": { backgroundColor: "#FFECC5", color: "#CC8400" },
+    Closed: { backgroundColor: "#90EE90", color: "#02730a" },
+    Pending: { backgroundColor: "#FFE0DC", color: "#C2410C" },
+    Escalated: { backgroundColor: "#E6E6FA", color: "#4B0082" },
+  };
+ 
+  const statusStyle = statusColorMap[row.status] || {
+    backgroundColor: "gray",
+    color: "white",
+  };
+  
+
+  // className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs"
+
   return (
     <>
       <TableRow>
         <TableCell align="center">{row.srNo}</TableCell>
         <TableCell align="center">{row.raisedBy}</TableCell>
-        <TableCell align="center">{row.department}</TableCell>
+        <TableCell align="center">{row.fromDepartment}</TableCell>
         <TableCell align="center">{row.ticketTitle}</TableCell>
         <TableCell align="center">
-          <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">
-            {row.status}
-          </span>
+        <Chip
+    label={row.status}
+    style={statusStyle}
+  
+  />
         </TableCell>
         <TableCell align="left">
           <IconButton size="small" onClick={() => setOpen(!open)}>
@@ -68,38 +86,99 @@ const Row = ({ row }) => {
 
 const TicketSettingsNew = () => {
   
+  // const rows = [
+  //   {
+  //     raisedBy: "Abrar Shaikh",
+  //     department: "IT",
+  //     ticketTitle: "Wifi is not working",
+  //     status: "Pending",
+  //   },
+  //   {
+  //     raisedBy: "Abrar Shaikh",
+  //     department: "IT",
+  //     ticketTitle: "Ac is not working",
+  //     status: "Pending",
+  //   },
+  //   {
+  //     raisedBy: "Abrar Shaikh",
+  //     department: "IT",
+  //     ticketTitle: "Page is not loading",
+  //     status: "Pending",
+  //   },
+  //   {
+  //     raisedBy: "Abrar Shaikh",
+  //     department: "IT",
+  //     ticketTitle: "Need More accessories",
+  //     status: "Pending",
+  //   },
+  //   {
+  //     raisedBy: "Abrar Shaikh",
+  //     department: "IT",
+  //     ticketTitle: "Need More accessories",
+  //     status: "Pending",
+  //   },
+  // ];
+
+
   const rows = [
     {
-      raisedBy: "Abrar Shaikh",
-      department: "IT",
-      ticketTitle: "Wifi is not working",
+      srNo: "1",
+      raisedBy: "Utkarsha Palkar",
+      fromDepartment: "Maintenance",
+      ticketTitle: "AC not working in Collosseum",
+      status: "In Progress",
+    },
+    {
+      srNo: "2",
+      raisedBy: "Kalpesh Naik",
+      fromDepartment: "Finance",
+      ticketTitle: "Unable to generate monthly expense report",
+      status: "Closed",
+    },
+    {
+      srNo: "3",
+      raisedBy: "Allan Mark Silvera",
+      fromDepartment: "IT",
+      ticketTitle: "System running slow after update",
       status: "Pending",
     },
     {
-      raisedBy: "Abrar Shaikh",
-      department: "IT",
-      ticketTitle: "Ac is not working",
+      srNo: "4",
+      raisedBy: "Siddhi Naik",
+      fromDepartment: "IT",
+      ticketTitle: "Printer not connecting to Wi-Fi",
+      status: "Open",
+    },
+    {
+      srNo: "5",
+      raisedBy: "Aiwinraj KS",
+      fromDepartment: "Maintenance",
+      ticketTitle: "Water leakage near server room",
+      status: "In Progress",
+    },
+    {
+      srNo: "6",
+      raisedBy: "Utkarsha Palkar",
+      fromDepartment: "Finance",
+      ticketTitle: "Incorrect tax calculations in payroll system",
       status: "Pending",
     },
     {
-      raisedBy: "Abrar Shaikh",
-      department: "IT",
-      ticketTitle: "Page is not loading",
-      status: "Pending",
+      srNo: "7",
+      raisedBy: "Hema Sawant",
+      fromDepartment: "Tech",
+      ticketTitle: "Server downtime experienced at 2 AM",
+      status: "Closed",
     },
     {
-      raisedBy: "Abrar Shaikh",
-      department: "IT",
-      ticketTitle: "Need More accessories",
-      status: "Pending",
-    },
-    {
-      raisedBy: "Abrar Shaikh",
-      department: "IT",
-      ticketTitle: "Need More accessories",
-      status: "Pending",
+      srNo: "8",
+      raisedBy: "Sankalp Kalangutkar",
+      fromDepartment: "IT",
+      ticketTitle: "Mouse and keyboard not working",
+      status: "Open",
     },
   ];
+  
 
   const headerCellStyle = {
     backgroundColor: "#f4f4f4",
