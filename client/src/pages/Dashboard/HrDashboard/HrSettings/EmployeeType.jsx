@@ -132,12 +132,9 @@ const EmployeeType = () => {
                 }
               />
 
-              <div className='flex items-center justify-center gap-4'>
-                <SecondaryButton title={"Cancel"} handleSubmit={() => { setOpenModal(false) }} />
-                <PrimaryButton title={"Add"} handleSubmit={() => {
-                  toast.success("Employee Type added")
-                }} />
-              </div>
+              <PrimaryButton title={"Add"} handleSubmit={() => {
+                toast.success("Employee Type added")
+              }} />
             </form>
           </div>
         </MuiModal>

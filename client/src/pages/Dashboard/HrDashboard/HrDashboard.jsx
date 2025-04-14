@@ -607,7 +607,7 @@ const HrDashboard = () => {
         {
           icon: <MdMiscellaneousServices />,
           title: "Settings",
-          route: "settings",
+          route: "settings/bulk-upload",
         },
       ]
         .filter((widget) => accessibleModules.has(widget.title)) // ✅ Filter widgets
