@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import dayjs from "dayjs";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const MaintenanceAssetList = () => {
   const { auth } = useAuth();
@@ -98,7 +99,7 @@ const MaintenanceAssetList = () => {
   });
 
   const assetColumns = [
-    { field: "id", headerName: "Sr No", width : 100 },
+    { field: "id", headerName: "Sr No", width: 100 },
     { field: "department", headerName: "Department" },
     { field: "inventoryNumber", headerName: "Inventory Number" },
     { field: "category", headerName: "Category" },
@@ -111,11 +112,15 @@ const MaintenanceAssetList = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <div className="p-2">
-          <PrimaryButton
-            title="Details"
-            handleSubmit={() => handleDetailsClick(params.data)}
-          />
+        <div
+          onClick={() => {
+            handleDetailsClick(params.data);
+          }}
+          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
+        >
+          <span className="text-subtitle">
+            <MdOutlineRemoveRedEye />
+          </span>
         </div>
       ),
     },
