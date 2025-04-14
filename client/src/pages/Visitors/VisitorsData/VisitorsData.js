@@ -144,8 +144,8 @@ const assetUtilizationOptions = {
 
 //---------------Asset Availabilty Pie start--------------------
 
-const totalAssets = 50; // Total assets count
-const assignedAssets = 36; // Assigned assets count
+const totalAssets = 15; // Total assets count
+const assignedAssets = 9; // Assigned assets count
 const unassignedAssets = totalAssets - assignedAssets; // Calculate unassigned assets
 
 // Process Data for Pie Chart
@@ -156,7 +156,7 @@ const assetAvailabilityDataV = [
     count: assignedAssets,
   },
   {
-    label: "Checked In",
+    label: "Yet To Check Out",
     value: ((unassignedAssets / totalAssets) * 100).toFixed(1),
     count: unassignedAssets,
   },
@@ -234,6 +234,8 @@ const departmentWiseAssets = [
   { label: "HR", value: 70 },
   { label: "Sales", value: 110 },
   { label: "Admin", value: 110 },
+  { label: "Finance", value: 60 },
+  { label: "Maintenance", value: 96 },
 ];
 
 const totalDepartmentAssets = departmentWiseAssets.reduce(

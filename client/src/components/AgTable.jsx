@@ -212,7 +212,7 @@ const AgTableComponent = React.memo(
         </div>
         {tableTitle && (
           <div className="flex items-center justify-between py-4">
-            <span className="font-pmedium text-title text-primary">
+            <span className="font-pmedium text-title text-primary uppercase">
               {tableTitle}
             </span>
             <div className="flex items-center gap-4">
@@ -242,8 +242,7 @@ const AgTableComponent = React.memo(
         <MuiAside
           open={isFilterDrawerOpen}
           onClose={() => setFilterDrawerOpen(false)}
-          title="Advanced Filter"
-        >
+          title="Advanced Filter">
           {columns.map((column) =>
             dropdownColumns.includes(column.field) ? (
               <TextField
@@ -257,8 +256,7 @@ const AgTableComponent = React.memo(
                 value={filters[column.field] || ""}
                 onChange={(e) =>
                   handleFilterChange(column.field, e.target.value)
-                }
-              >
+                }>
                 <MenuItem value="">All</MenuItem>
                 {columnOptions[column.field]?.map((option) => (
                   <MenuItem key={option} value={option}>
@@ -288,8 +286,7 @@ const AgTableComponent = React.memo(
         <div
           ref={tableRef}
           className="ag-theme-quartz border-none w-full font-pregular"
-          style={{ height: tableHeight || 500 }}
-        >
+          style={{ height: tableHeight || 500 }}>
           <AgGridReact
             ref={gridRef}
             rowData={filteredData}
@@ -313,8 +310,7 @@ const AgTableComponent = React.memo(
         {selectedRows.length > 0 && isTableInView && (
           <div
             className="fixed bottom-8 right-[38rem] bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition motion-preset-slide-up-sm"
-            onClick={handleActionClick}
-          >
+            onClick={handleActionClick}>
             Mark as Done ({selectedRows.length})
           </div>
         )}

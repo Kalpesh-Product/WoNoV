@@ -63,7 +63,6 @@ const VisitorReviews = () => {
     },
   });
 
-
   const departmentsColumn = [
     { field: "srno", headerName: "SR No" },
     {
@@ -128,8 +127,7 @@ const VisitorReviews = () => {
                 params.value === "Reply Review" ? (
                   <div
                     className="flex flex-row items-center justify-center gap-2"
-                    onClick={handleClick}
-                  >
+                    onClick={handleClick}>
                     <PiArrowBendLeftDownBold />
                     {params.value}
                   </div>
@@ -151,9 +149,15 @@ const VisitorReviews = () => {
       flex: 1,
     },
   ];
-
   const averageRatings =
-    reviews.reduce((acc, curr) => acc + curr.rate, 0) / reviews.length;
+    reviews.length > 0
+      ? (
+          reviews.reduce((acc, curr) => acc + curr.rate, 0) / reviews.length
+        ).toFixed(2)
+      : "0.00";
+
+  // const averageRatings =
+  //   reviews.reduce((acc, curr) => acc + curr.rate, 0) / reviews.length;
 
   // const averageRatings = rating
 
@@ -183,7 +187,7 @@ const VisitorReviews = () => {
                 id: review._id,
                 srno: index + 1,
                 nameofreview: review.reviewerName,
-                date : humanDate(review.createdAt),
+                date: humanDate(review.createdAt),
                 rate: review.rate,
                 Reviews: review.review,
                 action: review?.reply ? "Replied" : "Reply Review",
@@ -195,8 +199,7 @@ const VisitorReviews = () => {
         <MuiAside
           open={openSidebar}
           onClose={() => setOpenSidebar(false)}
-          title={"Reviews"}
-        >
+          title={"Reviews"}>
           <div className="p-2 space-y-6">
             <h1 className="font-pmedium text-subtitle">
               {reviewData.nameofreview}
@@ -210,8 +213,7 @@ const VisitorReviews = () => {
             <div className="mt-5">
               <form
                 onSubmit={handleSubmit(replyReview)}
-                className="flex flex-col gap-4"
-              >
+                className="flex flex-col gap-4">
                 <Controller
                   name="reply"
                   control={control}

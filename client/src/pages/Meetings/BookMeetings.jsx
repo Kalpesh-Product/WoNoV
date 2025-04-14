@@ -211,8 +211,7 @@ const BookMeetings = () => {
         </h2>
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col items-center"
-        >
+          className="flex flex-col items-center">
           <div className="grid grid-cols-1 px-0 sm:grid-cols-1 md:grid-cols-2 md:px-0 sm:px-0 justify-center gap-4 mb-10 w-full">
             {/* Location Dropdown */}
             <Controller
@@ -237,8 +236,7 @@ const BookMeetings = () => {
                         (building) => building?._id === locationId
                       );
                       setSelectedUnitId(selectedLocation?._id || "");
-                    }}
-                  >
+                    }}>
                     <MenuItem value="" disabled>
                       {" "}
                       Seletc Location
@@ -265,8 +263,7 @@ const BookMeetings = () => {
                   select
                   disabled={!watchFields.location}
                   error={!!errors.meetingRoom}
-                  helperText={errors.meetingRoom?.message}
-                >
+                  helperText={errors.meetingRoom?.message}>
                   <MenuItem value="" disabled>
                     Select Room
                   </MenuItem>
@@ -280,7 +277,8 @@ const BookMeetings = () => {
                             <span>{room.name}</span>
                             <div className="flex text-small gap-2 items-center py-1 px-2 rounded-full bg-primary bg-opacity-10 text-primary">
                               <span>{room.seats}</span>
-                              <MdEventSeat />
+                              {/* <MdEventSeat /> */}
+                              Seater
                             </div>
                           </div>
                           <div>
@@ -289,8 +287,7 @@ const BookMeetings = () => {
                                 room.status === "Available"
                                   ? "bg-green-400"
                                   : "bg-red-600"
-                              }`}
-                            ></div>
+                              }`}></div>
                           </div>
                         </div>
                       </MenuItem>
@@ -339,12 +336,10 @@ const BookMeetings = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add review"}
-      >
+        title={"Add review"}>
         <form
           onSubmit={reviewForm(submitReview)}
-          className="flex flex-col gap-4"
-        >
+          className="flex flex-col gap-4">
           <div className="flex gap-4 items-center">
             <span className="text-content">
               How was your meeting room experience ?

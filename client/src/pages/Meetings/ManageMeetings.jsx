@@ -342,7 +342,7 @@ const ManageMeetings = () => {
               <ThreeDotMenu
                 menuItems={[
                   {
-                    label: "Update",
+                    label: "Update Checklist",
                     onClick: () =>
                       handleOpenChecklistModal("update", params.data._id),
                   },
@@ -480,7 +480,14 @@ const ManageMeetings = () => {
         </Box>
       </MuiModal>
       <MuiModal
-        title={"Meeting Details"}
+        // title={"Meeting Details"}
+        title={
+          modalMode === "viewDetails"
+            ? "Meeting Details"
+            : modalMode === "cancel"
+            ? "Cancel Meeting"
+            : ""
+        }
         open={detailsModal}
         onClose={() => setDetailsModal(false)}>
         {modalMode === "viewDetails" && (
@@ -492,11 +499,11 @@ const ManageMeetings = () => {
             <DetalisFormatted title={"Date"} detail={selectedMeeting?.date} />
             <DetalisFormatted
               title={"Start Time"}
-              detail={selectedMeeting?.startTime}
+              detail={humanTime(selectedMeeting?.startTime)}
             />
             <DetalisFormatted
               title={"End Time"}
-              detail={selectedMeeting?.endTime}
+              detail={humanTime(selectedMeeting?.endTime)}
             />
             <div className="col-span-1 ">
               <DetalisFormatted

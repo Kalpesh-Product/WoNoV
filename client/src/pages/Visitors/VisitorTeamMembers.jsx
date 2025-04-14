@@ -40,15 +40,15 @@ const VisitorTeamMembers = () => {
   ];
 
   const teamMembersData = [
-    {
-      id: 1,
-      name: "Pranali Kandolkar",
-      email: "test.email@gmail.com",
-      role: "Sr. Associate - Community & Admin",
-      currentDesk: "ST 701A",
-      location: "ST",
-      status: "Active",
-    },
+    // {
+    //   id: 1,
+    //   name: "Pranali Kandolkar",
+    //   email: "test.email@gmail.com",
+    //   role: "Sr. Associate - Community & Admin",
+    //   currentDesk: "ST 701A",
+    //   location: "ST",
+    //   status: "Active",
+    // },
     {
       id: 2,
       name: "Anne Fernandes",
