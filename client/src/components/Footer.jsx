@@ -33,7 +33,7 @@ const Footer = ({ changeActiveTab }) => {
     <div className="bg-black text-white py-6">
       <div className="py-4 px-16 flex flex-wrap lg:flex-nowrap items-center gap-4">
         <div className=" w-full flex flex-col gap-2 justify-center items-center md:justify-center md:items-center lg:justify-start lg:items-start">
-          <div className="h-20 w-40">
+          <div className="h-15 w-40">
             <img
               className="w-[88%] h-full object-contain"
               src={wonoLogo}
@@ -67,10 +67,10 @@ const Footer = ({ changeActiveTab }) => {
         </div>
       </div>
       <div className="flex flex-col justify-center items-center border-t border-gray-600 pt-4">
-  <p className="text-content text-gray-400 text-center">
-    Powered by WONOCO PRIVATE LIMITED - SINGAPORE. All Rights Reserved. © Copyright {getFiscalYearString()}
-  </p>
-</div>
+        <p className="text-content text-gray-400 text-center">
+          Powered by WONOCO PRIVATE LIMITED - SINGAPORE. All Rights Reserved. © Copyright {getFiscalYearString()}
+        </p>
+      </div>
     </div>
   );
 };
