@@ -12,6 +12,8 @@ import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import dayjs from "dayjs";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 
 const MaintenanceAnnualExpenses = () => {
   const { auth } = useAuth();
@@ -41,28 +43,28 @@ const MaintenanceAnnualExpenses = () => {
     },
   });
 
-  const { data: assetsCategories = [], isPending: assetPending } = useQuery({
-    queryKey: ["assetsCategories"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-category");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
-  const { data: vendorDetials = [], isPending: isVendorDetails } = useQuery({
-    queryKey: ["vendorDetials"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/vendors/get-vendors");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
+  // const { data: assetsCategories = [], isPending: assetPending } = useQuery({
+  //   queryKey: ["assetsCategories"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-category");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+  // const { data: vendorDetials = [], isPending: isVendorDetails } = useQuery({
+  //   queryKey: ["vendorDetials"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/vendors/get-vendors");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
@@ -106,11 +108,15 @@ const MaintenanceAnnualExpenses = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <div className="p-2">
-          <PrimaryButton
-            title="Details"
-            handleSubmit={() => handleDetailsClick(params.data)}
-          />
+        <div
+          onClick={() => {
+            handleDetailsClick(params.data);
+          }}
+          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
+        >
+          <span className="text-subtitle">
+            <MdOutlineRemoveRedEye />
+          </span>
         </div>
       ),
     },
@@ -201,7 +207,7 @@ const MaintenanceAnnualExpenses = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={"Add expense"}
+        title={modalMode === "view" ? "View Details" : "Add Expense"}
       >
         {modalMode === "add" && (
           <div>
@@ -286,15 +292,32 @@ const MaintenanceAnnualExpenses = () => {
               {/* Conditionally render submit/edit button */}
               <div className="flex gap-4 justify-center items-center mt-4">
                 <PrimaryButton
-                  handleSubmit={()=>{
-                    toast.success("Expense type added succesfully")
-                    setIsModalOpen(false)
+                  handleSubmit={() => {
+                    toast.success("Expense type added succesfully");
+                    setIsModalOpen(false);
                   }}
                   title={modalMode === "add" ? "Submit" : "Update"}
                 />
                 {/* Cancel button for edit mode */}
               </div>
             </form>
+          </div>
+        )}
+        {modalMode === "view" && selectedAsset && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3 px-2 py-4">
+            <DetalisFormatted
+              title="Category"
+              detail={selectedAsset.category}
+            />
+            <DetalisFormatted
+              title="Expense Name"
+              detail={selectedAsset.expenseName}
+            />
+            <DetalisFormatted
+              title="Amount"
+              detail={`₹${selectedAsset.amount}`}
+            />
+            <DetalisFormatted title="Date" detail={selectedAsset.date} />
           </div>
         )}
       </MuiModal>

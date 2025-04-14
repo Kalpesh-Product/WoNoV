@@ -11,6 +11,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const MaintenanceVendorReports = () => {
   const { auth } = useAuth();
@@ -63,8 +65,6 @@ const MaintenanceVendorReports = () => {
     },
   });
 
-  console.log(vendorDetials);
-
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
     mutationFn: async (data) => {
@@ -110,14 +110,19 @@ const MaintenanceVendorReports = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <PrimaryButton
-          title="Details"
-          handleSubmit={() => handleDetailsClick(params.data)}
-        />
+        <div
+          onClick={() => {
+            handleDetailsClick(params.data);
+          }}
+          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
+        >
+          <span className="text-subtitle">
+            <MdOutlineRemoveRedEye />
+          </span>
+        </div>
       ),
     },
   ];
-  
 
   // const { data: assetsList = [] } = useQuery({
   //   queryKey: ["assetsList"],
@@ -169,9 +174,6 @@ const MaintenanceVendorReports = () => {
       gstNumber: "29AAACU4567M1Z9",
     },
   ];
-  
-  
-  
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -215,7 +217,7 @@ const MaintenanceVendorReports = () => {
         handleClick={handleAddAsset}
       />
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}  title={modalMode === "view" ? "View Details" : "Add Vendor"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -232,7 +234,8 @@ const MaintenanceVendorReports = () => {
                           errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                        } `}>
+                        } `}
+                      >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -242,7 +245,8 @@ const MaintenanceVendorReports = () => {
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}>
+                          }}
+                        >
                           <Button
                             variant="outlined"
                             component="label"
@@ -257,7 +261,8 @@ const MaintenanceVendorReports = () => {
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}>
+                            }}
+                          >
                             Select Image
                             <input
                               type="file"
@@ -283,7 +288,8 @@ const MaintenanceVendorReports = () => {
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}>
+                            }}
+                          >
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -300,7 +306,8 @@ const MaintenanceVendorReports = () => {
                       {...field}
                       label="Asset Type"
                       helperText={!!errors.assetType?.message}
-                      select>
+                      select
+                    >
                       <MenuItem value="">Select an Asset Type</MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
@@ -320,7 +327,8 @@ const MaintenanceVendorReports = () => {
                       {...field}
                       select
                       label="Department"
-                      size="small">
+                      size="small"
+                    >
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -341,7 +349,8 @@ const MaintenanceVendorReports = () => {
                       fullWidth
                       select
                       label="Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -361,7 +370,8 @@ const MaintenanceVendorReports = () => {
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}
@@ -496,6 +506,27 @@ const MaintenanceVendorReports = () => {
                 {/* Cancel button for edit mode */}
               </div>
             </form>
+          </div>
+        )}
+
+        {modalMode === "view" && selectedAsset && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3 px-2 py-4">
+            <DetalisFormatted
+              title="Vendor Name"
+              detail={selectedAsset.vendorName}
+            />
+            <DetalisFormatted
+              title="Contact Person"
+              detail={selectedAsset.contactPerson}
+            />
+            <DetalisFormatted title="Email" detail={selectedAsset.email} />
+            <DetalisFormatted title="Phone" detail={selectedAsset.phone} />
+            <DetalisFormatted title="Company" detail={selectedAsset.company} />
+            <DetalisFormatted title="Address" detail={selectedAsset.address} />
+            <DetalisFormatted
+              title="GST Number"
+              detail={selectedAsset.gstNumber}
+            />
           </div>
         )}
       </MuiModal>
