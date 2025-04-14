@@ -13,10 +13,13 @@ import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import dayjs from "dayjs";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 
 const FinanceAssetList = () => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
+    const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [viewDetails, setViewDetails] = useState(null);
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -65,7 +68,6 @@ const FinanceAssetList = () => {
     },
   });
 
-  console.log(vendorDetials);
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
@@ -119,7 +121,7 @@ const FinanceAssetList = () => {
              
             className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
           >
-            <span className="text-subtitle">
+            <span className="text-subtitle cursor-pointer" onClick={() => handleViewModal(params.data)}>
               <MdOutlineRemoveRedEye />
             </span>
           </div>
@@ -252,6 +254,11 @@ const FinanceAssetList = () => {
     }
   };
 
+  const handleViewModal = (rowData) => {
+    setViewDetails(rowData);
+    setViewModalOpen(true);
+  };
+
   return (
     <>
       <AgTable
@@ -276,6 +283,24 @@ const FinanceAssetList = () => {
         columns={assetColumns}
         handleClick={handleAddAsset}
       />
+
+{viewDetails && <ViewDetailsModal
+open={viewModalOpen}
+onClose={() => setViewModalOpen(false)}
+data={{...viewDetails,price:"INR " + Number(
+  viewDetails.price.toLocaleString("en-IN").replace(/,/g, "")
+).toLocaleString("en-IN", { maximumFractionDigits: 0 })
+}}
+title="Statutory Payment Detail"
+fields={[
+  { label: "Category", key: "category" },
+  { label: "Brand", key: "brand" },
+  { label: "Price", key: "price" },
+  { label: "Quantity", key: "quantity" },
+  { label: "Purchase Date", key: "purchaseDate" },
+  { label: "Warranty (Months)", key: "warranty" },
+]}
+/>}
 
       <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
         {modalMode === "add" && (

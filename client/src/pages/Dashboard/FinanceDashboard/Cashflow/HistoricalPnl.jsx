@@ -37,7 +37,7 @@ const mockBusinessRevenueData = [
     "month": "FY 2024-25",
     "domains": [
       {
-        "name": "2024-2025",
+        "name": "2024-25",
         "totalProfitLoss": 659015,
         "clients": [
           {
@@ -107,7 +107,7 @@ const mockBusinessRevenueData = [
         ]
       },
       {
-        "name": "2023-2024",
+        "name": "2023-24",
         "totalProfitLoss": 580756,
         "clients": [
           {
@@ -177,7 +177,7 @@ const mockBusinessRevenueData = [
         ]
       },
       {
-        "name": "2022-2023",
+        "name": "2022-23",
         "totalProfitLoss": 459132,
         "clients": [
           {
@@ -247,7 +247,7 @@ const mockBusinessRevenueData = [
         ]
       },
       {
-        "name": "2021-2022",
+        "name": "2021-22",
         "totalProfitLoss": 364978,
         "clients": [
           {
@@ -317,7 +317,7 @@ const mockBusinessRevenueData = [
         ]
       },
       {
-        "name": "2020-2021",
+        "name": "2020-21",
         "totalProfitLoss": 615630,
         "clients": [
           {
@@ -387,7 +387,7 @@ const mockBusinessRevenueData = [
         ]
       },
       {
-        "name": "2019-2020",
+        "name": "2019-20",
         "totalProfitLoss": 620934,
         "clients": [
           {
@@ -559,9 +559,7 @@ const mockBusinessRevenueData = [
         // "Feb-25",
         // "Mar-25",
       ],
-      title: {
-        text: "2020-2025", // overridden by BarGraph component
-      },
+
     },
     yaxis: {
       title: {
@@ -583,10 +581,11 @@ const mockBusinessRevenueData = [
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Historical P&L"}>
+        <WidgetSection border titleLabel={"FY 2024-25"}  title={"Historical P&L"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
+            
           />
         </WidgetSection>,
       ],

@@ -12,14 +12,18 @@ import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 
 const FinanceVendorDatabase = () => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [viewDetails, setViewDetails] = useState(null);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+
   const {
     handleSubmit,
     control,
@@ -63,8 +67,6 @@ const FinanceVendorDatabase = () => {
       }
     },
   });
-
-  console.log(vendorDetials);
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
@@ -117,7 +119,7 @@ const FinanceVendorDatabase = () => {
                                 
                                className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
                              >
-                               <span className="text-subtitle">
+                               <span className="text-subtitle cursor-pointer" onClick={() => handleViewModal(params.data)}>
                                  <MdOutlineRemoveRedEye />
                                </span>
                              </div>
@@ -178,6 +180,10 @@ const FinanceVendorDatabase = () => {
     },
   ];
   
+  const handleViewModal = (rowData) => {
+    setViewDetails(rowData);
+    setViewModalOpen(true);
+  };
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -220,6 +226,24 @@ const FinanceVendorDatabase = () => {
         columns={vendorColumns}
         handleClick={handleAddAsset}
       />
+
+{viewDetails && (
+  <ViewDetailsModal
+    open={viewModalOpen}
+    onClose={() => setViewModalOpen(false)}
+    data={viewDetails}
+    title="Vendor Detail"
+    fields={[
+      { label: "Vendor Name", key: "vendorName" },
+      { label: "Contact Person", key: "contactPerson" },
+      { label: "Email", key: "email" },
+      { label: "Phone", key: "phone" },
+      { label: "Company", key: "company" },
+      { label: "Address", key: "address" },
+      { label: "GST Number", key: "gstNumber" },
+    ]}
+  />
+)}
 
       <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
         {modalMode === "add" && (

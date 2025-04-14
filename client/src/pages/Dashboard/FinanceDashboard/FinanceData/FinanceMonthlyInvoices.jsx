@@ -13,12 +13,15 @@ import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import dayjs from "dayjs";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 
 const FinanceMonthlyInvoices = () => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewDetails, setViewDetails] = useState(null);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const {
@@ -65,8 +68,6 @@ const FinanceMonthlyInvoices = () => {
     },
   });
 
-  console.log(vendorDetials);
-
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
     mutationFn: async (data) => {
@@ -110,9 +111,10 @@ const FinanceMonthlyInvoices = () => {
     { field: "amount", headerName: "Amount" },
     { field: "status", headerName: "Status",
       cellRenderer: (params) => {
-        const status = params.value ? "Paid" : "Unpaid";
+        const status = params.value;
+
         const statusColorMap = {
-          UnPaid: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+          Unpaid: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
           Paid: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
         };
 
@@ -143,7 +145,8 @@ const FinanceMonthlyInvoices = () => {
              
             className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
           >
-            <span className="text-subtitle">
+            <span className="text-subtitle cursor-pointer"
+            onClick={() => handleViewModal(params.data)}>
               <MdOutlineRemoveRedEye />
             </span>
           </div>
@@ -243,6 +246,11 @@ const FinanceMonthlyInvoices = () => {
     }
   };
 
+  const handleViewModal = (rowData) => {
+    setViewDetails(rowData);
+    setViewModalOpen(true);
+  };
+
   return (
     <>
       <AgTable
@@ -271,6 +279,31 @@ const FinanceMonthlyInvoices = () => {
         columns={invoiceColumns}
         handleClick={handleAddAsset}
       />
+
+{viewDetails && (
+  <ViewDetailsModal
+    open={viewModalOpen}
+    onClose={() => setViewModalOpen(false)}
+    data={{
+      ...viewDetails,
+      amount: `INR ${Number(
+        String(viewDetails.amount).replace(/,/g, "")
+      ).toLocaleString("en-IN")}`,
+    }}
+    title="Invoice Detail"
+    fields={[
+      { label: "Month", key: "month" },
+      { label: "Invoice Number", key: "invoiceNumber" },
+      { label: "Vendor", key: "vendor" },
+      { label: "Service", key: "service" },
+      { label: "Invoice Date", key: "invoiceDate" },
+      { label: "Due Date", key: "dueDate" },
+      { label: "Amount", key: "amount" },
+      { label: "Status", key: "status" },
+    ]}
+  />
+)}
+
 
       <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
         {modalMode === "add" && (

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import AgTable from "../../../../components/AgTable";
@@ -9,8 +9,14 @@ import {
 } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import MuiModal from "../../../../components/MuiModal";
+import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 
 const Collections = () => {
+
+   const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [viewDetails, setViewDetails] = useState(null);
+
   const collectionData = [
     { month: "Apr-24", paid: 80, unpaid: 20 },
     { month: "May-24", paid: 90, unpaid: 10 },
@@ -82,15 +88,16 @@ const Collections = () => {
   const kraColumn = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "client", headerName: "Client", flex: 1 },
+    { field: "amount", headerName: "Amount", flex: 1 },
     { field: "status", headerName: "Status", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <div className="p-2 mb-2 flex gap-2">
            <span
             className="text-subtitle cursor-pointer"
-             
+            onClick={() => handleViewModal(params.data)}
           >
             <MdOutlineRemoveRedEye />
           </span>
@@ -100,12 +107,47 @@ const Collections = () => {
   ];
 
   const rows = [
-    { srNo: 1, client: "Zomato", status: "Paid" },
-    { srNo: 2, client: "Turtlemint", status: "Paid" },
-    { srNo: 3, client: "Zimetrics", status: "Paid" },
-    { srNo: 4, client: "SquadStack", status: "Paid" },
-    { srNo: 5, client: "Uber", status: "Paid" },
+    {
+      srNo: 1,
+      client: "Zomato",
+      status: "Paid",
+      amount: "1,25,000",
+      date: "10-04-2025",
+    },
+    {
+      srNo: 2,
+      client: "Turtlemint",
+      status: "Paid",
+      amount: "98,500",
+      date: "11-04-2025",
+    },
+    {
+      srNo: 3,
+      client: "Zimetrics",
+      status: "Paid",
+      amount: "1,15,300",
+      date: "12-04-2025",
+    },
+    {
+      srNo: 4,
+      client: "SquadStack",
+      status: "Paid",
+      amount: "1,40,000",
+      date: "13-04-2025",
+    },
+    {
+      srNo: 5,
+      client: "Uber",
+      status: "Paid",
+      amount: "1,22,750",
+      date: "14-04-2025",
+    },
   ];
+  
+  const handleViewModal = (rowData) => {
+    setViewDetails(rowData);
+    setViewModalOpen(true);
+  };
 
   // Create dummy tableData per month — you can replace this with actual filtered rows
   const financialData = collectionData.map((item) => ({
@@ -149,6 +191,26 @@ const Collections = () => {
           </Accordion>
         ))}
       </WidgetSection>
+
+     
+       { viewDetails && <ViewDetailsModal
+  open={viewModalOpen}
+  onClose={() => setViewModalOpen(false)}
+  data={{...viewDetails,amount:"INR " + Number(
+    viewDetails.amount.toLocaleString("en-IN").replace(/,/g, "")
+  ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
+}}
+  title="Tax Payment Detail"
+  fields={[
+    { label: "Client", key: "client" },
+    { label: "Amount Paid", key: "amount" },
+    { label: "Payment Date", key: "date" },
+    { label: "Payment Status", key: "status" },
+  ]}
+/>}
+
+
+  
     </div>
   );
 };

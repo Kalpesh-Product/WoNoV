@@ -84,10 +84,13 @@ const kraColumn = [
       amount: "20,00,000",
     },
   ];
-  
-  
 
-
+const transformedData = rows.map((viewDetail)=>(
+  {...viewDetail,amount:"INR " + Number(
+    viewDetail.amount.toLocaleString("en-IN").replace(/,/g, "")
+  ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
+  }
+))
 
   return (
     <div>
@@ -95,7 +98,7 @@ const kraColumn = [
         <AgTable
           search={true}
           tableTitle={"Pending Approvals"}
-          data={rows}
+          data={transformedData}
           columns={kraColumn}
         />
       </div>

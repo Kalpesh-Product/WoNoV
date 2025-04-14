@@ -1,10 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import AgTable from "../../../../components/AgTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 
 const StatutoryPayments = () => {
+
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewDetails, setViewDetails] = useState(null);
+
   const collectionData = [
     { month: "Apr-24", paid: 80, unpaid: 20 },
     { month: "May-24", paid: 90, unpaid: 10 },
@@ -76,6 +81,7 @@ const StatutoryPayments = () => {
   const kraColumn = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "client", headerName: "Client", flex: 1 },
+    { field: "amount", headerName: "Amount", flex: 1 },
     { field: "status", headerName: "Status", flex: 1 },
     {
       field: "actions",
@@ -85,7 +91,7 @@ const StatutoryPayments = () => {
           <div className="p-2 mb-2 flex gap-2">
             <span
                       className="text-subtitle cursor-pointer"
-                       
+                      onClick={() => handleViewModal(params.data)}
                     >
                       <MdOutlineRemoveRedEye />
                     </span>
@@ -100,19 +106,51 @@ const StatutoryPayments = () => {
       srNo: 1,
       client: "GST",
       status: "Paid",
+      amount: "18,000",
+      date: "10-04-2025",
     },
     {
       srNo: 2,
       client: "TDS",
       status: "Paid",
+      amount: "12,500",
+      date: "11-04-2025",
     },
     {
       srNo: 3,
       client: "Income Tax",
       status: "Paid",
+      amount: "22,750",
+      date: "12-04-2025",
     },
-
+    {
+      srNo: 4,
+      client: "Professional Tax",
+      status: "Paid",
+      amount: "6,000",
+      date: "13-04-2025",
+    },
+    {
+      srNo: 5,
+      client: "ROC Filing",
+      status: "Paid",
+      amount: "14,200",
+      date: "14-04-2025",
+    },
+    {
+      srNo: 6,
+      client: "Advance Tax",
+      status: "Paid",
+      amount: "30,000",
+      date: "15-04-2025",
+    },
   ];
+
+  
+  const handleViewModal = (rowData) => {
+    setViewDetails(rowData);
+    setViewModalOpen(true);
+  };
   //--------------------------------------------------------TableData----------------------------------------------------//
 
   return (
@@ -129,6 +167,22 @@ const StatutoryPayments = () => {
           tableTitle={"Statutory Payments"}
         />
       </div>
+     { viewDetails && <ViewDetailsModal
+  open={viewModalOpen}
+  onClose={() => setViewModalOpen(false)}
+  data={{...viewDetails,amount:"INR " + Number(
+    viewDetails.amount.toLocaleString("en-IN").replace(/,/g, "")
+  ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
+}}
+  title="Statutory Payment Detail"
+  fields={[
+    { label: "Client", key: "client" },
+    { label: "Amount Paid", key: "amount" },
+    { label: "Payment Date", key: "date" },
+    { label: "Payment Status", key: "status" },
+  ]}
+/>}
+
     </div>
   );
 };
