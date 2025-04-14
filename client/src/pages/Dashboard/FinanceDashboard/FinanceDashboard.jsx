@@ -322,8 +322,8 @@ const FinanceDashboard = () => {
   const donutRentalLabels = ["Paid", "Unpaid"];
   const donutRentalSeries = [totalPaid, totalUnpaid];
   const donutRentalTooltipValue = [
-    `Paid - INR${totalPaid.toLocaleString()}`,
-    `Unpaid - INR${totalUnpaid.toLocaleString()}`,
+    `Paid - INR ${totalPaid.toLocaleString()}`,
+    `Unpaid - INR ${totalUnpaid.toLocaleString()}`,
   ];
   const donutRentalColors = ["#4CAF50", "#F44336"];
 
@@ -402,7 +402,7 @@ const FinanceDashboard = () => {
     { id: "id", label: "Sr No", align: "left" },
     { id: "paymentName", label: "Payment Name", align: "left" },
     { id: "department", label: "Department", align: "left" },
-    { id: "amount", label: "Amount", align: "left" },
+    { id: "amount", label: "Amount (INR)", align: "left" },
   ];
   //-----------------------------------------------------Table Rental Payments------------------------------------------------------//
 
@@ -513,6 +513,7 @@ const FinanceDashboard = () => {
             colors={donutStatutoryColors}
             series={donutStatutorySeries}
             tooltipValue={donutStatutoryTooltipValue}
+            isMonetary={true}
           />
         </WidgetSection>,
         <WidgetSection title={"Rental Payments Due"} border>

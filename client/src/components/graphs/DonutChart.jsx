@@ -8,8 +8,10 @@ const DonutChart = ({
   series,
   tooltipValue,
   handleClick,
-  width
+  width,
+  isMonetary = false
 }) => {
+
   const chartData = {
     series: series,
     labels: labels,
@@ -38,8 +40,16 @@ const DonutChart = ({
     tooltip: {
       enabled: true,
       y: {
-        formatter: (val, { seriesIndex }) =>
-          `${tooltipValue[seriesIndex]}`,
+        formatter: (val, { seriesIndex }) => {
+          const rawValue = tooltipValue?.[seriesIndex];
+          const numericValue = Number(rawValue);
+        
+          if (isNaN(numericValue)) return tooltipValue?.[seriesIndex] || "";
+        
+          return isMonetary
+            ? `INR ${numericValue.toLocaleString("en-IN")}`
+            : `${numericValue.toLocaleString("en-IN")}`;
+        }
       },
     },
     plotOptions: {
@@ -53,6 +63,12 @@ const DonutChart = ({
               label: `Total ${centerLabel}`,
               fontSize: "16px",
               fontWeight: "bold",
+             formatter: function (w) {
+  const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+  return isMonetary
+    ? `INR ${total.toLocaleString("en-IN")}`
+    : `${total.toLocaleString("en-IN")}`;
+}
             },
           },
         },
