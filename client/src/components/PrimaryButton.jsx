@@ -24,10 +24,11 @@ const PrimaryButton = ({
       } motion-preset-slide-up-sm text-white rounded-md ${
         fontSize ? fontSize : "text-content leading-5"
       } ${externalStyles} ${padding ? padding : "px-8 py-2"} ${className}`}
-      onClick={handleSubmit}>
+      onClick={handleSubmit}
+    >
       {isLoading && <CircularProgress size={16} color="#1E3D73" />}{" "}
       {/* Spinner */}
-      <span>{isLoading ? `${title}` : title}</span>
+      <span className="whitespace-nowrap">{isLoading ? `${title}` : title}</span>
     </motion.button>
   );
 };

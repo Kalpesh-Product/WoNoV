@@ -1,7 +1,9 @@
 import React from "react";
 import Chart from "react-apexcharts";
+import { useNavigate } from "react-router-dom";
 
-const BudgetGraph = ({utilisedData,maxBudget}) => {
+const BudgetGraph = ({utilisedData,maxBudget,route}) => {
+    const navigate = useNavigate()
 
     const utilisedPercent = utilisedData.map((val, i) =>
         Math.min((val / maxBudget[i]) * 100, 100)
@@ -27,7 +29,11 @@ const BudgetGraph = ({utilisedData,maxBudget}) => {
       toolbar: { show: false },
       stacked: true,
       fontFamily: "Poppins-Regular",
+      events : {
+        dataPointSelection: ()=>navigate(route)
     },
+    },
+    
     plotOptions: {
       bar: {
         horizontal: false,

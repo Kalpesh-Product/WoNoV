@@ -359,6 +359,10 @@ export const routes = createBrowserRouter([
                         element: <EditTemplate />,
                       },
                       {
+                        path: "edit-theme/:templateName/:pageName",
+                        element: <EditTemplate />,
+                      },
+                      {
                         path: "data",
                         element: <FrontendData />,
                         children: [
