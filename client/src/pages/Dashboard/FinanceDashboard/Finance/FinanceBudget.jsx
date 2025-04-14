@@ -14,6 +14,7 @@ import { BsCheckCircleFill } from "react-icons/bs";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import BudgetGraph from "../../../../components/graphs/BudgetGraph";
 
 const FinanceBudget = () => {
   const axios = useAxiosPrivate();
@@ -34,7 +35,17 @@ const FinanceBudget = () => {
   });
 
   // Data for the chart
-  const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
+  // const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
+  const utilisedData = [
+    135000, 250000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 75000,
+    50000, 120000,
+  ];
+
+  const maxBudget = [
+    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
+    60000, 110000,
+  ];
+
   const defaultData = utilisedData.map((value) =>
     Math.max(100 - Math.min(value, 100), 0)
   );
@@ -42,6 +53,8 @@ const FinanceBudget = () => {
   const exceededData = utilisedData.map((value) =>
     value > 100 ? value - 100 : 0
   );
+
+  
 
   const data = [
     { name: "Utilised Budget", data: utilisedStack },
@@ -199,10 +212,11 @@ const FinanceBudget = () => {
     })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
+
   return (
     <div className="flex flex-col gap-8">
         <WidgetSection layout={1} titleLabel={"FY 2024-25"} title={"BUDGET"} border>
-          <LayerBarGraph options={optionss} data={data} />
+        <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={'finance/budget'} />
         </WidgetSection>
 
       <div>

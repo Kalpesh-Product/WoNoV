@@ -14,6 +14,7 @@ import { BsCheckCircleFill } from "react-icons/bs";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
+import BudgetGraph from "../../../../components/graphs/BudgetGraph";
 
 const DeptWiseBudget = () => {
   const axios = useAxiosPrivate();
@@ -34,7 +35,15 @@ const DeptWiseBudget = () => {
   });
 
   // Data for the chart
-  const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
+  // const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
+
+  const utilisedData = [
+    101250, 215000, 91080, 63750, 56700, 46500, 73600, 74100, 86000, 65250, 38500, 106800
+  ];
+  const maxBudget = [
+    78000, 109200, 80000, 80000, 62400, 51600, 72250, 79800, 78000, 63000, 51000, 99000
+  ];
+  
   const defaultData = utilisedData.map((value) =>
     Math.max(100 - Math.min(value, 100), 0)
   );
@@ -193,7 +202,7 @@ const DeptWiseBudget = () => {
   return (
     <div className="flex flex-col gap-8">
         <WidgetSection layout={1} titleLabel={"FY 2024-25"} title={"DEPARTMENT BUDGET"} border>
-          <LayerBarGraph options={optionss} data={data} />
+        <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={'finance/budget'} />
         </WidgetSection>
       <div>
         <WidgetSection layout={3} padding>
