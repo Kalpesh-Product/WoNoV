@@ -3,7 +3,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 
 const FrontendWebsiteIssueReports = () => {
   const websiteIssueReportsColumn = [
-    { field: "id", headerName: "Sr No" },
+    { field: "id", headerName: "Sr No", width : 100 },
     { field: "dueBy", headerName: "Due By" },
     { field: "clientName", headerName: "Client Name" },
     { field: "issue", headerName: "Issue" },
@@ -11,7 +11,7 @@ const FrontendWebsiteIssueReports = () => {
     { field: "status", headerName: "Status" },
     {
       field: "priority",
-      headerName: "Remarks",
+      headerName: "Priority",
       cellRenderer: (params) => {
         const priority = params.value.toLowerCase();
         let colorClass = "";
@@ -34,10 +34,12 @@ const FrontendWebsiteIssueReports = () => {
       field: "action",
       headerName: "Action",
       cellRenderer: (params) => (
-        <PrimaryButton
-          title="View Details"
-          handleSubmit={() => ("View Details clicked for id", params.data.id)}
-        />
+        <div className="p-2">
+          <PrimaryButton
+            title="View Details"
+            handleSubmit={() => ("View Details clicked for id", params.data.id)}
+          />
+        </div>
       ),
     },
   ];
@@ -161,7 +163,6 @@ const FrontendWebsiteIssueReports = () => {
       priority: "Low",
     },
   ];
-  
 
   return (
     <div className="flex flex-col gap-8">

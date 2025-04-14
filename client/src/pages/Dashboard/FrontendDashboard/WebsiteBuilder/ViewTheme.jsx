@@ -21,6 +21,7 @@ import Hostels from "../../../../assets/WONO_images/img/website-builder/new-layo
 import Hostels_mockup from "../../../../assets/WONO_images/img/website-builder/new-layout/mobile/mockups/hostels.png";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import PrimaryButton from "../../../../components/PrimaryButton";
 
 const ViewTheme = () => {
   const [showAll, setShowAll] = useState(false);
@@ -118,7 +119,8 @@ const ViewTheme = () => {
     { src: Hostels, mockup: Hostels_mockup, alt: "Hostels", tag: "hostels" },
   ];
   const location = useLocation();
-  const { templateName, pageName, tag } = location.state;
+  const { templateName, pageName, tag, link } = location.state;
+  console.log(link);
 
   const navigate = useNavigate();
 
@@ -170,20 +172,27 @@ const ViewTheme = () => {
                       className="product-page-button bg-white text-black mb-8 w-full py-2 px-8 rounded-full"
                       onClick={() => {
                         if (templateName && pageName) {
-                          navigate(`/app/dashboard/frontend-dashboard/select-theme/edit-theme/${templateName}/${pageName}`);
+                          navigate(
+                            `/app/dashboard/frontend-dashboard/select-theme/edit-theme/${templateName}/${pageName}`
+                          );
                         } else {
                           toast.success("Coming Soon.");
                         }
                       }}
-                      
                     >
                       Edit theme
                     </button>
                     <button
                       className="product-page-button bg-white text-black mb-8 w-full py-2 px-8 rounded-full"
-                      onClick={() =>
-                        navigate("/app/dashboard/frontend-dashboard/live-demo")
-                      }
+                      onClick={() => {
+                        if (link) {
+                          window.open(link, "_blank"); // ✅ open external link in new tab
+                        } else {
+                          navigate(
+                            "/app/dashboard/frontend-dashboard/live-demo"
+                          ); // fallback internal route
+                        }
+                      }}
                     >
                       Live Demo
                     </button>
@@ -251,7 +260,7 @@ const ViewTheme = () => {
               .map((rec, index) => (
                 <div
                   key={index}
-                  className="product-page-reccomendations-grid-image overflow-hidden shadow-lg cursor-pointer"
+                  className="product-page-reccomendations-grid-image overflow-hidden shadow-lg rounded-xl cursor-pointer"
                   onClick={() => {
                     handleImageClick(rec);
                   }}
@@ -266,12 +275,10 @@ const ViewTheme = () => {
           </div>
           <div className="themes-view-button flex justify-center mt-4">
             {filteredRecommendations.length > 4 && !showAll && (
-              <button
-                onClick={handleViewMore}
-                className="submit-button px-8 py-2 bg-blue-600 text-white rounded"
-              >
-                Load More
-              </button>
+              <PrimaryButton
+                title={"Load More"}
+                handleSubmit={handleViewMore}
+              />
             )}
           </div>
         </div>
