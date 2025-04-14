@@ -37,7 +37,7 @@ const FrontendLeads = () => {
        domains: [
         {
           name: "Co-Working",
-          revenue: 19,
+          revenue: 9,
           clients: [
             { srNo: 1, date: "01-04-2025", time: "10:00 AM", name: "Aarav Thakur", phone: "9811208753", status: "Pending" },
             { srNo: 2, date: "02-04-2025", time: "02:30 PM", name: "Bhavna Joshi", phone: "9487337194", status: "Follow-up" },
@@ -48,12 +48,12 @@ const FrontendLeads = () => {
             { srNo: 7, date: "07-04-2025", time: "12:15 PM", name: "Gaurav Kulkarni", phone: "9837373505", status: "Pending" },
             { srNo: 8, date: "08-04-2025", time: "04:00 PM", name: "Hina Parmar", phone: "9404873976", status: "Follow-up" },
             { srNo: 9, date: "09-04-2025", time: "10:45 AM", name: "Ishaan Vyas", phone: "9487337194", status: "Pending" },
-            { srNo: 10, date: "10-04-2025", time: "02:15 PM", name: "Jaya Sen", phone: "9811208753", status: "Follow-up" },
+           
           ],
         },
         {
           name: "Workation",
-          revenue: 8,
+          revenue: 9,
           clients: [
             { srNo: 1, date: "01-04-2025", time: "11:00 AM", name: "Kiran Bedi", phone: "9487337194", status: "Pending" },
             { srNo: 2, date: "02-04-2025", time: "03:30 PM", name: "Lalit Shukla", phone: "9828899290", status: "Follow-up" },
@@ -63,13 +63,11 @@ const FrontendLeads = () => {
             { srNo: 6, date: "06-04-2025", time: "02:45 PM", name: "Poonam Desai", phone: "9741777376", status: "Follow-up" },
             { srNo: 7, date: "07-04-2025", time: "12:00 PM", name: "Qadir Khan", phone: "9837373505", status: "Pending" },
             { srNo: 8, date: "08-04-2025", time: "04:30 PM", name: "Rhea Malhotra", phone: "9811208753", status: "Follow-up" },
-            { srNo: 9, date: "09-04-2025", time: "11:15 AM", name: "Sachin Tomar", phone: "9487337194", status: "Pending" },
-            { srNo: 10, date: "10-04-2025", time: "03:00 PM", name: "Tanvi Arora", phone: "9828899290", status: "Follow-up" },
           ],
         },
         {
           name: "Meetings",
-          revenue: 14,
+          revenue: 10,
           clients: [
             { srNo: 1, date: "01-04-2025", time: "12:30 PM", name: "Umesh Yadav", phone: "9751382616", status: "Pending" },
             { srNo: 2, date: "02-04-2025", time: "04:15 PM", name: "Vandana Sethi", phone: "9837373505", status: "Follow-up" },
@@ -85,35 +83,39 @@ const FrontendLeads = () => {
         },
         {
           name: "Virtual Office",
-          revenue: 21,
+          revenue: 8,
           clients: [
-            { srNo: 1, dueDate: "2025-04-01", time: "13:45", name: "Esha Trivedi", phone: "9751382616", status: "Pending" },
-            { srNo: 2, dueDate: "2025-04-02", time: "17:30", name: "Farooq Siddiqui", phone: "9741777376", status: "Follow-up" },
-            { srNo: 3, dueDate: "2025-04-03", time: "11:00", name: "Gitanjali Roy", phone: "9837373505", status: "Pending" },
-            { srNo: 4, dueDate: "2025-04-04", time: "15:15", name: "Harsh Vardhan", phone: "9487337194", status: "Follow-up" },
-            { srNo: 5, dueDate: "2025-04-05", time: "12:15", name: "Indira Kaul", phone: "9828899290", status: "Pending" },
-            { srNo: 6, dueDate: "2025-04-06", time: "16:45", name: "Jatin Puri", phone: "9894331626", status: "Follow-up" },
-            { srNo: 7, dueDate: "2025-04-07", time: "14:00", name: "Kavita Luthra", phone: "9404873976", status: "Pending" },
-            { srNo: 8, dueDate: "2025-04-08", time: "18:00", name: "Lakshmi Nair", phone: "9811208753", status: "Follow-up" },
-            { srNo: 9, dueDate: "2025-04-09", time: "13:30", name: "Manish Tandon", phone: "9751382616", status: "Pending" },
-            { srNo: 10, dueDate: "2025-04-10", time: "17:15", name: "Neelam Rathi", phone: "9741777376", status: "Follow-up" }
-          ]
+            { srNo: 1, date: "2025-04-01", time: "13:45", name: "Esha Trivedi", phone: "9751382616", status: "Pending" },
+            { srNo: 2, date: "2025-04-02", time: "17:30", name: "Farooq Siddiqui", phone: "9741777376", status: "Follow-up" },
+            { srNo: 3, date: "2025-04-03", time: "11:00", name: "Gitanjali Roy", phone: "9837373505", status: "Pending" },
+            { srNo: 4, date: "2025-04-04", time: "15:15", name: "Harsh Vardhan", phone: "9487337194", status: "Follow-up" },
+            { srNo: 5, date: "2025-04-05", time: "12:15", name: "Indira Kaul", phone: "9828899290", status: "Pending" },
+            { srNo: 6, date: "2025-04-06", time: "16:45", name: "Jatin Puri", phone: "9894331626", status: "Follow-up" },
+            { srNo: 7, date: "2025-04-07", time: "14:00", name: "Kavita Luthra", phone: "9404873976", status: "Pending" },
+            { srNo: 8, date: "2025-04-08", time: "18:00", name: "Lakshmi Nair", phone: "9811208753", status: "Follow-up" },
+          ].map(client => ({
+            ...client,
+            date: client.date.split("-").reverse().join("-") // Convert YYYY-MM-DD to DD-MM-YYYY
+          }))
         },        
         {
           name: "Co-Living",
-          revenue: 17,
+          revenue: 10,
           clients: [
-            { srNo: 1, dueDate: "2025-04-01", time: "14:15", name: "Omkar Patil", phone: "9894331626", status: "Pending" },
-            { srNo: 2, dueDate: "2025-04-02", time: "18:30", name: "Pallavi Dutta", phone: "9487337194", status: "Follow-up" },
-            { srNo: 3, dueDate: "2025-04-03", time: "12:00", name: "Qasim Rizvi", phone: "9811208753", status: "Pending" },
-            { srNo: 4, dueDate: "2025-04-04", time: "16:30", name: "Rekha Sharma", phone: "9828899290", status: "Follow-up" },
-            { srNo: 5, dueDate: "2025-04-05", time: "13:15", name: "Siddhant Jain", phone: "9751382616", status: "Pending" },
-            { srNo: 6, dueDate: "2025-04-06", time: "17:45", name: "Tanya Kohli", phone: "9741777376", status: "Follow-up" },
-            { srNo: 7, dueDate: "2025-04-07", time: "15:00", name: "Ujjwal Das", phone: "9837373505", status: "Pending" },
-            { srNo: 8, dueDate: "2025-04-08", time: "19:00", name: "Vaishali More", phone: "9404873976", status: "Follow-up" },
-            { srNo: 9, dueDate: "2025-04-09", time: "14:45", name: "Yuvraj Singh", phone: "9487337194", status: "Pending" },
-            { srNo: 10, dueDate: "2025-04-10", time: "18:15", name: "Zoya Akhtar", phone: "9894331626", status: "Follow-up" },
-          ]
+            { srNo: 1, date: "2025-04-01", time: "14:15", name: "Omkar Patil", phone: "9894331626", status: "Pending" },
+            { srNo: 2, date: "2025-04-02", time: "18:30", name: "Pallavi Dutta", phone: "9487337194", status: "Follow-up" },
+            { srNo: 3, date: "2025-04-03", time: "12:00", name: "Qasim Rizvi", phone: "9811208753", status: "Pending" },
+            { srNo: 4, date: "2025-04-04", time: "16:30", name: "Rekha Sharma", phone: "9828899290", status: "Follow-up" },
+            { srNo: 5, date: "2025-04-05", time: "13:15", name: "Siddhant Jain", phone: "9751382616", status: "Pending" },
+            { srNo: 6, date: "2025-04-06", time: "17:45", name: "Tanya Kohli", phone: "9741777376", status: "Follow-up" },
+            { srNo: 7, date: "2025-04-07", time: "15:00", name: "Ujjwal Das", phone: "9837373505", status: "Pending" },
+            { srNo: 8, date: "2025-04-08", time: "19:00", name: "Vaishali More", phone: "9404873976", status: "Follow-up" },
+            { srNo: 9, date: "2025-04-09", time: "14:45", name: "Yuvraj Singh", phone: "9487337194", status: "Pending" },
+            { srNo: 10, date: "2025-04-10", time: "18:15", name: "Zoya Akhtar", phone: "9894331626", status: "Follow-up" },
+          ].map(client => ({
+            ...client,
+            date: client.date.split("-").reverse().join("-") // Convert YYYY-MM-DD to DD-MM-YYYY
+          }))
         }
         
       ],
@@ -215,7 +217,7 @@ const FrontendLeads = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()}
+                    {domain.revenue.toLocaleString()} Leads
                   </span>
                 </div>
               </AccordionSummary>

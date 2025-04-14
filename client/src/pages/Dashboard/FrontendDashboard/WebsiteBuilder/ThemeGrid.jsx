@@ -139,6 +139,7 @@ const ThemeGrid = () => {
                         templateName: template.templateName,
                         pageName: template.pages[0]?.pageName,
                         tag: "co-working",
+                        link : "https://www.biznest.co.in/"
                       },
                     })
                   }
@@ -260,7 +261,7 @@ const ThemeGrid = () => {
             </div>
             <div className="themePage-website-support-grid grid grid-cols-3 gap-8">
               <div className="themePage-website-support-grid-1 flex flex-col border-t-2 border-black p-2">
-                <h2 className="text-xl font-medium mt-4 mb-4">Get answers</h2>
+                <h1 className="text-xl font-medium mt-4 mb-4">Get answers</h1>
                 <p className="mb-4">
                   Watch tutorials and read detailed articles in Wono help center
                 </p>
@@ -269,7 +270,7 @@ const ThemeGrid = () => {
                 </span>
               </div>
               <div className="themePage-website-support-grid-1 flex flex-col border-t-2 border-black p-2">
-                <h2 className="text-xl font-medium mt-4 mb-4">Contact Us</h2>
+                <h1 className="text-xl font-medium mt-4 mb-4">Contact Us</h1>
                 <p className="mb-4">
                   Get support by chat or schedule a call with a Customer Care
                   Expert
@@ -285,7 +286,7 @@ const ThemeGrid = () => {
                 </span>
               </div>
               <div className="themePage-website-support-grid-1 flex flex-col border-t-2 border-black p-2">
-                <h2 className="text-xl font-medium mt-4 mb-4">Hire a pro</h2>
+                <h1 className="text-xl font-medium mt-4 mb-4">Hire a pro</h1>
                 <p className="mb-4">
                   Get help at any stage -- from site creation to online growth
                 </p>

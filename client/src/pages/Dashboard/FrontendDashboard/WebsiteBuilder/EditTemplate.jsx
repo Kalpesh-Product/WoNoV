@@ -9,7 +9,13 @@ import { Controller, useForm } from "react-hook-form";
 import { useSidebar } from "../../../../context/SideBarContext";
 import { toast } from "sonner";
 import PrimaryButton from "../../../../components/PrimaryButton";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import DangerButton from "../../../../components/DangerButton";
+import { MdDelete } from "react-icons/md";
+import { CiCirclePlus } from "react-icons/ci";
+import MuiModal from "../../../../components/MuiModal";
+import SecondaryButton from "../../../../components/SecondaryButton";
+import { queryClient } from "../../../../main";
 
 const EditTemplate = () => {
   const { templateName, pageName } = useParams();
@@ -17,8 +23,15 @@ const EditTemplate = () => {
   const [selectedPage, setSelectedPage] = useState(pageName); // ✅ Track selected page
   const [input, setInput] = useState(false);
   const navigate = useNavigate();
-  const { handleSubmit, control, reset } = useForm({
-    pageName: "",
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      pageName: "",
+    },
   });
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
 
@@ -46,7 +59,7 @@ const EditTemplate = () => {
     enabled: !!templateName, // ✅ Fetch only when templateName is available
   });
 
-  const { mutate: addPage } = useMutation({
+  const { mutate: addPage, isPending: isAddPagePending } = useMutation({
     mutationFn: async (data) => {
       const response = await axios.post(
         `/api/editor/templates/${encodeURIComponent(templateName)}/addPage`,
@@ -57,10 +70,13 @@ const EditTemplate = () => {
       return response.data;
     },
     onSuccess: function (data) {
-      console.log(data);
+      toast.success(data.message || "Page added successfully");
+      queryClient.invalidateQueries({ queryKey: ["pages"] });
+      setInput(false);
+      reset();
     },
     onError: function (error) {
-      console.log(error.message);
+      toast.error(error.message || "Error adding pages");
     },
   });
 
@@ -87,9 +103,6 @@ const EditTemplate = () => {
 
     setEditor(editorInstance);
     editorInstance.on("load", () => {
-      console.log("Editor fully loaded!");
-
-      // ✅ Fix: Use addComponents instead of setComponents
       loadEditorData(editorInstance);
     });
     addBlocks(editorInstance);
@@ -110,8 +123,6 @@ const EditTemplate = () => {
       }
       if (style) editorInstance.setStyle(style);
       if (assets) editorInstance.AssetManager.add(assets);
-
-      console.log("Editor state loaded from MongoDB.");
     } catch (error) {
       console.error("Error loading editor data:", error);
     }
@@ -166,7 +177,9 @@ const EditTemplate = () => {
     const newPage = e.target.value;
     setSelectedPage(newPage);
     saveEditorData();
-    navigate(`/templates/view-template/editor/${templateName}/${newPage}`); // ✅ Navigate to new page
+    navigate(
+      `/app/dashboard/frontend-dashboard/select-theme/edit-theme/${templateName}/${newPage}`
+    ); // ✅ Navigate to new page
   };
 
   return (
@@ -188,22 +201,8 @@ const EditTemplate = () => {
           flexDirection: "column",
         }}
       >
-        <h3
-          style={{
-            textAlign: "center",
-            padding: "10px 0",
-            background: "#ffff",
-            margin: 0,
-            color: "black",
-            border: "1px solid black",
-          }}
-        >
-          Blocks
-        </h3>
-        <div
-          id="blocks"
-          style={{ flex: 1, overflowY: "auto" }}
-        ></div>
+        <span className="text-title text-primary font-pmedium p-4">Elements</span>
+        <div id="blocks" style={{ flex: 1, overflowY: "auto" }}></div>
       </div>
 
       {/* Main Editor Area */}
@@ -211,75 +210,107 @@ const EditTemplate = () => {
         <div
           style={{
             background: "white",
-            color:'black',
+            color: "black",
             padding: "5px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
           }}
         >
-          <h3>Editor</h3>
-          {/* 🔹 Page Selection Dropdown */}
-          {isLoading ? (
-            <div className=""><CircularProgress size={10} /></div>
-          ) : error ? (
-            <span style={{ color: "red" }}>Error loading pages</span>
-          ) : (
-            <select
-              value={selectedPage}
-              onChange={handlePageChange}
-              style={{ padding: "5px", borderRadius: "5px", fontSize: "14px" }}
-            >
-              {pages.map((page) => (
-                <option key={page} value={page}>
-                  {page}
-                </option>
-              ))}
-            </select>
-          )}
+          <span className="text-title text-primary font-pmedium p-3">Editor</span>
+          <div className="flex items-center gap-2 w-1/2">
+            {/* 🔹 Page Selection Dropdown */}
+            {isLoading ? (
+              <div className="">
+                <CircularProgress size={10} />
+              </div>
+            ) : error ? (
+              <span style={{ color: "red" }}>Error loading pages</span>
+            ) : (
+              <TextField
+                fullWidth
+                size="small"
+                select
+                value={selectedPage}
+                onChange={handlePageChange}
+                label="Select Page"
+              >
+                <MenuItem value="" disabled>
+                  Select Page
+                </MenuItem>
+                {pages.map((page) => (
+                  <MenuItem key={page} value={page}>
+                    {page}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
 
-          {isLoading ? (
-            <span>Loading</span>
-          ) : error ? (
-            <span>Error loading pages</span>
-          ) : (
-            <button onClick={() => setInput(true)}> Add Page </button>
-          )}
-          {input ? (
-            <div>
-              <form onSubmit={handleSubmit(addPage)}>
-                <Controller
-                  name="pageName"
-                  control={control}
-                  render={({ field }) => (
-                    <>
-                      <label style={{ color: "white" }} htmlFor="addPage">
-                        Page Name:
-                      </label>
-                      <input {...field} id="addPage" type="text" />
-                    </>
-                  )}
-                />
-
-                <button type="submit">Add</button>
-              </form>
-            </div>
-          ) : (
-            ""
-          )}
-          <PrimaryButton
-            title={"Save"}
-            handleSubmit={saveEditorData}
-            isLoading={isSaveEditorData}
-            disabled={isSaveEditorData}
-          />
+            {isLoading ? (
+              <span>Loading</span>
+            ) : error ? (
+              <span>Error loading pages</span>
+            ) : (
+              <PrimaryButton
+                title={" Add Page"}
+                handleSubmit={() => setInput(true)}
+              />
+            )}
+            <PrimaryButton
+              title={"Save"}
+              handleSubmit={saveEditorData}
+              isLoading={isSaveEditorData}
+              disabled={isSaveEditorData}
+            />
+          </div>
         </div>
-        
+
         <div
           id="editor-canvas"
           style={{ flex: 1, background: "#fff", height: "75vh" }}
         ></div>
       </div>
+
+      <MuiModal open={input} onClose={() => setInput(false)} title={"add page"}>
+        <form
+          onSubmit={handleSubmit(addPage)}
+          className="flex flex-col items-center gap-2"
+        >
+          <Controller
+            name="pageName"
+            control={control}
+            rules={{ required: "Enter a page name", maxLength: 10 }}
+            render={({ field }) => (
+              <>
+                <TextField
+                  {...field}
+                  label={"Page Name"}
+                  placeholder="Home"
+                  size="small"
+                  fullWidth
+                  error={!!errors.pageName}
+                  helperText={errors.pageName?.message}
+                />
+              </>
+            )}
+          />
+          <div className="flex gap-2 items-center">
+            <SecondaryButton
+              title={"Cancel"}
+              handleSubmit={() => {
+                setInput(false);
+                reset();
+              }}
+            />
+            <PrimaryButton
+              title={"Add Page"}
+              type="submit"
+              disabled={isAddPagePending}
+              isLoading={isAddPagePending}
+            />
+          </div>
+        </form>
+      </MuiModal>
     </div>
   );
 };

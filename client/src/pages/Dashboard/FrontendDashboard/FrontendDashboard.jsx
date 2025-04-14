@@ -88,7 +88,7 @@ const FrontendDashboard = () => {
       offsetY: -22, // Adjust position slightly above the bars
     },
     tooltip: {
-      theme: "dark",
+      theme: "light",
     },
   };
 
@@ -119,6 +119,7 @@ const FrontendDashboard = () => {
   const nationWisePieChart = {
     chart: {
       type: "pie",
+      fontFamily : "Poppins-Regular"
     },
     labels: nationWiseData.map((item) => item.label),
     colors: nationWiseData.map((item) => item.color), // Apply new shades of blue
@@ -173,9 +174,6 @@ const FrontendDashboard = () => {
     },
     xaxis: {
       categories: [
-        "Jan-24",
-        "Feb-24",
-        "Mar-24",
         "Apr-24",
         "May-24",
         "Jun-24",
@@ -185,6 +183,9 @@ const FrontendDashboard = () => {
         "Oct-24",
         "Nov-24",
         "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
       ],
     },
     yaxis: {
@@ -233,6 +234,7 @@ const FrontendDashboard = () => {
   const goaDistrictPieChart = {
     chart: {
       type: "pie",
+            fontFamily : "Poppins-Regular"
     },
     labels: goaDistrictData.map((item) => item.label),
     colors: goaDistrictData.map((item) => item.color),
@@ -269,7 +271,7 @@ const FrontendDashboard = () => {
           titleLabel={"FY 2024-25"}
         >
           {/* <LayerBarGraph data={data} options={options} /> */}
-          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
+          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={'finance/budget'} />
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard
@@ -309,7 +311,7 @@ const FrontendDashboard = () => {
         <Card
           icon={<LuHardDriveUpload />}
           title="Edit website"
-          route={`/app/dashboard/frontend-dashboard/select-theme/edit-theme/BIZNest/Home`}
+          route={`/app/dashboard/frontend-dashboard/edit-theme/BIZNest/Home`}
         />,
         <Card icon={<CgWebsite />} title="New Themes" route={"select-theme"} />,
         <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
@@ -324,7 +326,7 @@ const FrontendDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection layout={1} border title={"Site Visitors"}>
+        <WidgetSection layout={1} border title={"Site Visitors"} titleLabel={"FY 2024-25"}>
           <BarGraph data={siteVisitorsData} options={siteVisitorOptions} />
         </WidgetSection>,
       ],
