@@ -32,6 +32,7 @@ const PendingApprovals = () => {
 
 
 const kraColumn = [
+    { field: "id", headerName: "Sr No", flex: 1 },
     { field: "department", headerName: "Department", flex: 1 },
     { field: "date", headerName: "Date", flex: 1 },
     { field: "amount", headerName: "Amount", flex: 1 },

@@ -18,7 +18,8 @@ const FinanceCard = ({
 
       <div className="flex flex-col gap-2">
         {descriptionData.map((item, index) => {
-          const numericValue = parseInt(item.value.replace(/[^0-9-]/g, ""));
+          
+          const numericValue = typeof item.value === "number" ? item.value : parseInt(item?.value.replace(/[^0-9-]/g, ""));
           const dynamicColor =
             highlightNegativePositive && !isNaN(numericValue)
               ? numericValue < 0

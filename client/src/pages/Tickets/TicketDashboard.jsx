@@ -23,9 +23,7 @@ const TicketDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tickets/department-tickets/${auth.user?.departments?.map(
-            (dept) => dept._id
-          )}`
+          `/api/tickets/get-all-tickets`
         );
 
         return response.data;
@@ -36,6 +34,19 @@ const TicketDashboard = () => {
     },
   });
 
+  const ticketsFilteredData =  {
+    openTickets: ticketsData.filter((item) => item.status === "Open").length,
+    closedTickets: ticketsData.filter((item) => item.status === "Closed")
+      .length,
+    pendingTickets: ticketsData.filter((item) => item.status === "Pending")
+      .length,
+    acceptedTickets: ticketsData.filter((item) => item.acceptedBy).length,
+    assignedTickets: ticketsData.filter((item) => item.assignees.length > 0).length,
+    escalatedTickets: ticketsData.filter((item)=>item.status === "Escalated").length,
+  };
+
+
+
   const masterDepartments = [
     "IT",
     "Admin",
@@ -43,8 +54,18 @@ const TicketDashboard = () => {
     "HR",
     "Finance",
     "Sales",
-    "Maintainance",
+    "Maintenance",
   ];
+  const departmentCountMap = {};
+
+  ticketsData.forEach(item => {
+    const dept = item.raisedToDepartment.name;
+    if (dept) {
+      departmentCountMap[dept] = (departmentCountMap[dept] || 0) + 1;
+    }
+  });
+  
+  const donutSeries = masterDepartments.map(dept => departmentCountMap[dept] || 0);
 
   const ticketWidgets = [
     {
@@ -99,11 +120,11 @@ const TicketDashboard = () => {
           titleLabel={"Last Month"}
           title={"Total Tickets"}>
           <DonutChart
-            series={[49, 21, 30]}
+            series={[9, 5, 7]}
             labels={["High", "Medium", "Low"]}
             colors={["#ff4d4d", "#ffc107", "#28a745"]}
             centerLabel={"Tickets"}
-            tooltipValue={[49, 21, 30]}
+            tooltipValue={[9, 5, 7]}
           />
         </WidgetSection>,
         <WidgetSection
@@ -113,7 +134,7 @@ const TicketDashboard = () => {
           titleLabel={"Current month"}
           title={"Department Tickets"}>
           <DonutChart
-            series={[10, 4, 0, 5, 3, 2, 5]}
+            series={donutSeries}
             labels={masterDepartments}
             colors={[
               "#211C84",
@@ -125,7 +146,7 @@ const TicketDashboard = () => {
               "#C7D9DD",
             ]}
             centerLabel={"Tickets"}
-            tooltipValue={[30, 44, 50, 22, 14, 6, 39]}
+            tooltipValue={donutSeries}
             handleClick={() => navigate("department-wise-tickets")}
           />
         </WidgetSection>,
@@ -148,17 +169,17 @@ const TicketDashboard = () => {
               },
               {
                 title: "Immediate Attended",
-                value: "12",
+                value: "5",
                 route: "/app/tickets/manage-tickets",
               },
               {
                 title: "Medium Attended",
-                value: "10",
+                value: "5",
                 route: "/app/tickets/manage-tickets",
               },
               {
                 title: "Low Attended",
-                value: "26",
+                value: "3",
                 route: "/app/tickets/manage-tickets",
               },
             ]}
@@ -173,17 +194,17 @@ const TicketDashboard = () => {
           descriptionData={[
             {
               title: "Open Tickets",
-              value: "200",
+              value: "5",
               route: "/app/tickets/manage-tickets",
             },
             {
               title: "Closed Tickets",
-              value: "75",
+              value: "7",
               route: "/app/tickets/manage-tickets",
             },
             {
               title: "Pending Tickets",
-              value: "100",
+              value: "1",
               route: "/app/tickets/manage-tickets",
             },
           ]}
@@ -196,17 +217,17 @@ const TicketDashboard = () => {
           descriptionData={[
             {
               title: "Accepted Tickets",
-              value: "106",
+              value: ticketsFilteredData.acceptedBy? ticketsFilteredData.acceptedBy : 0,
               route: "/app/tickets/manage-tickets",
             },
             {
               title: "Assigned Tickets",
-              value: "65",
+              value: ticketsFilteredData.assignedTickets ? ticketsFilteredData.assignedTickets : 0,
               route: "/app/tickets/manage-tickets",
             },
             {
               title: "Escalated Tickets",
-              value: "50",
+              value: ticketsFilteredData.escalatedTickets ? ticketsFilteredData.escalatedTickets : 0,
               route: "/app/tickets/manage-tickets",
             },
           ]}

@@ -8,6 +8,7 @@ import {
   AccordionDetails,
 } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const Collections = () => {
   const collectionData = [
@@ -87,8 +88,11 @@ const Collections = () => {
       headerName: "Actions",
       cellRenderer: () => (
         <div className="p-2 mb-2 flex gap-2">
-          <span className="text-primary hover:underline text-content cursor-pointer">
-            View Details
+           <span
+            className="text-subtitle cursor-pointer"
+             
+          >
+            <MdOutlineRemoveRedEye />
           </span>
         </div>
       ),
@@ -114,7 +118,7 @@ const Collections = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection title={"Collections 24-25".toUpperCase()} border>
+      <WidgetSection title={"Collections 2024-25".toUpperCase()} border>
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
 

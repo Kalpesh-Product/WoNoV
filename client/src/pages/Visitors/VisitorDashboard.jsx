@@ -327,7 +327,12 @@ const VisitorDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection layout={1} border title={"Monthly Visitor Statistics"}>
+        // <WidgetSection layout={1} border title={"Monthly Visitor Statistics"}>
+        <WidgetSection
+          layout={1}
+          border
+          title={"Monthly Total Visitors"}
+          titleLabel={"FY 2024-25"}>
           <BarGraph
             height={400}
             data={averageBookingSeries}
@@ -381,12 +386,12 @@ const VisitorDashboard = () => {
         />,
         <DataCard
           title={"Total"}
-          data={"2"}
+          data={"9"}
           description={"Checked Out Today"}
         />,
         <DataCard
           title={"Total"}
-          data={"7"}
+          data={"6"}
           description={"Yet To Check Out"}
         />,
         <DataCard
@@ -394,7 +399,7 @@ const VisitorDashboard = () => {
           data={
             visitorsData.filter((item) => item.visitorType === "Walk In").length
           }
-          description={"Walk In Visits"}
+          description={"Walk In Visits Today"}
         />,
         <DataCard
           title={"Total"}
@@ -402,14 +407,14 @@ const VisitorDashboard = () => {
             visitorsData.filter((item) => item.visitorType === "Scheduled")
               .length
           }
-          description={"Scheduled Visits"}
+          description={"Scheduled Visits Today"}
         />,
         <DataCard
           title={"Total"}
           data={
             visitorsData.filter((item) => item.visitorType === "Meeting").length
           }
-          description={"Meeting Booking"}
+          description={"Meeting Bookings Today"}
         />,
       ],
     },
@@ -418,7 +423,8 @@ const VisitorDashboard = () => {
       widgets: [
         <WidgetSection
           layout={1}
-          title={"Visitor Categories This Month"}
+          title={"Visitor Categories"}
+          titleLabel={"This Month"}
           border>
           <DonutChart
             centerLabel="Visitors"
@@ -430,11 +436,13 @@ const VisitorDashboard = () => {
         </WidgetSection>,
         <WidgetSection
           layout={1}
-          title={"Checked In v/s Checked Out Visitors Today"}
+          title={"Checked Out v/s Yet To Check Out"}
+          titleLabel={"Today"}
           border>
           <PieChartMui
             data={assetAvailabilityDataV}
             options={assetAvailabilityOptionsV}
+            width={"100%"}
           />
         </WidgetSection>,
       ],
@@ -457,18 +465,29 @@ const VisitorDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection title={"Visitor Gender Data"} border>
+        <WidgetSection
+          title={"Visitor Gender Data"}
+          titleLabel={"This Month"}
+          border>
           <PieChartMui
             percent={true}
             title={"Visitor Gender Data"}
             data={genderData}
             options={genderPieChart}
+            height={400}
+            width={460}
           />
         </WidgetSection>,
-        <WidgetSection layout={1} title={"Department Wise Visits"} border>
+        <WidgetSection
+          layout={1}
+          title={"Department Wise Visits"}
+          titleLabel={"This Month"}
+          border>
           <PieChartMui
             data={departmentPieDataVX}
             options={departmentPieOptionsVX}
+            height={700}
+            width={570}
           />
         </WidgetSection>,
       ],

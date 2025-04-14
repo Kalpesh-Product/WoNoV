@@ -75,10 +75,7 @@ const DeptWiseBudget = () => {
     },
     xaxis: {
       categories: [
-        "Jan-24",
-        "Feb-24",
-        "Mar-24",
-        "Apr-24",
+"Apr-24",
         "May-24",
         "Jun-24",
         "Jul-24",
@@ -87,6 +84,9 @@ const DeptWiseBudget = () => {
         "Oct-24",
         "Nov-24",
         "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
       ]
     },
     yaxis: {
@@ -192,14 +192,29 @@ const DeptWiseBudget = () => {
 
   return (
     <div className="flex flex-col gap-8">
-        <WidgetSection layout={1} title={"BUDGET 2024"} border>
+        <WidgetSection layout={1} title={"BUDGET 2024-25"} border>
           <LayerBarGraph options={optionss} data={data} />
         </WidgetSection>
       <div>
         <WidgetSection layout={3} padding>
-          <DataCard data={"40K"} title={"Projected"} />
-          <DataCard data={"35K"} title={"Actual"} />
-          <DataCard data={6000} title={"Requested"} />
+          <DataCard data={"40K"} title={"Projected"} description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "long",
+              }
+            )}`}/>
+          <DataCard data={"35K"} title={"Actual"}description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "long",
+              }
+            )}`} />
+          <DataCard data={6000} title={"Requested"} description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "long",
+              }
+            )}`}/>
         </WidgetSection>
       </div>
       <div className="flex justify-end">

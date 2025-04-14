@@ -32,339 +32,97 @@ const HistoricalPnl = () => {
   });
 
   const mockBusinessRevenueData = [
-    {
-      month: "April",
-      domains: [
-        {
-          name: "2024-23",
-          revenue: 12000,
-          clients: [
-            {
-              client: "Zomato",
-              representative: "John Doe",
-              registerDate: "2024-01-15",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Uber",
-              representative: "Jane Smith",
-              registerDate: "2024-02-10",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Ola",
-              representative: "Alice Johnson",
-              registerDate: "2024-03-05",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-        {
-          name: "2023-22",
-          revenue: 8000,
-          clients: [
-            {
-              client: "Client D",
-              representative: "Bob Brown",
-              registerDate: "2024-01-20",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Client E",
-              representative: "Charlie White",
-              registerDate: "2024-02-25",
-              actualRevenue: 4000,
-            },
-          ],
-        },
-        {
-          name: "2022-21",
-          revenue: 15000,
-          clients: [
-            {
-              client: "Client AD",
-              representative: "Betty Silver",
-              registerDate: "2024-08-25",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client AE",
-              representative: "Charlie Platinum",
-              registerDate: "2024-09-14",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client AF",
-              representative: "David Bronze",
-              registerDate: "2024-10-05",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-        {
-          name: "2021-20",
-          revenue: 15000,
-          clients: [
-            {
-              client: "Client F",
-              representative: "Daniel Green",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client G",
-              representative: "Eva Black",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client H",
-              representative: "Frank Blue",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-        {
-          name: "2020-19",
-          revenue: 15000,
-          clients: [
-            {
-              client: "Client F",
-              representative: "Daniel Green",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client G",
-              representative: "Eva Black",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client H",
-              representative: "Frank Blue",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "May",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 15000,
-          clients: [
-            {
-              client: "Client I",
-              representative: "Grace Orange",
-              registerDate: "2024-02-11",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client J",
-              representative: "Hank Purple",
-              registerDate: "2024-03-09",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client K",
-              representative: "Isabel Cyan",
-              registerDate: "2024-04-14",
-              actualRevenue: 4000,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 9000,
-          clients: [
-            {
-              client: "Client L",
-              representative: "Jack Gray",
-              registerDate: "2024-02-28",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client M",
-              representative: "Kara Silver",
-              registerDate: "2024-03-07",
-              actualRevenue: 4000,
-            },
-          ],
-        },
-        {
-          name: "2024-25",
-          revenue: 14000,
-          clients: [
-            {
-              client: "Client N",
-              representative: "Leo Gold",
-              registerDate: "2024-05-20",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client O",
-              representative: "Mia Platinum",
-              registerDate: "2024-06-08",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client P",
-              representative: "Noah Bronze",
-              registerDate: "2024-07-15",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "June",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 18000,
-          clients: [
-            {
-              client: "Client Q",
-              representative: "Olivia Rose",
-              registerDate: "2024-01-30",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client R",
-              representative: "Peter Brown",
-              registerDate: "2024-02-18",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client S",
-              representative: "Quincy Black",
-              registerDate: "2024-03-26",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 10000,
-          clients: [
-            {
-              client: "Client T",
-              representative: "Rachel Violet",
-              registerDate: "2024-04-12",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client U",
-              representative: "Sam Indigo",
-              registerDate: "2024-05-07",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 13000,
-          clients: [
-            {
-              client: "Client V",
-              representative: "Tina Lilac",
-              registerDate: "2024-06-05",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client W",
-              representative: "Umar Yellow",
-              registerDate: "2024-07-08",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Client X",
-              representative: "Victor Pink",
-              registerDate: "2024-08-15",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "July",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 20000,
-          clients: [
-            {
-              client: "Client Y",
-              representative: "Wendy Red",
-              registerDate: "2024-03-10",
-              actualRevenue: 8000,
-            },
-            {
-              client: "Client Z",
-              representative: "Xavier Green",
-              registerDate: "2024-04-14",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client AA",
-              representative: "Yara Blue",
-              registerDate: "2024-05-16",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "2023-24",
-          revenue: 11000,
-          clients: [
-            {
-              client: "Client AB",
-              representative: "Zane Orange",
-              registerDate: "2024-06-20",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client AC",
-              representative: "Adam Gray",
-              registerDate: "2024-07-10",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "2024-25",
-          revenue: 16000,
-          clients: [
-            {
-              client: "Client AD",
-              representative: "Betty Silver",
-              registerDate: "2024-08-25",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client AE",
-              representative: "Charlie Platinum",
-              registerDate: "2024-09-14",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client AF",
-              representative: "David Bronze",
-              registerDate: "2024-10-05",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-  ];
+  {
+    month: "FY 2024-25",
+    domains: [
+      {
+        name: "2024-2025",
+        totalProfitLoss: 136000,
+        clients: [
+          { srNo: 1, month: "April", income: 80000, expense: 70000, profitLoss: 10000 },
+          { srNo: 2, month: "May", income: 85000, expense: 75000, profitLoss: 10000 },
+          { srNo: 3, month: "June", income: 95000, expense: 80000, profitLoss: 15000 },
+          { srNo: 4, month: "July", income: 100000, expense: 90000, profitLoss: 10000 },
+          { srNo: 5, month: "August", income: 105000, expense: 95000, profitLoss: 10000 },
+          { srNo: 6, month: "September", income: 110000, expense: 100000, profitLoss: 10000 },
+          { srNo: 7, month: "October", income: 115000, expense: 105000, profitLoss: 10000 },
+          { srNo: 8, month: "November", income: 120000, expense: 109000, profitLoss: 11000 },
+        ],
+      },
+      {
+        name: "2023-2024",
+        totalProfitLoss: 230000,
+        clients: [
+          { srNo: 1, month: "April", income: 120000, expense: 80000, profitLoss: 40000 },
+          { srNo: 2, month: "May", income: 110000, expense: 90000, profitLoss: 20000 },
+          { srNo: 3, month: "June", income: 95000, expense: 105000, profitLoss: -10000 },
+          { srNo: 4, month: "July", income: 150000, expense: 70000, profitLoss: 80000 },
+          { srNo: 5, month: "August", income: 100000, expense: 120000, profitLoss: -20000 },
+          { srNo: 6, month: "September", income: 130000, expense: 90000, profitLoss: 40000 },
+          { srNo: 7, month: "October", income: 140000, expense: 100000, profitLoss: 40000 },
+          { srNo: 8, month: "November", income: 90000, expense: 90000, profitLoss: 25000 },
+        ],
+      },
+      {
+        name: "2022-2023",
+        totalProfitLoss: 140000,
+        clients: [
+          { srNo: 1, month: "April", income: 90000, expense: 70000, profitLoss: 20000 },
+          { srNo: 2, month: "May", income: 95000, expense: 90000, profitLoss: 5000 },
+          { srNo: 3, month: "June", income: 100000, expense: 95000, profitLoss: 5000 },
+          { srNo: 4, month: "July", income: 85000, expense: 70000, profitLoss: 15000 },
+          { srNo: 5, month: "August", income: 120000, expense: 100000, profitLoss: 20000 },
+          { srNo: 6, month: "September", income: 110000, expense: 95000, profitLoss: 15000 },
+          { srNo: 7, month: "October", income: 130000, expense: 110000, profitLoss: 20000 },
+          { srNo: 8, month: "November", income: 125000, expense: 100000, profitLoss: 25000 },
+        ],
+      },
+      {
+        name: "2021-2022",
+        totalProfitLoss: 174000,
+        clients: [
+          { srNo: 1, month: "April", income: 105000, expense: 80000, profitLoss: 25000 },
+          { srNo: 2, month: "May", income: 95000, expense: 80000, profitLoss: 15000 },
+          { srNo: 3, month: "June", income: 110000, expense: 90000, profitLoss: 20000 },
+          { srNo: 4, month: "July", income: 115000, expense: 85000, profitLoss: 30000 },
+          { srNo: 5, month: "August", income: 125000, expense: 100000, profitLoss: 25000 },
+          { srNo: 6, month: "September", income: 95000, expense: 90000, profitLoss: 5000 },
+          { srNo: 7, month: "October", income: 100000, expense: 85000, profitLoss: 15000 },
+          { srNo: 8, month: "November", income: 105000, expense: 90000, profitLoss: 15000 },
+        ],
+      },
+      {
+        name: "2020-2021",
+        totalProfitLoss: 126000,
+        clients: [
+          { srNo: 1, month: "April", income: 80000, expense: 70000, profitLoss: 10000 },
+          { srNo: 2, month: "May", income: 85000, expense: 75000, profitLoss: 10000 },
+          { srNo: 3, month: "June", income: 95000, expense: 80000, profitLoss: 15000 },
+          { srNo: 4, month: "July", income: 100000, expense: 90000, profitLoss: 10000 },
+          { srNo: 5, month: "August", income: 105000, expense: 95000, profitLoss: 10000 },
+          { srNo: 6, month: "September", income: 110000, expense: 100000, profitLoss: 10000 },
+          { srNo: 7, month: "October", income: 115000, expense: 105000, profitLoss: 10000 },
+          { srNo: 8, month: "November", income: 120000, expense: 109000, profitLoss: 11000 },
+        ],
+      },
+      {
+        name: "2019-2020",
+        totalProfitLoss: 107000,
+        clients: [
+          { srNo: 1, month: "April", income: 70000, expense: 60000, profitLoss: 10000 },
+          { srNo: 2, month: "May", income: 80000, expense: 65000, profitLoss: 15000 },
+          { srNo: 3, month: "June", income: 85000, expense: 75000, profitLoss: 10000 },
+          { srNo: 4, month: "July", income: 90000, expense: 80000, profitLoss: 10000 },
+          { srNo: 5, month: "August", income: 95000, expense: 85000, profitLoss: 10000 },
+          { srNo: 6, month: "September", income: 100000, expense: 90000, profitLoss: 10000 },
+          { srNo: 7, month: "October", income: 105000, expense: 95000, profitLoss: 10000 },
+          { srNo: 8, month: "November", income: 110000, expense: 97000, profitLoss: 13000 },
+        ],
+      },
+    ],
+  },
+];
+
 
   const [selectedMonth, setSelectedMonth] = useState(
     mockBusinessRevenueData[0].month
@@ -385,8 +143,9 @@ const HistoricalPnl = () => {
           const updatedClients = domain.clients.map((client, index) => ({
             ...client,
             srNo: index + 1,
-            registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
-            actualRevenue:Number(client.actualRevenue).toLocaleString("en-IN")
+            income:Number(client.income).toLocaleString("en-IN"),
+            expense:Number(client.expense).toLocaleString("en-IN"),
+            profitLoss:Number(client.profitLoss).toLocaleString("en-IN")
           }));
           return { ...domain, clients: updatedClients };
         });
@@ -396,7 +155,7 @@ const HistoricalPnl = () => {
   const graphData = [
     {
       name: "Revenue",
-      data: selectedMonthData.domains.map((domain) => domain.revenue),
+      data: selectedMonthData.domains.map((domain) => domain.totalProfitLoss),
     },
   ];
 
@@ -417,11 +176,11 @@ const HistoricalPnl = () => {
   const incomeExpenseData = [
     {
       name: "Income",
-      data: [12000, 15000, 10000, 18000, 20000, 0],
+      data: [12000, 15000, 10000, 18000, 20000, 22000],
     },
     {
       name: "Expense",
-      data: [8000, 10000, 7000, 12000, 13000, 0],
+      data: [8000, 10000, 7000, 12000, 13000, 18000],
     },
   ];
   const incomeExpenseOptions = {
@@ -457,7 +216,7 @@ const HistoricalPnl = () => {
         "2022 - 2023",
         "2023 - 2024",
         "2024 - 2025",
-        // "Oct-24",
+         // "Oct-24",
         // "Nov-24",
         // "Dec-24",
         // "Jan-25",
@@ -542,7 +301,7 @@ const HistoricalPnl = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    INR {domain.revenue.toLocaleString()}  
+                    INR {domain.totalProfitLoss.toLocaleString()}  
                   </span>
                 </div>
               </AccordionSummary>
@@ -552,18 +311,10 @@ const HistoricalPnl = () => {
                   hideFilter
                   columns={[
                     { header: "Sr No", field: "srNo", flex: 1 },
-                    { header: "Client", field: "client", flex: 1 },
-                    {
-                      header: "Representative",
-                      field: "representative",
-                      flex: 1,
-                    },
-                    { header: "Register Date", field: "registerDate", flex: 1 },
-                    {
-                      header: "Actual Revenue",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
+                    { header: "Month", field: "month", flex: 1 },
+                    { header: "Income", field: "income", flex: 1 },
+                    { header: "Expense", field: "expense", flex: 1 },
+                    { header: "Profit / Loss", field: "profitLoss", flex: 1 },
                   ]}
                   tableHeight={300}
                 />
@@ -573,7 +324,7 @@ const HistoricalPnl = () => {
                       Total Revenue for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                      INR {domain.revenue.toLocaleString()}
+                      INR {domain.totalProfitLoss.toLocaleString()}
                     </span>{" "}
                   </div>
                 </div>

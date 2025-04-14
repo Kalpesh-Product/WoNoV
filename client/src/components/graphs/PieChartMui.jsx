@@ -27,8 +27,7 @@ const PieChartMui = ({ data, options, customLegend, width, height }) => {
           <div
             className={`${
               customLegend ? "flex-1" : ""
-            } p-4 justify-center items-center`}
-          >
+            } p-4 justify-center items-center`}>
             {customLegend}
           </div>
         ) : (

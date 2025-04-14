@@ -216,7 +216,7 @@ const BudgetDisplay = ({ budgetData }) => {
   return (
     <div className="flex flex-col gap-8">
       <div className="rounded-md">
-        <WidgetSection border layout={1} title={"BUDGET 2024"}>
+        <WidgetSection border layout={1} title={"BUDGET 2024-25"}>
           <LayerBarGraph options={optionss} data={data} />
         </WidgetSection>
       </div>
