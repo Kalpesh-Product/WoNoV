@@ -144,8 +144,8 @@ const assetUtilizationOptions = {
 
 //---------------Asset Availabilty Pie start--------------------
 
-const totalAssets = 50; // Total assets count
-const assignedAssets = 36; // Assigned assets count
+const totalAssets = 14; // Total assets count
+const assignedAssets = 8; // Assigned assets count
 const unassignedAssets = totalAssets - assignedAssets; // Calculate unassigned assets
 
 // Process Data for Pie Chart
@@ -156,7 +156,7 @@ const assetAvailabilityDataV = [
     count: assignedAssets,
   },
   {
-    label: "Checked In",
+    label: "Yet To Check Out",
     value: ((unassignedAssets / totalAssets) * 100).toFixed(1),
     count: unassignedAssets,
   },

@@ -277,8 +277,7 @@ const MeetingDashboard = () => {
                 style={{
                   backgroundColor:
                     room.status === "Available" ? "#28a745" : "#dc3545",
-                }}
-              ></span>
+                }}></span>
               <span className="text-content text-gray-400">
                 {room.roomName}
               </span>
@@ -455,7 +454,7 @@ const MeetingDashboard = () => {
   ];
 
   const averageOccupancyOptions = {
-    chart: { type: "bar", fontFamily: "Poppins-Regular", toolbar:false },
+    chart: { type: "bar", fontFamily: "Poppins-Regular", toolbar: false },
     xaxis: { categories: rooms },
     yaxis: {
       max: 100,
@@ -497,7 +496,6 @@ const MeetingDashboard = () => {
     },
     colors: ["#2DC1C6"],
   };
-  
 
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const timeSlots = [
@@ -567,14 +565,12 @@ const MeetingDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </div>
-          }
-        >
+          }>
           <WidgetSection
             layout={1}
             border
             title={"Average Meeting Room utilization"}
-            titleLabel={"FY 2024-25"}
-          >
+            titleLabel={"FY 2024-25"}>
             <BarGraph
               height={400}
               data={averageBookingSeries}
@@ -720,16 +716,14 @@ const MeetingDashboard = () => {
           layout={1}
           border
           title={"External Guests Visited"}
-          padding
-        >
+          padding>
           <BarGraph data={externalGuestsData} options={externalGuestsOptions} />
         </WidgetSection>,
         <WidgetSection
           layout={1}
           border
           title={"Average Occupancy Of Rooms in %"}
-          padding
-        >
+          padding>
           <BarGraph
             data={averageOccupancySeries}
             options={averageOccupancyOptions}
@@ -741,13 +735,18 @@ const MeetingDashboard = () => {
       layout: 2,
       widgets: [
         <WidgetSection layout={1} title={"Busy time during the week"} border>
-          <HeatMap data={heatmapData} options={heatmapOptions} height={400} />
+          <HeatMap
+            data={heatmapData}
+            options={heatmapOptions}
+            height={400}
+            width={550}
+          />
         </WidgetSection>,
         <WidgetSection layout={1} title={"Meeting Duration Breakdown"} border>
           <PieChartMui
             data={meetingPieData}
             options={meetingPieOptions}
-            height={400}
+            height={410}
             width={550}
           />
         </WidgetSection>,
@@ -756,12 +755,17 @@ const MeetingDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection layout={1} title={"Room Availability Status"} border>
+        <WidgetSection
+          layout={1}
+          title={"Room Availability Status"}
+          border
+          height={400}>
           <PieChartMui
             data={RoomPieData}
             options={RoomOptions}
             customLegend={CustomLegend}
             width={300}
+            height={400}
           />
         </WidgetSection>,
         <WidgetSection
@@ -770,13 +774,15 @@ const MeetingDashboard = () => {
           border
           titleLabel={"Today"}
           title={"Cleaning & Hygiene Status"}
-        >
+          height={350}>
           <DonutChart
             series={[5, 4, 3]}
             labels={["Dirty", "Cleaning", "Clean"]}
             colors={["#ff4d4d", "#ffc107", "#28a745"]}
             centerLabel={"Meeting Rooms"}
             tooltipValue={[5, 4, 3]}
+            width={457}
+            height={400}
           />
         </WidgetSection>,
       ],
