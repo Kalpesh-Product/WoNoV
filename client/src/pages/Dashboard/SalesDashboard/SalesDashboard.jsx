@@ -10,7 +10,6 @@ import MuiTable from "../../../components/Tables/MuiTable";
 import BarGraph from "../../../components/graphs/BarGraph";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import { inrFormat } from "../../../utils/currencyFormat";
-import TreemapGraph from "../../../components/graphs/TreemapGraph";
 import {
   financialYearMonths,
   sourcingChannelsOptions,

@@ -473,7 +473,7 @@ const calculateCompletedTime = (startDate) => {
 
 // ✅ Format Data for Table
 const companyTableColumns = [
-  { id: "id", label: "ID" },
+  { id: "id", label: "Sr.No" },
   { id: "company", label: "Company" },
   { id: "startDate", label: "Start Date" },
   { id: "completedTime", label: "Completed Time" },
@@ -521,7 +521,7 @@ upcomingBirthdays.sort((a, b) =>
 );
 
 const upcomingBirthdaysColumns = [
-  { id: "id", label: "ID" },
+  { id: "id", label: "Sr.No" },
   { id: "name", label: "Employee Name" },
   { id: "birthday", label: "Date of Birth" },
   { id: "daysLeft", label: "Days Left" },
