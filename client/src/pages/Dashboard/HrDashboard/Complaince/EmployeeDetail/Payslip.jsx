@@ -1,8 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 import AgTable from "../../../../../components/AgTable";
+import MuiModal from "../../../../../components/MuiModal";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { inrFormat } from "../../../../../utils/currencyFormat"
 
 const Payslip = () => {
   const name = localStorage.getItem("employeeName") || "Employee";
+
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewPayslip, setViewPayslip] = useState(null);
+
+  const rows = [
+    { id: 1, payslips: "Dec, 2024", netPay: "70000", deductions: "5000", issuedBy: "HR Dept" },
+    { id: 2, payslips: "Nov, 2024", netPay: "70000", deductions: "4500", issuedBy: "HR Dept" },
+    { id: 3, payslips: "Oct, 2024", netPay: "68000", deductions: "6000", issuedBy: "HR Dept" },
+  ];
+
+  const handleViewPayslip = (rowData) => {
+    setViewPayslip(rowData);
+    setViewModalOpen(true);
+  };
 
   const payslipColumns = [
     {
@@ -21,32 +38,43 @@ const Payslip = () => {
       headerName: "Actions",
       cellRenderer: (params) => (
         <div className="p-2 mb-2 flex gap-2">
-          <span className="text-primary hover:underline text-content cursor-pointer">
-            View Payslip
+          <span
+            className="text-subtitle cursor-pointer"
+            onClick={() => handleViewPayslip(params.data)}
+          >
+            <MdOutlineRemoveRedEye />
           </span>
         </div>
       ),
     },
   ];
 
-  const rows = [
-    { id: 1, payslips: "Dec, 2024" },
-    { id: 2, payslips: "Nov, 2024" },
-    { id: 3, payslips: "Oct, 2024" },
-  ];
-
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <AgTable
-          key={rows.length}
-          search={true}
-          searchColumn={"payslips"}
-          tableTitle={`${name}'s Payslip List`}
-          data={rows}
-          columns={payslipColumns}
-        />
-      </div>
+      <AgTable
+        key={rows.length}
+        search={true}
+        searchColumn={"payslips"}
+        tableTitle={`${name}'s Payslip List`}
+        data={rows}
+        columns={payslipColumns}
+      />
+
+      {/* Modal for viewing Payslip */}
+      <MuiModal
+        open={viewModalOpen}
+        onClose={() => setViewModalOpen(false)}
+        title="Payslip Detail"
+      >
+        {viewPayslip && (
+          <div className="space-y-3 text-sm">
+            <div><strong>Month:</strong>&nbsp; {viewPayslip.payslips}</div>
+            <div><strong>Net Pay:</strong>&nbsp; INR&nbsp;{inrFormat(viewPayslip.netPay) || "N/A"}</div>
+            <div><strong>Deductions:</strong>&nbsp; INR&nbsp;{inrFormat(viewPayslip.deductions) || "N/A"}</div>
+            <div><strong>Issued By:</strong>&nbsp; {viewPayslip.issuedBy || "N/A"}</div>
+          </div>
+        )}
+      </MuiModal>
     </div>
   );
 };

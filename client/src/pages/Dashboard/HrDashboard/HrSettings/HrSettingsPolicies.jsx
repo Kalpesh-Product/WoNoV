@@ -1,124 +1,125 @@
-import React from 'react'
+import { useState } from 'react';
 import AgTable from "../../../../components/AgTable";
-import { Chip } from "@mui/material";
+import { Chip, TextField, Switch, Button, FormControlLabel } from "@mui/material";
 import useAxiosPrivate from '../../../../hooks/useAxiosPrivate';
 import { useQuery } from '@tanstack/react-query';
-
+import MuiModal from '../../../../components/MuiModal';
+import PrimaryButton from '../../../../components/PrimaryButton';
+import { toast } from 'sonner';
 
 const HrSettingsPolicies = () => {
-
-  const axios = useAxiosPrivate()
+  const [openModal, setOpenModal] = useState(false);
+  const [policyName, setPolicyName] = useState('');
+  const axios = useAxiosPrivate();
 
   const { data: policies = [] } = useQuery({
     queryKey: ["policies"],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/company/get-company-documents/policies");
-        return response.data.policies
+        return response.data.policies;
       } catch (error) {
         throw new Error(error.response.data.message);
       }
     },
   });
 
-   const departmentsColumn = [
-        { field:"id", headerName:"Sr No",width:"100"},
-        { field: "policyname", headerName: "POLICY NAME",
-          cellRenderer:(params)=>{
-            return(
-              <div>
-                <span className="text-primary cursor-pointer hover:underline">
-                  {params.value}
-                </span>
-              </div>
-            )
-          },flex:1},
-        {
-          field: "status",
-          headerName: "Status",
-          cellRenderer: (params) => {
-            const status = params.value ? "Active" : "Inactive";
-            const statusColorMap = {
-              Inactive: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-              Active: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-            };
-    
-            const { backgroundColor, color } = statusColorMap[status] || {
-              backgroundColor: "gray",
-              color: "white",
-            };
-            return (
-              <>
-                <Chip
-                  label={status}
-                  style={{
-                    backgroundColor,
-                    color,
-                  }}
-                />
-              </>
-            );
-          },flex:1
-        },
-        {
-          field: "actions",
-          headerName: "Actions",
-          cellRenderer: (params) => (
-            <>
-              <div className="p-2 mb-2 flex gap-2">
-               <span className="text-content text-primary hover:underline cursor-pointer">
-                Make Inactive
-               </span>
-              </div>
-            </>
-          ),
-        },
-      ];
+  // const handleAddPolicy = async () => {
+  //   try {
+  //     await axios.post("/api/company/add-policy", {
+  //       name: policyName,
+  //       isActive: true,
+  //     });
+  //     setOpenModal(false);
+  //     setPolicyName('');
+  //     // Optionally refetch or invalidate query here
+  //   } catch (error) {
+  //     console.error("Error adding policy:", error);
+  //   }
+  // };
 
-  const rows = [
+  const handleAddPolicy = () => {
+    toast.success("Successfully added policy")
+    setOpenModal(false);
+  }
+
+  const departmentsColumn = [
+    { field: "id", headerName: "Sr No", width: "100" },
     {
-      srno:"1",
-      id: 1,
-      policyname: "Biz Nest Leave Policy",
-      status: "Active",
+      field: "policyname", headerName: "POLICY NAME",
+      cellRenderer: (params) => (
+        <div>
+          <span className="text-primary cursor-pointer hover:underline">
+            {params.value}
+          </span>
+        </div>
+      ), flex: 1
     },
     {
-      srno:"2",
-      id: 2,
-      policyname: "Biz Nest Leave Policy",
-      status: "Active",
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => {
+        const status = params.value ? "Active" : "Inactive";
+        const statusColorMap = {
+          Inactive: { backgroundColor: "#FFECC5", color: "#CC8400" },
+          Active: { backgroundColor: "#90EE90", color: "#006400" },
+        };
+        const { backgroundColor, color } = statusColorMap[status] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+        return <Chip label={status} style={{ backgroundColor, color }} />;
+      }, flex: 1
     },
     {
-      srno:"3",
-      id: 3,
-      policyname: "Biz Nest Leave Policy",
-      status: "Inactive",
+      field: "actions",
+      headerName: "Actions",
+      cellRenderer: () => (
+        <div className="p-2 mb-2 flex gap-2">
+          <span className="text-content text-primary hover:underline cursor-pointer">
+            Make Inactive
+          </span>
+        </div>
+      ),
     },
-    {
-      srno:"4",
-      id: 4,
-      policyname: "Biz Nest Leave Policy",
-      status: "Active",
-    },
-    
   ];
+
   return (
     <div>
-        <AgTable
-         key={policies.length}
-          search={true}
-          searchColumn={"Policies"}
-          tableTitle={"Policy List"}
-          buttonTitle={"Add Policy"}
-          data={[...policies.map((policy, index)=>({
-            id : index + 1,
-            policyname: policy.name,  
-            status: policy.isActive 
-          }))]}
-          columns={departmentsColumn}
-        />
-      </div>
-  )
-}
+      <AgTable
+        key={policies.length}
+        search={true}
+        searchColumn={"Policies"}
+        tableTitle={"Policy List"}
+        buttonTitle={"Add Policy"}
+        data={[...policies.map((policy, index) => ({
+          id: index + 1,
+          policyname: policy.name,
+          status: policy.isActive
+        }))]}
+        handleClick={() => setOpenModal(true)}
+        columns={departmentsColumn}
+      />
 
-export default HrSettingsPolicies
+      <MuiModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        title="Add New Policy"
+      >
+        <div className="flex flex-col gap-4">
+          <TextField
+            label="Policy Name"
+            variant="outlined"
+            fullWidth
+            value={policyName}
+            onChange={(e) => setPolicyName(e.target.value)}
+          />
+
+          <PrimaryButton title="Add Policy" onClick={handleAddPolicy} />
+        </div>
+      </MuiModal>
+    </div>
+  );
+};
+
+export default HrSettingsPolicies;

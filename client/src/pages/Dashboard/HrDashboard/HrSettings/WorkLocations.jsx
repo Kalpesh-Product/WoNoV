@@ -180,13 +180,6 @@ console.log(workLocations)
                 />
               )}
             />
-            <div className="flex items-center gap-4 justify-center">
-              <SecondaryButton
-                title={"Cancel"}
-                handleSubmit={() => {
-                  setOpenModal(false);
-                }}
-              />
               <PrimaryButton
                 type={"submit"}
                 title={"Submit"}
@@ -194,7 +187,6 @@ console.log(workLocations)
                   toast.success("Location added successfully");
                 }}
               />
-            </div>
           </form>
         </div>
       </MuiModal>

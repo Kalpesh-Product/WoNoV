@@ -35,7 +35,7 @@ const Shifts = () => {
     },
     onSuccess: function (data) {
       toast.success(data.message);
-      queryClient.invalidateQueries({queryKey:["shifts"]})
+      queryClient.invalidateQueries({ queryKey: ["shifts"] })
       setOpenModal(false);
       reset();
     },
@@ -48,7 +48,7 @@ const Shifts = () => {
     mutate(data);
   };
 
-  const fetchShifts = async()=>{
+  const fetchShifts = async () => {
     try {
       const response = await axios.get(
         "/api/company/get-company-data/?field=shifts"
@@ -61,7 +61,7 @@ const Shifts = () => {
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["shifts"],
-    queryFn:  fetchShifts,
+    queryFn: fetchShifts,
   });
 
   const departmentsColumn = [
@@ -180,18 +180,12 @@ const Shifts = () => {
                 />
               </LocalizationProvider>
 
-              <div className="flex items-center justify-center gap-4">
-                <SecondaryButton
-                  title={"Cancel"}
-                  handleSubmit={() => setOpenModal(false)}
-                />
-                <PrimaryButton
-                  title="Add Shift"
-                  type="submit"
-                  isLoading={isPending}
-                  disabled={isPending}
-                />
-              </div>
+              <PrimaryButton
+                title="Add Shift"
+                type="submit"
+                isLoading={isPending}
+                disabled={isPending}
+              />
             </form>
           </div>
         </MuiModal>

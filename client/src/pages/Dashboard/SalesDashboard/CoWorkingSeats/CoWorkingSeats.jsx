@@ -361,7 +361,8 @@ const CoWorkingSeats = () => {
           layout={1}
           border
           padding
-          title={"Co-Working Seats 24-25"}
+          title={"Co-Working Seats"}
+          titleLabel={"FY 24-25"}
         >
           <BarGraph
             data={series}
