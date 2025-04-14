@@ -156,7 +156,7 @@ const assetAvailabilityData = [
     count: assignedAssets,
   },
   {
-    label: "UnAssigned Assets",
+    label: "Unassigned Assets",
     value: ((unassignedAssets / totalAssets) * 100).toFixed(1),
     count: unassignedAssets,
   },
@@ -232,8 +232,10 @@ const departmentWiseAssets = [
   { label: "IT", value: 1200 },
   { label: "Finance", value: 900 },
   { label: "HR", value: 700 },
-  { label: "Operations", value: 1100 },
-  { label: "Marketing", value: 1100 },
+  { label: "Tech", value: 1100 },
+  { label: "Sales", value: 1000 },
+  { label: "Admin", value: 1200 },
+  { label: "Maintenance", value: 900 },
 ];
 
 const totalDepartmentAssets = departmentWiseAssets.reduce(
