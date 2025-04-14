@@ -262,7 +262,7 @@ const SalesBudget = () => {
   return (
     <div className="flex flex-col gap-8">
       <div className="border-default border-borderGray rounded-md">
-        <WidgetSection layout={1} title={"BUDGET 2024-25"}>
+        <WidgetSection layout={1} title={"Budget v/s Achievements"} titleLabel={"FY 2024-25"}>
           <BudgetGraph maxBudget={maxBudget} utilisedData={utilisedData} />
         </WidgetSection>
       </div>
