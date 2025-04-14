@@ -9,6 +9,7 @@ import DataCard from "../../../components/DataCard";
 import MuiTable from "../../../components/Tables/MuiTable";
 import BarGraph from "../../../components/graphs/BarGraph";
 import PieChartMui from "../../../components/graphs/PieChartMui";
+import { inrFormat } from "../../../utils/currencyFormat";
 import TreemapGraph from "../../../components/graphs/TreemapGraph";
 import {
   financialYearMonths,
@@ -70,13 +71,15 @@ const SalesDashboard = () => {
       },
     },
     dataLabels: {
-      enabled: true, // Disable data labels for a cleaner look
+      enabled: true,
+      formatter: (val) => inrFormat(val), // <-- format here
       style: {
         fontSize: "12px",
-        colors: ["#000"], // Set label color
+        colors: ["#000"],
       },
-      offsetY: -22, // Adjust position slightly above the bars
+      offsetY: -22,
     },
+
     stroke: {
       show: true,
       width: 2,
@@ -108,7 +111,7 @@ const SalesDashboard = () => {
     },
     tooltip: {
       y: {
-        formatter: (val) => `₹${val.toLocaleString()}`,
+        formatter: (val) => `INR ${inrFormat(val)}`,
       },
     },
   };
@@ -175,8 +178,8 @@ const SalesDashboard = () => {
       (item.openDesks
         ? item.openDesks
         : 0 + item.cabinDesks
-        ? item.cabinDesks
-        : 0),
+          ? item.cabinDesks
+          : 0),
     0
   );
   console.log("Total available seats : ", totalCoWorkingSeats);
@@ -330,7 +333,7 @@ const SalesDashboard = () => {
     0
   );
 
-  console.log("Total occupied desks : ",totalClientsDesks)
+  console.log("Total occupied desks : ", totalClientsDesks)
 
   const totalDeskPercent = simplifiedClientsPie.map((item) => ({
     label: `${item.companyName} ${(
@@ -363,9 +366,9 @@ const SalesDashboard = () => {
 
   const sectorwiseData = Array.isArray(clientsData)
     ? clientsData.map((item) => ({
-        clientName: item.clientName,
-        sector: item.sector,
-      }))
+      clientName: item.clientName,
+      sector: item.sector,
+    }))
     : [];
 
   const totalClients = sectorwiseData.length;
@@ -436,7 +439,7 @@ const SalesDashboard = () => {
 
   //-----------------------------------------------Conversion of Sector-wise Pie-graph-----------------------------------------------------------//
 
-  
+
   const meetingsWidgets = [
     {
       layout: 1,
@@ -444,8 +447,8 @@ const SalesDashboard = () => {
         <WidgetSection
           border
           title={"Annual Monthly Revenue"}
-          titleLabel={"2024-25"}
-          TitleAmount={"INR 2,09,000"}>
+          titleLabel={"FY 2024-25"}
+          TitleAmount={`INR ${inrFormat("209000")}`}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
@@ -573,7 +576,7 @@ const SalesDashboard = () => {
         </WidgetSection>,
         <WidgetSection layout={1} title={"Client-wise Occupancy"} border>
           {!isClientsDataPending ? (
-              <PieChartMui
+            <PieChartMui
               data={totalDeskPercent}
               options={clientsDesksPieOptions}
               width={"100%"}

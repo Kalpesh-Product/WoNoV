@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../components/AgTable";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const ParentRevenue = ({ salesData: initialSalesData, falseAccordion }) => {
   const [salesData, setSalesData] = useState(initialSalesData); // Store received sales data
@@ -66,7 +67,7 @@ const ParentRevenue = ({ salesData: initialSalesData, falseAccordion }) => {
 
   // Prepare Table Columns (Can be dynamically modified)
   const tableColumns = [
-    { header: "Client Name", field: "client" },
+    { header: "Client Name", field: "client",flex:1 },
     { header: "Revenue", field: "revenue" },
     { header: "Region", field: "region" },
     { header: "Industry", field: "industry" },
@@ -74,7 +75,7 @@ const ParentRevenue = ({ salesData: initialSalesData, falseAccordion }) => {
 
   // ApexCharts options
   const options = {
-    chart: { type: "bar", stacked: true, fontFamily: "Poppins-Regular" },
+    chart: { type: "bar", toolbar: false, stacked: true, fontFamily: "Poppins-Regular" },
     xaxis: { categories: months },
     yaxis: { title: { text: "Amount (in Rupees)" } },
     plotOptions: {
@@ -114,11 +115,11 @@ const ParentRevenue = ({ salesData: initialSalesData, falseAccordion }) => {
         customLegend={true}
         firstParam={{
           title: "Actual Sales",
-          data: "₹" + graphData[0].data.reduce((a, b) => a + b, 0),
+          data: "INR " + inrFormat(graphData[0].data.reduce((a, b) => a + b, 0)),
         }}
         secondParam={{
           title: "Projected Sales",
-          data: "₹" + graphData[1].data.reduce((a, b) => a + b, 0),
+          data: "INR " + inrFormat(graphData[1].data.reduce((a, b) => a + b, 0))
         }}
       />
 
@@ -146,7 +147,7 @@ const ParentRevenue = ({ salesData: initialSalesData, falseAccordion }) => {
                       {data.month}
                     </span>
                     <span className="text-subtitle font-medium">
-                      ₹{data.actual.toLocaleString()}
+                      INR&nbsp;{inrFormat(data.actual)}
                     </span>
                   </div>
                 </AccordionSummary>
@@ -157,8 +158,8 @@ const ParentRevenue = ({ salesData: initialSalesData, falseAccordion }) => {
                     tableHeight={300}
                   />
                   <span className="block mt-2 font-medium">
-                    Total Revenue for {data.month}: ₹
-                    {totalRevenue.toLocaleString()}
+                    Total Revenue for {data.month}: INR&nbsp;
+                    {inrFormat(totalRevenue)}
                   </span>
                 </AccordionDetails>
               </Accordion>

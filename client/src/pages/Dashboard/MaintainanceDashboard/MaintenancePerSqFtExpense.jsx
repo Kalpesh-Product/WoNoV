@@ -232,7 +232,7 @@ const MaintenancePerSqFtExpense = () => {
 
   // Graph Options
   const options = {
-    chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular" },
+    chart: { type: "bar", toolbar: false, stacked: false, fontFamily: "Poppins-Regular" },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },

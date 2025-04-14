@@ -16,22 +16,22 @@ import { useQuery } from "@tanstack/react-query";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 
 const DeptWiseBudget = () => {
-   const axios = useAxiosPrivate();
-        
-           const { data: hrFinance = [] } = useQuery({
-              queryKey: ["hrFinance"],
-              queryFn: async () => {
-                try {
-                  const response = await axios.get(
-                    `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
+  const axios = useAxiosPrivate();
+
+  const { data: hrFinance = [] } = useQuery({
+    queryKey: ["hrFinance"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
                     `
-                  );
-                  return response.data.allBudgets;
-                } catch (error) {
-                  throw new Error("Error fetching data");
-                }
-              },
-            });
+        );
+        return response.data.allBudgets;
+      } catch (error) {
+        throw new Error("Error fetching data");
+      }
+    },
+  });
 
   // Data for the chart
   const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
@@ -52,6 +52,7 @@ const DeptWiseBudget = () => {
   const optionss = {
     chart: {
       type: "bar",
+      toolbar: false,
       stacked: true,
     },
     plotOptions: {
@@ -131,72 +132,69 @@ const DeptWiseBudget = () => {
     },
   };
 
-   // Data array for rendering the Accordion
-   const groupedData = hrFinance.reduce((acc, item) => {
-        const month = dayjs(item.dueDate).format("MMMM YYYY"); // Extracting month and year
-    
-        if (!acc[month]) {
-          acc[month] = {
-            month,
-            latestDueDate: item.dueDate, // Store latest due date for sorting
-            projectedAmount: 0,
-            amount: 0,
-            tableData: {
-              rows: [],
-              columns: [
-                { field: "expanseName", headerName: "Expense Name", flex: 1 },
-                // { field: "department", headerName: "Department", flex: 200 },
-                { field: "expanseType", headerName: "Expense Type", flex: 1 },
-                { field: "projectedAmount", headerName: "Amount", flex: 1 },
-                { field: "dueDate", headerName: "Due Date", flex: 1 },
-                { field: "status", headerName: "Status", flex: 1 },
-              ],
-            },
-          };
-        }
-    
-        acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
-        acc[month].amount += item.projectedAmount; // Summing the total amount per month
-        acc[month].tableData.rows.push({
-          id: item._id,
-          expanseName: item.expanseName,
-          department: item.department,
-          expanseType: item.expanseType,
-          projectedAmount: item.projectedAmount.toFixed(2), // Ensuring two decimal places
-          dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
-          status: item.status,
-        });
-    
-        return acc;
-      }, {});
-  
-    // Data array for rendering the Accordion
-    const financialData = Object.values(groupedData)
-       .map((data,index) => {
-          
-         const transoformedRows = data.tableData.rows.map((row,index)=>({...row,srNo:index+1,projectedAmount:Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 })}))
-         const transformedCols = [
-           { field: 'srNo', headerName: 'SR NO', flex: 1 },
-           ...data.tableData.columns
-         ];
-   
-         return({
-         ...data,
-         projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-         amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-         tableData: {...data.tableData, rows:transoformedRows,columns: transformedCols}
-       })
-     })
-       .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); 
+  // Data array for rendering the Accordion
+  const groupedData = hrFinance.reduce((acc, item) => {
+    const month = dayjs(item.dueDate).format("MMMM YYYY"); // Extracting month and year
+
+    if (!acc[month]) {
+      acc[month] = {
+        month,
+        latestDueDate: item.dueDate, // Store latest due date for sorting
+        projectedAmount: 0,
+        amount: 0,
+        tableData: {
+          rows: [],
+          columns: [
+            { field: "expanseName", headerName: "Expense Name", flex: 1 },
+            // { field: "department", headerName: "Department", flex: 200 },
+            { field: "expanseType", headerName: "Expense Type", flex: 1 },
+            { field: "projectedAmount", headerName: "Amount", flex: 1 },
+            { field: "dueDate", headerName: "Due Date", flex: 1 },
+            { field: "status", headerName: "Status", flex: 1 },
+          ],
+        },
+      };
+    }
+
+    acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
+    acc[month].amount += item.projectedAmount; // Summing the total amount per month
+    acc[month].tableData.rows.push({
+      id: item._id,
+      expanseName: item.expanseName,
+      department: item.department,
+      expanseType: item.expanseType,
+      projectedAmount: item.projectedAmount.toFixed(2), // Ensuring two decimal places
+      dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
+      status: item.status,
+    });
+
+    return acc;
+  }, {});
+
+  // Data array for rendering the Accordion
+  const financialData = Object.values(groupedData)
+    .map((data, index) => {
+
+      const transoformedRows = data.tableData.rows.map((row, index) => ({ ...row, srNo: index + 1, projectedAmount: Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }) }))
+      const transformedCols = [
+        { field: 'srNo', headerName: 'SR NO', flex: 1 },
+        ...data.tableData.columns
+      ];
+
+      return ({
+        ...data,
+        projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        tableData: { ...data.tableData, rows: transoformedRows, columns: transformedCols }
+      })
+    })
+    .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate)));
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="border-default border-borderGray rounded-md">
-        <WidgetSection layout={1} title={"BUDGET 2024"}>
+        <WidgetSection layout={1} title={"BUDGET 2024"} border>
           <LayerBarGraph options={optionss} data={data} />
         </WidgetSection>
-      </div>
-
       <div>
         <WidgetSection layout={3} padding>
           <DataCard data={"40K"} title={"Projected"} description={`Current Month: ${new Date().toLocaleString(
@@ -220,12 +218,12 @@ const DeptWiseBudget = () => {
         </WidgetSection>
       </div>
       <div className="flex justify-end">
-            <PrimaryButton
-              title={"Request Budget"}
-              padding="px-5 py-2" fontSize="text-base"
-            />
-          </div>
-          <AllocatedBudget financialData={financialData}/>
+        <PrimaryButton
+          title={"Request Budget"}
+          padding="px-5 py-2" fontSize="text-base"
+        />
+      </div>
+      <AllocatedBudget financialData={financialData} />
     </div>
   );
 };

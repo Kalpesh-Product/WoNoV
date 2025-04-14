@@ -353,7 +353,7 @@ const LandlordPayments = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <WidgetSection title={"Statutory Payments 24-25"} border>
+      <WidgetSection title={"Landlord Payments 24-25".toUpperCase()} border>
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
 

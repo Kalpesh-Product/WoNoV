@@ -60,6 +60,10 @@ const ViewAvailability = () => {
   const [memberDetails, setMemberDetails] = useState({});
   const [selectedFile, setSelectedFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(occupied);
+  const [occupiedImage, setOccupiedImage] = useState(occupied);
+  const [clearedImagePreview, setClearedImagePreview] = useState(cleared);
+  const [clearedImageOpen, setClearedImageOpen] = useState(false);
+  const [clearedFile, setClearedFile] = useState(null);
 
   const handleViewDetails = (data) => {
     setOpenModal(true);
@@ -72,28 +76,64 @@ const ViewAvailability = () => {
       const imageUrl = URL.createObjectURL(file);
       setSelectedFile(file);
       setImagePreview(imageUrl);
-      setImageOpen(false)
+      setImageOpen(false);
     }
   };
+
+  const handleClearedFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setClearedFile(file);
+      setClearedImagePreview(imageUrl);
+      setClearedImageOpen(false);
+    }
+  };
+
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className="p-4 flex flex-col gap-8">
       <div>
         <div className="grid grid-cols-2  gap-4">
           <div className="flex w-full flex-col gap-4 text-center">
             <span className="text-primary text-title">Occupied</span>
-            <div onClick={()=>setImageOpen(true)} className="h-full w-full object-contain cursor-pointer">
-              <img className="w-full h-full" src={imagePreview} alt="" />
+            <div
+              onClick={() => setImageOpen(true)}
+              className="h-80 w-full  cursor-pointer"
+            >
+              <img
+                className="w-full h-full object-contain"
+                src={imagePreview}
+                alt=""
+              />
             </div>
           </div>
           <div className="flex w-full flex-col gap-4 text-center">
             <span className="text-primary text-title">Clear</span>
-            <div className="h-40 w-40 object-contain">
-              <img className="w-full h-full" src={cleared} alt="" />
+            <div
+              onClick={() => setClearedImageOpen(true)}
+              className="h-80 w-full  cursor-pointer"
+            >
+              <img
+                className="w-full h-full object-contain"
+                src={clearedImagePreview}
+                alt=""
+              />
             </div>
           </div>
         </div>
       </div>
+      {/* aCCordion section */}
       <div>
+        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+          <div className="flex justify-between items-center w-full px-4 py-2">
+            <span className="w-full text-muted font-pmedium text-subtitle">
+              CLIENT
+            </span>
+            <span className="w-full text-muted font-pmedium text-subtitle text-right flex items-center justify-end gap-1">
+              MEMBERS
+            </span>
+          </div>
+        </div>
         {mockSalesData.map((data, index) => (
           <Accordion key={index} className="py-4">
             <AccordionSummary
@@ -103,17 +143,21 @@ const ViewAvailability = () => {
               className="border-b-[1px] border-borderGray"
             >
               <div className="flex justify-between items-center w-full px-4">
-                <span className="text-subtitle font-medium">{data.client}</span>
-                <span className="text-subtitle font-medium">
+                <span className="text-content font-pmedium">{data.client}</span>
+                <span className="text-content font-pmedium">
                   {data.memberDetails.length} members
                 </span>
               </div>
             </AccordionSummary>
             <AccordionDetails sx={{ borderTop: "1px solid #d1d5db" }}>
               <AgTable
-                data={data.memberDetails}
+                data={data.memberDetails.map((member, idx) => ({
+                  ...member,
+                  id: idx + 1,
+                }))}
                 hideFilter
                 columns={[
+                  { field: "id", headerName: "ID", width:100 },
                   { field: "member", headerName: "Member Name", flex: 1 },
                   { field: "date", headerName: "Date", flex: 1 },
                   {
@@ -160,23 +204,44 @@ const ViewAvailability = () => {
           </div>
         </div>
       </MuiModal>
-      <MuiModal open={imageOpen} onClose={()=>setImageOpen(false)} title={"Upload occupied space"}>
-      <div className="flex flex-col items-center justify-center gap-4 p-6">
+      <MuiModal
+        open={imageOpen}
+        onClose={() => setImageOpen(false)}
+        title={"Upload occupied space"}
+      >
+        <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
-          <label
-            className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100"
-          >
+          <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
+            <MdUploadFile className="text-4xl text-gray-500" />
+            <span className="text-gray-500">Click to upload</span>
+            <input type="file" className="hidden" onChange={handleFileChange} />
+          </label>
+          {selectedFile && (
+            <div className="mt-4 text-gray-700">
+              Selected File: {selectedFile.name}
+            </div>
+          )}
+        </div>
+      </MuiModal>
+      <MuiModal
+        open={clearedImageOpen}
+        onClose={() => setClearedImageOpen(false)}
+        title={"Upload clear space"}
+      >
+        <div className="flex flex-col items-center justify-center gap-4 p-6">
+          <span className="text-subtitle font-pmedium">Upload New Image</span>
+          <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
             <MdUploadFile className="text-4xl text-gray-500" />
             <span className="text-gray-500">Click to upload</span>
             <input
               type="file"
               className="hidden"
-              onChange={handleFileChange}
+              onChange={handleClearedFileChange}
             />
           </label>
-          {selectedFile && (
+          {clearedFile && (
             <div className="mt-4 text-gray-700">
-              Selected File: {selectedFile.name}
+              Selected File: {clearedFile.name}
             </div>
           )}
         </div>

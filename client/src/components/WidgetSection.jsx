@@ -31,7 +31,7 @@ const WidgetSection = ({
   return (
     <div className="py-0 motion-preset-slide-up-sm">
       {title && (
-        <div className=" border-default  border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl">
+        <div className=" border-default  border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl uppercase">
           <div className="flex w-full gap-8 items-center justify-between">
             <div className="flex items-center gap-4">
               <span

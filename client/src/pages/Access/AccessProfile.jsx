@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import PermissionsTable from "../../components/PermissionsTable"; // Import the table
+import Abrar from "../../assets/abrar.jpeg"
 
 const AccessProfile = () => {
   const location = useLocation();
@@ -61,9 +62,11 @@ const AccessProfile = () => {
                 height: "100%",
                 fontSize: "5rem",
               }}
+              src={user.email === "abrar@biznest.co.in" ? Abrar : undefined}
             >
-              {user.name.charAt(0)}
+              {user.email !== "abrar@biznest.co.in" && user.name.charAt(0)}
             </Avatar>
+
           </div>
           <div className="flex flex-col gap-6">
             <span className="text-title flex items-center gap-3">
@@ -71,7 +74,7 @@ const AccessProfile = () => {
               <Chip
                 label={user.status ? 'Active' : 'InActive'}
                 sx={{
-                  backgroundColor: user.status  ? "green" : "grey",
+                  backgroundColor: user.status ? "green" : "grey",
                   color: "white",
                 }}
               />
@@ -104,9 +107,8 @@ const AccessProfile = () => {
           {accessProfile.map((department) => (
             <div
               key={department.departmentId}
-              className={`cursor-pointer rounded-md shadow-md ${
-                selectedDepartment?.departmentId === department.departmentId ? "border-default border-primary" : ""
-              }`}
+              className={`cursor-pointer rounded-md shadow-md ${selectedDepartment?.departmentId === department.departmentId ? "border-default border-primary" : ""
+                }`}
               onClick={() =>
                 setSelectedDepartment((prev) =>
                   prev?.departmentId === department.departmentId ? prev : department

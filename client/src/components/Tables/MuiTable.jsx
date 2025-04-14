@@ -21,7 +21,7 @@ const MuiTable = ({
 
   return (
     <div className="border-default border-borderGray rounded-md">
-      <div className="font-pmedium text-title text-primary p-4 border-b">
+      <div className="font-pmedium text-title text-primary p-4 border-b uppercase">
         {Title}
       </div>
       <Paper>
@@ -31,7 +31,8 @@ const MuiTable = ({
             height: scroll && rowsToDisplay ? 480 : "none",
             overflowY: scroll && rowsToDisplay ? "auto" : "hidden",
             overflowX: "auto",
-          }}>
+          }}
+        >
           <Table stickyHeader={scroll && rowsToDisplay}>
             <TableHead>
               <TableRow>
@@ -43,7 +44,8 @@ const MuiTable = ({
                       fontWeight: "bold",
                       minWidth: column.minWidth,
                       width: column.width,
-                    }}>
+                    }}
+                  >
                     {column.label}
                   </TableCell>
                 ))}
@@ -52,19 +54,38 @@ const MuiTable = ({
             <TableBody>
               {(scroll && rowsToDisplay ? rows : displayedRows).map((row) => (
                 <TableRow key={row[rowKey]}>
-                  {columns.map((column) => (
-                    <TableCell
-                      key={column.id}
-                      align={column.align || "left"}
-                      style={{
-                        minWidth: column.minWidth,
-                        width: column.width,
-                      }}>
-                      {column.renderCell
-                        ? column.renderCell(row) // Now row is properly passed
-                        : row[column.id]}
-                    </TableCell>
-                  ))}
+                  {columns.map((column) => {
+                    const value = column.renderCell
+                      ? column.renderCell(row)
+                      : row[column.id];
+                    const displayValue =
+                      typeof value === "string" && value.length > 15
+                        ? value.slice(0, 15) + "..."
+                        : value;
+
+                    return (
+                      <TableCell
+                        key={column.id}
+                        align={column.align || "left"}
+                        style={{
+                          minWidth: column.minWidth,
+                          width: column.width,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxWidth: column.width || 150, // fallback max width
+                          cursor: "default",
+                        }}
+                        title={
+                          typeof value === "string" && value.length > 15
+                            ? value
+                            : undefined
+                        }
+                      >
+                        {displayValue}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))}
             </TableBody>

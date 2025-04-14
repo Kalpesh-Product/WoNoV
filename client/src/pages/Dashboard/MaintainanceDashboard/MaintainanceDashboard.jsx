@@ -613,7 +613,7 @@ const MaintainanceDashboard = () => {
           description={"Assets Under Management"}
         />,
         <DataCard
-          route={"revenue"}
+          route={"annual-expenses"}
           title={"Free"}
           data={"200"}
           description={"Yearly Expense"}
