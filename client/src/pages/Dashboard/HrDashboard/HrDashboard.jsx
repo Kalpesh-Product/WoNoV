@@ -201,103 +201,6 @@ const HrDashboard = () => {
     value > 100 ? value - 100 : 0
   );
 
-  const data = [
-    { name: "Utilised Budget", data: utilisedStack },
-    { name: "Default Budget", data: defaultData },
-    { name: "Exceeded Budget", data: exceededData },
-  ];
-
-  const optionss = {
-    chart: {
-      type: "bar",
-      stacked: true,
-      toolbar: false,
-      fontFamily: "Poppins-Regular",
-      events: {
-        dataPointSelection: () => {
-          navigate("finance");
-        },
-      },
-      animations: {
-        enabled: false,
-      },
-    },
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "35%",
-        borderRadius: 3,
-        borderRadiusWhenStacked: "all",
-        borderRadiusApplication: "end",
-      },
-    },
-    colors: ["#36BA98", "#275D3E", "#E83F25"], // Colors for the series
-    dataLabels: {
-      enabled: true,
-      fontSize: "10px",
-      formatter: (value, { seriesIndex }) => {
-        if (seriesIndex === 1) return "";
-        return `${value}%`;
-      },
-    },
-    xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
-    },
-    yaxis: {
-      max: 150,
-      labels: {
-        formatter: (value) => `${value}%`,
-      },
-    },
-    tooltip: {
-      shared: true, // Ensure all series values are shown together
-      intersect: false, // Avoid showing individual values for each series separately
-      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-        const utilised = utilisedData[dataPointIndex] || 0;
-        const exceeded = exceededData[dataPointIndex] || 0;
-        const defaultVal = defaultData[dataPointIndex] || 0;
-
-        // Custom tooltip HTML
-        return `
-        <div style="padding: 10px; font-size: 12px; line-height: 1.5; text-align: left;">
-          <strong style="display: block; text-align: center; margin-bottom: 8px;">
-            ${w.globals.labels[dataPointIndex]}
-          </strong>
-          <div style="display: flex; gap:3rem;">
-            <span style="flex: 1; text-align: left;">Default Budget:</span>
-            <span style="flex: 1; text-align: right;">100%</span>
-          </div>
-          <div style="display: flex; gap:3rem;">
-            <span style="flex: 1; text-align: left;">Utilized Budget:</span>
-            <span style="flex: 1; text-align: right;">${utilised}%</span>
-          </div>
-          <div style="display: flex; gap:3rem;">
-            <span style="flex: 1; text-align: left;">Exceeded Budget:</span>
-            <span style="flex: 1; text-align: right;">${exceeded}%</span>
-          </div>
-        </div>
-      `;
-      },
-    },
-
-    legend: {
-      show: true,
-      position: "top",
-    },
-  };
 
   const columns = [
     { id: "id", label: "Sr No", align: "left" },
@@ -376,7 +279,7 @@ const HrDashboard = () => {
     {
       srNo: 2,
       ranks: "2",
-      employeeName: "Allen Silvera",
+      employeeName: "Allan Silvera",
       department: "Tech",
       "Performance (%)": "90",
     },
@@ -393,7 +296,7 @@ const HrDashboard = () => {
     {
       srNo: 1,
       ranks: 30,
-      employeeName: "Anushri Bhagat",
+      employeeName: "Alvera Maura",
       department: "Tech",
       "Performance (%)": "40",
     },
@@ -561,7 +464,7 @@ const HrDashboard = () => {
           }
         >
           <WidgetSection layout={1} border title={"Budget v/s Achievements"} titleLabel={"FY 2024-25"}>
-            <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
+            <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={'finance/budget'}/>
 
             <hr />
             <WidgetSection layout={3} padding>

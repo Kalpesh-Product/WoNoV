@@ -127,7 +127,7 @@ const HrBudget = () => {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <WidgetSection layout={1} title={"BUDGET 2024"} border>
+        <WidgetSection layout={1} title={"Budget v/s Achievements"} titleLabel={"FY 2024-25"} border>
           <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
         </WidgetSection>
       </div>

@@ -301,7 +301,7 @@ const ItDashboard = () => {
       layout: 1,
       widgets: [
         <WidgetSection border title={"Budget v/s Achievements"}>
-          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
+          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={"finance/budget"}/>
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard

@@ -18,30 +18,31 @@ const HrSops = () => {
   const sopsUploadData = [
     {
       srNo: 1,
-      templateName: "Upload Sops",
-      uploadedBy: "John Doe",
-      date: "01-03-2025"
+      templateName: "Employee Onboarding Process",
+      uploadedBy: "Utkarsha Palkar",
+      date: "23-11-2024"
     },
     {
       srNo: 2,
-      templateName: "Upload Sops",
-      uploadedBy: "Jane Smith",
-      date: "08-03-2025"
+      templateName: "Leave & Attendance Policy",
+      uploadedBy: "Utkarsha Palkar",
+      date: "14-12-2024"
     },
     {
       srNo: 3,
-      templateName: "Upload Sops",
-      uploadedBy: "Michael Johnson",
-      date: "15-03-2025"
+      templateName: "Performance Review Guidelines",
+      uploadedBy: "Utkarsha Palkar",
+      date: "28-01-2025"
     },
     {
       srNo: 4,
-      templateName: "Upload Sops",
-      uploadedBy: "Emily Davis",
-      date: "22-03-2025"
+      templateName: "Exit & Offboarding Procedure",
+      uploadedBy: "Utkarsha Palkar",
+      date: "09-03-2025"
     }
   ];
-
+  
+  
 
   return (
     <div className=" flex flex-col gap-4">
