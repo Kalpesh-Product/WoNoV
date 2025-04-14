@@ -125,7 +125,7 @@ const MeetingDashboard = () => {
         "Mar-24",
       ],
       title: {
-        text: "Financial Year Months",
+        text: "",
       },
       labels: {
         style: {
@@ -289,9 +289,6 @@ const MeetingDashboard = () => {
   );
 
   const BookingMonths = [
-    "Jan-24",
-    "Feb-24",
-    "Mar-24",
     "Apr-24",
     "May-24",
     "Jun-24",
@@ -301,6 +298,9 @@ const MeetingDashboard = () => {
     "Oct-24",
     "Nov-24",
     "Dec-24",
+    "Jan-25",
+    "Feb-25",
+    "Mar-25",
   ];
 
   // Example booked hours data per month
@@ -455,32 +455,41 @@ const MeetingDashboard = () => {
   ];
 
   const averageOccupancyOptions = {
-    chart: { type: "bar", fontFamily: "Poppins-Regular" },
-    xaxis: { categories: rooms, title: { text: "Rooms" } },
+    chart: { type: "bar", fontFamily: "Poppins-Regular", toolbar:false },
+    xaxis: { categories: rooms },
     yaxis: {
       max: 100,
       title: { text: "Occupancy (%)" },
       labels: {
         formatter: function (value) {
-          return Math.round(value) + "%"; // Removes decimals
+          return Math.round(value) + "%";
+        },
+      },
+    },
+    tooltip: {
+      y: {
+        formatter: function (value, { dataPointIndex }) {
+          const roomName = rooms[dataPointIndex];
+          const actual = actualBookedHours[roomName];
+          return `${actual} hours booked`;
         },
       },
     },
     dataLabels: {
       enabled: true,
       formatter: function (val) {
-        return Math.round(val) + "%"; // Display percentage without decimals
+        return Math.round(val) + "%";
       },
       style: {
         fontSize: "11px",
-        colors: ["#000"], // Black for better visibility
+        colors: ["#000"],
       },
       offsetY: -22,
     },
     plotOptions: {
       bar: {
         dataLabels: {
-          position: "top", // Places labels inside the bar
+          position: "top",
         },
         borderRadius: 5,
         columnWidth: "40%",
@@ -488,6 +497,7 @@ const MeetingDashboard = () => {
     },
     colors: ["#2DC1C6"],
   };
+  
 
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const timeSlots = [
@@ -562,7 +572,8 @@ const MeetingDashboard = () => {
           <WidgetSection
             layout={1}
             border
-            title={"Average Meeting Room Bookings"}
+            title={"Average Meeting Room utilization"}
+            titleLabel={"FY 2024-25"}
           >
             <BarGraph
               height={400}
@@ -737,6 +748,7 @@ const MeetingDashboard = () => {
             data={meetingPieData}
             options={meetingPieOptions}
             height={400}
+            width={550}
           />
         </WidgetSection>,
       ],

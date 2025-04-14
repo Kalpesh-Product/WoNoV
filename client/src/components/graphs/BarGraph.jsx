@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Chart from "react-apexcharts";
 import { Select, MenuItem, FormControl, Button } from "@mui/material";
 import SecondaryButton from "../SecondaryButton";
+import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
 const BarGraph = ({
   data,
@@ -54,8 +55,8 @@ const BarGraph = ({
   return (
     <div className="bg-white rounded-md">
       {/* Header with title, year dropdown and department switcher */}
-      <div className="flex justify-center items-center w-full">
-        <div className="flex gap-4 items-center">
+      <div className="flex justify-end items-center w-full">
+        <div className="flex gap-4 items-center mx-8">
           {year && (
             <FormControl size="small">
               <Select value={selectedYear} onChange={handleYearChange}>
@@ -67,7 +68,7 @@ const BarGraph = ({
           {departments && (
             <div className="flex items-center pt-2">
               <SecondaryButton
-                title={"Prev"}
+                title={<MdNavigateBefore />}
                 handleSubmit={handlePrev}
                 disabled={departmentIndex === 0}
               />
@@ -76,7 +77,7 @@ const BarGraph = ({
               </div>
 
               <SecondaryButton
-                title={"Next"}
+                title={<MdNavigateNext />}
                 handleSubmit={handleNext}
                 disabled={departmentIndex === departments.length - 1}
               />

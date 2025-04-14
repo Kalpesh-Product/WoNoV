@@ -36,16 +36,27 @@ const CheckAvailability = () => {
       const response = await axios.get(
         "/api/company/get-company-data?field=workLocations"
       );
-      console.log(response.data.workLocations);
-      return response.data.workLocations;
+      console.log(response.data);
+      return response.data;
     },
   });
 
-  const floors = [5, 6, 7];
+  const uniqueBuildings = Array.from(
+    new Map(
+      workLocations.map((loc) => [
+        loc.building._id, // use building._id as unique key
+        loc.building.buildingName,
+      ])
+    ).entries()
+  );
+
+  const floors = ["501(A)", "501(B)", "601(A)", "601(B)", "701(A)", "701(B)"];
 
   const onSubmit = (data) => {
     const { location, floor } = data;
-    navigate(`/app/dashboard/sales-dashboard/co-working-seats/view-availability?location=${location}&floor=${floor}`);
+    navigate(
+      `/app/dashboard/sales-dashboard/co-working-seats/view-availability?location=${location}&floor=${floor}`
+    );
   };
 
   return (
@@ -64,28 +75,26 @@ const CheckAvailability = () => {
             <Controller
               name="location"
               control={control}
-              render={({ field }) => {
-                return (
-                  <Select {...field} label="Select Location">
-                    <MenuItem value="" disabled>
-                      Select Location
+              render={({ field }) => (
+                <Select {...field} label="Select Location">
+                  <MenuItem value="" disabled>
+                    Select Location
+                  </MenuItem>
+                  {locationsLoading ? (
+                    <MenuItem disabled>
+                      <CircularProgress size={20} />
                     </MenuItem>
-                    {locationsLoading ? (
-                      <MenuItem disabled>
-                        <CircularProgress size={20} />
+                  ) : locationsError ? (
+                    <MenuItem disabled>Error fetching floors</MenuItem>
+                  ) : (
+                    uniqueBuildings.map(([id, name]) => (
+                      <MenuItem key={id} value={name}>
+                        {name}
                       </MenuItem>
-                    ) : locationsError ? (
-                      <MenuItem disabled>Error fetching floors</MenuItem>
-                    ) : (
-                      workLocations.map((location) => (
-                        <MenuItem key={location._id} value={location.buildingName}>
-                          {location.buildingName}
-                        </MenuItem>
-                      ))
-                    )}
-                  </Select>
-                );
-              }}
+                    ))
+                  )}
+                </Select>
+              )}
             />
           </FormControl>
 

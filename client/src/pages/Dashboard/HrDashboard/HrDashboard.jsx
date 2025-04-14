@@ -2,7 +2,7 @@ import React, { lazy, Suspense } from "react";
 import WidgetSection from "../../../components/WidgetSection";
 import Card from "../../../components/Card";
 import { LuHardDriveUpload } from "react-icons/lu";
-import { Skeleton, Box } from "@mui/material";
+import { Skeleton, Box, CircularProgress } from "@mui/material";
 import { CgWebsite } from "react-icons/cg";
 import { SiCashapp } from "react-icons/si";
 import { SiGoogleadsense } from "react-icons/si";
@@ -53,29 +53,29 @@ const HrDashboard = () => {
 
   const rawSeries = [
     {
-      name: "Sales Total",
-      data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 0, 0],
+      name: "Sales Assigned",
+      data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 20, 15],
       group: "total",
     },
     {
-      name: "IT Total",
-      data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 0, 0],
+      name: "IT Assigned",
+      data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 25, 10],
       group: "total",
     },
     {
-      name: "Tech Total",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 0, 0],
+      name: "Tech Assigned",
+      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 30, 30],
       group: "total",
     },
 
     {
-      name: "Admin Total",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 0, 0],
+      name: "Admin Assigned",
+      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 10, 10],
       group: "total",
     },
     {
-      name: "Maintainance Total",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 0, 0],
+      name: "Maintainance Assigned",
+      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 5, 3],
       group: "total",
     },
     {
@@ -85,28 +85,28 @@ const HrDashboard = () => {
     },
     {
       name: "Sales Completed",
-      data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 0, 0],
+      data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 10, 10],
       group: "completed",
     },
     {
       name: "IT Completed",
-      data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60],
+      data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 20, 10],
       group: "completed",
     },
 
     {
       name: "Tech Completed",
-      data: [45, 40, 30, 45, 50, 40, 55, 50, 60, 65],
+      data: [45, 40, 30, 45, 50, 40, 55, 50, 60, 65,30,30],
       group: "completed",
     },
     {
       name: "Admin Completed",
-      data: [40, 30, 40, 52, 46, 40, 60, 59, 50, 70],
+      data: [40, 30, 40, 52, 46, 40, 60, 59, 50, 70,8,10],
       group: "completed",
     },
     {
       name: "Maintainance Completed",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75],
+      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75,4,1],
       group: "completed",
     },
   ];
@@ -115,6 +115,7 @@ const HrDashboard = () => {
     chart: {
       type: "bar",
       toolbar: { show: false },
+      
       stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
       events: {
@@ -123,6 +124,7 @@ const HrDashboard = () => {
         },
       },
     },
+    colors: ["#36BA98", "#E83F25"],
     plotOptions: {
       bar: {
         horizontal: false,
@@ -155,22 +157,24 @@ const HrDashboard = () => {
     },
     yaxis: {
       max: 100,
+      title:{text: "Assigned vs Completed"},
       labels: {
-        formatter: (val) => `${Math.round(val)}%`,
+        formatter: (val) => `${Math.round(val)}`,
       },
     },
     fill: {
       opacity: 1,
     },
     legend: {
-      show: false,
+      show: true,
+      position:'top'
     },
 
     tooltip: {
       y: {
         formatter: (val, { seriesIndex, dataPointIndex }) => {
           const rawData = rawSeries[seriesIndex]?.data[dataPointIndex];
-          return `${rawData}`;
+          return `${rawData} Tasks`;
         },
       },
     },
@@ -303,6 +307,19 @@ const HrDashboard = () => {
     },
   });
 
+  const dummyBirthdays = [
+    { title: "Machindrath Parkar", start: "2025-04-16" },
+    { title: "Faizan Shaikh", start: "2025-04-16" },
+    { title: "Anne Fernandes", start: "2025-04-18" },
+    { title: "Melisa Fernandes", start: "2025-04-20" },
+    { title: "Allan Silveira", start: "2025-04-22" },
+    { title: "Sankalp Kalangutkar", start: "2025-04-22" },
+    { title: "Narshiva Naik", start: "2025-04-26" },
+    { title: "Hema", start: "2025-04-30" },
+  ];
+  
+  
+
   const columns2 = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "title", label: "Holiday/Event", align: "center" },
@@ -325,16 +342,14 @@ const HrDashboard = () => {
   });
 
   const columns3 = [
-    { id: "srNo", label: "Sr No", align: "left" },
-    { id: "ranks", label: "Rank", align: "left" },
+    { id: "srNo", label: "ID", align: "left" },
     { id: "employeeName", label: "Employee name", align: "left" },
     { id: "department", label: "Department", align: "center" },
     { id: "Performance (%)", label: "Performance (%)", align: "center" },
   ];
 
   const columns4 = [
-    { id: "srNo", label: "Sr No", align: "left" },
-    { id: "ranks", label: "Rank", align: "left" },
+    { id: "srNo", label: "ID", align: "left" },
     { id: "employeeName", label: "Employee name", align: "left" },
     { id: "department", label: "Department", align: "center" },
     { id: "Performance (%)", label: "Performance (%)", align: "center" },
@@ -342,21 +357,21 @@ const HrDashboard = () => {
 
   const rows3 = [
     {
-      srNo:1,
+      srNo: 1,
       ranks: "1",
       employeeName: "Aiwin",
       department: "Tech",
       "Performance (%)": "97",
     },
     {
-      srNo:2,
+      srNo: 2,
       ranks: "2",
       employeeName: "Allen Silvera",
       department: "Tech",
       "Performance (%)": "90",
     },
     {
-      srNo:3,
+      srNo: 3,
       ranks: 3,
       employeeName: "Sankalp Kalangutkar",
       department: "Tech",
@@ -366,21 +381,21 @@ const HrDashboard = () => {
 
   const rows4 = [
     {
-      srNo:1,
+      srNo: 1,
       ranks: 30,
       employeeName: "Anushri Bhagat",
       department: "Tech",
       "Performance (%)": "40",
     },
     {
-      srNo:2,
+      srNo: 2,
       ranks: 25,
       employeeName: "Sumera Naik",
       department: "Tech",
       "Performance (%)": "43",
     },
     {
-      srNo:3,
+      srNo: 3,
       ranks: 28,
       employeeName: "Sunaina Bharve",
       department: "Tech",
@@ -535,7 +550,7 @@ const HrDashboard = () => {
             </Box>
           }
         >
-          <WidgetSection layout={1} border title={"Budget v/s Achievements"}>
+          <WidgetSection layout={1} border title={"Budget v/s Achievements"} titleLabel={"FY 2024-25"}>
             <LayerBarGraph data={data} options={optionss} />
             <hr />
             <WidgetSection layout={3} padding>
@@ -652,7 +667,8 @@ const HrDashboard = () => {
             layout={1}
             border
             padding
-            title={"Department Wise Tasks% Vs Achievements in %"}
+            titleLabel={"FY 2024-25"}
+            title={"Department Wise Tasks Vs Achievements "}
           >
             <BarGraph
               data={rawSeries}
@@ -687,33 +703,37 @@ const HrDashboard = () => {
     {
       layout: 2,
       widgets: [
+        !isLoading ? (
+          <MuiTable
+            key={birthdays.length}
+            Title="Current Months Birthday List"
+            columns={columns}
+            rows={[
+              ...[...dummyBirthdays, ...birthdays].map((bd, index) => ({
+                id: index + 1,
+                title: bd.title,
+                start: new Date(bd.start).toLocaleDateString(),
+              })),
+            ]}
+            rowsToDisplay={5}
+            scroll
+          />
+        ) : (
+          <CircularProgress key="loading-spinner" />
+        ),
+
         <MuiTable
-          key={birthdays.length}
-          Title="Current Months Birthday List"
-          columns={columns}
-          rows={[
-            ...birthdays.map((bd, index) => ({
-              id: index + 1, 
-              title: bd.title,
-              start: new Date(bd.start).toLocaleDateString(), 
-            })),
-          ]}
-          rowsToDisplay={5}
-          scroll
-        />,
-        <MuiTable
-          Title="Current Months Holidays and Events List"
+          Title="Current Months Holidays and Events"
           columns={columns2}
-          rows={[
-            ...holidayEvents.map((holiday, index) => ({
-              id: index + 1, // Auto-increment Sr No
-              title: holiday.title, // Birthday Name
-              start: new Date(holiday.start).toLocaleDateString(), // Format as readable date
-            })),
-          ]}
+          rows={holidayEvents.map((holiday, index) => ({
+            id: index + 1,
+            title: holiday.title,
+            start: new Date(holiday.start).toLocaleDateString(),
+          }))}
           rowsToDisplay={5}
           scroll
         />,
+
         <MuiTable Title="Top 3 Performers" columns={columns3} rows={rows3} />,
         <MuiTable
           Title="Under 3 Performed List"
