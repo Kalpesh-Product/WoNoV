@@ -84,7 +84,6 @@ const Projections = () => {
   const monthlyProfitLossColumns = [
     { field: "id", headerName: "Sr No", flex: 1 },
     { field: "month", headerName: "Month", flex: 1 },
-    { field: "income", headerName: "Income", flex: 1 },
     { field: "expense", headerName: "Expense", flex: 1 },
     { field: "pnl", headerName: "P&L", flex: 1 },
     {

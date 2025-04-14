@@ -36,7 +36,7 @@ const AreaGraph = ({ responseData }) => {
         ],
         categories: [
           "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
-          "Oct-24", "Nov-24", "Dec-24", "Jan-24", "Feb-24", "Mar-24"
+          "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
         ],
       },
       Monthly: {

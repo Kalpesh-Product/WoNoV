@@ -215,7 +215,7 @@ const HrBudget = () => {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <WidgetSection layout={1} title={"BUDGET 2024"} border>
+        <WidgetSection layout={1} title={"BUDGET 2024-25"} border>
           <LayerBarGraph options={optionss} data={data} />
         </WidgetSection>
       </div>

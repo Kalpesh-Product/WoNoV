@@ -2,6 +2,7 @@ import React from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import AgTable from "../../../../components/AgTable";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const StatutoryPayments = () => {
   const collectionData = [
@@ -82,9 +83,12 @@ const StatutoryPayments = () => {
       cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
-            <span className="text-primary hover:underline text-content cursor-pointer">
-              View Details
-            </span>
+            <span
+                      className="text-subtitle cursor-pointer"
+                       
+                    >
+                      <MdOutlineRemoveRedEye />
+                    </span>
           </div>
         </>
       ),
@@ -113,7 +117,7 @@ const StatutoryPayments = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection title={"Statutory Payments 24-25".toUpperCase()} border>
+      <WidgetSection title={"Statutory Payments 2024-25".toUpperCase()} border>
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
 

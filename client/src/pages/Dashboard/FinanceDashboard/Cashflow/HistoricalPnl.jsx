@@ -311,7 +311,7 @@ const HistoricalPnl = () => {
                   hideFilter
                   columns={[
                     { header: "Sr No", field: "srNo", flex: 1 },
-                    { header: "Month", field: "month", flex: 1 },
+                    { header: "Department", field: "department", flex: 1 },
                     { header: "Income", field: "income", flex: 1 },
                     { header: "Expense", field: "expense", flex: 1 },
                     { header: "Profit / Loss", field: "profitLoss", flex: 1 },
