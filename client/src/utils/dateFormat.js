@@ -131,3 +131,17 @@ export const formatDuration = (start, end) => {
   const minutes = duration.minutes().toString().padStart(2, "0");
   return `${hours}:${minutes}`;
 };
+
+export const getFiscalYearString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth(); // 0 = Jan, 3 = Apr
+
+  // Assuming fiscal year starts in April
+  const startYear = month >= 3 ? year : year - 1;
+  const endYear = startYear + 1;
+
+  return `${startYear}-${String(endYear).slice(-2)}`;
+}
+
+

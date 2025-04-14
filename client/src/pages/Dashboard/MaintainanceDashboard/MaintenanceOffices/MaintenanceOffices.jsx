@@ -358,7 +358,7 @@ const MaintenanceOffices = () => {
         ...client,
         srNo: index + 1,
         registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
-        actualRevenue:Number(client.actualRevenue).toLocaleString("en-IN")
+        actualRevenue: Number(client.actualRevenue).toLocaleString("en-IN")
       }));
       return { ...domain, clients: updatedClients };
     });
@@ -374,7 +374,7 @@ const MaintenanceOffices = () => {
 
   // Graph Options
   const options = {
-    chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular" },
+    chart: { type: "bar", toolbar: false, stacked: false, fontFamily: "Poppins-Regular" },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
@@ -410,7 +410,7 @@ const MaintenanceOffices = () => {
       <WidgetSection layout={1} title={"Maintenance Offices"} border>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
-      
+
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
       <div>
         {selectedMonthData.domains.map((domain, index) => {
@@ -497,7 +497,7 @@ const MaintenanceOffices = () => {
                       field: "actualRevenue",
                       flex: 1,
                     },
-                   
+
                   ]}
                   tableHeight={300}
                 />
@@ -507,7 +507,7 @@ const MaintenanceOffices = () => {
                       Total Revenue for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                    INR {domain.revenue.toLocaleString()}
+                      INR {domain.revenue.toLocaleString()}
                     </span>{" "}
                   </div>
                 </div>

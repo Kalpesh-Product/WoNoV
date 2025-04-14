@@ -1,5 +1,5 @@
-import React from "react";
 import ParentRevenue from "./ParentRevenue";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const mockSalesData = [
   {
@@ -8,9 +8,9 @@ const mockSalesData = [
     projected: 10000,
     adjustedProjected: 0,
     revenueBreakup: [
-      { client: "Client A", revenue: 4500, region: "North", industry: "Retail" },
-      { client: "Client B", revenue: 3500, region: "South", industry: "Finance" },
-      { client: "Client C", revenue: 2000, region: "West", industry: "Technology" }
+      { client: "Client A", revenue: inrFormat(4500), region: "North", industry: "Retail" },
+      { client: "Client B", revenue: inrFormat(3500), region: "South", industry: "Finance" },
+      { client: "Client C", revenue: inrFormat(2000), region: "West", industry: "Technology" }
     ]
   },
   {
@@ -19,9 +19,9 @@ const mockSalesData = [
     projected: 11000,
     adjustedProjected: 0,
     revenueBreakup: [
-      { client: "Client D", revenue: 5000, region: "East", industry: "Healthcare" },
-      { client: "Client E", revenue: 4000, region: "North", industry: "Retail" },
-      { client: "Client F", revenue: 2100, region: "West", industry: "Technology" }
+      { client: "Client D", revenue: inrFormat(5000), region: "East", industry: "Healthcare" },
+      { client: "Client E", revenue: inrFormat(4000), region: "North", industry: "Retail" },
+      { client: "Client F", revenue: inrFormat(2100), region: "West", industry: "Technology" }
     ]
   },
   {
@@ -30,9 +30,9 @@ const mockSalesData = [
     projected: 12000,
     adjustedProjected: 4000,
     revenueBreakup: [
-      { client: "Client G", revenue: 3000, region: "South", industry: "E-commerce" },
-      { client: "Client H", revenue: 2500, region: "West", industry: "Logistics" },
-      { client: "Client I", revenue: 2500, region: "East", industry: "Finance" }
+      { client: "Client G", revenue: inrFormat(3000), region: "South", industry: "E-commerce" },
+      { client: "Client H", revenue: inrFormat(2500), region: "West", industry: "Logistics" },
+      { client: "Client I", revenue: inrFormat(2500), region: "East", industry: "Finance" }
     ]
   },
   {
@@ -41,8 +41,8 @@ const mockSalesData = [
     projected: 10500,
     adjustedProjected: 3500,
     revenueBreakup: [
-      { client: "Client J", revenue: 4000, region: "North", industry: "Retail" },
-      { client: "Client K", revenue: 3000, region: "South", industry: "Technology" }
+      { client: "Client J", revenue: inrFormat(4000), region: "North", industry: "Retail" },
+      { client: "Client K", revenue: inrFormat(3000), region: "South", industry: "Technology" }
     ]
   },
   {
@@ -51,9 +51,9 @@ const mockSalesData = [
     projected: 11500,
     adjustedProjected: 2000,
     revenueBreakup: [
-      { client: "Client L", revenue: 4500, region: "East", industry: "Healthcare" },
-      { client: "Client M", revenue: 3500, region: "West", industry: "Real Estate" },
-      { client: "Client N", revenue: 1500, region: "North", industry: "Manufacturing" }
+      { client: "Client L", revenue: inrFormat(4500), region: "East", industry: "Healthcare" },
+      { client: "Client M", revenue: inrFormat(3500), region: "West", industry: "Real Estate" },
+      { client: "Client N", revenue: inrFormat(1500), region: "North", industry: "Manufacturing" }
     ]
   },
   {
@@ -62,9 +62,9 @@ const mockSalesData = [
     projected: 12500,
     adjustedProjected: 2300,
     revenueBreakup: [
-      { client: "Client O", revenue: 5200, region: "South", industry: "Automobile" },
-      { client: "Client P", revenue: 3000, region: "North", industry: "Retail" },
-      { client: "Client Q", revenue: 2000, region: "West", industry: "Banking" }
+      { client: "Client O", revenue: inrFormat(5200), region: "South", industry: "Automobile" },
+      { client: "Client P", revenue: inrFormat(3000), region: "North", industry: "Retail" },
+      { client: "Client Q", revenue: inrFormat(2000), region: "West", industry: "Banking" }
     ]
   },
   {
@@ -73,9 +73,9 @@ const mockSalesData = [
     projected: 13500,
     adjustedProjected: 2000,
     revenueBreakup: [
-      { client: "Client R", revenue: 6000, region: "East", industry: "Technology" },
-      { client: "Client S", revenue: 4000, region: "North", industry: "Logistics" },
-      { client: "Client T", revenue: 1500, region: "South", industry: "Retail" }
+      { client: "Client R", revenue: inrFormat(6000), region: "East", industry: "Technology" },
+      { client: "Client S", revenue: inrFormat(4000), region: "North", industry: "Logistics" },
+      { client: "Client T", revenue: inrFormat(1500), region: "South", industry: "Retail" }
     ]
   },
   {
@@ -84,9 +84,9 @@ const mockSalesData = [
     projected: 14500,
     adjustedProjected: 2000,
     revenueBreakup: [
-      { client: "Client U", revenue: 5000, region: "West", industry: "E-commerce" },
-      { client: "Client V", revenue: 3500, region: "South", industry: "Banking" },
-      { client: "Client W", revenue: 4000, region: "North", industry: "Healthcare" }
+      { client: "Client U", revenue: inrFormat(5000), region: "West", industry: "E-commerce" },
+      { client: "Client V", revenue: inrFormat(3500), region: "South", industry: "Banking" },
+      { client: "Client W", revenue: inrFormat(4000), region: "North", industry: "Healthcare" }
     ]
   },
   {
@@ -95,9 +95,9 @@ const mockSalesData = [
     projected: 15500,
     adjustedProjected: 1500,
     revenueBreakup: [
-      { client: "Client X", revenue: 7000, region: "East", industry: "Technology" },
-      { client: "Client Y", revenue: 4000, region: "North", industry: "Retail" },
-      { client: "Client Z", revenue: 3000, region: "West", industry: "Logistics" }
+      { client: "Client X", revenue: inrFormat(7000), region: "East", industry: "Technology" },
+      { client: "Client Y", revenue: inrFormat(4000), region: "North", industry: "Retail" },
+      { client: "Client Z", revenue: inrFormat(3000), region: "West", industry: "Logistics" }
     ]
   },
   {
@@ -106,9 +106,9 @@ const mockSalesData = [
     projected: 16500,
     adjustedProjected: 3500,
     revenueBreakup: [
-      { client: "Client AA", revenue: 6000, region: "South", industry: "Manufacturing" },
-      { client: "Client AB", revenue: 5000, region: "North", industry: "Banking" },
-      { client: "Client AC", revenue: 2000, region: "West", industry: "E-commerce" }
+      { client: "Client AA", revenue: inrFormat(6000), region: "South", industry: "Manufacturing" },
+      { client: "Client AB", revenue: inrFormat(5000), region: "North", industry: "Banking" },
+      { client: "Client AC", revenue: inrFormat(2000), region: "West", industry: "E-commerce" }
     ]
   },
   {
@@ -117,9 +117,9 @@ const mockSalesData = [
     projected: 17500,
     adjustedProjected: 2500,
     revenueBreakup: [
-      { client: "Client AD", revenue: 8000, region: "East", industry: "Technology" },
-      { client: "Client AE", revenue: 4000, region: "South", industry: "Finance" },
-      { client: "Client AF", revenue: 3000, region: "North", industry: "Retail" }
+      { client: "Client AD", revenue: inrFormat(8000), region: "East", industry: "Technology" },
+      { client: "Client AE", revenue: inrFormat(4000), region: "South", industry: "Finance" },
+      { client: "Client AF", revenue: inrFormat(3000), region: "North", industry: "Retail" }
     ]
   },
   {
@@ -128,9 +128,9 @@ const mockSalesData = [
     projected: 18500,
     adjustedProjected: 2500,
     revenueBreakup: [
-      { client: "Client AG", revenue: 7000, region: "West", industry: "Logistics" },
-      { client: "Client AH", revenue: 6000, region: "North", industry: "Healthcare" },
-      { client: "Client AI", revenue: 3000, region: "South", industry: "Automobile" }
+      { client: "Client AG", revenue: inrFormat(7000), region: "West", industry: "Logistics" },
+      { client: "Client AH", revenue: inrFormat(6000), region: "North", industry: "Healthcare" },
+      { client: "Client AI", revenue: inrFormat(3000), region: "South", industry: "Automobile" }
     ]
   }
 ];

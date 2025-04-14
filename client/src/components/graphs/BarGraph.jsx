@@ -57,7 +57,7 @@ const BarGraph = ({
       <div className="flex justify-center items-center w-full">
         <div className="flex gap-4 items-center">
           {year && (
-            <FormControl size="small">
+            <FormControl size="small" sx={{marginBottom:"1rem"}}>
               <Select value={selectedYear} onChange={handleYearChange}>
                 <MenuItem value="2023-2024">2023-2024</MenuItem>
                 <MenuItem value="2024-2025">2024-2025</MenuItem>
