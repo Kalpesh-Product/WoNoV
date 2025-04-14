@@ -40,16 +40,8 @@ const DonutChart = ({
     tooltip: {
       enabled: true,
       y: {
-        formatter: (val, { seriesIndex }) => {
-          const rawValue = tooltipValue?.[seriesIndex];
-          const numericValue = Number(rawValue);
-        
-          if (isNaN(numericValue)) return tooltipValue?.[seriesIndex] || "";
-        
-          return isMonetary
-            ? `INR ${numericValue.toLocaleString("en-IN")}`
-            : `${numericValue.toLocaleString("en-IN")}`;
-        }
+        formatter: (val, { seriesIndex }) =>
+          `${tooltipValue[seriesIndex]}`,
       },
     },
     plotOptions: {
