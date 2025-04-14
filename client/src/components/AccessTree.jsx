@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import PrimaryButton from "./PrimaryButton";
 import { useNavigate, useLocation } from "react-router-dom";
 import { CircularProgress } from "@mui/material";
+import Abrar from "../assets/abrar.jpeg"
 
 const AccessTree = () => {
   const location = useLocation();
@@ -131,18 +132,28 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel }) => {
     const lastInitial = names.length > 1 ? names[names.length - 1]?.[0] : "";
     return `${firstInitial}${lastInitial}`;
   };
+
+  const isAbrar = user.email === "abrar@biznest.co.in";
+
   return (
     <div
       className={`bg-white flex flex-col shadow-md border border-gray-300 rounded-lg p-4 pt-0 px-0 text-center cursor-pointer relative w-60 transition ${
         isTopLevel ? "border-2 border-primary" : ""
-      } `}>
-      
+      }`}
+    >
       <div
         onClick={() => navigate("permissions", { state: { user } })}
-        className="bg-primary text-white p-2 pt-4 rounded-t-md">
-          <div className="w-full flex flex-col justify-center">
-        <div className="absolute -top-7 left-[6rem]  flex items-center justify-center text-black font-semibold border-default border-primary rounded-full w-12 h-12 bg-red-50">{getInitials(user.name)}</div>
-      </div>
+        className="bg-primary text-white p-2 pt-4 rounded-t-md"
+      >
+        <div className="w-full flex flex-col justify-center">
+          <div className="absolute -top-7 left-[6rem] flex items-center justify-center text-black font-semibold border-default border-primary rounded-full w-12 h-12 bg-red-50 overflow-hidden">
+            {isAbrar ? (
+              <img src={Abrar} alt="Abrar" className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <span>{getInitials(user.name)}</span>
+            )}
+          </div>
+        </div>
         <span className="text-subtitle font-semibold">{user.name}</span>
       </div>
       <span className="text-content mt-2">
@@ -155,7 +166,8 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel }) => {
       {user.subordinates && user.subordinates.length > 0 && (
         <p
           onClick={() => handleSelectUser(user)}
-          className="mt-2 text-xs text-gray-500 hover:underline">
+          className="mt-2 text-xs text-gray-500 hover:underline"
+        >
           {user.subordinates.length} Subordinate
           {user.subordinates.length > 1 ? "s" : ""}
         </p>
@@ -163,5 +175,6 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel }) => {
     </div>
   );
 };
+
 
 export default AccessTree;

@@ -114,7 +114,7 @@ const Collections = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection title={"Collections 24-25"} border>
+      <WidgetSection title={"Collections 24-25".toUpperCase()} border>
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
 

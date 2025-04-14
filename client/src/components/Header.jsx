@@ -74,7 +74,7 @@ const Header = () => {
 
   return (
     <>
-      <div className="flex w-full justify-between gap-x-10 items-center p-2">
+      <div className="flex w-full justify-between gap-x-10 items-center py-2">
         <div>
           <div>
             <div className={`w-48 flex items-center gap-16 h-full pl-4`}>
@@ -126,9 +126,9 @@ const Header = () => {
             </div>
           </>
         )}
-        <div className="flex items-center gap-4 ">
+        <div className="flex items-center gap-4 w-[40%]">
           <Avatar onClick={handleAvatarClick} className="cursor-pointer">
-            {auth.user.name === "Abrar Shaikh" ? (
+            {auth.user.email === "abrar@biznest.co.in" ? (
               <img src={Abrar} alt="" />
             ) : (
               auth.user.firstName.charAt(0)
@@ -140,7 +140,7 @@ const Header = () => {
             onMouseLeave={() => setIsHovered(false)}>
             {!isMobile && (
               <>
-                <h1 className="text-xl font-semibold text-right">
+                <h1 className="text-xl font-semibold text-start">
                   {auth.user.firstName}
                 </h1>
                 <span className="text-content">

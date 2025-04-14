@@ -71,15 +71,21 @@ const AdminOffices = () => {
           "name": "ST-601A",
           "revenue": 10,
           clients: [
-            { client: "Client F",  representative: "Daniel Green",
+            {
+              client: "Client F", representative: "Daniel Green",
               registerDate: "2024-03-12",
-              actualRevenue: 5000, },
-            { client: "Client G",  representative: "Eva Black",
+              actualRevenue: 5000,
+            },
+            {
+              client: "Client G", representative: "Eva Black",
               registerDate: "2024-04-18",
-              actualRevenue: 7000, },
-            { client: "Client H",  representative: "Frank Blue",
+              actualRevenue: 7000,
+            },
+            {
+              client: "Client H", representative: "Frank Blue",
               registerDate: "2024-05-10",
-              actualRevenue: 3000, },
+              actualRevenue: 3000,
+            },
           ],
         },
         {
@@ -357,7 +363,7 @@ const AdminOffices = () => {
       ]
     }
   ]
-  
+
   const [selectedMonth, setSelectedMonth] = useState(
     mockBusinessRevenueData[0].month
   ); // Default to first month
@@ -372,19 +378,19 @@ const AdminOffices = () => {
   const selectedMonthData = mockBusinessRevenueData.find(
     (data) => data.month === selectedMonth
   );
-  
+
   if (selectedMonthData) {
     selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
       const updatedClients = domain.clients.map((client, index) => ({
         ...client,
         srNo: index + 1,
         registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
-        actualRevenue:Number(client.actualRevenue).toLocaleString("en-IN")
+        actualRevenue: Number(client.actualRevenue).toLocaleString("en-IN")
       }));
       return { ...domain, clients: updatedClients };
     });
   }
- 
+
 
   // Prepare Bar Graph Data
   const graphData = [
@@ -396,7 +402,7 @@ const AdminOffices = () => {
 
   // Graph Options
   const options = {
-    chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular" },
+    chart: { type: "bar", toolbar: false, stacked: false, fontFamily: "Poppins-Regular" },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
@@ -519,7 +525,7 @@ const AdminOffices = () => {
                       field: "actualRevenue",
                       flex: 1,
                     },
-                   
+
                   ]}
                   tableHeight={300}
                 />
@@ -529,7 +535,7 @@ const AdminOffices = () => {
                       Total Revenue for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                    INR {domain.revenue.toLocaleString()}
+                      INR {domain.revenue.toLocaleString()}
                     </span>{" "}
                   </div>
                 </div>

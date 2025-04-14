@@ -351,17 +351,17 @@ const MaintenanceExpenses = () => {
     (data) => data.month === selectedMonth
   );
 
-   if (selectedMonthData) {
-      selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
-        const updatedClients = domain.clients.map((client, index) => ({
-          ...client,
-          srNo: index + 1,
-          registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
-          actualRevenue:Number(client.actualRevenue).toLocaleString("en-IN")
-        }));
-        return { ...domain, clients: updatedClients };
-      });
-    }
+  if (selectedMonthData) {
+    selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
+      const updatedClients = domain.clients.map((client, index) => ({
+        ...client,
+        srNo: index + 1,
+        registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
+        actualRevenue: Number(client.actualRevenue).toLocaleString("en-IN")
+      }));
+      return { ...domain, clients: updatedClients };
+    });
+  }
 
   // Prepare Bar Graph Data
   const graphData = [
@@ -373,7 +373,7 @@ const MaintenanceExpenses = () => {
 
   // Graph Options
   const options = {
-    chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular" },
+    chart: { type: "bar", toolbar: false, stacked: false, fontFamily: "Poppins-Regular" },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
@@ -494,7 +494,7 @@ const MaintenanceExpenses = () => {
                       header: "Unit Name",
                       field: "actualRevenue",
                       flex: 1,
-                    } 
+                    }
                   ]}
                   tableHeight={300}
                 />
