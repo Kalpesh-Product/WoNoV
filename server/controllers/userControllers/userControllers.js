@@ -348,6 +348,72 @@ const fetchSingleUser = async (req, res) => {
   }
 };
 
+const checkPassword = async (req, res, next) => {
+  try {
+    const { user } = req;
+    const { currentPassword } = req.body;
+    const userExists = await User.findById({ _id: user });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      userExists.password
+    );
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: "Invalid password" });
+    }
+
+    res.status(200).json({ message: "Passowrd verified" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updatePassword = async (req, res, next) => {
+  try {
+    const { user } = req;
+    const { newPassword, confirmPassword } = req.body;
+
+    // Check if newPassword and confirmPassword match
+    if (newPassword !== confirmPassword) {
+      return res
+        .status(400)
+        .json({ message: "New password and confirm password do not match" });
+    }
+
+    if (newPassword.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "Passoword should be atleast 8 characters long" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Find the user by ID and update the password
+    const updatedUser = await User.findByIdAndUpdate(
+      { _id: user },
+      { $set: { password: hashedPassword } }, // Update the password field
+      { new: true, runValidators: true } // Return the updated document and enforce validation
+    )
+      .lean()
+      .exec();
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating password: ", error);
+    next(error);
+  }
+};
+
 const updateProfile = async (req, res, next) => {
   try {
     const { user, ip, company } = req;
@@ -360,14 +426,25 @@ const updateProfile = async (req, res, next) => {
     const newProfilePicture = req.file;
 
     // Allowed top-level fields
-    const allowedFields = ["firstName", "middleName", "lastName", "phone"];
+    const allowedFields = [
+      "firstName",
+      "middleName",
+      "password",
+      "lastName",
+      "phone",
+    ];
     const filteredUpdateData = {};
 
-    allowedFields.forEach((field) => {
+    for (const field of allowedFields) {
       if (updateData[field] !== undefined) {
-        filteredUpdateData[field] = updateData[field].trim();
+        if (field === "password") {
+          const hashedPassword = await bcrypt.hash(updateData[field], 10);
+          filteredUpdateData.password = hashedPassword;
+        } else {
+          filteredUpdateData[field] = updateData[field].trim();
+        }
       }
-    });
+    }
 
     let profilePictureUpdate = null;
 
@@ -738,4 +815,6 @@ module.exports = {
   updateProfile,
   bulkInsertUsers,
   getAssignees,
+  checkPassword,
+  updatePassword,
 };

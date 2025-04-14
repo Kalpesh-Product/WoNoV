@@ -39,7 +39,7 @@ const DonutChart = ({
       enabled: true,
       y: {
         formatter: (val, { seriesIndex }) =>
-          `${tooltipValue[seriesIndex]} (${val.toFixed(1)}%)`,
+          `${tooltipValue[seriesIndex]}`,
       },
     },
     plotOptions: {

@@ -11,6 +11,7 @@ const {
   filterMyTickets,
   filterTodayTickets,
   ticketData,
+  getAllTickets,
 } = require("../controllers/ticketsControllers/ticketsControllers");
 const upload = require("../config/multerConfig");
 
@@ -31,6 +32,7 @@ router.get("/ticket-issues/:department", getTicketIssues);
 router.get("/new-ticket-issues/:department", getNewTicketIssues);
 router.delete("/reject-ticket-issue/:id", rejectTicketIssue);
 router.get("/get-tickets", getTickets);
+router.get("/get-all-tickets", getAllTickets);
 router.get("/my-tickets", filterMyTickets);
 router.get("/today", filterTodayTickets);
 router.get("/:id", getSingleUserTickets);

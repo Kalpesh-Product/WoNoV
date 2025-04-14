@@ -1,3 +1,4 @@
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
@@ -91,10 +92,10 @@ const Projections = () => {
       headerName: "Actions",
       cellRenderer: () => (
         <>
-          <div className="p-2 mb-2 flex gap-2">
-            <span className="text-primary hover:underline text-content cursor-pointer">
-              View Details
-            </span>
+          <div className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all mb-2 inline-flex gap-2">
+           <span className="text-subtitle">
+                           <MdOutlineRemoveRedEye />
+                         </span>
           </div>
         </>
       ),

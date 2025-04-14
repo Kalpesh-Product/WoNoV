@@ -8,6 +8,7 @@ import { Chip, CircularProgress } from "@mui/material";
 import MuiModal from "../../components/MuiModal";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import dayjs from "dayjs";
 
 const TicketReports = () => {
   const { auth } = useAuth();
@@ -23,10 +24,13 @@ const TicketReports = () => {
     queryKey: ["tickets-data"],
     queryFn: async () => {
       try {
+        // const response = await axios.get(
+        //   `/api/tickets/department-tickets/${auth.user?.departments?.map(
+        //     (dept) => dept._id
+        //   )}`
+        // );
         const response = await axios.get(
-          `/api/tickets/department-tickets/${auth.user?.departments?.map(
-            (dept) => dept._id
-          )}`
+          `/api/tickets/get-all-tickets`
         );
 
         return response.data;
@@ -36,6 +40,8 @@ const TicketReports = () => {
       }
     },
   });
+
+  
   const kraColumn = [
     { field: "id", headerName: "Sr No", flex: 1 },
     { field: "ticket", headerName: "Ticket", flex: 1 },
@@ -49,6 +55,8 @@ const TicketReports = () => {
         const statusColorMap = {
           "In Progress": { backgroundColor: "#FFECC5", color: "#CC8400" },
           Closed: { backgroundColor: "#90EE90", color: "#02730a" },
+          Pending: { backgroundColor: "#FFE0DC", color: "#C2410C" },
+          Escalated: { backgroundColor: "#E6E6FA", color: "#4B0082" },
         };
 
         const { backgroundColor, color } = statusColorMap[params.value] || {
@@ -87,9 +95,27 @@ const TicketReports = () => {
           <AgTable
             search={true}
             tableTitle={"Ticket Reports"}
+            // data={[
+            //   ...ticketsData
+            //     .filter((item) => item.raisedBy?._id === auth.user?._id)
+            //     .map((item, index) => ({
+            //       id: index + 1,
+            //       ticket: item.ticket || "",
+            //       raisedToDepartment: item.raisedToDepartment?.name || "",
+            //       raisedBy: `${item.raisedBy?.firstName || ""} ${
+            //         item.raisedBy?.lastName || ""
+            //       }`.trim(),
+            //       description: item.description || "",
+            //       status: item.status || "",
+            //       assignees: item.assignees || "",
+            //       company: item.company?.companyName,
+            //       createdAt: humanDate(item.createdAt) || "",
+            //       updatedAt: humanDate(item.updatedAt) || "",
+            //       acceptedBy: `${item.acceptedBy?.firstName || ""} ${item.acceptedBy?.lastName || ""}`,
+            //     })),
+            // ]}
             data={[
               ...ticketsData
-                .filter((item) => item.raisedBy?._id === auth.user?._id)
                 .map((item, index) => ({
                   id: index + 1,
                   ticket: item.ticket || "",
@@ -101,7 +127,7 @@ const TicketReports = () => {
                   status: item.status || "",
                   assignees: item.assignees || "",
                   company: item.company?.companyName,
-                  createdAt: humanDate(item.createdAt) || "",
+                  createdAt:  dayjs(item.createdAt).format("DD-MM-YYYY") || "",
                   updatedAt: humanDate(item.updatedAt) || "",
                   acceptedBy: `${item.acceptedBy?.firstName || ""} ${item.acceptedBy?.lastName || ""}`,
                 })),

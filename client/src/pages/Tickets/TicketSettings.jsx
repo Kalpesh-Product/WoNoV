@@ -10,7 +10,6 @@ import { Chip } from "@mui/material";
 const TicketSettings = () => {
   const [expandedRow, setExpandedRow] = useState({});
 
-  console.log('ticket settings')
   const toggleRowExpansion = (rowId) => {
 
     ('RowId',rowId);
@@ -107,6 +106,10 @@ const TicketSettings = () => {
       Status: "Pending",
     },
   ];
+
+ 
+  
+  
 
   return (
     <div className="p-4" >

@@ -279,6 +279,57 @@ const getTickets = async (req, res, next) => {
   }
 };
 
+const getAllTickets = async (req, res, next) => {
+  try {
+    const { user } = req;
+
+    const loggedInUser = await User.findOne({ _id: user })
+      .populate({ path: "role", select: "roleTitle" })
+      .lean()
+      .exec();
+
+    if (!loggedInUser || !loggedInUser.departments) {
+      return res.sendStatus(403);
+    }
+
+    // Fetch the company document to get selectedDepartments and ticketIssues
+    const company = await Company.findOne({ _id: loggedInUser.company })
+      .select("selectedDepartments")
+      .lean()
+      .exec();
+
+    if (!company) {
+      return res.status(400).json({ message: "Company not found" });
+    }
+
+    matchingTickets = await Tickets.find({
+      company: loggedInUser.company,
+    })
+      .populate([
+        {
+          path: "raisedBy",
+          select: "firstName lastName departments",
+          populate: {
+            path: "departments",
+            select: "name",
+            model: "Department",
+          },
+        },
+        { path: "raisedToDepartment", select: "name" },
+      ])
+      .lean()
+      .exec();
+
+    if (!matchingTickets.length) {
+      return res.status(200).json(matchingTickets);
+    }
+
+    return res.status(200).json(matchingTickets);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const acceptTicket = async (req, res, next) => {
   const logPath = "tickets/TicketLog";
   const logAction = "Accept Ticket";
@@ -1135,7 +1186,7 @@ const filterTodayTickets = async (req, res, next) => {
           (issue) => issue.title === ticket.ticket
         );
 
-        priority = issue?.priority || "Low";
+        priority = issue?.priority || "High";
       }
 
       // If the issue is not found, check for "Other" and assign its priority
@@ -1162,6 +1213,7 @@ const filterTodayTickets = async (req, res, next) => {
 module.exports = {
   raiseTicket,
   getTickets,
+  getAllTickets,
   acceptTicket,
   rejectTicket,
   assignTicket,

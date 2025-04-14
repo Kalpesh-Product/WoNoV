@@ -75,9 +75,6 @@ const FinanceBudget = () => {
     },
     xaxis: {
       categories: [
-        "Jan-24",
-        "Feb-24",
-        "Mar-24",
         "Apr-24",
         "May-24",
         "Jun-24",
@@ -87,6 +84,9 @@ const FinanceBudget = () => {
         "Oct-24",
         "Nov-24",
         "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
       ],
     },
     yaxis: {
