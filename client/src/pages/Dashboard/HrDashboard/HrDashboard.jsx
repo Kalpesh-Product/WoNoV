@@ -96,17 +96,17 @@ const HrDashboard = () => {
 
     {
       name: "Tech Completed",
-      data: [45, 40, 30, 45, 50, 40, 55, 50, 60, 65,30,30],
+      data: [45, 40, 30, 45, 50, 40, 55, 50, 60, 65, 30, 30],
       group: "completed",
     },
     {
       name: "Admin Completed",
-      data: [40, 30, 40, 52, 46, 40, 60, 59, 50, 70,8,10],
+      data: [40, 30, 40, 52, 46, 40, 60, 59, 50, 70, 8, 10],
       group: "completed",
     },
     {
       name: "Maintainance Completed",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75,4,1],
+      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 4, 1],
       group: "completed",
     },
   ];
@@ -115,7 +115,7 @@ const HrDashboard = () => {
     chart: {
       type: "bar",
       toolbar: { show: false },
-      
+
       stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
       events: {
@@ -157,7 +157,7 @@ const HrDashboard = () => {
     },
     yaxis: {
       max: 100,
-      title:{text: "Assigned vs Completed"},
+      title: { text: "Assigned vs Completed" },
       labels: {
         formatter: (val) => `${Math.round(val)}`,
       },
@@ -167,7 +167,7 @@ const HrDashboard = () => {
     },
     legend: {
       show: true,
-      position:'top'
+      position: 'top'
     },
 
     tooltip: {
@@ -182,7 +182,15 @@ const HrDashboard = () => {
 
   //firstgraph
 
-  const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
+  const utilisedData = [
+    125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
+    50000, 120000,
+  ];
+
+  const maxBudget = [
+    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
+    60000, 110000,
+  ];
   const defaultData = utilisedData.map((value) =>
     Math.max(100 - Math.min(value, 100), 0)
   );
@@ -317,8 +325,8 @@ const HrDashboard = () => {
     { title: "Narshiva Naik", start: "2025-04-26" },
     { title: "Hema", start: "2025-04-30" },
   ];
-  
-  
+
+
 
   const columns2 = [
     { id: "id", label: "Sr No", align: "left" },
