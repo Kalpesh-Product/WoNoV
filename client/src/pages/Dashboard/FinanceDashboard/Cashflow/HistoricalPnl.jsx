@@ -31,98 +31,434 @@ const HistoricalPnl = () => {
     },
   });
 
-  const mockBusinessRevenueData = [
-  {
-    month: "FY 2024-25",
-    domains: [
-      {
-        name: "2024-2025",
-        totalProfitLoss: 136000,
-        clients: [
-          { srNo: 1, month: "April", income: 80000, expense: 70000, profitLoss: 10000 },
-          { srNo: 2, month: "May", income: 85000, expense: 75000, profitLoss: 10000 },
-          { srNo: 3, month: "June", income: 95000, expense: 80000, profitLoss: 15000 },
-          { srNo: 4, month: "July", income: 100000, expense: 90000, profitLoss: 10000 },
-          { srNo: 5, month: "August", income: 105000, expense: 95000, profitLoss: 10000 },
-          { srNo: 6, month: "September", income: 110000, expense: 100000, profitLoss: 10000 },
-          { srNo: 7, month: "October", income: 115000, expense: 105000, profitLoss: 10000 },
-          { srNo: 8, month: "November", income: 120000, expense: 109000, profitLoss: 11000 },
-        ],
-      },
-      {
-        name: "2023-2024",
-        totalProfitLoss: 230000,
-        clients: [
-          { srNo: 1, month: "April", income: 120000, expense: 80000, profitLoss: 40000 },
-          { srNo: 2, month: "May", income: 110000, expense: 90000, profitLoss: 20000 },
-          { srNo: 3, month: "June", income: 95000, expense: 105000, profitLoss: -10000 },
-          { srNo: 4, month: "July", income: 150000, expense: 70000, profitLoss: 80000 },
-          { srNo: 5, month: "August", income: 100000, expense: 120000, profitLoss: -20000 },
-          { srNo: 6, month: "September", income: 130000, expense: 90000, profitLoss: 40000 },
-          { srNo: 7, month: "October", income: 140000, expense: 100000, profitLoss: 40000 },
-          { srNo: 8, month: "November", income: 90000, expense: 90000, profitLoss: 25000 },
-        ],
-      },
-      {
-        name: "2022-2023",
-        totalProfitLoss: 140000,
-        clients: [
-          { srNo: 1, month: "April", income: 90000, expense: 70000, profitLoss: 20000 },
-          { srNo: 2, month: "May", income: 95000, expense: 90000, profitLoss: 5000 },
-          { srNo: 3, month: "June", income: 100000, expense: 95000, profitLoss: 5000 },
-          { srNo: 4, month: "July", income: 85000, expense: 70000, profitLoss: 15000 },
-          { srNo: 5, month: "August", income: 120000, expense: 100000, profitLoss: 20000 },
-          { srNo: 6, month: "September", income: 110000, expense: 95000, profitLoss: 15000 },
-          { srNo: 7, month: "October", income: 130000, expense: 110000, profitLoss: 20000 },
-          { srNo: 8, month: "November", income: 125000, expense: 100000, profitLoss: 25000 },
-        ],
-      },
-      {
-        name: "2021-2022",
-        totalProfitLoss: 174000,
-        clients: [
-          { srNo: 1, month: "April", income: 105000, expense: 80000, profitLoss: 25000 },
-          { srNo: 2, month: "May", income: 95000, expense: 80000, profitLoss: 15000 },
-          { srNo: 3, month: "June", income: 110000, expense: 90000, profitLoss: 20000 },
-          { srNo: 4, month: "July", income: 115000, expense: 85000, profitLoss: 30000 },
-          { srNo: 5, month: "August", income: 125000, expense: 100000, profitLoss: 25000 },
-          { srNo: 6, month: "September", income: 95000, expense: 90000, profitLoss: 5000 },
-          { srNo: 7, month: "October", income: 100000, expense: 85000, profitLoss: 15000 },
-          { srNo: 8, month: "November", income: 105000, expense: 90000, profitLoss: 15000 },
-        ],
-      },
-      {
-        name: "2020-2021",
-        totalProfitLoss: 126000,
-        clients: [
-          { srNo: 1, month: "April", income: 80000, expense: 70000, profitLoss: 10000 },
-          { srNo: 2, month: "May", income: 85000, expense: 75000, profitLoss: 10000 },
-          { srNo: 3, month: "June", income: 95000, expense: 80000, profitLoss: 15000 },
-          { srNo: 4, month: "July", income: 100000, expense: 90000, profitLoss: 10000 },
-          { srNo: 5, month: "August", income: 105000, expense: 95000, profitLoss: 10000 },
-          { srNo: 6, month: "September", income: 110000, expense: 100000, profitLoss: 10000 },
-          { srNo: 7, month: "October", income: 115000, expense: 105000, profitLoss: 10000 },
-          { srNo: 8, month: "November", income: 120000, expense: 109000, profitLoss: 11000 },
-        ],
-      },
-      {
-        name: "2019-2020",
-        totalProfitLoss: 107000,
-        clients: [
-          { srNo: 1, month: "April", income: 70000, expense: 60000, profitLoss: 10000 },
-          { srNo: 2, month: "May", income: 80000, expense: 65000, profitLoss: 15000 },
-          { srNo: 3, month: "June", income: 85000, expense: 75000, profitLoss: 10000 },
-          { srNo: 4, month: "July", income: 90000, expense: 80000, profitLoss: 10000 },
-          { srNo: 5, month: "August", income: 95000, expense: 85000, profitLoss: 10000 },
-          { srNo: 6, month: "September", income: 100000, expense: 90000, profitLoss: 10000 },
-          { srNo: 7, month: "October", income: 105000, expense: 95000, profitLoss: 10000 },
-          { srNo: 8, month: "November", income: 110000, expense: 97000, profitLoss: 13000 },
-        ],
-      },
-    ],
-  },
-];
 
+const mockBusinessRevenueData = [
+  {
+    "month": "FY 2024-25",
+    "domains": [
+      {
+        "name": "2024-25",
+        "totalProfitLoss": 659015,
+        "clients": [
+          {
+            "srNo": 1,
+            "month": "April",
+            "income": 80000,
+            "expense": 70000,
+            "profitLoss": 74197,
+            "department": "IT"
+          },
+          {
+            "srNo": 2,
+            "month": "May",
+            "income": 85000,
+            "expense": 75000,
+            "profitLoss": 62586,
+            "department": "Tech"
+          },
+          {
+            "srNo": 3,
+            "month": "June",
+            "income": 95000,
+            "expense": 80000,
+            "profitLoss": 81041,
+            "department": "Admin"
+          },
+          {
+            "srNo": 4,
+            "month": "July",
+            "income": 100000,
+            "expense": 90000,
+            "profitLoss": 31077,
+            "department": "Sales"
+          },
+          {
+            "srNo": 5,
+            "month": "August",
+            "income": 105000,
+            "expense": 95000,
+            "profitLoss": 96453,
+            "department": "Finance"
+          },
+          {
+            "srNo": 6,
+            "month": "September",
+            "income": 110000,
+            "expense": 100000,
+            "profitLoss": 49643,
+            "department": "IT"
+          },
+          {
+            "srNo": 7,
+            "month": "October",
+            "income": 115000,
+            "expense": 105000,
+            "profitLoss": 133252,
+            "department": "Tech"
+          },
+          {
+            "srNo": 8,
+            "month": "November",
+            "income": 120000,
+            "expense": 109000,
+            "profitLoss": 130766,
+            "department": "Admin"
+          }
+        ]
+      },
+      {
+        "name": "2023-24",
+        "totalProfitLoss": 580756,
+        "clients": [
+          {
+            "srNo": 1,
+            "month": "April",
+            "income": 80000,
+            "expense": 70000,
+            "profitLoss": 25886,
+            "department": "IT"
+          },
+          {
+            "srNo": 2,
+            "month": "May",
+            "income": 85000,
+            "expense": 75000,
+            "profitLoss": 90080,
+            "department": "Tech"
+          },
+          {
+            "srNo": 3,
+            "month": "June",
+            "income": 95000,
+            "expense": 80000,
+            "profitLoss": 102970,
+            "department": "Admin"
+          },
+          {
+            "srNo": 4,
+            "month": "July",
+            "income": 100000,
+            "expense": 90000,
+            "profitLoss": 95380,
+            "department": "Sales"
+          },
+          {
+            "srNo": 5,
+            "month": "August",
+            "income": 105000,
+            "expense": 95000,
+            "profitLoss": 16332,
+            "department": "Finance"
+          },
+          {
+            "srNo": 6,
+            "month": "September",
+            "income": 110000,
+            "expense": 100000,
+            "profitLoss": 64160,
+            "department": "IT"
+          },
+          {
+            "srNo": 7,
+            "month": "October",
+            "income": 115000,
+            "expense": 105000,
+            "profitLoss": 93069,
+            "department": "Tech"
+          },
+          {
+            "srNo": 8,
+            "month": "November",
+            "income": 120000,
+            "expense": 109000,
+            "profitLoss": 92879,
+            "department": "Admin"
+          }
+        ]
+      },
+      {
+        "name": "2022-23",
+        "totalProfitLoss": 459132,
+        "clients": [
+          {
+            "srNo": 1,
+            "month": "April",
+            "income": 80000,
+            "expense": 70000,
+            "profitLoss": 93469,
+            "department": "IT"
+          },
+          {
+            "srNo": 2,
+            "month": "May",
+            "income": 85000,
+            "expense": 75000,
+            "profitLoss": 79615,
+            "department": "Tech"
+          },
+          {
+            "srNo": 3,
+            "month": "June",
+            "income": 95000,
+            "expense": 80000,
+            "profitLoss": 73981,
+            "department": "Admin"
+          },
+          {
+            "srNo": 4,
+            "month": "July",
+            "income": 100000,
+            "expense": 90000,
+            "profitLoss": 62319,
+            "department": "Sales"
+          },
+          {
+            "srNo": 5,
+            "month": "August",
+            "income": 105000,
+            "expense": 95000,
+            "profitLoss": 43862,
+            "department": "Finance"
+          },
+          {
+            "srNo": 6,
+            "month": "September",
+            "income": 110000,
+            "expense": 100000,
+            "profitLoss": 27267,
+            "department": "IT"
+          },
+          {
+            "srNo": 7,
+            "month": "October",
+            "income": 115000,
+            "expense": 105000,
+            "profitLoss": 48399,
+            "department": "Tech"
+          },
+          {
+            "srNo": 8,
+            "month": "November",
+            "income": 120000,
+            "expense": 109000,
+            "profitLoss": 30220,
+            "department": "Admin"
+          }
+        ]
+      },
+      {
+        "name": "2021-22",
+        "totalProfitLoss": 364978,
+        "clients": [
+          {
+            "srNo": 1,
+            "month": "April",
+            "income": 80000,
+            "expense": 70000,
+            "profitLoss": 56434,
+            "department": "IT"
+          },
+          {
+            "srNo": 2,
+            "month": "May",
+            "income": 85000,
+            "expense": 75000,
+            "profitLoss": 49940,
+            "department": "Tech"
+          },
+          {
+            "srNo": 3,
+            "month": "June",
+            "income": 95000,
+            "expense": 80000,
+            "profitLoss": 41680,
+            "department": "Admin"
+          },
+          {
+            "srNo": 4,
+            "month": "July",
+            "income": 100000,
+            "expense": 90000,
+            "profitLoss": 41240,
+            "department": "Sales"
+          },
+          {
+            "srNo": 5,
+            "month": "August",
+            "income": 105000,
+            "expense": 95000,
+            "profitLoss": 52293,
+            "department": "Finance"
+          },
+          {
+            "srNo": 6,
+            "month": "September",
+            "income": 110000,
+            "expense": 100000,
+            "profitLoss": 46599,
+            "department": "IT"
+          },
+          {
+            "srNo": 7,
+            "month": "October",
+            "income": 115000,
+            "expense": 105000,
+            "profitLoss": 33717,
+            "department": "Tech"
+          },
+          {
+            "srNo": 8,
+            "month": "November",
+            "income": 120000,
+            "expense": 109000,
+            "profitLoss": 43075,
+            "department": "Admin"
+          }
+        ]
+      },
+      {
+        "name": "2020-21",
+        "totalProfitLoss": 615630,
+        "clients": [
+          {
+            "srNo": 1,
+            "month": "April",
+            "income": 80000,
+            "expense": 70000,
+            "profitLoss": 33324,
+            "department": "IT"
+          },
+          {
+            "srNo": 2,
+            "month": "May",
+            "income": 85000,
+            "expense": 75000,
+            "profitLoss": 106534,
+            "department": "Tech"
+          },
+          {
+            "srNo": 3,
+            "month": "June",
+            "income": 95000,
+            "expense": 80000,
+            "profitLoss": 64167,
+            "department": "Admin"
+          },
+          {
+            "srNo": 4,
+            "month": "July",
+            "income": 100000,
+            "expense": 90000,
+            "profitLoss": 95236,
+            "department": "Sales"
+          },
+          {
+            "srNo": 5,
+            "month": "August",
+            "income": 105000,
+            "expense": 95000,
+            "profitLoss": 43373,
+            "department": "Finance"
+          },
+          {
+            "srNo": 6,
+            "month": "September",
+            "income": 110000,
+            "expense": 100000,
+            "profitLoss": 104447,
+            "department": "IT"
+          },
+          {
+            "srNo": 7,
+            "month": "October",
+            "income": 115000,
+            "expense": 105000,
+            "profitLoss": 92953,
+            "department": "Tech"
+          },
+          {
+            "srNo": 8,
+            "month": "November",
+            "income": 120000,
+            "expense": 109000,
+            "profitLoss": 75596,
+            "department": "Admin"
+          }
+        ]
+      },
+      {
+        "name": "2019-20",
+        "totalProfitLoss": 620934,
+        "clients": [
+          {
+            "srNo": 1,
+            "month": "April",
+            "income": 80000,
+            "expense": 70000,
+            "profitLoss": 23603,
+            "department": "IT"
+          },
+          {
+            "srNo": 2,
+            "month": "May",
+            "income": 85000,
+            "expense": 75000,
+            "profitLoss": 87263,
+            "department": "Tech"
+          },
+          {
+            "srNo": 3,
+            "month": "June",
+            "income": 95000,
+            "expense": 80000,
+            "profitLoss": 92783,
+            "department": "Admin"
+          },
+          {
+            "srNo": 4,
+            "month": "July",
+            "income": 100000,
+            "expense": 90000,
+            "profitLoss": 110420,
+            "department": "Sales"
+          },
+          {
+            "srNo": 5,
+            "month": "August",
+            "income": 105000,
+            "expense": 95000,
+            "profitLoss": 78060,
+            "department": "Finance"
+          },
+          {
+            "srNo": 6,
+            "month": "September",
+            "income": 110000,
+            "expense": 100000,
+            "profitLoss": 13340,
+            "department": "IT"
+          },
+          {
+            "srNo": 7,
+            "month": "October",
+            "income": 115000,
+            "expense": 105000,
+            "profitLoss": 109812,
+            "department": "Tech"
+          },
+          {
+            "srNo": 8,
+            "month": "November",
+            "income": 120000,
+            "expense": 109000,
+            "profitLoss": 105653,
+            "department": "Admin"
+          }
+        ]
+      }
+    ]
+  }
+]
 
   const [selectedMonth, setSelectedMonth] = useState(
     mockBusinessRevenueData[0].month
@@ -223,9 +559,7 @@ const HistoricalPnl = () => {
         // "Feb-25",
         // "Mar-25",
       ],
-      title: {
-        text: "2020-2025", // overridden by BarGraph component
-      },
+
     },
     yaxis: {
       title: {
@@ -247,10 +581,11 @@ const HistoricalPnl = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Historical P&L"}>
+        <WidgetSection border titleLabel={"FY 2024-25"}  title={"Historical P&L"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
+            
           />
         </WidgetSection>,
       ],
@@ -311,7 +646,7 @@ const HistoricalPnl = () => {
                   hideFilter
                   columns={[
                     { header: "Sr No", field: "srNo", flex: 1 },
-                    { header: "Month", field: "month", flex: 1 },
+                    { header: "Department", field: "department", flex: 1 },
                     { header: "Income", field: "income", flex: 1 },
                     { header: "Expense", field: "expense", flex: 1 },
                     { header: "Profit / Loss", field: "profitLoss", flex: 1 },

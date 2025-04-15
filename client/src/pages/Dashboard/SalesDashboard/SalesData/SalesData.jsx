@@ -179,6 +179,7 @@ const sourcingChannelsData = sourcingChannels.map((channel) => ({
 const sourcingChannelsOptions = {
   chart: {
     type: "bar",
+    toolbar: false,
     stacked: true, // Enable stacking for domains
     fontFamily: "Poppins-Regular",
   },
@@ -292,7 +293,7 @@ const clientOccupancyData = [
   },
   {
     id: 5,
-    client: "Flipkart",
+    client: "91 HR",
     sector: "E-commerce",
     location: "Bangalore",
     totalSeatsTaken: 5,
@@ -301,7 +302,7 @@ const clientOccupancyData = [
   },
   {
     id: 6,
-    client: "Amazon",
+    client: "Zimetrics",
     sector: "E-commerce",
     location: "Chennai",
     totalSeatsTaken: 7,
@@ -313,7 +314,7 @@ const clientOccupancyData = [
   },
   {
     id: 7,
-    client: "Microsoft",
+    client: "BDO",
     sector: "Technology",
     location: "Hyderabad",
     totalSeatsTaken: 6,
@@ -322,7 +323,7 @@ const clientOccupancyData = [
   },
   {
     id: 8,
-    client: "Google",
+    client: "Squadstack",
     sector: "Technology",
     location: "Mumbai",
     totalSeatsTaken: 2,
@@ -472,7 +473,7 @@ const calculateCompletedTime = (startDate) => {
 
 // ✅ Format Data for Table
 const companyTableColumns = [
-  { id: "id", label: "ID" },
+  { id: "id", label: "Sr.No" },
   { id: "company", label: "Company" },
   { id: "startDate", label: "Start Date" },
   { id: "completedTime", label: "Completed Time" },
@@ -509,7 +510,7 @@ clientOccupancyData.forEach((company) => {
         name: member.empName,
         birthday: member.dateOfBirth,
         daysLeft: daysLeft,
-        company:company.client
+        company: company.client
       });
     }
   });
@@ -520,7 +521,7 @@ upcomingBirthdays.sort((a, b) =>
 );
 
 const upcomingBirthdaysColumns = [
-  { id: "id", label: "ID" },
+  { id: "id", label: "Sr.No" },
   { id: "name", label: "Employee Name" },
   { id: "birthday", label: "Date of Birth" },
   { id: "daysLeft", label: "Days Left" },

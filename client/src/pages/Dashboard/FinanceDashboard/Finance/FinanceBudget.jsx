@@ -14,6 +14,7 @@ import { BsCheckCircleFill } from "react-icons/bs";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import BudgetGraph from "../../../../components/graphs/BudgetGraph";
 
 const FinanceBudget = () => {
   const axios = useAxiosPrivate();
@@ -34,7 +35,17 @@ const FinanceBudget = () => {
   });
 
   // Data for the chart
-  const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
+  // const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
+  const utilisedData = [
+    135000, 250000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 75000,
+    50000, 120000,
+  ];
+
+  const maxBudget = [
+    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
+    60000, 110000,
+  ];
+
   const defaultData = utilisedData.map((value) =>
     Math.max(100 - Math.min(value, 100), 0)
   );
@@ -42,6 +53,8 @@ const FinanceBudget = () => {
   const exceededData = utilisedData.map((value) =>
     value > 100 ? value - 100 : 0
   );
+
+  
 
   const data = [
     { name: "Utilised Budget", data: utilisedStack },
@@ -64,7 +77,7 @@ const FinanceBudget = () => {
         borderRadiusApplication: "end",
       },
     },
-    colors: ["#01bf50", "#01411C", "#FF0000"], // Colors for the series
+    colors: ["#54C4A7", "#47755B", "#EB5C45"], // Colors for the series
     dataLabels: {
       enabled: true,
       fontSize: "10px",
@@ -199,16 +212,17 @@ const FinanceBudget = () => {
     })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
+
   return (
     <div className="flex flex-col gap-8">
-        <WidgetSection layout={1} title={"BUDGET 2024-25"} border>
-          <LayerBarGraph options={optionss} data={data} />
+        <WidgetSection layout={1} titleLabel={"FY 2024-25"} title={"BUDGET"} border>
+        <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={'finance/budget'} />
         </WidgetSection>
 
       <div>
         <WidgetSection layout={3} padding>
           <DataCard
-            data={"40K"}
+            data={"INR 50,00,000"}
             title={"Projected"}
             description={`Current Month: ${new Date().toLocaleString(
               "default",
@@ -218,7 +232,7 @@ const FinanceBudget = () => {
             )}`}
           />
           <DataCard
-            data={"35K"}
+            data={"INR 45,00,000"}
             title={"Actual"}
             description={`Current Month: ${new Date().toLocaleString(
               "default",
@@ -228,7 +242,7 @@ const FinanceBudget = () => {
             )}`}
           />
           <DataCard
-            data={6000}
+            data={"INR 12,000"}
             title={"Requested"}
             description={`Current Month: ${new Date().toLocaleString(
               "default",

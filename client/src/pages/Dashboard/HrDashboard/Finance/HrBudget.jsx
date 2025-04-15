@@ -19,6 +19,7 @@ import DataCard from "../../../../components/DataCard";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 import { toast } from "sonner";
 import BudgetGraph from "../../../../components/graphs/BudgetGraph";
+import { inrFormat } from "../../../../utils/currencyFormat";
 
 const HrBudget = () => {
   const axios = useAxiosPrivate();
@@ -49,7 +50,7 @@ const HrBudget = () => {
 
   const onSubmit = (data) => {
     setOpenModal(false);
-     toast.success("Budget Requested succesfully");
+    toast.success("Budget Requested succesfully");
     reset();
   };
 
@@ -94,21 +95,21 @@ const HrBudget = () => {
 
   // Convert grouped data to array and sort by latest month (descending order)
   const financialData = Object.values(groupedData)
-    .map((data,index) => {
-       
-      const transoformedRows = data.tableData.rows.map((row,index)=>({...row,srNo:index+1,projectedAmount:Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 })}))
+    .map((data, index) => {
+
+      const transoformedRows = data.tableData.rows.map((row, index) => ({ ...row, srNo: index + 1, projectedAmount: Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }) }))
       const transformedCols = [
         { field: 'srNo', headerName: 'SR NO', flex: 1 },
         ...data.tableData.columns
       ];
 
-      return({
-      ...data,
-      projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-      amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-      tableData: {...data.tableData, rows:transoformedRows,columns: transformedCols}
+      return ({
+        ...data,
+        projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        tableData: { ...data.tableData, rows: transoformedRows, columns: transformedCols }
+      })
     })
-  })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
 
@@ -126,32 +127,35 @@ const HrBudget = () => {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <WidgetSection layout={1} title={"BUDGET 2024"} border>
-          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget}/>
+        <WidgetSection layout={1} title={"Budget v/s Achievements"} titleLabel={"FY 2024-25"} border>
+          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
         </WidgetSection>
       </div>
       <div>
         <WidgetSection layout={3} padding>
           <DataCard
-            data={"40K"}
+            data={"INR " + inrFormat("2000000")}
             title={"Projected"}
-            description={`Current Month: ${new Date().toLocaleString(
+            route={"/app/dashboard/hr-dashboard/finance/budget"}
+            description={`Current Month : ${new Date().toLocaleString(
               "default",
               { month: "long" }
             )}`}
           />
           <DataCard
-            data={"35K"}
+            data={"INR " + inrFormat("150000")}
             title={"Actual"}
-            description={`Current Month: ${new Date().toLocaleString(
+            route={"/app/dashboard/hr-dashboard/finance/budget"}
+            description={`Current Month : ${new Date().toLocaleString(
               "default",
               { month: "long" }
             )}`}
           />
           <DataCard
-            data={6000}
+            data={"INR " + inrFormat(12000)}
             title={"Requested"}
-            description={`Current Month: ${new Date().toLocaleString(
+            route={"/app/dashboard/hr-dashboard/finance/budget"}
+            description={`Current Month : ${new Date().toLocaleString(
               "default",
               { month: "long" }
             )}`}
@@ -168,7 +172,7 @@ const HrBudget = () => {
         />
       </div>
 
-    <AllocatedBudget financialData={financialData} groupedData={groupedData} />
+      <AllocatedBudget financialData={financialData} groupedData={groupedData} />
 
       <MuiModal
         title="Request Budget"

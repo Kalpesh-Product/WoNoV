@@ -4,6 +4,7 @@ import AgTable from "../../../../components/AgTable";
 import { Chip, TextField } from "@mui/material";
 import { Select, MenuItem, FormControl, InputLabel, Box } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { inrFormat } from "../../../../utils/currencyFormat";
 
 const HrReports = ({ title, buttonTitle, rowSelection }) => {
   const [selected, setSelected] = useState("");
@@ -33,10 +34,10 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "payrollid", headerName: "Payroll Id", flex: 1 },
     { field: "employeename", headerName: "Employee Name", flex: 1 },
-    { field: "role", headerName: "Role", width: "200" },
+    { field: "role", headerName: "Role" },
     { field: "dateandtime", headerName: "Date & Time", width: "200" },
-    { field: "totalsalary", headerName: "Total Salary", flex: 1 },
-    { field: "reimbursment", headerName: "Reimbursment", flex: 1 },
+    { field: "totalsalary", headerName: "Total Salary (INR)", flex: 1 },
+    { field: "reimbursment", headerName: "Reimbursment (INR)", flex: 1 },
     {
       field: "status",
       headerName: "Status",
@@ -73,8 +74,8 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
       employeename: "Kalpesh Naik",
       role: "Lead UI/UX Developer",
       dateandtime: "21 Jun, 2024 - 05.05pm ",
-      totalsalary: "Rs 2,500.00",
-      reimbursment: "Rs 500.00",
+      totalsalary: inrFormat("250000"),
+      reimbursment: inrFormat("50000"),
       status: "completed",
     },
     {
@@ -83,18 +84,18 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
       employeename: "AiwinRaj",
       role: "Jr UI/UX Developer",
       dateandtime: "21 Jun, 2024 - 05.03pm ",
-      totalsalary: "Rs 2,300.00",
-      reimbursment: "Rs 100.00",
+      totalsalary: inrFormat("230000"),
+      reimbursment: inrFormat("10000"),
       status: "completed",
     },
     {
       srNo:3,
       payrollid: "PYRL120131",
-      employeename: "Anushri Bhagat",
+      employeename: "Ashwin Karthik",
       role: "Jr UI/UX Developer",
       dateandtime: "21 Jun, 2024 - 05.05pm ",
-      totalsalary: "Rs 2,000.00",
-      reimbursment: "Rs 100.00",
+      totalsalary: inrFormat("200000"),
+      reimbursment: inrFormat("10000"),
       status: "Pending",
     },
     {
@@ -103,8 +104,8 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
       employeename: "Allen Silvera",
       role: "Jr UI/UX Developer",
       dateandtime: "21 Jun, 2024 - 05.00pm ",
-      totalsalary: "Rs 2,000.00",
-      reimbursment: "Rs 100.00",
+      totalsalary: inrFormat("200000"),
+      reimbursment: inrFormat("10000"),
       status: "Pending",
     },
     {
@@ -113,8 +114,8 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
       employeename: "Sankalp Kalangutkar",
       role: "Jr backed Develper",
       dateandtime: "21 Jun 2024 - 05.03pm ",
-      totalsalary: "Rs 2,500.00",
-      reimbursment: "Rs 200.00",
+      totalsalary: inrFormat("250000"),
+      reimbursment: inrFormat("20000"),
       status: "completed",
     },
     {
@@ -123,8 +124,8 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
       employeename: "Muskan Dodmani",
       role: "Jr backend Developer",
       dateandtime: "21 Jun 2024 - 05.10pm ",
-      totalsalary: "Rs 2,500.00",
-      reimbursment: "Rs 200.00",
+      totalsalary: inrFormat("250000"),
+      reimbursment: inrFormat("20000"),
       status: "Pending",
     },
   ];

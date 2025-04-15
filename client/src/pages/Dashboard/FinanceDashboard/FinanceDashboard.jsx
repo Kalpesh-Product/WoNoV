@@ -39,7 +39,7 @@ const FinanceDashboard = () => {
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#4CAF50", "#F44336"], // Green for income, Red for expense
+    colors: ["#54C4A7", "#EB5C45"], // Green for income, Red for expense
     plotOptions: {
       bar: {
         horizontal: false,
@@ -132,7 +132,7 @@ const FinanceDashboard = () => {
     cardTitle: "Net Savings",
     timePeriod: "Apr 24 – Mar 25",
     descriptionData: [
-      { title: "March 2025", value: "INR -7,00,000" },
+      { title: "March 2025", value: "INR 7,00,000" },
       { title: "Annual Average", value: "INR 5,00,000" },
       { title: "Overall", value: "INR 60,00,000" },
       { title: "Per Sq. Ft.", value: "150" },
@@ -428,6 +428,11 @@ const FinanceDashboard = () => {
       widgets: [
         <WidgetSection border title={"Income v/s Expenses"}>
           <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} />
+        <WidgetSection border titleLabel={"FY 2024-25"} title={"Income v/s Expenses"}>
+          <BarGraph
+            data={incomeExpenseData}
+            options={incomeExpenseOptions}
+          />
         </WidgetSection>,
       ],
     },

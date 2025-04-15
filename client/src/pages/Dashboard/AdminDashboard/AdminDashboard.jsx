@@ -18,23 +18,24 @@ import TreemapGraph from "../../../components/graphs/TreemapGraph";
 import { LuHardDriveUpload } from "react-icons/lu";
 import { CgWebsite } from "react-icons/cg";
 import { useNavigate } from "react-router-dom";
+import BudgetGraph from "../../../components/graphs/BudgetGraph";
 dayjs.extend(customParseFormat);
 const AdminDashboard = () => {
   const navigate = useNavigate()
-  const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
-  const defaultData = utilisedData.map((value) =>
-    Math.max(100 - Math.min(value, 100), 0)
-  );
-  const utilisedStack = utilisedData.map((value) => Math.min(value, 100));
-  const exceededData = utilisedData.map((value) =>
-    value > 100 ? value - 100 : 0
-  );
+  // const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
+  // const defaultData = utilisedData.map((value) =>
+  //   Math.max(100 - Math.min(value, 100), 0)
+  // );
+  // const utilisedStack = utilisedData.map((value) => Math.min(value, 100));
+  // const exceededData = utilisedData.map((value) =>
+  //   value > 100 ? value - 100 : 0
+  // );
 
-  const data = [
-    { name: "Utilised Budget", data: utilisedStack },
-    { name: "Default Budget", data: defaultData },
-    { name: "Exceeded Budget", data: exceededData },
-  ];
+  // const data = [
+  //   { name: "Utilised Budget", data: utilisedStack },
+  //   { name: "Default Budget", data: defaultData },
+  //   { name: "Exceeded Budget", data: exceededData },
+  // ];
 
   const options = {
     chart: {
@@ -520,17 +521,29 @@ const AdminDashboard = () => {
     { id: "upComingIn", label: "Upcoming in", align: "left" },
   ];
 
+  const utilisedData = [
+    125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
+    50000, 120000,
+  ];
+
+  const maxBudget = [
+    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
+    60000, 110000,
+  ];
+
   //-----------------------------------------------------------------------------------------------------------------//
   const techWidgets = [
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"}>
-          <LayerBarGraph data={data} options={options} />
+        <WidgetSection border titleLabel={"FY 2024-25"} title={"Budget v/s Achievements"}>
+
+          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={'finance/budget'} />
           <hr />
+          
           <WidgetSection layout={3} padding>
             <DataCard
-              data={"40K"}
+              data={"INR 45,00,000"}
               title={"Projected"}
               route={"/app/dashboard/admin-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
@@ -539,7 +552,7 @@ const AdminDashboard = () => {
               )}`}
             />
             <DataCard
-              data={"35K"}
+              data={"INR 40,00,000"}
               title={"Actual"}
               route={"/app/dashboard/admin-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
@@ -548,7 +561,7 @@ const AdminDashboard = () => {
               )}`}
             />
             <DataCard
-              data={6000}
+              data={"INR 15,000"}
               title={"Requested"}
               route={"/app/dashboard/admin-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
