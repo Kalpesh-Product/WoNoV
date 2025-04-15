@@ -162,9 +162,6 @@ const HrBudget = () => {
     },
     xaxis: {
       categories: [
-        "Jan-24",
-        "Feb-24",
-        "Mar-24",
         "Apr-24",
         "May-24",
         "Jun-24",
@@ -174,6 +171,9 @@ const HrBudget = () => {
         "Oct-24",
         "Nov-24",
         "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
       ]
       
     },
@@ -233,22 +233,22 @@ const HrBudget = () => {
           data={"INR 45,00,000"}
           title={"Projected"}
           description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
+            month: "short",
+          })}-24`}
         />
         <DataCard
           data={"INR 40,00,000"}
           title={"Actual"}
           description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
+            month: "short",
+          })}-24`}
         />
         <DataCard
           data={"INR 15,000"}
           title={"Requested"}
           description={`Current Month: ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
+            month: "short",
+          })}-24`}
         />
       </WidgetSection>
 

@@ -1,9 +1,15 @@
+import { useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
+import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import WidgetSection from "../../../../components/WidgetSection";
 
 const MonthlyProfitLoss = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
+
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+      const [viewDetails, setViewDetails] = useState(null);
+
   const incomeExpenseData = [
     {
       name: "Income",
@@ -83,8 +89,8 @@ const MonthlyProfitLoss = () => {
   const monthlyProfitLossColumns = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "month", headerName: "Month", flex: 1 },
-    { field: "income", headerName: "Income", flex: 1 },
-    { field: "expense", headerName: "Expense", flex: 1 },
+    { field: "income", headerName: "Income(INR)", flex: 1 },
+    { field: "expense", headerName: "Expense(INR)", flex: 1 },
     { field: "pnl", headerName: "P&L", flex: 1 },
     {
       field: "actions",
@@ -139,6 +145,10 @@ const MonthlyProfitLoss = () => {
     },
   ];
   
+  const handleViewModal = (rowData) => {
+    setViewDetails(rowData);
+    setViewModalOpen(true);
+  };
 
   const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
     const numericalPnL = parseInt(item.pnl.replace(/,/g, ""), 10);
@@ -177,6 +187,24 @@ const MonthlyProfitLoss = () => {
           />
         </WidgetSection>
       </div>
+        { viewDetails && <ViewDetailsModal
+        open={viewModalOpen}
+        onClose={() => setViewModalOpen(false)}
+        data={{...viewDetails,income:"INR " + Number(
+          viewDetails.income.toLocaleString("en-IN").replace(/,/g, "")
+        ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+        expense:"INR " + Number(
+          viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
+        ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
+      }}
+        title="Tax Payment Detail"
+        fields={[
+          { label: "Month&L", key: "month" },
+          { label: "Income", key: "income" },
+          { label: "Expense&L", key: "expense" },
+          { label: "P&L", key: "pnl" },
+        ]}
+      />}
     </div>
   );
 };

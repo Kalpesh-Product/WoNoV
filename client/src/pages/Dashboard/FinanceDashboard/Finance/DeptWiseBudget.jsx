@@ -209,21 +209,21 @@ const DeptWiseBudget = () => {
           <DataCard data={"INR 50,00,000"} title={"Projected"} description={`Current Month: ${new Date().toLocaleString(
               "default",
               {
-                month: "long",
+                month: "short",
               }
-            )}`}/>
+            )}-24`}/>
           <DataCard data={"INR 45,00,000"} title={"Actual"}description={`Current Month: ${new Date().toLocaleString(
               "default",
               {
-                month: "long",
+                month: "short",
               }
-            )}`} />
+            )}-24`} />
           <DataCard data={"INR 7,000"} title={"Requested"} description={`Current Month: ${new Date().toLocaleString(
               "default",
               {
-                month: "long",
+                month: "short",
               }
-            )}`}/>
+            )}-24`}/>
         </WidgetSection>
       </div>
       <div className="flex justify-end">
