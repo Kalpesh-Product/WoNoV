@@ -6,7 +6,6 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 
 const StatutoryPayments = () => {
-
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
 
@@ -56,7 +55,6 @@ const StatutoryPayments = () => {
     },
     xaxis: {
       categories: collectionData.map((item) => item.month),
-    
     },
     yaxis: {
       max: 100,
@@ -82,6 +80,7 @@ const StatutoryPayments = () => {
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "client", headerName: "Client", flex: 1 },
     { field: "amount", headerName: "Amount", flex: 1 },
+    { field: "due", headerName: "Due Date", flex: 1 },
     { field: "status", headerName: "Status", flex: 1 },
     {
       field: "actions",
@@ -90,11 +89,10 @@ const StatutoryPayments = () => {
         <>
           <div className="p-2 mb-2 flex gap-2">
             <span
-                      className="text-subtitle cursor-pointer"
-                      onClick={() => handleViewModal(params.data)}
-                    >
-                      <MdOutlineRemoveRedEye />
-                    </span>
+              className="text-subtitle cursor-pointer"
+              onClick={() => handleViewModal(params.data)}>
+              <MdOutlineRemoveRedEye />
+            </span>
           </div>
         </>
       ),
@@ -107,6 +105,7 @@ const StatutoryPayments = () => {
       client: "GST",
       status: "Paid",
       amount: "18,000",
+      due: "2024-04-15",
       date: "10-04-2025",
     },
     {
@@ -114,6 +113,7 @@ const StatutoryPayments = () => {
       client: "TDS",
       status: "Paid",
       amount: "12,500",
+      due: "2024-04-15",
       date: "11-04-2025",
     },
     {
@@ -121,6 +121,7 @@ const StatutoryPayments = () => {
       client: "Income Tax",
       status: "Paid",
       amount: "22,750",
+      due: "2024-04-18",
       date: "12-04-2025",
     },
     {
@@ -128,6 +129,7 @@ const StatutoryPayments = () => {
       client: "Professional Tax",
       status: "Paid",
       amount: "6,000",
+      due: "2024-04-14",
       date: "13-04-2025",
     },
     {
@@ -135,6 +137,7 @@ const StatutoryPayments = () => {
       client: "ROC Filing",
       status: "Paid",
       amount: "14,200",
+      due: "2024-04-16",
       date: "14-04-2025",
     },
     {
@@ -142,11 +145,11 @@ const StatutoryPayments = () => {
       client: "Advance Tax",
       status: "Paid",
       amount: "30,000",
+      due: "2024-04-12",
       date: "15-04-2025",
     },
   ];
 
-  
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
     setViewModalOpen(true);
@@ -155,7 +158,10 @@ const StatutoryPayments = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection titleLabel={"FY 2024-25"} title={"Statutory Payments".toUpperCase()} border>
+      <WidgetSection
+        titleLabel={"FY 2024-25"}
+        title={"Statutory Payments".toUpperCase()}
+        border>
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
 
@@ -164,25 +170,30 @@ const StatutoryPayments = () => {
           data={rows}
           columns={kraColumn}
           search
-          tableTitle={"Statutory Payments"}
+          tableTitle={"Statutory Payments FY 2024-25"}
         />
       </div>
-     { viewDetails && <ViewDetailsModal
-  open={viewModalOpen}
-  onClose={() => setViewModalOpen(false)}
-  data={{...viewDetails,amount:"INR " + Number(
-    viewDetails.amount.toLocaleString("en-IN").replace(/,/g, "")
-  ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
-}}
-  title="Statutory Payment Detail"
-  fields={[
-    { label: "Client", key: "client" },
-    { label: "Amount Paid", key: "amount" },
-    { label: "Payment Date", key: "date" },
-    { label: "Payment Status", key: "status" },
-  ]}
-/>}
-
+      {viewDetails && (
+        <ViewDetailsModal
+          open={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          data={{
+            ...viewDetails,
+            amount:
+              "INR " +
+              Number(
+                viewDetails.amount.toLocaleString("en-IN").replace(/,/g, "")
+              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+          }}
+          title="Statutory Payment Detail"
+          fields={[
+            { label: "Client", key: "client" },
+            { label: "Amount Paid", key: "amount" },
+            { label: "Payment Date", key: "date" },
+            { label: "Payment Status", key: "status" },
+          ]}
+        />
+      )}
     </div>
   );
 };

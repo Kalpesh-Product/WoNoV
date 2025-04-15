@@ -2,20 +2,15 @@ import React, { useState } from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import AgTable from "../../../../components/AgTable";
-import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from "@mui/material";
+import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../../components/MuiModal";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 
 const Collections = () => {
-
-   const [viewModalOpen, setViewModalOpen] = useState(false);
-    const [viewDetails, setViewDetails] = useState(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewDetails, setViewDetails] = useState(null);
 
   const collectionData = [
     { month: "Apr-24", paid: 80, unpaid: 20 },
@@ -63,7 +58,6 @@ const Collections = () => {
     },
     xaxis: {
       categories: collectionData.map((item) => item.month),
-       
     },
     yaxis: {
       max: 100,
@@ -95,10 +89,9 @@ const Collections = () => {
       headerName: "Actions",
       cellRenderer: (params) => (
         <div className="p-2 mb-2 flex gap-2">
-           <span
+          <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewModal(params.data)}
-          >
+            onClick={() => handleViewModal(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -143,7 +136,7 @@ const Collections = () => {
       date: "14-04-2025",
     },
   ];
-  
+
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
     setViewModalOpen(true);
@@ -164,15 +157,18 @@ const Collections = () => {
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
 
-      <WidgetSection border title="Collections" className="bg-white rounded-md shadow-sm">
+      <WidgetSection
+        border
+        title="Collections"
+        titleLabel={"FY 2024-25"}
+        className="bg-white rounded-md shadow-sm">
         {financialData.map((data, index) => (
-          <Accordion key={index} className="py-2">
+          <Accordion key={index} className="py-4">
             <AccordionSummary
               expandIcon={<IoIosArrowDown />}
               aria-controls={`panel${index}-content`}
               id={`panel${index}-header`}
-              className="border-b-[1px] border-borderGray"
-            >
+              className="border-b-[1px] border-borderGray">
               <div className="flex justify-between items-center w-full px-4">
                 <span className="text-subtitle font-pmedium">{data.month}</span>
                 <span className="text-subtitle font-pmedium">
@@ -192,25 +188,27 @@ const Collections = () => {
         ))}
       </WidgetSection>
 
-     
-       { viewDetails && <ViewDetailsModal
-  open={viewModalOpen}
-  onClose={() => setViewModalOpen(false)}
-  data={{...viewDetails,amount:"INR " + Number(
-    viewDetails.amount.toLocaleString("en-IN").replace(/,/g, "")
-  ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
-}}
-  title="Tax Payment Detail"
-  fields={[
-    { label: "Client", key: "client" },
-    { label: "Amount Paid", key: "amount" },
-    { label: "Payment Date", key: "date" },
-    { label: "Payment Status", key: "status" },
-  ]}
-/>}
-
-
-  
+      {viewDetails && (
+        <ViewDetailsModal
+          open={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          data={{
+            ...viewDetails,
+            amount:
+              "INR " +
+              Number(
+                viewDetails.amount.toLocaleString("en-IN").replace(/,/g, "")
+              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+          }}
+          title="Tax Payment Detail"
+          fields={[
+            { label: "Client", key: "client" },
+            { label: "Amount Paid", key: "amount" },
+            { label: "Payment Date", key: "date" },
+            { label: "Payment Status", key: "status" },
+          ]}
+        />
+      )}
     </div>
   );
 };

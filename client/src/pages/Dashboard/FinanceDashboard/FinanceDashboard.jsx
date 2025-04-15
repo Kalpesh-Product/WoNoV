@@ -426,13 +426,11 @@ const FinanceDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Income v/s Expenses"}>
+        <WidgetSection
+          border
+          title={"Income v/s Expenses"}
+          titleLabel={"FY 2024-25"}>
           <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} />
-        <WidgetSection border titleLabel={"FY 2024-25"} title={"Income v/s Expenses"}>
-          <BarGraph
-            data={incomeExpenseData}
-            options={incomeExpenseOptions}
-          />
         </WidgetSection>,
       ],
     },
