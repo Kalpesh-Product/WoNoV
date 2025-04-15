@@ -309,6 +309,7 @@ import MonthMeetings from "../pages/MonthMeetings";
 import DepartmentWiseTickets from "../pages/Tickets/DepartmentWiseTickets";
 import CafeLayout from "../pages/Dashboard/CafeDashboard/CafeLayout";
 import CafeDashboard from "../pages/Dashboard/CafeDashboard/CafeDashboard";
+import LandlordPaymentLocation from "../pages/Dashboard/FinanceDashboard/Finance/LandlordPaymentLocation";
 
 export const routes = createBrowserRouter([
   {
@@ -570,6 +571,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "landlord-payments",
                             element: <LandlordPayments />,
+                          },
+                          {
+                            path: "landlord-payments-unit",
+                            element: <LandlordPaymentLocation />,
                           },
                         ],
                       },

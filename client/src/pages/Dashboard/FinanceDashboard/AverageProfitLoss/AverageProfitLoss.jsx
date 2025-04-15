@@ -1,9 +1,13 @@
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
+import { useState } from "react";
 
 const AverageProfitLoss = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
+    const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [viewDetails, setViewDetails] = useState(null);
   const incomeExpenseData = [
     {
       name: "Income",
@@ -26,7 +30,7 @@ const AverageProfitLoss = () => {
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#4CAF50", "#F44336"], // Green for income, Red for expense
+    colors: ["#54C4A7", "#EB5C45"], // Green for income, Red for expense
     plotOptions: {
       bar: {
         horizontal: false,
@@ -60,9 +64,6 @@ const AverageProfitLoss = () => {
         "Feb-25",
         "Mar-25",
       ],
-      title: {
-        text: "2024-2025", // overridden by BarGraph component
-      },
     },
     yaxis: {
       title: {
@@ -77,6 +78,10 @@ const AverageProfitLoss = () => {
         formatter: (val) => `₹${val.toLocaleString()}`,
       },
     },
+    legend: {
+      show: true,
+      position: "top",
+    },
   };
   //-----------------------------------------------------Graph------------------------------------------------------//
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
@@ -89,12 +94,14 @@ const AverageProfitLoss = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
-            <span className="text-primary hover:underline text-content cursor-pointer">
-              View Details
-            </span>
+            <span
+                        className="text-subtitle cursor-pointer"
+                        onClick={() => handleViewModal(params.data)}>
+                        <MdOutlineRemoveRedEye />
+                      </span>
           </div>
         </>
       ),
@@ -149,7 +156,7 @@ const AverageProfitLoss = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"}>
+        <WidgetSection border  titleLabel={"FY 2024-25"} title={"Budget v/s Achievements"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
@@ -160,6 +167,12 @@ const AverageProfitLoss = () => {
     },
   ];
 
+  
+  const handleViewModal = (rowData) => {
+    setViewDetails(rowData);
+    setViewModalOpen(true);
+  };
+
   return (
     <div className="flex flex-col gap-4 p-4">
       {techWidgets.map((section, index) => (
@@ -169,7 +182,7 @@ const AverageProfitLoss = () => {
       ))}
 
       <div>
-        <WidgetSection border title={`Total Monthly P&L : ${totalPnL.toLocaleString()} INR`}>
+        <WidgetSection border title={"Total Monthly P&L"}>
           <AgTable
             data={monthlyProfitLossData}
             columns={monthlyProfitLossColumns}
