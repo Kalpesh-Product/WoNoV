@@ -4,27 +4,48 @@ import BarGraph from "../../../../components/graphs/BarGraph";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import WidgetSection from "../../../../components/WidgetSection";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { inrFormat } from "../../../../utils/currencyFormat";
 
 const MonthlyProfitLoss = () => {
 
   //-----------------------------------------------------Graph------------------------------------------------------//
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
-      const [viewDetails, setViewDetails] = useState(null);
+  const [viewDetails, setViewDetails] = useState(null);
 
   const incomeExpenseData = [
     {
       name: "Income",
       data: [
-        12000, 15000, 10000, 18000, 20000, 16000, 17000, 19000, 14000, 21000,
-        22000, 25000,
+        1550000, // Jan - stable start
+        1620000, // Feb
+        1750000, // Mar
+        1900000, // Apr
+        2100000, // May
+        2250000, // Jun
+        2450000, // Jul - mid year peak
+        2400000, // Aug
+        2300000, // Sep
+        2650000, // Oct - festive boost
+        2850000, // Nov - big sales
+        3100000, // Dec - year end peak
       ],
     },
     {
       name: "Expense",
       data: [
-        8000, 10000, 7000, 12000, 13000, 11000, 12000, 12500, 25000, 15000,
-        16000, 17000,
+        950000,  // Jan
+        1000000, // Feb
+        1080000, // Mar
+        1200000, // Apr
+        1350000, // May
+        1450000, // Jun
+        1550000, // Jul
+        1500000, // Aug
+        1480000, // Sep
+        1600000, // Oct
+        1750000, // Nov
+        1850000, // Dec
       ],
     },
   ];
@@ -90,7 +111,7 @@ const MonthlyProfitLoss = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const monthlyProfitLossColumns = [
-    { field: "srNo", headerName: "Sr No", flex: 1 },
+    { field: "id", headerName: "Sr No", flex: 1 },
     { field: "month", headerName: "Month", flex: 1 },
     { field: "income", headerName: "Income (INR)", flex: 1 },
     { field: "expense", headerName: "Expense (INR)", flex: 1 },
@@ -114,42 +135,69 @@ const MonthlyProfitLoss = () => {
 
   const monthlyProfitLossData = [
     {
-      srNo: 1,
+      id: 1,
       month: "April",
-      income: "1,20,000",
-      expense: "80,000",
-      pnl: "40,000",
+      income: inrFormat(1250000),
+      expense: inrFormat(750000),
+      pnl: inrFormat(500000),
     },
     {
-      srNo: 2,
+      id: 2,
       month: "May",
-      income: "1,10,000",
-      expense: "90,000",
-      pnl: "20,000",
+      income: inrFormat(1400000),
+      expense: inrFormat(800000),
+      pnl: inrFormat(600000),
     },
     {
-      srNo: 3,
+      id: 3,
       month: "June",
-      income: "95,000",
-      expense: "1,05,000",
-      pnl: "-10,000",
+      income: inrFormat(1600000),
+      expense: inrFormat(1700000),
+      pnl: inrFormat(-100000),
     },
     {
-      srNo: 4,
+      id: 4,
       month: "July",
-      income: "1,50,000",
-      expense: "70,000",
-      pnl: "80,000",
+      income: inrFormat(1800000),
+      expense: inrFormat(950000),
+      pnl: inrFormat(850000),
     },
     {
-      srNo: 5,
+      id: 5,
       month: "August",
-      income: "1,00,000",
-      expense: "1,20,000",
-      pnl: "-20,000",
+      income: inrFormat(2000000),
+      expense: inrFormat(2100000),
+      pnl: inrFormat(-100000),
     },
+    {
+      id: 6,
+      month: "September",
+      income: inrFormat(1700000),
+      expense: inrFormat(1100000),
+      pnl: inrFormat(600000),
+    },
+    {
+      id: 7,
+      month: "October",
+      income: inrFormat(1900000),
+      expense: inrFormat(1300000),
+      pnl: inrFormat(600000),
+    },
+    {
+      id: 8,
+      month: "November",
+      income: inrFormat(2100000),
+      expense: inrFormat(1600000),
+      pnl: inrFormat(500000),
+    },
+    {
+      id: 9,
+      month: "December",
+      income: inrFormat(2200000),
+      expense: inrFormat(2200000),
+      pnl: inrFormat(100000),
+    }
   ];
-  
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
     setViewModalOpen(true);
@@ -192,16 +240,17 @@ const MonthlyProfitLoss = () => {
           />
         </WidgetSection>
       </div>
-        { viewDetails && <ViewDetailsModal
+      {viewDetails && <ViewDetailsModal
         open={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
-        data={{...viewDetails,income:"INR " + Number(
-          viewDetails.income.toLocaleString("en-IN").replace(/,/g, "")
-        ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-        expense:"INR " + Number(
-          viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
-        ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
-      }}
+        data={{
+          ...viewDetails, income: "INR " + Number(
+            viewDetails.income.toLocaleString("en-IN").replace(/,/g, "")
+          ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+          expense: "INR " + Number(
+            viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
+          ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
+        }}
         title="Tax Payment Detail"
         fields={[
           { label: "Month", key: "month" },
