@@ -533,7 +533,7 @@ const mockBusinessRevenueData = [
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "70%",
+        columnWidth: "40%",
         borderRadius: 6, // Adds rounded corners to the top of bars
         dataLabels: {
           position: "top",
@@ -575,7 +575,7 @@ const mockBusinessRevenueData = [
     },
     tooltip: {
       y: {
-        formatter: (val) => `₹${val.toLocaleString()}`,
+        formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
   };

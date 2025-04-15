@@ -83,7 +83,7 @@ const Projections = () => {
     },
     tooltip: {
       y: {
-        formatter: (val) => `₹${val.toLocaleString()}`,
+        formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
   };
