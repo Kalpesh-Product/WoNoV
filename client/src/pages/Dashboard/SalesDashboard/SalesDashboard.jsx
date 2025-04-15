@@ -75,7 +75,7 @@ const SalesDashboard = () => {
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "50%",
+        columnWidth: "40%",
         borderRadius: 6, // Adds rounded corners to the top of bars
         dataLabels: {
           position: "top",

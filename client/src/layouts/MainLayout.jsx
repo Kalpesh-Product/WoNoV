@@ -11,14 +11,12 @@ import { useSidebar } from "../context/SideBarContext";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { IoIosArrowForward } from "react-icons/io";
 import ScrollToTop from "../components/ScrollToTop"; // Adjust path if needed
-import { useLocation } from "react-router-dom";
 
 const MainLayout = () => {
   const [showFooter, setShowFooter] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const dummyRef = useRef(null);
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
-  const pathName = useLocation()
 
   // Detect mobile view
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -95,7 +93,7 @@ const MainLayout = () => {
         </div>
       </div>
 
-      {showFooter && !location.pathname==="/" && (
+      {showFooter && (
         <footer
           className={`transition-all duration-500 transform ${showFooter
             ? "opacity-100 translate-y-0"

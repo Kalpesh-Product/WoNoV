@@ -7,8 +7,8 @@ import { useState } from "react";
 
 const AverageProfitLoss = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
-    const [viewModalOpen, setViewModalOpen] = useState(false);
-    const [viewDetails, setViewDetails] = useState(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewDetails, setViewDetails] = useState(null);
   const incomeExpenseData = [
     {
       name: "Income",
@@ -109,9 +109,9 @@ const AverageProfitLoss = () => {
   const monthlyProfitLossColumns = [
     { field: "id", headerName: "Sr No", flex: 1 },
     { field: "month", headerName: "Month", flex: 1 },
-    { field: "income", headerName: "Income", flex: 1 },
-    { field: "expense", headerName: "Expense", flex: 1 },
-    { field: "pnl", headerName: "P&L", flex: 1 },
+    { field: "income", headerName: "Income (INR)", flex: 1 },
+    { field: "expense", headerName: "Expense (INR)", flex: 1 },
+    { field: "pnl", headerName: "P&L (INR)", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -119,10 +119,10 @@ const AverageProfitLoss = () => {
         <>
           <div className="p-2 mb-2 flex gap-2">
             <span
-                        className="text-subtitle cursor-pointer"
-                        onClick={() => handleViewModal(params.data)}>
-                        <MdOutlineRemoveRedEye />
-                      </span>
+              className="text-subtitle cursor-pointer"
+              onClick={() => handleViewModal(params.data)}>
+              <MdOutlineRemoveRedEye />
+            </span>
           </div>
         </>
       ),
@@ -132,63 +132,63 @@ const AverageProfitLoss = () => {
   const monthlyProfitLossData = [
     {
       id: 1,
-      month: "April",
+      month: "Apr-24",
       income: inrFormat(1250000),
       expense: inrFormat(750000),
       pnl: inrFormat(500000),
     },
     {
       id: 2,
-      month: "May",
+      month: "May-24",
       income: inrFormat(1400000),
       expense: inrFormat(800000),
       pnl: inrFormat(600000),
     },
     {
       id: 3,
-      month: "June",
+      month: "Jun-24",
       income: inrFormat(1600000),
       expense: inrFormat(1700000),
       pnl: inrFormat(-100000),
     },
     {
       id: 4,
-      month: "July",
+      month: "Jul-24",
       income: inrFormat(1800000),
       expense: inrFormat(950000),
       pnl: inrFormat(850000),
     },
     {
       id: 5,
-      month: "August",
+      month: "Aug-24",
       income: inrFormat(2000000),
       expense: inrFormat(2100000),
       pnl: inrFormat(-100000),
     },
     {
       id: 6,
-      month: "September",
+      month: "Sep-24",
       income: inrFormat(1700000),
       expense: inrFormat(1100000),
       pnl: inrFormat(600000),
     },
     {
       id: 7,
-      month: "October",
+      month: "Oct-24",
       income: inrFormat(1900000),
       expense: inrFormat(1300000),
       pnl: inrFormat(600000),
     },
     {
       id: 8,
-      month: "November",
+      month: "Nov-24",
       income: inrFormat(2100000),
       expense: inrFormat(1600000),
       pnl: inrFormat(500000),
     },
     {
       id: 9,
-      month: "December",
+      month: "Dec-24",
       income: inrFormat(2200000),
       expense: inrFormat(2200000),
       pnl: inrFormat(100000),
@@ -217,7 +217,7 @@ const AverageProfitLoss = () => {
     },
   ];
 
-  
+
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
     setViewModalOpen(true);

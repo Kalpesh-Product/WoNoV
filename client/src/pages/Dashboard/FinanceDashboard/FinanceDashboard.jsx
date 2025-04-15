@@ -498,7 +498,7 @@ const FinanceDashboard = () => {
           <PieChartMui
             data={pieMonthlyPayoutData}
             options={pieMonthlyPayoutOptions}
-            width={550}
+            width={500}
             height={350}
           />
         </WidgetSection>,
@@ -506,7 +506,7 @@ const FinanceDashboard = () => {
           <PieChartMui
             data={pieMonthlyCollectionData}
             options={pieMonthlyCollectionOptions}
-            width={550}
+            width={500}
             height={350}
           />
         </WidgetSection>,

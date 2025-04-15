@@ -651,11 +651,11 @@ const HistoricalPnl = () => {
                   data={domain.clients}
                   hideFilter
                   columns={[
-                    { header: "Sr No", field: "srNo", flex: 1 },
-                    { header: "Domain", field: "domain", flex: 1 },
-                    { header: "Income (INR)", field: "income", flex: 1 },
-                    { header: "Expense (INR)", field: "expense", flex: 1 },
-                    { header: "Profit / Loss (INR)", field: "profitLoss", flex: 1 },
+                    { headerName: "Sr No", field: "srNo", flex: 1 },
+                    { headerName: "Domain", field: "domain", flex: 1 },
+                    { headerName: "Income (INR)", field: "income", flex: 1 },
+                    { headerName: "Expense (INR)", field: "expense", flex: 1 },
+                    { headerName: "Profit / Loss (INR)", field: "profitLoss", flex: 1 },
                   ]}
                   tableHeight={300}
                 />
