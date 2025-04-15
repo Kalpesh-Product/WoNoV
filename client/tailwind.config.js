@@ -19,7 +19,7 @@ module.exports = {
       fontSize: {
         title: '1.5rem', // Equivalent to text-2xl
         subtitle: '1.125rem', // Equivalent to text-lg
-        widgetTitle: '1.25rem',
+        widgetTitle: '1.3rem',
         content: '0.875rem', // Equivalent to text-sm
         small: '0.7rem',
       },

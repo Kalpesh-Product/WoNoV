@@ -65,7 +65,7 @@ const ViewTheme = () => {
   ];
 
   const features = [
-    "Website/ Native Apps",
+    "Website",
     "Payment Gateway",
     "Booking Engine",
     "Customer Profile",

@@ -397,7 +397,7 @@ const FinanceDashboard = () => {
       amount: "6,800",
     },
   ];
-  
+
   const executiveTimingsColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "paymentName", label: "Payment Name", align: "left" },
@@ -418,35 +418,17 @@ const FinanceDashboard = () => {
         </WidgetSection>,
       ],
     },
-      {
-          layout: 3,
-          widgets: [
-            <DataCard
-              data={"INR 50,00,000"}
-              title={"Projected"}
-              route={"/app/dashboard/finance-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString("default", {
-                month: "long",
-              })}`}
-            />,
-            <DataCard
-              data={"INR 40,00,000"}
-              title={"Actual"}
-              route={"/app/dashboard/finance-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString("default", {
-                month: "long",
-              })}`}
-            />,
-            <DataCard
-              data={"INR 17,000"}
-              title={"Requested"}
-              route={"/app/dashboard/finance-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString("default", {
-                month: "long",
-              })}`}
-            />,
-          ],
-        },
+    {
+      layout: 3,
+      widgets: [
+        <FinanceCard {...incomeCardData} />,
+        <FinanceCard {...expenseCardData} />,
+        <FinanceCard
+          {...netSavingsCardData}
+          highlightNegativePositive={true}
+        />,
+      ],
+    },
     {
       layout: 6,
       widgets: [
@@ -470,17 +452,7 @@ const FinanceDashboard = () => {
         />,
       ],
     },
-    {
-      layout: 3,
-      widgets: [
-        <FinanceCard {...incomeCardData} />,
-        <FinanceCard {...expenseCardData} />,
-        <FinanceCard
-          {...netSavingsCardData}
-          highlightNegativePositive={true}
-        />,
-      ],
-    },
+
 
     {
       layout: 2,
