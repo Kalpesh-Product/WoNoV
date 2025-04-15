@@ -8,7 +8,6 @@ import SecondaryButton from "../../../../components/SecondaryButton";
 const BulkUpload = () => {
   const uploadItems = ["Upload Budget"];
 
-
   const bulkUploadDataColumns = [
     { field: "srNo", headerName: "SR No", flex: 1 },
     { field: "templateName", headerName: "Template Name", flex: 1 },
@@ -30,7 +29,6 @@ const BulkUpload = () => {
       date: "08-03-2025",
     },
   ];
-
 
   return (
     <div className=" flex flex-col gap-4">

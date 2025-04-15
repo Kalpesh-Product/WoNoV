@@ -4,7 +4,6 @@ import WidgetSection from "../../../../components/WidgetSection";
 import AgTable from "../../../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
 
-
 const SalesPolicies = () => {
   const uploadItems = [
     "Upload Policies"
@@ -45,54 +44,50 @@ const SalesPolicies = () => {
 
  
   return (
-    <div className=" flex flex-col gap-4">
-    <span className="text-title font-pmedium text-primary">
-      Bulk Upload Data
-    </span>
-    <hr />
-
-    <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
-      {uploadItems.map((index, item) => {
-        return (
-          <>
-            <div
-              className="space-y-2 border-default p-4  rounded-md"
-              key={index}
-            >
-              <div className="mb-2">
-                <span className="text-subtitle text-primary">{index}</span>
+    <div className="flex flex-col gap-4">
+      <span className="text-title font-pmedium text-primary">
+        Upload Policies
+      </span>
+      <hr />
+  
+      <div className="grid lg:grid-cols-3 md:grid-cols-3 sm:grid-cols-1 gap-4">
+        {uploadItems.map((item, index) => (
+          <div
+            className="space-y-2 border-default p-4 rounded-md"
+            key={index}
+          >
+            <div className="mb-2">
+              <span className="text-subtitle text-primary">{item}</span>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex items-end w-full border justify-end border-gray-200 rounded-md">
+                <PrimaryButton title={"Choose File"} />
               </div>
-              <div className="flex gap-4">
-                {/* Placeholder Input Box */}
-                <div className="flex items-end w-full border justify-end border-gray-200 rounded-md">
-                  <PrimaryButton title={"Choose File"} />
+              <div className="flex gap-2 items-center">
+                <div className="bg-borderGray text-black p-2 rounded-md cursor-pointer hover:bg-gray-200 transition-all">
+                  <MdUpload style={{ fill: "black" }} />
                 </div>
-                <div className="flex gap-2 items-center">
-                  <div className="bg-borderGray text-black p-2 rounded-md cursor-pointer hover:bg-gray-200 transition-all">
-                    <MdUpload style={{ fill: "black" }} />
-                  </div>
-                  <div className="bg-borderGray text-black p-2 rounded-md cursor-pointer hover:bg-gray-200 transition-all">
-                    <IoMdDownload style={{ fill: "black" }} />
-                  </div>
+                <div className="bg-borderGray text-black p-2 rounded-md cursor-pointer hover:bg-gray-200 transition-all">
+                  <IoMdDownload style={{ fill: "black" }} />
                 </div>
               </div>
             </div>
-          </>
-        );
-      })}
+          </div>
+        ))}
+      </div>
+  
+      <div>
+        <WidgetSection border title="Bulk Upload Data">
+          <AgTable
+            data={policiesUploadData}
+            columns={policiesUploadDataColumns}
+            search={true}
+          />
+        </WidgetSection>
+      </div>
     </div>
-
-    <div>
-      <WidgetSection border title="Bulk Upload Data">
-        <AgTable
-          data={policiesUploadData}
-          columns={policiesUploadDataColumns}
-          search={true}
-        />
-      </WidgetSection>
-    </div>
-  </div>
   );
+  
 };
 
 export default SalesPolicies;
