@@ -38,7 +38,7 @@ const FinanceDashboard = () => {
     {
       name: "Expense",
       data: [
-        950000,  // Jan
+        950000, // Jan
         1000000, // Feb
         1080000, // Mar
         1200000, // Apr
@@ -53,7 +53,6 @@ const FinanceDashboard = () => {
       ],
     },
   ];
-  
 
   const incomeExpenseOptions = {
     chart: {
@@ -104,7 +103,7 @@ const FinanceDashboard = () => {
       title: {
         text: "Amount (INR)",
       },
-      tickAmount: 4
+      tickAmount: 4,
     },
     fill: {
       opacity: 1,
@@ -119,7 +118,7 @@ const FinanceDashboard = () => {
   //-----------------------------------------------------DataCards------------------------------------------------------//
   const incomeCardData = {
     cardTitle: "Income",
-    timePeriod: "Apr 24 – Mar 25",
+    timePeriod: "FY 2024-25",
     descriptionData: [
       {
         title: "March 2025",
@@ -142,7 +141,7 @@ const FinanceDashboard = () => {
 
   const expenseCardData = {
     cardTitle: "Expense",
-    timePeriod: "Apr 24 – Mar 25",
+    timePeriod: "FY 2024-25",
     descriptionData: [
       { title: "March 2025", value: "INR 18,00,000" },
       { title: "Annual Average", value: "INR 22,00,000" },
@@ -153,7 +152,7 @@ const FinanceDashboard = () => {
 
   const netSavingsCardData = {
     cardTitle: "Net Savings",
-    timePeriod: "Apr 24 – Mar 25",
+    timePeriod: "FY 2024-25",
     descriptionData: [
       { title: "March 2025", value: "INR 7,00,000" },
       { title: "Annual Average", value: "INR 5,00,000" },
@@ -491,7 +490,6 @@ const FinanceDashboard = () => {
         />,
       ],
     },
-
 
     {
       layout: 2,

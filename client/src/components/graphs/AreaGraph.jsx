@@ -7,7 +7,7 @@ dayjs.extend(utc);
 
 const AreaGraph = ({ responseData }) => {
   const [timeFilter, setTimeFilter] = useState("Yearly"); // State for the filter
-  console.log("Response length : ",responseData.length)
+  console.log("Response length : ", responseData.length);
 
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [data, setData] = useState({
@@ -23,10 +23,12 @@ const AreaGraph = ({ responseData }) => {
   const transformData = (data, filter) => {
     // Determine FY start and end based on currentDate
     const isBeforeApril = currentDate.month() < 3; // Jan/Feb/Mar
-    const fyStartYear = isBeforeApril ? currentDate.year() - 1 : currentDate.year();
+    const fyStartYear = isBeforeApril
+      ? currentDate.year() - 1
+      : currentDate.year();
     const fyStart = dayjs(`${fyStartYear}-04-01`);
     const fyEnd = fyStart.add(1, "year").subtract(1, "day");
-  
+
     const transformed = {
       Yearly: {
         series: [
@@ -35,8 +37,18 @@ const AreaGraph = ({ responseData }) => {
           { name: "Open Tickets", data: Array(12).fill(0), color: "#ff4d4d" },
         ],
         categories: [
-          "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
-          "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
+          "Apr-24",
+          "May-24",
+          "Jun-24",
+          "Jul-24",
+          "Aug-24",
+          "Sep-24",
+          "Oct-24",
+          "Nov-24",
+          "Dec-24",
+          "Jan-25",
+          "Feb-25",
+          "Mar-25",
         ],
       },
       Monthly: {
@@ -46,8 +58,13 @@ const AreaGraph = ({ responseData }) => {
           { name: "Open Tickets", data: Array(7).fill(0), color: "#ff4d4d" },
         ],
         categories: [
-          "Week 1", "Week 2", "Week 3", "Week 4",
-          "Week 5", "Week 6", "Week 7",
+          "Week 1",
+          "Week 2",
+          "Week 3",
+          "Week 4",
+          "Week 5",
+          "Week 6",
+          "Week 7",
         ],
       },
       Weekly: {
@@ -59,26 +76,39 @@ const AreaGraph = ({ responseData }) => {
         categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
       },
     };
-  
+
     data.forEach((ticket) => {
       const createdAt = dayjs(ticket.createdAt);
-  
+
       if (filter === "Yearly") {
-        if (!(createdAt.isSameOrAfter(fyStart) && createdAt.isSameOrBefore(fyEnd))) return;
+        if (
+          !(createdAt.isSameOrAfter(fyStart) && createdAt.isSameOrBefore(fyEnd))
+        )
+          return;
       }
-  
+
       if (filter === "Monthly") {
-        if (createdAt.year() !== currentDate.year() || createdAt.month() !== currentDate.month()) return;
+        if (
+          createdAt.year() !== currentDate.year() ||
+          createdAt.month() !== currentDate.month()
+        )
+          return;
       }
-  
+
       if (filter === "Weekly") {
         const startOfWeek = currentDate.startOf("week");
         const endOfWeek = currentDate.endOf("week");
-        if (!(createdAt.isSameOrAfter(startOfWeek) && createdAt.isSameOrBefore(endOfWeek))) return;
+        if (
+          !(
+            createdAt.isSameOrAfter(startOfWeek) &&
+            createdAt.isSameOrBefore(endOfWeek)
+          )
+        )
+          return;
       }
-  
+
       let categoryIndex = null;
-  
+
       if (filter === "Yearly") {
         // Fiscal month offset: Apr = 0, Mar = 11
         const month = createdAt.month(); // 0-11
@@ -88,7 +118,7 @@ const AreaGraph = ({ responseData }) => {
       } else if (filter === "Weekly") {
         categoryIndex = (createdAt.day() + 6) % 7; // Mon = 0
       }
-  
+
       if (categoryIndex !== null) {
         transformed[filter].series[0].data[categoryIndex] += 1;
         if (ticket.status === "Closed") {
@@ -98,11 +128,10 @@ const AreaGraph = ({ responseData }) => {
         }
       }
     });
-  
+
     return transformed[filter];
   };
-  
-  
+
   // Use effect to transform response data when it changes
   useEffect(() => {
     const transformedData = transformData(responseData, timeFilter);
@@ -135,7 +164,7 @@ const AreaGraph = ({ responseData }) => {
     },
     yaxis: {
       min: 0,
-      
+
       tickAmount: timeFilter === "Yearly" ? 3 : 5, // ✅ this gives ticks like 0, 10, 20, ...
       labels: {
         formatter: function (val) {
@@ -143,7 +172,7 @@ const AreaGraph = ({ responseData }) => {
         },
       },
     },
-    
+
     tooltip: {
       shared: true,
       intersect: false,
@@ -210,8 +239,7 @@ const AreaGraph = ({ responseData }) => {
                   ? "bg-primary text-white"
                   : "bg-gray-200 text-black"
               }`}
-              onClick={() => setTimeFilter(filter)}
-            >
+              onClick={() => setTimeFilter(filter)}>
               {filter}
             </button>
           ))}

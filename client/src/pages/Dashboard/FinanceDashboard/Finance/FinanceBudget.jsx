@@ -88,7 +88,7 @@ const FinanceBudget = () => {
       expanseName: "Income Tax Filing Consultant",
       department: "Finance",
       expanseType: "Professional Fees",
-      projectedAmount: 28000,
+      projectedAmount: 26000,
       dueDate: "2024-05-10",
       status: "Requested",
     },

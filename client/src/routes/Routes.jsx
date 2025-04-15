@@ -309,6 +309,7 @@ import MonthMeetings from "../pages/MonthMeetings";
 import DepartmentWiseTickets from "../pages/Tickets/DepartmentWiseTickets";
 import CafeLayout from "../pages/Dashboard/CafeDashboard/CafeLayout";
 import CafeDashboard from "../pages/Dashboard/CafeDashboard/CafeDashboard";
+import DeptWiseBudgetDetails from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudgetDetails";
 
 export const routes = createBrowserRouter([
   {
@@ -554,6 +555,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "dept-wise-budget",
                             element: <DeptWiseBudget />,
+                          },
+                          {
+                            path: "dept-wise-budget/:department",
+                            element: <DeptWiseBudgetDetails />,
                           },
                           {
                             path: "payment-schedule",
