@@ -4,8 +4,6 @@ import WidgetSection from "../../../../components/WidgetSection";
 import AgTable from "../../../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
 
-import PrimaryButton from "../../../../components/PrimaryButton";
-
 const SalesPolicies = () => {
   const uploadItems = [
     "Upload Policies"
