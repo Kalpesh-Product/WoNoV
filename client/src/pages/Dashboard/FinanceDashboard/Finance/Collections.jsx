@@ -103,35 +103,35 @@ const Collections = () => {
     {
       srNo: 1,
       client: "Zomato",
-      status: "Paid",
+      status: "Unpaid",
       amount: "1,25,000",
       date: "10-04-2025",
     },
     {
       srNo: 2,
       client: "Turtlemint",
-      status: "Paid",
+      status: "Unpaid",
       amount: "98,500",
       date: "11-04-2025",
     },
     {
       srNo: 3,
       client: "Zimetrics",
-      status: "Paid",
+      status: "Unpaid",
       amount: "1,15,300",
       date: "12-04-2025",
     },
     {
       srNo: 4,
       client: "SquadStack",
-      status: "Paid",
+      status: "Unpaid",
       amount: "1,40,000",
       date: "13-04-2025",
     },
     {
       srNo: 5,
       client: "Uber",
-      status: "Paid",
+      status: "Unpaid",
       amount: "1,22,750",
       date: "14-04-2025",
     },
@@ -163,13 +163,13 @@ const Collections = () => {
         titleLabel={"FY 2024-25"}
         className="bg-white rounded-md shadow-sm">
         {financialData.map((data, index) => (
-          <Accordion key={index} className="py-4">
+          <Accordion key={index} className="py-2">
             <AccordionSummary
               expandIcon={<IoIosArrowDown />}
               aria-controls={`panel${index}-content`}
               id={`panel${index}-header`}
               className="border-b-[1px] border-borderGray">
-              <div className="flex justify-between items-center w-full px-4">
+              <div className="flex justify-between items-center w-full">
                 <span className="text-subtitle font-pmedium">{data.month}</span>
                 <span className="text-subtitle font-pmedium">
                   {data.amount}

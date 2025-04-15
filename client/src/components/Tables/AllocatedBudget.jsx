@@ -11,7 +11,7 @@ import { BsCheckCircleFill } from "react-icons/bs";
 const AllocatedBudget = ({ financialData }) => {
   return financialData ? (
     <div>
-      <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
+      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
         {/* Top Bar: Allocated Budget */}
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center gap-4">
