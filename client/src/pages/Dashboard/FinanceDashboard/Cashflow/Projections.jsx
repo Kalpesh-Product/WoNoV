@@ -116,89 +116,48 @@ const Projections = () => {
   const monthlyProfitLossColumns = [
     { field: "id", headerName: "Sr No", flex: 1 },
     { field: "month", headerName: "Month", flex: 1 },
+    { field: "income", headerName: "Income (INR)", flex: 1 },
     { field: "expense", headerName: "Expense (INR)", flex: 1 },
     { field: "pnl", headerName: "P&L (INR)", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <>
-          <div className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all mb-2 inline-flex gap-2">
-            <span className="text-subtitle cursor-pointer"
-              onClick={() => handleViewModal(params.data)}>
-              <MdOutlineRemoveRedEye />
-            </span>
-          </div>
-        </>
+        <div className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all mb-2 inline-flex gap-2">
+          <span
+            className="text-subtitle cursor-pointer"
+            onClick={() => handleViewModal(params.data)}
+          >
+            <MdOutlineRemoveRedEye />
+          </span>
+        </div>
       ),
     },
   ];
-
-  const monthlyProfitLossData = [
-    {
-      id: 1,
-      month: "April",
-      income: inrFormat(1250000),
-      expense: inrFormat(750000),
-      pnl: inrFormat(500000),
-    },
-    {
-      id: 2,
-      month: "May",
-      income: inrFormat(1400000),
-      expense: inrFormat(800000),
-      pnl: inrFormat(600000),
-    },
-    {
-      id: 3,
-      month: "June",
-      income: inrFormat(1600000),
-      expense: inrFormat(1700000),
-      pnl: inrFormat(-100000),
-    },
-    {
-      id: 4,
-      month: "July",
-      income: inrFormat(1800000),
-      expense: inrFormat(950000),
-      pnl: inrFormat(850000),
-    },
-    {
-      id: 5,
-      month: "August",
-      income: inrFormat(2000000),
-      expense: inrFormat(2100000),
-      pnl: inrFormat(-100000),
-    },
-    {
-      id: 6,
-      month: "September",
-      income: inrFormat(1700000),
-      expense: inrFormat(1100000),
-      pnl: inrFormat(600000),
-    },
-    {
-      id: 7,
-      month: "October",
-      income: inrFormat(1900000),
-      expense: inrFormat(1300000),
-      pnl: inrFormat(600000),
-    },
-    {
-      id: 8,
-      month: "November",
-      income: inrFormat(2100000),
-      expense: inrFormat(1600000),
-      pnl: inrFormat(500000),
-    },
-    {
-      id: 9,
-      month: "December",
-      income: inrFormat(2200000),
-      expense: inrFormat(2200000),
-      pnl: inrFormat(100000),
-    }
+  
+  const rawMonthlyData = [
+    { id: 1, month: "Apr-24", income: 1250000, expense: 750000 },
+    { id: 2, month: "May-24", income: 1400000, expense: 800000 },
+    { id: 3, month: "Jun-24", income: 1600000, expense: 1700000 },
+    { id: 4, month: "Jul-24", income: 1800000, expense: 950000 },
+    { id: 5, month: "Aug-24", income: 2000000, expense: 2100000 },
+    { id: 6, month: "Sep-24", income: 1700000, expense: 1100000 },
+    { id: 7, month: "Oct-24", income: 1900000, expense: 1300000 },
+    { id: 8, month: "Nov-24", income: 2100000, expense: 1600000 },
+    { id: 9, month: "Dec-24", income: 2200000, expense: 500000 },
   ];
+  
+  
+  const monthlyProfitLossData = rawMonthlyData.map((item) => {
+    const pnl = item.income - item.expense;
+    return {
+      ...item,
+      income: inrFormat(item.income),
+      expense: inrFormat(item.expense),
+      pnl: inrFormat(pnl),
+    };
+  });
+  
 
 
 

@@ -67,7 +67,7 @@ const WidgetSection = ({
                 className={`${
                   titleFont
                     ? "text-subtitle text-primary"
-                    : "text-title text-primary font-pmedium"
+                    : "text-widgetTitle text-primary font-pmedium"
                 }`}>
                 {TitleAmount}{" "}
               </span>

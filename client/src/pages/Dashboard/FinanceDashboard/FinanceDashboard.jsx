@@ -119,7 +119,7 @@ const FinanceDashboard = () => {
   //-----------------------------------------------------DataCards------------------------------------------------------//
   const incomeCardData = {
     cardTitle: "Income",
-    timePeriod: "Apr 24 – Mar 25",
+    timePeriod: "FY 2024-25",
     descriptionData: [
       {
         title: "March 2025",
@@ -142,7 +142,7 @@ const FinanceDashboard = () => {
 
   const expenseCardData = {
     cardTitle: "Expense",
-    timePeriod: "Apr 24 – Mar 25",
+    timePeriod: "FY 2024-25",
     descriptionData: [
       { title: "March 2025", value: "INR 18,00,000" },
       { title: "Annual Average", value: "INR 22,00,000" },
@@ -153,7 +153,7 @@ const FinanceDashboard = () => {
 
   const netSavingsCardData = {
     cardTitle: "Net Savings",
-    timePeriod: "Apr 24 – Mar 25",
+    timePeriod: "FY 2024-25",
     descriptionData: [
       { title: "March 2025", value: "INR 7,00,000" },
       { title: "Annual Average", value: "INR 5,00,000" },

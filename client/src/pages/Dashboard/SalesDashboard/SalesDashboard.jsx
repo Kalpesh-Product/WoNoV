@@ -41,20 +41,22 @@ const SalesDashboard = () => {
     {
       name: "Income",
       data: [
-        1600000, // Jan
-        1700000, // Feb
-        1450000, // Mar
-        1800000, // Apr
-        1650000, // May
-        1500000, // Jun
-        1750000, // Jul
-        1800000, // Aug
-        1400000, // Sep
-        1200000, // Oct
-        1150000, // Nov
-        1550000  // Dec
+        1123500, // Nov
+        1184200, // Oct
+        1347800, // Sep
+        1436500, // Mar
+        1489300, // Jun
+        1532100, // Dec
+        1598700, // Jan
+        1642900, // May
+        1695000, // Feb
+        1746800, // Jul
+        1791200, // Aug
+        1823400  // Apr
       ]
-    },
+    }
+
+
     // {
     //   name: "Expense",
     //   data: [
@@ -115,6 +117,7 @@ const SalesDashboard = () => {
       title: {
         text: "Amount (INR)",
       },
+      tickAmount: 7
     },
     fill: {
       opacity: 1,
@@ -141,7 +144,7 @@ const SalesDashboard = () => {
     "Feb-25": "February",
     "Mar-25": "March",
   };
-  
+
 
   //-----------------------------------------------API-----------------------------------------------------------//
   const { data: leadsData, isPending: isLeadsPending } = useQuery({
@@ -505,7 +508,7 @@ const SalesDashboard = () => {
         <DataCard
           route={"revenue"}
           title={"Total"}
-          data={"INR " + inrFormat("800000")}
+          data={"INR " + inrFormat("43050000")}
           description={"Revenues"}
         />,
         <DataCard

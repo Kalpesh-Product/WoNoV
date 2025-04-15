@@ -14,6 +14,7 @@ import BarGraph from "../../../components/graphs/BarGraph";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import LineGraph from "../../../components/graphs/LineGraph";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const FrontendDashboard = () => {
   const utilisedData = [
@@ -275,7 +276,7 @@ const FrontendDashboard = () => {
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard
-              data={"40K"}
+              data={`INR ${inrFormat(40000)}`}
               title={"Projected"}
               route={"/app/dashboard/frontend-dashboard/finance"}
               description={`Current Month : ${new Date().toLocaleString(
@@ -284,7 +285,7 @@ const FrontendDashboard = () => {
               )}`}
             />
             <DataCard
-              data={"35K"}
+              data={`INR ${inrFormat(35000)}`}
               title={"Actual"}
               route={"/app/dashboard/frontend-dashboard/finance"}
               description={`Current Month : ${new Date().toLocaleString(
@@ -293,7 +294,7 @@ const FrontendDashboard = () => {
               )}`}
             />
             <DataCard
-              data={6000}
+              data={`INR ${inrFormat(6000)}`}
               title={"Requested"}
               route={"/app/dashboard/frontend-dashboard/finance"}
               description={`Current Month : ${new Date().toLocaleString(

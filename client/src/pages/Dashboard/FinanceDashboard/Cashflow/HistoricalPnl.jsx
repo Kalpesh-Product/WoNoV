@@ -38,7 +38,7 @@ const HistoricalPnl = () => {
       "domains": [
         {
           "name": "2024-25",
-          "totalProfitLoss": 659015,
+          "totalProfitLoss": 6590150,
           "clients": [
             {
               "srNo": 1,
@@ -46,7 +46,7 @@ const HistoricalPnl = () => {
               "income": 8000000,
               "expense": 7000000,
               "profitLoss": 74197,
-              "department": "IT"
+              "domain": "Coworking"
             },
             {
               "srNo": 2,
@@ -54,7 +54,7 @@ const HistoricalPnl = () => {
               "income": 8500000,
               "expense": 7500000,
               "profitLoss": 62586,
-              "department": "Tech"
+              "domain": "Virtual Office"
             },
             {
               "srNo": 3,
@@ -62,7 +62,7 @@ const HistoricalPnl = () => {
               "income": 9500000,
               "expense": 8000000,
               "profitLoss": 81041,
-              "department": "Admin"
+              "domain": "Workations"
             },
             {
               "srNo": 4,
@@ -70,7 +70,7 @@ const HistoricalPnl = () => {
               "income": 10000000,
               "expense": 9000000,
               "profitLoss": 31077,
-              "department": "Sales"
+              "domain": "Meetng Rooms"
             },
             {
               "srNo": 5,
@@ -78,7 +78,7 @@ const HistoricalPnl = () => {
               "income": 10500000,
               "expense": 9500000,
               "profitLoss": 96453,
-              "department": "Finance"
+              "domain": "Other Income"
             },
             {
               "srNo": 6,
@@ -86,7 +86,7 @@ const HistoricalPnl = () => {
               "income": 11000000,
               "expense": 10000000,
               "profitLoss": 49643,
-              "department": "IT"
+              "domain": "Coworking"
             },
             {
               "srNo": 7,
@@ -94,7 +94,7 @@ const HistoricalPnl = () => {
               "income": 11500000,
               "expense": 10500000,
               "profitLoss": 133252,
-              "department": "Tech"
+              "domain": "Virtual Office"
             },
             {
               "srNo": 8,
@@ -102,13 +102,13 @@ const HistoricalPnl = () => {
               "income": 12000000,
               "expense": 10900000,
               "profitLoss": 130766,
-              "department": "Admin"
+              "domain": "Workations"
             }
           ]
         },
         {
           "name": "2023-24",
-          "totalProfitLoss": 580756,
+          "totalProfitLoss": 5807560,
           "clients": [
             {
               "srNo": 1,
@@ -116,7 +116,7 @@ const HistoricalPnl = () => {
               "income": 8000000,
               "expense": 7000000,
               "profitLoss": 25886,
-              "department": "IT"
+              "domain": "Coworking"
             },
             {
               "srNo": 2,
@@ -124,7 +124,7 @@ const HistoricalPnl = () => {
               "income": 8500000,
               "expense": 7500000,
               "profitLoss": 90080,
-              "department": "Tech"
+              "domain": "Virtual Office"
             },
             {
               "srNo": 3,
@@ -132,7 +132,7 @@ const HistoricalPnl = () => {
               "income": 9500000,
               "expense": 8000000,
               "profitLoss": 102970,
-              "department": "Admin"
+              "domain": "Workations"
             },
             {
               "srNo": 4,
@@ -140,7 +140,7 @@ const HistoricalPnl = () => {
               "income": 10000000,
               "expense": 9000000,
               "profitLoss": 95380,
-              "department": "Sales"
+              "domain": "Café"
             },
             {
               "srNo": 5,
@@ -148,7 +148,7 @@ const HistoricalPnl = () => {
               "income": 10500000,
               "expense": 9500000,
               "profitLoss": 16332,
-              "department": "Finance"
+              "domain": "Meetng Rooms"
             },
             {
               "srNo": 6,
@@ -156,7 +156,7 @@ const HistoricalPnl = () => {
               "income": 11000000,
               "expense": 10000000,
               "profitLoss": 64160,
-              "department": "IT"
+              "domain": "Coworking"
             },
             {
               "srNo": 7,
@@ -164,7 +164,7 @@ const HistoricalPnl = () => {
               "income": 11500000,
               "expense": 10500000,
               "profitLoss": 93069,
-              "department": "Tech"
+              "domain": "Virtual Office"
             },
             {
               "srNo": 8,
@@ -172,13 +172,13 @@ const HistoricalPnl = () => {
               "income": 12000000,
               "expense": 10900000,
               "profitLoss": 92879,
-              "department": "Admin"
+              "domain": "Workations"
             }
           ]
         },
         {
           "name": "2022-23",
-          "totalProfitLoss": 459132,
+          "totalProfitLoss": 4591320,
           "clients": [
             {
               "srNo": 1,
@@ -186,7 +186,7 @@ const HistoricalPnl = () => {
               "income": 8000000,
               "expense": 7000000,
               "profitLoss": 93469,
-              "department": "IT"
+              "domain": "Coworking"
             },
             {
               "srNo": 2,
@@ -194,7 +194,7 @@ const HistoricalPnl = () => {
               "income": 8500000,
               "expense": 7500000,
               "profitLoss": 79615,
-              "department": "Tech"
+              "domain": "Virtual Office"
             },
             {
               "srNo": 3,
@@ -202,7 +202,7 @@ const HistoricalPnl = () => {
               "income": 9500000,
               "expense": 8000000,
               "profitLoss": 73981,
-              "department": "Admin"
+              "domain": "Workations"
             },
             {
               "srNo": 4,
@@ -210,7 +210,7 @@ const HistoricalPnl = () => {
               "income": 10000000,
               "expense": 9000000,
               "profitLoss": 62319,
-              "department": "Sales"
+              "domain": "Café"
             },
             {
               "srNo": 5,
@@ -218,7 +218,7 @@ const HistoricalPnl = () => {
               "income": 10500000,
               "expense": 9500000,
               "profitLoss": 43862,
-              "department": "Finance"
+              "domain": "Meetng Rooms"
             },
             {
               "srNo": 6,
@@ -226,7 +226,7 @@ const HistoricalPnl = () => {
               "income": 11000000,
               "expense": 10000000,
               "profitLoss": 27267,
-              "department": "IT"
+              "domain": "Coworking"
             },
             {
               "srNo": 7,
@@ -234,7 +234,7 @@ const HistoricalPnl = () => {
               "income": 11500000,
               "expense": 10500000,
               "profitLoss": 48399,
-              "department": "Tech"
+              "domain": "Virtual Office"
             },
             {
               "srNo": 8,
@@ -242,13 +242,13 @@ const HistoricalPnl = () => {
               "income": 12000000,
               "expense": 10900000,
               "profitLoss": 30220,
-              "department": "Admin"
+              "domain": "Workations"
             }
           ]
         },
         {
           "name": "2021-22",
-          "totalProfitLoss": 364978,
+          "totalProfitLoss": 3649780,
           "clients": [
             {
               "srNo": 1,
@@ -256,7 +256,7 @@ const HistoricalPnl = () => {
               "income": 8000000,
               "expense": 7000000,
               "profitLoss": 56434,
-              "department": "IT"
+              "domain": "Coworking"
             },
             {
               "srNo": 2,
@@ -264,7 +264,7 @@ const HistoricalPnl = () => {
               "income": 8500000,
               "expense": 7500000,
               "profitLoss": 49940,
-              "department": "Tech"
+              "domain": "Virtual Office"
             },
             {
               "srNo": 3,
@@ -272,7 +272,7 @@ const HistoricalPnl = () => {
               "income": 9500000,
               "expense": 8000000,
               "profitLoss": 41680,
-              "department": "Admin"
+              "domain": "Workations"
             },
             {
               "srNo": 4,
@@ -280,7 +280,7 @@ const HistoricalPnl = () => {
               "income": 10000000,
               "expense": 9000000,
               "profitLoss": 41240,
-              "department": "Sales"
+              "domain": "Café"
             },
             {
               "srNo": 5,
@@ -288,7 +288,7 @@ const HistoricalPnl = () => {
               "income": 10500000,
               "expense": 9500000,
               "profitLoss": 52293,
-              "department": "Finance"
+              "domain": "Meetng Rooms"
             },
             {
               "srNo": 6,
@@ -296,7 +296,7 @@ const HistoricalPnl = () => {
               "income": 11000000,
               "expense": 10000000,
               "profitLoss": 46599,
-              "department": "IT"
+              "domain": "Coworking"
             },
             {
               "srNo": 7,
@@ -304,7 +304,7 @@ const HistoricalPnl = () => {
               "income": 11500000,
               "expense": 10500000,
               "profitLoss": 33717,
-              "department": "Tech"
+              "domain": "Virtual Office"
             },
             {
               "srNo": 8,
@@ -312,13 +312,13 @@ const HistoricalPnl = () => {
               "income": 12000000,
               "expense": 10900000,
               "profitLoss": 43075,
-              "department": "Admin"
+              "domain": "Workations"
             }
           ]
         },
         {
           "name": "2020-21",
-          "totalProfitLoss": 615630,
+          "totalProfitLoss": 6156300,
           "clients": [
             {
               "srNo": 1,
@@ -326,7 +326,7 @@ const HistoricalPnl = () => {
               "income": 8000000,
               "expense": 7000000,
               "profitLoss": 33324,
-              "department": "IT"
+              "domain": "Coworking"
             },
             {
               "srNo": 2,
@@ -334,7 +334,7 @@ const HistoricalPnl = () => {
               "income": 8500000,
               "expense": 7500000,
               "profitLoss": 106534,
-              "department": "Tech"
+              "domain": "Virtual Office"
             },
             {
               "srNo": 3,
@@ -342,7 +342,7 @@ const HistoricalPnl = () => {
               "income": 9500000,
               "expense": 8000000,
               "profitLoss": 64167,
-              "department": "Admin"
+              "domain": "Workations"
             },
             {
               "srNo": 4,
@@ -350,7 +350,7 @@ const HistoricalPnl = () => {
               "income": 10000000,
               "expense": 9000000,
               "profitLoss": 95236,
-              "department": "Sales"
+              "domain": "Café"
             },
             {
               "srNo": 5,
@@ -358,7 +358,7 @@ const HistoricalPnl = () => {
               "income": 10500000,
               "expense": 9500000,
               "profitLoss": 43373,
-              "department": "Finance"
+              "domain": "Meetng Rooms"
             },
             {
               "srNo": 6,
@@ -366,7 +366,7 @@ const HistoricalPnl = () => {
               "income": 11000000,
               "expense": 10000000,
               "profitLoss": 104447,
-              "department": "IT"
+              "domain": "Coworking"
             },
             {
               "srNo": 7,
@@ -374,7 +374,7 @@ const HistoricalPnl = () => {
               "income": 11500000,
               "expense": 10500000,
               "profitLoss": 92953,
-              "department": "Tech"
+              "domain": "Virtual Office"
             },
             {
               "srNo": 8,
@@ -382,13 +382,13 @@ const HistoricalPnl = () => {
               "income": 12000000,
               "expense": 10900000,
               "profitLoss": 75596,
-              "department": "Admin"
+              "domain": "Workations"
             }
           ]
         },
         {
           "name": "2019-20",
-          "totalProfitLoss": 620934,
+          "totalProfitLoss": 6209340,
           "clients": [
             {
               "srNo": 1,
@@ -396,7 +396,7 @@ const HistoricalPnl = () => {
               "income": 8000000,
               "expense": 7000000,
               "profitLoss": 23603,
-              "department": "IT"
+              "domain": "Coworking"
             },
             {
               "srNo": 2,
@@ -404,7 +404,7 @@ const HistoricalPnl = () => {
               "income": 8500000,
               "expense": 7500000,
               "profitLoss": 87263,
-              "department": "Tech"
+              "domain": "Virtual Office"
             },
             {
               "srNo": 3,
@@ -412,7 +412,7 @@ const HistoricalPnl = () => {
               "income": 9500000,
               "expense": 8000000,
               "profitLoss": 92783,
-              "department": "Admin"
+              "domain": "Workations"
             },
             {
               "srNo": 4,
@@ -420,7 +420,7 @@ const HistoricalPnl = () => {
               "income": 10000000,
               "expense": 9000000,
               "profitLoss": 110420,
-              "department": "Sales"
+              "domain": "Café"
             },
             {
               "srNo": 5,
@@ -428,7 +428,7 @@ const HistoricalPnl = () => {
               "income": 10500000,
               "expense": 9500000,
               "profitLoss": 78060,
-              "department": "Finance"
+              "domain": "Meetng Rooms"
             },
             {
               "srNo": 6,
@@ -436,7 +436,7 @@ const HistoricalPnl = () => {
               "income": 1100000,
               "expense": 1000000,
               "profitLoss": 13340,
-              "department": "IT"
+              "domain": "Coworking"
             },
             {
               "srNo": 7,
@@ -444,7 +444,7 @@ const HistoricalPnl = () => {
               "income": 1150000,
               "expense": 1050000,
               "profitLoss": 109812,
-              "department": "Tech"
+              "domain": "Virtual Office"
             },
             {
               "srNo": 8,
@@ -452,7 +452,7 @@ const HistoricalPnl = () => {
               "income": 1200000,
               "expense": 1090000,
               "profitLoss": 105653,
-              "department": "Admin"
+              "domain": "Workations"
             }
           ]
         }
@@ -512,13 +512,14 @@ const HistoricalPnl = () => {
   const incomeExpenseData = [
     {
       name: "Income",
-      data: [1200000, 1500000, 1000000, 1800000, 2000000, 2200000],
+      data: [12500000, 13800000, 14800000, 16000000, 18500000, 21000000], // in ₹
     },
     {
       name: "Expense",
-      data: [800000, 1000000, 700000, 1200000, 1300000, 1800000],
+      data: [7500000, 8200000, 8900000, 10200000, 12000000, 15000000], // in ₹
     },
   ];
+
 
   const incomeExpenseOptions = {
     chart: {
@@ -551,12 +552,12 @@ const HistoricalPnl = () => {
     },
     xaxis: {
       categories: [
-        "2019 - 2020",
-        "2020 - 2021",
-        "2021 - 2022",
-        "2022 - 2023",
-        "2023 - 2024",
-        "2024 - 2025",
+        "FY 2019 - 20",
+        "FY 2020 - 21",
+        "FY 2021 - 22",
+        "FY 2022 - 23",
+        "FY 2023 - 24",
+        "FY 2024 - 25",
         // "Oct-24",
         // "Nov-24",
         // "Dec-24",
@@ -586,7 +587,7 @@ const HistoricalPnl = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border titleLabel={"FY 2024-25"} title={"Historical P&L"}>
+        <WidgetSection border title={"Historical P&L"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
@@ -651,7 +652,7 @@ const HistoricalPnl = () => {
                   hideFilter
                   columns={[
                     { header: "Sr No", field: "srNo", flex: 1 },
-                    { header: "Department", field: "department", flex: 1 },
+                    { header: "Domain", field: "domain", flex: 1 },
                     { header: "Income (INR)", field: "income", flex: 1 },
                     { header: "Expense (INR)", field: "expense", flex: 1 },
                     { header: "Profit / Loss (INR)", field: "profitLoss", flex: 1 },

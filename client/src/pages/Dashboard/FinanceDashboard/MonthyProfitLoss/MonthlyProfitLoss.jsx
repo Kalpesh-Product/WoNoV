@@ -53,7 +53,11 @@ const MonthlyProfitLoss = () => {
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#4CAF50", "#F44336"], // Green for income, Red for expense
+    legend: {
+      show: true,
+      position: "top",
+    },
+    colors: ["#54C4A7", "#EB5C45"], // Green for income, Red for expense
     plotOptions: {
       bar: {
         horizontal: false,
@@ -87,9 +91,6 @@ const MonthlyProfitLoss = () => {
         "Feb-25",
         "Mar-25",
       ],
-      title: {
-        text: "2024-2025", // overridden by BarGraph component
-      },
     },
     yaxis: {
       title: {
@@ -208,7 +209,8 @@ const MonthlyProfitLoss = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"}>
+        <WidgetSection border title={"Income v/s Expenses"}
+          titleLabel={"FY 2024-25"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}

@@ -535,7 +535,7 @@ const HrDashboard = () => {
         />,
         <DataCard
           title="Average"
-          data="52K"
+          data={`INR ${inrFormat("52000")}`}
           description="salary"
           route={"employee/view-employees"}
         />,

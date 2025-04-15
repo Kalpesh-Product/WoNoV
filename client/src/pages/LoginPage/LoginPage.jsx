@@ -63,21 +63,21 @@ const LoginPage = () => {
         <div>
           <img src={WonoLogo} alt="wono" />
         </div>
+        <div className="flex gap-4">
         <div className="flex items-center uppercase">
           <ul className="flex gap-5 text-white uppercase font-thin">
-            <li>Modules</li>
-            <li>Themes</li>
-            <li>Leads</li>
-            <li>Capital</li>
-            <li>Career</li>
+            <li className="cursor-pointer">Modules</li>
+            <li className="cursor-pointer">Themes</li>
+            <li className="cursor-pointer">Leads</li>
+            <li className="cursor-pointer">Capital</li>
+            <li className="cursor-pointer">Career</li>
           </ul>
         </div>
-        <div className="flex ">
           <div className="flex gap-2">
-            <button className="bg-white text-black py-2 px-3 rounded-md uppercase">
+            <button className="bg-white text-black py-2 px-3 rounded-full uppercase">
               Sign-In
             </button>
-            <button className="bg-sky-400 text-black py-2 px-3 rounded-md uppercase">
+            <button className="bg-sky-400 text-black py-2 px-3 rounded-full uppercase">
               Sign-Up
             </button>
           </div>
