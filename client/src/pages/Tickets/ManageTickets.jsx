@@ -16,8 +16,12 @@ const ManageTickets = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
-  const ticketLabel = auth.user.designation === "Founder & CEO" || auth.user.designation === "Co-Founder & COO" ? "Department " : "Personal"
- 
+  const ticketLabel =
+    auth.user.designation === "Founder & CEO" ||
+    auth.user.designation === "Co-Founder & COO"
+      ? "Department "
+      : "Personal";
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
@@ -32,9 +36,7 @@ const ManageTickets = () => {
         //     (dept) => dept._id
         //   )}`
         // );
-        const response = await axios.get(
-          `/api/tickets/get-all-tickets`
-        );
+        const response = await axios.get(`/api/tickets/get-all-tickets`);
 
         return response.data;
       } catch (error) {
@@ -52,78 +54,80 @@ const ManageTickets = () => {
       .length,
     // acceptedTickets: ticketsData
     // .filter((item) => item.acceptedBy === auth.user?._id).filter((item)=>item.status === "In Progress").length,
-    acceptedTickets: ticketsData.filter((item) => item.acceptedBy && item.status !== "Escalated").length,
-    assignedTickets: ticketsData.filter((item) => item.assignees.length > 0 && item.status !== "Escalated").length,
-    escalatedTickets: ticketsData.filter((item)=>item.status === "Escalated").length,
+    acceptedTickets: ticketsData.filter(
+      (item) => item.acceptedBy && item.status !== "Escalated"
+    ).length,
+    assignedTickets: ticketsData.filter(
+      (item) => item.assignees.length > 0 && item.status !== "Escalated"
+    ).length,
+    escalatedTickets: ticketsData.filter((item) => item.status === "Escalated")
+      .length,
   };
 
   const widgets = [
     {
       layout: 2,
       widgets: [
-
-          <div>
-            <WidgetSection border 
-              layout={3}
-              title={"Department Pending Tickets"}
-              titleDataColor={"red"}
-              titleData={ticketsFilteredData.pendingTickets}
-            >
-              <TicketCard
-                title={"Recieved Tickets"}
-                titleColor={"#1E3D73"}
-                data={ticketsData.length}
-                fontColor={"#1E3D73"}
-                fontFamily={"Poppins-Bold"}
-              />
-              <TicketCard
-                title={"Open Tickets"}
-                titleColor={"#1E3D73"}
-                data={ticketsFilteredData.openTickets}
-                fontColor={"#FFBF42"}
-                fontFamily={"Poppins-Bold"}
-              />
-              <TicketCard
-                title={"Closed Tickets"}
-                titleColor={"#1E3D73"}
-                data={ticketsFilteredData.closedTickets}
-                fontColor={"#52CE71"}
-                fontFamily={"Poppins-Bold"}
-              />
-            </WidgetSection>
-          </div>,
-          <div>
-            <WidgetSection
+        <div>
+          <WidgetSection
             border
-              layout={3}
-              title={"Personal Pending Tickets"}
-              titleDataColor={"black"}
-              titleData={"0"}
-            >
-              <TicketCard
-                title={"Accepted Tickets"}
-                data={ticketsFilteredData.acceptedTickets}
-                fontColor={"#1E3D73"}
-                fontFamily={"Poppins-Bold"}
-                titleColor={"#1E3D73"}
-              />
-              <TicketCard
-                title={"Assigned Tickets"}
-                data={ticketsFilteredData.assignedTickets}
-                fontColor={"#1E3D73"}
-                fontFamily={"Poppins-Bold"}
-                titleColor={"#1E3D73"}
-              />
-              <TicketCard
-                title={"Escalated Tickets"}
-                data={ticketsFilteredData.escalatedTickets}
-                fontColor={"#1E3D73"}
-                fontFamily={"Poppins-Bold"}
-                titleColor={"#1E3D73"}
-              />
-            </WidgetSection>
-          </div>
-       
+            layout={3}
+            title={"Department Pending Tickets"}
+            titleDataColor={"red"}
+            titleData={ticketsFilteredData.pendingTickets}>
+            <TicketCard
+              title={"Recieved Tickets"}
+              titleColor={"#1E3D73"}
+              data={ticketsData.length}
+              fontColor={"#1E3D73"}
+              fontFamily={"Poppins-Bold"}
+            />
+            <TicketCard
+              title={"Open Tickets"}
+              titleColor={"#1E3D73"}
+              data={ticketsFilteredData.openTickets}
+              fontColor={"#FFBF42"}
+              fontFamily={"Poppins-Bold"}
+            />
+            <TicketCard
+              title={"Closed Tickets"}
+              titleColor={"#1E3D73"}
+              data={ticketsFilteredData.closedTickets}
+              fontColor={"#52CE71"}
+              fontFamily={"Poppins-Bold"}
+            />
+          </WidgetSection>
+        </div>,
+        <div>
+          <WidgetSection
+            border
+            layout={3}
+            title={"Personal Pending Tickets"}
+            titleDataColor={"black"}
+            titleData={"0"}>
+            <TicketCard
+              title={"Accepted Tickets"}
+              data={ticketsFilteredData.acceptedTickets}
+              fontColor={"#1E3D73"}
+              fontFamily={"Poppins-Bold"}
+              titleColor={"#1E3D73"}
+            />
+            <TicketCard
+              title={"Assigned Tickets"}
+              data={ticketsFilteredData.assignedTickets}
+              fontColor={"#1E3D73"}
+              fontFamily={"Poppins-Bold"}
+              titleColor={"#1E3D73"}
+            />
+            <TicketCard
+              title={"Escalated Tickets"}
+              data={ticketsFilteredData.escalatedTickets}
+              fontColor={"#1E3D73"}
+              fontFamily={"Poppins-Bold"}
+              titleColor={"#1E3D73"}
+            />
+          </WidgetSection>
+        </div>,
       ],
     },
   ];
@@ -160,8 +164,7 @@ const ManageTickets = () => {
               backgroundColor: "#1E3D73", // Highlight background color for the active tab
               color: "white",
             },
-          }}
-        >
+          }}>
           <Tab
             label={
               <div className="flex flex-col gap-2 text-center">
