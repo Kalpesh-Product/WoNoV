@@ -525,7 +525,11 @@ const mockBusinessRevenueData = [
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#4CAF50", "#F44336"], // Green for income, Red for expense
+    colors: ["#54C4A7", "#EB5C45"], // Green for income, Red for expense
+    legend: {
+      show: true,
+      position: "top",
+    },
     plotOptions: {
       bar: {
         horizontal: false,
@@ -647,9 +651,9 @@ const mockBusinessRevenueData = [
                   columns={[
                     { header: "Sr No", field: "srNo", flex: 1 },
                     { header: "Department", field: "department", flex: 1 },
-                    { header: "Income", field: "income", flex: 1 },
-                    { header: "Expense", field: "expense", flex: 1 },
-                    { header: "Profit / Loss", field: "profitLoss", flex: 1 },
+                    { header: "Income (INR)", field: "income", flex: 1 },
+                    { header: "Expense (INR)", field: "expense", flex: 1 },
+                    { header: "Profit / Loss (INR)", field: "profitLoss", flex: 1 },
                   ]}
                   tableHeight={300}
                 />

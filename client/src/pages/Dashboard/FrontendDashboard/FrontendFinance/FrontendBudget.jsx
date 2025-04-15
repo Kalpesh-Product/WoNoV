@@ -145,9 +145,9 @@ const FrontendBudget = () => {
             description={`Current Month: ${new Date().toLocaleString(
               "default",
               {
-                month: "long",
+                month: "short",
               }
-            )}`}
+            )}-24`}
           />
           <DataCard
             data={"35K"}
@@ -155,9 +155,9 @@ const FrontendBudget = () => {
             description={`Current Month: ${new Date().toLocaleString(
               "default",
               {
-                month: "long",
+                month: "short",
               }
-            )}`}
+            )}-24`}
           />
           <DataCard
             data={6000}
@@ -165,9 +165,9 @@ const FrontendBudget = () => {
             description={`Current Month: ${new Date().toLocaleString(
               "default",
               {
-                month: "long",
+                month: "short",
               }
-            )}`}
+            )}-24`}
           />
         </WidgetSection>
       </div>

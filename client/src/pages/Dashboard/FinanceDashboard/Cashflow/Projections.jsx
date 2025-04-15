@@ -34,7 +34,11 @@ const Projections = () => {
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#4CAF50", "#F44336"], // Green for income, Red for expense
+    colors: ["#54C4A7", "#EB5C45"], // Green for income, Red for expense
+    legend: {
+      show: true,
+      position: "top",
+    },
     plotOptions: {
       bar: {
         horizontal: false,
@@ -88,8 +92,8 @@ const Projections = () => {
   const monthlyProfitLossColumns = [
     { field: "id", headerName: "Sr No", flex: 1 },
     { field: "month", headerName: "Month", flex: 1 },
-    { field: "expense", headerName: "Expense", flex: 1 },
-    { field: "pnl", headerName: "P&L", flex: 1 },
+    { field: "expense", headerName: "Expense (INR)", flex: 1 },
+    { field: "pnl", headerName: "P&L (INR)", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",

@@ -227,9 +227,9 @@ const FinanceBudget = () => {
             description={`Current Month: ${new Date().toLocaleString(
               "default",
               {
-                month: "long",
+                month: "short",
               }
-            )}`}
+            )}-24`}
           />
           <DataCard
             data={"INR 45,00,000"}
@@ -237,9 +237,9 @@ const FinanceBudget = () => {
             description={`Current Month: ${new Date().toLocaleString(
               "default",
               {
-                month: "long",
+                month: "short",
               }
-            )}`}
+            )}-24`}
           />
           <DataCard
             data={"INR 12,000"}
@@ -247,9 +247,9 @@ const FinanceBudget = () => {
             description={`Current Month: ${new Date().toLocaleString(
               "default",
               {
-                month: "long",
+                month: "short",
               }
-            )}`}
+            )}-24`}
           />
         </WidgetSection>
       </div>

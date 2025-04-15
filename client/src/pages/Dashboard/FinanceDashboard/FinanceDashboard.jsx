@@ -427,7 +427,7 @@ const FinanceDashboard = () => {
               route={"/app/dashboard/finance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString("default", {
                 month: "long",
-              })}`}
+              })}-24`}
             />,
             <DataCard
               data={"INR 40,00,000"}
@@ -435,7 +435,7 @@ const FinanceDashboard = () => {
               route={"/app/dashboard/finance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString("default", {
                 month: "long",
-              })}`}
+              })}-24`}
             />,
             <DataCard
               data={"INR 17,000"}
@@ -443,7 +443,7 @@ const FinanceDashboard = () => {
               route={"/app/dashboard/finance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString("default", {
                 month: "long",
-              })}`}
+              })}-24`}
             />,
           ],
         },

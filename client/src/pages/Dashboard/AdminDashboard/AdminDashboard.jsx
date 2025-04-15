@@ -548,8 +548,8 @@ const AdminDashboard = () => {
               route={"/app/dashboard/admin-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                { month: "short" }
+              )}-24`}
             />
             <DataCard
               data={"INR 40,00,000"}
@@ -557,8 +557,8 @@ const AdminDashboard = () => {
               route={"/app/dashboard/admin-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                { month: "short" }
+              )}-24`}
             />
             <DataCard
               data={"INR 15,000"}
@@ -566,8 +566,8 @@ const AdminDashboard = () => {
               route={"/app/dashboard/admin-dashboard/finance/budget"}
               description={`Current Month : ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                { month: "short" }
+              )}-24`}
             />
           </WidgetSection>
         </WidgetSection>,
