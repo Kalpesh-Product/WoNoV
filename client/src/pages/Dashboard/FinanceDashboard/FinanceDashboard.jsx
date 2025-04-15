@@ -363,6 +363,12 @@ const FinanceDashboard = () => {
     { taskName: "Tally Update", type: "Monthly", endTime: "10:00 AM" },
     { taskName: "TDS Query Update", type: "Daily", endTime: "02:30 PM" },
     { taskName: "Audit Report Update", type: "Daily", endTime: "08:00 AM" },
+    { taskName: "Check Approvals", type: "Daily", endTime: "09:00 AM" },
+    {
+      taskName: "Check Statutory Payments",
+      type: "Daily",
+      endTime: "03:00 PM",
+    },
   ];
 
   const priorityTasksColumns = [
@@ -396,28 +402,38 @@ const FinanceDashboard = () => {
     },
     {
       paymentName: "Zoom Enterprise",
-      department: "Operations",
+      department: "Finance",
       amount: "3,500",
     },
     {
       paymentName: "Notion Team Plan",
-      department: "Management",
+      department: "Admin",
       amount: "2,400",
     },
     {
       paymentName: "Figma Professional",
-      department: "Design",
+      department: "Tech",
       amount: "4,200",
     },
     {
       paymentName: "Slack Premium",
-      department: "Communication",
+      department: "Tech",
       amount: "3,000",
     },
     {
       paymentName: "Google Workspace",
       department: "IT",
       amount: "6,800",
+    },
+    {
+      paymentName: "Sumo Payroll",
+      department: "HR",
+      amount: "7,500",
+    },
+    {
+      paymentName: "Pet Pooja",
+      department: "Cafe",
+      amount: "5,300",
     },
   ];
 
@@ -433,11 +449,8 @@ const FinanceDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border titleLabel={"FY 2024-25"} title={"Income v/s Expenses"}>
-          <BarGraph
-            data={incomeExpenseData}
-            options={incomeExpenseOptions}
-          />
+        <WidgetSection border title={"Income v/s Expenses"}>
+          <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} />
         </WidgetSection>,
       ],
     },
