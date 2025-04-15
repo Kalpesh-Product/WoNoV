@@ -26,27 +26,42 @@ const CheckAvailability = () => {
   const selectedLocation = watch("location");
 
   // Fetch Work Locations
-  const {
-    data: workLocations = [],
-    isLoading: locationsLoading,
-    error: locationsError,
-  } = useQuery({
-    queryKey: ["workLocations"],
-    queryFn: async () => {
-      const response = await axios.get(
-        "/api/company/get-company-data?field=workLocations"
-      );
-      console.log(response.data);
-      return response.data;
-    },
-  });
+  // const {
+  //   data: workLocations = [],
+  //   isLoading: locationsLoading,
+  //   error: locationsError,
+  // } = useQuery({
+  //   queryKey: ["workLocations"],
+  //   queryFn: async () => {
+  //     const response = await axios.get(
+  //       "/api/company/get-company-data?field=workLocations"
+  //     );
+  //     console.log(response.data);
+  //     return response.data;
+  //   },
+  // });
+
+   const {
+      data: workLocations = [],
+      isLoading: locationsLoading,
+      error: locationsError,
+    } = useQuery({
+      queryKey: ["workLocations"],
+      queryFn: async () => {
+        const response = await axios.get(
+          "/api/company/fetch-units"
+        );
+        
+        return response.data;
+      },
+    });
 
   const uniqueBuildings = Array.from(
     new Map(
-      workLocations.map((loc) => [
+      workLocations.length > 0 ? workLocations.map((loc) => [
         loc.building._id, // use building._id as unique key
         loc.building.buildingName,
-      ])
+      ]) : []
     ).entries()
   );
 
@@ -114,11 +129,11 @@ const CheckAvailability = () => {
                 >
                   <MenuItem value="">Select Floor</MenuItem>
 
-                  {floors.map((floor) => (
-                    <MenuItem key={floor.length} value={floor}>
-                      {floor}
-                    </MenuItem>
-                  ))}
+                  {workLocations.map((unit) => (
+                                     unit.building.buildingName === selectedLocation ? <MenuItem key={unit._id} value={unit.unitNo}>
+                                        {unit.unitNo}
+                                      </MenuItem> : <></>
+                                    ))}
                 </Select>
               )}
             />
