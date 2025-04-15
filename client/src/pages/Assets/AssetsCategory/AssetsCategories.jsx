@@ -40,7 +40,8 @@ const AssetsCategories = () => {
       queryClient.invalidateQueries(["assetCategories"]);
     },
     onError: (error) => {
-      toast.error(error.response.data.message || "Failed to disable category");
+      // toast.error(error.response.data.message || "Failed to disable category");
+      toast.error("Access Required To Disable.");
     },
   });
 
@@ -71,15 +72,38 @@ const AssetsCategories = () => {
     },
   ];
 
+  // const { data: assetsCategories = [], isPending: assetPending } = useQuery({
+  //   queryKey: ["assetsCategories"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-category");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+
   const { data: assetsCategories = [], isPending: assetPending } = useQuery({
     queryKey: ["assetsCategories"],
     queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-category");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+      return [
+        {
+          _id: "1",
+          categoryName: "Electronics",
+          isActive: true,
+        },
+        {
+          _id: "2",
+          categoryName: "Furniture",
+          isActive: false,
+        },
+        {
+          _id: "3",
+          categoryName: "Stationery",
+          isActive: true,
+        },
+      ];
     },
   });
 
@@ -93,7 +117,7 @@ const AssetsCategories = () => {
     },
     onSuccess: function (data) {
       toast.success(data.message);
-      queryClient.invalidateQueries({queryKey:["assetsCategories"]})
+      queryClient.invalidateQueries({ queryKey: ["assetsCategories"] });
       setModalOpen(false);
       reset();
     },
@@ -141,12 +165,10 @@ const AssetsCategories = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setModalOpen(false)}
-        title="Add Category"
-      >
+        title="Add Category">
         <form
           onSubmit={handleSubmit(handleAddCategory)}
-          className="flex flex-col items-center gap-6 w-full"
-        >
+          className="flex flex-col items-center gap-6 w-full">
           {/* Category Name Input */}
           <Controller
             name="categoryName"
@@ -178,8 +200,7 @@ const AssetsCategories = () => {
                     auth.user.company.selectedDepartments.map((dep) => (
                       <MenuItem
                         key={dep.department._id}
-                        value={dep.department._id}
-                      >
+                        value={dep.department._id}>
                         {dep.department.name}
                       </MenuItem>
                     ))

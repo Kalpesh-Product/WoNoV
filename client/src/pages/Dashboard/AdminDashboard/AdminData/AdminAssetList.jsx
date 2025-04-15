@@ -11,6 +11,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const AdminAssetList = () => {
   const { auth } = useAuth();
@@ -63,7 +64,6 @@ const AdminAssetList = () => {
     },
   });
 
-  console.log(vendorDetials);
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
@@ -111,10 +111,18 @@ const AdminAssetList = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <PrimaryButton
-          title="Details"
-          handleSubmit={() => handleDetailsClick(params.data)}
-        />
+        <>
+        <div className="flex gap-2 items-center">
+          <div
+             
+            className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+          >
+            <span className="text-subtitle">
+              <MdOutlineRemoveRedEye />
+            </span>
+          </div>
+        </div>
+      </>
       ),
     },
   ];

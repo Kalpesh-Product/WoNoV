@@ -2,9 +2,16 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
+import { useState } from "react";
+import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 
 const Projections = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
+
+  
+     const [viewModalOpen, setViewModalOpen] = useState(false);
+      const [viewDetails, setViewDetails] = useState(null);
+
   const incomeExpenseData = [
     {
       name: "Income",
@@ -61,9 +68,6 @@ const Projections = () => {
         "Feb-25",
         "Mar-25",
       ],
-      title: {
-        text: "2024-2025", // overridden by BarGraph component
-      },
     },
     yaxis: {
       title: {
@@ -89,10 +93,11 @@ const Projections = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all mb-2 inline-flex gap-2">
-           <span className="text-subtitle">
+           <span className="text-subtitle cursor-pointer"
+            onClick={() => handleViewModal(params.data)}>
                            <MdOutlineRemoveRedEye />
                          </span>
           </div>
@@ -139,6 +144,10 @@ const Projections = () => {
     },
   ];
   
+  const handleViewModal = (rowData) => {
+    setViewDetails(rowData);
+    setViewModalOpen(true);
+  };
 
   const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
     const numericalPnL = parseInt(item.pnl.replace(/,/g, ""), 10);
@@ -150,10 +159,11 @@ const Projections = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Projections"}>
+        <WidgetSection border titleLabel={"FY 2024-25"} title={"Projections"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
+            
           />
         </WidgetSection>,
       ],
@@ -181,6 +191,24 @@ const Projections = () => {
           />
         </WidgetSection>
       </div>
+
+           { viewDetails && <ViewDetailsModal
+        open={viewModalOpen}
+        onClose={() => setViewModalOpen(false)}
+        data={{...viewDetails,expense:"INR " + Number(
+          viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
+        ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+        pnl:"INR " + Number(
+          viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
+        ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
+      }}
+        title="Tax Payment Detail"
+        fields={[
+          { label: "Month", key: "month" },
+          { label: "Expense", key: "expense" },
+          { label: "P&L", key: "pnl" },
+         ]}
+      />}
     </div>
   );
 };

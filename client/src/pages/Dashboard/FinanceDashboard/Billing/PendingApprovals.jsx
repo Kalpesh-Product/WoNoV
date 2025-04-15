@@ -54,45 +54,51 @@ const kraColumn = [
   ];
 
   const rows = [
+    {id: 1,
+    department: "Tech",
+    date: "10-04-2025",
+    amount: "18,50,000",
+  },
+  {
+    id: 2,
+    department: "Admin",
+    date: "12-04-2025",
+    amount: "21,75,000",
+  },
+  {
+    id: 3,
+    department: "HR",
+    date: "14-04-2025",
+    amount: "19,60,000",
+  },
     {
-        id: 1,
-        department: "Tech",
-        date: " 2022-01-01",
-        amount: 1000.0,
-      },
-      {
-        id: 2,
-        department: "Tech",
-        date: " 2022-01-01",
-        amount: 1000.0,
-      },
-      {
-        id: 3,
-        department: "Tech",
-        date: " 2022-01-01",
-        amount: 1000.0,
-      },
-      {
-        id: 4,
-        department: "Tech",
-        date: " 2022-01-01",
-        amount: 1000.0,
-      },
-      {
-        id: 5,
-        department: "Tech",
-        date: " 2022-01-01",
-        amount: 1000.0,
-      },
-];
+      id: 4,
+      department: "IT",
+      date: "18-08-2024",
+      amount: "27,00,000",
+    },
+    {
+      id: 5,
+      department: "Sales",
+      date: "20-08-2024",
+      amount: "20,00,000",
+    },
+  ];
+
+const transformedData = rows.map((viewDetail)=>(
+  {...viewDetail,amount:"INR " + Number(
+    viewDetail.amount.toLocaleString("en-IN").replace(/,/g, "")
+  ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
+  }
+))
 
   return (
     <div>
      <div>
         <AgTable
           search={true}
-
-          data={rows}
+          tableTitle={"Pending Approvals"}
+          data={transformedData}
           columns={kraColumn}
         />
       </div>

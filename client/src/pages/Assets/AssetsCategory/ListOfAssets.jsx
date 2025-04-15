@@ -103,7 +103,7 @@ const ListOfAssets = () => {
     // { field: "assetNumber", headerName: "Asset Number" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
+    { field: "price", headerName: "Price (INR)" },
     { field: "quantity", headerName: "Quantity" },
     { field: "purchaseDate", headerName: "Purchase Date" },
     { field: "warranty", headerName: "Warranty (Months)" },
@@ -119,17 +119,130 @@ const ListOfAssets = () => {
     },
   ];
 
-  const { data: assetsList = [] } = useQuery({
-    queryKey: ["assetsList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-assets");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+  // const { data: assetsList = [] } = useQuery({
+  //   queryKey: ["assetsList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-assets");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+
+  const assetsList = [
+    {
+      _id: "1",
+      department: { name: "IT" },
+      name: "Laptop",
+      brand: "Dell",
+      price: "80,000",
+      quantity: 10,
+      purchaseDate: "2023-06-15T00:00:00.000Z",
+      warranty: 24,
+      vendor: { name: "Tech Supplies Ltd." },
     },
-  });
+    {
+      _id: "2",
+      department: { name: "IT" },
+      name: "Printer",
+      brand: "HP",
+      price: "15,000",
+      quantity: 3,
+      purchaseDate: "2023-04-20T00:00:00.000Z",
+      warranty: 12,
+      vendor: { name: "Office Solutions" },
+    },
+    {
+      _id: "3",
+      department: { name: "IT" },
+      name: "Projector",
+      brand: "Epson",
+      price: "45,000",
+      quantity: 2,
+      purchaseDate: "2023-05-10T00:00:00.000Z",
+      warranty: 18,
+      vendor: { name: "AV World" },
+    },
+    {
+      _id: "4",
+      department: { name: "IT" },
+      name: "Router",
+      brand: "Cisco",
+      price: "12,000",
+      quantity: 5,
+      purchaseDate: "2023-07-01T00:00:00.000Z",
+      warranty: 24,
+      vendor: { name: "Network Hub" },
+    },
+    {
+      _id: "5",
+      department: { name: "Admin" },
+      name: "DSLR Camera",
+      brand: "Canon",
+      price: "60,000",
+      quantity: 2,
+      purchaseDate: "2023-01-05T00:00:00.000Z",
+      warranty: 12,
+      vendor: { name: "CamPro Store" },
+    },
+    {
+      _id: "6",
+      department: { name: "Maintenance" },
+      name: "Air Conditioner",
+      brand: "LG",
+      price: "40,000",
+      quantity: 4,
+      purchaseDate: "2022-11-25T00:00:00.000Z",
+      warranty: 36,
+      vendor: { name: "Climate Tech" },
+    },
+    {
+      _id: "7",
+      department: { name: "IT" },
+      name: "Desktop Computer",
+      brand: "Lenovo",
+      price: "55,000",
+      quantity: 8,
+      purchaseDate: "2023-02-12T00:00:00.000Z",
+      warranty: 24,
+      vendor: { name: "CompuZone" },
+    },
+    {
+      _id: "8",
+      department: { name: "IT" },
+      name: "Monitor",
+      brand: "Samsung",
+      price: "12,000",
+      quantity: 6,
+      purchaseDate: "2023-03-30T00:00:00.000Z",
+      warranty: 18,
+      vendor: { name: "Display World" },
+    },
+    {
+      _id: "9",
+      department: { name: "IT" },
+      name: "Laptop",
+      brand: "Apple",
+      price: "70,000",
+      quantity: 3,
+      purchaseDate: "2023-09-10T00:00:00.000Z",
+      warranty: 12,
+      vendor: { name: "iTech Solutions" },
+    },
+    {
+      _id: "10",
+      department: { name: "Admin" },
+      name: "Office Chair",
+      brand: "Creality",
+      price: "75,000",
+      quantity: 1,
+      purchaseDate: "2023-08-18T00:00:00.000Z",
+      warranty: 24,
+      vendor: { name: "Innovate Machines" },
+    },
+  ];
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
