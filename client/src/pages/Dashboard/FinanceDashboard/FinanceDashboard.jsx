@@ -38,7 +38,7 @@ const FinanceDashboard = () => {
     {
       name: "Expense",
       data: [
-        950000,  // Jan
+        950000, // Jan
         1000000, // Feb
         1080000, // Mar
         1200000, // Apr
@@ -53,7 +53,6 @@ const FinanceDashboard = () => {
       ],
     },
   ];
-  
 
   const incomeExpenseOptions = {
     chart: {
@@ -104,7 +103,7 @@ const FinanceDashboard = () => {
       title: {
         text: "Amount (INR)",
       },
-      tickAmount: 4
+      tickAmount: 4,
     },
     fill: {
       opacity: 1,
@@ -491,7 +490,6 @@ const FinanceDashboard = () => {
         />,
       ],
     },
-
 
     {
       layout: 2,
