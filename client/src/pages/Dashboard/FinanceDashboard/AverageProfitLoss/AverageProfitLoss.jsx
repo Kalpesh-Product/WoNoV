@@ -1,10 +1,14 @@
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import { useState } from "react";
 
 const AverageProfitLoss = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
+    const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [viewDetails, setViewDetails] = useState(null);
   const incomeExpenseData = [
     {
       name: "Income",
@@ -111,12 +115,14 @@ const AverageProfitLoss = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
-            <span className="text-primary hover:underline text-content cursor-pointer">
-              View Details
-            </span>
+            <span
+                        className="text-subtitle cursor-pointer"
+                        onClick={() => handleViewModal(params.data)}>
+                        <MdOutlineRemoveRedEye />
+                      </span>
           </div>
         </>
       ),
@@ -211,6 +217,12 @@ const AverageProfitLoss = () => {
     },
   ];
 
+  
+  const handleViewModal = (rowData) => {
+    setViewDetails(rowData);
+    setViewModalOpen(true);
+  };
+
   return (
     <div className="flex flex-col gap-4 p-4">
       {techWidgets.map((section, index) => (
@@ -220,7 +232,7 @@ const AverageProfitLoss = () => {
       ))}
 
       <div>
-        <WidgetSection border title={`Total Monthly P&L : ${totalPnL.toLocaleString()} INR`}>
+        <WidgetSection border title={"Total Monthly P&L"}>
           <AgTable
             data={monthlyProfitLossData}
             columns={monthlyProfitLossColumns}

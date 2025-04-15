@@ -26,7 +26,7 @@ const SqWiseData = () => {
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#4CAF50", "#F44336"], // Green for income, Red for expense
+    colors: ["#54C4A7", "#EB5C45"], // Green for income, Red for expense
     plotOptions: {
       bar: {
         horizontal: false,
@@ -59,10 +59,7 @@ const SqWiseData = () => {
         "Jan-25",
         "Feb-25",
         "Mar-25",
-      ],
-      title: {
-        text: "2024-2025", // overridden by BarGraph component
-      },
+      ]
     },
     yaxis: {
       title: {
@@ -76,6 +73,10 @@ const SqWiseData = () => {
       y: {
         formatter: (val) => `₹${val.toLocaleString()}`,
       },
+    },
+    legend: {
+      show: true,
+      position: "top",
     },
   };
   //-----------------------------------------------------Graph------------------------------------------------------//
@@ -137,7 +138,7 @@ const SqWiseData = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"}>
+        <WidgetSection border titleLabel={"FY 2024-25"} title={"Budget v/s Achievements"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
@@ -157,7 +158,7 @@ const SqWiseData = () => {
       ))}
 
       <div>
-        <WidgetSection border title={`Total Monthly P&L : ${totalPnL.toLocaleString()} INR`}>
+        <WidgetSection border titleLabel={"FY 2024-25"} title={`Total Monthly P&L : ${totalPnL.toLocaleString()} INR`}>
           <AgTable
             data={monthlyProfitLossData}
             columns={monthlyProfitLossColumns}

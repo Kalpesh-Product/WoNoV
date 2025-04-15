@@ -4,8 +4,10 @@ import BarGraph from "../../../../components/graphs/BarGraph";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import WidgetSection from "../../../../components/WidgetSection";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const MonthlyProfitLoss = () => {
+
   //-----------------------------------------------------Graph------------------------------------------------------//
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -52,10 +54,6 @@ const MonthlyProfitLoss = () => {
       id: "income-vs-expense-bar",
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
-    },
-    legend: {
-      show: true,
-      position: "top",
     },
     colors: ["#54C4A7", "#EB5C45"], // Green for income, Red for expense
     plotOptions: {
@@ -105,6 +103,10 @@ const MonthlyProfitLoss = () => {
         formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
+    legend: {
+      show: true,
+      position: "top",
+    },
   };
   //-----------------------------------------------------Graph------------------------------------------------------//
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
@@ -117,12 +119,14 @@ const MonthlyProfitLoss = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
-            <span className="text-primary hover:underline text-content cursor-pointer">
-              View Details
-            </span>
+            <span
+                       className="text-subtitle cursor-pointer"
+                       onClick={() => handleViewModal(params.data)}>
+                       <MdOutlineRemoveRedEye />
+                     </span>
           </div>
         </>
       ),
@@ -209,8 +213,7 @@ const MonthlyProfitLoss = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Income v/s Expenses"}
-          titleLabel={"FY 2024-25"}>
+        <WidgetSection border  titleLabel={"FY 2024-25"} title={"Income v/s Expenses"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
@@ -229,7 +232,7 @@ const MonthlyProfitLoss = () => {
       ))}
 
       <div>
-        <WidgetSection border title={`Total Monthly P&L : ${totalPnL.toLocaleString()} INR`}>
+        <WidgetSection border TitleAmount={`INR ${totalPnL.toLocaleString()}`} titleLabel={"FY 2024-25"} title={`Total Monthly P&L`}>
           <AgTable
             data={monthlyProfitLossData}
             columns={monthlyProfitLossColumns}
@@ -250,9 +253,9 @@ const MonthlyProfitLoss = () => {
         }}
         title="Tax Payment Detail"
         fields={[
-          { label: "Month&L", key: "month" },
+          { label: "Month", key: "month" },
           { label: "Income", key: "income" },
-          { label: "Expense&L", key: "expense" },
+          { label: "Expense", key: "expense" },
           { label: "P&L", key: "pnl" },
         ]}
       />}

@@ -1,10 +1,17 @@
+import { useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
+import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import WidgetSection from "../../../../components/WidgetSection";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const OverallProfitLoss = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
+
+    const [viewModalOpen, setViewModalOpen] = useState(false);
+        const [viewDetails, setViewDetails] = useState(null);
+
   const incomeExpenseData = [
     {
       name: "Income",
@@ -58,10 +65,6 @@ const OverallProfitLoss = () => {
         },
       },
     },
-    legend: {
-      show: true,
-      position: "top",
-    },
     dataLabels: {
       enabled: false,
     },
@@ -99,24 +102,30 @@ const OverallProfitLoss = () => {
         formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
+    legend: {
+      show: true,
+      position: "top",
+    },
   };
   //-----------------------------------------------------Graph------------------------------------------------------//
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const monthlyProfitLossColumns = [
     { field: "id", headerName: "Sr No", flex: 1 },
     { field: "month", headerName: "Month", flex: 1 },
-    { field: "income", headerName: "Income", flex: 1 },
-    { field: "expense", headerName: "Expense", flex: 1 },
-    { field: "pnl", headerName: "P&L", flex: 1 },
+    { field: "income", headerName: "Income (INR)", flex: 1 },
+    { field: "expense", headerName: "Expense (INR)", flex: 1 },
+    { field: "pnl", headerName: "P&L (INR)", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
-            <span className="text-primary hover:underline text-content cursor-pointer">
-              View Details
-            </span>
+            <span
+                                   className="text-subtitle cursor-pointer"
+                                   onClick={() => handleViewModal(params.data)}>
+                                   <MdOutlineRemoveRedEye />
+                                 </span>
           </div>
         </>
       ),
@@ -211,6 +220,11 @@ const OverallProfitLoss = () => {
     },
   ];
 
+  const handleViewModal = (rowData) => {
+    setViewDetails(rowData);
+    setViewModalOpen(true);
+  };
+
   return (
     <div className="flex flex-col gap-4 p-4">
       {techWidgets.map((section, index) => (
@@ -220,7 +234,7 @@ const OverallProfitLoss = () => {
       ))}
 
       <div>
-        <WidgetSection border title={`Total Monthly P&L : ${totalPnL.toLocaleString()} INR`}>
+        <WidgetSection border TitleAmount={`INR ${totalPnL.toLocaleString()}`} titleLabel={"FY 2024-25"} title={"Total Monthly P&L"}>
           <AgTable
             data={monthlyProfitLossData}
             columns={monthlyProfitLossColumns}
@@ -228,6 +242,24 @@ const OverallProfitLoss = () => {
           />
         </WidgetSection>
       </div>
+        { viewDetails && <ViewDetailsModal
+              open={viewModalOpen}
+              onClose={() => setViewModalOpen(false)}
+              data={{...viewDetails,income:"INR " + Number(
+                viewDetails.income.toLocaleString("en-IN").replace(/,/g, "")
+              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+              expense:"INR " + Number(
+                viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
+              ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
+            }}
+              title="P&L Detail"
+              fields={[
+                { label: "Month", key: "month" },
+                { label: "Income", key: "income" },
+                { label: "Expense", key: "expense" },
+                { label: "P&L", key: "pnl" },
+              ]}
+            />}
     </div>
   );
 };
