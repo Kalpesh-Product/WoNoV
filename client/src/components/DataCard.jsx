@@ -2,11 +2,19 @@ import { useNavigate } from "react-router-dom";
 import { FaArrowRight } from "react-icons/fa";
 import { motion } from "motion/react";
 
-const DataCard = ({ title, description, data, route }) => {
+const DataCard = ({ title, description, data, route,onClick }) => {
   const navigate = useNavigate();
 
+  
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    }  
+  };
+
+
   return (
-    <div className="transition-colors duration-200 p-6 rounded-xl text-left w-full  shadow-md">
+    <div className="transition-colors duration-200 p-6 rounded-xl text-left w-full  shadow-md"   onClick={handleClick}>
       <div className="flex justify-between items-center mb-4">
         <div className="text-title font-semibold text-black ">
           {title}
