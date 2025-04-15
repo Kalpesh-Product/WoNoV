@@ -13,8 +13,16 @@ import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import DataCard from "../../../components/DataCard";
+import { useSidebar } from "../../../context/SideBarContext";
+import { useEffect } from "react";
 
 const FinanceDashboard = () => {
+  const { setIsSidebarOpen } = useSidebar();
+
+  useEffect(() => {
+    setIsSidebarOpen(true);
+  }, []); // Empty dependency array ensures this runs once on mount
+
   const navigate = useNavigate();
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [

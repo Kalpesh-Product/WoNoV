@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
@@ -14,8 +14,15 @@ import DonutChart from "../../../components/graphs/DonutChart";
 import { useNavigate } from "react-router-dom";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
+import { useSidebar } from "../../../context/SideBarContext";
 
 const ItDashboard = () => {
+  const { setIsSidebarOpen } = useSidebar();
+
+  useEffect(() => {
+    setIsSidebarOpen(true);
+  }, []); // Empty dependency array ensures this runs once on mount
+
   const navigate = useNavigate();
   const utilisedData = [
     1250000, 1500000, 990000, 850000, 700000, 500000, 800000, 950000, 1000000,

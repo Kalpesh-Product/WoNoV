@@ -30,8 +30,15 @@ import { useDispatch } from "react-redux";
 import { setClientData, setLeadsData } from "../../../redux/slices/salesSlice";
 import { CircularProgress, Skeleton } from "@mui/material";
 import { SiCashapp } from "react-icons/si";
+import { useSidebar } from "../../../context/SideBarContext";
 
 const SalesDashboard = () => {
+  const { setIsSidebarOpen } = useSidebar();
+
+  useEffect(() => {
+    setIsSidebarOpen(true);
+  }, []); // Empty dependency array ensures this runs once on mount
+
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
@@ -52,10 +59,9 @@ const SalesDashboard = () => {
         1695000, // Feb
         1746800, // Jul
         1791200, // Aug
-        1823400  // Apr
-      ]
-    }
-
+        1823400, // Apr
+      ],
+    },
 
     // {
     //   name: "Expense",
@@ -117,7 +123,7 @@ const SalesDashboard = () => {
       title: {
         text: "Amount (INR)",
       },
-      tickAmount: 7
+      tickAmount: 7,
     },
     fill: {
       opacity: 1,
@@ -144,7 +150,6 @@ const SalesDashboard = () => {
     "Feb-25": "February",
     "Mar-25": "March",
   };
-
 
   //-----------------------------------------------API-----------------------------------------------------------//
   const { data: leadsData, isPending: isLeadsPending } = useQuery({
@@ -192,8 +197,8 @@ const SalesDashboard = () => {
       (item.openDesks
         ? item.openDesks
         : 0 + item.cabinDesks
-          ? item.cabinDesks
-          : 0),
+        ? item.cabinDesks
+        : 0),
     0
   );
   console.log("Total available seats : ", totalCoWorkingSeats);
@@ -211,7 +216,7 @@ const SalesDashboard = () => {
 
       const createdMonth = `${dayjs(lead.startDate).month()}`; // 0 = Jan, 11 = Dec
 
-      console.log(dayjs(lead.startDate).year())
+      console.log(dayjs(lead.startDate).year());
       // Initialize if domain not yet seen
       if (!domainMap[domain]) {
         domainMap[domain] = Array(12).fill(0);
@@ -348,7 +353,7 @@ const SalesDashboard = () => {
     0
   );
 
-  console.log("Total occupied desks : ", totalClientsDesks)
+  console.log("Total occupied desks : ", totalClientsDesks);
 
   const totalDeskPercent = simplifiedClientsPie.map((item) => ({
     label: `${item.companyName} ${(
@@ -381,9 +386,9 @@ const SalesDashboard = () => {
 
   const sectorwiseData = Array.isArray(clientsData)
     ? clientsData.map((item) => ({
-      clientName: item.clientName,
-      sector: item.sector,
-    }))
+        clientName: item.clientName,
+        sector: item.sector,
+      }))
     : [];
 
   const totalClients = sectorwiseData.length;
@@ -454,7 +459,6 @@ const SalesDashboard = () => {
 
   //-----------------------------------------------Conversion of Sector-wise Pie-graph-----------------------------------------------------------//
 
-
   const meetingsWidgets = [
     {
       layout: 1,
@@ -464,10 +468,7 @@ const SalesDashboard = () => {
           title={"Annual Monthly Revenue"}
           titleLabel={"FY 2024-25"}
           TitleAmount={`INR ${inrFormat("20900000")}`}>
-          <BarGraph
-            data={incomeExpenseData}
-            options={incomeExpenseOptions}
-          />
+          <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} />
         </WidgetSection>,
       ],
     },
@@ -534,7 +535,7 @@ const SalesDashboard = () => {
         <DataCard
           route={"co-working-seats"}
           title={"Free"}
-          data={Math.abs((totalCoWorkingSeats - totalClientsDesks))}
+          data={Math.abs(totalCoWorkingSeats - totalClientsDesks)}
           description={"Co-working Seats"}
         />,
       ],
@@ -543,7 +544,11 @@ const SalesDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection layout={1} title={"Monthly Unique Leads"} titleLabel={"FY 2024-25"} border>
+        <WidgetSection
+          layout={1}
+          title={"Monthly Unique Leads"}
+          titleLabel={"FY 2024-25"}
+          border>
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
@@ -562,7 +567,11 @@ const SalesDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection layout={1} title={"Sourcing Channels"} titleLabel={"FY 2024-25"} border>
+        <WidgetSection
+          layout={1}
+          title={"Sourcing Channels"}
+          titleLabel={"FY 2024-25"}
+          border>
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
@@ -599,7 +608,6 @@ const SalesDashboard = () => {
               options={clientsDesksPieOptions}
               width={"100%"}
             />
-
           ) : (
             <CircularProgress color="#1E3D73" />
           )}
@@ -644,61 +652,61 @@ const SalesDashboard = () => {
             columns={upcomingBirthdaysColumns}
             rows={[
               {
-                id: '1',
-                name: 'Aarav Sharma',
-                birthday: '1990-04-20',
+                id: "1",
+                name: "Aarav Sharma",
+                birthday: "1990-04-20",
                 daysLeft: 6,
-                company: 'Zomato'
+                company: "Zomato",
               },
               {
-                id: '2',
-                name: 'Priya Mehta',
-                birthday: '1988-05-02',
+                id: "2",
+                name: "Priya Mehta",
+                birthday: "1988-05-02",
                 daysLeft: 18,
-                company: 'Turtlemint'
+                company: "Turtlemint",
               },
               {
-                id: '3',
-                name: 'Rohan Verma',
-                birthday: '1992-04-14',
+                id: "3",
+                name: "Rohan Verma",
+                birthday: "1992-04-14",
                 daysLeft: 0,
-                company: 'Infuse'
+                company: "Infuse",
               },
               {
-                id: '4',
-                name: 'Sneha Kapoor',
-                birthday: '1995-04-25',
+                id: "4",
+                name: "Sneha Kapoor",
+                birthday: "1995-04-25",
                 daysLeft: 11,
-                company: 'Zimetrics'
+                company: "Zimetrics",
               },
               {
-                id: '5',
-                name: 'Vikram Joshi',
-                birthday: '1991-06-01',
+                id: "5",
+                name: "Vikram Joshi",
+                birthday: "1991-06-01",
                 daysLeft: 48,
-                company: 'LanceSoft'
+                company: "LanceSoft",
               },
               {
-                id: '6',
-                name: 'Tanvi Nair',
-                birthday: '1993-04-18',
+                id: "6",
+                name: "Tanvi Nair",
+                birthday: "1993-04-18",
                 daysLeft: 4,
-                company: '91HR'
+                company: "91HR",
               },
               {
-                id: '7',
-                name: 'Kunal Desai',
-                birthday: '1990-05-10',
+                id: "7",
+                name: "Kunal Desai",
+                birthday: "1990-05-10",
                 daysLeft: 26,
-                company: 'Zimetrics'
+                company: "Zimetrics",
               },
               {
-                id: '8',
-                name: 'Meera Iyer',
-                birthday: '1989-04-30',
+                id: "8",
+                name: "Meera Iyer",
+                birthday: "1989-04-30",
                 daysLeft: 16,
-                company: 'Turtlemint'
-              }
+                company: "Turtlemint",
+              },
             ]}
             rowKey="id"
             rowsToDisplay={10}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
@@ -14,10 +14,17 @@ import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
-import {inrFormat} from '../../../utils/currencyFormat'
+import { inrFormat } from "../../../utils/currencyFormat";
+import { useSidebar } from "../../../context/SideBarContext";
 
 const MaintainanceDashboard = () => {
-  const navigate= useNavigate()
+  const { setIsSidebarOpen } = useSidebar();
+
+  useEffect(() => {
+    setIsSidebarOpen(true);
+  }, []); // Empty dependency array ensures this runs once on mount
+
+  const navigate = useNavigate();
   const utilisedData = [
     125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
     50000, 120000,
@@ -191,7 +198,9 @@ const MaintainanceDashboard = () => {
       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: () => {
-          navigate("/app/dashboard/admin-dashboard/client-members/client-members-data");
+          navigate(
+            "/app/dashboard/admin-dashboard/client-members/client-members-data"
+          );
         },
       },
     },
@@ -263,7 +272,6 @@ const MaintainanceDashboard = () => {
         formatter: (val) =>
           `${((val / totalYearlyDueTasksCount) * 100).toFixed(1)}%`,
       },
-
     },
     stroke: {
       show: true,
@@ -352,12 +360,10 @@ const MaintainanceDashboard = () => {
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
- 
-
   const executiveTimings = [
     {
       srNo: 1,
-      id:2,
+      id: 2,
       name: "Machindranath Parkar",
       building: "DTC",
       unitNo: "002",
@@ -371,7 +377,7 @@ const MaintainanceDashboard = () => {
       building: "ST",
       unitNo: "501(B)",
       startTime: "09:30 AM",
-      endTime: "06:30 PM"
+      endTime: "06:30 PM",
     },
     {
       srNo: 3,
@@ -380,7 +386,7 @@ const MaintainanceDashboard = () => {
       building: "ST",
       unitNo: "701(A)",
       startTime: "09:00 AM",
-      endTime: "06:00 PM"
+      endTime: "06:00 PM",
     },
     {
       srNo: 4,
@@ -389,7 +395,7 @@ const MaintainanceDashboard = () => {
       building: "DTC",
       unitNo: "007",
       startTime: "09:00 AM",
-      endTime: "06:00 PM"
+      endTime: "06:00 PM",
     },
     {
       srNo: 5,
@@ -398,10 +404,9 @@ const MaintainanceDashboard = () => {
       building: "DTC",
       unitNo: "004",
       startTime: "09:00 AM",
-      endTime: "06:00 PM"
-    }
+      endTime: "06:00 PM",
+    },
   ];
-  
 
   const executiveTimingsColumns = [
     { id: "srNo", label: "Sr No", align: "left" },
@@ -462,14 +467,17 @@ const MaintainanceDashboard = () => {
     },
   };
   //----------------------------------------------------------------------------------------------------------//
- 
+
   //----------------------------------------------------------------------------------------------------------//
 
   const techWidgets = [
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"} titleLabel={"FY 2024-25"}>
+        <WidgetSection
+          border
+          title={"Budget v/s Achievements"}
+          titleLabel={"FY 2024-25"}>
           <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
           <hr />
           <WidgetSection layout={3} padding>
@@ -477,34 +485,34 @@ const MaintainanceDashboard = () => {
               data={"40K"}
               title={"Projected"}
               route={"/app/dashboard/maintenance-dashboard/finance/budget"}
-            description={`Current Month: ${new Date().toLocaleString(
-              "default",
-              {
-                month: "short",
-              }
-            )}-24`}
+              description={`Current Month: ${new Date().toLocaleString(
+                "default",
+                {
+                  month: "short",
+                }
+              )}-24`}
             />
             <DataCard
               data={"35K"}
               title={"Actual"}
               route={"/app/dashboard/maintenance-dashboard/finance/budget"}
-           description={`Current Month: ${new Date().toLocaleString(
-              "default",
-              {
-                month: "short",
-              }
-            )}-24`}
+              description={`Current Month: ${new Date().toLocaleString(
+                "default",
+                {
+                  month: "short",
+                }
+              )}-24`}
             />
             <DataCard
               data={inrFormat("6000")}
               title={"Requested"}
               route={"/app/dashboard/maintenance-dashboard/finance/budget"}
-            description={`Current Month: ${new Date().toLocaleString(
-              "default",
-              {
-                month: "short",
-              }
-            )}-24`}
+              description={`Current Month: ${new Date().toLocaleString(
+                "default",
+                {
+                  month: "short",
+                }
+              )}-24`}
             />
           </WidgetSection>
         </WidgetSection>,
