@@ -21,18 +21,40 @@ const FinanceDashboard = () => {
     {
       name: "Income",
       data: [
-        12000, 15000, 10000, 18000, 20000, 16000, 17000, 19000, 14000, 21000,
-        22000, 25000,
+        1550000, // Jan - stable start
+        1620000, // Feb
+        1750000, // Mar
+        1900000, // Apr
+        2100000, // May
+        2250000, // Jun
+        2450000, // Jul - mid year peak
+        2400000, // Aug
+        2300000, // Sep
+        2650000, // Oct - festive boost
+        2850000, // Nov - big sales
+        3100000, // Dec - year end peak
       ],
     },
     {
       name: "Expense",
       data: [
-        8000, 10000, 7000, 12000, 13000, 11000, 12000, 12500, 25000, 15000,
-        16000, 17000,
+        950000,  // Jan
+        1000000, // Feb
+        1080000, // Mar
+        1200000, // Apr
+        1350000, // May
+        1450000, // Jun
+        1550000, // Jul
+        1500000, // Aug
+        1480000, // Sep
+        1600000, // Oct
+        1750000, // Nov
+        1850000, // Dec
       ],
     },
   ];
+  
+
   const incomeExpenseOptions = {
     chart: {
       id: "income-vs-expense-bar",
@@ -82,6 +104,7 @@ const FinanceDashboard = () => {
       title: {
         text: "Amount (INR)",
       },
+      tickAmount: 4
     },
     fill: {
       opacity: 1,
@@ -547,25 +570,25 @@ const FinanceDashboard = () => {
 
       {/* <div
         onClick={() => {
-          navigate(`monthly-pnl`);
+          navigate(`monthly-P&L`);
         }}>
         Monthly P&L
       </div>
       <div
         onClick={() => {
-          navigate(`annual-average-pnl`);
+          navigate(`annual-average-P&L`);
         }}>
         Annual Average P&L
       </div>
       <div
         onClick={() => {
-          navigate(`overall-pnl`);
+          navigate(`overall-P&L`);
         }}>
         Overall P&L
       </div>
       <div
         onClick={() => {
-          navigate(`monthly-per-sq-ft-pnl`);
+          navigate(`monthly-per-sq-ft-P&L`);
         }}>
         Monthly Per Sq. Ft. P&L
       </div>

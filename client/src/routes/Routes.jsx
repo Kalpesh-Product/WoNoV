@@ -420,19 +420,19 @@ export const routes = createBrowserRouter([
                         element: <FinanceDashboard />,
                       },
                       {
-                        path: "monthly-pnl",
+                        path: "monthly-P&L",
                         element: <MonthlyPnl />,
                       },
                       {
-                        path: "annual-average-pnl",
+                        path: "annual-average-P&L",
                         element: <AnnualAveragePnl />,
                       },
                       {
-                        path: "overall-pnl",
+                        path: "overall-P&L",
                         element: <OverallPnl />,
                       },
                       {
-                        path: "monthly-per-sq-ft-pnl",
+                        path: "monthly-per-sq-ft-P&L",
                         element: <MonthlyPerSqFtPnl />,
                       },
                       {
@@ -456,7 +456,7 @@ export const routes = createBrowserRouter([
                             element: <Projections />,
                           },
                           {
-                            path: "historical-pnl",
+                            path: "historical-P&L",
                             element: <HistoricalPnl />,
                           },
                         ],
