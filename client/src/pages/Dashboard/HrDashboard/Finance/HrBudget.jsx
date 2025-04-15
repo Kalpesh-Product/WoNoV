@@ -1,12 +1,7 @@
 import React, { useState } from "react";
 import LayerBarGraph from "../../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
-import {
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-} from "@mui/material";
+import { TextField, Select, MenuItem, FormControl } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -96,22 +91,30 @@ const HrBudget = () => {
   // Convert grouped data to array and sort by latest month (descending order)
   const financialData = Object.values(groupedData)
     .map((data, index) => {
-
-      const transoformedRows = data.tableData.rows.map((row, index) => ({ ...row, srNo: index + 1, projectedAmount: Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }) }))
+      const transoformedRows = data.tableData.rows.map((row, index) => ({
+        ...row,
+        srNo: index + 1,
+        projectedAmount: Number(
+          row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")
+        ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+      }));
       const transformedCols = [
-        { field: 'srNo', headerName: 'SR NO', flex: 1 },
-        ...data.tableData.columns
+        { field: "srNo", headerName: "SR NO", flex: 1 },
+        ...data.tableData.columns,
       ];
 
-      return ({
+      return {
         ...data,
         projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
         amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-        tableData: { ...data.tableData, rows: transoformedRows, columns: transformedCols }
-      })
+        tableData: {
+          ...data.tableData,
+          rows: transoformedRows,
+          columns: transformedCols,
+        },
+      };
     })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
-
 
   // ---------------------------------------------------------------------//
   // Data for the chart
@@ -127,7 +130,11 @@ const HrBudget = () => {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <WidgetSection layout={1} title={"Budget v/s Achievements"} titleLabel={"FY 2024-25"} border>
+        <WidgetSection
+          layout={1}
+          title={"Budget v/s Achievements"}
+          titleLabel={"FY 2024-25"}
+          border>
           <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
         </WidgetSection>
       </div>
@@ -137,28 +144,34 @@ const HrBudget = () => {
             data={"INR " + inrFormat("2000000")}
             title={"Projected"}
             route={"/app/dashboard/hr-dashboard/finance/budget"}
-            description={`Current Month : ${new Date().toLocaleString(
+            description={`Current Month: ${new Date().toLocaleString(
               "default",
-              { month: "long" }
-            )}`}
+              {
+                month: "short",
+              }
+            )}-24`}
           />
           <DataCard
             data={"INR " + inrFormat("150000")}
             title={"Actual"}
             route={"/app/dashboard/hr-dashboard/finance/budget"}
-            description={`Current Month : ${new Date().toLocaleString(
+            description={`Current Month: ${new Date().toLocaleString(
               "default",
-              { month: "long" }
-            )}`}
+              {
+                month: "short",
+              }
+            )}-24`}
           />
           <DataCard
             data={"INR " + inrFormat(12000)}
             title={"Requested"}
             route={"/app/dashboard/hr-dashboard/finance/budget"}
-            description={`Current Month : ${new Date().toLocaleString(
+            description={`Current Month: ${new Date().toLocaleString(
               "default",
-              { month: "long" }
-            )}`}
+              {
+                month: "short",
+              }
+            )}-24`}
           />
         </WidgetSection>
       </div>
@@ -172,13 +185,15 @@ const HrBudget = () => {
         />
       </div>
 
-      <AllocatedBudget financialData={financialData} groupedData={groupedData} />
+      <AllocatedBudget
+        financialData={financialData}
+        groupedData={groupedData}
+      />
 
       <MuiModal
         title="Request Budget"
         open={openModal}
-        onClose={() => setOpenModal(false)}
-      >
+        onClose={() => setOpenModal(false)}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Expense Name */}
           <Controller

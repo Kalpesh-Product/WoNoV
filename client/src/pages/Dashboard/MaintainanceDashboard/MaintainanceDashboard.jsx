@@ -477,28 +477,34 @@ const MaintainanceDashboard = () => {
               data={"40K"}
               title={"Projected"}
               route={"/app/dashboard/maintenance-dashboard/finance/budget"}
-              description={`Current Month : ${new Date().toLocaleString(
-                "default",
-                { month: "long" }
-              )}`}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "short",
+              }
+            )}-24`}
             />
             <DataCard
               data={"35K"}
               title={"Actual"}
               route={"/app/dashboard/maintenance-dashboard/finance/budget"}
-              description={`Current Month : ${new Date().toLocaleString(
-                "default",
-                { month: "long" }
-              )}`}
+           description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "short",
+              }
+            )}-24`}
             />
             <DataCard
               data={inrFormat("6000")}
               title={"Requested"}
               route={"/app/dashboard/maintenance-dashboard/finance/budget"}
-              description={`Current Month : ${new Date().toLocaleString(
-                "default",
-                { month: "long" }
-              )}`}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "short",
+              }
+            )}-24`}
             />
           </WidgetSection>
         </WidgetSection>,

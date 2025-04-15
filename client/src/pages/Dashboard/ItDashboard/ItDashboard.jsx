@@ -16,15 +16,15 @@ import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 
 const ItDashboard = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const utilisedData = [
-    1250000, 1500000, 990000, 850000, 700000, 500000, 800000, 950000, 1000000, 650000,
-    500000, 1200000,
+    1250000, 1500000, 990000, 850000, 700000, 500000, 800000, 950000, 1000000,
+    650000, 500000, 1200000,
   ];
 
   const maxBudget = [
-    1000000, 1200000, 1000000, 1000000, 800000, 600000, 850000, 950000, 1000000, 700000,
-    600000, 1100000,
+    1000000, 1200000, 1000000, 1000000, 800000, 600000, 850000, 950000, 1000000,
+    700000, 600000, 1100000,
   ];
 
   const taskData = [
@@ -237,7 +237,7 @@ const ItDashboard = () => {
       endTime: "06:45PM",
     },
   ];
-  
+
   const executiveTimingsColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "name", label: "Name", align: "left" },
@@ -301,35 +301,45 @@ const ItDashboard = () => {
       layout: 1,
       widgets: [
         <WidgetSection border title={"Budget v/s Achievements"}>
-          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={"finance/budget"}/>
+          <BudgetGraph
+            utilisedData={utilisedData}
+            maxBudget={maxBudget}
+            route={"finance/budget"}
+          />
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard
               data={"INR " + inrFormat("4000000")}
               title={"Projected"}
               route={"/app/dashboard/it-dashboard/finance/budget"}
-              description={`Current Month : ${new Date().toLocaleString(
+              description={`Current Month: ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                {
+                  month: "short",
+                }
+              )}-24`}
             />
             <DataCard
               data={"INR " + inrFormat("3500000")}
               title={"Actual"}
               route={"/app/dashboard/it-dashboard/finance/budget"}
-              description={`Current Month : ${new Date().toLocaleString(
+              description={`Current Month: ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                {
+                  month: "short",
+                }
+              )}-24`}
             />
             <DataCard
               data={"INR " + inrFormat(60000)}
               title={"Requested"}
               route={"/app/dashboard/it-dashboard/finance/budget"}
-              description={`Current Month : ${new Date().toLocaleString(
+              description={`Current Month: ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                {
+                  month: "short",
+                }
+              )}-24`}
             />
           </WidgetSection>
         </WidgetSection>,

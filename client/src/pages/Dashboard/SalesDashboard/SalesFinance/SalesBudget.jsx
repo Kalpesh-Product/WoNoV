@@ -16,13 +16,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import MuiModal from "../../../../components/MuiModal";
-import {
-  FormControl,
-  Select,
-  MenuItem
-} from "@mui/material";
+import { FormControl, Select, MenuItem } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
 
 const SalesBudget = () => {
   const axios = useAxiosPrivate();
@@ -43,7 +38,6 @@ const SalesBudget = () => {
     reset();
   };
 
-
   const { data: hrFinance = [] } = useQuery({
     queryKey: ["hrFinance"],
     queryFn: async () => {
@@ -61,13 +55,13 @@ const SalesBudget = () => {
 
   // Data for the chart
   const utilisedData = [
-    7500000, 8200000, 6900000, 8800000, 9200000, 6100000,
-    7300000, 8100000, 7700000, 9400000, 6600000, 8500000,
+    7500000, 8200000, 6900000, 8800000, 9200000, 6100000, 7300000, 8100000,
+    7700000, 9400000, 6600000, 8500000,
   ];
 
   const maxBudget = [
-    8000000, 9000000, 7000000, 9500000, 8800000, 6300000,
-    7900000, 8700000, 7600000, 9900000, 7100000, 8900000,
+    8000000, 9000000, 7000000, 9500000, 8800000, 6300000, 7900000, 8700000,
+    7600000, 9900000, 7100000, 8900000,
   ];
 
   // Data array for rendering the Accordion
@@ -172,7 +166,6 @@ const SalesBudget = () => {
   //     // Same structure to be repeated for May–August with unique data.
   //   ];
 
-
   // const transformedFinancialData = financialData.map((data) => {
   //   const transformedRows = data.tableData.rows.map((row, index) => ({
   //     srNo: index + 1,
@@ -243,26 +236,38 @@ const SalesBudget = () => {
   // Convert grouped data to array and sort by latest month (descending order)
   const financialData = Object.values(groupedData)
     .map((data, index) => {
-
-      const transoformedRows = data.tableData.rows.map((row, index) => ({ ...row, srNo: index + 1, projectedAmount: Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }) }))
+      const transoformedRows = data.tableData.rows.map((row, index) => ({
+        ...row,
+        srNo: index + 1,
+        projectedAmount: Number(
+          row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")
+        ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+      }));
       const transformedCols = [
-        { field: 'srNo', headerName: 'SR NO', flex: 1 },
-        ...data.tableData.columns
+        { field: "srNo", headerName: "SR NO", flex: 1 },
+        ...data.tableData.columns,
       ];
 
-      return ({
+      return {
         ...data,
         projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
         amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-        tableData: { ...data.tableData, rows: transoformedRows, columns: transformedCols }
-      })
+        tableData: {
+          ...data.tableData,
+          rows: transoformedRows,
+          columns: transformedCols,
+        },
+      };
     })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
   return (
     <div className="flex flex-col gap-8">
       <div className="border-default border-borderGray rounded-md">
-        <WidgetSection layout={1} title={"Budget v/s Achievements"} titleLabel={"FY 2024-25"}>
+        <WidgetSection
+          layout={1}
+          title={"Budget v/s Achievements"}
+          titleLabel={"FY 2024-25"}>
           <BudgetGraph maxBudget={maxBudget} utilisedData={utilisedData} />
         </WidgetSection>
       </div>
@@ -270,26 +275,25 @@ const SalesBudget = () => {
         <DataCard
           data={"INR " + inrFormat("7500000")}
           title={"Projected"}
-          description={`Current Month : ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "short",
+          })}-24`}
         />
         <DataCard
           data={"INR " + inrFormat("6200000")}
           title={"Actual"}
-          description={`Current Month : ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "short",
+          })}-24`}
         />
         <DataCard
           data={"INR " + inrFormat("89000")}
           title={"Requested"}
-          description={`Current Month : ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "short",
+          })}-24`}
         />
       </WidgetSection>
-
 
       <div className="flex justify-end">
         <PrimaryButton
@@ -298,15 +302,13 @@ const SalesBudget = () => {
           fontSize="text-base"
           handleSubmit={() => setOpenModal(true)} // ✅ triggers modal
         />
-
       </div>
 
       <AllocatedBudget financialData={financialData} />
       <MuiModal
         title="Request Budget"
         open={openModal}
-        onClose={() => setOpenModal(false)}
-      >
+        onClose={() => setOpenModal(false)}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Expense Name */}
           <Controller

@@ -119,7 +119,7 @@ const FrontendDashboard = () => {
   const nationWisePieChart = {
     chart: {
       type: "pie",
-      fontFamily : "Poppins-Regular"
+      fontFamily: "Poppins-Regular",
     },
     labels: nationWiseData.map((item) => item.label),
     colors: nationWiseData.map((item) => item.color), // Apply new shades of blue
@@ -234,7 +234,7 @@ const FrontendDashboard = () => {
   const goaDistrictPieChart = {
     chart: {
       type: "pie",
-            fontFamily : "Poppins-Regular"
+      fontFamily: "Poppins-Regular",
     },
     labels: goaDistrictData.map((item) => item.label),
     colors: goaDistrictData.map((item) => item.color),
@@ -268,38 +268,47 @@ const FrontendDashboard = () => {
           layout={1}
           border
           title={"Budget v/s Achievements"}
-          titleLabel={"FY 2024-25"}
-        >
+          titleLabel={"FY 2024-25"}>
           {/* <LayerBarGraph data={data} options={options} /> */}
-          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={'finance/budget'} />
+          <BudgetGraph
+            utilisedData={utilisedData}
+            maxBudget={maxBudget}
+            route={"finance/budget"}
+          />
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard
               data={"40K"}
               title={"Projected"}
               route={"/app/dashboard/frontend-dashboard/finance"}
-              description={`Current Month : ${new Date().toLocaleString(
+              description={`Current Month: ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                {
+                  month: "short",
+                }
+              )}-24`}
             />
             <DataCard
               data={"35K"}
               title={"Actual"}
               route={"/app/dashboard/frontend-dashboard/finance"}
-              description={`Current Month : ${new Date().toLocaleString(
+              description={`Current Month: ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                {
+                  month: "short",
+                }
+              )}-24`}
             />
             <DataCard
               data={6000}
               title={"Requested"}
               route={"/app/dashboard/frontend-dashboard/finance"}
-              description={`Current Month : ${new Date().toLocaleString(
+              description={`Current Month: ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                {
+                  month: "short",
+                }
+              )}-24`}
             />
           </WidgetSection>
         </WidgetSection>,
@@ -326,7 +335,11 @@ const FrontendDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection layout={1} border title={"Site Visitors"} titleLabel={"FY 2024-25"}>
+        <WidgetSection
+          layout={1}
+          border
+          title={"Site Visitors"}
+          titleLabel={"FY 2024-25"}>
           <BarGraph data={siteVisitorsData} options={siteVisitorOptions} />
         </WidgetSection>,
       ],
