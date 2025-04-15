@@ -3,6 +3,7 @@ import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import WidgetSection from "../../../../components/WidgetSection";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 

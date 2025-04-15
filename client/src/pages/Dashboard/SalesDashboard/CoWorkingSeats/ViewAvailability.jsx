@@ -6,7 +6,9 @@ import occupied from "../../../../assets/biznest/occupancy/occupied.png";
 import cleared from "../../../../assets/biznest/occupancy/cleared.png";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import MuiModal from "../../../../components/MuiModal";
-import { MdUploadFile } from "react-icons/md";
+import { MdOutlineRemoveRedEye, MdUploadFile } from "react-icons/md";
+import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import dayjs from "dayjs";
 
 const mockSalesData = [
   {
@@ -55,6 +57,8 @@ const mockSalesData = [
 ];
 
 const ViewAvailability = () => {
+   const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [viewDetails, setViewDetails] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [imageOpen, setImageOpen] = useState(false);
   const [memberDetails, setMemberDetails] = useState({});
@@ -88,6 +92,11 @@ const ViewAvailability = () => {
       setClearedImagePreview(imageUrl);
       setClearedImageOpen(false);
     }
+  };
+
+  const handleViewModal = (rowData) => {
+    setViewDetails(rowData);
+    setViewModalOpen(true);
   };
 
   return (
@@ -157,21 +166,20 @@ const ViewAvailability = () => {
                 }))}
                 hideFilter
                 columns={[
-                  { field: "id", headerName: "ID", width:100 },
+                  { field: "id", headerName: "Sr No", width:100 },
                   { field: "member", headerName: "Member Name", flex: 1 },
                   { field: "date", headerName: "Date", flex: 1 },
                   {
                     headerName: "Action",
                     field: "action",
                     cellRenderer: (params) => (
-                      <>
-                        <div className="p-1 flex gap-2">
-                          <PrimaryButton
-                            title={"View"}
-                            handleSubmit={() => handleViewDetails(params.data)}
-                          />
-                        </div>
-                      </>
+                       <div className="p-2 mb-2 flex gap-2">
+                                <span
+                                  className="text-subtitle cursor-pointer"
+                                  onClick={() => handleViewModal(params.data)}>
+                                  <MdOutlineRemoveRedEye />
+                                </span>
+                              </div>
                     ),
                   },
                 ]}
@@ -204,6 +212,21 @@ const ViewAvailability = () => {
           </div>
         </div>
       </MuiModal>
+
+       {viewDetails && (
+              <ViewDetailsModal
+                open={viewModalOpen}
+                onClose={() => setViewModalOpen(false)}
+                data={{...viewDetails,date:dayjs(viewDetails.date).format("DD-MM-YYYY")}}
+                title="Tax Payment Detail"
+                fields={[
+                  { label: "Member Name", key: "member" },
+                  { label: "Date Of Joining", key: "date" },
+
+                ]}
+              />
+            )}
+            
       <MuiModal
         open={imageOpen}
         onClose={() => setImageOpen(false)}

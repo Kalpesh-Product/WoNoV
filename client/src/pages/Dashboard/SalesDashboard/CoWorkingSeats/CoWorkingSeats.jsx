@@ -457,7 +457,7 @@ const CoWorkingSeats = () => {
                 }))}
                 hideFilter
                 columns={[
-                  { headerName: "ID", field: "id", width: 100 },
+                  { headerName: "Sr No", field: "id", width: 100 },
                   { headerName: "Location", field: "location" },
                   { headerName: "Floor", field: "floor" },
                   { headerName: "Total Seats", field: "totalSeats" },
