@@ -3,11 +3,11 @@ import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import WidgetSection from "../../../../components/WidgetSection";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { inrFormat } from "../../../../utils/currencyFormat";
-// import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const MonthlyProfitLoss = () => {
+
   //-----------------------------------------------------Graph------------------------------------------------------//
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -34,7 +34,7 @@ const MonthlyProfitLoss = () => {
     {
       name: "Expense",
       data: [
-        950000, // Jan
+        950000,  // Jan
         1000000, // Feb
         1080000, // Mar
         1200000, // Apr
@@ -196,7 +196,7 @@ const MonthlyProfitLoss = () => {
       income: inrFormat(2200000),
       expense: inrFormat(2200000),
       pnl: inrFormat(100000),
-    },
+    }
   ];
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
@@ -213,11 +213,11 @@ const MonthlyProfitLoss = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection
-          border
-          titleLabel={"FY 2024-25"}
-          title={"Income v/s Expenses"}>
-          <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} />
+        <WidgetSection border titleLabel={"FY 2024-25"} title={"Income v/s Expenses"}>
+          <BarGraph
+            data={incomeExpenseData}
+            options={incomeExpenseOptions}
+          />
         </WidgetSection>,
       ],
     },
@@ -232,11 +232,7 @@ const MonthlyProfitLoss = () => {
       ))}
 
       <div>
-        <WidgetSection
-          border
-          TitleAmount={`INR ${totalPnL.toLocaleString()}`}
-          titleLabel={"FY 2024-25"}
-          title={`Total Monthly P&L`}>
+        <WidgetSection border TitleAmount={`INR ${totalPnL.toLocaleString()}`} titleLabel={"FY 2024-25"} title={`Total Monthly P&L`}>
           <AgTable
             data={monthlyProfitLossData}
             columns={monthlyProfitLossColumns}
@@ -244,37 +240,28 @@ const MonthlyProfitLoss = () => {
           />
         </WidgetSection>
       </div>
-      {viewDetails && (
-        <ViewDetailsModal
-          open={viewModalOpen}
-          onClose={() => setViewModalOpen(false)}
-          data={{
-            ...viewDetails,
-            income:
-              "INR " +
-              Number(
-                viewDetails.income.toLocaleString("en-IN").replace(/,/g, "")
-              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-            expense:
-              "INR " +
-              Number(
-                viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
-              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-            pnl:
-              "INR " +
-              Number(
-                viewDetails.pnl.toLocaleString("en-IN").replace(/,/g, "")
-              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-          }}
-          title="Monthly P&L Detail"
-          fields={[
-            { label: "Month", key: "month" },
-            { label: "Income", key: "income" },
-            { label: "Expense", key: "expense" },
-            { label: "P&L", key: "pnl" },
-          ]}
-        />
-      )}
+      {viewDetails && <ViewDetailsModal
+        open={viewModalOpen}
+        onClose={() => setViewModalOpen(false)}
+        data={{
+          ...viewDetails, income: "INR " + Number(
+            viewDetails.income.toLocaleString("en-IN").replace(/,/g, "")
+          ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+          expense: "INR " + Number(
+            viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
+          ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+          pnl: "INR " + Number(
+            viewDetails.pnl.toLocaleString("en-IN").replace(/,/g, "")
+          ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
+        }}
+        title="Tax Payment Detail"
+        fields={[
+          { label: "Month", key: "month" },
+          { label: "Income", key: "income" },
+          { label: "Expense", key: "expense" },
+          { label: "P&L", key: "pnl" },
+        ]}
+      />}
     </div>
   );
 };
