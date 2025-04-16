@@ -68,10 +68,10 @@
 
 
 }
-.bold-header {
-  font-weight: bold;
-  font-family: "Poppins-Medium", sans-serif; /* Optional */
+.ag-header-cell-label {
+  font-weight: bold !important;
 }
+
 
 /* Hide scrollbar for the specified container */
 .hideScrollbar {
