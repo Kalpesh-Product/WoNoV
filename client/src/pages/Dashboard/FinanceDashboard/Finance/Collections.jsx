@@ -7,6 +7,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../../components/MuiModal";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import dayjs from "dayjs";
 
 const Collections = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);

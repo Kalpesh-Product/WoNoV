@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import dayjs from "dayjs";
 import LayerBarGraph from "../../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
@@ -15,10 +15,24 @@ import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import BudgetGraph from "../../../../components/graphs/BudgetGraph";
+import MuiModal from "../../../../components/MuiModal";
+import { Controller, useForm } from "react-hook-form";
+import { FormControl, MenuItem, Select, TextField } from "@mui/material";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { toast } from "sonner";
 
 const FinanceBudget = () => {
   const axios = useAxiosPrivate();
-
+    const [openModal, setOpenModal] = useState(false);
+ const { control, handleSubmit, reset } = useForm({
+    defaultValues: {
+      expanseName: "",
+      expanseType: "",
+      projectedAmount: null,
+      dueDate: "",
+    },
+  });
   // const { data: hrFinance = [] } = useQuery({
   //   queryKey: ["hrFinance"],
   //   queryFn: async () => {
@@ -776,6 +790,12 @@ const FinanceBudget = () => {
     })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
+      const onSubmit = (data) => {
+        setOpenModal(false);
+        toast.success("Budget Requested succesfully");
+        reset();
+      };
+
   return (
     <div className="flex flex-col gap-8">
       <WidgetSection
@@ -834,6 +854,130 @@ const FinanceBudget = () => {
       </div>
 
       <AllocatedBudget financialData={financialData} />
+       <MuiModal
+              title="Request Budget"
+              open={openModal}
+              onClose={() => setOpenModal(false)}>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                {/* Expense Name */}
+                <Controller
+                  name="expanseName"
+                  control={control}
+                  rules={{ required: "Expense name is required" }}
+                  render={({ field, fieldState }) => (
+                    <TextField
+                      {...field}
+                      label="Expense Name"
+                      fullWidth
+                      size="small"
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                    />
+                  )}
+                />
+      
+                {/* Expense Type */}
+                <Controller
+                  name="expanseType"
+                  control={control}
+                  rules={{ required: "Expense type is required" }}
+                  render={({ field, fieldState }) => (
+                    <FormControl fullWidth error={!!fieldState.error}>
+                      <Select {...field} size="small" displayEmpty>
+                        <MenuItem value="" disabled>
+                          Select Expense Type
+                        </MenuItem>
+                        <MenuItem value="Internal">Internal</MenuItem>
+                        <MenuItem value="External">External</MenuItem>
+                      </Select>
+                    </FormControl>
+                  )}
+                />
+      
+                {/* Amount */}
+                <Controller
+                  name="projectedAmount"
+                  control={control}
+                  rules={{
+                    required: "Amount is required",
+                    pattern: {
+                      value: /^[0-9]+(\.[0-9]{1,2})?$/,
+                      message: "Enter a valid amount",
+                    },
+                  }}
+                  render={({ field, fieldState }) => (
+                    <TextField
+                      {...field}
+                      label="Projected Amount"
+                      fullWidth
+                      size="small"
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                    />
+                  )}
+                />
+      
+                {/* Due Date */}
+                <Controller
+                  name="dueDate"
+                  control={control}
+                  rules={{ required: "Due date is required" }}
+                  render={({ field, fieldState }) => (
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DatePicker
+                        {...field}
+                        label="Due Date"
+                        format="DD-MM-YYYY"
+                        value={field.value ? dayjs(field.value) : null}
+                        onChange={(date) =>
+                          field.onChange(date ? date.toISOString() : null)
+                        }
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            size: "small",
+                            error: !!fieldState.error,
+                            helperText: fieldState.error?.message,
+                          },
+                        }}
+                      />
+                    </LocalizationProvider>
+                  )}
+                />
+
+                {/* Due Date */}
+                <Controller
+                  name="dueDate"
+                  control={control}
+                  rules={{ required: "Due date is required" }}
+                  render={({ field, fieldState }) => (
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DatePicker
+                        {...field}
+                        label="Due Date"
+                        format="DD-MM-YYYY"
+                        value={field.value ? dayjs(field.value) : null}
+                        onChange={(date) =>
+                          field.onChange(date ? date.toISOString() : null)
+                        }
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            size: "small",
+                            error: !!fieldState.error,
+                            helperText: fieldState.error?.message,
+                          },
+                        }}
+                      />
+                    </LocalizationProvider>
+                  )}
+                />
+                <div className="flex justify-center items-center">
+                  {/* Submit Button */}
+                  <PrimaryButton type={"submit"} title={"Submit"} />
+                </div>
+              </form>
+            </MuiModal>
     </div>
   );
 };

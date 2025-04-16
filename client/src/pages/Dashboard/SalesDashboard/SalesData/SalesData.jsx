@@ -473,17 +473,18 @@ const calculateCompletedTime = (startDate) => {
 
 // ✅ Format Data for Table
 const companyTableColumns = [
-  { id: "id", label: "Sr.No" },
+  { id: "id", label: "Sr No" },
   { id: "company", label: "Company" },
-  { id: "startDate", label: "Start Date" },
+  { id: "startDate", label: "Date of Join" },
   { id: "completedTime", label: "Completed Time" },
+ 
 ];
 
 // ✅ Processed Table Data (Including Completed Time)
 const formattedCompanyTableData = clientOccupancyData.map((company) => ({
   id: company.id,
   company: company.client,
-  startDate: company.startDate,
+  startDate: dayjs(company.startDate).format("DD-MM-YYYY"),
   completedTime: calculateCompletedTime(company.startDate),
 }));
 
@@ -521,7 +522,7 @@ upcomingBirthdays.sort((a, b) =>
 );
 
 const upcomingBirthdaysColumns = [
-  { id: "id", label: "Sr.No" },
+  { id: "id", label: "Sr No" },
   { id: "name", label: "Employee Name" },
   { id: "birthday", label: "Date of Birth" },
   { id: "daysLeft", label: "Days Left" },

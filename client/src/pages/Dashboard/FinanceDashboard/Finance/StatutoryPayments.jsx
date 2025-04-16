@@ -4,6 +4,7 @@ import BarGraph from "../../../../components/graphs/BarGraph";
 import AgTable from "../../../../components/AgTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import dayjs from "dayjs";
 
 const StatutoryPayments = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -150,6 +151,8 @@ const StatutoryPayments = () => {
     },
   ];
 
+  const formattedRows = rows.map((row)=> ({...row,due:dayjs(row.due).format("DD-MM-YYYY")}))
+
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
     setViewModalOpen(true);
@@ -167,7 +170,7 @@ const StatutoryPayments = () => {
 
       <div>
         <AgTable
-          data={rows}
+          data={formattedRows}
           columns={kraColumn}
           search
           tableTitle={"Statutory Payments FY 2024-25"}
@@ -189,7 +192,7 @@ const StatutoryPayments = () => {
           fields={[
             { label: "Client", key: "client" },
             { label: "Amount Paid", key: "amount" },
-            { label: "Payment Date", key: "date" },
+            { label: "Due Date", key: "due" },
             { label: "Payment Status", key: "status" },
           ]}
         />

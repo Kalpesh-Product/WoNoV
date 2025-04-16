@@ -388,24 +388,24 @@ const CoWorkingSeats = () => {
             data={"1000"}
             description={`Current Month : ${new Date().toLocaleString(
               "default",
-              { month: "long" }
-            )}`}
+              { month: "short" }
+            )}-24`}
           />
           <DataCard
             title={"Available Seats"}
             data={"200"}
             description={`Current Month : ${new Date().toLocaleString(
               "default",
-              { month: "long" }
-            )}`}
+              { month: "short" }
+            )}-24`}
           />
           <DataCard
             title={"Booked Seats"}
             data={"800"}
             description={`Current Month : ${new Date().toLocaleString(
               "default",
-              { month: "long" }
-            )}`}
+              { month: "short" }
+            )}-24`}
           />
         </WidgetSection>
       </div>

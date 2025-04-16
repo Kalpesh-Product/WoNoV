@@ -1,8 +1,15 @@
+import { useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
+import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import WidgetSection from "../../../../components/WidgetSection";
+import { inrFormat } from "../../../../utils/currencyFormat";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import dayjs from "dayjs";
 
 const SqWiseData = () => {
+   const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [viewDetails, setViewDetails] = useState(null);
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [
     {
@@ -71,7 +78,7 @@ const SqWiseData = () => {
     },
     tooltip: {
       y: {
-        formatter: (val) => `₹${val.toLocaleString()}`,
+        formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
     legend: {
@@ -84,48 +91,71 @@ const SqWiseData = () => {
   const monthlyProfitLossColumns = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "month", headerName: "Month", flex: 1 },
-    { field: "income", headerName: "Income", flex: 1 },
-    { field: "sqft", headerName: "Sq. Ft.", flex: 1 },
-    { field: "perSqFt", headerName: "Per Sq. Ft. income", flex: 1 },
+    { field: "income", headerName: "Income (INR)", flex: 1 },
+    { field: "sqft", headerName: " Sq. Ft. (INR)", flex: 1 },
+    { field: "perSqFt", headerName: "Per Sq. Ft. income (INR)", flex: 1 },
+    {
+          field: "actions",
+          headerName: "Actions",
+          cellRenderer: (params) => (
+            <>
+              <div className="p-2 mb-2 flex gap-2">
+                <span
+                  className="text-subtitle cursor-pointer"
+                  onClick={() => handleViewModal(params.data)}>
+                  <MdOutlineRemoveRedEye />
+                </span>
+              </div>
+            </>
+          ),
+        },
   ];
 
   const monthlyProfitLossData = [
     {
       srNo: 1,
-      month: "April",
+      month: "April-24",
       income: "1,20,000",
       sqft: "80,000",
       perSqFt: "90",
+      pnl: "40,000",
     },
     {
       srNo: 2,
-      month: "May",
+      month: "May-24",
       income: "1,10,000",
       sqft: "90,000",
-      perSqFt: "90",
+      perSqFt: "95",
+      pnl: "20,000",
     },
     {
       srNo: 3,
-      month: "June",
+      month: "June-24",
       income: "95,000",
       sqft: "1,05,000",
-      perSqFt: "90",
+      perSqFt: "88",
+      pnl: "-10,000",
     },
     {
       srNo: 4,
-      month: "July",
+      month: "July-24",
       income: "1,50,000",
       sqft: "70,000",
-      perSqFt: "90",
+      perSqFt: "95",
+      pnl: "80,000",
     },
     {
       srNo: 5,
-      month: "August",
+      month: "August-24",
       income: "1,00,000",
       sqft: "1,20,000",
-      perSqFt: "90",
+      perSqFt: "80",
+      pnl: "-20,000",
     },
   ];
+  
+  const formatMonthlyProfitLoss = monthlyProfitLossData.map((item)=>( {...item,month: dayjs(item.month, "MMMM-YY").format("MMM-YY")}))
+  
   
 
   const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
@@ -149,6 +179,12 @@ const SqWiseData = () => {
     },
   ];
 
+
+  const handleViewModal = (rowData) => {
+    setViewDetails(rowData);
+    setViewModalOpen(true);
+  };
+
   return (
     <div className="flex flex-col gap-4 p-4">
       {techWidgets.map((section, index) => (
@@ -158,14 +194,42 @@ const SqWiseData = () => {
       ))}
 
       <div>
-        <WidgetSection border titleLabel={"FY 2024-25"} title={`Total Monthly P&L : ${totalPnL.toLocaleString()} INR`}>
+        <WidgetSection border titleLabel={"FY 2024-25"} title={"Total Monthly P&L"}
+        TitleAmount={`INR ${inrFormat(totalPnL)}`}>
           <AgTable
-            data={monthlyProfitLossData}
+            data={formatMonthlyProfitLoss}
             columns={monthlyProfitLossColumns}
             search={true}
           />
         </WidgetSection>
       </div>
+       {viewDetails && (
+              <ViewDetailsModal
+                open={viewModalOpen}
+                onClose={() => setViewModalOpen(false)}
+                data={{
+                  ...viewDetails,
+                  income:
+                    "INR " +
+                    Number(
+                      viewDetails.income.toLocaleString("en-IN").replace(/,/g, "")
+                    ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+                    sqft:`INR ${Number(
+                      viewDetails.sqft.toLocaleString("en-IN").replace(/,/g, "")
+                    ).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
+                    
+                    perSqFt:`INR ${inrFormat(viewDetails.perSqFt)}`
+                }}
+                title="Monthly P&L Detail"
+                fields={[
+                  { label: "Month", key: "month" },
+                  { label: "Income", key: "income" },
+                  { label: "Sq. Ft.", key: "sqft" },
+                  { label: "Per Sq. Ft.", key: "perSqFt" },
+                 
+                ]}
+              />
+            )}
     </div>
   );
 };
