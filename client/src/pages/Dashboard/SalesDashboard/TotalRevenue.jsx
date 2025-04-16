@@ -216,35 +216,34 @@ const TotalRevenue = () => {
             <div>
 
               <Accordion key={index} className="py-4">
-                <AccordionSummary
-                  expandIcon={<IoIosArrowDown />}
-                  aria-controls={`panel-${index}-content`}
-                  id={`panel-${index}-header`}
-                  className="border-b-[1px] border-borderGray"
-                >
-                  <div className="flex justify-between items-center w-full px-4">
-                    <span className="text-subtitle font-pmedium">
-                      {domain.name}
-                    </span>
-                    <span className="w-1/5 text-subtitle font-pmedium px-4">
-                      INR {totalRevenue.toLocaleString()}
-                    </span>
-                  </div>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <AgTable
-                    search={transformRows.length > 5}
-                    data={transformRows}
-                    columns={columns}
-                    tableHeight={300}
-                  />
-                  <span className="text-sm font-medium mt-2 block">
-                    Total revenue of {domain.name}: INR
-                    {totalRevenue.toLocaleString()}
+              <AccordionSummary
+                expandIcon={<IoIosArrowDown />}
+                aria-controls={`panel-${index}-content`}
+                id={`panel-${index}-header`}
+                className="border-b-[1px] border-borderGray"
+              >
+                <div className="flex justify-between items-center w-full px-4">
+                  <span className="text-subtitle font-pmedium">
+                    {domain.name}
                   </span>
-                </AccordionDetails>
-              </Accordion>
-            </div>
+                  <span className="w-1/5 text-subtitle font-pmedium px-4">
+                  INR {totalRevenue.toLocaleString()} 
+                  </span>
+                </div>
+              </AccordionSummary>
+              <AccordionDetails>
+                <AgTable
+                  search={transformRows.length > 5}
+                  data={transformRows}
+                  columns={columns}
+                  tableHeight={300}
+                />
+                <span className="text-sm font-medium mt-2 block">
+                  Total revenue of {domain.name}: INR {totalRevenue.toLocaleString()}
+                </span>
+              </AccordionDetails>
+            </Accordion>
+          </div>
           );
         })}
 
