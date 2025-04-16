@@ -344,7 +344,10 @@ const CoWorkingSeats = () => {
         },
       },
     },
-    dataLabels: { enabled: true, formatter: (value) => `${Math.round(value)}%` },
+    dataLabels: {
+      enabled: true,
+      formatter: (value) => `${Math.round(value)}%`,
+    },
     plotOptions: {
       bar: {
         horizontal: false,
@@ -362,8 +365,7 @@ const CoWorkingSeats = () => {
           border
           padding
           title={"Co-Working Seats"}
-          titleLabel={"FY 24-25"}
-        >
+          titleLabel={"FY 24-25"}>
           <BarGraph
             data={series}
             options={options}
@@ -385,6 +387,7 @@ const CoWorkingSeats = () => {
         <WidgetSection layout={3} padding>
           <DataCard
             title={"Total Seats"}
+            route={"check-availability"}
             data={"1000"}
             description={`Current Month : ${new Date().toLocaleString(
               "default",
@@ -392,16 +395,18 @@ const CoWorkingSeats = () => {
             )}-24`}
           />
           <DataCard
-            title={"Available Seats"}
-            data={"200"}
+            title={"Booked Seats"}
+            route={"check-availability"}
+            data={"800"}
             description={`Current Month : ${new Date().toLocaleString(
               "default",
               { month: "short" }
             )}-24`}
           />
           <DataCard
-            title={"Booked Seats"}
-            data={"800"}
+            title={"Available Seats"}
+            route={"check-availability"}
+            data={"200"}
             description={`Current Month : ${new Date().toLocaleString(
               "default",
               { month: "short" }
@@ -411,13 +416,13 @@ const CoWorkingSeats = () => {
       </div>
       <div className="flex items-end justify-end">
         <div className="flex w-1/4">
-          <PrimaryButton
+          {/* <PrimaryButton
             handleSubmit={() => {
               navigate("check-availability");
             }}
             title={"Check Availability"}
             externalStyles={"h-full w-full"}
-          />
+          /> */}
         </div>
       </div>
       {/* Accordion Section */}
@@ -438,8 +443,7 @@ const CoWorkingSeats = () => {
               expandIcon={<IoIosArrowDown />}
               aria-controls={`panel-${index}-content`}
               id={`panel-${index}-header`}
-              className="border-b-[1px] border-borderGray"
-            >
+              className="border-b-[1px] border-borderGray">
               <div className="flex justify-between items-center w-full px-4">
                 <span className="text-subtitle font-pmedium">
                   {domain.month}
@@ -491,8 +495,7 @@ const CoWorkingSeats = () => {
         onClose={() => {
           setOpenModal(false);
           setLocation({});
-        }}
-      >
+        }}>
         <div className="grid grid-cols-2 gap-8 px-2 pb-8 border-b-default border-borderGray">
           <div className="flex items-center justify-between">
             <span className="text-content">Location</span>
