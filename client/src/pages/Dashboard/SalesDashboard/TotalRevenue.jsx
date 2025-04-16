@@ -237,9 +237,15 @@ const TotalRevenue = () => {
                   columns={columns}
                   tableHeight={300}
                 />
-                <span className="text-sm font-medium mt-2 block">
+                {/* <span className="text-primary font-pregular">
                   Total revenue of {domain.name}: INR {totalRevenue.toLocaleString()}
-                </span>
+                </span> */}
+                <span className="text-primary font-pregular">
+                      Total Revenue for {domain.name}:{" "}
+                    </span>
+                    <span className="text-black font-pmedium">
+                      INR {totalRevenue.toLocaleString()}
+                    </span>
               </AccordionDetails>
             </Accordion>
           </div>
