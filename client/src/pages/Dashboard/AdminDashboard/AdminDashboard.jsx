@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
@@ -19,9 +19,10 @@ import { LuHardDriveUpload } from "react-icons/lu";
 import { CgWebsite } from "react-icons/cg";
 import { useNavigate } from "react-router-dom";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
+import { useSidebar } from "../../../context/SideBarContext";
 dayjs.extend(customParseFormat);
 const AdminDashboard = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   // const utilisedData = [125, 150, 99, 85, 70, 50, 80, 95, 100, 65, 50, 120];
   // const defaultData = utilisedData.map((value) =>
   //   Math.max(100 - Math.min(value, 100), 0)
@@ -36,6 +37,12 @@ const AdminDashboard = () => {
   //   { name: "Default Budget", data: defaultData },
   //   { name: "Exceeded Budget", data: exceededData },
   // ];
+
+  const { setIsSidebarOpen } = useSidebar();
+
+  useEffect(() => {
+    setIsSidebarOpen(true);
+  }, []); // Empty dependency array ensures this runs once on mount
 
   const options = {
     chart: {
@@ -170,7 +177,9 @@ const AdminDashboard = () => {
       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: () => {
-          navigate("/app/dashboard/admin-dashboard/client-members/client-members-data");
+          navigate(
+            "/app/dashboard/admin-dashboard/client-members/client-members-data"
+          );
         },
       },
     },
@@ -206,7 +215,9 @@ const AdminDashboard = () => {
       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: () => {
-          navigate("/app/dashboard/admin-dashboard/client-members/client-members-data");
+          navigate(
+            "/app/dashboard/admin-dashboard/client-members/client-members-data"
+          );
         },
       },
     },
@@ -406,7 +417,7 @@ const AdminDashboard = () => {
       company: "IBDO",
     },
   ];
-  
+
   const clientMemberBirthdaysColumns = [
     { id: "srNo", label: "Sr No", align: "left" },
     { id: "name", label: "Name", align: "left" },
@@ -418,30 +429,30 @@ const AdminDashboard = () => {
   const today = dayjs();
   const cutOff = today.add(15, "day");
 
- const upcomingBirthdays = clientMemberBirthdays
-  .map((item) => {
-    const dob = dayjs(item.dateOfBirth, "YYYY-MM-DD");
-    const thisYearBirthday = dob.set("year", today.year());
+  const upcomingBirthdays = clientMemberBirthdays
+    .map((item) => {
+      const dob = dayjs(item.dateOfBirth, "YYYY-MM-DD");
+      const thisYearBirthday = dob.set("year", today.year());
 
-    const birthday = thisYearBirthday.isBefore(today)
-      ? thisYearBirthday.add(1, "year")
-      : thisYearBirthday;
+      const birthday = thisYearBirthday.isBefore(today)
+        ? thisYearBirthday.add(1, "year")
+        : thisYearBirthday;
 
-    const doj = dayjs(item.dateOfJoin, "YYYY-MM-DD");
-    const completedYears = today.diff(doj, "year");
-    const upComingIn = birthday.diff(today, "days");
+      const doj = dayjs(item.dateOfJoin, "YYYY-MM-DD");
+      const completedYears = today.diff(doj, "year");
+      const upComingIn = birthday.diff(today, "days");
 
-    return {
-      ...item,
-      dateOfBirth:dayjs(item.dateOfBirth, "YYYY-MM-DD").format("DD-MM-YYYY"),
-      upComingIn: `${upComingIn} days`,
-      isUpcoming:
-        birthday.isBefore(cutOff) &&
-        birthday.isAfter(today.subtract(1, "day")),
-    };
-  })
+      return {
+        ...item,
+        dateOfBirth: dayjs(item.dateOfBirth, "YYYY-MM-DD").format("DD-MM-YYYY"),
+        upComingIn: `${upComingIn} days`,
+        isUpcoming:
+          birthday.isBefore(cutOff) &&
+          birthday.isAfter(today.subtract(1, "day")),
+      };
+    })
     .filter((item) => item.isUpcoming);
- 
+
   //-----------------------------------------------------------------------------------------------------------------//
   const clientAnniversaryData = [
     {
@@ -480,38 +491,35 @@ const AdminDashboard = () => {
       upComingIn: "2 days",
     },
   ];
-  
-  
 
   const upComingClientAnniversary = clientAnniversaryData
-  .map((item, index) => {
-    const doj = dayjs(item.dateOfJoin, "DD-MM-YYYY");
-    const thisYearAnniversary = doj.set("year", today.year());
-    const anniversary = thisYearAnniversary.isBefore(today)
-      ? thisYearAnniversary.add(1, "year")
-      : thisYearAnniversary;
+    .map((item, index) => {
+      const doj = dayjs(item.dateOfJoin, "DD-MM-YYYY");
+      const thisYearAnniversary = doj.set("year", today.year());
+      const anniversary = thisYearAnniversary.isBefore(today)
+        ? thisYearAnniversary.add(1, "year")
+        : thisYearAnniversary;
 
-    const completedYears = today.diff(doj, "year");
-    const upComingInDays = anniversary.diff(today, "day");
+      const completedYears = today.diff(doj, "year");
+      const upComingInDays = anniversary.diff(today, "day");
 
-    return {
-      srNo: index + 1,
-      client: item.client,
-      dateOfJoin: item.dateOfJoin,
-      completedYears: completedYears,
-      upComingIn:
-        upComingInDays === 0
-          ? "Today"
-          : upComingInDays === 1
-          ? "Tomorrow"
-          : `${upComingInDays} days`,
-      isUpcoming:
-        anniversary.isBefore(cutOff) &&
-        anniversary.isAfter(today.subtract(1, "day")),
-    };
-  })
+      return {
+        srNo: index + 1,
+        client: item.client,
+        dateOfJoin: item.dateOfJoin,
+        completedYears: completedYears,
+        upComingIn:
+          upComingInDays === 0
+            ? "Today"
+            : upComingInDays === 1
+            ? "Tomorrow"
+            : `${upComingInDays} days`,
+        isUpcoming:
+          anniversary.isBefore(cutOff) &&
+          anniversary.isAfter(today.subtract(1, "day")),
+      };
+    })
     .filter((item) => item.isUpcoming);
-
 
   const upComingClientAnniversaryColumns = [
     { id: "srNo", label: "Sr No", align: "left" },
@@ -536,11 +544,17 @@ const AdminDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border titleLabel={"FY 2024-25"} title={"Budget v/s Achievements"}>
-
-          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={'finance/budget'} />
+        <WidgetSection
+          border
+          titleLabel={"FY 2024-25"}
+          title={"Budget v/s Achievements"}>
+          <BudgetGraph
+            utilisedData={utilisedData}
+            maxBudget={maxBudget}
+            route={"finance/budget"}
+          />
           <hr />
-          
+
           <WidgetSection layout={3} padding>
             <DataCard
               data={"INR 45,00,000"}
@@ -766,7 +780,7 @@ const AdminDashboard = () => {
                 name: item.name,
                 upComingIn: item.upComingIn === 0 ? "Today" : item.upComingIn,
                 company: item.company,
-                dateOfBirth:item.dateOfBirth
+                dateOfBirth: item.dateOfBirth,
               })),
           ]}
         />,

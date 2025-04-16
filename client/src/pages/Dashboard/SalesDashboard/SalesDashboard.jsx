@@ -30,8 +30,15 @@ import { useDispatch } from "react-redux";
 import { setClientData, setLeadsData } from "../../../redux/slices/salesSlice";
 import { CircularProgress, Skeleton } from "@mui/material";
 import { SiCashapp } from "react-icons/si";
+import { useSidebar } from "../../../context/SideBarContext";
 
 const SalesDashboard = () => {
+  const { setIsSidebarOpen } = useSidebar();
+
+  useEffect(() => {
+    setIsSidebarOpen(true);
+  }, []); // Empty dependency array ensures this runs once on mount
+
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
@@ -41,20 +48,21 @@ const SalesDashboard = () => {
     {
       name: "Income",
       data: [
-        1600000, // Jan
-        1700000, // Feb
-        1450000, // Mar
-        1800000, // Apr
-        1650000, // May
-        1500000, // Jun
-        1750000, // Jul
-        1800000, // Aug
-        1400000, // Sep
-        1200000, // Oct
-        1150000, // Nov
-        1550000  // Dec
-      ]
+        1123500, // Nov
+        1184200, // Oct
+        1347800, // Sep
+        1436500, // Mar
+        1489300, // Jun
+        1532100, // Dec
+        1598700, // Jan
+        1642900, // May
+        1695000, // Feb
+        1746800, // Jul
+        1791200, // Aug
+        1823400, // Apr
+      ],
     },
+
     // {
     //   name: "Expense",
     //   data: [
@@ -73,7 +81,7 @@ const SalesDashboard = () => {
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "50%",
+        columnWidth: "40%",
         borderRadius: 6, // Adds rounded corners to the top of bars
         dataLabels: {
           position: "top",
@@ -115,6 +123,7 @@ const SalesDashboard = () => {
       title: {
         text: "Amount (INR)",
       },
+      tickAmount: 7,
     },
     fill: {
       opacity: 1,
@@ -141,7 +150,6 @@ const SalesDashboard = () => {
     "Feb-25": "February",
     "Mar-25": "March",
   };
-  
 
   //-----------------------------------------------API-----------------------------------------------------------//
   const { data: leadsData, isPending: isLeadsPending } = useQuery({
@@ -189,8 +197,8 @@ const SalesDashboard = () => {
       (item.openDesks
         ? item.openDesks
         : 0 + item.cabinDesks
-          ? item.cabinDesks
-          : 0),
+        ? item.cabinDesks
+        : 0),
     0
   );
   console.log("Total available seats : ", totalCoWorkingSeats);
@@ -208,7 +216,7 @@ const SalesDashboard = () => {
 
       const createdMonth = `${dayjs(lead.startDate).month()}`; // 0 = Jan, 11 = Dec
 
-      console.log(dayjs(lead.startDate).year())
+      console.log(dayjs(lead.startDate).year());
       // Initialize if domain not yet seen
       if (!domainMap[domain]) {
         domainMap[domain] = Array(12).fill(0);
@@ -377,9 +385,9 @@ const SalesDashboard = () => {
 
   const sectorwiseData = Array.isArray(clientsData)
     ? clientsData.map((item) => ({
-      clientName: item.clientName,
-      sector: item.sector,
-    }))
+        clientName: item.clientName,
+        sector: item.sector,
+      }))
     : [];
 
   const totalClients = sectorwiseData.length;
@@ -449,7 +457,6 @@ const SalesDashboard = () => {
   };
 
   //-----------------------------------------------Conversion of Sector-wise Pie-graph-----------------------------------------------------------//
-
   const clientMemberBirthday = [
     {
       id: '1',
@@ -521,10 +528,7 @@ const formattedClientMemberBirthday = clientMemberBirthday.map((client)=> ({...c
           title={"Annual Monthly Revenue"}
           titleLabel={"FY 2024-25"}
           TitleAmount={`INR ${inrFormat("20900000")}`}>
-          <BarGraph
-            data={incomeExpenseData}
-            options={incomeExpenseOptions}
-          />
+          <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} />
         </WidgetSection>,
       ],
     },
@@ -565,7 +569,7 @@ const formattedClientMemberBirthday = clientMemberBirthday.map((client)=> ({...c
         <DataCard
           route={"revenue"}
           title={"Total"}
-          data={"INR " + inrFormat("800000")}
+          data={"INR " + inrFormat("43050000")}
           description={"Revenues"}
         />,
         <DataCard
@@ -591,7 +595,7 @@ const formattedClientMemberBirthday = clientMemberBirthday.map((client)=> ({...c
         <DataCard
           route={"co-working-seats"}
           title={"Free"}
-          data={Math.abs((totalCoWorkingSeats - totalClientsDesks))}
+          data={Math.abs(totalCoWorkingSeats - totalClientsDesks)}
           description={"Co-working Seats"}
         />,
       ],
@@ -600,7 +604,11 @@ const formattedClientMemberBirthday = clientMemberBirthday.map((client)=> ({...c
     {
       layout: 1,
       widgets: [
-        <WidgetSection layout={1} title={"Monthly Unique Leads"} titleLabel={"FY 2024-25"} border>
+        <WidgetSection
+          layout={1}
+          title={"Monthly Unique Leads"}
+          titleLabel={"FY 2024-25"}
+          border>
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
@@ -619,7 +627,11 @@ const formattedClientMemberBirthday = clientMemberBirthday.map((client)=> ({...c
     {
       layout: 1,
       widgets: [
-        <WidgetSection layout={1} title={"Sourcing Channels"} titleLabel={"FY 2024-25"} border>
+        <WidgetSection
+          layout={1}
+          title={"Sourcing Channels"}
+          titleLabel={"FY 2024-25"}
+          border>
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
@@ -656,7 +668,6 @@ const formattedClientMemberBirthday = clientMemberBirthday.map((client)=> ({...c
               options={clientsDesksPieOptions}
               width={"100%"}
             />
-
           ) : (
             <CircularProgress color="#1E3D73" />
           )}

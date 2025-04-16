@@ -40,6 +40,7 @@ const MainLayout = () => {
     };
   }, []);
 
+
   return (
     <div className="w-full flex flex-col justify-between h-screen overflow-y-auto">
       <header className="flex w-full shadow-md items-center px-4">
@@ -94,11 +95,10 @@ const MainLayout = () => {
 
       {showFooter && (
         <footer
-          className={`transition-all duration-500 transform ${
-            showFooter
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-10"
-          }`}
+          className={`transition-all duration-500 transform ${showFooter
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-10"
+            }`}
         >
           <Footer />
         </footer>

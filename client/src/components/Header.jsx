@@ -144,8 +144,8 @@ const Header = () => {
                   {auth.user.firstName}
                 </h1>
                 <span className="text-content">
-                  {auth.user.designation.split(" ").length > 3
-                    ? auth.user.designation.split(" ").slice(0, 3).join(" ") +
+                  {auth.user.designation.split(" ").length > 2
+                    ? auth.user.designation.split(" ").slice(0, 2).join(" ") +
                       "..."
                     : auth.user.designation}
                 </span>

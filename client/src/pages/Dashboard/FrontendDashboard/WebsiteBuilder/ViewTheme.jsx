@@ -22,8 +22,15 @@ import Hostels_mockup from "../../../../assets/WONO_images/img/website-builder/n
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import PrimaryButton from "../../../../components/PrimaryButton";
+// import { useSidebar } from "../../../../context/SideBarContext";
 
 const ViewTheme = () => {
+  // const { setIsSidebarOpen } = useSidebar();
+
+  // useEffect(() => {
+  //   setIsSidebarOpen(true);
+  // }, []); // Empty dependency array ensures this runs once on mount
+
   const [showAll, setShowAll] = useState(false);
   const perks = [
     {
@@ -158,8 +165,7 @@ const ViewTheme = () => {
                     {features.map((feature, index) => (
                       <div
                         key={index}
-                        className="product-page-features flex items-center mb-4"
-                      >
+                        className="product-page-features flex items-center mb-4">
                         <span className="text-wonoColor font-bold">
                           ✔&nbsp;&nbsp;
                         </span>
@@ -178,8 +184,7 @@ const ViewTheme = () => {
                         } else {
                           toast.success("Coming Soon.");
                         }
-                      }}
-                    >
+                      }}>
                       Edit theme
                     </button>
                     <button
@@ -192,8 +197,7 @@ const ViewTheme = () => {
                             "/app/dashboard/frontend-dashboard/live-demo"
                           ); // fallback internal route
                         }
-                      }}
-                    >
+                      }}>
                       Live Demo
                     </button>
                   </div>
@@ -263,8 +267,7 @@ const ViewTheme = () => {
                   className="product-page-reccomendations-grid-image overflow-hidden shadow-lg rounded-xl cursor-pointer"
                   onClick={() => {
                     handleImageClick(rec);
-                  }}
-                >
+                  }}>
                   <img
                     src={rec.src}
                     alt={rec.alt}

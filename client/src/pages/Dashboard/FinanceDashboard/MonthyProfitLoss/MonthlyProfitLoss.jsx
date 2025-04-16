@@ -5,9 +5,9 @@ import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import WidgetSection from "../../../../components/WidgetSection";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { inrFormat } from "../../../../utils/currencyFormat";
+// import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const MonthlyProfitLoss = () => {
-
   //-----------------------------------------------------Graph------------------------------------------------------//
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -34,7 +34,7 @@ const MonthlyProfitLoss = () => {
     {
       name: "Expense",
       data: [
-        950000,  // Jan
+        950000, // Jan
         1000000, // Feb
         1080000, // Mar
         1200000, // Apr
@@ -115,7 +115,7 @@ const MonthlyProfitLoss = () => {
     { field: "month", headerName: "Month", flex: 1 },
     { field: "income", headerName: "Income (INR)", flex: 1 },
     { field: "expense", headerName: "Expense (INR)", flex: 1 },
-    { field: "pnl", headerName: "P&L", flex: 1 },
+    { field: "pnl", headerName: "P&L (INR)", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -123,10 +123,10 @@ const MonthlyProfitLoss = () => {
         <>
           <div className="p-2 mb-2 flex gap-2">
             <span
-                       className="text-subtitle cursor-pointer"
-                       onClick={() => handleViewModal(params.data)}>
-                       <MdOutlineRemoveRedEye />
-                     </span>
+              className="text-subtitle cursor-pointer"
+              onClick={() => handleViewModal(params.data)}>
+              <MdOutlineRemoveRedEye />
+            </span>
           </div>
         </>
       ),
@@ -136,67 +136,67 @@ const MonthlyProfitLoss = () => {
   const monthlyProfitLossData = [
     {
       id: 1,
-      month: "April",
+      month: "Apr-24",
       income: inrFormat(1250000),
       expense: inrFormat(750000),
       pnl: inrFormat(500000),
     },
     {
       id: 2,
-      month: "May",
+      month: "May-24",
       income: inrFormat(1400000),
       expense: inrFormat(800000),
       pnl: inrFormat(600000),
     },
     {
       id: 3,
-      month: "June",
+      month: "Jun-24",
       income: inrFormat(1600000),
       expense: inrFormat(1700000),
       pnl: inrFormat(-100000),
     },
     {
       id: 4,
-      month: "July",
+      month: "Jul-24",
       income: inrFormat(1800000),
       expense: inrFormat(950000),
       pnl: inrFormat(850000),
     },
     {
       id: 5,
-      month: "August",
+      month: "Aug-24",
       income: inrFormat(2000000),
       expense: inrFormat(2100000),
       pnl: inrFormat(-100000),
     },
     {
       id: 6,
-      month: "September",
+      month: "Sep-24",
       income: inrFormat(1700000),
       expense: inrFormat(1100000),
       pnl: inrFormat(600000),
     },
     {
       id: 7,
-      month: "October",
+      month: "Oct-24",
       income: inrFormat(1900000),
       expense: inrFormat(1300000),
       pnl: inrFormat(600000),
     },
     {
       id: 8,
-      month: "November",
+      month: "Nov-24",
       income: inrFormat(2100000),
       expense: inrFormat(1600000),
       pnl: inrFormat(500000),
     },
     {
       id: 9,
-      month: "December",
+      month: "Dec-24",
       income: inrFormat(2200000),
       expense: inrFormat(2200000),
       pnl: inrFormat(100000),
-    }
+    },
   ];
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
@@ -213,11 +213,11 @@ const MonthlyProfitLoss = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border  titleLabel={"FY 2024-25"} title={"Budget v/s Achievements"}>
-          <BarGraph
-            data={incomeExpenseData}
-            options={incomeExpenseOptions}
-          />
+        <WidgetSection
+          border
+          titleLabel={"FY 2024-25"}
+          title={"Income v/s Expenses"}>
+          <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} />
         </WidgetSection>,
       ],
     },
@@ -232,7 +232,11 @@ const MonthlyProfitLoss = () => {
       ))}
 
       <div>
-        <WidgetSection border TitleAmount={`INR ${totalPnL.toLocaleString()}`} titleLabel={"FY 2024-25"} title={`Total Monthly P&L`}>
+        <WidgetSection
+          border
+          TitleAmount={`INR ${totalPnL.toLocaleString()}`}
+          titleLabel={"FY 2024-25"}
+          title={`Total Monthly P&L`}>
           <AgTable
             data={monthlyProfitLossData}
             columns={monthlyProfitLossColumns}
@@ -240,25 +244,37 @@ const MonthlyProfitLoss = () => {
           />
         </WidgetSection>
       </div>
-      {viewDetails && <ViewDetailsModal
-        open={viewModalOpen}
-        onClose={() => setViewModalOpen(false)}
-        data={{
-          ...viewDetails, income: "INR " + Number(
-            viewDetails.income.toLocaleString("en-IN").replace(/,/g, "")
-          ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-          expense: "INR " + Number(
-            viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
-          ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
-        }}
-        title="Tax Payment Detail"
-        fields={[
-          { label: "Month", key: "month" },
-          { label: "Income", key: "income" },
-          { label: "Expense", key: "expense" },
-          { label: "P&L", key: "pnl" },
-        ]}
-      />}
+      {viewDetails && (
+        <ViewDetailsModal
+          open={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          data={{
+            ...viewDetails,
+            income:
+              "INR " +
+              Number(
+                viewDetails.income.toLocaleString("en-IN").replace(/,/g, "")
+              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+            expense:
+              "INR " +
+              Number(
+                viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
+              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+            pnl:
+              "INR " +
+              Number(
+                viewDetails.pnl.toLocaleString("en-IN").replace(/,/g, "")
+              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+          }}
+          title="Tax Payment Detail"
+          fields={[
+            { label: "Month", key: "month" },
+            { label: "Income", key: "income" },
+            { label: "Expense", key: "expense" },
+            { label: "P&L", key: "pnl" },
+          ]}
+        />
+      )}
     </div>
   );
 };

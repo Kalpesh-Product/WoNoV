@@ -16,13 +16,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import MuiModal from "../../../../components/MuiModal";
-import {
-  FormControl,
-  Select,
-  MenuItem
-} from "@mui/material";
+import { FormControl, Select, MenuItem } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
 
 const SalesBudget = () => {
   const axios = useAxiosPrivate();
@@ -43,7 +38,6 @@ const SalesBudget = () => {
     reset();
   };
 
-
   const { data: hrFinance = [] } = useQuery({
     queryKey: ["hrFinance"],
     queryFn: async () => {
@@ -61,148 +55,528 @@ const SalesBudget = () => {
 
   // Data for the chart
   const utilisedData = [
-    7500000, 8200000, 6900000, 8800000, 9200000, 6100000,
-    7300000, 8100000, 7700000, 9400000, 6600000, 8500000,
+    7500000, 8200000, 6900000, 8800000, 9200000, 6100000, 7300000, 8100000,
+    7700000, 9400000, 6600000, 8500000,
   ];
 
   const maxBudget = [
-    8000000, 9000000, 7000000, 9500000, 8800000, 6300000,
-    7900000, 8700000, 7600000, 9900000, 7100000, 8900000,
+    8000000, 9000000, 7000000, 9500000, 8800000, 6300000, 7900000, 8700000,
+    7600000, 9900000, 7100000, 8900000,
   ];
 
-  // Data array for rendering the Accordion
-  //   const financialData = [
-  //     {
-  //       month: "April 2024",
-  //       projectedAmount: 18000,
-  //       amount: "15000",
-  //       tableData: {
-  //         columns: [
-  //           { field: "srNo", headerName: "SR NO", flex: 1 },
-  //           { field: "category", headerName: "Category", flex: 1 },
-  //           { field: "expenseName", headerName: "Expense", flex: 1 },
-  //           { field: "dueDate", headerName: "Due Date", flex: 1 },
-  //           { field: "amount", headerName: "Amount", flex: 1 },
-  //           { field: "status", headerName: "Status", flex: 1 },
-  //         ],
-  //         rows: [
-  //           {
-  //             srNo: 1,
-  //             category: "Hosting",
-  //             expenseName: "Hosting Fee",
-  //             amount: "2500",
-  //             dueDate: "2024-04-10",
-  //             status: "Paid",
-  //           },
-  //           {
-  //             srNo: 2,
-  //             category: "Domain",
-  //             expenseName: "Domain Renewal",
-  //             amount: "1500",
-  //             dueDate: "2024-04-12",
-  //             status: "Pending",
-  //           },
-  //           {
-  //             srNo: 3,
-  //             category: "Software",
-  //             expenseName: "SaaS Subscription",
-  //             amount: "4500",
-  //             dueDate: "2024-04-15",
-  //             status: "Paid",
-  //           },
-  //           {
-  //             srNo: 4,
-  //             category: "Marketing",
-  //             expenseName: "Ad Campaign",
-  //             amount: "3500",
-  //             dueDate: "2024-04-20",
-  //             status: "Paid",
-  //           },
-  //           {
-  //             srNo: 5,
-  //             category: "Office",
-  //             expenseName: "Printer Paper",
-  //             amount: "300",
-  //             dueDate: "2024-04-22",
-  //             status: "Paid",
-  //           },
-  //           {
-  //             srNo: 6,
-  //             category: "Utilities",
-  //             expenseName: "Water Supply",
-  //             amount: "200",
-  //             dueDate: "2024-04-24",
-  //             status: "Paid",
-  //           },
-  //           {
-  //             srNo: 7,
-  //             category: "Software",
-  //             expenseName: "Bug Tracking Tool",
-  //             amount: "1000",
-  //             dueDate: "2024-04-25",
-  //             status: "Pending",
-  //           },
-  //           {
-  //             srNo: 8,
-  //             category: "Salaries",
-  //             expenseName: "Part-time Developer",
-  //             amount: "3000",
-  //             dueDate: "2024-04-26",
-  //             status: "Paid",
-  //           },
-  //           {
-  //             srNo: 9,
-  //             category: "Marketing",
-  //             expenseName: "Design Templates",
-  //             amount: "500",
-  //             dueDate: "2024-04-28",
-  //             status: "Paid",
-  //           },
-  //           {
-  //             srNo: 10,
-  //             category: "Office",
-  //             expenseName: "Cleaning Supplies",
-  //             amount: "400",
-  //             dueDate: "2024-04-30",
-  //             status: "Pending",
-  //           },
-  //         ],
-  //       },
-  //     },
-  //     // Same structure to be repeated for May–August with unique data.
-  //   ];
+  ;
 
 
-  // const transformedFinancialData = financialData.map((data) => {
-  //   const transformedRows = data.tableData.rows.map((row, index) => ({
-  //     srNo: index + 1,
-  //     category: row.category,
-  //     expenseName: row.expenseName,
-  //     amount: Number(row.amount).toLocaleString("en-IN", {
-  //       minimumFractionDigits: 0
-  //     }),
-  //     dueDate: dayjs(row.dueDate).format("DD-MM-YYYY"),
-  //     status: row.status,
-  //   }));
+  const dummyData = [
+    {
+      "_id": "67c12be4a9f97d94bd2b1902",
+      "expanseName": "Client Onboarding Seminar",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e51",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 5200,
+      "dueDate": "2024-04-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1903",
+      "expanseName": "Sales Strategy Bootcamp",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e51",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 6000,
+      "dueDate": "2024-04-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1904",
+      "expanseName": "Quarterly Sales Meetup",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e51",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 4100,
+      "dueDate": "2024-04-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1905",
+      "expanseName": "Advanced Negotiation Skills",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e51",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 4800,
+      "dueDate": "2024-04-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1906",
+      "expanseName": "CRM System Training",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e51",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 5300,
+      "dueDate": "2024-04-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1907",
+      "expanseName": "Sales Pitch Refinement Session",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e51",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 4950,
+      "dueDate": "2024-04-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1901",
+      "expanseName": "Sales Software",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e51",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 4500,
+      "dueDate": "2024-04-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1903",
+      "expanseName": "Social Media Ads",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e52",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 4500,
+      "dueDate": "2024-05-20T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1904",
+      "expanseName": "Email Marketing Tools",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e52",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 1200,
+      "dueDate": "2024-05-20T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1905",
+      "expanseName": "SEO Consultant",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e52",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 5000,
+      "dueDate": "2024-05-20T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1906",
+      "expanseName": "Landing Page Development",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e52",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 2000,
+      "dueDate": "2024-05-20T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1907",
+      "expanseName": "Salesforce CRM Subscription",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e52",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 3500,
+      "dueDate": "2024-05-20T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1908",
+      "expanseName": "Affiliate Program Setup",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e52",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 2700,
+      "dueDate": "2024-05-20T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1909",
+      "expanseName": "Video Ad Production",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e52",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 6200,
+      "dueDate": "2024-05-20T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
 
-  //   return {
-  //     ...data,
-  //     projectedAmount: Number(data.projectedAmount).toLocaleString("en-IN", {
-  //       minimumFractionDigits: 0,
-  //       maximumFractionDigits: 2,
-  //     }),
-  //     amount: Number(data.amount).toLocaleString("en-IN", {
-  //       minimumFractionDigits: 0,
-  //       maximumFractionDigits: 2,
-  //     }),
-  //     tableData: {
-  //       columns: data.tableData.columns,
-  //       rows: transformedRows,
-  //     },
-  //   };
-  // });
+    {
+      "_id": "67c12be4a9f97d94bd2b1910",
+      "expanseName": "Sales Team Training Program",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e53",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 2500,
+      "dueDate": "2024-06-15T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1911",
+      "expanseName": "Internal Networking Tools",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e53",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 1800,
+      "dueDate": "2024-06-15T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1912",
+      "expanseName": "Team Productivity Software",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e53",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 950,
+      "dueDate": "2024-06-15T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1913",
+      "expanseName": "Sales Enablement Toolkit",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e53",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 2100,
+      "dueDate": "2024-06-15T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1914",
+      "expanseName": "Intranet Portal Development",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e53",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 3000,
+      "dueDate": "2024-06-15T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1915",
+      "expanseName": "Internal Communication Upgrade",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e53",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 1650,
+      "dueDate": "2024-06-15T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1916",
+      "expanseName": "Sales Analytics Dashboard",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e53",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 2750,
+      "dueDate": "2024-06-15T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b192g",
+      "expanseName": "Team Building Activity",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e61",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 4500.00,
+      "dueDate": "2024-07-15T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b192h",
+      "expanseName": "Sales Conference",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e61",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 8900.00,
+      "dueDate": "2024-07-15T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b192i",
+      "expanseName": "Client Gifts",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e61",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 3000.00,
+      "dueDate": "2024-07-15T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b192j",
+      "expanseName": "Lead Generation Campaign",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e61",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 6700.00,
+      "dueDate": "2024-07-15T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b192k",
+      "expanseName": "Salesforce Training",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e61",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 5100.00,
+      "dueDate": "2024-07-15T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b192l",
+      "expanseName": "Market Research",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e61",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 4200.00,
+      "dueDate": "2024-07-15T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b192m",
+      "expanseName": "Client Onboarding",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e61",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 5600.00,
+      "dueDate": "2024-07-15T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1931",
+      "expanseName": "Sales Team Accommodation",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e62",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 7600.00,
+      "dueDate": "2024-08-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1932",
+      "expanseName": "In-House Sales Training",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e62",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 5000.00,
+      "dueDate": "2024-08-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1933",
+      "expanseName": "Internal Sales Strategy Meet",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e62",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 6450.50,
+      "dueDate": "2024-08-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1934",
+      "expanseName": "Sales Planning Resources",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e62",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 5900.25,
+      "dueDate": "2024-08-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1935",
+      "expanseName": "Quarterly Sales Review",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e62",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 7150.00,
+      "dueDate": "2024-08-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1936",
+      "expanseName": "Sales Process Audit",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e62",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 4725.00,
+      "dueDate": "2024-08-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1937",
+      "expanseName": "CRM Tools Upgrade",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e62",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 6880.80,
+      "dueDate": "2024-08-10T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1931",
+      "expanseName": "Product Launch Marketing",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e63",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 12650.00,
+      "dueDate": "2024-09-01T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": true
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1904",
+      "expanseName": "Sales Conference Sponsorship",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e64",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 9500,
+      "dueDate": "2024-10-05T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1905",
+      "expanseName": "Holiday Discounts Promotions",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e65",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 4100,
+      "dueDate": "2024-11-25T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1906",
+      "expanseName": "Corporate Gifting",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e66",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 2200,
+      "dueDate": "2024-12-18T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1907",
+      "expanseName": "New Year Ad Campaign",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e67",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 6700,
+      "dueDate": "2025-01-05T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": true
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1908",
+      "expanseName": "Sales Data Analytics Tools",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e68",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 3100,
+      "dueDate": "2025-02-14T18:30:00.000Z",
+      "status": "Pending",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1909",
+      "expanseName": "Q4 Incentive Budget",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e69",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 5000,
+      "dueDate": "2025-03-28T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    }
+  ];
 
-  const groupedData = hrFinance.reduce((acc, item) => {
+
+  const groupedData = dummyData.reduce((acc, item) => {
     const month = dayjs(item.dueDate).format("MMM-YYYY"); // Extracting month and year
 
     if (!acc[month]) {
@@ -240,29 +614,47 @@ const SalesBudget = () => {
     return acc;
   }, {});
 
+
+
+
+
+
   // Convert grouped data to array and sort by latest month (descending order)
   const financialData = Object.values(groupedData)
     .map((data, index) => {
-
-      const transoformedRows = data.tableData.rows.map((row, index) => ({ ...row, srNo: index + 1, projectedAmount: Number(row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }) }))
+      const transoformedRows = data.tableData.rows.map((row, index) => ({
+        ...row,
+        srNo: index + 1,
+        projectedAmount: Number(
+          row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")
+        ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+      }));
       const transformedCols = [
-        { field: 'srNo', headerName: 'SR NO', flex: 1 },
-        ...data.tableData.columns
+        { field: "srNo", headerName: "SR NO", flex: 1 },
+        ...data.tableData.columns,
       ];
 
-      return ({
+      return {
         ...data,
         projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
         amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-        tableData: { ...data.tableData, rows: transoformedRows, columns: transformedCols }
-      })
+        tableData: {
+          ...data.tableData,
+          rows: transoformedRows,
+          columns: transformedCols,
+        },
+      };
     })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="border-default border-borderGray rounded-md">
-        <WidgetSection layout={1} title={"Budget v/s Achievements"} titleLabel={"FY 2024-25"}>
+      <div>
+        <WidgetSection
+          layout={1}
+          title={"Budget v/s Achievements"}
+          border
+          titleLabel={"FY 2024-25"}>
           <BudgetGraph maxBudget={maxBudget} utilisedData={utilisedData} />
         </WidgetSection>
       </div>
@@ -270,26 +662,25 @@ const SalesBudget = () => {
         <DataCard
           data={"INR " + inrFormat("7500000")}
           title={"Projected"}
-          description={`Current Month : ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "short",
+          })}-24`}
         />
         <DataCard
           data={"INR " + inrFormat("6200000")}
           title={"Actual"}
-          description={`Current Month : ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "short",
+          })}-24`}
         />
         <DataCard
           data={"INR " + inrFormat("89000")}
           title={"Requested"}
-          description={`Current Month : ${new Date().toLocaleString("default", {
-            month: "long",
-          })}`}
+          description={`Current Month: ${new Date().toLocaleString("default", {
+            month: "short",
+          })}-24`}
         />
       </WidgetSection>
-
 
       <div className="flex justify-end">
         <PrimaryButton
@@ -298,15 +689,13 @@ const SalesBudget = () => {
           fontSize="text-base"
           handleSubmit={() => setOpenModal(true)} // ✅ triggers modal
         />
-
       </div>
 
       <AllocatedBudget financialData={financialData} />
       <MuiModal
         title="Request Budget"
         open={openModal}
-        onClose={() => setOpenModal(false)}
-      >
+        onClose={() => setOpenModal(false)}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Expense Name */}
           <Controller

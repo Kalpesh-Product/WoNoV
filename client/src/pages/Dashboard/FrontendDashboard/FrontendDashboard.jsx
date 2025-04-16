@@ -1,5 +1,5 @@
 import Card from "../../../components/Card";
-import React from "react";
+import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import LayerBarGraph from "../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../components/WidgetSection";
@@ -14,8 +14,16 @@ import BarGraph from "../../../components/graphs/BarGraph";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import LineGraph from "../../../components/graphs/LineGraph";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
+import { inrFormat } from "../../../utils/currencyFormat";
+import { useSidebar } from "../../../context/SideBarContext";
 
 const FrontendDashboard = () => {
+  const { setIsSidebarOpen } = useSidebar();
+
+  useEffect(() => {
+    setIsSidebarOpen(true);
+  }, []); // Empty dependency array ensures this runs once on mount
+
   const utilisedData = [
     125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
     50000, 120000,
@@ -119,7 +127,7 @@ const FrontendDashboard = () => {
   const nationWisePieChart = {
     chart: {
       type: "pie",
-      fontFamily : "Poppins-Regular"
+      fontFamily: "Poppins-Regular",
     },
     labels: nationWiseData.map((item) => item.label),
     colors: nationWiseData.map((item) => item.color), // Apply new shades of blue
@@ -234,7 +242,7 @@ const FrontendDashboard = () => {
   const goaDistrictPieChart = {
     chart: {
       type: "pie",
-            fontFamily : "Poppins-Regular"
+      fontFamily: "Poppins-Regular",
     },
     labels: goaDistrictData.map((item) => item.label),
     colors: goaDistrictData.map((item) => item.color),
@@ -268,38 +276,47 @@ const FrontendDashboard = () => {
           layout={1}
           border
           title={"Budget v/s Achievements"}
-          titleLabel={"FY 2024-25"}
-        >
+          titleLabel={"FY 2024-25"}>
           {/* <LayerBarGraph data={data} options={options} /> */}
-          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={'finance/budget'} />
+          <BudgetGraph
+            utilisedData={utilisedData}
+            maxBudget={maxBudget}
+            route={"finance/budget"}
+          />
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard
-              data={"40K"}
+              data={`INR ${inrFormat(40000)}`}
               title={"Projected"}
               route={"/app/dashboard/frontend-dashboard/finance"}
-              description={`Current Month : ${new Date().toLocaleString(
+              description={`Current Month: ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                {
+                  month: "short",
+                }
+              )}-24`}
             />
             <DataCard
-              data={"35K"}
+              data={`INR ${inrFormat(35000)}`}
               title={"Actual"}
               route={"/app/dashboard/frontend-dashboard/finance"}
-              description={`Current Month : ${new Date().toLocaleString(
+              description={`Current Month: ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                {
+                  month: "short",
+                }
+              )}-24`}
             />
             <DataCard
-              data={6000}
+              data={`INR ${inrFormat(6000)}`}
               title={"Requested"}
               route={"/app/dashboard/frontend-dashboard/finance"}
-              description={`Current Month : ${new Date().toLocaleString(
+              description={`Current Month: ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                {
+                  month: "short",
+                }
+              )}-24`}
             />
           </WidgetSection>
         </WidgetSection>,
@@ -326,7 +343,11 @@ const FrontendDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection layout={1} border title={"Site Visitors"} titleLabel={"FY 2024-25"}>
+        <WidgetSection
+          layout={1}
+          border
+          title={"Site Visitors"}
+          titleLabel={"FY 2024-25"}>
           <BarGraph data={siteVisitorsData} options={siteVisitorOptions} />
         </WidgetSection>,
       ],
