@@ -582,7 +582,7 @@ const CoWorking = () => {
             occupancy: client.occupancy,
             term: client.term,
             expiry: client.expiry,
-            recievedDate: client.recievedDate,
+            recievedDate: dayjs(client.recievedDate).format("DD-MM-YYYY"),
             dueDate:dayjs(client.dueDate).format("DD-MM-YYYY"),
           }));
 

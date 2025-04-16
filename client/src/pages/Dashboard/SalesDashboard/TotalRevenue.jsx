@@ -238,8 +238,7 @@ const TotalRevenue = () => {
                   tableHeight={300}
                 />
                 <span className="text-sm font-medium mt-2 block">
-                  Total revenue of {domain.name}: INR
-                  {totalRevenue.toLocaleString()}
+                  Total revenue of {domain.name}: INR {totalRevenue.toLocaleString()}
                 </span>
               </AccordionDetails>
             </Accordion>
