@@ -467,8 +467,8 @@ const RevenueTarget = () => {
         border
         padding
         title={"Vertical-wise Revenue Targets"}
-        titleLabel={dayjs().format("MMMM YYYY")}
-        TitleAmount={"Total INR 6,80,000"}>
+        titleLabel={"FY 2024-25"}
+        TitleAmount={"INR 6,80,000"}>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
 
@@ -487,7 +487,7 @@ const RevenueTarget = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()} INR
+                  INR {domain.revenue.toLocaleString()} 
                   </span>
                 </div>
               </AccordionSummary>
@@ -513,8 +513,7 @@ const RevenueTarget = () => {
                   tableHeight={300}
                 />
                 <span className="block mt-2 font-medium">
-                  Total Revenue for {domain.name}: ₹
-                  {domain.revenue.toLocaleString()}
+                  Total Revenue for {domain.name}: INR {domain.revenue.toLocaleString()}
                 </span>
               </AccordionDetails>
             </Accordion>

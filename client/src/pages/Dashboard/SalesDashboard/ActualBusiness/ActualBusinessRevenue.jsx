@@ -496,8 +496,8 @@ const ActualBusinessRevenue = () => {
       <WidgetSection
         layout={1}
         title={"Vertical-wise Revenue"}
-        titleLabel={`${selectedMonth} 2025`}
-        TitleAmount={"Total INR 6,80,0000"}
+        titleLabel={"FY 2024-25"}
+        TitleAmount={"INR 6,80,0000"}
         border>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
@@ -516,7 +516,7 @@ const ActualBusinessRevenue = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()} INR
+                  INR {domain.revenue.toLocaleString()}
                   </span>
                 </div>
               </AccordionSummary>
