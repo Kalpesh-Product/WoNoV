@@ -1,22 +1,50 @@
+import { useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
+import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import WidgetSection from "../../../../components/WidgetSection";
+import { inrFormat } from "../../../../utils/currencyFormat";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const OverallProfitLoss = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
+
+    const [viewModalOpen, setViewModalOpen] = useState(false);
+        const [viewDetails, setViewDetails] = useState(null);
+
   const incomeExpenseData = [
     {
       name: "Income",
       data: [
-        12000, 15000, 10000, 18000, 20000, 16000, 17000, 19000, 14000, 21000,
-        22000, 25000,
+        1550000, // Jan - stable start
+        1620000, // Feb
+        1750000, // Mar
+        1900000, // Apr
+        2100000, // May
+        2250000, // Jun
+        2450000, // Jul - mid year peak
+        2400000, // Aug
+        2300000, // Sep
+        2650000, // Oct - festive boost
+        2850000, // Nov - big sales
+        3100000, // Dec - year end peak
       ],
     },
     {
       name: "Expense",
       data: [
-        8000, 10000, 7000, 12000, 13000, 11000, 12000, 12500, 25000, 15000,
-        16000, 17000,
+        950000,  // Jan
+        1000000, // Feb
+        1080000, // Mar
+        1200000, // Apr
+        1350000, // May
+        1450000, // Jun
+        1550000, // Jul
+        1500000, // Aug
+        1480000, // Sep
+        1600000, // Oct
+        1750000, // Nov
+        1850000, // Dec
       ],
     },
   ];
@@ -26,7 +54,7 @@ const OverallProfitLoss = () => {
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#4CAF50", "#F44336"], // Green for income, Red for expense
+    colors: ["#54C4A7", "#EB5C45"], // Green for income, Red for expense
     plotOptions: {
       bar: {
         horizontal: false,
@@ -60,9 +88,6 @@ const OverallProfitLoss = () => {
         "Feb-25",
         "Mar-25",
       ],
-      title: {
-        text: "2024-2025", // overridden by BarGraph component
-      },
     },
     yaxis: {
       title: {
@@ -74,27 +99,33 @@ const OverallProfitLoss = () => {
     },
     tooltip: {
       y: {
-        formatter: (val) => `₹${val.toLocaleString()}`,
+        formatter: (val) => `INR ${val.toLocaleString()}`,
       },
+    },
+    legend: {
+      show: true,
+      position: "top",
     },
   };
   //-----------------------------------------------------Graph------------------------------------------------------//
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const monthlyProfitLossColumns = [
-    { field: "srNo", headerName: "Sr No", flex: 1 },
+    { field: "id", headerName: "Sr No", flex: 1 },
     { field: "month", headerName: "Month", flex: 1 },
-    { field: "income", headerName: "Income", flex: 1 },
-    { field: "expense", headerName: "Expense", flex: 1 },
-    { field: "pnl", headerName: "P&L", flex: 1 },
+    { field: "income", headerName: "Income (INR)", flex: 1 },
+    { field: "expense", headerName: "Expense (INR)", flex: 1 },
+    { field: "pnl", headerName: "P&L (INR)", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: () => (
+      cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
-            <span className="text-primary hover:underline text-content cursor-pointer">
-              View Details
-            </span>
+            <span
+                                   className="text-subtitle cursor-pointer"
+                                   onClick={() => handleViewModal(params.data)}>
+                                   <MdOutlineRemoveRedEye />
+                                 </span>
           </div>
         </>
       ),
@@ -103,40 +134,68 @@ const OverallProfitLoss = () => {
 
   const monthlyProfitLossData = [
     {
-      srNo: 1,
-      month: "April",
-      income: "1,20,000",
-      expense: "80,000",
-      pnl: "40,000",
+      id: 1,
+      month: "Apr-24",
+      income: inrFormat(1250000),
+      expense: inrFormat(750000),
+      pnl: inrFormat(500000),
     },
     {
-      srNo: 2,
-      month: "May",
-      income: "1,10,000",
-      expense: "90,000",
-      pnl: "20,000",
+      id: 2,
+      month: "May-24",
+      income: inrFormat(1400000),
+      expense: inrFormat(800000),
+      pnl: inrFormat(600000),
     },
     {
-      srNo: 3,
-      month: "June",
-      income: "95,000",
-      expense: "1,05,000",
-      pnl: "-10,000",
+      id: 3,
+      month: "Jun-24",
+      income: inrFormat(1600000),
+      expense: inrFormat(1700000),
+      pnl: inrFormat(-100000),
     },
     {
-      srNo: 4,
-      month: "July",
-      income: "1,50,000",
-      expense: "70,000",
-      pnl: "80,000",
+      id: 4,
+      month: "Jul-24",
+      income: inrFormat(1800000),
+      expense: inrFormat(950000),
+      pnl: inrFormat(850000),
     },
     {
-      srNo: 5,
-      month: "August",
-      income: "1,00,000",
-      expense: "1,20,000",
-      pnl: "-20,000",
+      id: 5,
+      month: "Aug-24",
+      income: inrFormat(2000000),
+      expense: inrFormat(2100000),
+      pnl: inrFormat(-100000),
     },
+    {
+      id: 6,
+      month: "Sep-24",
+      income: inrFormat(1700000),
+      expense: inrFormat(1100000),
+      pnl: inrFormat(600000),
+    },
+    {
+      id: 7,
+      month: "Oct-24",
+      income: inrFormat(1900000),
+      expense: inrFormat(1300000),
+      pnl: inrFormat(600000),
+    },
+    {
+      id: 8,
+      month: "Nov-24",
+      income: inrFormat(2100000),
+      expense: inrFormat(1600000),
+      pnl: inrFormat(500000),
+    },
+    {
+      id: 9,
+      month: "Dec-24",
+      income: inrFormat(2200000),
+      expense: inrFormat(2200000),
+      pnl: inrFormat(100000),
+    }
   ];
 
   const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
@@ -149,16 +208,22 @@ const OverallProfitLoss = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"}>
+        <WidgetSection border title={"Income v/s Expenses"}
+          titleLabel={"FY 2024-25"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
-            
+
           />
         </WidgetSection>,
       ],
     },
   ];
+
+  const handleViewModal = (rowData) => {
+    setViewDetails(rowData);
+    setViewModalOpen(true);
+  };
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -169,7 +234,7 @@ const OverallProfitLoss = () => {
       ))}
 
       <div>
-        <WidgetSection border title={`Total Monthly P&L : ${totalPnL.toLocaleString()} INR`}>
+        <WidgetSection border TitleAmount={`INR ${totalPnL.toLocaleString()}`} titleLabel={"FY 2024-25"} title={"Total Monthly P&L"}>
           <AgTable
             data={monthlyProfitLossData}
             columns={monthlyProfitLossColumns}
@@ -177,6 +242,24 @@ const OverallProfitLoss = () => {
           />
         </WidgetSection>
       </div>
+        { viewDetails && <ViewDetailsModal
+              open={viewModalOpen}
+              onClose={() => setViewModalOpen(false)}
+              data={{...viewDetails,income:"INR " + Number(
+                viewDetails.income.toLocaleString("en-IN").replace(/,/g, "")
+              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+              expense:"INR " + Number(
+                viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
+              ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
+            }}
+              title="P&L Detail"
+              fields={[
+                { label: "Month", key: "month" },
+                { label: "Income", key: "income" },
+                { label: "Expense", key: "expense" },
+                { label: "P&L", key: "pnl" },
+              ]}
+            />}
     </div>
   );
 };

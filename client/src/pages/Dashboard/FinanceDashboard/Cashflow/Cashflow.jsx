@@ -9,7 +9,7 @@ const Cashflow = () => {
   // Map routes to tabs
   const tabs = [
     { label: "Projections", path: "projections" },
-    { label: "Historical P&L", path: "historical-pnl" },
+    { label: "Historical P&L", path: "historical-P&L" },
   ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"

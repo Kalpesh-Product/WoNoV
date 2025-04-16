@@ -3,8 +3,15 @@ import BarGraph from "../../../../components/graphs/BarGraph";
 import AgTable from "../../../../components/AgTable";
 import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
+import DataCard from "../../../../components/DataCard";
+import FilterUnits from "./FilterUnits";
+import { useState } from "react";
+
+
+ 
 
 const LandlordPayments = () => {
+
   const collectionData = [
     { month: "Apr-24", paid: 80, unpaid: 20 },
     { month: "May-24", paid: 90, unpaid: 10 },
@@ -73,283 +80,9 @@ const LandlordPayments = () => {
     colors: ["#54C4A7", "#EB5C45"], // Green for paid, red for unpaid
   };
 
-  const unitData = [
-    {
-      unitNo: "501(A)",
-      tableData: {
-        columns: [
-          { field: "srNo", headerName: "Sr No", width: 100 },
-          { field: "month", headerName: "Month", width: 120 },
-          { field: "landlordName", headerName: "Landlord Name", flex: 1 },
-          { field: "total", headerName: "Total", width: 150 },
-        ],
-        rows: [
-          {
-            srNo: 1,
-            month: "Apr-24",
-            landlordName: "Ravi Kumar",
-            total: "INR 25,000",
-          },
-          {
-            srNo: 2,
-            month: "May-24",
-            landlordName: "Ravi Kumar",
-            total: "INR 26,000",
-          },
-        ],
-      },
-    },
-    {
-      unitNo: "501(B)",
-      tableData: {
-        columns: [
-          { field: "srNo", headerName: "Sr No", width: 100 },
-          { field: "month", headerName: "Month", width: 120 },
-          { field: "landlordName", headerName: "Landlord Name", flex: 1 },
-          { field: "total", headerName: "Total", width: 150 },
-        ],
-        rows: [
-          {
-            srNo: 1,
-            month: "Apr-24",
-            landlordName: "Sneha Mehta",
-            total: "INR 24,500",
-          },
-          {
-            srNo: 2,
-            month: "May-24",
-            landlordName: "Sneha Mehta",
-            total: "INR 25,100",
-          },
-        ],
-      },
-    },
-    {
-      unitNo: "601(A)",
-      tableData: {
-        columns: [
-          { field: "srNo", headerName: "Sr No", width: 100 },
-          { field: "month", headerName: "Month", width: 120 },
-          { field: "landlordName", headerName: "Landlord Name", flex: 1 },
-          { field: "total", headerName: "Total", width: 150 },
-        ],
-        rows: [
-          {
-            srNo: 1,
-            month: "Apr-24",
-            landlordName: "Amit Shah",
-            total: "INR 28,000",
-          },
-          {
-            srNo: 2,
-            month: "May-24",
-            landlordName: "Amit Shah",
-            total: "INR 27,800",
-          },
-        ],
-      },
-    },
-    {
-      unitNo: "601(B)",
-      tableData: {
-        columns: [
-          { field: "srNo", headerName: "Sr No", width: 100 },
-          { field: "month", headerName: "Month", width: 120 },
-          { field: "landlordName", headerName: "Landlord Name", flex: 1 },
-          { field: "total", headerName: "Total", width: 150 },
-        ],
-        rows: [
-          {
-            srNo: 1,
-            month: "Apr-24",
-            landlordName: "Priya Das",
-            total: "INR 27,000",
-          },
-          {
-            srNo: 2,
-            month: "May-24",
-            landlordName: "Priya Das",
-            total: "INR 27,500",
-          },
-        ],
-      },
-    },
-    {
-      unitNo: "701(A)",
-      tableData: {
-        columns: [
-          { field: "srNo", headerName: "Sr No", width: 100 },
-          { field: "month", headerName: "Month", width: 120 },
-          { field: "landlordName", headerName: "Landlord Name", flex: 1 },
-          { field: "total", headerName: "Total", width: 150 },
-        ],
-        rows: [
-          {
-            srNo: 1,
-            month: "Apr-24",
-            landlordName: "Vikram Singh",
-            total: "INR 29,500",
-          },
-          {
-            srNo: 2,
-            month: "May-24",
-            landlordName: "Vikram Singh",
-            total: "INR 30,000",
-          },
-        ],
-      },
-    },
-    {
-      unitNo: "701(B)",
-      tableData: {
-        columns: [
-          { field: "srNo", headerName: "Sr No", width: 100 },
-          { field: "month", headerName: "Month", width: 120 },
-          { field: "landlordName", headerName: "Landlord Name", flex: 1 },
-          { field: "total", headerName: "Total", width: 150 },
-        ],
-        rows: [
-          {
-            srNo: 1,
-            month: "Apr-24",
-            landlordName: "Neha Rathi",
-            total: "INR 29,000",
-          },
-          {
-            srNo: 2,
-            month: "May-24",
-            landlordName: "Neha Rathi",
-            total: "INR 29,200",
-          },
-        ],
-      },
-    },
-    {
-      unitNo: "002",
-      tableData: {
-        columns: [
-          { field: "srNo", headerName: "Sr No", width: 100 },
-          { field: "month", headerName: "Month", width: 120 },
-          { field: "landlordName", headerName: "Landlord Name", flex: 1 },
-          { field: "total", headerName: "Total", width: 150 },
-        ],
-        rows: [
-          {
-            srNo: 1,
-            month: "Apr-24",
-            landlordName: "Manish Verma",
-            total: "INR 23,000",
-          },
-          {
-            srNo: 2,
-            month: "May-24",
-            landlordName: "Manish Verma",
-            total: "INR 23,400",
-          },
-        ],
-      },
-    },
-    {
-      unitNo: "004",
-      tableData: {
-        columns: [
-          { field: "srNo", headerName: "Sr No", width: 100 },
-          { field: "month", headerName: "Month", width: 120 },
-          { field: "landlordName", headerName: "Landlord Name", flex: 1 },
-          { field: "total", headerName: "Total", width: 150 },
-        ],
-        rows: [
-          {
-            srNo: 1,
-            month: "Apr-24",
-            landlordName: "Ritika Sinha",
-            total: "INR 22,500",
-          },
-          {
-            srNo: 2,
-            month: "May-24",
-            landlordName: "Ritika Sinha",
-            total: "INR 23,000",
-          },
-        ],
-      },
-    },
-    {
-      unitNo: "503",
-      tableData: {
-        columns: [
-          { field: "srNo", headerName: "Sr No", width: 100 },
-          { field: "month", headerName: "Month", width: 120 },
-          { field: "landlordName", headerName: "Landlord Name", flex: 1 },
-          { field: "total", headerName: "Total", width: 150 },
-        ],
-        rows: [
-          {
-            srNo: 1,
-            month: "Apr-24",
-            landlordName: "Rohan Desai",
-            total: "INR 26,300",
-          },
-          {
-            srNo: 2,
-            month: "May-24",
-            landlordName: "Rohan Desai",
-            total: "INR 26,800",
-          },
-        ],
-      },
-    },
-    {
-      unitNo: "706",
-      tableData: {
-        columns: [
-          { field: "srNo", headerName: "Sr No", width: 100 },
-          { field: "month", headerName: "Month", width: 120 },
-          { field: "landlordName", headerName: "Landlord Name", flex: 1 },
-          { field: "total", headerName: "Total", width: 150 },
-        ],
-        rows: [
-          {
-            srNo: 1,
-            month: "Apr-24",
-            landlordName: "Tina Malhotra",
-            total: "INR 31,000",
-          },
-          {
-            srNo: 2,
-            month: "May-24",
-            landlordName: "Tina Malhotra",
-            total: "INR 31,500",
-          },
-        ],
-      },
-    },
-    {
-      unitNo: "703",
-      tableData: {
-        columns: [
-          { field: "srNo", headerName: "Sr No", width: 100 },
-          { field: "month", headerName: "Month", width: 120 },
-          { field: "landlordName", headerName: "Landlord Name", flex: 1 },
-          { field: "total", headerName: "Total", width: 150 },
-        ],
-        rows: [
-          {
-            srNo: 1,
-            month: "Apr-24",
-            landlordName: "Kunal Joshi",
-            total: "INR 30,200",
-          },
-          {
-            srNo: 2,
-            month: "May-24",
-            landlordName: "Kunal Joshi",
-            total: "INR 30,700",
-          },
-        ],
-      },
-    },
-  ];
+ 
+
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -357,8 +90,10 @@ const LandlordPayments = () => {
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
 
-      <WidgetSection title="Unit Wise Landlord Payments" border>
-        {unitData.map((unit, index) => (
+       <FilterUnits/>
+
+      {/* <WidgetSection title="Unit Wise Landlord Payments" border>
+        {units.map((unit, index) => (
           <Accordion key={index} className="py-4">
             <AccordionSummary
               expandIcon={<IoIosArrowDown />}
@@ -396,7 +131,7 @@ const LandlordPayments = () => {
             </AccordionDetails>
           </Accordion>
         ))}
-      </WidgetSection>
+      </WidgetSection> */}
     </div>
   );
 };

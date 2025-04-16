@@ -22,7 +22,7 @@ const RevenueTarget = () => {
       domains: [
         {
           name: "Co-Working",
-          revenue: 1256800,
+          revenue: 12568000,
           clients: [
             {
               srNo: "1",
@@ -49,7 +49,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Workation",
-          revenue: 836300,
+          revenue: 8363000,
           clients: [
             {
               srNo: "1",
@@ -77,7 +77,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Meetings",
-          revenue: 1578400,
+          revenue: 15784000,
           clients: [
             {
               srNo: "4",
@@ -105,7 +105,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Virtual Office",
-          revenue: 1463800,
+          revenue: 14638000,
           clients: [
             {
               srNo: "7",
@@ -133,7 +133,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Other Channels",
-          revenue: 1264700,
+          revenue: 12647000,
           clients: [
             {
               srNo: "10",
@@ -165,7 +165,7 @@ const RevenueTarget = () => {
       domains: [
         {
           name: "Co-Working",
-          revenue: 15654,
+          revenue: 156540,
           clients: [
             {
               srNo: "1",
@@ -192,7 +192,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Workation",
-          revenue: 9795,
+          revenue: 97950,
           clients: [
             {
               srNo: "1",
@@ -212,7 +212,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Co-Living",
-          revenue: 14000,
+          revenue: 140000,
           clients: [
             {
               srNo: "1",
@@ -244,7 +244,7 @@ const RevenueTarget = () => {
       domains: [
         {
           name: "Co-Working",
-          revenue: 18264,
+          revenue: 182640,
           clients: [
             {
               srNo: "1",
@@ -271,7 +271,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Workation",
-          revenue: 10000,
+          revenue: 100000,
           clients: [
             {
               srNo: "1",
@@ -291,7 +291,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Co-Living",
-          revenue: 13586,
+          revenue: 135860,
           clients: [
             {
               srNo: "1",
@@ -323,7 +323,7 @@ const RevenueTarget = () => {
       domains: [
         {
           name: "Co-Working",
-          revenue: 20000,
+          revenue: 200000,
           clients: [
             {
               srNo: "1",
@@ -350,7 +350,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Workation",
-          revenue: 11000,
+          revenue: 110000,
           clients: [
             {
               srNo: "1",
@@ -370,7 +370,7 @@ const RevenueTarget = () => {
         },
         {
           name: "Co-Living",
-          revenue: 16468,
+          revenue: 164680,
           clients: [
             {
               srNo: "1",
@@ -468,7 +468,7 @@ const RevenueTarget = () => {
         padding
         title={"Vertical-wise Revenue Targets"}
         titleLabel={dayjs().format("MMMM YYYY")}
-        TitleAmount={"Total INR 6,80,000"}>
+        TitleAmount={`Total INR ${inrFormat("6800000")}`}>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
 

@@ -13,26 +13,55 @@ import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import DataCard from "../../../components/DataCard";
+import { useSidebar } from "../../../context/SideBarContext";
+import { useEffect } from "react";
 
 const FinanceDashboard = () => {
+  const { setIsSidebarOpen } = useSidebar();
+
+  useEffect(() => {
+    setIsSidebarOpen(true);
+  }, []); // Empty dependency array ensures this runs once on mount
+
   const navigate = useNavigate();
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [
     {
       name: "Income",
       data: [
-        12000, 15000, 10000, 18000, 20000, 16000, 17000, 19000, 14000, 21000,
-        22000, 25000,
+        1550000, // Jan - stable start
+        1620000, // Feb
+        1750000, // Mar
+        1900000, // Apr
+        2100000, // May
+        2250000, // Jun
+        2450000, // Jul - mid year peak
+        2400000, // Aug
+        2300000, // Sep
+        2650000, // Oct - festive boost
+        2850000, // Nov - big sales
+        3100000, // Dec - year end peak
       ],
     },
     {
       name: "Expense",
       data: [
-        8000, 10000, 7000, 12000, 13000, 11000, 12000, 12500, 25000, 15000,
-        16000, 17000,
+        950000, // Jan
+        1000000, // Feb
+        1080000, // Mar
+        1200000, // Apr
+        1350000, // May
+        1450000, // Jun
+        1550000, // Jul
+        1500000, // Aug
+        1480000, // Sep
+        1600000, // Oct
+        1750000, // Nov
+        1850000, // Dec
       ],
     },
   ];
+
   const incomeExpenseOptions = {
     chart: {
       id: "income-vs-expense-bar",
@@ -82,6 +111,7 @@ const FinanceDashboard = () => {
       title: {
         text: "Amount (INR)",
       },
+      tickAmount: 4,
     },
     fill: {
       opacity: 1,
@@ -96,7 +126,7 @@ const FinanceDashboard = () => {
   //-----------------------------------------------------DataCards------------------------------------------------------//
   const incomeCardData = {
     cardTitle: "Income",
-    timePeriod: "Apr 24 – Mar 25",
+    timePeriod: "FY 2024-25",
     descriptionData: [
       {
         title: "March 2025",
@@ -119,7 +149,7 @@ const FinanceDashboard = () => {
 
   const expenseCardData = {
     cardTitle: "Expense",
-    timePeriod: "Apr 24 – Mar 25",
+    timePeriod: "FY 2024-25",
     descriptionData: [
       { title: "March 2025", value: "INR 18,00,000" },
       { title: "Annual Average", value: "INR 22,00,000" },
@@ -130,7 +160,7 @@ const FinanceDashboard = () => {
 
   const netSavingsCardData = {
     cardTitle: "Net Savings",
-    timePeriod: "Apr 24 – Mar 25",
+    timePeriod: "FY 2024-25",
     descriptionData: [
       { title: "March 2025", value: "INR 7,00,000" },
       { title: "Annual Average", value: "INR 5,00,000" },
@@ -340,6 +370,12 @@ const FinanceDashboard = () => {
     { taskName: "Tally Update", type: "Monthly", endTime: "10:00 AM" },
     { taskName: "TDS Query Update", type: "Daily", endTime: "02:30 PM" },
     { taskName: "Audit Report Update", type: "Daily", endTime: "08:00 AM" },
+    { taskName: "Check Approvals", type: "Daily", endTime: "09:00 AM" },
+    {
+      taskName: "Check Statutory Payments",
+      type: "Daily",
+      endTime: "03:00 PM",
+    },
   ];
 
   const priorityTasksColumns = [
@@ -373,22 +409,22 @@ const FinanceDashboard = () => {
     },
     {
       paymentName: "Zoom Enterprise",
-      department: "Operations",
+      department: "Finance",
       amount: "3,500",
     },
     {
       paymentName: "Notion Team Plan",
-      department: "Management",
+      department: "Admin",
       amount: "2,400",
     },
     {
       paymentName: "Figma Professional",
-      department: "Design",
+      department: "Tech",
       amount: "4,200",
     },
     {
       paymentName: "Slack Premium",
-      department: "Communication",
+      department: "Tech",
       amount: "3,000",
     },
     {
@@ -396,8 +432,18 @@ const FinanceDashboard = () => {
       department: "IT",
       amount: "6,800",
     },
+    {
+      paymentName: "Sumo Payroll",
+      department: "HR",
+      amount: "7,500",
+    },
+    {
+      paymentName: "Pet Pooja",
+      department: "Cafe",
+      amount: "5,300",
+    },
   ];
-  
+
   const executiveTimingsColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "paymentName", label: "Payment Name", align: "left" },
@@ -410,43 +456,25 @@ const FinanceDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border titleLabel={"FY 2024-25"} title={"Income v/s Expenses"}>
-          <BarGraph
-            data={incomeExpenseData}
-            options={incomeExpenseOptions}
-          />
+        <WidgetSection
+          border
+          title={"Income v/s Expenses"}
+          titleLabel={"FY 2024-25"}>
+          <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} />
         </WidgetSection>,
       ],
     },
-      {
-          layout: 3,
-          widgets: [
-            <DataCard
-              data={"INR 50,00,000"}
-              title={"Projected"}
-              route={"/app/dashboard/finance-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString("default", {
-                month: "long",
-              })}`}
-            />,
-            <DataCard
-              data={"INR 40,00,000"}
-              title={"Actual"}
-              route={"/app/dashboard/finance-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString("default", {
-                month: "long",
-              })}`}
-            />,
-            <DataCard
-              data={"INR 17,000"}
-              title={"Requested"}
-              route={"/app/dashboard/finance-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString("default", {
-                month: "long",
-              })}`}
-            />,
-          ],
-        },
+    {
+      layout: 3,
+      widgets: [
+        <FinanceCard {...incomeCardData} />,
+        <FinanceCard {...expenseCardData} />,
+        <FinanceCard
+          {...netSavingsCardData}
+          highlightNegativePositive={true}
+        />,
+      ],
+    },
     {
       layout: 6,
       widgets: [
@@ -470,17 +498,6 @@ const FinanceDashboard = () => {
         />,
       ],
     },
-    {
-      layout: 3,
-      widgets: [
-        <FinanceCard {...incomeCardData} />,
-        <FinanceCard {...expenseCardData} />,
-        <FinanceCard
-          {...netSavingsCardData}
-          highlightNegativePositive={true}
-        />,
-      ],
-    },
 
     {
       layout: 2,
@@ -489,7 +506,7 @@ const FinanceDashboard = () => {
           <PieChartMui
             data={pieMonthlyPayoutData}
             options={pieMonthlyPayoutOptions}
-            width={550}
+            width={500}
             height={350}
           />
         </WidgetSection>,
@@ -497,7 +514,7 @@ const FinanceDashboard = () => {
           <PieChartMui
             data={pieMonthlyCollectionData}
             options={pieMonthlyCollectionOptions}
-            width={550}
+            width={500}
             height={350}
           />
         </WidgetSection>,
@@ -575,25 +592,25 @@ const FinanceDashboard = () => {
 
       {/* <div
         onClick={() => {
-          navigate(`monthly-pnl`);
+          navigate(`monthly-P&L`);
         }}>
         Monthly P&L
       </div>
       <div
         onClick={() => {
-          navigate(`annual-average-pnl`);
+          navigate(`annual-average-P&L`);
         }}>
         Annual Average P&L
       </div>
       <div
         onClick={() => {
-          navigate(`overall-pnl`);
+          navigate(`overall-P&L`);
         }}>
         Overall P&L
       </div>
       <div
         onClick={() => {
-          navigate(`monthly-per-sq-ft-pnl`);
+          navigate(`monthly-per-sq-ft-P&L`);
         }}>
         Monthly Per Sq. Ft. P&L
       </div>

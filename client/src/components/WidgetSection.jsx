@@ -33,19 +33,19 @@ const WidgetSection = ({
       {title && (
         <div className=" border-default  border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl uppercase">
           <div className="flex w-full gap-8 items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <span
                 className={`${
                   titleFont
                     ? "text-subtitle text-primary"
-                    : "text-title text-primary font-pmedium"
+                    : "text-widgetTitle text-primary font-pmedium"
                 }`}
               >
-                {title}{" "}
+                {title}
               </span>
 
               {titleLabel ? (
-                <span className="text-title text-primary font-pmedium">{titleLabel}</span>
+                <span className="text-widgetTitle text-primary font-pmedium">{titleLabel}</span>
               ) : (
                 ""
               )}
@@ -57,8 +57,7 @@ const WidgetSection = ({
                 :{" "}
                 <span
                   style={{ color: titleDataColor }}
-                  className="font-pbold text-title"
-                >
+                  className="font-pbold text-title">
                   {titleData}
                 </span>
               </span>
@@ -68,9 +67,8 @@ const WidgetSection = ({
                 className={`${
                   titleFont
                     ? "text-subtitle text-primary"
-                    : "text-title text-primary font-pmedium"
-                }`}
-              >
+                    : "text-widgetTitle text-primary font-pmedium"
+                }`}>
                 {TitleAmount}{" "}
               </span>
             </div>
@@ -82,12 +80,10 @@ const WidgetSection = ({
       )}
       <div
         style={border ? { border: "2px solid #d1d5db", borderTop: "0" } : {}}
-        className="h-full rounded-b-xl"
-      >
+        className="h-full rounded-b-xl">
         <div
           style={{ padding: padding ? "0" : "1rem" }}
-          className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}
-        >
+          className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>
           {React.Children.map(children, (child) => (
             <div>{child}</div>
           ))}

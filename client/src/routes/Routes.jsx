@@ -309,6 +309,8 @@ import MonthMeetings from "../pages/MonthMeetings";
 import DepartmentWiseTickets from "../pages/Tickets/DepartmentWiseTickets";
 import CafeLayout from "../pages/Dashboard/CafeDashboard/CafeLayout";
 import CafeDashboard from "../pages/Dashboard/CafeDashboard/CafeDashboard";
+import DeptWiseBudgetDetails from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudgetDetails";
+import LandlordPaymentLocation from "../pages/Dashboard/FinanceDashboard/Finance/LandlordPaymentLocation";
 
 export const routes = createBrowserRouter([
   {
@@ -420,19 +422,19 @@ export const routes = createBrowserRouter([
                         element: <FinanceDashboard />,
                       },
                       {
-                        path: "monthly-pnl",
+                        path: "monthly-P&L",
                         element: <MonthlyPnl />,
                       },
                       {
-                        path: "annual-average-pnl",
+                        path: "annual-average-P&L",
                         element: <AnnualAveragePnl />,
                       },
                       {
-                        path: "overall-pnl",
+                        path: "overall-P&L",
                         element: <OverallPnl />,
                       },
                       {
-                        path: "monthly-per-sq-ft-pnl",
+                        path: "monthly-per-sq-ft-P&L",
                         element: <MonthlyPerSqFtPnl />,
                       },
                       {
@@ -456,7 +458,7 @@ export const routes = createBrowserRouter([
                             element: <Projections />,
                           },
                           {
-                            path: "historical-pnl",
+                            path: "historical-P&L",
                             element: <HistoricalPnl />,
                           },
                         ],
@@ -556,6 +558,10 @@ export const routes = createBrowserRouter([
                             element: <DeptWiseBudget />,
                           },
                           {
+                            path: "dept-wise-budget/:department",
+                            element: <DeptWiseBudgetDetails />,
+                          },
+                          {
                             path: "payment-schedule",
                             element: <PaymentSchedule />,
                           },
@@ -570,6 +576,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "landlord-payments",
                             element: <LandlordPayments />,
+                          },
+                          {
+                            path: "landlord-payments-unit",
+                            element: <LandlordPaymentLocation />,
                           },
                         ],
                       },

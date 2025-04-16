@@ -32,433 +32,433 @@ const HistoricalPnl = () => {
   });
 
 
-const mockBusinessRevenueData = [
-  {
-    "month": "FY 2024-25",
-    "domains": [
-      {
-        "name": "2024-25",
-        "totalProfitLoss": 659015,
-        "clients": [
-          {
-            "srNo": 1,
-            "month": "April",
-            "income": 80000,
-            "expense": 70000,
-            "profitLoss": 74197,
-            "department": "IT"
-          },
-          {
-            "srNo": 2,
-            "month": "May",
-            "income": 85000,
-            "expense": 75000,
-            "profitLoss": 62586,
-            "department": "Tech"
-          },
-          {
-            "srNo": 3,
-            "month": "June",
-            "income": 95000,
-            "expense": 80000,
-            "profitLoss": 81041,
-            "department": "Admin"
-          },
-          {
-            "srNo": 4,
-            "month": "July",
-            "income": 100000,
-            "expense": 90000,
-            "profitLoss": 31077,
-            "department": "Sales"
-          },
-          {
-            "srNo": 5,
-            "month": "August",
-            "income": 105000,
-            "expense": 95000,
-            "profitLoss": 96453,
-            "department": "Finance"
-          },
-          {
-            "srNo": 6,
-            "month": "September",
-            "income": 110000,
-            "expense": 100000,
-            "profitLoss": 49643,
-            "department": "IT"
-          },
-          {
-            "srNo": 7,
-            "month": "October",
-            "income": 115000,
-            "expense": 105000,
-            "profitLoss": 133252,
-            "department": "Tech"
-          },
-          {
-            "srNo": 8,
-            "month": "November",
-            "income": 120000,
-            "expense": 109000,
-            "profitLoss": 130766,
-            "department": "Admin"
-          }
-        ]
-      },
-      {
-        "name": "2023-24",
-        "totalProfitLoss": 580756,
-        "clients": [
-          {
-            "srNo": 1,
-            "month": "April",
-            "income": 80000,
-            "expense": 70000,
-            "profitLoss": 25886,
-            "department": "IT"
-          },
-          {
-            "srNo": 2,
-            "month": "May",
-            "income": 85000,
-            "expense": 75000,
-            "profitLoss": 90080,
-            "department": "Tech"
-          },
-          {
-            "srNo": 3,
-            "month": "June",
-            "income": 95000,
-            "expense": 80000,
-            "profitLoss": 102970,
-            "department": "Admin"
-          },
-          {
-            "srNo": 4,
-            "month": "July",
-            "income": 100000,
-            "expense": 90000,
-            "profitLoss": 95380,
-            "department": "Sales"
-          },
-          {
-            "srNo": 5,
-            "month": "August",
-            "income": 105000,
-            "expense": 95000,
-            "profitLoss": 16332,
-            "department": "Finance"
-          },
-          {
-            "srNo": 6,
-            "month": "September",
-            "income": 110000,
-            "expense": 100000,
-            "profitLoss": 64160,
-            "department": "IT"
-          },
-          {
-            "srNo": 7,
-            "month": "October",
-            "income": 115000,
-            "expense": 105000,
-            "profitLoss": 93069,
-            "department": "Tech"
-          },
-          {
-            "srNo": 8,
-            "month": "November",
-            "income": 120000,
-            "expense": 109000,
-            "profitLoss": 92879,
-            "department": "Admin"
-          }
-        ]
-      },
-      {
-        "name": "2022-23",
-        "totalProfitLoss": 459132,
-        "clients": [
-          {
-            "srNo": 1,
-            "month": "April",
-            "income": 80000,
-            "expense": 70000,
-            "profitLoss": 93469,
-            "department": "IT"
-          },
-          {
-            "srNo": 2,
-            "month": "May",
-            "income": 85000,
-            "expense": 75000,
-            "profitLoss": 79615,
-            "department": "Tech"
-          },
-          {
-            "srNo": 3,
-            "month": "June",
-            "income": 95000,
-            "expense": 80000,
-            "profitLoss": 73981,
-            "department": "Admin"
-          },
-          {
-            "srNo": 4,
-            "month": "July",
-            "income": 100000,
-            "expense": 90000,
-            "profitLoss": 62319,
-            "department": "Sales"
-          },
-          {
-            "srNo": 5,
-            "month": "August",
-            "income": 105000,
-            "expense": 95000,
-            "profitLoss": 43862,
-            "department": "Finance"
-          },
-          {
-            "srNo": 6,
-            "month": "September",
-            "income": 110000,
-            "expense": 100000,
-            "profitLoss": 27267,
-            "department": "IT"
-          },
-          {
-            "srNo": 7,
-            "month": "October",
-            "income": 115000,
-            "expense": 105000,
-            "profitLoss": 48399,
-            "department": "Tech"
-          },
-          {
-            "srNo": 8,
-            "month": "November",
-            "income": 120000,
-            "expense": 109000,
-            "profitLoss": 30220,
-            "department": "Admin"
-          }
-        ]
-      },
-      {
-        "name": "2021-22",
-        "totalProfitLoss": 364978,
-        "clients": [
-          {
-            "srNo": 1,
-            "month": "April",
-            "income": 80000,
-            "expense": 70000,
-            "profitLoss": 56434,
-            "department": "IT"
-          },
-          {
-            "srNo": 2,
-            "month": "May",
-            "income": 85000,
-            "expense": 75000,
-            "profitLoss": 49940,
-            "department": "Tech"
-          },
-          {
-            "srNo": 3,
-            "month": "June",
-            "income": 95000,
-            "expense": 80000,
-            "profitLoss": 41680,
-            "department": "Admin"
-          },
-          {
-            "srNo": 4,
-            "month": "July",
-            "income": 100000,
-            "expense": 90000,
-            "profitLoss": 41240,
-            "department": "Sales"
-          },
-          {
-            "srNo": 5,
-            "month": "August",
-            "income": 105000,
-            "expense": 95000,
-            "profitLoss": 52293,
-            "department": "Finance"
-          },
-          {
-            "srNo": 6,
-            "month": "September",
-            "income": 110000,
-            "expense": 100000,
-            "profitLoss": 46599,
-            "department": "IT"
-          },
-          {
-            "srNo": 7,
-            "month": "October",
-            "income": 115000,
-            "expense": 105000,
-            "profitLoss": 33717,
-            "department": "Tech"
-          },
-          {
-            "srNo": 8,
-            "month": "November",
-            "income": 120000,
-            "expense": 109000,
-            "profitLoss": 43075,
-            "department": "Admin"
-          }
-        ]
-      },
-      {
-        "name": "2020-21",
-        "totalProfitLoss": 615630,
-        "clients": [
-          {
-            "srNo": 1,
-            "month": "April",
-            "income": 80000,
-            "expense": 70000,
-            "profitLoss": 33324,
-            "department": "IT"
-          },
-          {
-            "srNo": 2,
-            "month": "May",
-            "income": 85000,
-            "expense": 75000,
-            "profitLoss": 106534,
-            "department": "Tech"
-          },
-          {
-            "srNo": 3,
-            "month": "June",
-            "income": 95000,
-            "expense": 80000,
-            "profitLoss": 64167,
-            "department": "Admin"
-          },
-          {
-            "srNo": 4,
-            "month": "July",
-            "income": 100000,
-            "expense": 90000,
-            "profitLoss": 95236,
-            "department": "Sales"
-          },
-          {
-            "srNo": 5,
-            "month": "August",
-            "income": 105000,
-            "expense": 95000,
-            "profitLoss": 43373,
-            "department": "Finance"
-          },
-          {
-            "srNo": 6,
-            "month": "September",
-            "income": 110000,
-            "expense": 100000,
-            "profitLoss": 104447,
-            "department": "IT"
-          },
-          {
-            "srNo": 7,
-            "month": "October",
-            "income": 115000,
-            "expense": 105000,
-            "profitLoss": 92953,
-            "department": "Tech"
-          },
-          {
-            "srNo": 8,
-            "month": "November",
-            "income": 120000,
-            "expense": 109000,
-            "profitLoss": 75596,
-            "department": "Admin"
-          }
-        ]
-      },
-      {
-        "name": "2019-20",
-        "totalProfitLoss": 620934,
-        "clients": [
-          {
-            "srNo": 1,
-            "month": "April",
-            "income": 80000,
-            "expense": 70000,
-            "profitLoss": 23603,
-            "department": "IT"
-          },
-          {
-            "srNo": 2,
-            "month": "May",
-            "income": 85000,
-            "expense": 75000,
-            "profitLoss": 87263,
-            "department": "Tech"
-          },
-          {
-            "srNo": 3,
-            "month": "June",
-            "income": 95000,
-            "expense": 80000,
-            "profitLoss": 92783,
-            "department": "Admin"
-          },
-          {
-            "srNo": 4,
-            "month": "July",
-            "income": 100000,
-            "expense": 90000,
-            "profitLoss": 110420,
-            "department": "Sales"
-          },
-          {
-            "srNo": 5,
-            "month": "August",
-            "income": 105000,
-            "expense": 95000,
-            "profitLoss": 78060,
-            "department": "Finance"
-          },
-          {
-            "srNo": 6,
-            "month": "September",
-            "income": 110000,
-            "expense": 100000,
-            "profitLoss": 13340,
-            "department": "IT"
-          },
-          {
-            "srNo": 7,
-            "month": "October",
-            "income": 115000,
-            "expense": 105000,
-            "profitLoss": 109812,
-            "department": "Tech"
-          },
-          {
-            "srNo": 8,
-            "month": "November",
-            "income": 120000,
-            "expense": 109000,
-            "profitLoss": 105653,
-            "department": "Admin"
-          }
-        ]
-      }
-    ]
-  }
-]
+  const mockBusinessRevenueData = [
+    {
+      "month": "FY 2024-25",
+      "domains": [
+        {
+          "name": "2024-25",
+          "totalProfitLoss": 6590150,
+          "clients": [
+            {
+              "srNo": 1,
+              "month": "April",
+              "income": 8000000,
+              "expense": 7000000,
+              "profitLoss": 74197,
+              "domain": "Coworking"
+            },
+            {
+              "srNo": 2,
+              "month": "May",
+              "income": 8500000,
+              "expense": 7500000,
+              "profitLoss": 62586,
+              "domain": "Virtual Office"
+            },
+            {
+              "srNo": 3,
+              "month": "June",
+              "income": 9500000,
+              "expense": 8000000,
+              "profitLoss": 81041,
+              "domain": "Workations"
+            },
+            {
+              "srNo": 4,
+              "month": "July",
+              "income": 10000000,
+              "expense": 9000000,
+              "profitLoss": 31077,
+              "domain": "Meetng Rooms"
+            },
+            {
+              "srNo": 5,
+              "month": "August",
+              "income": 10500000,
+              "expense": 9500000,
+              "profitLoss": 96453,
+              "domain": "Other Income"
+            },
+            {
+              "srNo": 6,
+              "month": "September",
+              "income": 11000000,
+              "expense": 10000000,
+              "profitLoss": 49643,
+              "domain": "Coworking"
+            },
+            {
+              "srNo": 7,
+              "month": "October",
+              "income": 11500000,
+              "expense": 10500000,
+              "profitLoss": 133252,
+              "domain": "Virtual Office"
+            },
+            {
+              "srNo": 8,
+              "month": "November",
+              "income": 12000000,
+              "expense": 10900000,
+              "profitLoss": 130766,
+              "domain": "Workations"
+            }
+          ]
+        },
+        {
+          "name": "2023-24",
+          "totalProfitLoss": 5807560,
+          "clients": [
+            {
+              "srNo": 1,
+              "month": "April",
+              "income": 8000000,
+              "expense": 7000000,
+              "profitLoss": 25886,
+              "domain": "Coworking"
+            },
+            {
+              "srNo": 2,
+              "month": "May",
+              "income": 8500000,
+              "expense": 7500000,
+              "profitLoss": 90080,
+              "domain": "Virtual Office"
+            },
+            {
+              "srNo": 3,
+              "month": "June",
+              "income": 9500000,
+              "expense": 8000000,
+              "profitLoss": 102970,
+              "domain": "Workations"
+            },
+            {
+              "srNo": 4,
+              "month": "July",
+              "income": 10000000,
+              "expense": 9000000,
+              "profitLoss": 95380,
+              "domain": "Café"
+            },
+            {
+              "srNo": 5,
+              "month": "August",
+              "income": 10500000,
+              "expense": 9500000,
+              "profitLoss": 16332,
+              "domain": "Meetng Rooms"
+            },
+            {
+              "srNo": 6,
+              "month": "September",
+              "income": 11000000,
+              "expense": 10000000,
+              "profitLoss": 64160,
+              "domain": "Coworking"
+            },
+            {
+              "srNo": 7,
+              "month": "October",
+              "income": 11500000,
+              "expense": 10500000,
+              "profitLoss": 93069,
+              "domain": "Virtual Office"
+            },
+            {
+              "srNo": 8,
+              "month": "November",
+              "income": 12000000,
+              "expense": 10900000,
+              "profitLoss": 92879,
+              "domain": "Workations"
+            }
+          ]
+        },
+        {
+          "name": "2022-23",
+          "totalProfitLoss": 4591320,
+          "clients": [
+            {
+              "srNo": 1,
+              "month": "April",
+              "income": 8000000,
+              "expense": 7000000,
+              "profitLoss": 93469,
+              "domain": "Coworking"
+            },
+            {
+              "srNo": 2,
+              "month": "May",
+              "income": 8500000,
+              "expense": 7500000,
+              "profitLoss": 79615,
+              "domain": "Virtual Office"
+            },
+            {
+              "srNo": 3,
+              "month": "June",
+              "income": 9500000,
+              "expense": 8000000,
+              "profitLoss": 73981,
+              "domain": "Workations"
+            },
+            {
+              "srNo": 4,
+              "month": "July",
+              "income": 10000000,
+              "expense": 9000000,
+              "profitLoss": 62319,
+              "domain": "Café"
+            },
+            {
+              "srNo": 5,
+              "month": "August",
+              "income": 10500000,
+              "expense": 9500000,
+              "profitLoss": 43862,
+              "domain": "Meetng Rooms"
+            },
+            {
+              "srNo": 6,
+              "month": "September",
+              "income": 11000000,
+              "expense": 10000000,
+              "profitLoss": 27267,
+              "domain": "Coworking"
+            },
+            {
+              "srNo": 7,
+              "month": "October",
+              "income": 11500000,
+              "expense": 10500000,
+              "profitLoss": 48399,
+              "domain": "Virtual Office"
+            },
+            {
+              "srNo": 8,
+              "month": "November",
+              "income": 12000000,
+              "expense": 10900000,
+              "profitLoss": 30220,
+              "domain": "Workations"
+            }
+          ]
+        },
+        {
+          "name": "2021-22",
+          "totalProfitLoss": 3649780,
+          "clients": [
+            {
+              "srNo": 1,
+              "month": "April",
+              "income": 8000000,
+              "expense": 7000000,
+              "profitLoss": 56434,
+              "domain": "Coworking"
+            },
+            {
+              "srNo": 2,
+              "month": "May",
+              "income": 8500000,
+              "expense": 7500000,
+              "profitLoss": 49940,
+              "domain": "Virtual Office"
+            },
+            {
+              "srNo": 3,
+              "month": "June",
+              "income": 9500000,
+              "expense": 8000000,
+              "profitLoss": 41680,
+              "domain": "Workations"
+            },
+            {
+              "srNo": 4,
+              "month": "July",
+              "income": 10000000,
+              "expense": 9000000,
+              "profitLoss": 41240,
+              "domain": "Café"
+            },
+            {
+              "srNo": 5,
+              "month": "August",
+              "income": 10500000,
+              "expense": 9500000,
+              "profitLoss": 52293,
+              "domain": "Meetng Rooms"
+            },
+            {
+              "srNo": 6,
+              "month": "September",
+              "income": 11000000,
+              "expense": 10000000,
+              "profitLoss": 46599,
+              "domain": "Coworking"
+            },
+            {
+              "srNo": 7,
+              "month": "October",
+              "income": 11500000,
+              "expense": 10500000,
+              "profitLoss": 33717,
+              "domain": "Virtual Office"
+            },
+            {
+              "srNo": 8,
+              "month": "November",
+              "income": 12000000,
+              "expense": 10900000,
+              "profitLoss": 43075,
+              "domain": "Workations"
+            }
+          ]
+        },
+        {
+          "name": "2020-21",
+          "totalProfitLoss": 6156300,
+          "clients": [
+            {
+              "srNo": 1,
+              "month": "April",
+              "income": 8000000,
+              "expense": 7000000,
+              "profitLoss": 33324,
+              "domain": "Coworking"
+            },
+            {
+              "srNo": 2,
+              "month": "May",
+              "income": 8500000,
+              "expense": 7500000,
+              "profitLoss": 106534,
+              "domain": "Virtual Office"
+            },
+            {
+              "srNo": 3,
+              "month": "June",
+              "income": 9500000,
+              "expense": 8000000,
+              "profitLoss": 64167,
+              "domain": "Workations"
+            },
+            {
+              "srNo": 4,
+              "month": "July",
+              "income": 10000000,
+              "expense": 9000000,
+              "profitLoss": 95236,
+              "domain": "Café"
+            },
+            {
+              "srNo": 5,
+              "month": "August",
+              "income": 10500000,
+              "expense": 9500000,
+              "profitLoss": 43373,
+              "domain": "Meetng Rooms"
+            },
+            {
+              "srNo": 6,
+              "month": "September",
+              "income": 11000000,
+              "expense": 10000000,
+              "profitLoss": 104447,
+              "domain": "Coworking"
+            },
+            {
+              "srNo": 7,
+              "month": "October",
+              "income": 11500000,
+              "expense": 10500000,
+              "profitLoss": 92953,
+              "domain": "Virtual Office"
+            },
+            {
+              "srNo": 8,
+              "month": "November",
+              "income": 12000000,
+              "expense": 10900000,
+              "profitLoss": 75596,
+              "domain": "Workations"
+            }
+          ]
+        },
+        {
+          "name": "2019-20",
+          "totalProfitLoss": 6209340,
+          "clients": [
+            {
+              "srNo": 1,
+              "month": "April",
+              "income": 8000000,
+              "expense": 7000000,
+              "profitLoss": 23603,
+              "domain": "Coworking"
+            },
+            {
+              "srNo": 2,
+              "month": "May",
+              "income": 8500000,
+              "expense": 7500000,
+              "profitLoss": 87263,
+              "domain": "Virtual Office"
+            },
+            {
+              "srNo": 3,
+              "month": "June",
+              "income": 9500000,
+              "expense": 8000000,
+              "profitLoss": 92783,
+              "domain": "Workations"
+            },
+            {
+              "srNo": 4,
+              "month": "July",
+              "income": 10000000,
+              "expense": 9000000,
+              "profitLoss": 110420,
+              "domain": "Café"
+            },
+            {
+              "srNo": 5,
+              "month": "August",
+              "income": 10500000,
+              "expense": 9500000,
+              "profitLoss": 78060,
+              "domain": "Meetng Rooms"
+            },
+            {
+              "srNo": 6,
+              "month": "September",
+              "income": 1100000,
+              "expense": 1000000,
+              "profitLoss": 13340,
+              "domain": "Coworking"
+            },
+            {
+              "srNo": 7,
+              "month": "October",
+              "income": 1150000,
+              "expense": 1050000,
+              "profitLoss": 109812,
+              "domain": "Virtual Office"
+            },
+            {
+              "srNo": 8,
+              "month": "November",
+              "income": 1200000,
+              "expense": 1090000,
+              "profitLoss": 105653,
+              "domain": "Workations"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 
   const [selectedMonth, setSelectedMonth] = useState(
     mockBusinessRevenueData[0].month
@@ -474,18 +474,18 @@ const mockBusinessRevenueData = [
     (data) => data.month === selectedMonth
   );
 
-     if (selectedMonthData) {
-        selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
-          const updatedClients = domain.clients.map((client, index) => ({
-            ...client,
-            srNo: index + 1,
-            income:Number(client.income).toLocaleString("en-IN"),
-            expense:Number(client.expense).toLocaleString("en-IN"),
-            profitLoss:Number(client.profitLoss).toLocaleString("en-IN")
-          }));
-          return { ...domain, clients: updatedClients };
-        });
-      }
+  if (selectedMonthData) {
+    selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
+      const updatedClients = domain.clients.map((client, index) => ({
+        ...client,
+        srNo: index + 1,
+        income: Number(client.income).toLocaleString("en-IN"),
+        expense: Number(client.expense).toLocaleString("en-IN"),
+        profitLoss: Number(client.profitLoss).toLocaleString("en-IN")
+      }));
+      return { ...domain, clients: updatedClients };
+    });
+  }
 
   // Prepare Bar Graph Data
   const graphData = [
@@ -512,24 +512,30 @@ const mockBusinessRevenueData = [
   const incomeExpenseData = [
     {
       name: "Income",
-      data: [12000, 15000, 10000, 18000, 20000, 22000],
+      data: [12500000, 13800000, 14800000, 16000000, 18500000, 21000000], // in ₹
     },
     {
       name: "Expense",
-      data: [8000, 10000, 7000, 12000, 13000, 18000],
+      data: [7500000, 8200000, 8900000, 10200000, 12000000, 15000000], // in ₹
     },
   ];
+
+
   const incomeExpenseOptions = {
     chart: {
       id: "income-vs-expense-bar",
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#4CAF50", "#F44336"], // Green for income, Red for expense
+    colors: ["#54C4A7", "#EB5C45"], // Green for income, Red for expense
+    legend: {
+      show: true,
+      position: "top",
+    },
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "70%",
+        columnWidth: "40%",
         borderRadius: 6, // Adds rounded corners to the top of bars
         dataLabels: {
           position: "top",
@@ -546,13 +552,13 @@ const mockBusinessRevenueData = [
     },
     xaxis: {
       categories: [
-        "2019 - 2020",
-        "2020 - 2021",
-        "2021 - 2022",
-        "2022 - 2023",
-        "2023 - 2024",
-        "2024 - 2025",
-         // "Oct-24",
+        "FY 2019 - 20",
+        "FY 2020 - 21",
+        "FY 2021 - 22",
+        "FY 2022 - 23",
+        "FY 2023 - 24",
+        "FY 2024 - 25",
+        // "Oct-24",
         // "Nov-24",
         // "Dec-24",
         // "Jan-25",
@@ -571,7 +577,7 @@ const mockBusinessRevenueData = [
     },
     tooltip: {
       y: {
-        formatter: (val) => `₹${val.toLocaleString()}`,
+        formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
   };
@@ -581,11 +587,11 @@ const mockBusinessRevenueData = [
     {
       layout: 1,
       widgets: [
-        <WidgetSection border titleLabel={"FY 2024-25"}  title={"Historical P&L"}>
+        <WidgetSection border title={"Historical P&L"}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
-            
+
           />
         </WidgetSection>,
       ],
@@ -636,7 +642,7 @@ const mockBusinessRevenueData = [
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    INR {domain.totalProfitLoss.toLocaleString()}  
+                    INR {domain.totalProfitLoss.toLocaleString()}
                   </span>
                 </div>
               </AccordionSummary>
@@ -645,11 +651,11 @@ const mockBusinessRevenueData = [
                   data={domain.clients}
                   hideFilter
                   columns={[
-                    { header: "Sr No", field: "srNo", flex: 1 },
-                    { header: "Department", field: "department", flex: 1 },
-                    { header: "Income", field: "income", flex: 1 },
-                    { header: "Expense", field: "expense", flex: 1 },
-                    { header: "Profit / Loss", field: "profitLoss", flex: 1 },
+                    { headerName: "Sr No", field: "srNo", flex: 1 },
+                    { headerName: "Domain", field: "domain", flex: 1 },
+                    { headerName: "Income (INR)", field: "income", flex: 1 },
+                    { headerName: "Expense (INR)", field: "expense", flex: 1 },
+                    { headerName: "Profit / Loss (INR)", field: "profitLoss", flex: 1 },
                   ]}
                   tableHeight={300}
                 />

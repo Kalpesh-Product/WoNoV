@@ -2,20 +2,15 @@ import React, { useState } from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import AgTable from "../../../../components/AgTable";
-import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from "@mui/material";
+import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../../components/MuiModal";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 
 const Collections = () => {
-
-   const [viewModalOpen, setViewModalOpen] = useState(false);
-    const [viewDetails, setViewDetails] = useState(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewDetails, setViewDetails] = useState(null);
 
   const collectionData = [
     { month: "Apr-24", paid: 80, unpaid: 20 },
@@ -54,7 +49,7 @@ const Collections = () => {
       bar: {
         horizontal: false,
         borderRadius: 4,
-        columnWidth: "60%",
+        columnWidth: "40%",
       },
     },
     dataLabels: {
@@ -63,7 +58,6 @@ const Collections = () => {
     },
     xaxis: {
       categories: collectionData.map((item) => item.month),
-       
     },
     yaxis: {
       max: 100,
@@ -88,17 +82,16 @@ const Collections = () => {
   const kraColumn = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "client", headerName: "Client", flex: 1 },
-    { field: "amount", headerName: "Amount", flex: 1 },
+    { field: "amount", headerName: "Amount (INR)", flex: 1 },
     { field: "status", headerName: "Status", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
         <div className="p-2 mb-2 flex gap-2">
-           <span
+          <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewModal(params.data)}
-          >
+            onClick={() => handleViewModal(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -110,53 +103,85 @@ const Collections = () => {
     {
       srNo: 1,
       client: "Zomato",
-      status: "Paid",
+      status: "Unpaid",
       amount: "1,25,000",
       date: "10-04-2025",
     },
     {
       srNo: 2,
       client: "Turtlemint",
-      status: "Paid",
+      status: "Unpaid",
       amount: "98,500",
       date: "11-04-2025",
     },
     {
       srNo: 3,
       client: "Zimetrics",
-      status: "Paid",
+      status: "Unpaid",
       amount: "1,15,300",
       date: "12-04-2025",
     },
     {
       srNo: 4,
       client: "SquadStack",
-      status: "Paid",
+      status: "Unpaid",
       amount: "1,40,000",
       date: "13-04-2025",
     },
     {
       srNo: 5,
       client: "Uber",
-      status: "Paid",
+      status: "Unpaid",
       amount: "1,22,750",
       date: "14-04-2025",
     },
   ];
-  
+
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
     setViewModalOpen(true);
   };
 
   // Create dummy tableData per month — you can replace this with actual filtered rows
-  const financialData = collectionData.map((item) => ({
-    month: item.month,
-    tableData: {
-      columns: kraColumn,
-      rows,
-    },
-  }));
+  const generateMonthlyRows = (monthIndex) => {
+    const clients = ["Zomato", "Turtlemint", "Zimetrics", "SquadStack", "Uber", "Ola", "Swiggy"];
+    const baseDate = new Date(2025, monthIndex, 10);
+
+    return Array.from({ length: 4 }, (_, i) => {
+      const amount = Math.floor(Math.random() * 900000) + 100000; // Between 1L and 10L
+      const date = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + i);
+
+      return {
+        srNo: i + 1,
+        client: clients[(i + monthIndex) % clients.length],
+        status: Math.random() > 0.5 ? "Paid" : "Unpaid",
+        amount: amount.toLocaleString("en-IN"),
+        date: date.toLocaleDateString("en-GB"),
+      };
+    });
+  };
+
+
+  const financialData = collectionData.map((item, index) => {
+    const rows = generateMonthlyRows(index);
+    const totalAmount = rows.reduce((acc, curr) => {
+      const cleanAmount = parseFloat(curr.amount.replace(/,/g, ""));
+      return acc + cleanAmount;
+    }, 0);
+
+    return {
+      month: item.month,
+      totalAmount,
+      tableData: {
+        columns: kraColumn,
+        rows,
+      },
+    };
+  });
+
+  const grandTotal = financialData.reduce((acc, item) => acc + item.totalAmount, 0);
+
+  console.log(grandTotal)
 
   return (
     <div className="flex flex-col gap-8">
@@ -164,20 +189,25 @@ const Collections = () => {
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
 
-      <WidgetSection border title="Collections" className="bg-white rounded-md shadow-sm">
+      <WidgetSection
+        border
+        title="Collections"
+        titleLabel={"FY 2024-25"}
+        TitleAmount={`INR ${grandTotal.toLocaleString("en-IN")}`}
+        className="bg-white rounded-md shadow-sm">
         {financialData.map((data, index) => (
           <Accordion key={index} className="py-2">
             <AccordionSummary
               expandIcon={<IoIosArrowDown />}
               aria-controls={`panel${index}-content`}
               id={`panel${index}-header`}
-              className="border-b-[1px] border-borderGray"
-            >
-              <div className="flex justify-between items-center w-full px-4">
+              className="border-b-[1px] border-borderGray">
+              <div className="flex justify-between items-center w-full">
                 <span className="text-subtitle font-pmedium">{data.month}</span>
                 <span className="text-subtitle font-pmedium">
-                  {data.amount}
+                  INR {data.totalAmount.toLocaleString("en-IN")}&nbsp;
                 </span>
+
               </div>
             </AccordionSummary>
             <AccordionDetails sx={{ borderTop: "1px solid #d1d5db" }}>
@@ -192,25 +222,27 @@ const Collections = () => {
         ))}
       </WidgetSection>
 
-     
-       { viewDetails && <ViewDetailsModal
-  open={viewModalOpen}
-  onClose={() => setViewModalOpen(false)}
-  data={{...viewDetails,amount:"INR " + Number(
-    viewDetails.amount.toLocaleString("en-IN").replace(/,/g, "")
-  ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
-}}
-  title="Tax Payment Detail"
-  fields={[
-    { label: "Client", key: "client" },
-    { label: "Amount Paid", key: "amount" },
-    { label: "Payment Date", key: "date" },
-    { label: "Payment Status", key: "status" },
-  ]}
-/>}
-
-
-  
+      {viewDetails && (
+        <ViewDetailsModal
+          open={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          data={{
+            ...viewDetails,
+            amount:
+              "INR " +
+              Number(
+                viewDetails.amount.toLocaleString("en-IN").replace(/,/g, "")
+              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+          }}
+          title="Tax Payment Detail"
+          fields={[
+            { label: "Client", key: "client" },
+            { label: "Amount Paid", key: "amount" },
+            { label: "Payment Date", key: "date" },
+            { label: "Payment Status", key: "status" },
+          ]}
+        />
+      )}
     </div>
   );
 };

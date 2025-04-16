@@ -251,16 +251,16 @@ const getCompanyData = async (req, res, next) => {
     };
 
     if (field === "workLocations") {
-      // query = query.populate({ path: "workLocations", select: "-company" });
-      const workLocations = await Unit.find({ company: companyId })
-        .populate({ path: "building", select: "buildingName" })
-        .select("unitNo unitName isActive");
+      query = query.populate({ path: "workLocations", select: "-company" });
+      // const workLocations = await Unit.find({ company: companyId })
+      //   .populate({ path: "building", select: "buildingName" })
+      //   .select("unitNo unitName isActive");
 
-      if (!workLocations) {
-        return res.status(400).json({ message: "No worklocations found" });
-      }
+      // if (!workLocations) {
+      //   return res.status(400).json({ message: "No worklocations found" });
+      // }
 
-      return res.status(200).json(workLocations);
+      // return res.status(200).json(workLocations);
     }
     let query = Company.findOne({ _id: companyId })
       .populate(fieldsToPopulate[field])
