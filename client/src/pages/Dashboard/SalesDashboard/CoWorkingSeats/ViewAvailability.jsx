@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
-import occupied from "../../../../assets/biznest/occupancy/occupied.png";
-import cleared from "../../../../assets/biznest/occupancy/cleared.png";
+import occupied from "../../../../assets/biznest/occupancy/occupied-701.jpeg";
+import cleared from "../../../../assets/biznest/occupancy/clear-701.png";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import MuiModal from "../../../../components/MuiModal";
 import { MdOutlineRemoveRedEye, MdUploadFile } from "react-icons/md";
@@ -120,7 +120,7 @@ const ViewAvailability = () => {
             <span className="text-primary text-title">Occupied</span>
             <div
               onClick={() => setImageOpen(true)}
-              className="h-80 w-full  cursor-pointer">
+              className="h-80 w-full  cursor-pointer  p-4 border-[1px] border-borderGray rounded-lg">
               <img
                 className="w-full h-full object-contain"
                 src={imagePreview}
@@ -132,7 +132,7 @@ const ViewAvailability = () => {
             <span className="text-primary text-title">Clear</span>
             <div
               onClick={() => setClearedImageOpen(true)}
-              className="h-80 w-full  cursor-pointer">
+              className="h-80 w-full  cursor-pointer p-4 border-[1px] border-borderGray rounded-lg">
               <img
                 className="w-full h-full object-contain"
                 src={clearedImagePreview}
