@@ -180,68 +180,69 @@ const HistoricalPnl = () => {
             {
               "srNo": 1,
               "month": "April",
-              "income": 2312500,
-              "expense": 1500000,
-              "profitLoss": 812500,
+              "income": 2014925,
+              "expense": 1306212,
+              "profitLoss": 708713,
               "domain": "Coworking"
             },
             {
               "srNo": 2,
               "month": "May",
-              "income": 2150000,
-              "expense": 1400000,
-              "profitLoss": 750000,
+              "income": 1876361,
+              "expense": 1222636,
+              "profitLoss": 653725,
               "domain": "Virtual Office"
             },
             {
               "srNo": 3,
               "month": "June",
-              "income": 2200000,
-              "expense": 1450000,
-              "profitLoss": 750000,
+              "income": 1920155,
+              "expense": 1264458,
+              "profitLoss": 655697,
               "domain": "Workations"
             },
             {
               "srNo": 4,
               "month": "July",
-              "income": 2400000,
-              "expense": 1600000,
-              "profitLoss": 800000,
+              "income": 2096502,
+              "expense": 1397673,
+              "profitLoss": 698829,
               "domain": "Café"
             },
             {
               "srNo": 5,
               "month": "August",
-              "income": 2300000,
-              "expense": 1450000,
-              "profitLoss": 850000,
+              "income": 2001110,
+              "expense": 1264458,
+              "profitLoss": 736652,
               "domain": "Meeting Rooms"
             },
             {
               "srNo": 6,
               "month": "September",
-              "income": 2150000,
-              "expense": 1400000,
-              "profitLoss": 750000,
+              "income": 1876361,
+              "expense": 1222636,
+              "profitLoss": 653725,
               "domain": "Coworking"
             },
             {
               "srNo": 7,
               "month": "October",
-              "income": 2250000,
-              "expense": 1500000,
-              "profitLoss": 750000,
+              "income": 1963949,
+              "expense": 1306212,
+              "profitLoss": 657737,
               "domain": "Virtual Office"
             },
             {
               "srNo": 8,
               "month": "November",
-              "income": 2150000,
-              "expense": 1300000,
-              "profitLoss": 850000,
+              "income": 1876361,
+              "expense": 1041714,
+              "profitLoss": 834647,
               "domain": "Workations"
             }
           ]
+
         },
         {
           "name": "2021-22",
@@ -250,68 +251,69 @@ const HistoricalPnl = () => {
             {
               "srNo": 1,
               "month": "April",
-              "income": 8000000,
-              "expense": 7000000,
-              "profitLoss": 56434,
+              "income": 1800000,
+              "expense": 1200000,
+              "profitLoss": 600000,
               "domain": "Coworking"
             },
             {
               "srNo": 2,
               "month": "May",
-              "income": 8500000,
-              "expense": 7500000,
-              "profitLoss": 49940,
+              "income": 1700000,
+              "expense": 1000000,
+              "profitLoss": 700000,
               "domain": "Virtual Office"
             },
             {
               "srNo": 3,
               "month": "June",
-              "income": 9500000,
-              "expense": 8000000,
-              "profitLoss": 41680,
+              "income": 1900000,
+              "expense": 1100000,
+              "profitLoss": 800000,
               "domain": "Workations"
             },
             {
               "srNo": 4,
               "month": "July",
-              "income": 10000000,
-              "expense": 9000000,
-              "profitLoss": 41240,
+              "income": 2000000,
+              "expense": 1200000,
+              "profitLoss": 800000,
               "domain": "Café"
             },
             {
               "srNo": 5,
               "month": "August",
-              "income": 10500000,
-              "expense": 9500000,
-              "profitLoss": 52293,
+              "income": 1600000,
+              "expense": 1000000,
+              "profitLoss": 600000,
               "domain": "Meetng Rooms"
             },
             {
               "srNo": 6,
               "month": "September",
-              "income": 11000000,
-              "expense": 10000000,
-              "profitLoss": 46599,
+              "income": 1500000,
+              "expense": 1300000,
+              "profitLoss": 200000,
               "domain": "Coworking"
             },
             {
               "srNo": 7,
               "month": "October",
-              "income": 11500000,
-              "expense": 10500000,
-              "profitLoss": 33717,
+              "income": 1400000,
+              "expense": 1100000,
+              "profitLoss": 300000,
               "domain": "Virtual Office"
             },
             {
               "srNo": 8,
               "month": "November",
-              "income": 12000000,
-              "expense": 10900000,
-              "profitLoss": 43075,
+              "income": 1300000,
+              "expense": 900000,
+              "profitLoss": 400000,
               "domain": "Workations"
             }
           ]
+
         },
         {
           "name": "2020-21",
@@ -320,68 +322,69 @@ const HistoricalPnl = () => {
             {
               "srNo": 1,
               "month": "April",
-              "income": 8000000,
-              "expense": 7000000,
-              "profitLoss": 33324,
+              "income": 1058824,
+              "expense": 1012195,
+              "profitLoss": 46629,
               "domain": "Coworking"
             },
             {
               "srNo": 2,
               "month": "May",
-              "income": 8500000,
-              "expense": 7500000,
-              "profitLoss": 106534,
+              "income": 1125000,
+              "expense": 1082675,
+              "profitLoss": 42325,
               "domain": "Virtual Office"
             },
             {
               "srNo": 3,
               "month": "June",
-              "income": 9500000,
-              "expense": 8000000,
-              "profitLoss": 64167,
+              "income": 1257353,
+              "expense": 1150902,
+              "profitLoss": 106451,
               "domain": "Workations"
             },
             {
               "srNo": 4,
               "month": "July",
-              "income": 10000000,
-              "expense": 9000000,
-              "profitLoss": 95236,
+              "income": 1323529,
+              "expense": 1298780,
+              "profitLoss": 24749,
               "domain": "Café"
             },
             {
               "srNo": 5,
               "month": "August",
-              "income": 10500000,
-              "expense": 9500000,
-              "profitLoss": 43373,
+              "income": 1389706,
+              "expense": 1376707,
+              "profitLoss": 12999,
               "domain": "Meetng Rooms"
             },
             {
               "srNo": 6,
               "month": "September",
-              "income": 11000000,
-              "expense": 10000000,
-              "profitLoss": 104447,
+              "income": 1455882,
+              "expense": 1444634,
+              "profitLoss": 11248,
               "domain": "Coworking"
             },
             {
               "srNo": 7,
               "month": "October",
-              "income": 11500000,
-              "expense": 10500000,
-              "profitLoss": 92953,
+              "income": 1522059,
+              "expense": 1512561,
+              "profitLoss": 9498,
               "domain": "Virtual Office"
             },
             {
               "srNo": 8,
               "month": "November",
-              "income": 12000000,
-              "expense": 10900000,
-              "profitLoss": 75596,
+              "income": 1626546,
+              "expense": 1588235,
+              "profitLoss": 38311,
               "domain": "Workations"
             }
           ]
+
         },
         {
           "name": "2019-20",
@@ -390,65 +393,65 @@ const HistoricalPnl = () => {
             {
               "srNo": 1,
               "month": "April",
-              "income": 8000000,
-              "expense": 7000000,
-              "profitLoss": 23603,
+              "income": 2002002,
+              "expense": 1189397,
+              "profitLoss": 812605,
               "domain": "Coworking"
             },
             {
               "srNo": 2,
               "month": "May",
-              "income": 8500000,
-              "expense": 7500000,
-              "profitLoss": 87263,
+              "income": 2127127,
+              "expense": 1274354,
+              "profitLoss": 852773,
               "domain": "Virtual Office"
             },
             {
               "srNo": 3,
               "month": "June",
-              "income": 9500000,
-              "expense": 8000000,
-              "profitLoss": 92783,
+              "income": 2377377,
+              "expense": 1359311,
+              "profitLoss": 1018066,
               "domain": "Workations"
             },
             {
               "srNo": 4,
               "month": "July",
-              "income": 10000000,
-              "expense": 9000000,
-              "profitLoss": 110420,
+              "income": 2502503,
+              "expense": 1529225,
+              "profitLoss": 973278,
               "domain": "Café"
             },
             {
               "srNo": 5,
               "month": "August",
-              "income": 10500000,
-              "expense": 9500000,
-              "profitLoss": 78060,
+              "income": 2627628,
+              "expense": 1614182,
+              "profitLoss": 1013446,
               "domain": "Meetng Rooms"
             },
             {
               "srNo": 6,
               "month": "September",
-              "income": 1100000,
-              "expense": 1000000,
-              "profitLoss": 13340,
+              "income": 275275,
+              "expense": 169914,
+              "profitLoss": 105361,
               "domain": "Coworking"
             },
             {
               "srNo": 7,
               "month": "October",
-              "income": 1150000,
-              "expense": 1050000,
-              "profitLoss": 109812,
+              "income": 287788,
+              "expense": 178410,
+              "profitLoss": 109378,
               "domain": "Virtual Office"
             },
             {
               "srNo": 8,
               "month": "November",
-              "income": 1200000,
-              "expense": 1090000,
-              "profitLoss": 105653,
+              "income": 300300,
+              "expense": 185206,
+              "profitLoss": 115094,
               "domain": "Workations"
             }
           ]
