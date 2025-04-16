@@ -65,12 +65,22 @@
     font-size: 1.5rem !important;
   }
 
-
+  .MuiTab-root.Mui-selected {
+    background-color: #1E3D73 !important;
+    color: #ffffff !important;
+  }
+  
 
 }
 .ag-header-cell-label {
   font-weight: bold !important;
 }
+
+.MuiTab-root.Mui-selected {
+  background-color: #1E3D73 !important;
+  color: #ffffff !important;
+}
+
 
 
 /* Hide scrollbar for the specified container */
