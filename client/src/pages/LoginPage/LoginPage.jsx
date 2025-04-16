@@ -61,11 +61,10 @@ const LoginPage = () => {
 
   return (
     <>
-      <div className="bg-black flex justify-around py-3">
+      <div className="bg-black flex justify-around py-4">
         <div>
           <img src={WonoLogo} alt="wono" />
         </div>
-        <div className="flex gap-6">
           <div className="flex items-center uppercase">
             <ul className="flex gap-5 text-white uppercase font-thin">
               <li className="cursor-pointer">Modules</li>
@@ -75,6 +74,7 @@ const LoginPage = () => {
               <li className="cursor-pointer">Career</li>
             </ul>
           </div>
+        <div className="flex gap-6">
           <div className="flex gap-6">
             <button className="bg-white text-black py-2 px-3 rounded-full uppercase">
               Sign-In
