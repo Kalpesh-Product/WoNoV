@@ -12,7 +12,6 @@ import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import DataCard from "../../../components/DataCard";
 
 const FinanceDashboard = () => {
   const navigate = useNavigate();
@@ -151,7 +150,7 @@ const FinanceDashboard = () => {
   };
 
   const netSavingsCardData = {
-    cardTitle: "Net Savings",
+    cardTitle: "Profit & Loss",
     timePeriod: "FY 2024-25",
     descriptionData: [
       { title: "March 2025", value: "INR 7,00,000" },
