@@ -229,7 +229,7 @@ const ViewAvailability = () => {
             ...viewDetails,
             date: dayjs(viewDetails.date).format("DD-MM-YYYY"),
           }}
-          title="Tax Payment Detail"
+          title="member details"
           fields={[
             { label: "Member Name", key: "member" },
             { label: "Date Of Joining", key: "date" },
