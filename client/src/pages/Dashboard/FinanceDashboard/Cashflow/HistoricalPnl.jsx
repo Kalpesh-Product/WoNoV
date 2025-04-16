@@ -494,14 +494,22 @@ const HistoricalPnl = () => {
       const recalculatedTotal = updatedClients.reduce((sum, client) => {
         return sum + Number(client.rawProfitLoss);
       }, 0);
+      const recalculatedTotalIncome = updatedClients.reduce((sum, client) => {
+        return sum + Number(client.income);
+      }, 0);
+      const recalculatedTotalExpense = updatedClients.reduce((sum, client) => {
+        return sum + Number(client.expense);
+      }, 0);
 
       return {
         ...domain,
         clients: updatedClients,
         totalProfitLoss: recalculatedTotal,
+        totalIncome: recalculatedTotalIncome,
+        totalExpense: recalculatedTotalExpense,
       };
     });
-
+ 
 
   }
 
@@ -617,7 +625,7 @@ const HistoricalPnl = () => {
   ];
 
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className="p-4 flex flex-col gap-8">
       {techWidgets.map((section, index) => (
         <WidgetSection key={index} layout={section?.layout} padding>
           {section?.widgets}
@@ -625,23 +633,51 @@ const HistoricalPnl = () => {
       ))}
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
-      <div>
+      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
+      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+      <div className=" bg-gray-50">
+  <div className="flex justify-between items-center w-full px-4 py-2">
+    <span className="w-1/4 text-sm text-muted font-pmedium text-title">
+      FINANCIAL YEAR
+    </span>
+    <span className="w-1/4 text-sm text-muted font-pmedium text-title flex items-center gap-1">
+      INCOME
+    </span>
+    <span className="w-1/4 text-sm text-muted font-pmedium text-title flex items-center gap-1">
+      EXPENSE
+    </span>
+    <span className="w-1/4 text-sm text-muted font-pmedium text-title flex items-center gap-1">
+      PROFIT/LOSS
+    </span>
+  </div>
+</div>
+
+</div>
+
         {selectedMonthData.domains.map((domain, index) => {
           return (
             <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}>
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium">
-                    {domain.name}
-                  </span>
-                  <span className="text-subtitle font-pmedium">
-                    INR {domain.totalProfitLoss.toLocaleString()}
-                  </span>
-                </div>
-              </AccordionSummary>
+             <AccordionSummary
+  expandIcon={<IoIosArrowDown />}
+  aria-controls={`panel-${index}-content`}
+  id={`panel-${index}-header`}
+>
+  <div className="flex justify-between items-center w-full px-4">
+    <span className="w-1/4 text-subtitle font-pmedium">
+      {domain.name}
+    </span>
+    <span className="w-1/4 text-subtitle font-pmedium px-2">
+      INR {inrFormat(domain.totalIncome)}
+    </span>
+    <span className="w-1/4 text-subtitle font-pmedium px-2">
+      INR {inrFormat(domain.totalExpense)}
+    </span>
+    <span className="w-1/4 text-subtitle font-pmedium px-4">
+      INR {inrFormat(domain.totalProfitLoss)}
+    </span>
+  </div>
+</AccordionSummary>
+
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 <AgTable
                   data={domain.clients.map(client => {
@@ -666,7 +702,7 @@ const HistoricalPnl = () => {
                 <div className="flex items-center gap-4 mt-4">
                   <div className="flex items-center gap-4">
                     <span className="text-primary font-pregular">
-                      Total Revenue for {domain.name}:{" "}
+                      Total Profit/Loss for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
                       INR {domain.totalProfitLoss.toLocaleString()}
