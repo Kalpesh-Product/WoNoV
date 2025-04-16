@@ -34,7 +34,7 @@ const HistoricalPnl = () => {
       "domains": [
         {
           "name": "2024-25",
-          "totalProfitLoss": 6590150,
+          "totalProfitLoss": 60000000,
           "clients": [
             {
               "srNo": 1,
@@ -95,7 +95,7 @@ const HistoricalPnl = () => {
             {
               "srNo": 8,
               "month": "November",
-              "income": 31111111,
+              "income": 31111110,
               "expense": 22582873,
               "profitLoss": 8528238,
               "domain": "Workations"
@@ -109,64 +109,64 @@ const HistoricalPnl = () => {
             {
               "srNo": 1,
               "month": "April",
-              "income": 3650000,
-              "expense": 2300000,
+              "income": 2365149,
+              "expense": 1667674,
               "profitLoss": 1350000,
               "domain": "Coworking"
             },
             {
               "srNo": 2,
               "month": "May",
-              "income": 3250000,
-              "expense": 2000000,
+              "income": 2105954,
+              "expense": 1875000,
               "profitLoss": 1250000,
               "domain": "Virtual Office"
             },
             {
               "srNo": 3,
               "month": "June",
-              "income": 3100000,
-              "expense": 1800000,
+              "income": 2008757,
+              "expense": 1875000,
               "profitLoss": 1300000,
               "domain": "Workations"
             },
             {
               "srNo": 4,
               "month": "July",
-              "income": 4000000,
-              "expense": 2500000,
+              "income": 2591944,
+              "expense": 1875000,
               "profitLoss": 1500000,
               "domain": "Café"
             },
             {
               "srNo": 5,
               "month": "August",
-              "income": 3950000,
-              "expense": 2200000,
+              "income": 2559545,
+              "expense": 1875000,
               "profitLoss": 1750000,
               "domain": "Meeting Rooms"
             },
             {
               "srNo": 6,
               "month": "September",
-              "income": 3350000,
-              "expense": 1900000,
+              "income": 2170753,
+              "expense": 1875000,
               "profitLoss": 1450000,
               "domain": "Coworking"
             },
             {
               "srNo": 7,
               "month": "October",
-              "income": 3550000,
-              "expense": 1950000,
+              "income": 2300350,
+              "expense": 1875000,
               "profitLoss": 1600000,
               "domain": "Virtual Office"
             },
             {
               "srNo": 8,
               "month": "November",
-              "income": 3700000,
-              "expense": 1900000,
+              "income": 2397548,
+              "expense": 1875000,
               "profitLoss": 1800000,
               "domain": "Workations"
             }
@@ -654,12 +654,13 @@ const HistoricalPnl = () => {
                   })}
                   hideFilter
                   columns={[
-                    { headerName: "Sr No", field: "srNo", flex: 1 },
-                    { headerName: "Verticals", field: "domain", flex: 1 },
-                    { headerName: "Income (INR)", field: "income", flex: 1 },
-                    { headerName: "Expense (INR)", field: "expense", flex: 1 },
-                    { headerName: "Profit / Loss (INR)", field: "profitLoss", flex: 1 },
+                    { headerName: "Sr No", field: "srNo", flex: 1, headerClass: 'bold-header' },
+                    { headerName: "Verticals", field: "domain", flex: 1, headerClass: 'bold-header' },
+                    { headerName: "Income (INR)", field: "income", flex: 1, headerClass: 'bold-header' },
+                    { headerName: "Expense (INR)", field: "expense", flex: 1, headerClass: 'bold-header' },
+                    { headerName: "Profit / Loss (INR)", field: "profitLoss", flex: 1, headerClass: 'bold-header' },
                   ]}
+
                   tableHeight={300}
                 />
                 <div className="flex items-center gap-4 mt-4">

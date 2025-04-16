@@ -68,6 +68,11 @@
 
 
 }
+.bold-header {
+  font-weight: bold;
+  font-family: "Poppins-Medium", sans-serif; /* Optional */
+}
+
 /* Hide scrollbar for the specified container */
 .hideScrollbar {
   scrollbar-width: none; /* Hide scrollbar for Firefox */
