@@ -199,56 +199,52 @@ const Collections = () => {
 
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="p-4 flex flex-col gap-8">
       <WidgetSection title={"COLLECTIONS"} titleLabel={"FY 2024-25"} border>
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
 
       <WidgetSection
-        border
-        title="Collections"
-        titleLabel={"FY 2024-25"}
-        TitleAmount={`INR ${grandTotal.toLocaleString("en-IN")}`}
-        className="bg-white rounded-md shadow-sm">
-              <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
-      <div className=" bg-gray-50">
-  <div className="flex justify-between items-center w-full  py-2">
-    <span className="w-1/5 text-sm text-muted font-pmedium text-title">
-      FINANCIAL YEAR
-    </span>
-    <span className="w-1/5 text-sm text-muted font-pmedium text-title flex items-center gap-1">
-     AMOUNT
-    </span>
+  border
+  title="Collections"
+  titleLabel={"FY 2024-25"}
+  TitleAmount={`INR ${grandTotal.toLocaleString("en-IN")}`}
+  className="bg-white rounded-md shadow-sm"
+>
+  <div className="px-4 py-2 border-b border-borderGray bg-gray-50">
+    <div className="flex flex-wrap justify-between items-center py-2 text-sm text-muted font-pmedium text-title">
+      <span className="w-1/2 sm:w-1/5">FINANCIAL YEAR</span>
+      <span className="w-1/2 sm:w-1/5 flex items-center gap-1">AMOUNT</span>
+    </div>
   </div>
-</div>
 
-</div>
-        {financialData.map((data, index) => (
-          <Accordion key={index} className="py-2">
-            <AccordionSummary
-              expandIcon={<IoIosArrowDown />}
-              aria-controls={`panel${index}-content`}
-              id={`panel${index}-header`}
-              className="border-b-[1px] border-borderGray">
-              <div className="flex justify-between items-center w-full px-2">
-                <span className="w-1/5 text-subtitle font-pmedium">{data.month}</span>
-                
-                <span className="w-1/5 px-4 text-subtitle font-pmedium">
-                  INR {data.totalAmount.toLocaleString("en-IN")}&nbsp;
-                </span>
-              </div>
-            </AccordionSummary>
-            <AccordionDetails sx={{ borderTop: "1px solid #d1d5db" }}>
-              <AgTable
-                search={true}
-                data={data.tableData.rows}
-                columns={data.tableData.columns}
-                tableHeight={250}
-              />
-            </AccordionDetails>
-          </Accordion>
-        ))}
-      </WidgetSection>
+  {financialData.map((data, index) => (
+    <Accordion key={index} className="py-2">
+      <AccordionSummary
+        expandIcon={<IoIosArrowDown />}
+        aria-controls={`panel${index}-content`}
+        id={`panel${index}-header`}
+        className="border-b border-borderGray"
+      >
+        <div className="flex flex-wrap justify-between items-center w-full px-2 text-subtitle font-pmedium">
+          <span className="w-1/2 sm:w-1/5">{data.month}</span>
+          <span className="w-1/2 sm:w-1/5 px-4">
+            INR {data.totalAmount.toLocaleString("en-IN")}
+          </span>
+        </div>
+      </AccordionSummary>
+      <AccordionDetails sx={{ borderTop: "1px solid #d1d5db" }}>
+        <AgTable
+          search={true}
+          data={data.tableData.rows}
+          columns={data.tableData.columns}
+          tableHeight={250}
+        />
+      </AccordionDetails>
+    </Accordion>
+  ))}
+</WidgetSection>
+
 
       {viewDetails && (
         <ViewDetailsModal
