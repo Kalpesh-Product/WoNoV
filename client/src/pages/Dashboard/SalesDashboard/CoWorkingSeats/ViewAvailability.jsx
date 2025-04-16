@@ -227,7 +227,7 @@ const ViewAvailability = () => {
           onClose={() => setViewModalOpen(false)}
           data={{
             ...viewDetails,
-            date: dayjs(viewDetails.date).format("DD-MM-YYYY"),
+            date:dayjs( new Date(viewDetails.date.split("-").reverse().join("-"))).format("DD-MM-YYYY"),
           }}
           title="member details"
           fields={[
