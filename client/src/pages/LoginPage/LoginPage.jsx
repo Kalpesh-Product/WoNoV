@@ -86,7 +86,7 @@ const LoginPage = () => {
         </div>
       </div>
       <div className="login-section loginTopPadding loginBottomPadding poppinsRegular heightPadding">
-        <h1 className="text-center text-4xl font-bold">Log In</h1>
+        <h1 className="text-center text-4xl font-bold">LOG IN</h1>
         <div className="loginDividingContainer shrink-container">
           <div className="loginLeftContainer">
             <Container maxWidth="md" style={{ padding: "3rem 0 0" }}>
