@@ -3,6 +3,7 @@ import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
+import dayjs from "dayjs";
 
 const AltRevenues = () => {
   const monthlyRevenueData = [
@@ -298,7 +299,7 @@ const AltRevenues = () => {
     },
     yaxis: {
       labels: {
-        formatter: (val) => `₹${val.toLocaleString()}`,
+        formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
     tooltip: {
@@ -340,16 +341,27 @@ const AltRevenues = () => {
           customLegend
           firstParam={{
             title: "Actual",
-            data: `${totalActual.toLocaleString()} INR`,
+            data: `INR ${totalActual.toLocaleString()}`,
           }}
           secondParam={{
             title: "Projected",
-            data: `${totalProjected.toLocaleString()} INR`,
+            data: `INR ${totalProjected.toLocaleString()}`,
           }}
         />
       </WidgetSection>
 
-      <div>
+      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
+      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+          <div className="flex justify-between items-center w-full px-4 py-2">
+            <span className=" text-sm text-muted font-pmedium text-title">
+              MONTH
+            </span>
+            <span className="px-8 text-sm text-muted font-pmedium text-title flex items-center gap-1">
+              REVENUE
+            </span>
+            
+          </div>
+        </div>
         {monthlyRevenueData.map((monthData, index) => {
           const totalActual = monthData.clients.reduce(
             (sum, c) => sum + c.revenue,
@@ -360,11 +372,11 @@ const AltRevenues = () => {
             id: index + 1,
             revenueSource: client.revenueSource,
             revenue: `${client.revenue.toLocaleString()}`,
-            recievedDate: client.recievedDate,
+             recievedDate: dayjs( client.recievedDate).format("DD-MM-YYYY"),
           }));
 
           const columns = [
-            { headerName: "ID", field: "id", width: 80 },
+            { headerName: "Sr No", field: "id", width: 80 },
             { headerName: "Revenue Source", field: "revenueSource", flex: 1 },
             { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
             { headerName: "Received Date", field: "recievedDate", flex: 1 },
@@ -383,7 +395,7 @@ const AltRevenues = () => {
                     {monthData.month}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {totalActual.toLocaleString()} INR
+                    INR {totalActual.toLocaleString()} 
                   </span>
                 </div>
               </AccordionSummary>
@@ -397,7 +409,7 @@ const AltRevenues = () => {
                 />
                 <span className="text-sm font-medium mt-2 block">
                   Total Actual Revenue for {monthData.month}:
-                  {totalActual.toLocaleString()} INR
+                  INR {totalActual.toLocaleString()}
                 </span>
               </AccordionDetails>
             </Accordion>

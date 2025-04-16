@@ -3,6 +3,7 @@ import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
+import dayjs from "dayjs";
 
 const VirtualOffice = () => {
   const monthlyRevenueData = [
@@ -24,7 +25,7 @@ const VirtualOffice = () => {
         {
           clientName: "UrbanClap",
           revenue: 800000,
-          status: "Unpaid",
+          status: "Paid",
           desks: 5,
           occupancy: 1.6,
           term: 12,
@@ -63,7 +64,7 @@ const VirtualOffice = () => {
         {
           clientName: "Freshworks",
           revenue: 1250000,
-          status: "Unpaid",
+          status: "Paid",
           desks: 6,
           occupancy: 1.8,
           term: 9,
@@ -102,7 +103,7 @@ const VirtualOffice = () => {
         {
           clientName: "Myntra",
           revenue: 750000,
-          status: "Unpaid",
+          status: "Paid",
           desks: 5,
           occupancy: 1.6,
           term: 9,
@@ -130,7 +131,7 @@ const VirtualOffice = () => {
         {
           clientName: "Meesho",
           revenue: 800000,
-          status: "Unpaid",
+          status: "Paid",
           desks: 6,
           occupancy: 1.8,
           term: 6,
@@ -181,7 +182,7 @@ const VirtualOffice = () => {
         {
           clientName: "Flipkart",
           revenue: 1250000,
-          status: "Unpaid",
+          status: "Paid",
           desks: 10,
           occupancy: 2.7,
           term: 12,
@@ -209,7 +210,7 @@ const VirtualOffice = () => {
         {
           clientName: "Lenskart",
           revenue: 900000,
-          status: "Unpaid",
+          status: "Paid",
           desks: 5,
           occupancy: 1.5,
           term: 6,
@@ -259,7 +260,7 @@ const VirtualOffice = () => {
         {
           clientName: "Udaan",
           revenue: 850000,
-          status: "Unpaid",
+          status: "Paid",
           desks: 7,
           occupancy: 2.0,
           term: 9,
@@ -288,7 +289,7 @@ const VirtualOffice = () => {
         {
           clientName: "CoinDCX",
           revenue: 1000000,
-          status: "Unpaid",
+          status: "Paid",
           desks: 6,
           occupancy: 1.8,
           term: 6,
@@ -338,7 +339,7 @@ const VirtualOffice = () => {
         {
           clientName: "CRED",
           revenue: 1100000,
-          status: "Unpaid",
+          status: "Paid",
           desks: 8,
           occupancy: 2.2,
           term: 9,
@@ -377,7 +378,7 @@ const VirtualOffice = () => {
         {
           clientName: "Pharmeasy",
           revenue: 850000,
-          status: "Unpaid",
+          status: "Paid",
           desks: 6,
           occupancy: 1.7,
           term: 9,
@@ -394,7 +395,7 @@ const VirtualOffice = () => {
         {
           clientName: "Cars24",
           revenue: 1300000,
-          status: "Unpaid",
+          status: "Paid",
           desks: 8,
           occupancy: 2.1,
           term: 12,
@@ -444,7 +445,7 @@ const VirtualOffice = () => {
         {
           clientName: "PolicyBazaar",
           revenue: 1200000,
-          status: "Unpaid",
+          status: "Paid",
           desks: 6,
           occupancy: 1.8,
           term: 6,
@@ -505,12 +506,12 @@ const VirtualOffice = () => {
     },
     yaxis: {
       labels: {
-        formatter: (val) => `₹${val.toLocaleString()}`,
+        formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
     tooltip: {
       y: {
-        formatter: (val) => `${val.toLocaleString()} INR`,
+        formatter: (val) => `INR ${val.toLocaleString()} `,
       },
     },
     plotOptions: {
@@ -546,15 +547,26 @@ const VirtualOffice = () => {
           customLegend
           firstParam={{
             title: "Actual",
-            data: `${totalActual.toLocaleString()} INR`,
+            data: `INR ${totalActual.toLocaleString()}`,
           }}
           secondParam={{
             title: "Projected",
-            data: `${totalProjected.toLocaleString()} INR`,
+            data: `INR ${totalProjected.toLocaleString()} `,
           }}
         />
       </WidgetSection>
-      <div>
+      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
+      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+          <div className="flex justify-between items-center w-full px-4 py-2">
+            <span className=" text-sm text-muted font-pmedium text-title">
+              MONTH
+            </span>
+            <span className="px-8 text-sm text-muted font-pmedium text-title flex items-center gap-1">
+              REVENUE
+            </span>
+            
+          </div>
+        </div>
         {monthlyRevenueData.map((monthData, index) => {
           const totalActual = monthData.clients.reduce(
             (sum, c) => sum + c.revenue,
@@ -570,12 +582,12 @@ const VirtualOffice = () => {
             occupancy: client.occupancy,
             term: client.term,
             expiry: client.expiry,
-            recievedDate: client.recievedDate,
-            dueDate: client.dueDate,
+            recievedDate: dayjs( client.recievedDate).format("DD-MM-YYYY"),
+            dueDate:dayjs( client.dueDate).format("DD-MM-YYYY"),
           }));
 
           const columns = [
-            { headerName: "ID", field: "id", width: 80 },
+            { headerName: "Sr No", field: "id", width: 80 },
             { headerName: "Client Name", field: "clientName" },
             { headerName: "Revenue (INR)", field: "revenue" },
             { headerName: "Status", field: "status" },
@@ -600,7 +612,7 @@ const VirtualOffice = () => {
                     {monthData.month}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {totalActual.toLocaleString()} INR
+                  INR {totalActual.toLocaleString()} 
                   </span>
                 </div>
               </AccordionSummary>
@@ -614,7 +626,7 @@ const VirtualOffice = () => {
                 />
                 <span className="text-sm font-medium mt-2 block">
                   Total Actual Revenue for {monthData.month}:
-                  {totalActual.toLocaleString()} INR
+                  INR {totalActual.toLocaleString()} 
                 </span>
               </AccordionDetails>
             </Accordion>
