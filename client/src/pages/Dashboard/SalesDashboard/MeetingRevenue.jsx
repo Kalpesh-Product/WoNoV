@@ -22,7 +22,7 @@ const MeetingRevenue = () => {
         {
           clientName: "UrbanClap",
           revenue: 800000,
-          status: "Unpaid",
+          status: "Paid",
           totalCredits: 100,
           usedCredits: 80,
           extraCredits: 10,
@@ -55,7 +55,7 @@ const MeetingRevenue = () => {
         {
           clientName: "Freshworks",
           revenue: 1250000,
-          status: "Unpaid",
+          status: "Paid",
           totalCredits: 100,
           usedCredits: 85,
           extraCredits: 10,
@@ -88,7 +88,7 @@ const MeetingRevenue = () => {
         {
           clientName: "Myntra",
           revenue: 750000,
-          status: "Unpaid",
+          status: "Paid",
           totalCredits: 90,
           usedCredits: 70,
           extraCredits: 5,
@@ -112,7 +112,7 @@ const MeetingRevenue = () => {
         {
           clientName: "Meesho",
           revenue: 800000,
-          status: "Unpaid",
+          status: "Paid",
           totalCredits: 100,
           usedCredits: 85,
           extraCredits: 7,
@@ -154,7 +154,7 @@ const MeetingRevenue = () => {
         {
           clientName: "Flipkart",
           revenue: 1250000,
-          status: "Unpaid",
+          status: "Paid",
           totalCredits: 130,
           usedCredits: 100,
           extraCredits: 15,
@@ -178,7 +178,7 @@ const MeetingRevenue = () => {
         {
           clientName: "Lenskart",
           revenue: 900000,
-          status: "Unpaid",
+          status: "Paid",
           totalCredits: 100,
           usedCredits: 90,
           extraCredits: 7,
@@ -220,7 +220,7 @@ const MeetingRevenue = () => {
         {
           clientName: "Udaan",
           revenue: 850000,
-          status: "Unpaid",
+          status: "Paid",
           totalCredits: 110,
           usedCredits: 95,
           extraCredits: 10,
@@ -244,7 +244,7 @@ const MeetingRevenue = () => {
         {
           clientName: "CoinDCX",
           revenue: 1000000,
-          status: "Unpaid",
+          status: "Paid",
           totalCredits: 100,
           usedCredits: 85,
           extraCredits: 8,
@@ -286,7 +286,7 @@ const MeetingRevenue = () => {
         {
           clientName: "CRED",
           revenue: 1100000,
-          status: "Unpaid",
+          status: "Paid",
           totalCredits: 110,
           usedCredits: 95,
           extraCredits: 10,
@@ -319,7 +319,7 @@ const MeetingRevenue = () => {
         {
           clientName: "Pharmeasy",
           revenue: 850000,
-          status: "Unpaid",
+          status: "Paid",
           totalCredits: 100,
           usedCredits: 85,
           extraCredits: 7,
@@ -334,7 +334,7 @@ const MeetingRevenue = () => {
         {
           clientName: "Cars24",
           revenue: 1300000,
-          status: "Unpaid",
+          status: "Paid",
           totalCredits: 120,
           usedCredits: 100,
           extraCredits: 10,
@@ -376,7 +376,7 @@ const MeetingRevenue = () => {
         {
           clientName: "PolicyBazaar",
           revenue: 1200000,
-          status: "Unpaid",
+          status: "Paid",
           totalCredits: 115,
           usedCredits: 100,
           extraCredits: 8,
@@ -433,12 +433,12 @@ const MeetingRevenue = () => {
     },
     yaxis: {
       labels: {
-        formatter: (val) => `₹${val.toLocaleString()}`,
+        formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
     tooltip: {
       y: {
-        formatter: (val) => `${val.toLocaleString()} INR`,
+        formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
     plotOptions: {
@@ -474,16 +474,27 @@ const MeetingRevenue = () => {
           customLegend
           firstParam={{
             title: "Actual",
-            data: `${totalActual.toLocaleString()} INR`,
+            data: `INR ${totalActual.toLocaleString()}`,
           }}
           secondParam={{
             title: "Projected",
-            data: `${totalProjected.toLocaleString()} INR`,
+            data: `INR ${totalProjected.toLocaleString()}`,
           }}
         />
       </WidgetSection>
 
-      <div>
+      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
+      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+          <div className="flex justify-between items-center w-full px-4 py-2">
+            <span className=" text-sm text-muted font-pmedium text-title">
+              MONTH
+            </span>
+            <span className="px-8 text-sm text-muted font-pmedium text-title flex items-center gap-1">
+              REVENUE
+            </span>
+            
+          </div>
+        </div>
         {monthlyMeetingeData.map((monthData, index) => {
           const totalActual = monthData.clients.reduce(
             (sum, c) => sum + c.revenue,
@@ -502,7 +513,7 @@ const MeetingRevenue = () => {
           }));
 
           const columns = [
-            { headerName: "ID", field: "id", width: 80 },
+            { headerName: "Sr No", field: "id", width: 80 },
             { headerName: "Client Name", field: "clientName", flex: 1 },
             { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
             { headerName: "Total Credits", field: "totalCredits", flex: 1 },
@@ -524,8 +535,8 @@ const MeetingRevenue = () => {
                   <span className="text-subtitle font-pmedium">
                     {monthData.month}
                   </span>
-                  <span className="text-subtitle font-pmedium">
-                    {totalActual.toLocaleString()} INR
+                  <span className="text-subtitle font-pmedium ">
+                    INR {totalActual.toLocaleString()}
                   </span>
                 </div>
               </AccordionSummary>
@@ -538,7 +549,7 @@ const MeetingRevenue = () => {
                 />
                 <span className="text-sm font-medium mt-2 block">
                   Total Actual Revenue for {monthData.month}:
-                  {totalActual.toLocaleString()} INR
+                  INR {totalActual.toLocaleString()} 
                 </span>
               </AccordionDetails>
             </Accordion>

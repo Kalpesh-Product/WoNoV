@@ -161,7 +161,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 4500,
       "dueDate": "2024-05-20T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -173,7 +173,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 1200,
       "dueDate": "2024-05-20T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -185,7 +185,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 5000,
       "dueDate": "2024-05-20T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -197,7 +197,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 2000,
       "dueDate": "2024-05-20T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -209,7 +209,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 3500,
       "dueDate": "2024-05-20T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -221,7 +221,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 2700,
       "dueDate": "2024-05-20T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -233,7 +233,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 6200,
       "dueDate": "2024-05-20T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
 
@@ -330,7 +330,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 4500.00,
       "dueDate": "2024-07-15T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -342,7 +342,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 8900.00,
       "dueDate": "2024-07-15T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -354,7 +354,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 3000.00,
       "dueDate": "2024-07-15T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -366,7 +366,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 6700.00,
       "dueDate": "2024-07-15T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -378,7 +378,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 5100.00,
       "dueDate": "2024-07-15T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -390,7 +390,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 4200.00,
       "dueDate": "2024-07-15T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -402,7 +402,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 5600.00,
       "dueDate": "2024-07-15T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -510,7 +510,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 4200,
       "dueDate": "2024-10-05T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -522,7 +522,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 12500,
       "dueDate": "2024-10-05T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -534,7 +534,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 8300,
       "dueDate": "2024-10-05T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -546,7 +546,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 6700,
       "dueDate": "2024-10-05T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -558,7 +558,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 3900,
       "dueDate": "2024-10-05T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -570,7 +570,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 5600,
       "dueDate": "2024-10-05T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -582,7 +582,7 @@ const SalesBudget = () => {
       "expanseType": "External",
       "projectedAmount": 7100,
       "dueDate": "2024-10-05T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -678,7 +678,7 @@ const SalesBudget = () => {
       "expanseType": "Internal",
       "projectedAmount": 2200,
       "dueDate": "2024-12-18T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
@@ -702,7 +702,7 @@ const SalesBudget = () => {
       "expanseType": "Internal",
       "projectedAmount": 3100,
       "dueDate": "2025-02-14T18:30:00.000Z",
-      "status": "Pending",
+      "status": "Approved",
       "isExtraBudget": false
     },
     {
