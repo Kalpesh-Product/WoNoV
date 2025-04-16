@@ -126,7 +126,8 @@ const Header = () => {
             </div>
           </>
         )}
-        <div className="flex items-center gap-4 w-[40%]">
+        {/* <div className="flex items-center gap-4 w-[40%]"> */}
+        <div className="flex items-center gap-4 w-[45%]">
           <Avatar onClick={handleAvatarClick} className="cursor-pointer">
             {auth.user.email === "abrar@biznest.co.in" ? (
               <img src={Abrar} alt="" />
@@ -143,9 +144,11 @@ const Header = () => {
                 <h1 className="text-xl font-semibold text-start">
                   {auth.user.firstName}
                 </h1>
-                <span className="text-content">
-                  {auth.user.designation.split(" ").length > 2
-                    ? auth.user.designation.split(" ").slice(0, 2).join(" ") +
+                <span className="text-content w-full">
+                  {/* {auth.user.designation.split(" ").length > 2 */}
+                  {auth.user.designation.split(" ").length > 3
+                    ? // ? auth.user.designation.split(" ").slice(0, 2).join(" ") +
+                      auth.user.designation.split(" ").slice(0, 3).join(" ") +
                       "..."
                     : auth.user.designation}
                 </span>

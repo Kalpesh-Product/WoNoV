@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect } from "react";
 import WidgetSection from "../../../components/WidgetSection";
 import Card from "../../../components/Card";
 import { LuHardDriveUpload } from "react-icons/lu";
@@ -18,12 +18,19 @@ import BarGraph from "../../../components/graphs/BarGraph";
 import { useNavigate } from "react-router-dom";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
+import { useSidebar } from "../../../context/SideBarContext";
 
 const LayerBarGraph = lazy(() =>
   import("../../../components/graphs/LayerBarGraph")
 );
 
 const HrDashboard = () => {
+  const { setIsSidebarOpen } = useSidebar();
+
+  useEffect(() => {
+    setIsSidebarOpen(true);
+  }, []); // Empty dependency array ensures this runs once on mount
+
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const navigate = useNavigate();
@@ -169,7 +176,7 @@ const HrDashboard = () => {
     },
     legend: {
       show: true,
-      position: 'top'
+      position: "top",
     },
 
     tooltip: {
@@ -185,13 +192,13 @@ const HrDashboard = () => {
   //firstgraph
 
   const utilisedData = [
-    1250000, 1500000, 990000, 850000, 700000, 500000, 800000, 950000, 1000000, 650000,
-    500000, 1200000,
+    1250000, 1500000, 990000, 850000, 700000, 500000, 800000, 950000, 1000000,
+    650000, 500000, 1200000,
   ];
 
   const maxBudget = [
-    1000000, 1200000, 1000000, 1000000, 800000, 600000, 850000, 950000, 1000000, 700000,
-    600000, 1100000,
+    1000000, 1200000, 1000000, 1000000, 800000, 600000, 850000, 950000, 1000000,
+    700000, 600000, 1100000,
   ];
   const defaultData = utilisedData.map((value) =>
     Math.max(100 - Math.min(value, 100), 0)
@@ -200,7 +207,6 @@ const HrDashboard = () => {
   const exceededData = utilisedData.map((value) =>
     value > 100 ? value - 100 : 0
   );
-
 
   const columns = [
     { id: "id", label: "Sr No", align: "left" },
@@ -230,8 +236,6 @@ const HrDashboard = () => {
     { title: "Narshiva Naik", start: "2025-04-26" },
     { title: "Hema", start: "2025-04-30" },
   ];
-
-
 
   const columns2 = [
     { id: "id", label: "Sr No", align: "left" },
@@ -461,15 +465,22 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
-          <WidgetSection layout={1} border title={"Budget v/s Achievements"} titleLabel={"FY 2024-25"}>
-            <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={'finance/budget'}/>
+          }>
+          <WidgetSection
+            layout={1}
+            border
+            title={"Budget v/s Achievements"}
+            titleLabel={"FY 2024-25"}>
+            <BudgetGraph
+              utilisedData={utilisedData}
+              maxBudget={maxBudget}
+              route={"finance/budget"}
+            />
 
             <hr />
             <WidgetSection layout={3} padding>
               <DataCard
-                data={"INR "+inrFormat("2000000")}
+                data={"INR " + inrFormat("2000000")}
                 title={"Projected"}
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
@@ -478,7 +489,7 @@ const HrDashboard = () => {
                 )}`}
               />
               <DataCard
-                data={"INR "+inrFormat("150000")}
+                data={"INR " + inrFormat("150000")}
                 title={"Actual"}
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
@@ -487,7 +498,7 @@ const HrDashboard = () => {
                 )}`}
               />
               <DataCard
-                data={"INR "+inrFormat(12000)}
+                data={"INR " + inrFormat(12000)}
                 title={"Requested"}
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
@@ -575,15 +586,13 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection
             layout={1}
             border
             padding
             titleLabel={"FY 2024-25"}
-            title={"Department Wise Tasks Vs Achievements "}
-          >
+            title={"Department Wise Tasks Vs Achievements "}>
             <BarGraph
               data={rawSeries}
               options={options}
@@ -648,7 +657,11 @@ const HrDashboard = () => {
           scroll
         />,
 
-        <MuiTable Title="Top 3 Performers List" columns={columns3} rows={rows3} />,
+        <MuiTable
+          Title="Top 3 Performers List"
+          columns={columns3}
+          rows={rows3}
+        />,
         <MuiTable
           Title="Under 3 Performed List"
           columns={columns4}

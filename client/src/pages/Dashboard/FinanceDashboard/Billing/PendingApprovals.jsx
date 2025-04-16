@@ -35,7 +35,7 @@ const kraColumn = [
     { field: "id", headerName: "Sr No", flex: 1 },
     { field: "department", headerName: "Department", flex: 1 },
     { field: "date", headerName: "Date", flex: 1 },
-    { field: "amount", headerName: "Amount", flex: 1 },
+    { field: "amount", headerName: "Amount (INR)", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -86,7 +86,7 @@ const kraColumn = [
   ];
 
 const transformedData = rows.map((viewDetail)=>(
-  {...viewDetail,amount:"INR " + Number(
+  {...viewDetail,amount:Number(
     viewDetail.amount.toLocaleString("en-IN").replace(/,/g, "")
   ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
   }

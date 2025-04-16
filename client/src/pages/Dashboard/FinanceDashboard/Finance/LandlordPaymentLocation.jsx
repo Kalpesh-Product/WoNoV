@@ -15,1443 +15,1421 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 
-
-
 const LandlordPaymentLocation = () => {
   const [searchParams] = useSearchParams();
-    const [viewModalOpen, setViewModalOpen] = useState(false);
-        const [viewDetails, setViewDetails] = useState(null);
-  const building = searchParams.get('location');
-  const rawUnit = searchParams.get('floor');
-  const unit = rawUnit?.replace(/[()]/g, ''); 
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewDetails, setViewDetails] = useState(null);
+  const building = searchParams.get("location");
+  const rawUnit = searchParams.get("floor");
+  const unit = rawUnit?.replace(/[()]/g, "");
   const buildingInitials = building
-  ? (() => {
-      const words = building.split(' ');
-      if(words[0] === "Sunteck"){
-        return "ST"
-      }
-      return `${words[0][0]}${words[words.length - 1][0]}`;
-    })()
-  : '';
+    ? (() => {
+        const words = building.split(" ");
+        if (words[0] === "Sunteck") {
+          return "ST";
+        }
+        return `${words[0][0]}${words[words.length - 1][0]}`;
+      })()
+    : "";
 
   const unitData = [
     {
-      "unitNo": "501(A)",
-      "buildingName": "Sunteck Kanaka",
-      "tableData": {
-        "columns": [
+      unitNo: "501(A)",
+      buildingName: "Sunteck Kanaka",
+      tableData: {
+        columns: [
           {
-            "field": "srNo",
-            "headerName": "Sr No",
-            "width": 100,
-            "flex":1
+            field: "srNo",
+            headerName: "Sr No",
+            width: 100,
+            flex: 1,
           },
           {
-            "field": "month",
-            "headerName": "Month",
-            "width": 120,
-            "flex":1
+            field: "month",
+            headerName: "Month",
+            width: 120,
+            flex: 1,
           },
           {
-            "field": "status",
-            "headerName": "Status",
-            "width": 120,
-            "flex":1
+            field: "status",
+            headerName: "Status",
+            width: 120,
+            flex: 1,
           },
-           {
-                field: "actions",
-                headerName: "Actions",
-                cellRenderer: (params) => (
-                  <>
-                    <div className="p-2 mb-2 flex gap-2">
-                      <span
-                                 className="text-subtitle cursor-pointer"
-                                 onClick={() => handleViewModal(params.data)}>
-                                 <MdOutlineRemoveRedEye />
-                               </span>
-                    </div>
-                  </>
-                ),
-              
-              },
-         
+          {
+            field: "actions",
+            headerName: "Actions",
+            cellRenderer: (params) => (
+              <>
+                <div className="p-2 mb-2 flex gap-2">
+                  <span
+                    className="text-subtitle cursor-pointer"
+                    onClick={() => handleViewModal(params.data)}>
+                    <MdOutlineRemoveRedEye />
+                  </span>
+                </div>
+              </>
+            ),
+          },
         ],
-        "rows": [
+        rows: [
           {
-            "srNo": 1,
-            "month": "Apr-24",
-            "landlordName": "Ravi Kumar",
-            "total": "25,000",
-            "status": "Paid"
+            srNo: 1,
+            month: "Apr-24",
+            landlordName: "Ravi Kumar",
+            total: "25,000",
+            status: "Paid",
           },
           {
-            "srNo": 2,
-            "month": "May-24",
-            "landlordName": "Kunal Joshi",
-            "total": "25,200",
-            "status": "Paid"
+            srNo: 2,
+            month: "May-24",
+            landlordName: "Kunal Joshi",
+            total: "25,200",
+            status: "Paid",
           },
           {
-            "srNo": 3,
-            "month": "Jun-24",
-            "landlordName": "Sara Fernandes",
-            "total": "25,400",
-            "status": "Paid"
+            srNo: 3,
+            month: "Jun-24",
+            landlordName: "Sara Fernandes",
+            total: "25,400",
+            status: "Paid",
           },
           {
-            "srNo": 4,
-            "month": "Jul-24",
-            "landlordName": "Zina Malik",
-            "total": "25,600",
-            "status": "Unpaid"
+            srNo: 4,
+            month: "Jul-24",
+            landlordName: "Zina Malik",
+            total: "25,600",
+            status: "Paid",
           },
           {
-            "srNo": 5,
-            "month": "Aug-24",
-            "landlordName": "Arun Kashyap",
-            "total": "25,800",
-            "status": "Paid"
+            srNo: 5,
+            month: "Aug-24",
+            landlordName: "Arun Kashyap",
+            total: "25,800",
+            status: "Paid",
           },
           {
-            "srNo": 6,
-            "month": "Sep-24",
-            "landlordName": "Sara Fernandes",
-            "total": "26,000",
-            "status": "Unpaid"
+            srNo: 6,
+            month: "Sep-24",
+            landlordName: "Sara Fernandes",
+            total: "26,000",
+            status: "Paid",
           },
           {
-            "srNo": 7,
-            "month": "Oct-24",
-            "landlordName": "Anne Dsouza",
-            "total": "26,200",
-            "status": "Paid"
+            srNo: 7,
+            month: "Oct-24",
+            landlordName: "Anne Dsouza",
+            total: "26,200",
+            status: "Paid",
           },
           {
-            "srNo": 8,
-            "month": "Nov-24",
-            "landlordName": "Naaz Bwannavar",
-            "total": "26,400",
-            "status": "Paid"
+            srNo: 8,
+            month: "Nov-24",
+            landlordName: "Naaz Bwannavar",
+            total: "26,400",
+            status: "Paid",
           },
           {
-            "srNo": 9,
-            "month": "Dec-24",
-            "landlordName": "Allan Mark",
-            "total": "26,600",
-            "status": "Paid"
+            srNo: 9,
+            month: "Dec-24",
+            landlordName: "Allan Mark",
+            total: "26,600",
+            status: "Paid",
           },
           {
-            "srNo": 10,
-            "month": "Jan-25",
-            "landlordName": "Jhon Robert",
-            "total": "26,800",
-            "status": "Paid"
+            srNo: 10,
+            month: "Jan-25",
+            landlordName: "Jhon Robert",
+            total: "26,800",
+            status: "Paid",
           },
           {
-            "srNo": 11,
-            "month": "Feb-25",
-            "landlordName": "Sankalp Kalangutkar",
-            "total": "27,000",
-            "status": "Unpaid"
+            srNo: 11,
+            month: "Feb-25",
+            landlordName: "Sankalp Kalangutkar",
+            total: "27,000",
+            status: "Paid",
           },
           {
-            "srNo": 12,
-            "month": "Mar-25",
-            "landlordName": "Aiwinraj KS",
-            "total": "27,200",
-            "status": "Unpaid"
-          }
-        ]
-      }
+            srNo: 12,
+            month: "Mar-25",
+            landlordName: "Aiwinraj KS",
+            total: "27,200",
+            status: "Unpaid",
+          },
+        ],
+      },
     },
     {
-      "unitNo": "501(B)",
-      "buildingName": "Sunteck Kanaka",
-      "tableData": {
-        "columns": [
+      unitNo: "501(B)",
+      buildingName: "Sunteck Kanaka",
+      tableData: {
+        columns: [
           {
-            "field": "srNo",
-            "headerName": "Sr No",
-            "width": 100,
-            "flex":1
+            field: "srNo",
+            headerName: "Sr No",
+            width: 100,
+            flex: 1,
           },
           {
-            "field": "month",
-            "headerName": "Month",
-            "width": 120,
-            "flex":1
+            field: "month",
+            headerName: "Month",
+            width: 120,
+            flex: 1,
           },
           {
-            "field": "status",
-            "headerName": "Status",
-            "width": 120,
-            "flex":1
+            field: "status",
+            headerName: "Status",
+            width: 120,
+            flex: 1,
           },
-           {
-                field: "actions",
-                headerName: "Actions",
-                cellRenderer: (params) => (
-                  <>
-                    <div className="p-2 mb-2 flex gap-2">
-                      <span
-                                 className="text-subtitle cursor-pointer"
-                                 onClick={() => handleViewModal(params.data)}>
-                                 <MdOutlineRemoveRedEye />
-                               </span>
-                    </div>
-                  </>
-                ),
-              
-              },
-         
+          {
+            field: "actions",
+            headerName: "Actions",
+            cellRenderer: (params) => (
+              <>
+                <div className="p-2 mb-2 flex gap-2">
+                  <span
+                    className="text-subtitle cursor-pointer"
+                    onClick={() => handleViewModal(params.data)}>
+                    <MdOutlineRemoveRedEye />
+                  </span>
+                </div>
+              </>
+            ),
+          },
         ],
-        "rows": [
+        rows: [
           {
-            "srNo": 1,
-            "month": "Apr-24",
-            "landlordName": "Sneha Mehta",
-            "total": "24,500",
-            "status": "Paid"
+            srNo: 1,
+            month: "Apr-24",
+            landlordName: "Sneha Mehta",
+            total: "24,500",
+            status: "Paid",
           },
           {
-            "srNo": 2,
-            "month": "May-24",
-            "landlordName": "Sneha Mehta",
-            "total": "24,700",
-            "status": "Unpaid"
+            srNo: 2,
+            month: "May-24",
+            landlordName: "Sneha Mehta",
+            total: "24,700",
+            status: "Paid",
           },
           {
-            "srNo": 3,
-            "month": "Jun-24",
-            "landlordName": "Sneha Mehta",
-            "total": "24,900",
-            "status": "Unpaid"
+            srNo: 3,
+            month: "Jun-24",
+            landlordName: "Sneha Mehta",
+            total: "24,900",
+            status: "Paid",
           },
           {
-            "srNo": 4,
-            "month": "Jul-24",
-            "landlordName": "Sneha Mehta",
-            "total": "25,100",
-            "status": "Paid"
+            srNo: 4,
+            month: "Jul-24",
+            landlordName: "Sneha Mehta",
+            total: "25,100",
+            status: "Paid",
           },
           {
-            "srNo": 5,
-            "month": "Aug-24",
-            "landlordName": "Sneha Mehta",
-            "total": "25,300",
-            "status": "Unpaid"
+            srNo: 5,
+            month: "Aug-24",
+            landlordName: "Sneha Mehta",
+            total: "25,300",
+            status: "Paid",
           },
           {
-            "srNo": 6,
-            "month": "Sep-24",
-            "landlordName": "Sneha Mehta",
-            "total": "25,500",
-            "status": "Unpaid"
+            srNo: 6,
+            month: "Sep-24",
+            landlordName: "Sneha Mehta",
+            total: "25,500",
+            status: "Paid",
           },
           {
-            "srNo": 7,
-            "month": "Oct-24",
-            "landlordName": "Sneha Mehta",
-            "total": "25,700",
-            "status": "Unpaid"
+            srNo: 7,
+            month: "Oct-24",
+            landlordName: "Sneha Mehta",
+            total: "25,700",
+            status: "Paid",
           },
           {
-            "srNo": 8,
-            "month": "Nov-24",
-            "landlordName": "Sneha Mehta",
-            "total": "25,900",
-            "status": "Unpaid"
+            srNo: 8,
+            month: "Nov-24",
+            landlordName: "Sneha Mehta",
+            total: "25,900",
+            status: "Paid",
           },
           {
-            "srNo": 9,
-            "month": "Dec-24",
-            "landlordName": "Sneha Mehta",
-            "total": "26,100",
-            "status": "Unpaid"
+            srNo: 9,
+            month: "Dec-24",
+            landlordName: "Sneha Mehta",
+            total: "26,100",
+            status: "Paid",
           },
           {
-            "srNo": 10,
-            "month": "Jan-25",
-            "landlordName": "Sneha Mehta",
-            "total": "26,300",
-            "status": "Paid"
+            srNo: 10,
+            month: "Jan-25",
+            landlordName: "Sneha Mehta",
+            total: "26,300",
+            status: "Paid",
           },
           {
-            "srNo": 11,
-            "month": "Feb-25",
-            "landlordName": "Sneha Mehta",
-            "total": "26,500",
-            "status": "Unpaid"
+            srNo: 11,
+            month: "Feb-25",
+            landlordName: "Sneha Mehta",
+            total: "26,500",
+            status: "Paid",
           },
           {
-            "srNo": 12,
-            "month": "Mar-25",
-            "landlordName": "Sneha Mehta",
-            "total": "26,700",
-            "status": "Paid"
-          }
-        ]
-      }
+            srNo: 12,
+            month: "Mar-25",
+            landlordName: "Sneha Mehta",
+            total: "26,700",
+            status: "Unpaid",
+          },
+        ],
+      },
     },
     {
-      "unitNo": "601(A)",
-      "buildingName": "Sunteck Kanaka",
-      "tableData": {
-        "columns": [
+      unitNo: "601(A)",
+      buildingName: "Sunteck Kanaka",
+      tableData: {
+        columns: [
           {
-            "field": "srNo",
-            "headerName": "Sr No",
-            "width": 100,
-            "flex":1
+            field: "srNo",
+            headerName: "Sr No",
+            width: 100,
+            flex: 1,
           },
           {
-            "field": "month",
-            "headerName": "Month",
-            "width": 120,
-            "flex":1
+            field: "month",
+            headerName: "Month",
+            width: 120,
+            flex: 1,
           },
           {
-            "field": "status",
-            "headerName": "Status",
-            "width": 120,
-            "flex":1
+            field: "status",
+            headerName: "Status",
+            width: 120,
+            flex: 1,
           },
-           {
-                field: "actions",
-                headerName: "Actions",
-                cellRenderer: (params) => (
-                  <>
-                    <div className="p-2 mb-2 flex gap-2">
-                      <span
-                                 className="text-subtitle cursor-pointer"
-                                 onClick={() => handleViewModal(params.data)}>
-                                 <MdOutlineRemoveRedEye />
-                               </span>
-                    </div>
-                  </>
-                ),
-              
-              },
-         
+          {
+            field: "actions",
+            headerName: "Actions",
+            cellRenderer: (params) => (
+              <>
+                <div className="p-2 mb-2 flex gap-2">
+                  <span
+                    className="text-subtitle cursor-pointer"
+                    onClick={() => handleViewModal(params.data)}>
+                    <MdOutlineRemoveRedEye />
+                  </span>
+                </div>
+              </>
+            ),
+          },
         ],
-        "rows": [
+        rows: [
           {
-            "srNo": 1,
-            "month": "Apr-24",
-            "landlordName": "Amit Shah",
-            "total": "28,000",
-            "status": "Unpaid"
+            srNo: 1,
+            month: "Apr-24",
+            landlordName: "Amit Shah",
+            total: "28,000",
+            status: "Paid",
           },
           {
-            "srNo": 2,
-            "month": "May-24",
-            "landlordName": "Amit Shah",
-            "total": "28,200",
-            "status": "Paid"
+            srNo: 2,
+            month: "May-24",
+            landlordName: "Amit Shah",
+            total: "28,200",
+            status: "Paid",
           },
           {
-            "srNo": 3,
-            "month": "Jun-24",
-            "landlordName": "Amit Shah",
-            "total": "28,400",
-            "status": "Unpaid"
+            srNo: 3,
+            month: "Jun-24",
+            landlordName: "Amit Shah",
+            total: "28,400",
+            status: "Paid",
           },
           {
-            "srNo": 4,
-            "month": "Jul-24",
-            "landlordName": "Amit Shah",
-            "total": "28,600",
-            "status": "Paid"
+            srNo: 4,
+            month: "Jul-24",
+            landlordName: "Amit Shah",
+            total: "28,600",
+            status: "Paid",
           },
           {
-            "srNo": 5,
-            "month": "Aug-24",
-            "landlordName": "Amit Shah",
-            "total": "28,800",
-            "status": "Unpaid"
+            srNo: 5,
+            month: "Aug-24",
+            landlordName: "Amit Shah",
+            total: "28,800",
+            status: "Paid",
           },
           {
-            "srNo": 6,
-            "month": "Sep-24",
-            "landlordName": "Amit Shah",
-            "total": "29,000",
-            "status": "Unpaid"
+            srNo: 6,
+            month: "Sep-24",
+            landlordName: "Amit Shah",
+            total: "29,000",
+            status: "Paid",
           },
           {
-            "srNo": 7,
-            "month": "Oct-24",
-            "landlordName": "Amit Shah",
-            "total": "29,200",
-            "status": "Unpaid"
+            srNo: 7,
+            month: "Oct-24",
+            landlordName: "Amit Shah",
+            total: "29,200",
+            status: "Paid",
           },
           {
-            "srNo": 8,
-            "month": "Nov-24",
-            "landlordName": "Amit Shah",
-            "total": "29,400",
-            "status": "Unpaid"
+            srNo: 8,
+            month: "Nov-24",
+            landlordName: "Amit Shah",
+            total: "29,400",
+            status: "Paid",
           },
           {
-            "srNo": 9,
-            "month": "Dec-24",
-            "landlordName": "Amit Shah",
-            "total": "29,600",
-            "status": "Unpaid"
+            srNo: 9,
+            month: "Dec-24",
+            landlordName: "Amit Shah",
+            total: "29,600",
+            status: "Paid",
           },
           {
-            "srNo": 10,
-            "month": "Jan-25",
-            "landlordName": "Amit Shah",
-            "total": "29,800",
-            "status": "Unpaid"
+            srNo: 10,
+            month: "Jan-25",
+            landlordName: "Amit Shah",
+            total: "29,800",
+            status: "Paid",
           },
           {
-            "srNo": 11,
-            "month": "Feb-25",
-            "landlordName": "Amit Shah",
-            "total": "30,000",
-            "status": "Unpaid"
+            srNo: 11,
+            month: "Feb-25",
+            landlordName: "Amit Shah",
+            total: "30,000",
+            status: "Paid",
           },
           {
-            "srNo": 12,
-            "month": "Mar-25",
-            "landlordName": "Amit Shah",
-            "total": "30,200",
-            "status": "Paid"
-          }
-        ]
-      }
+            srNo: 12,
+            month: "Mar-25",
+            landlordName: "Amit Shah",
+            total: "30,200",
+            status: "Unpaid",
+          },
+        ],
+      },
     },
     {
-      "unitNo": "601(B)",
-      "buildingName": "Sunteck Kanaka",
-      "tableData": {
-        "columns": [
+      unitNo: "601(B)",
+      buildingName: "Sunteck Kanaka",
+      tableData: {
+        columns: [
           {
-            "field": "srNo",
-            "headerName": "Sr No",
-            "width": 100,
-            "flex":1
+            field: "srNo",
+            headerName: "Sr No",
+            width: 100,
+            flex: 1,
           },
           {
-            "field": "month",
-            "headerName": "Month",
-            "width": 120,
-            "flex":1
+            field: "month",
+            headerName: "Month",
+            width: 120,
+            flex: 1,
           },
           {
-            "field": "status",
-            "headerName": "Status",
-            "width": 120,
-            "flex":1
+            field: "status",
+            headerName: "Status",
+            width: 120,
+            flex: 1,
           },
-           {
-                field: "actions",
-                headerName: "Actions",
-                cellRenderer: (params) => (
-                  <>
-                    <div className="p-2 mb-2 flex gap-2">
-                      <span
-                                 className="text-subtitle cursor-pointer"
-                                 onClick={() => handleViewModal(params.data)}>
-                                 <MdOutlineRemoveRedEye />
-                               </span>
-                    </div>
-                  </>
-                ),
-              
-              },
-         
+          {
+            field: "actions",
+            headerName: "Actions",
+            cellRenderer: (params) => (
+              <>
+                <div className="p-2 mb-2 flex gap-2">
+                  <span
+                    className="text-subtitle cursor-pointer"
+                    onClick={() => handleViewModal(params.data)}>
+                    <MdOutlineRemoveRedEye />
+                  </span>
+                </div>
+              </>
+            ),
+          },
         ],
-        "rows": [
+        rows: [
           {
-            "srNo": 1,
-            "month": "Apr-24",
-            "landlordName": "Ravi Kumar",
-            "total": "27,000",
-            "status": "Paid"
+            srNo: 1,
+            month: "Apr-24",
+            landlordName: "Ravi Kumar",
+            total: "27,000",
+            status: "Paid",
           },
           {
-            "srNo": 2,
-            "month": "May-24",
-            "landlordName": "Kunal Joshi",
-            "total": "27,200",
-            "status": "Paid"
+            srNo: 2,
+            month: "May-24",
+            landlordName: "Kunal Joshi",
+            total: "27,200",
+            status: "Paid",
           },
           {
-            "srNo": 3,
-            "month": "Jun-24",
-            "landlordName": "Sara Fernandes",
-            "total": "27,400",
-            "status": "Paid"
+            srNo: 3,
+            month: "Jun-24",
+            landlordName: "Sara Fernandes",
+            total: "27,400",
+            status: "Paid",
           },
           {
-            "srNo": 4,
-            "month": "Jul-24",
-            "landlordName": "Zina Malik",
-            "total": "27,600",
-            "status": "Unpaid"
+            srNo: 4,
+            month: "Jul-24",
+            landlordName: "Zina Malik",
+            total: "27,600",
+            status: "Paid",
           },
           {
-            "srNo": 5,
-            "month": "Aug-24",
-            "landlordName": "Arun Kashyap",
-            "total": "27,800",
-            "status": "Unpaid"
+            srNo: 5,
+            month: "Aug-24",
+            landlordName: "Arun Kashyap",
+            total: "27,800",
+            status: "Paid",
           },
           {
-            "srNo": 6,
-            "month": "Sep-24",
-            "landlordName": "Sara Fernandes",
-            "total": "28,000",
-            "status": "Unpaid"
+            srNo: 6,
+            month: "Sep-24",
+            landlordName: "Sara Fernandes",
+            total: "28,000",
+            status: "Paid",
           },
           {
-            "srNo": 7,
-            "month": "Oct-24",
-            "landlordName": "Anne Dsouza",
-            "total": "28,200",
-            "status": "Paid"
+            srNo: 7,
+            month: "Oct-24",
+            landlordName: "Anne Dsouza",
+            total: "28,200",
+            status: "Paid",
           },
           {
-            "srNo": 8,
-            "month": "Nov-24",
-            "landlordName": "Naaz Bwannavar",
-            "total": "28,400",
-            "status": "Paid"
+            srNo: 8,
+            month: "Nov-24",
+            landlordName: "Naaz Bwannavar",
+            total: "28,400",
+            status: "Paid",
           },
           {
-            "srNo": 9,
-            "month": "Dec-24",
-            "landlordName": "Allan Mark",
-            "total": "28,600",
-            "status": "Paid"
+            srNo: 9,
+            month: "Dec-24",
+            landlordName: "Allan Mark",
+            total: "28,600",
+            status: "Paid",
           },
           {
-            "srNo": 10,
-            "month": "Jan-25",
-            "landlordName": "Jhon Robert",
-            "total": "28,800",
-            "status": "Unpaid"
+            srNo: 10,
+            month: "Jan-25",
+            landlordName: "Jhon Robert",
+            total: "28,800",
+            status: "Paid",
           },
           {
-            "srNo": 11,
-            "month": "Feb-25",
-            "landlordName": "Sankalp Kalangutkar",
-            "total": "29,000",
-            "status": "Paid"
+            srNo: 11,
+            month: "Feb-25",
+            landlordName: "Sankalp Kalangutkar",
+            total: "29,000",
+            status: "Paid",
           },
           {
-            "srNo": 12,
-            "month": "Mar-25",
-            "landlordName": "Aiwinraj KS",
-            "total": "29,200",
-            "status": "Paid"
-          }
-        ]
-      }
+            srNo: 12,
+            month: "Mar-25",
+            landlordName: "Aiwinraj KS",
+            total: "29,200",
+            status: "Unpaid",
+          },
+        ],
+      },
     },
     {
-      "unitNo": "701(A)",
-      "buildingName": "Sunteck Kanaka",
-      "tableData": {
-        "columns": [
+      unitNo: "701(A)",
+      buildingName: "Sunteck Kanaka",
+      tableData: {
+        columns: [
           {
-            "field": "srNo",
-            "headerName": "Sr No",
-            "width": 100,
-            "flex":1
+            field: "srNo",
+            headerName: "Sr No",
+            width: 100,
+            flex: 1,
           },
           {
-            "field": "month",
-            "headerName": "Month",
-            "width": 120,
-            "flex":1
+            field: "month",
+            headerName: "Month",
+            width: 120,
+            flex: 1,
           },
           {
-            "field": "status",
-            "headerName": "Status",
-            "width": 120,
-            "flex":1
+            field: "status",
+            headerName: "Status",
+            width: 120,
+            flex: 1,
           },
-           {
-                field: "actions",
-                headerName: "Actions",
-                cellRenderer: (params) => (
-                  <>
-                    <div className="p-2 mb-2 flex gap-2">
-                      <span
-                                 className="text-subtitle cursor-pointer"
-                                 onClick={() => handleViewModal(params.data)}>
-                                 <MdOutlineRemoveRedEye />
-                               </span>
-                    </div>
-                  </>
-                ),
-              
-              },
-         
+          {
+            field: "actions",
+            headerName: "Actions",
+            cellRenderer: (params) => (
+              <>
+                <div className="p-2 mb-2 flex gap-2">
+                  <span
+                    className="text-subtitle cursor-pointer"
+                    onClick={() => handleViewModal(params.data)}>
+                    <MdOutlineRemoveRedEye />
+                  </span>
+                </div>
+              </>
+            ),
+          },
         ],
-        "rows": [
+        rows: [
           {
-            "srNo": 1,
-            "month": "Apr-24",
-            "landlordName": "Vikram Singh",
-            "total": "29,500",
-            "status": "Unpaid"
+            srNo: 1,
+            month: "Apr-24",
+            landlordName: "Vikram Singh",
+            total: "29,500",
+            status: "Paid",
           },
           {
-            "srNo": 2,
-            "month": "May-24",
-            "landlordName": "Vikram Singh",
-            "total": "29,700",
-            "status": "Paid"
+            srNo: 2,
+            month: "May-24",
+            landlordName: "Vikram Singh",
+            total: "29,700",
+            status: "Paid",
           },
           {
-            "srNo": 3,
-            "month": "Jun-24",
-            "landlordName": "Vikram Singh",
-            "total": "29,900",
-            "status": "Paid"
+            srNo: 3,
+            month: "Jun-24",
+            landlordName: "Vikram Singh",
+            total: "29,900",
+            status: "Paid",
           },
           {
-            "srNo": 4,
-            "month": "Jul-24",
-            "landlordName": "Vikram Singh",
-            "total": "30,100",
-            "status": "Paid"
+            srNo: 4,
+            month: "Jul-24",
+            landlordName: "Vikram Singh",
+            total: "30,100",
+            status: "Paid",
           },
           {
-            "srNo": 5,
-            "month": "Aug-24",
-            "landlordName": "Vikram Singh",
-            "total": "30,300",
-            "status": "Unpaid"
+            srNo: 5,
+            month: "Aug-24",
+            landlordName: "Vikram Singh",
+            total: "30,300",
+            status: "Paid",
           },
           {
-            "srNo": 6,
-            "month": "Sep-24",
-            "landlordName": "Vikram Singh",
-            "total": "30,500",
-            "status": "Paid"
+            srNo: 6,
+            month: "Sep-24",
+            landlordName: "Vikram Singh",
+            total: "30,500",
+            status: "Paid",
           },
           {
-            "srNo": 7,
-            "month": "Oct-24",
-            "landlordName": "Vikram Singh",
-            "total": "30,700",
-            "status": "Paid"
+            srNo: 7,
+            month: "Oct-24",
+            landlordName: "Vikram Singh",
+            total: "30,700",
+            status: "Paid",
           },
           {
-            "srNo": 8,
-            "month": "Nov-24",
-            "landlordName": "Vikram Singh",
-            "total": "30,900",
-            "status": "Unpaid"
+            srNo: 8,
+            month: "Nov-24",
+            landlordName: "Vikram Singh",
+            total: "30,900",
+            status: "Paid",
           },
           {
-            "srNo": 9,
-            "month": "Dec-24",
-            "landlordName": "Vikram Singh",
-            "total": "31,100",
-            "status": "Unpaid"
+            srNo: 9,
+            month: "Dec-24",
+            landlordName: "Vikram Singh",
+            total: "31,100",
+            status: "Paid",
           },
           {
-            "srNo": 10,
-            "month": "Jan-25",
-            "landlordName": "Vikram Singh",
-            "total": "31,300",
-            "status": "Unpaid"
+            srNo: 10,
+            month: "Jan-25",
+            landlordName: "Vikram Singh",
+            total: "31,300",
+            status: "Paid",
           },
           {
-            "srNo": 11,
-            "month": "Feb-25",
-            "landlordName": "Vikram Singh",
-            "total": "31,500",
-            "status": "Paid"
+            srNo: 11,
+            month: "Feb-25",
+            landlordName: "Vikram Singh",
+            total: "31,500",
+            status: "Paid",
           },
           {
-            "srNo": 12,
-            "month": "Mar-25",
-            "landlordName": "Vikram Singh",
-            "total": "31,700",
-            "status": "Unpaid"
-          }
-        ]
-      }
+            srNo: 12,
+            month: "Mar-25",
+            landlordName: "Vikram Singh",
+            total: "31,700",
+            status: "Unpaid",
+          },
+        ],
+      },
     },
     {
-      "unitNo": "701(B)",
-      "buildingName": "Sunteck Kanaka",
-      "tableData": {
-        "columns": [
+      unitNo: "701(B)",
+      buildingName: "Sunteck Kanaka",
+      tableData: {
+        columns: [
           {
-            "field": "srNo",
-            "headerName": "Sr No",
-            "width": 100,
-            "flex":1
+            field: "srNo",
+            headerName: "Sr No",
+            width: 100,
+            flex: 1,
           },
           {
-            "field": "month",
-            "headerName": "Month",
-            "width": 120,
-            "flex":1
+            field: "month",
+            headerName: "Month",
+            width: 120,
+            flex: 1,
           },
           {
-            "field": "status",
-            "headerName": "Status",
-            "width": 120,
-            "flex":1
+            field: "status",
+            headerName: "Status",
+            width: 120,
+            flex: 1,
           },
-           {
-                field: "actions",
-                headerName: "Actions",
-                cellRenderer: (params) => (
-                  <>
-                    <div className="p-2 mb-2 flex gap-2">
-                      <span
-                                 className="text-subtitle cursor-pointer"
-                                 onClick={() => handleViewModal(params.data)}>
-                                 <MdOutlineRemoveRedEye />
-                               </span>
-                    </div>
-                  </>
-                ),
-              
-              },
-         
+          {
+            field: "actions",
+            headerName: "Actions",
+            cellRenderer: (params) => (
+              <>
+                <div className="p-2 mb-2 flex gap-2">
+                  <span
+                    className="text-subtitle cursor-pointer"
+                    onClick={() => handleViewModal(params.data)}>
+                    <MdOutlineRemoveRedEye />
+                  </span>
+                </div>
+              </>
+            ),
+          },
         ],
-        "rows": [
+        rows: [
           {
-            "srNo": 1,
-            "month": "Apr-24",
-            "landlordName": "Ravi Kumar",
-            "total": "29,000",
-            "status": "Unpaid"
+            srNo: 1,
+            month: "Apr-24",
+            landlordName: "Ravi Kumar",
+            total: "29,000",
+            status: "Paid",
           },
           {
-            "srNo": 2,
-            "month": "May-24",
-            "landlordName": "Kunal Joshi",
-            "total": "29,200",
-            "status": "Unpaid"
+            srNo: 2,
+            month: "May-24",
+            landlordName: "Kunal Joshi",
+            total: "29,200",
+            status: "Paid",
           },
           {
-            "srNo": 3,
-            "month": "Jun-24",
-            "landlordName": "Sara Fernandes",
-            "total": "29,400",
-            "status": "Unpaid"
+            srNo: 3,
+            month: "Jun-24",
+            landlordName: "Sara Fernandes",
+            total: "29,400",
+            status: "Paid",
           },
           {
-            "srNo": 4,
-            "month": "Jul-24",
-            "landlordName": "Zina Malik",
-            "total": "29,600",
-            "status": "Paid"
+            srNo: 4,
+            month: "Jul-24",
+            landlordName: "Zina Malik",
+            total: "29,600",
+            status: "Paid",
           },
           {
-            "srNo": 5,
-            "month": "Aug-24",
-            "landlordName": "Arun Kashyap",
-            "total": "29,800",
-            "status": "Unpaid"
+            srNo: 5,
+            month: "Aug-24",
+            landlordName: "Arun Kashyap",
+            total: "29,800",
+            status: "Paid",
           },
           {
-            "srNo": 6,
-            "month": "Sep-24",
-            "landlordName": "Sara Fernandes",
-            "total": "30,000",
-            "status": "Paid"
+            srNo: 6,
+            month: "Sep-24",
+            landlordName: "Sara Fernandes",
+            total: "30,000",
+            status: "Paid",
           },
           {
-            "srNo": 7,
-            "month": "Oct-24",
-            "landlordName": "Anne Dsouza",
-            "total": "30,200",
-            "status": "Paid"
+            srNo: 7,
+            month: "Oct-24",
+            landlordName: "Anne Dsouza",
+            total: "30,200",
+            status: "Paid",
           },
           {
-            "srNo": 8,
-            "month": "Nov-24",
-            "landlordName": "Naaz Bwannavar",
-            "total": "30,400",
-            "status": "Unpaid"
+            srNo: 8,
+            month: "Nov-24",
+            landlordName: "Naaz Bwannavar",
+            total: "30,400",
+            status: "Paid",
           },
           {
-            "srNo": 9,
-            "month": "Dec-24",
-            "landlordName": "Allan Mark",
-            "total": "30,600",
-            "status": "Unpaid"
+            srNo: 9,
+            month: "Dec-24",
+            landlordName: "Allan Mark",
+            total: "30,600",
+            status: "Paid",
           },
           {
-            "srNo": 10,
-            "month": "Jan-25",
-            "landlordName": "Jhon Robert",
-            "total": "30,800",
-            "status": "Unpaid"
+            srNo: 10,
+            month: "Jan-25",
+            landlordName: "Jhon Robert",
+            total: "30,800",
+            status: "Paid",
           },
           {
-            "srNo": 11,
-            "month": "Feb-25",
-            "landlordName": "Sankalp Kalangutkar",
-            "total": "31,000",
-            "status": "Paid"
+            srNo: 11,
+            month: "Feb-25",
+            landlordName: "Sankalp Kalangutkar",
+            total: "31,000",
+            status: "Paid",
           },
           {
-            "srNo": 12,
-            "month": "Mar-25",
-            "landlordName": "Aiwinraj KS",
-            "total": "31,200",
-            "status": "Unpaid"
-          }
-        ]
-      }
+            srNo: 12,
+            month: "Mar-25",
+            landlordName: "Aiwinraj KS",
+            total: "31,200",
+            status: "Unpaid",
+          },
+        ],
+      },
     },
     {
-      "unitNo": "002",
-      "buildingName": "Dempo Trade Centre",
-      "tableData": {
-        "columns": [
+      unitNo: "002",
+      buildingName: "Dempo Trade Centre",
+      tableData: {
+        columns: [
           {
-            "field": "srNo",
-            "headerName": "Sr No",
-            "width": 100,
-            "flex":1
+            field: "srNo",
+            headerName: "Sr No",
+            width: 100,
+            flex: 1,
           },
           {
-            "field": "month",
-            "headerName": "Month",
-            "width": 120,
-            "flex":1
+            field: "month",
+            headerName: "Month",
+            width: 120,
+            flex: 1,
           },
           {
-            "field": "status",
-            "headerName": "Status",
-            "width": 120,
-            "flex":1
+            field: "status",
+            headerName: "Status",
+            width: 120,
+            flex: 1,
           },
-           {
-                field: "actions",
-                headerName: "Actions",
-                cellRenderer: (params) => (
-                  <>
-                    <div className="p-2 mb-2 flex gap-2">
-                      <span
-                                 className="text-subtitle cursor-pointer"
-                                 onClick={() => handleViewModal(params.data)}>
-                                 <MdOutlineRemoveRedEye />
-                               </span>
-                    </div>
-                  </>
-                ),
-              
-              },
-         
+          {
+            field: "actions",
+            headerName: "Actions",
+            cellRenderer: (params) => (
+              <>
+                <div className="p-2 mb-2 flex gap-2">
+                  <span
+                    className="text-subtitle cursor-pointer"
+                    onClick={() => handleViewModal(params.data)}>
+                    <MdOutlineRemoveRedEye />
+                  </span>
+                </div>
+              </>
+            ),
+          },
         ],
-        "rows": [
+        rows: [
           {
-            "srNo": 1,
-            "month": "Apr-24",
-            "landlordName": "Manish Verma",
-            "total": "23,000",
-            "status": "Unpaid"
+            srNo: 1,
+            month: "Apr-24",
+            landlordName: "Manish Verma",
+            total: "23,000",
+            status: "Paid",
           },
           {
-            "srNo": 2,
-            "month": "May-24",
-            "landlordName": "Manish Verma",
-            "total": "23,200",
-            "status": "Unpaid"
+            srNo: 2,
+            month: "May-24",
+            landlordName: "Manish Verma",
+            total: "23,200",
+            status: "Paid",
           },
           {
-            "srNo": 3,
-            "month": "Jun-24",
-            "landlordName": "Manish Verma",
-            "total": "23,400",
-            "status": "Unpaid"
+            srNo: 3,
+            month: "Jun-24",
+            landlordName: "Manish Verma",
+            total: "23,400",
+            status: "Paid",
           },
           {
-            "srNo": 4,
-            "month": "Jul-24",
-            "landlordName": "Manish Verma",
-            "total": "23,600",
-            "status": "Paid"
+            srNo: 4,
+            month: "Jul-24",
+            landlordName: "Manish Verma",
+            total: "23,600",
+            status: "Paid",
           },
           {
-            "srNo": 5,
-            "month": "Aug-24",
-            "landlordName": "Manish Verma",
-            "total": "23,800",
-            "status": "Unpaid"
+            srNo: 5,
+            month: "Aug-24",
+            landlordName: "Manish Verma",
+            total: "23,800",
+            status: "Paid",
           },
           {
-            "srNo": 6,
-            "month": "Sep-24",
-            "landlordName": "Manish Verma",
-            "total": "24,000",
-            "status": "Paid"
+            srNo: 6,
+            month: "Sep-24",
+            landlordName: "Manish Verma",
+            total: "24,000",
+            status: "Paid",
           },
           {
-            "srNo": 7,
-            "month": "Oct-24",
-            "landlordName": "Manish Verma",
-            "total": "24,200",
-            "status": "Unpaid"
+            srNo: 7,
+            month: "Oct-24",
+            landlordName: "Manish Verma",
+            total: "24,200",
+            status: "Paid",
           },
           {
-            "srNo": 8,
-            "month": "Nov-24",
-            "landlordName": "Manish Verma",
-            "total": "24,400",
-            "status": "Unpaid"
+            srNo: 8,
+            month: "Nov-24",
+            landlordName: "Manish Verma",
+            total: "24,400",
+            status: "Paid",
           },
           {
-            "srNo": 9,
-            "month": "Dec-24",
-            "landlordName": "Manish Verma",
-            "total": "24,600",
-            "status": "Paid"
+            srNo: 9,
+            month: "Dec-24",
+            landlordName: "Manish Verma",
+            total: "24,600",
+            status: "Paid",
           },
           {
-            "srNo": 10,
-            "month": "Jan-25",
-            "landlordName": "Manish Verma",
-            "total": "24,800",
-            "status": "Unpaid"
+            srNo: 10,
+            month: "Jan-25",
+            landlordName: "Manish Verma",
+            total: "24,800",
+            status: "Paid",
           },
           {
-            "srNo": 11,
-            "month": "Feb-25",
-            "landlordName": "Manish Verma",
-            "total": "25,000",
-            "status": "Paid"
+            srNo: 11,
+            month: "Feb-25",
+            landlordName: "Manish Verma",
+            total: "25,000",
+            status: "Paid",
           },
           {
-            "srNo": 12,
-            "month": "Mar-25",
-            "landlordName": "Manish Verma",
-            "total": "25,200",
-            "status": "Paid"
-          }
-        ]
-      }
+            srNo: 12,
+            month: "Mar-25",
+            landlordName: "Manish Verma",
+            total: "25,200",
+            status: "Unpaid",
+          },
+        ],
+      },
     },
     {
-      "unitNo": "004",
-      "buildingName": "Dempo Trade Centre",
-      "tableData": {
-        "columns": [
+      unitNo: "004",
+      buildingName: "Dempo Trade Centre",
+      tableData: {
+        columns: [
           {
-            "field": "srNo",
-            "headerName": "Sr No",
-            "width": 100,
-            "flex":1
+            field: "srNo",
+            headerName: "Sr No",
+            width: 100,
+            flex: 1,
           },
           {
-            "field": "month",
-            "headerName": "Month",
-            "width": 120,
-            "flex":1
+            field: "month",
+            headerName: "Month",
+            width: 120,
+            flex: 1,
           },
           {
-            "field": "status",
-            "headerName": "Status",
-            "width": 120,
-            "flex":1
+            field: "status",
+            headerName: "Status",
+            width: 120,
+            flex: 1,
           },
-           {
-                field: "actions",
-                headerName: "Actions",
-                cellRenderer: (params) => (
-                  <>
-                    <div className="p-2 mb-2 flex gap-2">
-                      <span
-                                 className="text-subtitle cursor-pointer"
-                                 onClick={() => handleViewModal(params.data)}>
-                                 <MdOutlineRemoveRedEye />
-                               </span>
-                    </div>
-                  </>
-                ),
-              
-              },
-         
+          {
+            field: "actions",
+            headerName: "Actions",
+            cellRenderer: (params) => (
+              <>
+                <div className="p-2 mb-2 flex gap-2">
+                  <span
+                    className="text-subtitle cursor-pointer"
+                    onClick={() => handleViewModal(params.data)}>
+                    <MdOutlineRemoveRedEye />
+                  </span>
+                </div>
+              </>
+            ),
+          },
         ],
-        "rows": [
+        rows: [
           {
-            "srNo": 1,
-            "month": "Apr-24",
-            "landlordName": "Ritika Sinha",
-            "total": "22,500",
-            "status": "Paid"
+            srNo: 1,
+            month: "Apr-24",
+            landlordName: "Ritika Sinha",
+            total: "22,500",
+            status: "Paid",
           },
           {
-            "srNo": 2,
-            "month": "May-24",
-            "landlordName": "Ritika Sinha",
-            "total": "22,700",
-            "status": "Unpaid"
+            srNo: 2,
+            month: "May-24",
+            landlordName: "Ritika Sinha",
+            total: "22,700",
+            status: "Paid",
           },
           {
-            "srNo": 3,
-            "month": "Jun-24",
-            "landlordName": "Ritika Sinha",
-            "total": "22,900",
-            "status": "Paid"
+            srNo: 3,
+            month: "Jun-24",
+            landlordName: "Ritika Sinha",
+            total: "22,900",
+            status: "Paid",
           },
           {
-            "srNo": 4,
-            "month": "Jul-24",
-            "landlordName": "Ritika Sinha",
-            "total": "23,100",
-            "status": "Unpaid"
+            srNo: 4,
+            month: "Jul-24",
+            landlordName: "Ritika Sinha",
+            total: "23,100",
+            status: "Paid",
           },
           {
-            "srNo": 5,
-            "month": "Aug-24",
-            "landlordName": "Ritika Sinha",
-            "total": "23,300",
-            "status": "Paid"
+            srNo: 5,
+            month: "Aug-24",
+            landlordName: "Ritika Sinha",
+            total: "23,300",
+            status: "Paid",
           },
           {
-            "srNo": 6,
-            "month": "Sep-24",
-            "landlordName": "Ritika Sinha",
-            "total": "23,500",
-            "status": "Paid"
+            srNo: 6,
+            month: "Sep-24",
+            landlordName: "Ritika Sinha",
+            total: "23,500",
+            status: "Paid",
           },
           {
-            "srNo": 7,
-            "month": "Oct-24",
-            "landlordName": "Ritika Sinha",
-            "total": "23,700",
-            "status": "Paid"
+            srNo: 7,
+            month: "Oct-24",
+            landlordName: "Ritika Sinha",
+            total: "23,700",
+            status: "Paid",
           },
           {
-            "srNo": 8,
-            "month": "Nov-24",
-            "landlordName": "Ritika Sinha",
-            "total": "23,900",
-            "status": "Paid"
+            srNo: 8,
+            month: "Nov-24",
+            landlordName: "Ritika Sinha",
+            total: "23,900",
+            status: "Paid",
           },
           {
-            "srNo": 9,
-            "month": "Dec-24",
-            "landlordName": "Ritika Sinha",
-            "total": "24,100",
-            "status": "Unpaid"
+            srNo: 9,
+            month: "Dec-24",
+            landlordName: "Ritika Sinha",
+            total: "24,100",
+            status: "Paid",
           },
           {
-            "srNo": 10,
-            "month": "Jan-25",
-            "landlordName": "Ritika Sinha",
-            "total": "24,300",
-            "status": "Unpaid"
+            srNo: 10,
+            month: "Jan-25",
+            landlordName: "Ritika Sinha",
+            total: "24,300",
+            status: "Paid",
           },
           {
-            "srNo": 11,
-            "month": "Feb-25",
-            "landlordName": "Ritika Sinha",
-            "total": "24,500",
-            "status": "Paid"
+            srNo: 11,
+            month: "Feb-25",
+            landlordName: "Ritika Sinha",
+            total: "24,500",
+            status: "Paid",
           },
           {
-            "srNo": 12,
-            "month": "Mar-25",
-            "landlordName": "Ritika Sinha",
-            "total": "24,700",
-            "status": "Unpaid"
-          }
-        ]
-      }
+            srNo: 12,
+            month: "Mar-25",
+            landlordName: "Ritika Sinha",
+            total: "24,700",
+            status: "Unpaid",
+          },
+        ],
+      },
     },
     {
-      "unitNo": "503",
-      "buildingName": "Dempo Trade Centre",
-      "tableData": {
-        "columns": [
+      unitNo: "503",
+      buildingName: "Dempo Trade Centre",
+      tableData: {
+        columns: [
           {
-            "field": "srNo",
-            "headerName": "Sr No",
-            "width": 100,
-            "flex":1
+            field: "srNo",
+            headerName: "Sr No",
+            width: 100,
+            flex: 1,
           },
           {
-            "field": "month",
-            "headerName": "Month",
-            "width": 120,
-            "flex":1
+            field: "month",
+            headerName: "Month",
+            width: 120,
+            flex: 1,
           },
           {
-            "field": "status",
-            "headerName": "Status",
-            "width": 120,
-            "flex":1
+            field: "status",
+            headerName: "Status",
+            width: 120,
+            flex: 1,
           },
-           {
-                field: "actions",
-                headerName: "Actions",
-                cellRenderer: (params) => (
-                  <>
-                    <div className="p-2 mb-2 flex gap-2">
-                      <span
-                                 className="text-subtitle cursor-pointer"
-                                 onClick={() => handleViewModal(params.data)}>
-                                 <MdOutlineRemoveRedEye />
-                               </span>
-                    </div>
-                  </>
-                ),
-              
-              },
-         
+          {
+            field: "actions",
+            headerName: "Actions",
+            cellRenderer: (params) => (
+              <>
+                <div className="p-2 mb-2 flex gap-2">
+                  <span
+                    className="text-subtitle cursor-pointer"
+                    onClick={() => handleViewModal(params.data)}>
+                    <MdOutlineRemoveRedEye />
+                  </span>
+                </div>
+              </>
+            ),
+          },
         ],
-        "rows": [
+        rows: [
           {
-            "srNo": 1,
-            "month": "Apr-24",
-            "landlordName": "Rohan Desai",
-            "total": "26,300",
-            "status": "Unpaid"
+            srNo: 1,
+            month: "Apr-24",
+            landlordName: "Rohan Desai",
+            total: "26,300",
+            status: "Paid",
           },
           {
-            "srNo": 2,
-            "month": "May-24",
-            "landlordName": "Rohan Desai",
-            "total": "26,500",
-            "status": "Unpaid"
+            srNo: 2,
+            month: "May-24",
+            landlordName: "Rohan Desai",
+            total: "26,500",
+            status: "Paid",
           },
           {
-            "srNo": 3,
-            "month": "Jun-24",
-            "landlordName": "Rohan Desai",
-            "total": "26,700",
-            "status": "Unpaid"
+            srNo: 3,
+            month: "Jun-24",
+            landlordName: "Rohan Desai",
+            total: "26,700",
+            status: "Paid",
           },
           {
-            "srNo": 4,
-            "month": "Jul-24",
-            "landlordName": "Rohan Desai",
-            "total": "26,900",
-            "status": "Unpaid"
+            srNo: 4,
+            month: "Jul-24",
+            landlordName: "Rohan Desai",
+            total: "26,900",
+            status: "Paid",
           },
           {
-            "srNo": 5,
-            "month": "Aug-24",
-            "landlordName": "Rohan Desai",
-            "total": "27,100",
-            "status": "Paid"
+            srNo: 5,
+            month: "Aug-24",
+            landlordName: "Rohan Desai",
+            total: "27,100",
+            status: "Paid",
           },
           {
-            "srNo": 6,
-            "month": "Sep-24",
-            "landlordName": "Rohan Desai",
-            "total": "27,300",
-            "status": "Paid"
+            srNo: 6,
+            month: "Sep-24",
+            landlordName: "Rohan Desai",
+            total: "27,300",
+            status: "Paid",
           },
           {
-            "srNo": 7,
-            "month": "Oct-24",
-            "landlordName": "Rohan Desai",
-            "total": "27,500",
-            "status": "Unpaid"
+            srNo: 7,
+            month: "Oct-24",
+            landlordName: "Rohan Desai",
+            total: "27,500",
+            status: "Paid",
           },
           {
-            "srNo": 8,
-            "month": "Nov-24",
-            "landlordName": "Rohan Desai",
-            "total": "27,700",
-            "status": "Paid"
+            srNo: 8,
+            month: "Nov-24",
+            landlordName: "Rohan Desai",
+            total: "27,700",
+            status: "Paid",
           },
           {
-            "srNo": 9,
-            "month": "Dec-24",
-            "landlordName": "Rohan Desai",
-            "total": "27,900",
-            "status": "Paid"
+            srNo: 9,
+            month: "Dec-24",
+            landlordName: "Rohan Desai",
+            total: "27,900",
+            status: "Paid",
           },
           {
-            "srNo": 10,
-            "month": "Jan-25",
-            "landlordName": "Rohan Desai",
-            "total": "28,100",
-            "status": "Unpaid"
+            srNo: 10,
+            month: "Jan-25",
+            landlordName: "Rohan Desai",
+            total: "28,100",
+            status: "Paid",
           },
           {
-            "srNo": 11,
-            "month": "Feb-25",
-            "landlordName": "Rohan Desai",
-            "total": "28,300",
-            "status": "Paid"
+            srNo: 11,
+            month: "Feb-25",
+            landlordName: "Rohan Desai",
+            total: "28,300",
+            status: "Paid",
           },
           {
-            "srNo": 12,
-            "month": "Mar-25",
-            "landlordName": "Rohan Desai",
-            "total": "28,500",
-            "status": "Paid"
-          }
-        ]
-      }
+            srNo: 12,
+            month: "Mar-25",
+            landlordName: "Rohan Desai",
+            total: "28,500",
+            status: "Unpaid",
+          },
+        ],
+      },
     },
     {
-      "unitNo": "706",
-      "buildingName": "Dempo Trade Centre",
-      "tableData": {
-        "columns": [
+      unitNo: "706",
+      buildingName: "Dempo Trade Centre",
+      tableData: {
+        columns: [
           {
-            "field": "srNo",
-            "headerName": "Sr No",
-            "width": 100,
-            "flex":1
+            field: "srNo",
+            headerName: "Sr No",
+            width: 100,
+            flex: 1,
           },
           {
-            "field": "month",
-            "headerName": "Month",
-            "width": 120,
-            "flex":1
+            field: "month",
+            headerName: "Month",
+            width: 120,
+            flex: 1,
           },
           {
-            "field": "status",
-            "headerName": "Status",
-            "width": 120,
-            "flex":1
+            field: "status",
+            headerName: "Status",
+            width: 120,
+            flex: 1,
           },
-           {
-                field: "actions",
-                headerName: "Actions",
-                cellRenderer: (params) => (
-                  <>
-                    <div className="p-2 mb-2 flex gap-2">
-                      <span
-                                 className="text-subtitle cursor-pointer"
-                                 onClick={() => handleViewModal(params.data)}>
-                                 <MdOutlineRemoveRedEye />
-                               </span>
-                    </div>
-                  </>
-                ),
-              
-              },
-         
+          {
+            field: "actions",
+            headerName: "Actions",
+            cellRenderer: (params) => (
+              <>
+                <div className="p-2 mb-2 flex gap-2">
+                  <span
+                    className="text-subtitle cursor-pointer"
+                    onClick={() => handleViewModal(params.data)}>
+                    <MdOutlineRemoveRedEye />
+                  </span>
+                </div>
+              </>
+            ),
+          },
         ],
-        "rows": [
+        rows: [
           {
-            "srNo": 1,
-            "month": "Apr-24",
-            "landlordName": "Tina Malhotra",
-            "total": "31,000",
-            "status": "Paid"
+            srNo: 1,
+            month: "Apr-24",
+            landlordName: "Tina Malhotra",
+            total: "31,000",
+            status: "Paid",
           },
           {
-            "srNo": 2,
-            "month": "May-24",
-            "landlordName": "Tina Malhotra",
-            "total": "31,200",
-            "status": "Paid"
+            srNo: 2,
+            month: "May-24",
+            landlordName: "Tina Malhotra",
+            total: "31,200",
+            status: "Paid",
           },
           {
-            "srNo": 3,
-            "month": "Jun-24",
-            "landlordName": "Tina Malhotra",
-            "total": "31,400",
-            "status": "Unpaid"
+            srNo: 3,
+            month: "Jun-24",
+            landlordName: "Tina Malhotra",
+            total: "31,400",
+            status: "Paid",
           },
           {
-            "srNo": 4,
-            "month": "Jul-24",
-            "landlordName": "Tina Malhotra",
-            "total": "31,600",
-            "status": "Unpaid"
+            srNo: 4,
+            month: "Jul-24",
+            landlordName: "Tina Malhotra",
+            total: "31,600",
+            status: "Paid",
           },
           {
-            "srNo": 5,
-            "month": "Aug-24",
-            "landlordName": "Tina Malhotra",
-            "total": "31,800",
-            "status": "Paid"
+            srNo: 5,
+            month: "Aug-24",
+            landlordName: "Tina Malhotra",
+            total: "31,800",
+            status: "Paid",
           },
           {
-            "srNo": 6,
-            "month": "Sep-24",
-            "landlordName": "Tina Malhotra",
-            "total": "32,000",
-            "status": "Paid"
+            srNo: 6,
+            month: "Sep-24",
+            landlordName: "Tina Malhotra",
+            total: "32,000",
+            status: "Paid",
           },
           {
-            "srNo": 7,
-            "month": "Oct-24",
-            "landlordName": "Tina Malhotra",
-            "total": "32,200",
-            "status": "Unpaid"
+            srNo: 7,
+            month: "Oct-24",
+            landlordName: "Tina Malhotra",
+            total: "32,200",
+            status: "Paid",
           },
           {
-            "srNo": 8,
-            "month": "Nov-24",
-            "landlordName": "Tina Malhotra",
-            "total": "32,400",
-            "status": "Paid"
+            srNo: 8,
+            month: "Nov-24",
+            landlordName: "Tina Malhotra",
+            total: "32,400",
+            status: "Paid",
           },
           {
-            "srNo": 9,
-            "month": "Dec-24",
-            "landlordName": "Tina Malhotra",
-            "total": "32,600",
-            "status": "Unpaid"
+            srNo: 9,
+            month: "Dec-24",
+            landlordName: "Tina Malhotra",
+            total: "32,600",
+            status: "Paid",
           },
           {
-            "srNo": 10,
-            "month": "Jan-25",
-            "landlordName": "Tina Malhotra",
-            "total": "32,800",
-            "status": "Paid"
+            srNo: 10,
+            month: "Jan-25",
+            landlordName: "Tina Malhotra",
+            total: "32,800",
+            status: "Paid",
           },
           {
-            "srNo": 11,
-            "month": "Feb-25",
-            "landlordName": "Tina Malhotra",
-            "total": "33,000",
-            "status": "Unpaid"
+            srNo: 11,
+            month: "Feb-25",
+            landlordName: "Tina Malhotra",
+            total: "33,000",
+            status: "Paid",
           },
           {
-            "srNo": 12,
-            "month": "Mar-25",
-            "landlordName": "Tina Malhotra",
-            "total": "33,200",
-            "status": "Paid"
-          }
-        ]
-      }
+            srNo: 12,
+            month: "Mar-25",
+            landlordName: "Tina Malhotra",
+            total: "33,200",
+            status: "Unpaid",
+          },
+        ],
+      },
     },
     {
-      "unitNo": "703",
-      "buildingName": "Dempo Trade Centre",
-      "tableData": {
-        "columns": [
+      unitNo: "703",
+      buildingName: "Dempo Trade Centre",
+      tableData: {
+        columns: [
           {
-            "field": "srNo",
-            "headerName": "Sr No",
-            "width": 100
+            field: "srNo",
+            headerName: "Sr No",
+            width: 100,
           },
           {
-            "field": "month",
-            "headerName": "Month",
-            "width": 120
+            field: "month",
+            headerName: "Month",
+            width: 120,
           },
           {
-            "field": "landlordName",
-            "headerName": "Landlord Name",
-            "flex": 1
+            field: "landlordName",
+            headerName: "Landlord Name",
+            flex: 1,
           },
           {
-            "field": "total",
-            "headerName": "Total",
-            "width": 150
+            field: "total",
+            headerName: "Total",
+            width: 150,
           },
           {
-            "field": "status",
-            "headerName": "Status",
-            "width": 120
-          }
+            field: "status",
+            headerName: "Status",
+            width: 120,
+          },
         ],
-        "rows": [
+        rows: [
           {
-            "srNo": 1,
-            "month": "Apr-24",
-            "landlordName": "Kunal Joshi",
-            "total": "30,200",
-            "status": "Unpaid"
+            srNo: 1,
+            month: "Apr-24",
+            landlordName: "Kunal Joshi",
+            total: "30,200",
+            status: "Paid",
           },
           {
-            "srNo": 2,
-            "month": "May-24",
-            "landlordName": "Kunal Joshi",
-            "total": "30,400",
-            "status": "Unpaid"
+            srNo: 2,
+            month: "May-24",
+            landlordName: "Kunal Joshi",
+            total: "30,400",
+            status: "Paid",
           },
           {
-            "srNo": 3,
-            "month": "Jun-24",
-            "landlordName": "Kunal Joshi",
-            "total": "30,600",
-            "status": "Paid"
+            srNo: 3,
+            month: "Jun-24",
+            landlordName: "Kunal Joshi",
+            total: "30,600",
+            status: "Paid",
           },
           {
-            "srNo": 4,
-            "month": "Jul-24",
-            "landlordName": "Kunal Joshi",
-            "total": "30,800",
-            "status": "Paid"
+            srNo: 4,
+            month: "Jul-24",
+            landlordName: "Kunal Joshi",
+            total: "30,800",
+            status: "Paid",
           },
           {
-            "srNo": 5,
-            "month": "Aug-24",
-            "landlordName": "Kunal Joshi",
-            "total": "31,000",
-            "status": "Unpaid"
+            srNo: 5,
+            month: "Aug-24",
+            landlordName: "Kunal Joshi",
+            total: "31,000",
+            status: "Paid",
           },
           {
-            "srNo": 6,
-            "month": "Sep-24",
-            "landlordName": "Kunal Joshi",
-            "total": "31,200",
-            "status": "Paid"
+            srNo: 6,
+            month: "Sep-24",
+            landlordName: "Kunal Joshi",
+            total: "31,200",
+            status: "Paid",
           },
           {
-            "srNo": 7,
-            "month": "Oct-24",
-            "landlordName": "Kunal Joshi",
-            "total": "31,400",
-            "status": "Paid"
+            srNo: 7,
+            month: "Oct-24",
+            landlordName: "Kunal Joshi",
+            total: "31,400",
+            status: "Paid",
           },
           {
-            "srNo": 8,
-            "month": "Nov-24",
-            "landlordName": "Kunal Joshi",
-            "total": "31,600",
-            "status": "Paid"
+            srNo: 8,
+            month: "Nov-24",
+            landlordName: "Kunal Joshi",
+            total: "31,600",
+            status: "Paid",
           },
           {
-            "srNo": 9,
-            "month": "Dec-24",
-            "landlordName": "Kunal Joshi",
-            "total": "31,800",
-            "status": "Paid"
+            srNo: 9,
+            month: "Dec-24",
+            landlordName: "Kunal Joshi",
+            total: "31,800",
+            status: "Paid",
           },
           {
-            "srNo": 10,
-            "month": "Jan-25",
-            "landlordName": "Kunal Joshi",
-            "total": "32,000",
-            "status": "Paid"
+            srNo: 10,
+            month: "Jan-25",
+            landlordName: "Kunal Joshi",
+            total: "32,000",
+            status: "Paid",
           },
           {
-            "srNo": 11,
-            "month": "Feb-25",
-            "landlordName": "Kunal Joshi",
-            "total": "32,200",
-            "status": "Paid"
+            srNo: 11,
+            month: "Feb-25",
+            landlordName: "Kunal Joshi",
+            total: "32,200",
+            status: "Paid",
           },
           {
-            "srNo": 12,
-            "month": "Mar-25",
-            "landlordName": "Kunal Joshi",
-            "total": "32,400",
-            "status": "Unpaid"
-          }
-        ]
-      }
-    }
-  ]
+            srNo: 12,
+            month: "Mar-25",
+            landlordName: "Kunal Joshi",
+            total: "32,400",
+            status: "Unpaid",
+          },
+        ],
+      },
+    },
+  ];
 
-  const removeParanthesis = (unit)=>{
-    const newunit = unit?.replace(/[()]/g, '')
-    return newunit
-  }
+  const removeParanthesis = (unit) => {
+    const newunit = unit?.replace(/[()]/g, "");
+    return newunit;
+  };
 
-  const unitEntry = unitData.find(u => removeParanthesis(u.unitNo) === unit);
+  const unitEntry = unitData.find((u) => removeParanthesis(u.unitNo) === unit);
   const columns = unitEntry?.tableData?.columns || [];
   const rows = unitEntry?.tableData?.rows || [];
 
@@ -1459,7 +1437,6 @@ const LandlordPaymentLocation = () => {
     setViewDetails(rowData);
     setViewModalOpen(true);
   };
-  
 
   return (
     <div className="p-4">
@@ -1467,28 +1444,25 @@ const LandlordPaymentLocation = () => {
         key={unitData.length}
         search={true}
         tableTitle={`Landlord Payments (${buildingInitials}- ${unit})`}
-       data={rows}
-      columns={columns}
-        
+        data={[...rows].reverse()}
+        columns={columns}
       />
 
-        { viewDetails && <ViewDetailsModal
-              open={viewModalOpen}
-              onClose={() => setViewModalOpen(false)}
-              data={{...viewDetails,total:`INR ${viewDetails.total}`
-               
-            }}
-              title="Landlord Payment Detail"
-              fields={[
-                { label: "Month", key: "month" },
-                { label: "Landlord", key: "landlordName" },
-                { label: "Status", key: "status" },
-                { label: "Amount", key: "total" },
-              ]}
-            />}
-     
+      {viewDetails && (
+        <ViewDetailsModal
+          open={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          data={{ ...viewDetails, total: `INR ${viewDetails.total}` }}
+          title="Landlord Payment Detail"
+          fields={[
+            { label: "Month", key: "month" },
+            { label: "Landlord", key: "landlordName" },
+            { label: "Status", key: "status" },
+            { label: "Amount", key: "total" },
+          ]}
+        />
+      )}
     </div>
-    
   );
 };
 

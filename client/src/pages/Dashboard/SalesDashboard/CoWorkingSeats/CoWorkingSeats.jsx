@@ -388,24 +388,24 @@ const CoWorkingSeats = () => {
             data={"1000"}
             description={`Current Month : ${new Date().toLocaleString(
               "default",
-              { month: "long" }
-            )}`}
+              { month: "short" }
+            )}-24`}
           />
           <DataCard
             title={"Available Seats"}
             data={"200"}
             description={`Current Month : ${new Date().toLocaleString(
               "default",
-              { month: "long" }
-            )}`}
+              { month: "short" }
+            )}-24`}
           />
           <DataCard
             title={"Booked Seats"}
             data={"800"}
             description={`Current Month : ${new Date().toLocaleString(
               "default",
-              { month: "long" }
-            )}`}
+              { month: "short" }
+            )}-24`}
           />
         </WidgetSection>
       </div>
@@ -457,7 +457,7 @@ const CoWorkingSeats = () => {
                 }))}
                 hideFilter
                 columns={[
-                  { headerName: "ID", field: "id", width: 100 },
+                  { headerName: "Sr No", field: "id", width: 100 },
                   { headerName: "Location", field: "location" },
                   { headerName: "Floor", field: "floor" },
                   { headerName: "Total Seats", field: "totalSeats" },

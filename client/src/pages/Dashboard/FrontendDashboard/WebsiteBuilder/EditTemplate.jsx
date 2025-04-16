@@ -16,6 +16,7 @@ import { CiCirclePlus } from "react-icons/ci";
 import MuiModal from "../../../../components/MuiModal";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { queryClient } from "../../../../main";
+// import { useLocation } from "react-router-dom";
 
 const EditTemplate = () => {
   const { templateName, pageName } = useParams();
@@ -34,6 +35,7 @@ const EditTemplate = () => {
     },
   });
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
+  const location = useLocation();
 
   const axios = useAxiosPrivate();
 
@@ -42,6 +44,13 @@ const EditTemplate = () => {
       setIsSidebarOpen(false);
     }
   }, []);
+
+  // New useEffect: sets sidebar to true for specific route
+  useEffect(() => {
+    if (location.pathname === "/app/dashboard/frontend-dashboard/edit-theme") {
+      setIsSidebarOpen(true);
+    }
+  }, [location.pathname, setIsSidebarOpen]); // Re-run when route changes
 
   const fetchPages = async ({ queryKey }) => {
     const [, templateName] = queryKey; // Extract template name
@@ -189,8 +198,7 @@ const EditTemplate = () => {
         height: "75vh",
         background: "#ffff",
         overflowY: "auto",
-      }}
-    >
+      }}>
       {/* Sidebar */}
       <div
         style={{
@@ -199,9 +207,10 @@ const EditTemplate = () => {
           color: "#fff",
           display: "flex",
           flexDirection: "column",
-        }}
-      >
-        <span className="text-title text-primary font-pmedium p-4">Elements</span>
+        }}>
+        <span className="text-title text-primary font-pmedium p-4">
+          Elements
+        </span>
         <div id="blocks" style={{ flex: 1, overflowY: "auto" }}></div>
       </div>
 
@@ -215,9 +224,10 @@ const EditTemplate = () => {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-          }}
-        >
-          <span className="text-title text-primary font-pmedium p-3">Editor</span>
+          }}>
+          <span className="text-title text-primary font-pmedium p-3">
+            Editor
+          </span>
           <div className="flex items-center gap-2 w-1/2">
             {/* 🔹 Page Selection Dropdown */}
             {isLoading ? (
@@ -233,8 +243,7 @@ const EditTemplate = () => {
                 select
                 value={selectedPage}
                 onChange={handlePageChange}
-                label="Select Page"
-              >
+                label="Select Page">
                 <MenuItem value="" disabled>
                   Select Page
                 </MenuItem>
@@ -267,15 +276,13 @@ const EditTemplate = () => {
 
         <div
           id="editor-canvas"
-          style={{ flex: 1, background: "#fff", height: "75vh" }}
-        ></div>
+          style={{ flex: 1, background: "#fff", height: "75vh" }}></div>
       </div>
 
       <MuiModal open={input} onClose={() => setInput(false)} title={"add page"}>
         <form
           onSubmit={handleSubmit(addPage)}
-          className="flex flex-col items-center gap-2"
-        >
+          className="flex flex-col items-center gap-2">
           <Controller
             name="pageName"
             control={control}

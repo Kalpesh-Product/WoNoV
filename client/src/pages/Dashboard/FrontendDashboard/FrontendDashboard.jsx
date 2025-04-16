@@ -1,5 +1,5 @@
 import Card from "../../../components/Card";
-import React from "react";
+import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import LayerBarGraph from "../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../components/WidgetSection";
@@ -15,8 +15,15 @@ import PieChartMui from "../../../components/graphs/PieChartMui";
 import LineGraph from "../../../components/graphs/LineGraph";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
+import { useSidebar } from "../../../context/SideBarContext";
 
 const FrontendDashboard = () => {
+  const { setIsSidebarOpen } = useSidebar();
+
+  useEffect(() => {
+    setIsSidebarOpen(true);
+  }, []); // Empty dependency array ensures this runs once on mount
+
   const utilisedData = [
     125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
     50000, 120000,
