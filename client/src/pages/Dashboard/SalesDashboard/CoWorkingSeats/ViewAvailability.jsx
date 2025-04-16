@@ -14,9 +14,11 @@ const mockSalesData = [
   {
     client: "WoNo",
     memberDetails: [
-      { member: "Aiwinraj", date: "2024-02-20" },
-      { member: "Allan", date: "2024-02-21" },
-      { member: "Sankalp", date: "2024-02-22" },
+      { member: "Kalpesh Naik", date: "2024-02-20" },
+      { member: "Aiwinraj KS", date: "2024-02-20" },
+      { member: "Allan Silveira", date: "2024-02-21" },
+      { member: "Sankalp Kalangutkar", date: "2024-02-22" },
+      { member: "Muskan Dodmani", date: "2024-02-22" },
     ],
   },
   {
@@ -30,7 +32,7 @@ const mockSalesData = [
     ],
   },
   {
-    client: "Turtlemint",
+    client: "SquadStack",
     memberDetails: [
       { member: "Alex Turner", date: "2024-03-01" },
       { member: "Emma Watson", date: "2024-03-01" },
@@ -54,11 +56,21 @@ const mockSalesData = [
       { member: "Grace Roberts", date: "2024-03-07" },
     ],
   },
+  {
+    client: "BDO",
+    memberDetails: [
+      { member: "John Doe", date: "2024-02-25" },
+      { member: "Jane Smith", date: "2024-02-26" },
+      { member: "Bob Johnson", date: "2024-02-26" },
+      { member: "Alice Brown", date: "2024-02-26" },
+      { member: "Mike Davis", date: "2024-02-26" },
+    ],
+  },
 ];
 
 const ViewAvailability = () => {
-   const [viewModalOpen, setViewModalOpen] = useState(false);
-    const [viewDetails, setViewDetails] = useState(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewDetails, setViewDetails] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [imageOpen, setImageOpen] = useState(false);
   const [memberDetails, setMemberDetails] = useState({});
@@ -107,8 +119,7 @@ const ViewAvailability = () => {
             <span className="text-primary text-title">Occupied</span>
             <div
               onClick={() => setImageOpen(true)}
-              className="h-80 w-full  cursor-pointer"
-            >
+              className="h-80 w-full  cursor-pointer">
               <img
                 className="w-full h-full object-contain"
                 src={imagePreview}
@@ -120,8 +131,7 @@ const ViewAvailability = () => {
             <span className="text-primary text-title">Clear</span>
             <div
               onClick={() => setClearedImageOpen(true)}
-              className="h-80 w-full  cursor-pointer"
-            >
+              className="h-80 w-full  cursor-pointer">
               <img
                 className="w-full h-full object-contain"
                 src={clearedImagePreview}
@@ -149,8 +159,7 @@ const ViewAvailability = () => {
               expandIcon={<IoIosArrowDown />}
               aria-controls={`panel-${index}-content`}
               id={`panel-${index}-header`}
-              className="border-b-[1px] border-borderGray"
-            >
+              className="border-b-[1px] border-borderGray">
               <div className="flex justify-between items-center w-full px-4">
                 <span className="text-content font-pmedium">{data.client}</span>
                 <span className="text-content font-pmedium">
@@ -166,20 +175,20 @@ const ViewAvailability = () => {
                 }))}
                 hideFilter
                 columns={[
-                  { field: "id", headerName: "Sr No", width:100 },
+                  { field: "id", headerName: "Sr No", width: 100 },
                   { field: "member", headerName: "Member Name", flex: 1 },
                   { field: "date", headerName: "Date", flex: 1 },
                   {
                     headerName: "Action",
                     field: "action",
                     cellRenderer: (params) => (
-                       <div className="p-2 mb-2 flex gap-2">
-                                <span
-                                  className="text-subtitle cursor-pointer"
-                                  onClick={() => handleViewModal(params.data)}>
-                                  <MdOutlineRemoveRedEye />
-                                </span>
-                              </div>
+                      <div className="p-2 mb-2 flex gap-2">
+                        <span
+                          className="text-subtitle cursor-pointer"
+                          onClick={() => handleViewModal(params.data)}>
+                          <MdOutlineRemoveRedEye />
+                        </span>
+                      </div>
                     ),
                   },
                 ]}
@@ -195,8 +204,7 @@ const ViewAvailability = () => {
         onClose={() => {
           setOpenModal(false);
           setMemberDetails({});
-        }}
-      >
+        }}>
         <div className="grid grid-cols-2 gap-8 px-2 pb-8 border-b-default border-borderGray">
           <div className="flex items-center justify-between">
             <span className="text-content">Member Name</span>
@@ -213,25 +221,26 @@ const ViewAvailability = () => {
         </div>
       </MuiModal>
 
-       {viewDetails && (
-              <ViewDetailsModal
-                open={viewModalOpen}
-                onClose={() => setViewModalOpen(false)}
-                data={{...viewDetails,date:dayjs(viewDetails.date).format("DD-MM-YYYY")}}
-                title="Tax Payment Detail"
-                fields={[
-                  { label: "Member Name", key: "member" },
-                  { label: "Date Of Joining", key: "date" },
+      {viewDetails && (
+        <ViewDetailsModal
+          open={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          data={{
+            ...viewDetails,
+            date: dayjs(viewDetails.date).format("DD-MM-YYYY"),
+          }}
+          title="Tax Payment Detail"
+          fields={[
+            { label: "Member Name", key: "member" },
+            { label: "Date Of Joining", key: "date" },
+          ]}
+        />
+      )}
 
-                ]}
-              />
-            )}
-            
       <MuiModal
         open={imageOpen}
         onClose={() => setImageOpen(false)}
-        title={"Upload occupied space"}
-      >
+        title={"Upload occupied space"}>
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
@@ -249,8 +258,7 @@ const ViewAvailability = () => {
       <MuiModal
         open={clearedImageOpen}
         onClose={() => setClearedImageOpen(false)}
-        title={"Upload clear space"}
-      >
+        title={"Upload clear space"}>
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
