@@ -103,7 +103,7 @@ const LandlordPaymentLocation = () => {
             "month": "Jul-24",
             "landlordName": "Zina Malik",
             "total": "25,600",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 5,
@@ -117,7 +117,7 @@ const LandlordPaymentLocation = () => {
             "month": "Sep-24",
             "landlordName": "Sara Fernandes",
             "total": "26,000",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 7,
@@ -152,14 +152,14 @@ const LandlordPaymentLocation = () => {
             "month": "Feb-25",
             "landlordName": "Sankalp Kalangutkar",
             "total": "27,000",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 12,
             "month": "Mar-25",
             "landlordName": "Aiwinraj KS",
             "total": "27,200",
-            "status": "Unpaid"
+            "status": "Paid"
           }
         ]
       }
@@ -218,14 +218,14 @@ const LandlordPaymentLocation = () => {
             "month": "May-24",
             "landlordName": "Sneha Mehta",
             "total": "24,700",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 3,
             "month": "Jun-24",
             "landlordName": "Sneha Mehta",
             "total": "24,900",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 4,
@@ -239,35 +239,35 @@ const LandlordPaymentLocation = () => {
             "month": "Aug-24",
             "landlordName": "Sneha Mehta",
             "total": "25,300",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 6,
             "month": "Sep-24",
             "landlordName": "Sneha Mehta",
             "total": "25,500",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 7,
             "month": "Oct-24",
             "landlordName": "Sneha Mehta",
             "total": "25,700",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 8,
             "month": "Nov-24",
             "landlordName": "Sneha Mehta",
             "total": "25,900",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 9,
             "month": "Dec-24",
             "landlordName": "Sneha Mehta",
             "total": "26,100",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 10,
@@ -281,7 +281,7 @@ const LandlordPaymentLocation = () => {
             "month": "Feb-25",
             "landlordName": "Sneha Mehta",
             "total": "26,500",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 12,
@@ -340,7 +340,7 @@ const LandlordPaymentLocation = () => {
             "month": "Apr-24",
             "landlordName": "Amit Shah",
             "total": "28,000",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 2,
@@ -354,7 +354,7 @@ const LandlordPaymentLocation = () => {
             "month": "Jun-24",
             "landlordName": "Amit Shah",
             "total": "28,400",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 4,
@@ -368,49 +368,49 @@ const LandlordPaymentLocation = () => {
             "month": "Aug-24",
             "landlordName": "Amit Shah",
             "total": "28,800",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 6,
             "month": "Sep-24",
             "landlordName": "Amit Shah",
             "total": "29,000",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 7,
             "month": "Oct-24",
             "landlordName": "Amit Shah",
             "total": "29,200",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 8,
             "month": "Nov-24",
             "landlordName": "Amit Shah",
             "total": "29,400",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 9,
             "month": "Dec-24",
             "landlordName": "Amit Shah",
             "total": "29,600",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 10,
             "month": "Jan-25",
             "landlordName": "Amit Shah",
             "total": "29,800",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 11,
             "month": "Feb-25",
             "landlordName": "Amit Shah",
             "total": "30,000",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 12,
@@ -490,21 +490,21 @@ const LandlordPaymentLocation = () => {
             "month": "Jul-24",
             "landlordName": "Zina Malik",
             "total": "27,600",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 5,
             "month": "Aug-24",
             "landlordName": "Arun Kashyap",
             "total": "27,800",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 6,
             "month": "Sep-24",
             "landlordName": "Sara Fernandes",
             "total": "28,000",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 7,
@@ -532,7 +532,7 @@ const LandlordPaymentLocation = () => {
             "month": "Jan-25",
             "landlordName": "Jhon Robert",
             "total": "28,800",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 11,
@@ -598,7 +598,7 @@ const LandlordPaymentLocation = () => {
             "month": "Apr-24",
             "landlordName": "Vikram Singh",
             "total": "29,500",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 2,
@@ -626,7 +626,7 @@ const LandlordPaymentLocation = () => {
             "month": "Aug-24",
             "landlordName": "Vikram Singh",
             "total": "30,300",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 6,
@@ -647,21 +647,21 @@ const LandlordPaymentLocation = () => {
             "month": "Nov-24",
             "landlordName": "Vikram Singh",
             "total": "30,900",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 9,
             "month": "Dec-24",
             "landlordName": "Vikram Singh",
             "total": "31,100",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 10,
             "month": "Jan-25",
             "landlordName": "Vikram Singh",
             "total": "31,300",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 11,
@@ -675,7 +675,7 @@ const LandlordPaymentLocation = () => {
             "month": "Mar-25",
             "landlordName": "Vikram Singh",
             "total": "31,700",
-            "status": "Unpaid"
+            "status": "Paid"
           }
         ]
       }
@@ -727,21 +727,21 @@ const LandlordPaymentLocation = () => {
             "month": "Apr-24",
             "landlordName": "Ravi Kumar",
             "total": "29,000",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 2,
             "month": "May-24",
             "landlordName": "Kunal Joshi",
             "total": "29,200",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 3,
             "month": "Jun-24",
             "landlordName": "Sara Fernandes",
             "total": "29,400",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 4,
@@ -755,7 +755,7 @@ const LandlordPaymentLocation = () => {
             "month": "Aug-24",
             "landlordName": "Arun Kashyap",
             "total": "29,800",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 6,
@@ -776,21 +776,21 @@ const LandlordPaymentLocation = () => {
             "month": "Nov-24",
             "landlordName": "Naaz Bwannavar",
             "total": "30,400",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 9,
             "month": "Dec-24",
             "landlordName": "Allan Mark",
             "total": "30,600",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 10,
             "month": "Jan-25",
             "landlordName": "Jhon Robert",
             "total": "30,800",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 11,
@@ -804,7 +804,7 @@ const LandlordPaymentLocation = () => {
             "month": "Mar-25",
             "landlordName": "Aiwinraj KS",
             "total": "31,200",
-            "status": "Unpaid"
+            "status": "Paid"
           }
         ]
       }
@@ -856,21 +856,21 @@ const LandlordPaymentLocation = () => {
             "month": "Apr-24",
             "landlordName": "Manish Verma",
             "total": "23,000",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 2,
             "month": "May-24",
             "landlordName": "Manish Verma",
             "total": "23,200",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 3,
             "month": "Jun-24",
             "landlordName": "Manish Verma",
             "total": "23,400",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 4,
@@ -884,7 +884,7 @@ const LandlordPaymentLocation = () => {
             "month": "Aug-24",
             "landlordName": "Manish Verma",
             "total": "23,800",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 6,
@@ -898,14 +898,14 @@ const LandlordPaymentLocation = () => {
             "month": "Oct-24",
             "landlordName": "Manish Verma",
             "total": "24,200",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 8,
             "month": "Nov-24",
             "landlordName": "Manish Verma",
             "total": "24,400",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 9,
@@ -919,7 +919,7 @@ const LandlordPaymentLocation = () => {
             "month": "Jan-25",
             "landlordName": "Manish Verma",
             "total": "24,800",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 11,
@@ -992,7 +992,7 @@ const LandlordPaymentLocation = () => {
             "month": "May-24",
             "landlordName": "Ritika Sinha",
             "total": "22,700",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 3,
@@ -1006,7 +1006,7 @@ const LandlordPaymentLocation = () => {
             "month": "Jul-24",
             "landlordName": "Ritika Sinha",
             "total": "23,100",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 5,
@@ -1041,14 +1041,14 @@ const LandlordPaymentLocation = () => {
             "month": "Dec-24",
             "landlordName": "Ritika Sinha",
             "total": "24,100",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 10,
             "month": "Jan-25",
             "landlordName": "Ritika Sinha",
             "total": "24,300",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 11,
@@ -1062,7 +1062,7 @@ const LandlordPaymentLocation = () => {
             "month": "Mar-25",
             "landlordName": "Ritika Sinha",
             "total": "24,700",
-            "status": "Unpaid"
+            "status": "Paid"
           }
         ]
       }
@@ -1114,28 +1114,28 @@ const LandlordPaymentLocation = () => {
             "month": "Apr-24",
             "landlordName": "Rohan Desai",
             "total": "26,300",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 2,
             "month": "May-24",
             "landlordName": "Rohan Desai",
             "total": "26,500",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 3,
             "month": "Jun-24",
             "landlordName": "Rohan Desai",
             "total": "26,700",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 4,
             "month": "Jul-24",
             "landlordName": "Rohan Desai",
             "total": "26,900",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 5,
@@ -1156,7 +1156,7 @@ const LandlordPaymentLocation = () => {
             "month": "Oct-24",
             "landlordName": "Rohan Desai",
             "total": "27,500",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 8,
@@ -1177,7 +1177,7 @@ const LandlordPaymentLocation = () => {
             "month": "Jan-25",
             "landlordName": "Rohan Desai",
             "total": "28,100",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 11,
@@ -1257,14 +1257,14 @@ const LandlordPaymentLocation = () => {
             "month": "Jun-24",
             "landlordName": "Tina Malhotra",
             "total": "31,400",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 4,
             "month": "Jul-24",
             "landlordName": "Tina Malhotra",
             "total": "31,600",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 5,
@@ -1285,7 +1285,7 @@ const LandlordPaymentLocation = () => {
             "month": "Oct-24",
             "landlordName": "Tina Malhotra",
             "total": "32,200",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 8,
@@ -1299,7 +1299,7 @@ const LandlordPaymentLocation = () => {
             "month": "Dec-24",
             "landlordName": "Tina Malhotra",
             "total": "32,600",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 10,
@@ -1313,7 +1313,7 @@ const LandlordPaymentLocation = () => {
             "month": "Feb-25",
             "landlordName": "Tina Malhotra",
             "total": "33,000",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 12,
@@ -1362,14 +1362,14 @@ const LandlordPaymentLocation = () => {
             "month": "Apr-24",
             "landlordName": "Kunal Joshi",
             "total": "30,200",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 2,
             "month": "May-24",
             "landlordName": "Kunal Joshi",
             "total": "30,400",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 3,
@@ -1390,7 +1390,7 @@ const LandlordPaymentLocation = () => {
             "month": "Aug-24",
             "landlordName": "Kunal Joshi",
             "total": "31,000",
-            "status": "Unpaid"
+            "status": "Paid"
           },
           {
             "srNo": 6,
@@ -1439,7 +1439,7 @@ const LandlordPaymentLocation = () => {
             "month": "Mar-25",
             "landlordName": "Kunal Joshi",
             "total": "32,400",
-            "status": "Unpaid"
+            "status": "Paid"
           }
         ]
       }
@@ -1467,7 +1467,7 @@ const LandlordPaymentLocation = () => {
         key={unitData.length}
         search={true}
         tableTitle={`Landlord Payments (${buildingInitials}- ${unit})`}
-       data={rows}
+       data={[...rows].reverse()}
       columns={columns}
         
       />

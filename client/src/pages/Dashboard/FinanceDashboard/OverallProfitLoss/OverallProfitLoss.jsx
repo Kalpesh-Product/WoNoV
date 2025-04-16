@@ -252,7 +252,7 @@ const OverallProfitLoss = () => {
                 viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
               ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
             }}
-              title="P&L Detail"
+              title="Monthly P&L Detail"
               fields={[
                 { label: "Month", key: "month" },
                 { label: "Income", key: "income" },

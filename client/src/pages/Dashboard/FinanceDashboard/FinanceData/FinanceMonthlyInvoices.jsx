@@ -108,7 +108,7 @@ const FinanceMonthlyInvoices = () => {
     { field: "service", headerName: "Service" },
     { field: "invoiceDate", headerName: "Invoice Date" },
     { field: "dueDate", headerName: "Due Date" },
-    { field: "amount", headerName: "Amount" },
+    { field: "amount", headerName: "Amount (INR)" },
     { field: "status", headerName: "Status",
       cellRenderer: (params) => {
         const status = params.value;
@@ -172,7 +172,7 @@ const FinanceMonthlyInvoices = () => {
   const monthlyInvoices = [
     {
       srNo: 1,
-      month: "April",
+      month: "April-24",
       invoiceNumber: "INV-2024-001",
       vendor: "FinAudit Consultants",
       service: "Quarterly Audit",
@@ -183,7 +183,7 @@ const FinanceMonthlyInvoices = () => {
     },
     {
       srNo: 2,
-      month: "May",
+      month: "May-24",
       invoiceNumber: "INV-2024-002",
       vendor: "ClearTax",
       service: "GST Filing",
@@ -194,7 +194,7 @@ const FinanceMonthlyInvoices = () => {
     },
     {
       srNo: 3,
-      month: "June",
+      month: "June-24",
       invoiceNumber: "INV-2024-003",
       vendor: "Tally Solutions",
       service: "Accounting Software License",
@@ -205,7 +205,7 @@ const FinanceMonthlyInvoices = () => {
     },
     {
       srNo: 4,
-      month: "July",
+      month: "July-24",
       invoiceNumber: "INV-2024-004",
       vendor: "QuickBooks India",
       service: "Bookkeeping Services",
@@ -216,7 +216,7 @@ const FinanceMonthlyInvoices = () => {
     },
     {
       srNo: 5,
-      month: "August",
+      month: "August-24",
       invoiceNumber: "INV-2024-005",
       vendor: "FinAudit Consultants",
       service: "Compliance Review",
@@ -262,7 +262,8 @@ const FinanceMonthlyInvoices = () => {
         data={ [
           ...monthlyInvoices.map((invoice, index) => ({
             srNo: index + 1,
-            month: invoice.month || "-",
+            month:  `${dayjs(`${invoice.month} 1`, "MMMM D").format("MMM")
+            }-24`,
             invoiceNumber: invoice.invoiceNumber || "-",
             vendor: invoice.vendor || "-",
             service: invoice.service || "-",

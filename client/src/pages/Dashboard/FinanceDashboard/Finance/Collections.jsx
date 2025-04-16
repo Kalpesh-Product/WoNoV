@@ -7,6 +7,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../../components/MuiModal";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import dayjs from "dayjs";
 
 const Collections = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -233,8 +234,9 @@ const Collections = () => {
               Number(
                 viewDetails.amount.toLocaleString("en-IN").replace(/,/g, "")
               ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+              date:dayjs(viewDetails.date).format("DD-MM-YYYY")
           }}
-          title="Tax Payment Detail"
+          title="Collection Detail"
           fields={[
             { label: "Client", key: "client" },
             { label: "Amount Paid", key: "amount" },
