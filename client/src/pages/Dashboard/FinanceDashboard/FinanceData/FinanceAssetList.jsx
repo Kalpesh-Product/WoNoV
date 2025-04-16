@@ -291,7 +291,7 @@ data={{...viewDetails,price:"INR " + Number(
   viewDetails.price.toLocaleString("en-IN").replace(/,/g, "")
 ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
 }}
-title="Statutory Payment Detail"
+title="Asset Detail"
 fields={[
   { label: "Category", key: "category" },
   { label: "Brand", key: "brand" },

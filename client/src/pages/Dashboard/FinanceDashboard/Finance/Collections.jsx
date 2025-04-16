@@ -7,6 +7,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../../components/MuiModal";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import dayjs from "dayjs";
 
 const Collections = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -144,23 +145,35 @@ const Collections = () => {
 
   // Create dummy tableData per month — you can replace this with actual filtered rows
   const generateMonthlyRows = (monthIndex) => {
-    const clients = ["Zomato", "Turtlemint", "Zimetrics", "SquadStack", "Uber", "Ola", "Swiggy"];
+    const clients = [
+      "Zomato",
+      "Turtlemint",
+      "Zimetrics",
+      "SquadStack",
+      "Uber",
+      "Ola",
+      "Swiggy",
+    ];
     const baseDate = new Date(2025, monthIndex, 10);
 
     return Array.from({ length: 4 }, (_, i) => {
       const amount = Math.floor(Math.random() * 900000) + 100000; // Between 1L and 10L
-      const date = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + i);
+      const date = new Date(
+        baseDate.getFullYear(),
+        baseDate.getMonth(),
+        baseDate.getDate() + i
+      );
 
       return {
         srNo: i + 1,
         client: clients[(i + monthIndex) % clients.length],
-        status: Math.random() > 0.5 ? "Paid" : "Unpaid",
+        status: Math.random() > 0.5 ? "Unpaid" : "Unpaid",
         amount: amount.toLocaleString("en-IN"),
-        date: date.toLocaleDateString("en-GB"),
+        // date: date.toLocaleDateString("en-GB"),
+        date: date.toLocaleDateString("en-GB").replace(/\//g, "-"),
       };
     });
   };
-
 
   const financialData = collectionData.map((item, index) => {
     const rows = generateMonthlyRows(index);
@@ -179,9 +192,12 @@ const Collections = () => {
     };
   });
 
-  const grandTotal = financialData.reduce((acc, item) => acc + item.totalAmount, 0);
+  const grandTotal = financialData.reduce(
+    (acc, item) => acc + item.totalAmount,
+    0
+  );
 
-  console.log(grandTotal)
+  console.log(grandTotal);
 
   return (
     <div className="flex flex-col gap-8">
@@ -207,7 +223,6 @@ const Collections = () => {
                 <span className="text-subtitle font-pmedium">
                   INR {data.totalAmount.toLocaleString("en-IN")}&nbsp;
                 </span>
-
               </div>
             </AccordionSummary>
             <AccordionDetails sx={{ borderTop: "1px solid #d1d5db" }}>
@@ -234,10 +249,11 @@ const Collections = () => {
                 viewDetails.amount.toLocaleString("en-IN").replace(/,/g, "")
               ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
           }}
-          title="Tax Payment Detail"
+          title="Collection Details"
           fields={[
             { label: "Client", key: "client" },
             { label: "Amount Paid", key: "amount" },
+            // { label: "Payment Date", key: "date" },
             { label: "Payment Date", key: "date" },
             { label: "Payment Status", key: "status" },
           ]}

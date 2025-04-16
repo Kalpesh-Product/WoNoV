@@ -220,9 +220,10 @@ const Projections = () => {
             viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
           ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
         }}
-        title="Tax Payment Detail"
+        title="Monthly P&L Detail"
         fields={[
           { label: "Month", key: "month" },
+          { label: "Income", key: "income" },
           { label: "Expense", key: "expense" },
           { label: "P&L", key: "pnl" },
         ]}

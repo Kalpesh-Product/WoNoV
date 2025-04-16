@@ -68,6 +68,11 @@
 
 
 }
+.ag-header-cell-label {
+  font-weight: bold !important;
+}
+
+
 /* Hide scrollbar for the specified container */
 .hideScrollbar {
   scrollbar-width: none; /* Hide scrollbar for Firefox */

@@ -4,6 +4,7 @@ import BarGraph from "../../../../components/graphs/BarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import { useState } from "react";
+import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 
 const AverageProfitLoss = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
@@ -232,7 +233,7 @@ const AverageProfitLoss = () => {
       ))}
 
       <div>
-        <WidgetSection border title={"Total Monthly P&L"}>
+        <WidgetSection border titleLabel={"FY 2024-25"} title={"Total Monthly P&L"}>
           <AgTable
             data={monthlyProfitLossData}
             columns={monthlyProfitLossColumns}
@@ -240,6 +241,37 @@ const AverageProfitLoss = () => {
           />
         </WidgetSection>
       </div>
+      {viewDetails && (
+        <ViewDetailsModal
+          open={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          data={{
+            ...viewDetails,
+            income:
+              "INR " +
+              Number(
+                viewDetails.income.toLocaleString("en-IN").replace(/,/g, "")
+              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+            expense:
+              "INR " +
+              Number(
+                viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
+              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+            pnl:
+              "INR " +
+              Number(
+                viewDetails.pnl.toLocaleString("en-IN").replace(/,/g, "")
+              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+          }}
+          title="Monthly P&L Detail"
+          fields={[
+            { label: "Month", key: "month" },
+            { label: "Income", key: "income" },
+            { label: "Expense", key: "expense" },
+            { label: "P&L", key: "pnl" },
+          ]}
+        />
+      )}
     </div>
   );
 };

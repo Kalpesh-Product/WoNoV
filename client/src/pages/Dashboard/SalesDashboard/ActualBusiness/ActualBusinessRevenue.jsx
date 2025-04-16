@@ -516,7 +516,7 @@ const ActualBusinessRevenue = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()} INR
+                  INR {domain.revenue.toLocaleString()}
                   </span>
                 </div>
               </AccordionSummary>
