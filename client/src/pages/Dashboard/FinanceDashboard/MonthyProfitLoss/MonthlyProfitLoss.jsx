@@ -28,7 +28,7 @@ const MonthlyProfitLoss = () => {
         2300000, // Sep
         2650000, // Oct - festive boost
         2850000, // Nov - big sales
-        3100001, // Dec - year end peak
+        3100002, // Dec - year end peak
       ],
     },
     {
