@@ -1088,7 +1088,7 @@ const DeptWiseBudget = () => {
                 );
               },
             },
-            { field: "amount", headerName: "Amount", flex: 1 },
+            { field: "amount", headerName: "Amount (INR)", flex: 1 },
           ],
         },
       };
