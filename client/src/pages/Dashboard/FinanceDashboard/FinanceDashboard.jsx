@@ -159,7 +159,7 @@ const FinanceDashboard = () => {
   };
 
   const netSavingsCardData = {
-    cardTitle: "Net Savings",
+    cardTitle: "Profit & Loss",
     timePeriod: "FY 2024-25",
     descriptionData: [
       { title: "March 2025", value: "INR 7,00,000" },

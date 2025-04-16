@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import {
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -14,7 +10,7 @@ import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import dayjs from "dayjs";
+import { inrFormat } from "../../../../utils/currencyFormat";
 
 const HistoricalPnl = () => {
   const axios = useAxiosPrivate();
@@ -43,65 +39,65 @@ const HistoricalPnl = () => {
             {
               "srNo": 1,
               "month": "April",
-              "income": 8000000,
-              "expense": 7000000,
-              "profitLoss": 74197,
+              "income": 20740741,
+              "expense": 14502762,
+              "profitLoss": 6237979,
               "domain": "Coworking"
             },
             {
               "srNo": 2,
               "month": "May",
-              "income": 8500000,
-              "expense": 7500000,
-              "profitLoss": 62586,
+              "income": 22037037,
+              "expense": 15538674,
+              "profitLoss": 6498363,
               "domain": "Virtual Office"
             },
             {
               "srNo": 3,
               "month": "June",
-              "income": 9500000,
-              "expense": 8000000,
-              "profitLoss": 81041,
+              "income": 24629630,
+              "expense": 16574586,
+              "profitLoss": 8055044,
               "domain": "Workations"
             },
             {
               "srNo": 4,
               "month": "July",
-              "income": 10000000,
-              "expense": 9000000,
-              "profitLoss": 31077,
+              "income": 25925926,
+              "expense": 18646409,
+              "profitLoss": 7279517,
               "domain": "Meetng Rooms"
             },
             {
               "srNo": 5,
               "month": "August",
-              "income": 10500000,
-              "expense": 9500000,
-              "profitLoss": 96453,
+              "income": 27222222,
+              "expense": 19682320,
+              "profitLoss": 7539902,
               "domain": "Other Income"
             },
             {
               "srNo": 6,
               "month": "September",
-              "income": 11000000,
-              "expense": 10000000,
-              "profitLoss": 49643,
+              "income": 28518519,
+              "expense": 20718232,
+              "profitLoss": 7800287,
               "domain": "Coworking"
             },
             {
               "srNo": 7,
               "month": "October",
-              "income": 11500000,
-              "expense": 10500000,
-              "profitLoss": 133252,
+              "income": 29814815,
+              "expense": 21754144,
+              "profitLoss": 8060671,
               "domain": "Virtual Office"
             },
             {
               "srNo": 8,
               "month": "November",
-              "income": 12000000,
-              "expense": 10900000,
-              "profitLoss": 130766,
+              "income": 31111111,
+              "expense": 22582873,
+              "profitLoss": 8528238,
               "domain": "Workations"
             }
           ]
@@ -113,68 +109,69 @@ const HistoricalPnl = () => {
             {
               "srNo": 1,
               "month": "April",
-              "income": 8000000,
-              "expense": 7000000,
-              "profitLoss": 25886,
+              "income": 3650000,
+              "expense": 2300000,
+              "profitLoss": 1350000,
               "domain": "Coworking"
             },
             {
               "srNo": 2,
               "month": "May",
-              "income": 8500000,
-              "expense": 7500000,
-              "profitLoss": 90080,
+              "income": 3250000,
+              "expense": 2000000,
+              "profitLoss": 1250000,
               "domain": "Virtual Office"
             },
             {
               "srNo": 3,
               "month": "June",
-              "income": 9500000,
-              "expense": 8000000,
-              "profitLoss": 102970,
+              "income": 3100000,
+              "expense": 1800000,
+              "profitLoss": 1300000,
               "domain": "Workations"
             },
             {
               "srNo": 4,
               "month": "July",
-              "income": 10000000,
-              "expense": 9000000,
-              "profitLoss": 95380,
+              "income": 4000000,
+              "expense": 2500000,
+              "profitLoss": 1500000,
               "domain": "Café"
             },
             {
               "srNo": 5,
               "month": "August",
-              "income": 10500000,
-              "expense": 9500000,
-              "profitLoss": 16332,
-              "domain": "Meetng Rooms"
+              "income": 3950000,
+              "expense": 2200000,
+              "profitLoss": 1750000,
+              "domain": "Meeting Rooms"
             },
             {
               "srNo": 6,
               "month": "September",
-              "income": 11000000,
-              "expense": 10000000,
-              "profitLoss": 64160,
+              "income": 3350000,
+              "expense": 1900000,
+              "profitLoss": 1450000,
               "domain": "Coworking"
             },
             {
               "srNo": 7,
               "month": "October",
-              "income": 11500000,
-              "expense": 10500000,
-              "profitLoss": 93069,
+              "income": 3550000,
+              "expense": 1950000,
+              "profitLoss": 1600000,
               "domain": "Virtual Office"
             },
             {
               "srNo": 8,
               "month": "November",
-              "income": 12000000,
-              "expense": 10900000,
-              "profitLoss": 92879,
+              "income": 3700000,
+              "expense": 1900000,
+              "profitLoss": 1800000,
               "domain": "Workations"
             }
           ]
+
         },
         {
           "name": "2022-23",
@@ -183,65 +180,65 @@ const HistoricalPnl = () => {
             {
               "srNo": 1,
               "month": "April",
-              "income": 8000000,
-              "expense": 7000000,
-              "profitLoss": 93469,
+              "income": 2312500,
+              "expense": 1500000,
+              "profitLoss": 812500,
               "domain": "Coworking"
             },
             {
               "srNo": 2,
               "month": "May",
-              "income": 8500000,
-              "expense": 7500000,
-              "profitLoss": 79615,
+              "income": 2150000,
+              "expense": 1400000,
+              "profitLoss": 750000,
               "domain": "Virtual Office"
             },
             {
               "srNo": 3,
               "month": "June",
-              "income": 9500000,
-              "expense": 8000000,
-              "profitLoss": 73981,
+              "income": 2200000,
+              "expense": 1450000,
+              "profitLoss": 750000,
               "domain": "Workations"
             },
             {
               "srNo": 4,
               "month": "July",
-              "income": 10000000,
-              "expense": 9000000,
-              "profitLoss": 62319,
+              "income": 2400000,
+              "expense": 1600000,
+              "profitLoss": 800000,
               "domain": "Café"
             },
             {
               "srNo": 5,
               "month": "August",
-              "income": 10500000,
-              "expense": 9500000,
-              "profitLoss": 43862,
-              "domain": "Meetng Rooms"
+              "income": 2300000,
+              "expense": 1450000,
+              "profitLoss": 850000,
+              "domain": "Meeting Rooms"
             },
             {
               "srNo": 6,
               "month": "September",
-              "income": 11000000,
-              "expense": 10000000,
-              "profitLoss": 27267,
+              "income": 2150000,
+              "expense": 1400000,
+              "profitLoss": 750000,
               "domain": "Coworking"
             },
             {
               "srNo": 7,
               "month": "October",
-              "income": 11500000,
-              "expense": 10500000,
-              "profitLoss": 48399,
+              "income": 2250000,
+              "expense": 1500000,
+              "profitLoss": 750000,
               "domain": "Virtual Office"
             },
             {
               "srNo": 8,
               "month": "November",
-              "income": 12000000,
-              "expense": 10900000,
-              "profitLoss": 30220,
+              "income": 2150000,
+              "expense": 1300000,
+              "profitLoss": 850000,
               "domain": "Workations"
             }
           ]
@@ -476,15 +473,33 @@ const HistoricalPnl = () => {
 
   if (selectedMonthData) {
     selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
-      const updatedClients = domain.clients.map((client, index) => ({
-        ...client,
-        srNo: index + 1,
-        income: Number(client.income).toLocaleString("en-IN"),
-        expense: Number(client.expense).toLocaleString("en-IN"),
-        profitLoss: Number(client.profitLoss).toLocaleString("en-IN")
-      }));
-      return { ...domain, clients: updatedClients };
+      const updatedClients = domain.clients.map((client, index) => {
+        const income = Number(client.income);
+        const expense = Number(client.expense);
+        const profitLoss = income - expense;
+
+        return {
+          ...client,
+          srNo: index + 1,
+          income: income,
+          expense: expense,
+          profitLoss: profitLoss,
+          rawProfitLoss: profitLoss, // used for internal calc
+        };
+      });
+
+      const recalculatedTotal = updatedClients.reduce((sum, client) => {
+        return sum + Number(client.rawProfitLoss);
+      }, 0);
+
+      return {
+        ...domain,
+        clients: updatedClients,
+        totalProfitLoss: recalculatedTotal,
+      };
     });
+
+
   }
 
   // Prepare Bar Graph Data
@@ -600,28 +615,6 @@ const HistoricalPnl = () => {
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      {/* Month Selection Dropdown */}
-      {/* <div className="mb-4 flex">
-        <FormControl size="small">
-          <InputLabel>Select Month</InputLabel>
-          <Select
-            label="Select Month"
-            value={selectedMonth}
-            onChange={handleMonthChange}
-            sx={{ width: "200px" }}>
-            {mockBusinessRevenueData.map((data) => (
-              <MenuItem key={data.month} value={data.month}>
-                {data.month}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </div> */}
-
-      {/* Bar Graph Component */}
-      {/* <WidgetSection layout={1} title={"Historical P&L"} border>
-        <BarGraph data={graphData} options={options} height={400} />
-      </WidgetSection> */}
       {techWidgets.map((section, index) => (
         <WidgetSection key={index} layout={section?.layout} padding>
           {section?.widgets}
@@ -648,11 +641,18 @@ const HistoricalPnl = () => {
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 <AgTable
-                  data={domain.clients}
+                  data={domain.clients.map(client => {
+                    return {
+                      ...client,
+                      income: inrFormat(client.income),
+                      expense: inrFormat(client.expense),
+                      profitLoss: inrFormat(client.profitLoss)
+                    }
+                  })}
                   hideFilter
                   columns={[
                     { headerName: "Sr No", field: "srNo", flex: 1 },
-                    { headerName: "Domain", field: "domain", flex: 1 },
+                    { headerName: "Verticals", field: "domain", flex: 1 },
                     { headerName: "Income (INR)", field: "income", flex: 1 },
                     { headerName: "Expense (INR)", field: "expense", flex: 1 },
                     { headerName: "Profit / Loss (INR)", field: "profitLoss", flex: 1 },
