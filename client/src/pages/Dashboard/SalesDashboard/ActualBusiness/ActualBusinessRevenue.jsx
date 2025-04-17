@@ -450,7 +450,7 @@ const ActualBusinessRevenue = () => {
       title: { text: "Verticals" }
     },
     yaxis: {
-      title: { text: "Revenue (in INR)" },
+      title: { text: "Revenue (INR)" },
       labels: {
         formatter: (value) => `INR ${value.toLocaleString("en-IN")}`
       }
@@ -497,7 +497,7 @@ const ActualBusinessRevenue = () => {
         layout={1}
         title={"Vertical-wise Revenue"}
         titleLabel={`${selectedMonth} 2025`}
-        TitleAmount={`Total INR ${inrFormat("6800000")}`}
+        TitleAmount={`INR ${inrFormat("6800000")}`}
         border>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>

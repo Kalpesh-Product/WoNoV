@@ -11,6 +11,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
+import { inrFormat } from "../../../utils/currencyFormat";
+import dayjs from "dayjs";
 
 const ItInventory = () => {
   const { auth } = useAuth();
@@ -137,7 +139,7 @@ const ItInventory = () => {
     // { field: "assetNumber", headerName: "Asset Number" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
+    { field: "price", headerName: "Price (INR)" },
     { field: "quantity", headerName: "Quantity" },
     { field: "purchaseDate", headerName: "Purchase Date" },
     { field: "warranty", headerName: "Warranty (Months)" },
@@ -197,13 +199,9 @@ const ItInventory = () => {
             department: asset.department.name,
             category: asset.name,
             brand: asset.brand,
-            price: asset.price,
+            price: inrFormat(asset.price),
             quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
+            purchaseDate: dayjs(asset.purchaseDate).format("DD-MM-YYYY"),
             warranty: asset.warranty,
             vendorName: asset.vendor.name,
           })),

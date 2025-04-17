@@ -102,7 +102,7 @@ const MaintenanceAnnualExpenses = () => {
     { field: "id", headerName: "Sr No" },
     { field: "category", headerName: "Category" },
     { field: "expenseName", headerName: "Expense Name", flex: 1 },
-    { field: "amount", headerName: "Amount" },
+    { field: "amount", headerName: "Amount (INR)" },
     { field: "date", headerName: "Date" },
     {
       field: "actions",

@@ -883,7 +883,7 @@ export const routes = createBrowserRouter([
                     ],
                   },
                   {
-                    path: "IT-dashboard",
+                    path: "it-dashboard",
                     element: <ItLayout />,
                     children: [
                       {

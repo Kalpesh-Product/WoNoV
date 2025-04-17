@@ -49,9 +49,10 @@ const AllocatedBudget = ({ financialData }) => {
               className="border-b-[1px] border-borderGray">
               <div className="flex justify-between items-center w-full px-4">
                 <span className="w-1/3 text-content font-pmedium">
-                  {`${new Date(data.month).toLocaleString("default", {
+                  {/* {`${new Date(data.month).toLocaleString("default", {
                     month: "short",
-                  })}-${new Date(data.month).getFullYear()}`}
+                  })}-${new Date(data.month).getFullYear()}`} */}
+                  {dayjs(data.month).format("MMM-YY")}
                 </span>
                 <span className="w-1/3 text-content font-pmedium flex items-center gap-1">
                   <MdTrendingUp

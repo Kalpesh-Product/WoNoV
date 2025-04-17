@@ -294,7 +294,18 @@ const MaintenanceOffices = () => {
       </WidgetSection>
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
-      <div>
+      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
+      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+          <div className="flex justify-between items-center w-full px-4 py-2">
+            <span className="text-sm text-muted font-pmedium text-title">
+              LOCATION
+            </span>
+            <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
+              REVENUE
+            </span>
+            
+          </div>
+        </div>
         {selectedMonthData.domains.map((domain, index) => {
           return (
             <Accordion key={index} className="py-4">
