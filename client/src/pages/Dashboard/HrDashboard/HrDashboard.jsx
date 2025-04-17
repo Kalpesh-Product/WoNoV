@@ -559,7 +559,7 @@ const HrDashboard = () => {
         <DataCard
           title="Average"
           data="4%"
-          description="Monthly Iteration"
+          description="Monthly Attrition"
           route={"employee/view-employees"}
         />,
         <DataCard
