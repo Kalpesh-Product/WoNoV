@@ -5,6 +5,7 @@ import { TextField } from "@mui/material";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../../../../components/DetalisFormatted";
 
 const KPI = () => {
   const name = localStorage.getItem("employeeName") || "Employee";
@@ -18,7 +19,7 @@ const KPI = () => {
       id: 1,
       kpi: "Achieved 90% lead conversion rate",
       assignedBy: "Utkarsha Palkar",
-      targetDate: "2025-03-31",
+      targetDate: "31-03-2025",
       status: "Completed",
       comments: "Excellent performance",
     },
@@ -26,7 +27,7 @@ const KPI = () => {
       id: 2,
       kpi: "Increased client retention by 20%",
       assignedBy: "Utkarsha Palkar",
-      targetDate: "2025-04-15",
+      targetDate: "15-04-2025",
       status: "In Progress",
       comments: "Need to monitor progress",
     },
@@ -34,7 +35,7 @@ const KPI = () => {
       id: 3,
       kpi: "Reduced support response time to under 2 hrs",
       assignedBy: "Utkarsha Palkar",
-      targetDate: "2025-04-10",
+      targetDate: "10-04-2025",
       status: "Completed",
       comments: "Well-coordinated with support team",
     },
@@ -42,7 +43,7 @@ const KPI = () => {
       id: 4,
       kpi: "Completed 5 major releases on time",
       assignedBy: "Utkarsha Palkar",
-      targetDate: "2025-03-01",
+      targetDate: "01-03-2025",
       status: "Completed",
       comments: "On-time delivery",
     },
@@ -50,11 +51,12 @@ const KPI = () => {
       id: 5,
       kpi: "Improved NPS score from 45 to 60",
       assignedBy: "Utkarsha Palkar",
-      targetDate: "2025-05-01",
+      targetDate: "01-05-2025",
       status: "Pending",
       comments: "",
     },
-  ]);
+  ]
+  );
 
 
   const handleAddKPI = () => {
@@ -145,10 +147,10 @@ const KPI = () => {
       >
         {viewKPI && (
           <div className="space-y-3 text-sm">
-            <div><strong>Description:</strong>&nbsp; {viewKPI.kpi}</div>
-            <div><strong>Assigned By:</strong>&nbsp; {viewKPI.assignedBy}</div>
-            <div><strong>Target Date:</strong>&nbsp; {viewKPI.targetDate}</div>
-            <div><strong>Comments:</strong>&nbsp; {viewKPI.comments || "No comments"}</div>
+            <DetalisFormatted title="Description" detail={viewKPI.kpi} />
+            <DetalisFormatted title="Assigned By" detail={viewKPI.assignedBy} />
+            <DetalisFormatted title="Target Date" detail={viewKPI.targetDate} />
+            <DetalisFormatted title="Comments" detail={viewKPI.comments || "No comments"} />
           </div>
         )}
       </MuiModal>

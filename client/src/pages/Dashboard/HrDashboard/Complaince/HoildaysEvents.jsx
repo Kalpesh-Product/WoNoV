@@ -27,6 +27,7 @@ const HoildaysEvents = ({ title }) => {
     queryKey: ["holidayEvents"],
     queryFn: async () => {
       const response = await axios.get("/api/events/all-events");
+      console.log(response.data)
       return response.data;
     },
   });
@@ -37,7 +38,7 @@ const HoildaysEvents = ({ title }) => {
   ].map((holiday, index) => ({
     id: index + 1,
     title: holiday.title,
-    start: dayjs(holiday.startDate).format("DD-MM-YYYY"),
+    start: dayjs(holiday.start).format("DD-MM-YYYY"),
   }));
 
   const handleSubmit = (e) => {
