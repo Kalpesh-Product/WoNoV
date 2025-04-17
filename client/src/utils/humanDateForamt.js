@@ -3,7 +3,7 @@ const humanDate = (date) => {
 
   try {
     const parsedDate = new Date(date);
-    if (isNaN(parsedDate)) return "—";
+    if (isNaN(parsedDate)) return "N/A";
 
     return new Intl.DateTimeFormat("en-GB", {
       day: "2-digit",
@@ -11,7 +11,7 @@ const humanDate = (date) => {
       year: "numeric",
     }).format(parsedDate);
   } catch (error) {
-    return "—";
+    return "N/A";
   }
 };
 

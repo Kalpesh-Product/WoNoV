@@ -159,7 +159,7 @@ const ClientDetails = () => {
                             </div>
                             <div className="w-full">
                               <span className="text-gray-500">
-                                {control._defaultValues[fieldKey]}
+                                {control._defaultValues[fieldKey] || "N/A"}
                               </span>
                             </div>
                           </div>
@@ -215,7 +215,7 @@ const ClientDetails = () => {
                           </div>
                           <div className="w-full">
                             <span className="text-gray-500">
-                              {control._defaultValues[fieldKey]}
+                              {control._defaultValues[fieldKey] || "N/A"}
                             </span>
                           </div>
                         </div>

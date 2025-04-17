@@ -26,20 +26,20 @@ const ItPerSqExpense = () => {
           clients: [
             {
               client: "Zomato",
-              representative: "John Doe",
-              registerDate: "2024-01-15",
+              representative: "Rohan Mehta",
+              registerDate: "15-01-2024",
               actualRevenue: 5000,
             },
             {
               client: "Uber",
-              representative: "Jane Smith",
-              registerDate: "2024-02-10",
+              representative: "Priya Sharma",
+              registerDate: "10-02-2024",
               actualRevenue: 4000,
             },
             {
               client: "Ola",
-              representative: "Alice Johnson",
-              registerDate: "2024-03-05",
+              representative: "Aditi Menon",
+              registerDate: "05-03-2024",
               actualRevenue: 3000,
             },
           ],
@@ -49,15 +49,15 @@ const ItPerSqExpense = () => {
           revenue: 8000,
           clients: [
             {
-              client: "Client D",
-              representative: "Bob Brown",
-              registerDate: "2024-01-20",
+              client: "Swiggy",
+              representative: "Ravi Kapoor",
+              registerDate: "20-01-2024",
               actualRevenue: 4000,
             },
             {
-              client: "Client E",
-              representative: "Charlie White",
-              registerDate: "2024-02-25",
+              client: "Flipkart",
+              representative: "Neha Iyer",
+              registerDate: "25-02-2024",
               actualRevenue: 4000,
             },
           ],
@@ -66,9 +66,24 @@ const ItPerSqExpense = () => {
           name: "ST-601A",
           revenue: 15000,
           clients: [
-            { client: "Client F", revenue: 5000 },
-            { client: "Client G", revenue: 7000 },
-            { client: "Client H", revenue: 3000 },
+            {
+              client: "Paytm",
+              representative: "Rajeev Malhotra",
+              registerDate: "22-01-2024",
+              actualRevenue: 5000,
+            },
+            {
+              client: "BigBasket",
+              representative: "Sneha Kulkarni",
+              registerDate: "11-02-2024",
+              actualRevenue: 7000,
+            },
+            {
+              client: "BYJU'S",
+              representative: "Aditya Ghosh",
+              registerDate: "03-03-2024",
+              actualRevenue: 3000,
+            },
           ],
         },
         {
@@ -76,21 +91,21 @@ const ItPerSqExpense = () => {
           revenue: 15000,
           clients: [
             {
-              client: "Client F",
-              representative: "Daniel Green",
-              registerDate: "2024-03-12",
+              client: "Paytm",
+              representative: "Ankit Verma",
+              registerDate: "12-03-2024",
               actualRevenue: 5000,
             },
             {
-              client: "Client G",
-              representative: "Eva Black",
-              registerDate: "2024-04-18",
+              client: "BigBasket",
+              representative: "Sneha Reddy",
+              registerDate: "18-04-2024",
               actualRevenue: 7000,
             },
             {
-              client: "Client H",
-              representative: "Frank Blue",
-              registerDate: "2024-05-10",
+              client: "BYJU'S",
+              representative: "Vikram Das",
+              registerDate: "10-05-2024",
               actualRevenue: 3000,
             },
           ],
@@ -100,27 +115,28 @@ const ItPerSqExpense = () => {
           revenue: 15000,
           clients: [
             {
-              client: "Client F",
-              representative: "Daniel Green",
-              registerDate: "2024-03-12",
+              client: "Paytm",
+              representative: "Ankit Verma",
+              registerDate: "12-03-2024",
               actualRevenue: 5000,
             },
             {
-              client: "Client G",
-              representative: "Eva Black",
-              registerDate: "2024-04-18",
+              client: "BigBasket",
+              representative: "Sneha Reddy",
+              registerDate: "18-04-2024",
               actualRevenue: 7000,
             },
             {
-              client: "Client H",
-              representative: "Frank Blue",
-              registerDate: "2024-05-10",
+              client: "BYJU'S",
+              representative: "Vikram Das",
+              registerDate: "10-05-2024",
               actualRevenue: 3000,
             },
           ],
         },
       ],
     },
+
     {
       month: "May",
       domains: [
@@ -129,21 +145,21 @@ const ItPerSqExpense = () => {
           revenue: 15000,
           clients: [
             {
-              client: "Client I",
-              representative: "Grace Orange",
-              registerDate: "2024-02-11",
+              client: "Infosys Ventures",
+              representative: "Ritika Nair",
+              registerDate: "11-02-2024",
               actualRevenue: 6000,
             },
             {
-              client: "Client J",
-              representative: "Hank Purple",
-              registerDate: "2024-03-09",
+              client: "Tata Innovations",
+              representative: "Harsh Vardhan",
+              registerDate: "09-03-2024",
               actualRevenue: 5000,
             },
             {
-              client: "Client K",
-              representative: "Isabel Cyan",
-              registerDate: "2024-04-14",
+              client: "RedDot Labs",
+              representative: "Ishita Rao",
+              registerDate: "14-04-2024",
               actualRevenue: 4000,
             },
           ],
@@ -153,15 +169,15 @@ const ItPerSqExpense = () => {
           revenue: 9000,
           clients: [
             {
-              client: "Client L",
-              representative: "Jack Gray",
-              registerDate: "2024-02-28",
+              client: "Himalayan Escapes",
+              representative: "Jignesh Patel",
+              registerDate: "28-02-2024",
               actualRevenue: 5000,
             },
             {
-              client: "Client M",
-              representative: "Kara Silver",
-              registerDate: "2024-03-07",
+              client: "Kerala Nomads",
+              representative: "Kavya Menon",
+              registerDate: "07-03-2024",
               actualRevenue: 4000,
             },
           ],
@@ -171,27 +187,28 @@ const ItPerSqExpense = () => {
           revenue: 14000,
           clients: [
             {
-              client: "Client N",
-              representative: "Leo Gold",
-              registerDate: "2024-05-20",
+              client: "Zolo Living",
+              representative: "Lakshya Mehra",
+              registerDate: "20-05-2024",
               actualRevenue: 6000,
             },
             {
-              client: "Client O",
-              representative: "Mia Platinum",
-              registerDate: "2024-06-08",
+              client: "Colive South",
+              representative: "Megha Joshi",
+              registerDate: "08-06-2024",
               actualRevenue: 5000,
             },
             {
-              client: "Client P",
-              representative: "Noah Bronze",
-              registerDate: "2024-07-15",
+              client: "StayAbode",
+              representative: "Nikhil Reddy",
+              registerDate: "15-07-2024",
               actualRevenue: 3000,
             },
           ],
         },
       ],
     },
+
     {
       month: "June",
       domains: [
@@ -200,21 +217,21 @@ const ItPerSqExpense = () => {
           revenue: 18000,
           clients: [
             {
-              client: "Client Q",
-              representative: "Olivia Rose",
-              registerDate: "2024-01-30",
+              client: "Zomato",
+              representative: "Rajeev Mehta",
+              registerDate: "30-01-2024",
               actualRevenue: 7000,
             },
             {
-              client: "Client R",
-              representative: "Peter Brown",
-              registerDate: "2024-02-18",
+              client: "Paytm",
+              representative: "Neha Reddy",
+              registerDate: "18-02-2024",
               actualRevenue: 6000,
             },
             {
-              client: "Client S",
-              representative: "Quincy Black",
-              registerDate: "2024-03-26",
+              client: "BYJU'S",
+              representative: "Siddharth Menon",
+              registerDate: "26-03-2024",
               actualRevenue: 5000,
             },
           ],
@@ -224,15 +241,15 @@ const ItPerSqExpense = () => {
           revenue: 10000,
           clients: [
             {
-              client: "Client T",
-              representative: "Rachel Violet",
-              registerDate: "2024-04-12",
+              client: "OYO",
+              representative: "Ritika Sharma",
+              registerDate: "12-04-2024",
               actualRevenue: 5000,
             },
             {
-              client: "Client U",
-              representative: "Sam Indigo",
-              registerDate: "2024-05-07",
+              client: "MakeMyTrip",
+              representative: "Saurabh Verma",
+              registerDate: "07-05-2024",
               actualRevenue: 5000,
             },
           ],
@@ -242,27 +259,28 @@ const ItPerSqExpense = () => {
           revenue: 13000,
           clients: [
             {
-              client: "Client V",
-              representative: "Tina Lilac",
-              registerDate: "2024-06-05",
+              client: "NestAway",
+              representative: "Tanvi Rao",
+              registerDate: "05-06-2024",
               actualRevenue: 6000,
             },
             {
-              client: "Client W",
-              representative: "Umar Yellow",
-              registerDate: "2024-07-08",
+              client: "Stanza Living",
+              representative: "Uday Singh",
+              registerDate: "08-07-2024",
               actualRevenue: 4000,
             },
             {
-              client: "Client X",
-              representative: "Victor Pink",
-              registerDate: "2024-08-15",
+              client: "NoBroker",
+              representative: "Vikram Shetty",
+              registerDate: "15-08-2024",
               actualRevenue: 3000,
             },
           ],
         },
       ],
     },
+
     {
       month: "July",
       domains: [
@@ -271,21 +289,21 @@ const ItPerSqExpense = () => {
           revenue: 20000,
           clients: [
             {
-              client: "Client Y",
-              representative: "Wendy Red",
-              registerDate: "2024-03-10",
+              client: "Swiggy",
+              representative: "Wasim Khan",
+              registerDate: "10-03-2024",
               actualRevenue: 8000,
             },
             {
-              client: "Client Z",
-              representative: "Xavier Green",
-              registerDate: "2024-04-14",
+              client: "CRED",
+              representative: "Xenia Batra",
+              registerDate: "14-04-2024",
               actualRevenue: 7000,
             },
             {
-              client: "Client AA",
-              representative: "Yara Blue",
-              registerDate: "2024-05-16",
+              client: "Dunzo",
+              representative: "Yashika Jain",
+              registerDate: "16-05-2024",
               actualRevenue: 5000,
             },
           ],
@@ -295,15 +313,15 @@ const ItPerSqExpense = () => {
           revenue: 11000,
           clients: [
             {
-              client: "Client AB",
-              representative: "Zane Orange",
-              registerDate: "2024-06-20",
+              client: "MakeMyTrip",
+              representative: "Zaid Hussain",
+              registerDate: "20-06-2024",
               actualRevenue: 6000,
             },
             {
-              client: "Client AC",
-              representative: "Adam Gray",
-              registerDate: "2024-07-10",
+              client: "RedBus",
+              representative: "Aarav Menon",
+              registerDate: "10-07-2024",
               actualRevenue: 5000,
             },
           ],
@@ -313,21 +331,21 @@ const ItPerSqExpense = () => {
           revenue: 16000,
           clients: [
             {
-              client: "Client AD",
-              representative: "Betty Silver",
-              registerDate: "2024-08-25",
+              client: "NestAway",
+              representative: "Bhavana Patil",
+              registerDate: "25-08-2024",
               actualRevenue: 7000,
             },
             {
-              client: "Client AE",
-              representative: "Charlie Platinum",
-              registerDate: "2024-09-14",
+              client: "Stanza Living",
+              representative: "Chirag Rao",
+              registerDate: "14-09-2024",
               actualRevenue: 6000,
             },
             {
-              client: "Client AF",
-              representative: "David Bronze",
-              registerDate: "2024-10-05",
+              client: "NoBroker",
+              representative: "Deepika Sethi",
+              registerDate: "05-10-2024",
               actualRevenue: 3000,
             },
           ],
@@ -354,17 +372,22 @@ const ItPerSqExpense = () => {
   const graphData = [
     {
       name: "Revenue",
-      data: selectedMonthData.domains.map((domain) => domain.revenue),
+      data: selectedMonthData.domains.map((domain) => domain.clients.length),
     },
   ];
 
   // Graph Options
   const options = {
-    chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular",toolbar:false },
+    chart: {
+      type: "bar",
+      stacked: false,
+      fontFamily: "Poppins-Regular",
+      toolbar: false,
+    },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
-    yaxis: { title: { text: "Revenue (INR)" } },
+    yaxis: { title: { text: "Revenue (INR)" }, tickAmount: 3 },
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
@@ -382,7 +405,8 @@ const ItPerSqExpense = () => {
             label="Select Month"
             value={selectedMonth}
             onChange={handleMonthChange}
-            sx={{ width: "200px" }}>
+            sx={{ width: "200px" }}
+          >
             {mockBusinessRevenueData.map((data) => (
               <MenuItem key={data.month} value={data.month}>
                 {data.month}
@@ -399,7 +423,7 @@ const ItPerSqExpense = () => {
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
       <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
           <div className="flex justify-between items-center w-full px-4 py-2">
             <span className="text-sm text-muted font-pmedium text-title">
               LOCATION
@@ -407,7 +431,6 @@ const ItPerSqExpense = () => {
             <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
               REVENUE
             </span>
-            
           </div>
         </div>
         {selectedMonthData.domains.map((domain, index) => {
@@ -416,21 +439,24 @@ const ItPerSqExpense = () => {
               <AccordionSummary
                 expandIcon={<IoIosArrowDown />}
                 aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}>
+                id={`panel-${index}-header`}
+              >
                 <div className="flex justify-between items-center w-full px-4">
                   <span className="text-subtitle font-pmedium">
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                  INR {domain.revenue.toLocaleString()} 
+                    INR {domain.revenue.toLocaleString()}
                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 <AgTable
-                  data={domain.clients.map((client,index)=>({...client,srNo:index+1,
-                    registerDate:dayjs(client.registerDate).format("DD-MM-YYYY"),
-                    actualRevenue:inrFormat(client.actualRevenue)
+                  data={domain.clients.map((client, index) => ({
+                    ...client,
+                    srNo: index + 1,
+                    registerDate: client.registerDate,
+                    actualRevenue: inrFormat(client.actualRevenue),
                   }))}
                   hideFilter
                   columns={[
@@ -441,7 +467,11 @@ const ItPerSqExpense = () => {
                       field: "representative",
                       flex: 1,
                     },
-                    { headerName: "Register Date", field: "registerDate", flex: 1 },
+                    {
+                      headerName: "Register Date",
+                      field: "registerDate",
+                      flex: 1,
+                    },
                     {
                       headerName: "Actual Revenue (INR)",
                       field: "actualRevenue",
@@ -456,7 +486,7 @@ const ItPerSqExpense = () => {
                       Total Revenue for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                    INR {domain.revenue.toLocaleString()}
+                      INR {domain.revenue.toLocaleString()}
                     </span>{" "}
                   </div>
                 </div>
