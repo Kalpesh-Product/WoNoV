@@ -1,19 +1,9 @@
 import { useState } from "react";
 import AgTable from "../../../../components/AgTable";
-import PrimaryButton from "../../../../components/PrimaryButton";
-// import AssetModal from "./AssetModal";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { Controller, useForm } from "react-hook-form";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
-import { toast } from "sonner";
-import useAuth from "../../../../hooks/useAuth";
-import MuiModal from "../../../../components/MuiModal";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import MuiModal from "../../../../components/MuiModal";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const LandlordPaymentLocation = () => {
   const [searchParams] = useSearchParams();
@@ -24,12 +14,12 @@ const LandlordPaymentLocation = () => {
   const unit = rawUnit?.replace(/[()]/g, "");
   const buildingInitials = building
     ? (() => {
-        const words = building.split(" ");
-        if (words[0] === "Sunteck") {
-          return "ST";
-        }
-        return `${words[0][0]}${words[words.length - 1][0]}`;
-      })()
+      const words = building.split(" ");
+      if (words[0] === "Sunteck") {
+        return "ST";
+      }
+      return `${words[0][0]}${words[words.length - 1][0]}`;
+    })()
     : "";
 
   const unitData = [
@@ -1449,19 +1439,23 @@ const LandlordPaymentLocation = () => {
       />
 
       {viewDetails && (
-        <ViewDetailsModal
+        <MuiModal
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
-          data={{ ...viewDetails, total: `INR ${viewDetails.total}` }}
           title="Landlord Payment Detail"
-          fields={[
-            { label: "Month", key: "month" },
-            { label: "Landlord", key: "landlordName" },
-            { label: "Status", key: "status" },
-            { label: "Amount", key: "total" },
-          ]}
-        />
+        >
+          <div className="space-y-3">
+            <DetalisFormatted title="Month" detail={viewDetails.month} />
+            <DetalisFormatted title="Landlord" detail={viewDetails.landlordName} />
+            <DetalisFormatted title="Status" detail={viewDetails.status} />
+            <DetalisFormatted
+              title="Amount"
+              detail={`INR ${Number(1500000).toLocaleString("en-IN")}`}
+            />
+          </div>
+        </MuiModal>
       )}
+
     </div>
   );
 };

@@ -2,6 +2,9 @@ import { RouterProvider } from "react-router-dom";
 import { routes } from "./routes/Routes";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { Toaster } from "sonner";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+
 
 const theme = createTheme({
   typography: {
@@ -22,10 +25,10 @@ const theme = createTheme({
         },
       },
     },
-    MuiMenuItem:{
-      styleOverrides:{
-        root:{
-          fontSize:'0.875rem'
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          fontSize: '0.875rem'
         }
       }
     },
@@ -53,8 +56,10 @@ const theme = createTheme({
 function App() {
   return (
     <ThemeProvider theme={theme}>
-      <RouterProvider router={routes} />
-      <Toaster richColors />
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <RouterProvider router={routes} />
+        <Toaster richColors />
+      </LocalizationProvider>
     </ThemeProvider>
   );
 }

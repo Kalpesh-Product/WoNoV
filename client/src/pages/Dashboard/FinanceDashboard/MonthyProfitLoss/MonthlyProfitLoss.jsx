@@ -1,10 +1,11 @@
 import { useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
-import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import MuiModal from "../../../../components/MuiModal";
 import WidgetSection from "../../../../components/WidgetSection";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const MonthlyProfitLoss = () => {
 
@@ -194,7 +195,7 @@ const MonthlyProfitLoss = () => {
       id: 9,
       month: "Dec-24",
       income: inrFormat(2200000),
-      expense: inrFormat(2200000),
+      expense: inrFormat(2100000),
       pnl: inrFormat(100000),
     }
   ];
@@ -240,28 +241,30 @@ const MonthlyProfitLoss = () => {
           />
         </WidgetSection>
       </div>
-      {viewDetails && <ViewDetailsModal
-        open={viewModalOpen}
-        onClose={() => setViewModalOpen(false)}
-        data={{
-          ...viewDetails, income: "INR " + Number(
-            viewDetails.income.toLocaleString("en-IN").replace(/,/g, "")
-          ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-          expense: "INR " + Number(
-            viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
-          ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-          pnl: "INR " + Number(
-            viewDetails.pnl.toLocaleString("en-IN").replace(/,/g, "")
-          ).toLocaleString("en-IN", { maximumFractionDigits: 0 })
-        }}
-        title="Tax Payment Detail"
-        fields={[
-          { label: "Month", key: "month" },
-          { label: "Income", key: "income" },
-          { label: "Expense", key: "expense" },
-          { label: "P&L", key: "pnl" },
-        ]}
-      />}
+      {viewDetails && (
+        <MuiModal
+          open={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          title="Tax Payment Detail"
+        >
+          <div className="space-y-3">
+            <DetalisFormatted title="Month" detail={viewDetails.month} />
+            <DetalisFormatted
+              title="Income"
+              detail={`INR ${Number(viewDetails.income.replace(/,/g, "")).toLocaleString("en-IN")}`}
+            />
+            <DetalisFormatted
+              title="Expense"
+              detail={`INR ${Number(viewDetails.expense.replace(/,/g, "")).toLocaleString("en-IN")}`}
+            />
+            <DetalisFormatted
+              title="P&L"
+              detail={`INR ${Number(viewDetails.pnl.replace(/,/g, "")).toLocaleString("en-IN")}`}
+            />
+          </div>
+        </MuiModal>
+      )}
+
     </div>
   );
 };

@@ -8,6 +8,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import Loader from "../../../Loading";
 
 const WorkLocations = () => {
   const axios = useAxiosPrivate();
@@ -28,19 +29,19 @@ const WorkLocations = () => {
     setOpenModal(false);
   };
 
-  const { data: workLocations = [] } = useQuery({
+  const { data: workLocations = [], isLoading } = useQuery({
     queryKey: ["workLocation"],
     queryFn: async () => {
       try {
         const response = await axios.get(
           "/api/company/get-company-data?field=workLocations"
         );
-        return response.data;
+        return response.data?.workLocations;
       } catch (error) {
         throw new Error(error.response.data.message);
       }
     },
-    
+
   });
 
   const departmentsColumn = [
@@ -111,13 +112,10 @@ const WorkLocations = () => {
     setOpenModal(true);
   };
 
-  useEffect(()=>{
-console.log(workLocations)
-  },[workLocations])
 
   return (
     <>
-      <div>
+      {isLoading ? <Loader /> : <div>
         <AgTable
           key={workLocations.length}
           search={true}
@@ -134,7 +132,7 @@ console.log(workLocations)
             })),
           ]}
         />
-      </div>
+      </div>}
 
       <MuiModal
         open={openModal}
@@ -167,7 +165,7 @@ console.log(workLocations)
             /> */}
             <Controller
               name="workLocation"
-              rules={{required:"Work location is required"}}
+              rules={{ required: "Work location is required" }}
               control={control}
               render={({ field }) => (
                 <TextField
@@ -180,13 +178,13 @@ console.log(workLocations)
                 />
               )}
             />
-              <PrimaryButton
-                type={"submit"}
-                title={"Submit"}
-                handleSubmit={() => {
-                  toast.success("Location added successfully");
-                }}
-              />
+            <PrimaryButton
+              type={"submit"}
+              title={"Submit"}
+              handleSubmit={() => {
+                toast.success("Location added successfully");
+              }}
+            />
           </form>
         </div>
       </MuiModal>

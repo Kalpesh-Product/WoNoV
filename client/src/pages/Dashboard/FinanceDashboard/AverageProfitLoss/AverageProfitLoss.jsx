@@ -4,7 +4,8 @@ import BarGraph from "../../../../components/graphs/BarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import { useState } from "react";
-import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import MuiModal from "../../../../components/MuiModal";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const AverageProfitLoss = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
@@ -242,36 +243,29 @@ const AverageProfitLoss = () => {
         </WidgetSection>
       </div>
       {viewDetails && (
-        <ViewDetailsModal
-          open={viewModalOpen}
-          onClose={() => setViewModalOpen(false)}
-          data={{
-            ...viewDetails,
-            income:
-              "INR " +
-              Number(
-                viewDetails.income.toLocaleString("en-IN").replace(/,/g, "")
-              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-            expense:
-              "INR " +
-              Number(
-                viewDetails.expense.toLocaleString("en-IN").replace(/,/g, "")
-              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-            pnl:
-              "INR " +
-              Number(
-                viewDetails.pnl.toLocaleString("en-IN").replace(/,/g, "")
-              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-          }}
-          title="Monthly P&L Detail"
-          fields={[
-            { label: "Month", key: "month" },
-            { label: "Income", key: "income" },
-            { label: "Expense", key: "expense" },
-            { label: "P&L", key: "pnl" },
-          ]}
-        />
-      )}
+  <MuiModal
+    open={viewModalOpen}
+    onClose={() => setViewModalOpen(false)}
+    title="Monthly P&L Detail"
+  >
+    <div className="space-y-3">
+      <DetalisFormatted title="Month" detail={viewDetails.month} />
+      <DetalisFormatted
+        title="Income"
+        detail={`INR ${Number(viewDetails.income.replace(/,/g, "")).toLocaleString("en-IN")}`}
+      />
+      <DetalisFormatted
+        title="Expense"
+        detail={`INR ${Number(viewDetails.expense.replace(/,/g, "")).toLocaleString("en-IN")}`}
+      />
+      <DetalisFormatted
+        title="P&L"
+        detail={`INR ${Number(viewDetails.pnl.replace(/,/g, "")).toLocaleString("en-IN")}`}
+      />
+    </div>
+  </MuiModal>
+)}
+
     </div>
   );
 };

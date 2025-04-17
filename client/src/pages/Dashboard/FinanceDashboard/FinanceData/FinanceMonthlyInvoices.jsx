@@ -14,6 +14,7 @@ import useAuth from "../../../../hooks/useAuth";
 import dayjs from "dayjs";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const FinanceMonthlyInvoices = () => {
   const { auth } = useAuth();
@@ -282,27 +283,25 @@ const FinanceMonthlyInvoices = () => {
       />
 
 {viewDetails && (
-  <ViewDetailsModal
+  <MuiModal
     open={viewModalOpen}
     onClose={() => setViewModalOpen(false)}
-    data={{
-      ...viewDetails,
-      amount: `INR ${Number(
-        String(viewDetails.amount).replace(/,/g, "")
-      ).toLocaleString("en-IN")}`,
-    }}
     title="Invoice Detail"
-    fields={[
-      { label: "Month", key: "month" },
-      { label: "Invoice Number", key: "invoiceNumber" },
-      { label: "Vendor", key: "vendor" },
-      { label: "Service", key: "service" },
-      { label: "Invoice Date", key: "invoiceDate" },
-      { label: "Due Date", key: "dueDate" },
-      { label: "Amount", key: "amount" },
-      { label: "Status", key: "status" },
-    ]}
-  />
+  >
+    <div className="space-y-3">
+      <DetalisFormatted title="Month" detail={viewDetails.month} />
+      <DetalisFormatted title="Invoice Number" detail={viewDetails.invoiceNumber} />
+      <DetalisFormatted title="Vendor" detail={viewDetails.vendor} />
+      <DetalisFormatted title="Service" detail={viewDetails.service} />
+      <DetalisFormatted title="Invoice Date" detail={viewDetails.invoiceDate} />
+      <DetalisFormatted title="Due Date" detail={viewDetails.dueDate} />
+      <DetalisFormatted
+        title="Amount"
+        detail={`INR ${Number(String(viewDetails.amount).replace(/,/g, "")).toLocaleString("en-IN")}`}
+      />
+      <DetalisFormatted title="Status" detail={viewDetails.status} />
+    </div>
+  </MuiModal>
 )}
 
 

@@ -1148,7 +1148,6 @@ const DeptWiseBudget = () => {
         <BudgetGraph
           utilisedData={utilisedData}
           maxBudget={maxBudget}
-          route={"finance/budget"}
         />
       </WidgetSection>
       <div>
