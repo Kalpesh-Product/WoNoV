@@ -6,9 +6,11 @@ import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
 
 const LeadsLayout = ({ hideAccordion, data }) => {
   const navigate = useNavigate()
+  console.log(data)
   // ✅ Dynamically Count Clients Per Domain
   const transformedData = data.map((monthData) => {
     const domainCounts = {
@@ -99,7 +101,7 @@ const LeadsLayout = ({ hideAccordion, data }) => {
           title=""
           options={barChartOptions}
           height={400}
-          year={true}
+          
         />
       </WidgetSection>
 
@@ -107,7 +109,18 @@ const LeadsLayout = ({ hideAccordion, data }) => {
       {hideAccordion ? (
         ""
       ) : (
-        <div>
+        <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
+        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+            <div className="flex justify-between items-center w-full px-4 py-2">
+              <span className="text-sm text-muted font-pmedium text-title">
+                MONTH
+              </span>
+              <span className="px-8 text-sm text-muted font-pmedium text-title flex items-center gap-1">
+              Total Unique Clients
+              </span>
+              
+            </div>
+          </div>
           {transformedData.map((data, index) => (
             <Accordion key={index} className="py-4">
               <AccordionSummary
@@ -118,15 +131,17 @@ const LeadsLayout = ({ hideAccordion, data }) => {
                   <span className="text-subtitle font-medium">
                     {data.month}
                   </span>
-                  <span className="text-subtitle font-medium">
-                    Total Unique Clients: {data.clients.length}
+                  <span className="px-8 text-subtitle font-medium">
+                   {data.clients.length}
                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 <AgTable
                   search={true}
-                  data={data.clients}
+                  data={data.clients.map((client)=>({...client,date:dayjs(client.date).format("DD-MM-YYYY"),
+                    paymentStatus:"Paid"
+                  }))}
                   columns={tableColumns}
                   tableHeight={250}
                 />

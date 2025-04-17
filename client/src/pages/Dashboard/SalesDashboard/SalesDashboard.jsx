@@ -656,6 +656,7 @@ const formattedClientMemberBirthday = clientMemberBirthday.map((client)=> ({...c
               data={sectorPieData}
               options={sectorPieChartOptions}
               width={"100%"}
+              // height={350}
             />
           ) : (
             <CircularProgress color="#1E3D73" />
@@ -667,6 +668,7 @@ const formattedClientMemberBirthday = clientMemberBirthday.map((client)=> ({...c
               data={totalDeskPercent}
               options={clientsDesksPieOptions}
               width={"100%"}
+              
             />
           ) : (
             <CircularProgress color="#1E3D73" />
