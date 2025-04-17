@@ -1,13 +1,14 @@
 import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const ItAnnualExpenses = () => {
   const expenseColumns = [
-    { field: "id", headerName: "Sr.No" }, // Updated here
+    { field: "id", headerName: "Sr No" }, // Updated here
     { field: "category", headerName: "Category" },
     { field: "expenseName", headerName: "Expense Name" },
     { field: "date", headerName: "Date" },
-    { field: "amount", headerName: "Amount" },
+    { field: "amount", headerName: "Amount (INR)" },
     {
       field: "actions",
       headerName: "Actions",
@@ -103,7 +104,7 @@ const ItAnnualExpenses = () => {
             category: expense.category,
             expenseName: expense.expenseName,
             date: expense.date,
-            amount: expense.amount,
+            amount: inrFormat(expense.amount),
           })),
         ]}
         columns={expenseColumns}

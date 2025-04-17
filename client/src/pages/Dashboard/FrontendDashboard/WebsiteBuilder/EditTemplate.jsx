@@ -90,14 +90,13 @@ const EditTemplate = () => {
   });
 
   useEffect(() => {
-    if (!templateName || !pageName) return; // Ensure they are not null
-
+    if (!templateName || !pageName) return;
+  
     if (editor) {
       editor.destroy();
       setEditor(null);
     }
-
-    // Initialize GrapesJS editor
+  
     const editorInstance = grapesjs.init({
       container: "#editor-canvas",
       storageManager: false,
@@ -108,14 +107,39 @@ const EditTemplate = () => {
         gjsPresetWebpage: {},
         gjsBasicBlocks: {},
       },
+      canvas: {
+        styles: [
+          'https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Montserrat:wght@300;500&display=swap',
+          'https://fonts.googleapis.com/css2?family=Belleza&display=swap'
+        ],
+      },
     });
-
+  
     setEditor(editorInstance);
+  
     editorInstance.on("load", () => {
+      // Load content from backend
       loadEditorData(editorInstance);
+  
+      // Add font family dropdown to Style Manager
+      editorInstance.StyleManager.addProperty('typography', {
+        name: 'Font Family',
+        property: 'font-family',
+        type: 'select',
+        defaults: 'Roboto, sans-serif',
+        list: [
+          { value: 'Roboto, sans-serif', name: 'Roboto' },
+          { value: 'Montserrat, sans-serif', name: 'Montserrat' },
+          { value: 'Arial, sans-serif', name: 'Arial' },
+          { value: 'Georgia, serif', name: 'Georgia' },
+          { value: 'Belleza, serif', name: 'Belleza' },
+        ],
+      });
     });
+  
     addBlocks(editorInstance);
   }, [templateName, pageName]);
+  
 
   // 🔹 Function to Load Editor Data from MongoDB
   const loadEditorData = async (editorInstance) => {

@@ -318,7 +318,7 @@ const ItDashboard = () => {
             <DataCard
               data={"INR " + inrFormat("4000000")}
               title={"Projected"}
-              route={"/app/dashboard/it-dashboard/finance/budget"}
+              route={"/app/dashboard/IT-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString(
                 "default",
                 {
@@ -329,7 +329,7 @@ const ItDashboard = () => {
             <DataCard
               data={"INR " + inrFormat("3500000")}
               title={"Actual"}
-              route={"/app/dashboard/it-dashboard/finance/budget"}
+              route={"/app/dashboard/IT-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString(
                 "default",
                 {
@@ -340,7 +340,7 @@ const ItDashboard = () => {
             <DataCard
               data={"INR " + inrFormat(60000)}
               title={"Requested"}
-              route={"/app/dashboard/it-dashboard/finance/budget"}
+              route={"/app/dashboard/IT-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString(
                 "default",
                 {
@@ -390,7 +390,7 @@ const ItDashboard = () => {
           data={"05"}
           title={"Offices"}
           description={"Under Management"}
-          route={"it-offices"}
+          route={"IT-offices"}
         />,
         <DataCard
           data={"58"}
@@ -410,7 +410,7 @@ const ItDashboard = () => {
           route={"per-sq-ft-expense"}
         />,
         <DataCard
-          route={"it-expenses"}
+          route={"IT-expenses"}
           title={"Average"}
           data={"INR " + inrFormat("600000")}
           description={"Monthly Expense"}

@@ -428,7 +428,7 @@ const RevenueTarget = () => {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
     yaxis: {
-      title: { text: "Revenue (in INR)" },
+      title: { text: "Revenue (INR)" },
       labels: {
         formatter: (value) => `INR ${value.toLocaleString("en-IN")}`
       }
@@ -468,7 +468,7 @@ const RevenueTarget = () => {
         padding
         title={"Vertical-wise Revenue Targets"}
         titleLabel={dayjs().format("MMMM YYYY")}
-        TitleAmount={`Total INR ${inrFormat("6800000")}`}>
+        TitleAmount={`INR ${inrFormat("6800000")}`}>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
 
