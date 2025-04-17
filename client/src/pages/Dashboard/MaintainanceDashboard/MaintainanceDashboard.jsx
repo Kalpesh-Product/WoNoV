@@ -509,7 +509,7 @@ const MaintainanceDashboard = () => {
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard
-              data={"40K"}
+              data={"INR 40,000"}
               title={"Projected"}
               route={"/app/dashboard/maintenance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString(
@@ -520,7 +520,7 @@ const MaintainanceDashboard = () => {
               )}-24`}
             />
             <DataCard
-              data={"35K"}
+              data={"INR 35,000"}
               title={"Actual"}
               route={"/app/dashboard/maintenance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString(
@@ -531,7 +531,7 @@ const MaintainanceDashboard = () => {
               )}-24`}
             />
             <DataCard
-              data={inrFormat("6000")}
+              data={"INR 16,000"}
               title={"Requested"}
               route={"/app/dashboard/maintenance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString(
@@ -594,7 +594,7 @@ const MaintainanceDashboard = () => {
         <DataCard
           route={"maintenance-expenses"}
           title={"Average"}
-          data={inrFormat("61000")}
+          data={`INR ${inrFormat("61000")}`}
           description={"Monthly Expense"}
         />,
       ],
