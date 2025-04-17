@@ -5,7 +5,7 @@ import AgTable from "../../../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
 
 const AdminBulkUpload = () => {
-  const uploadItems = ["Upload Expenses"];
+  const uploadItems = ["Upload Expenses", "Upload Members", "Upload Rotations"];
   const bulkUploadDataColumns = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "templateName", headerName: "Template Name", flex: 1 },
@@ -46,7 +46,7 @@ const AdminBulkUpload = () => {
         Bulk Upload Data
       </span>
 
-      <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
+      <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1 gap-4">
         {uploadItems.map((index, item) => {
           return (
             <>

@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import clearImage from "../../../../assets/biznest/clear-seats.png";
 import occupiedImage from "../../../../assets/biznest/occupied-seats.png";
+import clientOccupied from "../../../../assets/biznest/occupancy/occupied-701.jpeg"
+import clientClear from "../../../../assets/biznest/occupancy/clear-701.png"
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  Chip,
 } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import MuiModal from "../../../../components/MuiModal";
@@ -61,8 +62,8 @@ const Desks = () => {
     },
   ];
   const currentRoomData = [
-    { id: 1, title: "Occupied", image: selectedClient?.occupiedImage ? selectedClient.occupiedImage : occupiedImage, type: "occupiedImage" },
-    { id: 2, title: "Available", image: clearImage, type: "clearImage" },
+    { id: 1, title: "Occupied", image: selectedClient?.occupiedImage ? selectedClient.occupiedImage : clientOccupied, type: "occupiedImage" },
+    { id: 2, title: "Available", image: clientClear, type: "clearImage" },
   ];
 
   const uploadRoomImage = async ({ file, imageType }) => {
