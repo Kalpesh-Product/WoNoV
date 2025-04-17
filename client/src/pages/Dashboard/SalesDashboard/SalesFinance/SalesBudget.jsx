@@ -1091,21 +1091,21 @@ const SalesBudget = () => {
           title={"Projected"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "short",
-          })}-24`}
+          })}-25`}
         />
         <DataCard
           data={"INR " + inrFormat("6200000")}
           title={"Actual"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "short",
-          })}-24`}
+          })}-25`}
         />
         <DataCard
           data={"INR " + inrFormat("89000")}
           title={"Requested"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "short",
-          })}-24`}
+          })}-25`}
         />
       </WidgetSection>
 

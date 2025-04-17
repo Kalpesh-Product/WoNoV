@@ -490,7 +490,7 @@ const MaintainanceDashboard = () => {
                 {
                   month: "short",
                 }
-              )}-24`}
+              )}-25`}
             />
             <DataCard
               data={"35K"}
@@ -501,7 +501,7 @@ const MaintainanceDashboard = () => {
                 {
                   month: "short",
                 }
-              )}-24`}
+              )}-25`}
             />
             <DataCard
               data={inrFormat("6000")}
@@ -512,7 +512,7 @@ const MaintainanceDashboard = () => {
                 {
                   month: "short",
                 }
-              )}-24`}
+              )}-25`}
             />
           </WidgetSection>
         </WidgetSection>,

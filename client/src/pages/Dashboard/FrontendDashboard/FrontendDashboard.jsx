@@ -347,7 +347,7 @@ const FrontendDashboard = () => {
                 {
                   month: "short",
                 }
-              )}-24`}
+              )}-25`}
             />
             <DataCard
               data={`INR ${inrFormat(35000)}`}
@@ -358,7 +358,7 @@ const FrontendDashboard = () => {
                 {
                   month: "short",
                 }
-              )}-24`}
+              )}-25`}
             />
             <DataCard
               data={`INR ${inrFormat(6000)}`}
@@ -369,7 +369,7 @@ const FrontendDashboard = () => {
                 {
                   month: "short",
                 }
-              )}-24`}
+              )}-25`}
             />
           </WidgetSection>
         </WidgetSection>,

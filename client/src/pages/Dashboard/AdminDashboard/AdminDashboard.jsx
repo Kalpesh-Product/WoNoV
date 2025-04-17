@@ -563,7 +563,7 @@ const AdminDashboard = () => {
               description={`Current Month : ${new Date().toLocaleString(
                 "default",
                 { month: "short" }
-              )}-24`}
+              )}-25`}
             />
             <DataCard
               data={"INR 40,00,000"}
@@ -572,7 +572,7 @@ const AdminDashboard = () => {
               description={`Current Month : ${new Date().toLocaleString(
                 "default",
                 { month: "short" }
-              )}-24`}
+              )}-25`}
             />
             <DataCard
               data={"INR 15,000"}
@@ -581,7 +581,7 @@ const AdminDashboard = () => {
               description={`Current Month : ${new Date().toLocaleString(
                 "default",
                 { month: "short" }
-              )}-24`}
+              )}-25`}
             />
           </WidgetSection>
         </WidgetSection>,

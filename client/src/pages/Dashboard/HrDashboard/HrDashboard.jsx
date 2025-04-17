@@ -484,27 +484,27 @@ const HrDashboard = () => {
                 title={"Projected"}
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
-                  "default",
-                  { month: "long" }
-                )}`}
+                "default",
+                { month: "short" }
+              )}-25`}
               />
               <DataCard
                 data={"INR " + inrFormat("150000")}
                 title={"Actual"}
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
-                  "default",
-                  { month: "long" }
-                )}`}
+                "default",
+                { month: "short" }
+              )}-25`}
               />
               <DataCard
                 data={"INR " + inrFormat(12000)}
                 title={"Requested"}
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
-                  "default",
-                  { month: "long" }
-                )}`}
+                "default",
+                { month: "short" }
+              )}-25`}
               />
             </WidgetSection>
           </WidgetSection>

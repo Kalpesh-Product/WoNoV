@@ -147,7 +147,7 @@ const FrontendBudget = () => {
               {
                 month: "short",
               }
-            )}-24`}
+            )}-25`}
           />
           <DataCard
             data={"35K"}
@@ -157,7 +157,7 @@ const FrontendBudget = () => {
               {
                 month: "short",
               }
-            )}-24`}
+            )}-25`}
           />
           <DataCard
             data={6000}
@@ -167,7 +167,7 @@ const FrontendBudget = () => {
               {
                 month: "short",
               }
-            )}-24`}
+            )}-25`}
           />
         </WidgetSection>
       </div>

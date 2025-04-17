@@ -324,7 +324,7 @@ const ItDashboard = () => {
                 {
                   month: "short",
                 }
-              )}-24`}
+              )}-25`}
             />
             <DataCard
               data={"INR " + inrFormat("3500000")}
@@ -335,7 +335,7 @@ const ItDashboard = () => {
                 {
                   month: "short",
                 }
-              )}-24`}
+              )}-25`}
             />
             <DataCard
               data={"INR " + inrFormat(60000)}
@@ -346,7 +346,7 @@ const ItDashboard = () => {
                 {
                   month: "short",
                 }
-              )}-24`}
+              )}-25`}
             />
           </WidgetSection>
         </WidgetSection>,
