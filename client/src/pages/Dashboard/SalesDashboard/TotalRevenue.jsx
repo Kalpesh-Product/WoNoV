@@ -63,8 +63,9 @@ const TotalRevenue = () => {
   }));
   const options = {
     chart: {
+      toolbar: false,
       stacked: true,
-      fontFamily : "Poppins-Regular"
+      fontFamily: "Poppins-Regular"
     },
     xaxis: {
       categories: [
@@ -143,9 +144,9 @@ const TotalRevenue = () => {
       >
         <BarGraph height={400} data={normalizedData} options={options} />
       </WidgetSection>
-       
+
       <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
           <div className="flex justify-between items-center w-full px-4 py-2">
             <span className="text-sm text-muted font-pmedium text-title">
               VERTICALS
@@ -153,11 +154,11 @@ const TotalRevenue = () => {
             <span className="w-1/5 text-sm text-muted font-pmedium text-title flex items-center gap-1">
               REVENUE
             </span>
-            
+
           </div>
         </div>
-        
-  
+
+
         {rawData.map((domain, index) => {
           const totalRevenue = domain.data.reduce((sum, val) => sum + val, 0);
 
@@ -199,11 +200,11 @@ const TotalRevenue = () => {
               month: fullMonthMap[shortMonth],
               year,
               revenue: `${val.toLocaleString()}`,
-              
+
             };
           }).reverse();
- 
-          const transformRows = rows.map((row,index)=>({...row,srNo:index+1}))
+
+          const transformRows = rows.map((row, index) => ({ ...row, srNo: index + 1 }))
           const columns = [
             { headerName: "Sr No", field: "srNo", flex: 1 },
             { headerName: "Month", field: "month", flex: 1 },
@@ -212,8 +213,8 @@ const TotalRevenue = () => {
           ];
 
           return (
-          <div>
-            
+            <div>
+
               <Accordion key={index} className="py-4">
               <AccordionSummary
                 expandIcon={<IoIosArrowDown />}
@@ -252,8 +253,8 @@ const TotalRevenue = () => {
           );
         })}
 
-        </div>
-      
+      </div>
+
     </div>
   );
 };

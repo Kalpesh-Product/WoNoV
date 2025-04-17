@@ -277,12 +277,12 @@ const jsonData = {
 const CoWorkingSeats = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
-  const [openModal, setOpenModal] = useState(false);
   const [location, setLocation] = useState({});
-    const [viewModalOpen, setViewModalOpen] = useState(false);
-    const [viewDetails, setViewDetails] = useState(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewDetails, setViewDetails] = useState(null);
   const handleViewModal = (data) => {
-    setOpenModal(true);
+    setViewDetails(data)
+    setViewModalOpen(true);
     setLocation(data);
   };
 
@@ -477,15 +477,15 @@ const CoWorkingSeats = () => {
                     headerName: "Action",
                     field: "action",
                     cellRenderer: (params) => (
-                      
-                        <div className="p-2 mb-2  flex gap-2">
-                          <span
-                                     className="text-subtitle cursor-pointer"
-                                     onClick={() => handleViewModal(params.data)}>
-                                     <MdOutlineRemoveRedEye />
-                                   </span>
-                        </div>
-                      
+
+                      <div className="p-2 mb-2  flex gap-2">
+                        <span
+                          className="text-subtitle cursor-pointer"
+                          onClick={() => handleViewModal(params.data)}>
+                          <MdOutlineRemoveRedEye />
+                        </span>
+                      </div>
+
                     ),
                   },
                 ]}
@@ -496,23 +496,23 @@ const CoWorkingSeats = () => {
         ))}
       </div>
 
-     
-       {viewDetails && (
-              <ViewDetailsModal
-                open={viewModalOpen}
-                onClose={() => setViewModalOpen(false)}
-                data={viewDetails}
-                title="Location Details"
-                fields={[
-                  { label: "Location", key: "location" },
-                  { label: "Floor", key: "floor" },
-                  // { label: "Payment Date", key: "date" },
-                  { label: "Total Seats", key: "totalSeats" },
-                  { label: "Booked", key: "booked" },
-                  { label: "Available", key: "available" },
-                ]}
-              />
-            )}
+
+      {viewDetails && (
+        <ViewDetailsModal
+          open={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          data={viewDetails}
+          title="Location Details"
+          fields={[
+            { label: "Location", key: "location" },
+            { label: "Floor", key: "floor" },
+            // { label: "Payment Date", key: "date" },
+            { label: "Total Seats", key: "totalSeats" },
+            { label: "Booked", key: "booked" },
+            { label: "Available", key: "available" },
+          ]}
+        />
+      )}
     </div>
   );
 };
