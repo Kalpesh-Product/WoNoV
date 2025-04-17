@@ -11,6 +11,7 @@ import MuiModal from "../../../../components/MuiModal";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 // JSON data structure for coworking seats and client details
 const jsonData = {
@@ -365,7 +366,8 @@ const CoWorkingSeats = () => {
           border
           padding
           title={"Co-Working Seats"}
-          titleLabel={"FY 24-25"}>
+          titleLabel={"FY 24-25"}
+        >
           <BarGraph
             data={series}
             options={options}
@@ -443,7 +445,8 @@ const CoWorkingSeats = () => {
               expandIcon={<IoIosArrowDown />}
               aria-controls={`panel-${index}-content`}
               id={`panel-${index}-header`}
-              className="border-b-[1px] border-borderGray">
+              className="border-b-[1px] border-borderGray"
+            >
               <div className="flex justify-between items-center w-full px-4">
                 <span className="text-subtitle font-pmedium">
                   {domain.month}
@@ -472,11 +475,13 @@ const CoWorkingSeats = () => {
                     field: "action",
                     cellRenderer: (params) => (
                       <>
-                        <div className="p-1 flex gap-2">
-                          <PrimaryButton
-                            title={"View"}
-                            handleSubmit={() => handleViewDetails(params.data)}
-                          />
+                        <div className="p-2 mb-2 flex gap-2">
+                          <span
+                            className="text-subtitle cursor-pointer"
+                            onClick={() => handleViewDetails(params.data)}
+                          >
+                            <MdOutlineRemoveRedEye />
+                          </span>
                         </div>
                       </>
                     ),
@@ -495,7 +500,8 @@ const CoWorkingSeats = () => {
         onClose={() => {
           setOpenModal(false);
           setLocation({});
-        }}>
+        }}
+      >
         <div className="grid grid-cols-2 gap-8 px-2 pb-8 border-b-default border-borderGray">
           <div className="flex items-center justify-between">
             <span className="text-content">Location</span>
