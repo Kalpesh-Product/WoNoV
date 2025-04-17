@@ -14,12 +14,13 @@ import useAuth from "../../../../hooks/useAuth";
 import dayjs from "dayjs";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const FinanceAssetList = () => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
-    const [viewModalOpen, setViewModalOpen] = useState(false);
-    const [viewDetails, setViewDetails] = useState(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewDetails, setViewDetails] = useState(null);
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -116,17 +117,17 @@ const FinanceAssetList = () => {
       headerName: "Actions",
       cellRenderer: (params) => (
         <>
-        <div className="flex gap-2 items-center">
-          <div
-             
-            className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-          >
-            <span className="text-subtitle cursor-pointer" onClick={() => handleViewModal(params.data)}>
-              <MdOutlineRemoveRedEye />
-            </span>
+          <div className="flex gap-2 items-center">
+            <div
+
+              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+            >
+              <span className="text-subtitle cursor-pointer" onClick={() => handleViewModal(params.data)}>
+                <MdOutlineRemoveRedEye />
+              </span>
+            </div>
           </div>
-        </div>
-      </>
+        </>
       ),
     },
   ];
@@ -233,8 +234,8 @@ const FinanceAssetList = () => {
       vendor: { name: "Microsoft India" },
     },
   ];
-  
-  
+
+
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -284,23 +285,28 @@ const FinanceAssetList = () => {
         handleClick={handleAddAsset}
       />
 
-{viewDetails && <ViewDetailsModal
-open={viewModalOpen}
-onClose={() => setViewModalOpen(false)}
-data={{...viewDetails,price:"INR " + Number(
-  viewDetails.price.toLocaleString("en-IN").replace(/,/g, "")
-).toLocaleString("en-IN", { maximumFractionDigits: 0 })
-}}
-title="Asset Detail"
-fields={[
-  { label: "Category", key: "category" },
-  { label: "Brand", key: "brand" },
-  { label: "Price", key: "price" },
-  { label: "Quantity", key: "quantity" },
-  { label: "Purchase Date", key: "purchaseDate" },
-  { label: "Warranty (Months)", key: "warranty" },
-]}
-/>}
+      {viewDetails && (
+        <MuiModal
+          open={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          title="Asset Detail"
+        >
+          <div className="space-y-3">
+            <DetalisFormatted title="Category" detail={viewDetails.category} />
+            <DetalisFormatted title="Brand" detail={viewDetails.brand} />
+            <DetalisFormatted
+              title="Price"
+              detail={`INR ${Number(viewDetails.price?.toString().replace(/,/g, "")).toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}`}
+            />
+            <DetalisFormatted title="Quantity" detail={viewDetails.quantity} />
+            <DetalisFormatted title="Purchase Date" detail={viewDetails.purchaseDate} />
+            <DetalisFormatted title="Warranty (Months)" detail={viewDetails.warranty} />
+          </div>
+        </MuiModal>
+      )}
+
 
       <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
         {modalMode === "add" && (
@@ -315,11 +321,10 @@ fields={[
                     render={({ field }) => (
                       <div
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
-                          errors.assetImage
+                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                        } `}>
+                          } `}>
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{

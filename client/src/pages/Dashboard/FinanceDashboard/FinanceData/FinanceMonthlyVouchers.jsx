@@ -45,7 +45,7 @@ const FinanceMonthlyVouchers = () => {
     <div className="">
       <div className="flex justify-between items-center mb-6">
         <span className=" text-primary text-title font-pmedium">Templates</span>
-        <PrimaryButton title={"Add Template"} />
+        {/* <PrimaryButton title={"Add Template"} /> */}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

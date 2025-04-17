@@ -12,7 +12,7 @@ import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const FinanceVendorDatabase = () => {
   const { auth } = useAuth();
@@ -20,7 +20,7 @@ const FinanceVendorDatabase = () => {
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
-    const [viewDetails, setViewDetails] = useState(null);
+  const [viewDetails, setViewDetails] = useState(null);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
 
@@ -101,33 +101,33 @@ const FinanceVendorDatabase = () => {
   });
 
   const vendorColumns = [
-     { field: "id", headerName: "Sr No" },
-     { field: "vendorName", headerName: "Vendor Name" },
-     { field: "contactPerson", headerName: "Contact Person" },
-     { field: "email", headerName: "Email" },
-     { field: "phone", headerName: "Phone" },
-     { field: "company", headerName: "Company" },
-     { field: "address", headerName: "Address" },
-     { field: "gstNumber", headerName: "GST Number" },
-     {
-       field: "actions",
-       headerName: "Actions",
-       cellRenderer: (params) => (
-            <>
-                           <div className="flex gap-2 items-center">
-                             <div
-                                
-                               className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-                             >
-                               <span className="text-subtitle cursor-pointer" onClick={() => handleViewModal(params.data)}>
-                                 <MdOutlineRemoveRedEye />
-                               </span>
-                             </div>
-                           </div>
-                         </>
-       ),
-     },
-   ];
+    { field: "id", headerName: "Sr No" },
+    { field: "vendorName", headerName: "Vendor Name" },
+    { field: "contactPerson", headerName: "Contact Person" },
+    { field: "email", headerName: "Email" },
+    { field: "phone", headerName: "Phone" },
+    { field: "company", headerName: "Company" },
+    { field: "address", headerName: "Address" },
+    { field: "gstNumber", headerName: "GST Number" },
+    {
+      field: "actions",
+      headerName: "Actions",
+      cellRenderer: (params) => (
+        <>
+          <div className="flex gap-2 items-center">
+            <div
+
+              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+            >
+              <span className="text-subtitle cursor-pointer" onClick={() => handleViewModal(params.data)}>
+                <MdOutlineRemoveRedEye />
+              </span>
+            </div>
+          </div>
+        </>
+      ),
+    },
+  ];
 
   // const { data: assetsList = [] } = useQuery({
   //   queryKey: ["assetsList"],
@@ -179,7 +179,7 @@ const FinanceVendorDatabase = () => {
       gstNumber: "29AAACU4567M1Z9",
     },
   ];
-  
+
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
     setViewModalOpen(true);
@@ -227,23 +227,24 @@ const FinanceVendorDatabase = () => {
         handleClick={handleAddAsset}
       />
 
-{viewDetails && (
-  <ViewDetailsModal
-    open={viewModalOpen}
-    onClose={() => setViewModalOpen(false)}
-    data={viewDetails}
-    title="Vendor Detail"
-    fields={[
-      { label: "Vendor Name", key: "vendorName" },
-      { label: "Contact Person", key: "contactPerson" },
-      { label: "Email", key: "email" },
-      { label: "Phone", key: "phone" },
-      { label: "Company", key: "company" },
-      { label: "Address", key: "address" },
-      { label: "GST Number", key: "gstNumber" },
-    ]}
-  />
-)}
+      {viewDetails && (
+        <MuiModal
+          open={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          title="Vendor Detail"
+        >
+          <div className="space-y-3">
+            <DetalisFormatted title="Vendor Name" detail={viewDetails.vendorName} />
+            <DetalisFormatted title="Contact Person" detail={viewDetails.contactPerson} />
+            <DetalisFormatted title="Email" detail={viewDetails.email} />
+            <DetalisFormatted title="Phone" detail={viewDetails.phone} />
+            <DetalisFormatted title="Company" detail={viewDetails.company} />
+            <DetalisFormatted title="Address" detail={viewDetails.address} />
+            <DetalisFormatted title="GST Number" detail={viewDetails.gstNumber} />
+          </div>
+        </MuiModal>
+      )}
+
 
       <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
         {modalMode === "add" && (
@@ -258,11 +259,10 @@ const FinanceVendorDatabase = () => {
                     render={({ field }) => (
                       <div
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
-                          errors.assetImage
+                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                        } `}>
+                          } `}>
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
