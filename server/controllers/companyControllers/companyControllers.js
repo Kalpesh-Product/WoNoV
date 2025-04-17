@@ -229,7 +229,7 @@ const getCompanyLogo = async (req, res, next) => {
 };
 
 const getCompanyData = async (req, res, next) => {
-  const { field } = req.query; // employeeTypes | workLocations | leaveTypes | shifts
+  const { field } = req.query; // employeeTypes | workLocations | leaveTypes | shifts | selectedDepartments
   const companyId = req.company;
 
   try {
@@ -241,47 +241,47 @@ const getCompanyData = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid company ID provided" });
     }
 
-    // Define fields that require population
+    // Special case: workLocations from Unit collection
+    if (field === "workLocations") {
+      const workLocations = await Unit.find({ company: companyId })
+        .populate({ path: "building", select: "buildingName" })
+        .select("unitNo unitName isActive building");
+
+      if (!workLocations || workLocations.length === 0) {
+        return res.status(404).json({ message: "No work locations found" });
+      }
+
+      return res.status(200).json({ workLocations });
+    }
+
+    // Define which fields need to be populated
     const fieldsToPopulate = {
-      selectedDepartments: "selectedDepartments.department",
-      employeeTypes: "",
-      workLocations: "",
-      leaveTypes: "",
-      shifts: "",
+      selectedDepartments: { path: "selectedDepartments.department", select: "name" },
+      employeeTypes: "", // No population
+      leaveTypes: "",    // No population
+      shifts: "",        // No population
     };
 
-    if (field === "workLocations") {
-      query = query.populate({ path: "workLocations", select: "-company" });
-      // const workLocations = await Unit.find({ company: companyId })
-      //   .populate({ path: "building", select: "buildingName" })
-      //   .select("unitNo unitName isActive");
-
-      // if (!workLocations) {
-      //   return res.status(400).json({ message: "No worklocations found" });
-      // }
-
-      // return res.status(200).json(workLocations);
-    }
-    let query = Company.findOne({ _id: companyId })
-      .populate(fieldsToPopulate[field])
-      .select(field);
-
-    // Populate if the field is in the fieldsToPopulate map
-
-    const fetchedData = await query.exec();
-    let transformedData = fetchedData;
-    if (!fetchedData || !fetchedData[field]) {
-      return res.status(400).json({ message: "Couldn't fetch the data" });
+    // Build the query
+    let query = Company.findById(companyId).select(field);
+    if (fieldsToPopulate[field]) {
+      query = query.populate(fieldsToPopulate[field]);
     }
 
+    const company = await query.exec();
+
+    if (!company || !company[field]) {
+      return res.status(404).json({ message: `Couldn't fetch the data for '${field}'` });
+    }
+
+    // Special case: selectedDepartments needs extra processing
     if (field === "selectedDepartments") {
       const departmentsWithManagers = await Promise.all(
-        fetchedData.selectedDepartments.map(async (dep) => {
-          if (!dep.admin) return { ...dep._doc, manager: null };
+        company.selectedDepartments.map(async (dep) => {
+          if (!dep.admin) return { ...dep._doc, admin: null };
 
-          const manager = await UserData.findOne({
-            role: { $in: [dep.admin] },
-          }).select("firstName lastName role");
+          const manager = await UserData.findOne({ role: { $in: [dep.admin] } })
+            .select("firstName lastName role");
 
           return {
             ...dep._doc,
@@ -290,13 +290,12 @@ const getCompanyData = async (req, res, next) => {
         })
       );
 
-      return res
-        .status(200)
-        .json({ selectedDepartments: departmentsWithManagers });
+      return res.status(200).json({ selectedDepartments: departmentsWithManagers });
     }
 
-    return res.status(200).json({ [field]: fetchedData[field] });
-    // return res.status(200).json({ [field]: transformedData[field] });
+    // Default return for other fields
+    return res.status(200).json({ [field]: company[field] });
+
   } catch (error) {
     next(error);
   }

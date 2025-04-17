@@ -6,7 +6,7 @@ import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../../components/MuiModal";
-import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 import dayjs from "dayjs";
 
 const Collections = () => {
@@ -205,69 +205,65 @@ const Collections = () => {
       </WidgetSection>
 
       <WidgetSection
-  border
-  title="Collections"
-  titleLabel={"FY 2024-25"}
-  TitleAmount={`INR ${grandTotal.toLocaleString("en-IN")}`}
-  className="bg-white rounded-md shadow-sm"
->
-  <div className="px-4 py-2 border-b border-borderGray bg-gray-50">
-    <div className="flex flex-wrap justify-between items-center py-2 text-sm text-muted font-pmedium text-title">
-      <span className="w-1/2 sm:w-1/5">FINANCIAL YEAR</span>
-      <span className="w-1/2 sm:w-1/5 flex items-center gap-1">AMOUNT</span>
-    </div>
-  </div>
-
-  {financialData.map((data, index) => (
-    <Accordion key={index} className="py-2">
-      <AccordionSummary
-        expandIcon={<IoIosArrowDown />}
-        aria-controls={`panel${index}-content`}
-        id={`panel${index}-header`}
-        className="border-b border-borderGray"
+        border
+        title="Collections"
+        titleLabel={"FY 2024-25"}
+        TitleAmount={`INR ${grandTotal.toLocaleString("en-IN")}`}
+        className="bg-white rounded-md shadow-sm"
       >
-        <div className="flex flex-wrap justify-between items-center w-full px-2 text-subtitle font-pmedium">
-          <span className="w-1/2 sm:w-1/5">{data.month}</span>
-          <span className="w-1/2 sm:w-1/5 px-4">
-            INR {data.totalAmount.toLocaleString("en-IN")}
-          </span>
+        <div className="px-4 py-2 border-b border-borderGray bg-gray-50">
+          <div className="flex flex-wrap justify-between items-center py-2 text-sm text-muted font-pmedium text-title">
+            <span className="w-1/2 sm:w-1/5">FINANCIAL YEAR</span>
+            <span className="w-1/2 sm:w-1/5 flex items-center gap-1">AMOUNT</span>
+          </div>
         </div>
-      </AccordionSummary>
-      <AccordionDetails sx={{ borderTop: "1px solid #d1d5db" }}>
-        <AgTable
-          search={true}
-          data={data.tableData.rows}
-          columns={data.tableData.columns}
-          tableHeight={250}
-        />
-      </AccordionDetails>
-    </Accordion>
-  ))}
-</WidgetSection>
+
+        {financialData.map((data, index) => (
+          <Accordion key={index} className="py-2">
+            <AccordionSummary
+              expandIcon={<IoIosArrowDown />}
+              aria-controls={`panel${index}-content`}
+              id={`panel${index}-header`}
+              className="border-b border-borderGray"
+            >
+              <div className="flex flex-wrap justify-between items-center w-full px-2 text-subtitle font-pmedium">
+                <span className="w-1/2 sm:w-1/5">{data.month}</span>
+                <span className="w-1/2 sm:w-1/5 px-4">
+                  INR {data.totalAmount.toLocaleString("en-IN")}
+                </span>
+              </div>
+            </AccordionSummary>
+            <AccordionDetails sx={{ borderTop: "1px solid #d1d5db" }}>
+              <AgTable
+                search={true}
+                data={data.tableData.rows}
+                columns={data.tableData.columns}
+                tableHeight={250}
+              />
+            </AccordionDetails>
+          </Accordion>
+        ))}
+      </WidgetSection>
 
 
       {viewDetails && (
-        <ViewDetailsModal
+        <MuiModal
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
-          data={{
-            ...viewDetails,
-            amount:
-              "INR " +
-              Number(
-                viewDetails.amount.toLocaleString("en-IN").replace(/,/g, "")
-              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-          }}
           title="Collection Details"
-          fields={[
-            { label: "Client", key: "client" },
-            { label: "Amount Paid", key: "amount" },
-            // { label: "Payment Date", key: "date" },
-            { label: "Payment Date", key: "date" },
-            { label: "Payment Status", key: "status" },
-          ]}
-        />
+        >
+          <div className="space-y-3">
+            <DetalisFormatted title="Client" detail={viewDetails.client} />
+            <DetalisFormatted
+              title="Amount Paid"
+              detail={`INR ${Number(viewDetails.amount.replace(/,/g, "")).toLocaleString("en-IN")}`}
+            />
+            <DetalisFormatted title="Payment Date" detail={viewDetails.date} />
+            <DetalisFormatted title="Payment Status" detail={viewDetails.status} />
+          </div>
+        </MuiModal>
       )}
+
     </div>
   );
 };

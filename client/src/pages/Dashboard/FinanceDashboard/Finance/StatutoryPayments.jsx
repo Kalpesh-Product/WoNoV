@@ -3,7 +3,8 @@ import WidgetSection from "../../../../components/WidgetSection";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import AgTable from "../../../../components/AgTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import MuiModal from "../../../../components/MuiModal";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 import dayjs from "dayjs";
 
 const StatutoryPayments = () => {
@@ -151,7 +152,7 @@ const StatutoryPayments = () => {
     },
   ];
 
-  const formattedRows = rows.map((row)=> ({...row,due:dayjs(row.due).format("DD-MM-YYYY")}))
+  const formattedRows = rows.map((row) => ({ ...row, due: dayjs(row.due).format("DD-MM-YYYY") }))
 
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
@@ -177,26 +178,23 @@ const StatutoryPayments = () => {
         />
       </div>
       {viewDetails && (
-        <ViewDetailsModal
+        <MuiModal
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
-          data={{
-            ...viewDetails,
-            amount:
-              "INR " +
-              Number(
-                viewDetails.amount.toLocaleString("en-IN").replace(/,/g, "")
-              ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-          }}
           title="Statutory Payment Detail"
-          fields={[
-            { label: "Client", key: "client" },
-            { label: "Amount Paid", key: "amount" },
-            { label: "Due Date", key: "due" },
-            { label: "Payment Status", key: "status" },
-          ]}
-        />
+        >
+          <div className="space-y-3">
+            <DetalisFormatted title="Client" detail={viewDetails.client} />
+            <DetalisFormatted
+              title="Amount Paid"
+              detail={`INR ${Number(viewDetails.amount.replace(/,/g, "")).toLocaleString("en-IN")}`}
+            />
+            <DetalisFormatted title="Due Date" detail={viewDetails.due} />
+            <DetalisFormatted title="Payment Status" detail={viewDetails.status} />
+          </div>
+        </MuiModal>
       )}
+
     </div>
   );
 };
