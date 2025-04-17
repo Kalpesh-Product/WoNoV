@@ -40,7 +40,7 @@ const ViewClients = () => {
   };
 
   const viewEmployeeColumns = [
-    { field: "id", headerName: "ID" },
+    { field: "id", headerName: "Sr No" },
     {
       field: "clientName",
       headerName: "Client Name",
