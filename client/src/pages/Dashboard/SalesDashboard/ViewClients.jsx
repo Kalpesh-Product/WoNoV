@@ -51,8 +51,7 @@ const ViewClients = () => {
             textDecoration: "underline",
             cursor: "pointer",
           }}
-          onClick={() => handleClickRow(params.data)}
-        >
+          onClick={() => handleClickRow(params.data)}>
           {params.value}
         </span>
       ),
@@ -170,7 +169,8 @@ const ViewClients = () => {
               localPocEmail: item.localPoc?.email,
               localPocPhone: item.localPoc?.phone,
               hoPocName: item.hOPoc?.name,
-              hoPocEmail: item.hOPoc?.email,
+              // hoPocEmail: item.hOPoc?.email,
+              hoPocEmail: item.hOPoc?.email || "client@gmail.com",
               hoPocPhone: item.hOPoc?.phone,
               isActive: item.isActive,
               createdAt: item.createdAt,
