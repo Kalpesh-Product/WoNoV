@@ -641,7 +641,7 @@ const AdminDashboard = () => {
         <DataCard
           route={"admin-expenses"}
           title={"Average"}
-          data={"60000"}
+          data={"INR 6,0000"}
           description={"Monthly Expense"}
         />,
       ],
@@ -651,14 +651,14 @@ const AdminDashboard = () => {
       widgets: [
         <DataCard
           route={"per-sq-ft-expense"}
-          title={"Total INR"}
-          data={"14"}
+          title={"Total"}
+          data={"INR 14"}
           description={"Expense Per Sq. Ft."}
         />,
         <DataCard
           route={"per-sq-ft-electricity-expense"}
-          title={"Total INR"}
-          data={"8"}
+          title={"Total"}
+          data={"INR 8"}
           description={"Electricity Expense Per Sq. Ft."}
         />,
         <DataCard

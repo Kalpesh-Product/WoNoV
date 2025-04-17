@@ -454,7 +454,7 @@ const AdminOffices = () => {
               LOCATION
             </span>
             <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              REVENUE
+            EXPENSE
             </span>
           </div>
         </div>
@@ -476,15 +476,14 @@ const AdminOffices = () => {
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 {/* Details Start */}
-                <div className="flex justify-between">
-                  <div className="flex justify-between items-center w-80 px-4">
+                  <div className="flex justify-between items-center w-full p-4">
                     <span
                       className="text-subtitle font-pmedium underline text-primary
                       cursor-pointer"
                       onClick={() => {
                         localStorage.setItem("client", domain.name);
                         navigate(
-                          `/app/dashboard/admin-dashboard/admin-offices/admin-offices-layout/${domain.name}`
+                          `/app/dashboard/admin-dashboard/admin-offices/${domain.name}`
                         );
                       }}>
                       View Layout {domain.name}
@@ -492,9 +491,9 @@ const AdminOffices = () => {
                     {/* <span className="text-subtitle font-pmedium">
                       {domain.revenue.toLocaleString()}
                     </span> */}
-                  </div>
-                  <div className="w-4/12 ">
-                    <p className="text-subtitle text-primary p-6 w-fit">
+
+                  <div >
+                    <p className="text-subtitle text-primary ">
                       <span className="font-bold">Admin Lead: </span>
                       Machindranath Parkar
                     </p>
@@ -542,7 +541,7 @@ const AdminOffices = () => {
                       flex: 1,
                     },
                     {
-                      headerName: "Actual Revenue (INR)",
+                      headerName: "Actual Expense (INR)",
                       field: "actualRevenue",
                       flex: 1,
                     },
@@ -552,7 +551,7 @@ const AdminOffices = () => {
                 <div className="flex items-center gap-4 mt-4">
                   <div className="flex items-center gap-4">
                     <span className="text-primary font-pregular">
-                      Total Revenue for {domain.name}:{" "}
+                      Total Expense for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
                       INR {domain.revenue.toLocaleString()}

@@ -509,7 +509,7 @@ const MaintainanceDashboard = () => {
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard
-              data={"40K"}
+              data={"INR 40,000"}
               title={"Projected"}
               route={"/app/dashboard/maintenance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString(
@@ -520,7 +520,7 @@ const MaintainanceDashboard = () => {
               )}-25`}
             />
             <DataCard
-              data={"35K"}
+              data={"INR 35,000"}
               title={"Actual"}
               route={"/app/dashboard/maintenance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString(
@@ -531,7 +531,7 @@ const MaintainanceDashboard = () => {
               )}-25`}
             />
             <DataCard
-              data={inrFormat("6000")}
+              data={"INR 16,000"}
               title={"Requested"}
               route={"/app/dashboard/maintenance-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString(
@@ -586,7 +586,7 @@ const MaintainanceDashboard = () => {
           description={"Offices Under Maintenance"}
         />,
         <DataCard
-          route={"revenue"}
+          // route={"revenue"}
           title={"Total"}
           data={"38"}
           description={"Monthly Due Tasks"}
@@ -594,7 +594,7 @@ const MaintainanceDashboard = () => {
         <DataCard
           route={"maintenance-expenses"}
           title={"Average"}
-          data={inrFormat("61000")}
+          data={`INR ${inrFormat("61000")}`}
           description={"Monthly Expense"}
         />,
       ],
@@ -605,7 +605,7 @@ const MaintainanceDashboard = () => {
         <DataCard
           route={"per-sq-ft-expense"}
           title={"Total"}
-          data={"350"}
+          data={"INR 350"}
           description={"Expense Per Sq. Ft."}
         />,
         <DataCard
@@ -617,7 +617,7 @@ const MaintainanceDashboard = () => {
         <DataCard
           route={"annual-expenses"}
           title={"Free"}
-          data={"200"}
+          data={"INR 200"}
           description={"Yearly Expense"}
         />,
       ],

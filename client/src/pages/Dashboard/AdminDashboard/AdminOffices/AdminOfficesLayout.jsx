@@ -18,10 +18,10 @@ const AdminOfficesLayout = () => {
   useEffect(() => {
     if (
       location.pathname ===
-      `/app/dashboard/admin-dashboard/admin-offices/admin-offices-layout/${client}`
+      `/app/dashboard/admin-dashboard/admin-offices/${client}`
     ) {
       navigate(
-        `/app/dashboard/admin-dashboard/admin-offices/admin-offices-layout/${client}/admin-offices-occupied`,
+        `/app/dashboard/admin-dashboard/admin-offices/${client}/admin-offices-occupied`,
         {
           replace: true,
         }

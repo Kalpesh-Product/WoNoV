@@ -407,7 +407,7 @@ const ItExpenses = () => {
               LOCATION
             </span>
             <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              REVENUE
+            EXPENSE
             </span>
             
           </div>
@@ -519,7 +519,7 @@ const ItExpenses = () => {
                     },
                     { headerName: "Register Date", field: "registerDate", flex: 1 },
                     {
-                      headerName: "Actual Revenue (INR)",
+                      headerName: "Actual Expense (INR)",
                       field: "actualRevenue",
                       flex: 1,
                     },
@@ -529,7 +529,7 @@ const ItExpenses = () => {
                 <div className="flex items-center gap-4 mt-4">
                   <div className="flex items-center gap-4">
                     <span className="text-primary font-pregular">
-                      Total Revenue for {domain.name}:{" "}
+                      Total Expense for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
                       INR {domain.revenue.toLocaleString()}

@@ -404,13 +404,13 @@ const ItDashboard = () => {
           description={"Due Tasks This Month"}
         />,
         <DataCard
-          data={"500"}
+          data={"INR 500"}
           title={"Total"}
           description={"Internet Expense per sq.ft"}
           route={"per-sq-ft-internet-expense"}
         />,
         <DataCard
-          data={"350"}
+          data={"INR 350"}
           title={"Total"}
           description={"Expense per sq.ft"}
           route={"per-sq-ft-expense"}

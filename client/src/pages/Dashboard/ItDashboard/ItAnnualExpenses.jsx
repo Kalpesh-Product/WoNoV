@@ -1,8 +1,19 @@
+import { useState } from "react";
 import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 import { inrFormat } from "../../../utils/currencyFormat";
+import MuiModal from "../../../components/MuiModal";
+import DetalisFormatted from "../../../components/DetalisFormatted";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const ItAnnualExpenses = () => {
+  const [data, setData] = useState([]);
+  const [openModal, setOpenModal] = useState(false);
+
+  const handleViewExpense = (expense) => {
+    setData(expense);
+    setOpenModal(true);
+  };
   const expenseColumns = [
     { field: "id", headerName: "Sr No" }, // Updated here
     { field: "category", headerName: "Category" },
@@ -12,7 +23,16 @@ const ItAnnualExpenses = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: (params) => <PrimaryButton title="Details" />,
+      cellRenderer: (params) => (
+        <div className="p-2 mb-2 flex gap-2">
+          <span
+            className="text-subtitle cursor-pointer"
+            onClick={() => handleViewExpense(params.data)}
+          >
+            <MdOutlineRemoveRedEye />
+          </span>
+        </div>
+      ),
     },
   ];
 
@@ -109,6 +129,23 @@ const ItAnnualExpenses = () => {
         ]}
         columns={expenseColumns}
       />
+
+      <MuiModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        title={"View details"}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+          <DetalisFormatted title="Category" detail={data?.category} />
+          <DetalisFormatted title="Expense Name" gap={"w-full"} detail={data?.expenseName} />
+          <DetalisFormatted title="Date" detail={data?.date} />
+          <DetalisFormatted
+            title="Amount (INR)"
+            gap={"w-full"}
+            detail={inrFormat(data?.amount)}
+          />
+        </div>
+      </MuiModal>
     </div>
   );
 };
