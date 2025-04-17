@@ -44,7 +44,7 @@ const MaintenanceOfficesLayout = () => {
           Office Layout ({client})
         </p>
         <p className="text-subtitle text-primary p-6">
-          <span className="font-bold">Maintenance Lead: </span>Amol Kakade
+          <span className="font-bold">Maintenance Lead: </span>Rajesh Sawant
         </p>
       </div>
 
