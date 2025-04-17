@@ -194,7 +194,7 @@ const MonthlyProfitLoss = () => {
       id: 9,
       month: "Dec-24",
       income: inrFormat(2200000),
-      expense: inrFormat(2200000),
+      expense: inrFormat(2100000),
       pnl: inrFormat(100000),
     }
   ];
