@@ -450,7 +450,7 @@ const ActualBusinessRevenue = () => {
       title: { text: "Verticals" }
     },
     yaxis: {
-      title: { text: "Revenue (in INR)" },
+      title: { text: "Revenue (INR)" },
       labels: {
         formatter: (value) => `INR ${value.toLocaleString("en-IN")}`
       }

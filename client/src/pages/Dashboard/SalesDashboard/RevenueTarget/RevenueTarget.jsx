@@ -428,7 +428,7 @@ const RevenueTarget = () => {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
     yaxis: {
-      title: { text: "Revenue (in INR)" },
+      title: { text: "Revenue (INR)" },
       labels: {
         formatter: (value) => `INR ${value.toLocaleString("en-IN")}`
       }
