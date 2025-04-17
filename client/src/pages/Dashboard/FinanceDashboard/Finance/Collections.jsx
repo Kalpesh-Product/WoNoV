@@ -8,6 +8,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import dayjs from "dayjs";
+import DataCard from "../../../../components/DataCard";
 
 const Collections = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -92,49 +93,12 @@ const Collections = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewModal(params.data)}>
+            onClick={() => handleViewModal(params.data)}
+          >
             <MdOutlineRemoveRedEye />
           </span>
         </div>
       ),
-    },
-  ];
-
-  const rows = [
-    {
-      srNo: 1,
-      client: "Zomato",
-      status: "Unpaid",
-      amount: "1,25,000",
-      date: "10-04-2025",
-    },
-    {
-      srNo: 2,
-      client: "Turtlemint",
-      status: "Unpaid",
-      amount: "98,500",
-      date: "11-04-2025",
-    },
-    {
-      srNo: 3,
-      client: "Zimetrics",
-      status: "Unpaid",
-      amount: "1,15,300",
-      date: "12-04-2025",
-    },
-    {
-      srNo: 4,
-      client: "SquadStack",
-      status: "Unpaid",
-      amount: "1,40,000",
-      date: "13-04-2025",
-    },
-    {
-      srNo: 5,
-      client: "Uber",
-      status: "Unpaid",
-      amount: "1,22,750",
-      date: "14-04-2025",
     },
   ];
 
@@ -197,13 +161,21 @@ const Collections = () => {
     0
   );
 
-
   return (
     <div className="p-4 flex flex-col gap-8">
-      <WidgetSection title={"COLLECTIONS"} titleLabel={"FY 2024-25"} border>
+      <WidgetSection
+        layout={1}
+        title={"COLLECTIONS"}
+        titleLabel={"FY 2024-25"}
+        border
+      >
         <BarGraph data={barGraphData} options={barGraphOptions} />
+        <hr />
+        <WidgetSection layout={2}>
+          <DataCard title={"Paid"} description={"Current Month :Apr-24"} route={"paid"}/>
+          <DataCard title={"Unpaid"} description={"Current Month :Apr-24"} data={40} />
+        </WidgetSection>
       </WidgetSection>
-
       <WidgetSection
         border
         title="Collections"
@@ -214,7 +186,9 @@ const Collections = () => {
         <div className="px-4 py-2 border-b border-borderGray bg-gray-50">
           <div className="flex flex-wrap justify-between items-center py-2 text-sm text-muted font-pmedium text-title">
             <span className="w-1/2 sm:w-1/5">FINANCIAL YEAR</span>
-            <span className="w-1/2 sm:w-1/5 flex items-center gap-1">AMOUNT</span>
+            <span className="w-1/2 sm:w-1/5 flex items-center gap-1">
+              AMOUNT
+            </span>
           </div>
         </div>
 
@@ -245,7 +219,6 @@ const Collections = () => {
         ))}
       </WidgetSection>
 
-
       {viewDetails && (
         <MuiModal
           open={viewModalOpen}
@@ -256,14 +229,18 @@ const Collections = () => {
             <DetalisFormatted title="Client" detail={viewDetails.client} />
             <DetalisFormatted
               title="Amount Paid"
-              detail={`INR ${Number(viewDetails.amount.replace(/,/g, "")).toLocaleString("en-IN")}`}
+              detail={`INR ${Number(
+                viewDetails.amount.replace(/,/g, "")
+              ).toLocaleString("en-IN")}`}
             />
             <DetalisFormatted title="Payment Date" detail={viewDetails.date} />
-            <DetalisFormatted title="Payment Status" detail={viewDetails.status} />
+            <DetalisFormatted
+              title="Payment Status"
+              detail={viewDetails.status}
+            />
           </div>
         </MuiModal>
       )}
-
     </div>
   );
 };

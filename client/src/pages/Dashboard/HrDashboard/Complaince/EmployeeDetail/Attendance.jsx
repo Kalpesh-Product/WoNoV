@@ -70,7 +70,7 @@ const Attendance = () => {
     },
   });
   const attendanceColumns = [
-    { field: "id", headerName: "Sr.No", width: 100 },
+    { field: "id", headerName: "Sr No", width: 100 },
     { field: "date", headerName: "Date", width: 200 },
     { field: "inTime", headerName: "In Time" },
     { field: "outTime", headerName: "Out Time" },
@@ -245,12 +245,12 @@ const Attendance = () => {
     {
       name: "Green (Completed)",
       data: attendanceData.map((entry) => entry.sections[1].value), // Green section values
-      color: "#34a853",
+      color: "#54C4A7",
     },
     {
       name: "Red (Remaining)",
       data: attendanceData.map((entry) => entry.sections[2].value), // Red section values
-      color: "#ff0000",
+      color: "#EB5C45",
     },
   ];
 
@@ -378,24 +378,24 @@ const Attendance = () => {
               title={"Accurate Checkins"}
               description={`Current Month : ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                { month: "short" }
+              )}-24`}
             />
             <DataCard
               data={"8"}
               title={"Late Checkins"}
               description={`Current Month : ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                { month: "short" }
+              )}-24`}
             />
             <DataCard
               data={"10"}
               title={"Late Checkouts"}
               description={`Current Month : ${new Date().toLocaleString(
                 "default",
-                { month: "long" }
-              )}`}
+                { month: "short" }
+              )}-24`}
             />
           </WidgetSection>
         </WidgetSection>
@@ -428,7 +428,7 @@ const Attendance = () => {
               : attendance.map((record, index) => ({
                   id: index + 1,
                   // date: humanDate(record.date),
-                  date: humanDate(record.inTime),
+                  date: humanDate(record.inTime) ,
                   inTime: humanTime(record.inTime),
                   outTime: humanTime(record.outTime),
                   // workHours: record.workHours,

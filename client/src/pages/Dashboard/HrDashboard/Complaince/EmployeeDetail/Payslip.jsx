@@ -29,7 +29,7 @@ const Payslip = () => {
 
   const payslipColumns = [
     {
-      headerName: "S. No",
+      headerName: "Sr No",
       field: "serialNo",
       valueGetter: (params) => params.node.rowIndex + 1,
       maxWidth: 100,

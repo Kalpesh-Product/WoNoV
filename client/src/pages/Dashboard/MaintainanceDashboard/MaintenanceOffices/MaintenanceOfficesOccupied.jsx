@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import clearImage from "../../../../assets/biznest/clear-seats.png";
-import occupiedImage from "../../../../assets/biznest/occupied-seats.png";
+import occupiedImage from "../../../../assets/biznest/occupancy/occupied-701.jpeg";
 import { Chip } from "@mui/material";
 
 const MaintenanceOfficesOccupied = () => {
@@ -123,10 +123,10 @@ const MaintenanceOfficesOccupied = () => {
           {/* <div className="py-2 text-center">
             <p className="text-primary text-lg font-bold">Occupied</p>
           </div> */}
-          <div>
+          <div className="flex justify-center items-center">
             <img
               // className="w-[90%] h-[80%] object-contain cursor-pointer"
-              className="w-full h-[80%] object-contain cursor-pointer"
+              className="w-[50%] h-[80%] object-contain cursor-pointer"
               src={occupiedImage}
               alt="Image"
             />

@@ -13,7 +13,6 @@ import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useNavigate } from "react-router-dom";
-import { inrFormat } from "../../../../utils/currencyFormat";
 import dayjs from "dayjs";
 
 const ItOffices = () => {
@@ -24,319 +23,195 @@ const ItOffices = () => {
       domains: [
         {
           name: "ST-701A",
-          revenue: 10,
+          revenue: 226000, // 85000 + 72000 + 69000
           clients: [
             {
               client: "Zomato",
-              representative: "John Doe",
+              representative: "Rajesh Kumar",
               registerDate: "2024-01-15",
-              actualRevenue: 5000,
+              actualRevenue: 85000,
             },
             {
               client: "Uber",
-              representative: "Jane Smith",
+              representative: "Neha Sharma",
               registerDate: "2024-02-10",
-              actualRevenue: 4000,
+              actualRevenue: 72000,
             },
             {
               client: "Ola",
-              representative: "Alice Johnson",
+              representative: "Amit Verma",
               registerDate: "2024-03-05",
-              actualRevenue: 3000,
+              actualRevenue: 69000,
             },
           ],
         },
         {
           name: "ST-701B",
-          revenue: 10,
+          revenue: 138000, // 60000 + 78000
           clients: [
             {
-              client: "Client D",
-              representative: "Bob Brown",
+              client: "Tata Consultancy Services",
+              representative: "Sunil Mehra",
               registerDate: "2024-01-20",
-              actualRevenue: 4000,
+              actualRevenue: 60000,
             },
             {
-              client: "Client E",
-              representative: "Charlie White",
+              client: "Infosys",
+              representative: "Priya Iyer",
               registerDate: "2024-02-25",
-              actualRevenue: 4000,
+              actualRevenue: 78000,
             },
           ],
         },
         {
           name: "ST-601A",
-          revenue: 10,
+          revenue: 208000, // 52000 + 97000 + 59000
           clients: [
-            { client: "Client F", revenue: 5000 },
-            { client: "Client G", revenue: 7000 },
-            { client: "Client H", revenue: 3000 },
+            {
+              client: "Reliance Industries",
+              representative: "Deepak Nair",
+              registerDate: "2024-01-18",
+              actualRevenue: 52000,
+            },
+            {
+              client: "Wipro",
+              representative: "Kavita Rao",
+              registerDate: "2024-02-22",
+              actualRevenue: 97000,
+            },
+            {
+              client: "Mahindra & Mahindra",
+              representative: "Suresh Menon",
+              registerDate: "2024-03-09",
+              actualRevenue: 59000,
+            },
           ],
         },
         {
           name: "ST-601B",
-          revenue: 10,
+          revenue: 207000, // 64000 + 89000 + 54000
           clients: [
             {
-              client: "Client F",
-              representative: "Daniel Green",
+              client: "Reliance Industries",
+              representative: "Anjali Desai",
               registerDate: "2024-03-12",
-              actualRevenue: 5000,
+              actualRevenue: 64000,
             },
             {
-              client: "Client G",
-              representative: "Eva Black",
+              client: "Wipro",
+              representative: "Ravi Chandra",
               registerDate: "2024-04-18",
-              actualRevenue: 7000,
+              actualRevenue: 89000,
             },
             {
-              client: "Client H",
-              representative: "Frank Blue",
+              client: "Mahindra & Mahindra",
+              representative: "Meena Joshi",
               registerDate: "2024-05-10",
-              actualRevenue: 3000,
+              actualRevenue: 54000,
             },
           ],
         },
         {
           name: "ST-501A",
-          revenue: 10,
+          revenue: 232000, // 77000 + 94000 + 61000
           clients: [
             {
-              client: "Client F",
-              representative: "Daniel Green",
+              client: "Reliance Industries",
+              representative: "Anjali Desai",
               registerDate: "2024-03-12",
-              actualRevenue: 5000,
+              actualRevenue: 77000,
             },
             {
-              client: "Client G",
-              representative: "Eva Black",
+              client: "Wipro",
+              representative: "Ravi Chandra",
               registerDate: "2024-04-18",
-              actualRevenue: 7000,
+              actualRevenue: 94000,
             },
             {
-              client: "Client H",
-              representative: "Frank Blue",
+              client: "Mahindra & Mahindra",
+              representative: "Meena Joshi",
               registerDate: "2024-05-10",
-              actualRevenue: 3000,
+              actualRevenue: 61000,
             },
           ],
         },
       ],
     },
+    
+  
     {
       month: "May",
       domains: [
         {
-          name: "Co-Working",
-          revenue: 10,
+          name: "ST-701A",
+          revenue: 150000, // 60000 + 50000 + 40000
           clients: [
             {
-              client: "Client I",
-              representative: "Grace Orange",
+              client: "Paytm",
+              representative: "Ravi Bhatia",
               registerDate: "2024-02-11",
-              actualRevenue: 6000,
+              actualRevenue: 60000,
             },
             {
-              client: "Client J",
-              representative: "Hank Purple",
+              client: "Byju's",
+              representative: "Sneha Kapoor",
               registerDate: "2024-03-09",
-              actualRevenue: 5000,
+              actualRevenue: 50000,
             },
             {
-              client: "Client K",
-              representative: "Isabel Cyan",
+              client: "Swiggy",
+              representative: "Ankit Reddy",
               registerDate: "2024-04-14",
-              actualRevenue: 4000,
+              actualRevenue: 40000,
             },
           ],
         },
         {
-          name: "Workation",
-          revenue: 9000,
+          name: "ST-701B",
+          revenue: 90000, // 50000 + 40000
           clients: [
             {
-              client: "Client L",
-              representative: "Jack Gray",
+              client: "HDFC Bank",
+              representative: "Rohit Joshi",
               registerDate: "2024-02-28",
-              actualRevenue: 5000,
+              actualRevenue: 50000,
             },
             {
-              client: "Client M",
-              representative: "Kara Silver",
+              client: "ICICI Bank",
+              representative: "Pooja Nair",
               registerDate: "2024-03-07",
-              actualRevenue: 4000,
+              actualRevenue: 40000,
             },
           ],
         },
         {
-          name: "Co-Living",
-          revenue: 14000,
+          name: "ST-601A",
+          revenue: 140000, // 60000 + 50000 + 30000
           clients: [
             {
-              client: "Client N",
-              representative: "Leo Gold",
+              client: "Asian Paints",
+              representative: "Nikhil Rao",
               registerDate: "2024-05-20",
-              actualRevenue: 6000,
+              actualRevenue: 60000,
             },
             {
-              client: "Client O",
-              representative: "Mia Platinum",
+              client: "Tanishq",
+              representative: "Isha Kulkarni",
               registerDate: "2024-06-08",
-              actualRevenue: 5000,
+              actualRevenue: 50000,
             },
             {
-              client: "Client P",
-              representative: "Noah Bronze",
+              client: "Amul",
+              representative: "Vikas Sharma",
               registerDate: "2024-07-15",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "June",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 18000,
-          clients: [
-            {
-              client: "Client Q",
-              representative: "Olivia Rose",
-              registerDate: "2024-01-30",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client R",
-              representative: "Peter Brown",
-              registerDate: "2024-02-18",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client S",
-              representative: "Quincy Black",
-              registerDate: "2024-03-26",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 10000,
-          clients: [
-            {
-              client: "Client T",
-              representative: "Rachel Violet",
-              registerDate: "2024-04-12",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client U",
-              representative: "Sam Indigo",
-              registerDate: "2024-05-07",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 13000,
-          clients: [
-            {
-              client: "Client V",
-              representative: "Tina Lilac",
-              registerDate: "2024-06-05",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client W",
-              representative: "Umar Yellow",
-              registerDate: "2024-07-08",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Client X",
-              representative: "Victor Pink",
-              registerDate: "2024-08-15",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "July",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 20000,
-          clients: [
-            {
-              client: "Client Y",
-              representative: "Wendy Red",
-              registerDate: "2024-03-10",
-              actualRevenue: 8000,
-            },
-            {
-              client: "Client Z",
-              representative: "Xavier Green",
-              registerDate: "2024-04-14",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client AA",
-              representative: "Yara Blue",
-              registerDate: "2024-05-16",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 11000,
-          clients: [
-            {
-              client: "Client AB",
-              representative: "Zane Orange",
-              registerDate: "2024-06-20",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client AC",
-              representative: "Adam Gray",
-              registerDate: "2024-07-10",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 16000,
-          clients: [
-            {
-              client: "Client AD",
-              representative: "Betty Silver",
-              registerDate: "2024-08-25",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client AE",
-              representative: "Charlie Platinum",
-              registerDate: "2024-09-14",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client AF",
-              representative: "David Bronze",
-              registerDate: "2024-10-05",
-              actualRevenue: 3000,
+              actualRevenue: 30000,
             },
           ],
         },
       ],
     },
   ];
+  
 
   const [selectedMonth, setSelectedMonth] = useState(
     mockBusinessRevenueData[0].month
@@ -352,21 +227,40 @@ const ItOffices = () => {
     (data) => data.month === selectedMonth
   );
 
+  if (selectedMonthData) {
+    selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
+      const updatedClients = domain.clients.map((client, index) => ({
+        ...client,
+        srNo: index + 1,
+        registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
+        actualRevenue: Number(client.actualRevenue).toLocaleString("en-IN"),
+      }));
+      return { ...domain, clients: updatedClients };
+    });
+  }
+
   // Prepare Bar Graph Data
   const graphData = [
     {
-      name: "Revenue",
-      data: selectedMonthData.domains.map((domain) => domain.revenue),
+      // name: "Revenue",
+      name: "Offices",
+      data: selectedMonthData.domains.map((domain) => domain.clients.length),
+
     },
   ];
 
   // Graph Options
   const options = {
-    chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular",toolbar:false },
+    chart: {
+      type: "bar",
+      toolbar: false,
+      stacked: false,
+      fontFamily: "Poppins-Regular",
+    },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
-    yaxis: { title: { text: "Number Of Offices" } },
+    yaxis: { title: { text: "Number Of Offices" }, tickAmount: 3 },
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
@@ -384,7 +278,8 @@ const ItOffices = () => {
             label="Select Month"
             value={selectedMonth}
             onChange={handleMonthChange}
-            sx={{ width: "200px" }}>
+            sx={{ width: "200px" }}
+          >
             {mockBusinessRevenueData.map((data) => (
               <MenuItem key={data.month} value={data.month}>
                 {data.month}
@@ -418,7 +313,8 @@ const ItOffices = () => {
               <AccordionSummary
                 expandIcon={<IoIosArrowDown />}
                 aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}>
+                id={`panel-${index}-header`}
+              >
                 <div className="flex justify-between items-center w-full px-4">
                   <span className="text-subtitle font-pmedium  ">
                     {domain.name}
@@ -431,57 +327,37 @@ const ItOffices = () => {
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 {/* Details Start */}
                 <div className="flex justify-between">
-                  <div className="flex justify-between items-center w-80 px-4">
+                  <div className="flex justify-between items-center w-full">
                     <span
-                      className="text-subtitle font-pmedium underline text-primary"
+                      className="text-subtitle font-pmedium underline text-primary cursor-pointer"
                       onClick={() => {
                         localStorage.setItem("client", domain.name);
                         navigate(
-                          `/app/dashboard/it-dashboard/it-offices/it-offices-layout/${domain.name}`
+                          `/app/dashboard/admin-dashboard/admin-offices/admin-offices-layout/${domain.name}`
                         );
-                      }}>
+                      }}
+                    >
                       View Layout {domain.name}
                     </span>
-                    {/* <span className="text-subtitle font-pmedium">
-                      {domain.revenue.toLocaleString()}
-                    </span> */}
-                  </div>
-                  <div className="w-4/12 ">
-                    <p className="text-subtitle text-primary p-6 w-fit">
-                      <span className="font-bold">Admin Lead: </span>
-                      Machindranath Parkar
-                    </p>
+
+                    <div className="">
+                      <p className="text-subtitle text-primary p-6 w-fit">
+                        <span className="font-bold">Maintenance Lead: </span>
+                        Machindranath Parkar
+                      </p>
+                    </div>
                   </div>
                 </div>
                 {/* Details End */}
                 <AgTable
-                  data={domain.clients.map((client,index)=>({...client,srNo:index+1,actualRevenue:inrFormat(client.actualRevenue),
-                  registerDate:dayjs(client.registerDate).format("DD-MM-YYYY")
-                  }))}
+                  data={domain.clients}
                   hideFilter
                   columns={[
                     {
-                      header: "Sr No",
+                      headerName: "Sr No",
                       field: "srNo",
                       flex: 1,
-                      // cellRenderer: (params) => (
-                      //   <span
-                      //     style={{
-                      //       color: "#1E3D73",
-                      //       textDecoration: "underline",
-                      //       cursor: "pointer",
-                      //     }}
-                      //     onClick={() => {
-                      //       localStorage.setItem("client", params.data.client);
-                      //       navigate(
-                      //         `/app/dashboard/it-dashboard/it-offices/it-offices-layout/${params.data.client}`
-                      //       );
-                      //     }}>
-                      //     {params.value}
-                      //   </span>
-                      // ),
                     },
-                   
                     {
                       headerName: "Client",
                       field: "client",
@@ -502,7 +378,6 @@ const ItOffices = () => {
                       field: "actualRevenue",
                       flex: 1,
                     },
-                   
                   ]}
                   tableHeight={300}
                 />

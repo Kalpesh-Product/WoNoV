@@ -1,14 +1,36 @@
-import React from "react";
+import React, { useState } from "react";
 import AgTable from "../../../../../components/AgTable";
 import BarGraph from "../../../../../components/graphs/BarGraph";
 import CustomYAxis from "../../../../../components/graphs/CustomYAxis";
 import WidgetSection from "../../../../../components/WidgetSection";
 import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
+import humanDate from "../../../../../utils/humanDateForamt";
+import PrimaryButton from "../../../../../components/PrimaryButton";
+import SecondaryButton from "../../../../../components/SecondaryButton";
+import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import { Controller, useForm } from "react-hook-form";
+import MuiModal from "../../../../../components/MuiModal";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { TextField } from "@mui/material";
+import dayjs from "dayjs";
+import { toast } from "sonner";
 
 const Leaves = () => {
   const axios = useAxiosPrivate();
+    const queryClient = useQueryClient();
+    const { control, reset, handleSubmit } = useForm({
+      defaultValues: {
+        fromDate: null,
+        toDate: null,
+        leavetype:"",
+        leavePeriod:null,
+        hours:0,
+        description:""
+      },
+    });
+    const [openModal, setOpenModal] = useState(false);
   const { id } = useParams();
   const name = localStorage.getItem("employeeName") || "Employee";
   const { data: leaves = [] } = useQuery({
@@ -22,8 +44,28 @@ const Leaves = () => {
       }
     },
   });
+
+   const { mutate: correctionPost, isPending: correctionPending } = useMutation({
+      mutationFn: async (data) => {
+        const response = await axios.patch("/api/attendance/correct-attendance", {
+          ...data,
+          empId: id,
+        });
+        return response.data;
+      },
+      onSuccess: function (data) {
+        setOpenModal(false);
+        toast.success(data.message);
+        queryClient.invalidateQueries({ queryKey: ["attendance"] });
+        reset();
+      },
+      onError: function (error) {
+        toast.error(error.response.data.message);
+      },
+    });
+
   const leavesColumn = [
-    { field: "id", headerName: "Sr.No" },
+    { field: "id", headerName: "Sr No" },
     { field: "fromDate", headerName: "From Date" },
     { field: "toDate", headerName: "To Date" },
     { field: "leaveType", headerName: "Leave Type" },
@@ -187,6 +229,11 @@ const Leaves = () => {
     legend: { show: false },
   };
   
+  
+  const onSubmit = (data) => {
+    correctionPost(data);
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -206,19 +253,14 @@ const Leaves = () => {
           searchColumn={"Leave Type"}
           tableTitle={`${name}'s Leaves`}
           buttonTitle={"Add Requested Leave"}
+          handleClick={() => {
+            setOpenModal(true);
+          }}
           data={[
             ...leaves.map((leave, index) => ({
               id: index + 1,
-              fromDate: new Intl.DateTimeFormat("en-GB", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              }).format(new Date(leave.fromDate)),
-              toDate: new Intl.DateTimeFormat("en-GB", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              }).format(new Date(leave.toDate)),
+              fromDate:  humanDate(leave.fromDate),
+              toDate: humanDate(leave.toDate),
               leaveType: leave.leaveType,
               leavePeriod: leave.leavePeriod,
               hours: leave.hours,
@@ -229,6 +271,98 @@ const Leaves = () => {
           columns={leavesColumn}
         />
       </div>
+           <MuiModal
+              title={"Leave Request"}
+              open={openModal}
+              onClose={() => {
+                setOpenModal(false);
+              }}
+            >
+              <div>
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  className="flex flex-col gap-4"
+                >
+                  <Controller
+                    name="fromDate"
+                    control={control}
+                    render={({ field }) => (
+                      <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                          {...field}
+                          label={"From Date"}
+                          format="DD-MM-YYYY"
+                          value={field.value ? dayjs(field.value) : null}
+                          onChange={(date) => {
+                            field.onChange(date ? date.toISOString() : null);
+                          }}
+                        />
+                      </LocalizationProvider>
+                    )}
+                  />
+                  <Controller
+                    name="toDate"
+                    control={control}
+                    render={({ field }) => (
+                      <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                          {...field}
+                          label={"To Date"}
+                          format="DD-MM-YYYY"
+                          value={field.value ? dayjs(field.value) : null}
+                          onChange={(date) => {
+                            field.onChange(date ? date.toISOString() : null);
+                          }}
+                        />
+                      </LocalizationProvider>
+                    )}
+                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Controller
+                      name="inTime"
+                      control={control}
+                      render={({ field }) => (
+                        <TimePicker
+                          {...field}
+                          label={"Select In-Time"}
+                          slotProps={{ textField: { size: "small" } }}
+                          render={(params) => <TextField {...params} fullWidth />}
+                        />
+                      )}
+                    />
+                  </LocalizationProvider>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Controller
+                      name="outTime"
+                      control={control}
+                      render={({ field }) => (
+                        <TimePicker
+                          {...field}
+                          label={"Select Out-Time"}
+                          slotProps={{ textField: { size: "small" } }}
+                          render={(params) => <TextField {...params} fullWidth />}
+                        />
+                      )}
+                    />
+                  </LocalizationProvider>
+      
+                  <div className="flex items-center justify-center gap-4">
+                    <SecondaryButton
+                      title={"Cancel"}
+                      handleSubmit={() => {
+                        setOpenModal(false);
+                      }}
+                    />
+                    <PrimaryButton
+                      title={"Submit"}
+                      type={"submit"}
+                      isLoading={correctionPending}
+                      disabled={correctionPending}
+                    />
+                  </div>
+                </form>
+              </div>
+            </MuiModal>
     </div>
   );
 };

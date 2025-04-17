@@ -20,10 +20,6 @@ import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
 
-const LayerBarGraph = lazy(() =>
-  import("../../../components/graphs/LayerBarGraph")
-);
-
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
 

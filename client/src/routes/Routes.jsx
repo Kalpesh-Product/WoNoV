@@ -311,6 +311,7 @@ import CafeLayout from "../pages/Dashboard/CafeDashboard/CafeLayout";
 import CafeDashboard from "../pages/Dashboard/CafeDashboard/CafeDashboard";
 import DeptWiseBudgetDetails from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudgetDetails";
 import LandlordPaymentLocation from "../pages/Dashboard/FinanceDashboard/Finance/LandlordPaymentLocation";
+import CollectionsLayout from "../pages/Dashboard/FinanceDashboard/Finance/CollectionsLayout";
 
 export const routes = createBrowserRouter([
   {
@@ -568,6 +569,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "collections",
                             element: <Collections />,
+                          },
+                          {
+                            path : "collections/paid",
+                            element:<CollectionsLayout />,
                           },
                           {
                             path: "statutory-payments",
