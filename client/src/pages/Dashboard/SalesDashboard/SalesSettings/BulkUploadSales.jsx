@@ -9,7 +9,7 @@ const BulkUpload = () => {
   const uploadItems = ["Upload Budget"];
 
   const bulkUploadDataColumns = [
-    { field: "srNo", headerName: "SR No", flex: 1 },
+    { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "templateName", headerName: "Template Name", flex: 1 },
     { field: "uploadedBy", headerName: "Uploaded By", flex: 1 },
     { field: "date", headerName: "Date", flex: 1 },

@@ -129,7 +129,7 @@ const LeadsLayout = ({ hideAccordion, data }) => {
               >
                 <div className="flex justify-between items-center w-full px-4">
                   <span className="text-subtitle font-medium">
-                    {data.month}
+                  {dayjs(data.month, "MMMM-YY").format("MMM-YY")}
                   </span>
                   <span className="px-8 text-subtitle font-medium">
                    {data.clients.length}

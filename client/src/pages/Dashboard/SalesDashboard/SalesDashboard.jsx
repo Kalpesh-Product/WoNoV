@@ -182,7 +182,7 @@ const SalesDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/company/fetch-units");
-        console.log(response.data);
+     
         return response.data;
       } catch (error) {
         console.error("Error fetching clients data:", error);
@@ -201,7 +201,7 @@ const SalesDashboard = () => {
         : 0),
     0
   );
-  console.log("Total available seats : ", totalCoWorkingSeats);
+ 
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
   //-----------------------------------------------Conversion of leads into graph-----------------------------------------------------------//
 
@@ -216,7 +216,7 @@ const SalesDashboard = () => {
 
       const createdMonth = `${dayjs(lead.startDate).month()}`; // 0 = Jan, 11 = Dec
 
-      console.log(dayjs(lead.startDate).year());
+    
       // Initialize if domain not yet seen
       if (!domainMap[domain]) {
         domainMap[domain] = Array(12).fill(0);

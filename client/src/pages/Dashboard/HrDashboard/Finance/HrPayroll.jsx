@@ -68,7 +68,7 @@ const HrPayroll = () => {
   };
 
   const payrollColumn = [
-    { field: "id", headerName: "Sr. No." },
+    { field: "id", headerName: "Sr No" },
     { field: "payrollId", headerName: "Employee ID" },
     {
       field: "employeeName",
