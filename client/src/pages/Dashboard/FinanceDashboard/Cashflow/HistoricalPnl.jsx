@@ -652,7 +652,7 @@ const HistoricalPnl = () => {
   </div>
 </div>
 
-</div>
+      </div>
 
         {selectedMonthData.domains.map((domain, index) => {
           return (
