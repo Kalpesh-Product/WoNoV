@@ -422,7 +422,7 @@ const AdminPerSqFtExpense = () => {
               LOCATION
             </span>
             <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              REVENUE
+              EXPENSE
             </span>
             
           </div>
