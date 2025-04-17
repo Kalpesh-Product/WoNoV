@@ -1,12 +1,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
-import clearImage from "../../../../assets/biznest/clear-seats.png";
-import occupiedImage from "../../../../assets/biznest/occupied-seats.png";
+import clearImage from "../../../../assets/biznest/occupancy/clear-701.png";
 import { Chip } from "@mui/material";
 
 const AdminOfficesClear = () => {
-  const navigate = useNavigate();
 
   const viewEmployeeColumns = [
     { field: "srno", headerName: "Total Seats" },
@@ -137,10 +135,10 @@ const AdminOfficesClear = () => {
             {" "}
             <p className="text-primary text-lg font-bold">Clear</p>
           </div> */}
-          <div>
+          <div className="flex justify-center items-center">
             <img
               // className="w-[90%] h-[80%] object-contain cursor-pointer"
-              className="w-full h-[80%] object-contain cursor-pointer"
+              className="w-[50%] h-[80%] object-contain cursor-pointer"
               src={clearImage}
               alt="Image"
             />

@@ -333,7 +333,7 @@ const MaintenanceOffices = () => {
                       onClick={() => {
                         localStorage.setItem("client", domain.name);
                         navigate(
-                          `/app/dashboard/admin-dashboard/admin-offices/admin-offices-layout/${domain.name}`
+                          `/app/dashboard/maintenance-dashboard/maintenance-offices/maintenance-offices-layout/${domain.name}`
                         );
                       }}
                     >

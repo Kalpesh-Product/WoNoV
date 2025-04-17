@@ -79,7 +79,7 @@ const KPI = () => {
 
   const kpiColumn = [
     {
-      headerName: "S. No",
+      headerName: "Sr No",
       field: "serialNumber",
       valueGetter: (params) => params.node.rowIndex + 1,
       width: 100,

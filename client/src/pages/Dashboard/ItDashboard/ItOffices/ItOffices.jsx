@@ -433,7 +433,7 @@ const ItOffices = () => {
                 <div className="flex justify-between">
                   <div className="flex justify-between items-center w-80 px-4">
                     <span
-                      className="text-subtitle font-pmedium underline text-primary"
+                      className="text-subtitle font-pmedium underline text-primary cursor-pointer"
                       onClick={() => {
                         localStorage.setItem("client", domain.name);
                         navigate(
