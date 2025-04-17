@@ -20,10 +20,6 @@ import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
 
-const LayerBarGraph = lazy(() =>
-  import("../../../components/graphs/LayerBarGraph")
-);
-
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
 
@@ -485,8 +481,8 @@ const HrDashboard = () => {
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
                   "default",
-                  { month: "long" }
-                )}`}
+                  { month: "short" }
+                )}-24`}
               />
               <DataCard
                 data={"INR " + inrFormat("150000")}
@@ -494,8 +490,8 @@ const HrDashboard = () => {
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
                   "default",
-                  { month: "long" }
-                )}`}
+                  { month: "short" }
+                )}-24`}
               />
               <DataCard
                 data={"INR " + inrFormat(12000)}
@@ -503,8 +499,8 @@ const HrDashboard = () => {
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
                   "default",
-                  { month: "long" }
-                )}`}
+                  { month: "short" }
+                )}-24`}
               />
             </WidgetSection>
           </WidgetSection>

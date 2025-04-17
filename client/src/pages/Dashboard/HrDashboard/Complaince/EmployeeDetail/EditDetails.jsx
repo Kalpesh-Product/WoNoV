@@ -8,10 +8,13 @@ import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { useLocation, useSearchParams } from "react-router-dom";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+
+dayjs.extend(customParseFormat);
 
 const EditDetails = () => {
-  const location = useLocation();
-  const { id, firstName } = useParams(); // both are available
+  const { id } = useParams(); // both are available
   const axios = useAxiosPrivate();
   const { data: employeeData, isLoading } = useQuery({
     queryKey: ["employeeData"],
@@ -78,6 +81,10 @@ const EditDetails = () => {
   const handleReset = () => {
     reset();
   };
+
+  const transformEmployeeData = isLoading ? [] : {...employeeData,dob:dayjs(employeeData.dob,"DD/MM/YYYY").format("DD-MM-YYYY"),
+    startDate:dayjs(employeeData.startDate, "DD/MM/YYYY").format("DD-MM-YYYY")}
+
 
   return (
     <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4 ">
@@ -148,7 +155,7 @@ const EditDetails = () => {
                               </div>
                               <div className="w-full">
                                 <span className="text-gray-500">
-                                  {employeeData[fieldKey]}
+                                  {transformEmployeeData[fieldKey]}
                                 </span>
                               </div>
                             </div>
@@ -208,7 +215,7 @@ const EditDetails = () => {
                               </div>
                               <div className="w-full">
                                 <span className="text-gray-500">
-                                  {employeeData[fieldKey]}
+                                  {transformEmployeeData[fieldKey]}
                                 </span>
                               </div>
                             </div>
@@ -264,9 +271,9 @@ const EditDetails = () => {
                               <div className="w-full">
                                 {["leavePolicy", "holidayPolicy"].includes(
                                   fieldKey
-                                ) && employeeData[fieldKey] ? (
+                                ) && transformEmployeeData[fieldKey] ? (
                                   <a
-                                    href={employeeData[fieldKey]}
+                                    href={transformEmployeeData[fieldKey]}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-600 underline"
@@ -279,7 +286,7 @@ const EditDetails = () => {
                                   </a>
                                 ) : (
                                   <span className="text-gray-500">
-                                    {employeeData[fieldKey]}
+                                    {transformEmployeeData[fieldKey]}
                                   </span>
                                 )}
                               </div>
@@ -333,7 +340,7 @@ const EditDetails = () => {
                               </div>
                               <div className="w-full">
                                 <span className="text-gray-500">
-                                  {employeeData[fieldKey]}
+                                  {transformEmployeeData[fieldKey]}
                                 </span>
                               </div>
                             </div>
@@ -390,7 +397,7 @@ const EditDetails = () => {
                               </div>
                               <div className="w-full">
                                 <span className="text-gray-500">
-                                  {employeeData[fieldKey]}
+                                  {transformEmployeeData[fieldKey]}
                                 </span>
                               </div>
                             </div>
@@ -450,7 +457,7 @@ const EditDetails = () => {
                               </div>
                               <div className="w-full">
                                 <span className="text-gray-500">
-                                  {employeeData[fieldKey]}
+                                  {transformEmployeeData[fieldKey]}
                                 </span>
                               </div>
                             </div>

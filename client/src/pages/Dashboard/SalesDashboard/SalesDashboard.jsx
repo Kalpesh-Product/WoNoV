@@ -651,24 +651,25 @@ const SalesDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection layout={1} title={"Sector-wise Occupancy"} border>
+        <WidgetSection layout={1} title={"Sector-wise Occupancy"} border >
           {!isClientsDataPending ? (
             <PieChartMui
               data={sectorPieData}
               options={sectorPieChartOptions}
               width={"100%"}
-              // height={350}
+              
             />
           ) : (
             <CircularProgress color="#1E3D73" />
           )}
         </WidgetSection>,
-        <WidgetSection layout={1} title={"Client-wise Occupancy"} border>
+        <WidgetSection layout={1} title={"Client-wise Occupancy"} border >
           {!isClientsDataPending ? (
             <PieChartMui
               data={totalDeskPercent}
               options={clientsDesksPieOptions}
               width={"100%"}
+              
             />
           ) : (
             <CircularProgress color="#1E3D73" />

@@ -101,7 +101,7 @@ const tasksMonthlyOptions = {
     show: true,
     position: "top",
   },
-  colors: ["#28a745", "#dc3545"], // Green for completed, Red for pending
+  colors: ["#54C4A7", "#EB5C45"], // Green for completed, Red for pending
   tooltip: {
     custom: function ({ dataPointIndex, w }) {
       const totalAssigned = totalAllocated[dataPointIndex];
