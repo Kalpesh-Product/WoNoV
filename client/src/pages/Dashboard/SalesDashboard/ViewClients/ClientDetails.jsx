@@ -5,6 +5,8 @@ import { Controller, useForm } from "react-hook-form";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
+import humanDate from "../../../../utils/humanDateForamt";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const ClientDetails = () => {
   const selectedClient = useSelector((state) => state.client.selectedClient);
@@ -83,7 +85,6 @@ const ClientDetails = () => {
       });
     }
   }, [selectedClient, reset]);
- 
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -168,7 +169,6 @@ const ClientDetails = () => {
                   )}
                 </div>
               </div>
-
               {/* Section: Company Details */}
               <div>
                 <div className="py-4 border-b-default border-borderGray">
@@ -227,64 +227,288 @@ const ClientDetails = () => {
               <div>
                 <div className="py-4 border-b-default border-borderGray">
                   <span className="text-subtitle font-pmedium">
-                    Company Details
+                    Agreement Details
                   </span>
                 </div>
 
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {[
-                    "annualIncrement",
-                    "perDeskMeetingCredits",
-                    "totalMeetingCredits",
-                    "startDate",
-                    "endDate",
-                    "lockinPeriod",
-                    "rentDate",
-                    "nextIncrement",
-                  ].map((fieldKey) => (
-                    <div key={fieldKey}>
-                      {isEditing ? (
-                        <Controller
-                          name={fieldKey}
-                          control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              fullWidth
-                            />
-                          )}
-                        />
-                      ) : (
-                        <div className="py-2 flex justify-between items-start gap-2">
-                          <div className="w-[100%] justify-start flex">
-                            <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </span>{" "}
-                          </div>
-                          <div className="">
-                            <span>:</span>
-                          </div>
-                          <div className="w-full">
-                            <span className="text-gray-500">
-                              {control._defaultValues[fieldKey]}
-                            </span>
-                          </div>
+                  {/* Annual Increment */}
+                  <div>
+                    {isEditing ? (
+                      <Controller
+                        name="annualIncrement"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Annual Increment"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Annual Increment
+                          </span>{" "}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {control._defaultValues.annualIncrement}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Per Desk Meeting Credits */}
+                  <div>
+                    {isEditing ? (
+                      <Controller
+                        name="perDeskMeetingCredits"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Per Desk Meeting Credits"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Per Desk Meeting Credits
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {control._defaultValues.perDeskMeetingCredits}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Total Meeting Credits */}
+                  <div>
+                    {isEditing ? (
+                      <Controller
+                        name="totalMeetingCredits"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Total Meeting Credits"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Total Meeting Credits
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {control._defaultValues.totalMeetingCredits}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Start Date */}
+                  <div>
+                    {isEditing ? (
+                      <Controller
+                        name="startDate"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Start Date"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Start Date
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {humanDate(control._defaultValues.startDate)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* End Date */}
+                  <div>
+                    {isEditing ? (
+                      <Controller
+                        name="endDate"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="End Date"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            End Date
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {humanDate(control._defaultValues.endDate)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Lock-in Period */}
+                  <div>
+                    {isEditing ? (
+                      <Controller
+                        name="lockinPeriod"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Lock-in Period"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Lock-in Period
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {control._defaultValues.lockinPeriod}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Rent Date */}
+                  <div>
+                    {isEditing ? (
+                      <Controller
+                        name="rentDate"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Rent Date"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Rent Date
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {humanDate(control._defaultValues.rentDate)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Next Increment */}
+                  <div>
+                    {isEditing ? (
+                      <Controller
+                        name="nextIncrement"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Next Increment"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Next Increment
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {humanDate(control._defaultValues.nextIncrement)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <div>
                 <div className="py-4 border-b-default border-borderGray">
                   <span className="text-subtitle font-pmedium">
-                    Company Details
+                    POC Details
                   </span>
                 </div>
 
