@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
-import clearImage from "../../../../assets/biznest/occupancy/occupied-701.jpeg";
+import clearImage from "../../../../assets/biznest/occupancy/clear-701.png";
 import { Chip } from "@mui/material";
 
 const MaintenanceOfficesClear = () => {
