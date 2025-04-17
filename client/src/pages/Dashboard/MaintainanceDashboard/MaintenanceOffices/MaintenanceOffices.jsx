@@ -137,8 +137,7 @@ const MaintenanceOffices = () => {
         },
       ],
     },
-    
-  
+
     {
       month: "May",
       domains: [
@@ -211,7 +210,6 @@ const MaintenanceOffices = () => {
       ],
     },
   ];
-  
 
   const [selectedMonth, setSelectedMonth] = useState(
     mockBusinessRevenueData[0].month
@@ -244,7 +242,7 @@ const MaintenanceOffices = () => {
     {
       // name: "Revenue",
       name: "Offices",
-      data: selectedMonthData.domains.map((domain) => domain.revenue),
+      data: selectedMonthData.domains.map((domain) => domain.clients.length),
     },
   ];
 
@@ -277,8 +275,7 @@ const MaintenanceOffices = () => {
             label="Select Month"
             value={selectedMonth}
             onChange={handleMonthChange}
-            sx={{ width: "200px" }}
-          >
+            sx={{ width: "200px" }}>
             {mockBusinessRevenueData.map((data) => (
               <MenuItem key={data.month} value={data.month}>
                 {data.month}
@@ -295,7 +292,7 @@ const MaintenanceOffices = () => {
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
       <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
           <div className="flex justify-between items-center w-full px-4 py-2">
             <span className="text-sm text-muted font-pmedium text-title">
               LOCATION
@@ -303,7 +300,6 @@ const MaintenanceOffices = () => {
             <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
               REVENUE
             </span>
-            
           </div>
         </div>
         {selectedMonthData.domains.map((domain, index) => {
@@ -312,8 +308,7 @@ const MaintenanceOffices = () => {
               <AccordionSummary
                 expandIcon={<IoIosArrowDown />}
                 aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}
-              >
+                id={`panel-${index}-header`}>
                 <div className="flex justify-between items-center w-full px-4">
                   <span className="text-subtitle font-pmedium  ">
                     {domain.name}
@@ -335,15 +330,14 @@ const MaintenanceOffices = () => {
                         navigate(
                           `/app/dashboard/maintenance-dashboard/maintenance-offices/maintenance-offices-layout/${domain.name}`
                         );
-                      }}
-                    >
+                      }}>
                       View Layout {domain.name}
                     </span>
 
                     <div className="">
                       <p className="text-subtitle text-primary p-6 w-fit">
                         <span className="font-bold">Maintenance Lead: </span>
-                        Machindranath Parkar
+                        Rajesh Sawant
                       </p>
                     </div>
                   </div>

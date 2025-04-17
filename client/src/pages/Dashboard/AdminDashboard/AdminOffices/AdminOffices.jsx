@@ -20,349 +20,352 @@ const AdminOffices = () => {
 
   const mockBusinessRevenueData = [
     {
-      "month": "April",
-      "domains": [
+      month: "April",
+      domains: [
         {
-          "srNo": 1,
-          "name": "ST-701A",
-          "revenue": 10,
-          "clients": [
-            {
-              "client": "Zomato",
-              "representative": "John Doe",
-              "registerDate": "2024-01-15",
-              "actualRevenue": 500000
-            },
-            {
-              "client": "Uber",
-              "representative": "Jane Smith",
-              "registerDate": "2024-02-10",
-              "actualRevenue": 4000
-            },
-            {
-              "client": "Ola",
-              "representative": "Alice Johnson",
-              "registerDate": "2024-03-05",
-              "actualRevenue": 3000
-            }
-          ]
-        },
-        {
-          "srNo": 2,
-          "name": "ST-701B",
-          "revenue": 10,
-          "clients": [
-            {
-              "client": "Client D",
-              "representative": "Bob Brown",
-              "registerDate": "2024-01-20",
-              "actualRevenue": 4000
-            },
-            {
-              "client": "Client E",
-              "representative": "Charlie White",
-              "registerDate": "2024-02-25",
-              "actualRevenue": 4000
-            }
-          ]
-        },
-        {
-          "srNo": 3,
-          "name": "ST-601A",
-          "revenue": 10,
+          srNo: 1,
+          name: "ST-701A",
+          revenue: 10,
           clients: [
             {
-              client: "Client F", representative: "Daniel Green",
+              client: "Zomato",
+              representative: "John Doe",
+              registerDate: "2024-01-15",
+              actualRevenue: 500000,
+            },
+            {
+              client: "Uber",
+              representative: "Jane Smith",
+              registerDate: "2024-02-10",
+              actualRevenue: 4000,
+            },
+            {
+              client: "Ola",
+              representative: "Alice Johnson",
+              registerDate: "2024-03-05",
+              actualRevenue: 3000,
+            },
+          ],
+        },
+        {
+          srNo: 2,
+          name: "ST-701B",
+          revenue: 10,
+          clients: [
+            {
+              client: "Client D",
+              representative: "Bob Brown",
+              registerDate: "2024-01-20",
+              actualRevenue: 4000,
+            },
+            {
+              client: "Client E",
+              representative: "Charlie White",
+              registerDate: "2024-02-25",
+              actualRevenue: 4000,
+            },
+          ],
+        },
+        {
+          srNo: 3,
+          name: "ST-601A",
+          revenue: 10,
+          clients: [
+            {
+              client: "Client F",
+              representative: "Daniel Green",
               registerDate: "2024-03-12",
               actualRevenue: 5000,
             },
             {
-              client: "Client G", representative: "Eva Black",
+              client: "Client G",
+              representative: "Eva Black",
               registerDate: "2024-04-18",
               actualRevenue: 7000,
             },
             {
-              client: "Client H", representative: "Frank Blue",
+              client: "Client H",
+              representative: "Frank Blue",
               registerDate: "2024-05-10",
               actualRevenue: 3000,
             },
           ],
         },
         {
-          "srNo": 4,
-          "name": "ST-601B",
-          "revenue": 10,
-          "clients": [
+          srNo: 4,
+          name: "ST-601B",
+          revenue: 10,
+          clients: [
             {
-              "client": "Client F",
-              "representative": "Daniel Green",
-              "registerDate": "2024-03-12",
-              "actualRevenue": 5000
+              client: "Client F",
+              representative: "Daniel Green",
+              registerDate: "2024-03-12",
+              actualRevenue: 5000,
             },
             {
-              "client": "Client G",
-              "representative": "Eva Black",
-              "registerDate": "2024-04-18",
-              "actualRevenue": 7000
+              client: "Client G",
+              representative: "Eva Black",
+              registerDate: "2024-04-18",
+              actualRevenue: 7000,
             },
             {
-              "client": "Client H",
-              "representative": "Frank Blue",
-              "registerDate": "2024-05-10",
-              "actualRevenue": 3000
-            }
-          ]
+              client: "Client H",
+              representative: "Frank Blue",
+              registerDate: "2024-05-10",
+              actualRevenue: 3000,
+            },
+          ],
         },
         {
-          "srNo": 5,
-          "name": "ST-501A",
-          "revenue": 10,
-          "clients": [
+          srNo: 5,
+          name: "ST-501A",
+          revenue: 10,
+          clients: [
             {
-              "client": "Client F",
-              "representative": "Daniel Green",
-              "registerDate": "2024-03-12",
-              "actualRevenue": 5000
+              client: "Client F",
+              representative: "Daniel Green",
+              registerDate: "2024-03-12",
+              actualRevenue: 5000,
             },
             {
-              "client": "Client G",
-              "representative": "Eva Black",
-              "registerDate": "2024-04-18",
-              "actualRevenue": 7000
+              client: "Client G",
+              representative: "Eva Black",
+              registerDate: "2024-04-18",
+              actualRevenue: 7000,
             },
             {
-              "client": "Client H",
-              "representative": "Frank Blue",
-              "registerDate": "2024-05-10",
-              "actualRevenue": 3000
-            }
-          ]
-        }
-      ]
+              client: "Client H",
+              representative: "Frank Blue",
+              registerDate: "2024-05-10",
+              actualRevenue: 3000,
+            },
+          ],
+        },
+      ],
     },
     {
-      "month": "May",
-      "domains": [
+      month: "May",
+      domains: [
         {
-          "srNo": 1,
-          "name": "Co-Working",
-          "revenue": 10,
-          "clients": [
+          srNo: 1,
+          name: "Co-Working",
+          revenue: 10,
+          clients: [
             {
-              "client": "Client I",
-              "representative": "Grace Orange",
-              "registerDate": "2024-02-11",
-              "actualRevenue": 6000
+              client: "Client I",
+              representative: "Grace Orange",
+              registerDate: "2024-02-11",
+              actualRevenue: 6000,
             },
             {
-              "client": "Client J",
-              "representative": "Hank Purple",
-              "registerDate": "2024-03-09",
-              "actualRevenue": 5000
+              client: "Client J",
+              representative: "Hank Purple",
+              registerDate: "2024-03-09",
+              actualRevenue: 5000,
             },
             {
-              "client": "Client K",
-              "representative": "Isabel Cyan",
-              "registerDate": "2024-04-14",
-              "actualRevenue": 4000
-            }
-          ]
+              client: "Client K",
+              representative: "Isabel Cyan",
+              registerDate: "2024-04-14",
+              actualRevenue: 4000,
+            },
+          ],
         },
         {
-          "srNo": 2,
-          "name": "Workation",
-          "revenue": 9000,
-          "clients": [
+          srNo: 2,
+          name: "Workation",
+          revenue: 9000,
+          clients: [
             {
-              "client": "Client L",
-              "representative": "Jack Gray",
-              "registerDate": "2024-02-28",
-              "actualRevenue": 5000
+              client: "Client L",
+              representative: "Jack Gray",
+              registerDate: "2024-02-28",
+              actualRevenue: 5000,
             },
             {
-              "client": "Client M",
-              "representative": "Kara Silver",
-              "registerDate": "2024-03-07",
-              "actualRevenue": 4000
-            }
-          ]
+              client: "Client M",
+              representative: "Kara Silver",
+              registerDate: "2024-03-07",
+              actualRevenue: 4000,
+            },
+          ],
         },
         {
-          "srNo": 3,
-          "name": "Co-Living",
-          "revenue": 14000,
-          "clients": [
+          srNo: 3,
+          name: "Co-Living",
+          revenue: 14000,
+          clients: [
             {
-              "client": "Client N",
-              "representative": "Leo Gold",
-              "registerDate": "2024-05-20",
-              "actualRevenue": 6000
+              client: "Client N",
+              representative: "Leo Gold",
+              registerDate: "2024-05-20",
+              actualRevenue: 6000,
             },
             {
-              "client": "Client O",
-              "representative": "Mia Platinum",
-              "registerDate": "2024-06-08",
-              "actualRevenue": 5000
+              client: "Client O",
+              representative: "Mia Platinum",
+              registerDate: "2024-06-08",
+              actualRevenue: 5000,
             },
             {
-              "client": "Client P",
-              "representative": "Noah Bronze",
-              "registerDate": "2024-07-15",
-              "actualRevenue": 3000
-            }
-          ]
-        }
-      ]
+              client: "Client P",
+              representative: "Noah Bronze",
+              registerDate: "2024-07-15",
+              actualRevenue: 3000,
+            },
+          ],
+        },
+      ],
     },
     {
-      "month": "June",
-      "domains": [
+      month: "June",
+      domains: [
         {
-          "srNo": 1,
-          "name": "Co-Working",
-          "revenue": 18000,
-          "clients": [
+          srNo: 1,
+          name: "Co-Working",
+          revenue: 18000,
+          clients: [
             {
-              "client": "Client Q",
-              "representative": "Olivia Rose",
-              "registerDate": "2024-01-30",
-              "actualRevenue": 7000
+              client: "Client Q",
+              representative: "Olivia Rose",
+              registerDate: "2024-01-30",
+              actualRevenue: 7000,
             },
             {
-              "client": "Client R",
-              "representative": "Peter Brown",
-              "registerDate": "2024-02-18",
-              "actualRevenue": 6000
+              client: "Client R",
+              representative: "Peter Brown",
+              registerDate: "2024-02-18",
+              actualRevenue: 6000,
             },
             {
-              "client": "Client S",
-              "representative": "Quincy Black",
-              "registerDate": "2024-03-26",
-              "actualRevenue": 5000
-            }
-          ]
+              client: "Client S",
+              representative: "Quincy Black",
+              registerDate: "2024-03-26",
+              actualRevenue: 5000,
+            },
+          ],
         },
         {
-          "srNo": 2,
-          "name": "Workation",
-          "revenue": 10000,
-          "clients": [
+          srNo: 2,
+          name: "Workation",
+          revenue: 10000,
+          clients: [
             {
-              "client": "Client T",
-              "representative": "Rachel Violet",
-              "registerDate": "2024-04-12",
-              "actualRevenue": 5000
+              client: "Client T",
+              representative: "Rachel Violet",
+              registerDate: "2024-04-12",
+              actualRevenue: 5000,
             },
             {
-              "client": "Client U",
-              "representative": "Sam Indigo",
-              "registerDate": "2024-05-07",
-              "actualRevenue": 5000
-            }
-          ]
+              client: "Client U",
+              representative: "Sam Indigo",
+              registerDate: "2024-05-07",
+              actualRevenue: 5000,
+            },
+          ],
         },
         {
-          "srNo": 3,
-          "name": "Co-Living",
-          "revenue": 13000,
-          "clients": [
+          srNo: 3,
+          name: "Co-Living",
+          revenue: 13000,
+          clients: [
             {
-              "client": "Client V",
-              "representative": "Tina Lilac",
-              "registerDate": "2024-06-05",
-              "actualRevenue": 6000
+              client: "Client V",
+              representative: "Tina Lilac",
+              registerDate: "2024-06-05",
+              actualRevenue: 6000,
             },
             {
-              "client": "Client W",
-              "representative": "Umar Yellow",
-              "registerDate": "2024-07-08",
-              "actualRevenue": 4000
+              client: "Client W",
+              representative: "Umar Yellow",
+              registerDate: "2024-07-08",
+              actualRevenue: 4000,
             },
             {
-              "client": "Client X",
-              "representative": "Victor Pink",
-              "registerDate": "2024-08-15",
-              "actualRevenue": 3000
-            }
-          ]
-        }
-      ]
+              client: "Client X",
+              representative: "Victor Pink",
+              registerDate: "2024-08-15",
+              actualRevenue: 3000,
+            },
+          ],
+        },
+      ],
     },
     {
-      "month": "July",
-      "domains": [
+      month: "July",
+      domains: [
         {
-          "srNo": 1,
-          "name": "Co-Working",
-          "revenue": 20000,
-          "clients": [
+          srNo: 1,
+          name: "Co-Working",
+          revenue: 20000,
+          clients: [
             {
-              "client": "Client Y",
-              "representative": "Wendy Red",
-              "registerDate": "2024-03-10",
-              "actualRevenue": 8000
+              client: "Client Y",
+              representative: "Wendy Red",
+              registerDate: "2024-03-10",
+              actualRevenue: 8000,
             },
             {
-              "client": "Client Z",
-              "representative": "Xavier Green",
-              "registerDate": "2024-04-14",
-              "actualRevenue": 7000
+              client: "Client Z",
+              representative: "Xavier Green",
+              registerDate: "2024-04-14",
+              actualRevenue: 7000,
             },
             {
-              "client": "Client AA",
-              "representative": "Yara Blue",
-              "registerDate": "2024-05-16",
-              "actualRevenue": 5000
-            }
-          ]
+              client: "Client AA",
+              representative: "Yara Blue",
+              registerDate: "2024-05-16",
+              actualRevenue: 5000,
+            },
+          ],
         },
         {
-          "srNo": 2,
-          "name": "Workation",
-          "revenue": 11000,
-          "clients": [
+          srNo: 2,
+          name: "Workation",
+          revenue: 11000,
+          clients: [
             {
-              "client": "Client AB",
-              "representative": "Zane Orange",
-              "registerDate": "2024-06-20",
-              "actualRevenue": 6000
+              client: "Client AB",
+              representative: "Zane Orange",
+              registerDate: "2024-06-20",
+              actualRevenue: 6000,
             },
             {
-              "client": "Client AC",
-              "representative": "Adam Gray",
-              "registerDate": "2024-07-10",
-              "actualRevenue": 5000
-            }
-          ]
+              client: "Client AC",
+              representative: "Adam Gray",
+              registerDate: "2024-07-10",
+              actualRevenue: 5000,
+            },
+          ],
         },
         {
-          "srNo": 3,
-          "name": "Co-Living",
-          "revenue": 16000,
-          "clients": [
+          srNo: 3,
+          name: "Co-Living",
+          revenue: 16000,
+          clients: [
             {
-              "client": "Client AD",
-              "representative": "Betty Silver",
-              "registerDate": "2024-08-25",
-              "actualRevenue": 7000
+              client: "Client AD",
+              representative: "Betty Silver",
+              registerDate: "2024-08-25",
+              actualRevenue: 7000,
             },
             {
-              "client": "Client AE",
-              "representative": "Charlie Platinum",
-              "registerDate": "2024-09-14",
-              "actualRevenue": 6000
+              client: "Client AE",
+              representative: "Charlie Platinum",
+              registerDate: "2024-09-14",
+              actualRevenue: 6000,
             },
             {
-              "client": "Client AF",
-              "representative": "David Bronze",
-              "registerDate": "2024-10-05",
-              "actualRevenue": 3000
-            }
-          ]
-        }
-      ]
-    }
-  ]
+              client: "Client AF",
+              representative: "David Bronze",
+              registerDate: "2024-10-05",
+              actualRevenue: 3000,
+            },
+          ],
+        },
+      ],
+    },
+  ];
 
   const [selectedMonth, setSelectedMonth] = useState(
     mockBusinessRevenueData[0].month
@@ -385,24 +388,28 @@ const AdminOffices = () => {
         ...client,
         srNo: index + 1,
         registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
-        actualRevenue: Number(client.actualRevenue).toLocaleString("en-IN")
+        actualRevenue: Number(client.actualRevenue).toLocaleString("en-IN"),
       }));
       return { ...domain, clients: updatedClients };
     });
   }
 
-
   // Prepare Bar Graph Data
   const graphData = [
     {
-      name: "Revenue",
-      data: selectedMonthData.domains.map((domain) => domain.revenue),
+      name: "Offices",
+      data: selectedMonthData.domains.map((domain) => domain.clients.length),
     },
   ];
 
   // Graph Options
   const options = {
-    chart: { type: "bar", toolbar: false, stacked: false, fontFamily: "Poppins-Regular" },
+    chart: {
+      type: "bar",
+      toolbar: false,
+      stacked: false,
+      fontFamily: "Poppins-Regular",
+    },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
@@ -441,7 +448,7 @@ const AdminOffices = () => {
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
       <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
           <div className="flex justify-between items-center w-full px-4 py-2">
             <span className="text-sm text-muted font-pmedium text-title">
               LOCATION
@@ -449,7 +456,6 @@ const AdminOffices = () => {
             <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
               REVENUE
             </span>
-            
           </div>
         </div>
         {selectedMonthData.domains.map((domain, index) => {
@@ -464,21 +470,20 @@ const AdminOffices = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    INR {domain.revenue.toLocaleString()}
+                    {domain.revenue.toLocaleString()}
                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 {/* Details Start */}
-                <div className="flex justify-between">
-                  <div className="flex justify-between items-center w-80 px-4">
+                  <div className="flex justify-between items-center w-full p-4">
                     <span
                       className="text-subtitle font-pmedium underline text-primary
                       cursor-pointer"
                       onClick={() => {
                         localStorage.setItem("client", domain.name);
                         navigate(
-                          `/app/dashboard/admin-dashboard/admin-offices/admin-offices-layout/${domain.name}`
+                          `/app/dashboard/admin-dashboard/admin-offices/${domain.name}`
                         );
                       }}>
                       View Layout {domain.name}
@@ -486,9 +491,9 @@ const AdminOffices = () => {
                     {/* <span className="text-subtitle font-pmedium">
                       {domain.revenue.toLocaleString()}
                     </span> */}
-                  </div>
-                  <div className="w-4/12 ">
-                    <p className="text-subtitle text-primary p-6 w-fit">
+
+                  <div >
+                    <p className="text-subtitle text-primary ">
                       <span className="font-bold">Admin Lead: </span>
                       Machindranath Parkar
                     </p>
@@ -530,13 +535,16 @@ const AdminOffices = () => {
                       field: "representative",
                       flex: 1,
                     },
-                    { headerName: "Register Date", field: "registerDate", flex: 1 },
+                    {
+                      headerName: "Register Date",
+                      field: "registerDate",
+                      flex: 1,
+                    },
                     {
                       headerName: "Actual Revenue (INR)",
                       field: "actualRevenue",
                       flex: 1,
                     },
-
                   ]}
                   tableHeight={300}
                 />

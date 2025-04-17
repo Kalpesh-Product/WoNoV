@@ -38,15 +38,14 @@ const ItDashboard = () => {
     { unit: "ST-701A", tasks: 25 },
     { unit: "ST-701B", tasks: 30 },
   ];
-
+  
   const totalUnitWiseTask = taskData.reduce((sum, item) => sum + item.tasks, 0);
+  
   const unitWisePieData = taskData.map((item) => ({
-    label: `${item.unit} (${((item.tasks / totalUnitWiseTask) * 100).toFixed(
-      1
-    )}%)`,
+    label: `${item.unit} (${((item.tasks / totalUnitWiseTask) * 100).toFixed(1)}%)`,
     value: item.tasks,
   }));
-
+  
   const unitPieChartOptions = {
     labels: unitWisePieData.map((item) => item.label),
     chart: {
@@ -57,18 +56,19 @@ const ItDashboard = () => {
         },
       },
     },
-    toolTip: {
+    tooltip: {
       y: {
-        formatter: (val) => `${((val / totalUnitWiseTask) * 100).toFixed(1)}%`,
+        formatter: (val) => `${val} Due tasks`, // ✅ Show actual task count
       },
     },
   };
+  
 
   // ------------------------------------------------------------------------------------------------------------------//
   const executiveTasks = [
-    { name: "Mac", tasks: 10 },
+    { name: "Machindranath", tasks: 10 },
     { name: "Rajiv", tasks: 20 },
-    { name: "Faizan", tasks: 30 },
+    { name: "Faizan Shaikh", tasks: 30 },
   ];
 
   const executiveTotalTasks = executiveTasks.reduce(
@@ -88,17 +88,18 @@ const ItDashboard = () => {
     { unit: "ST-601A", expense: 11500 },
     { unit: "ST-601B", expense: 10000 },
   ];
+  
   const totalUnitWiseExpense = unitWiseExpense.reduce(
     (sum, item) => sum + item.expense,
     0
   );
+  
+  // Label shows % but value used for actual data
   const pieUnitWiseExpenseData = unitWiseExpense.map((item) => ({
-    label: `${item.unit} (${(
-      (item.expense / totalUnitWiseExpense) *
-      100
-    ).toFixed(1)}%)`,
+    label: `${item.unit} (${((item.expense / totalUnitWiseExpense) * 100).toFixed(1)}%)`,
     value: item.expense,
   }));
+  
   const pieUnitWiseExpenseOptions = {
     labels: unitWiseExpense.map((item) => item.unit),
     chart: {
@@ -109,27 +110,32 @@ const ItDashboard = () => {
         },
       },
     },
-    toolTip: {
+    tooltip: {
       y: {
-        formatter: (val) => `${((val / totalUnitWiseTask) * 100).toFixed(1)}%`,
+        formatter: (val) => `INR ${val.toLocaleString()}`, // ✅ shows actual expense
       },
     },
   };
+  
   //----------------------------------------------------------------------------------------------------------//
   const genderData = [
-    { gender: "Male", count: "45" },
-    { gender: "Female", count: "40" },
+    { gender: "Male", count: 45 },
+    { gender: "Female", count: 40 },
   ];
+  
+  // Calculate total for reference
   const totalGenderCount = genderData.reduce(
     (sum, item) => sum + item.count,
     0
   );
+  
+  // Prepare pie chart data with labels showing % but values are actual
   const pieGenderData = genderData.map((item) => ({
-    label: `${item.gender} ${((item.count / totalGenderCount) * 100).toFixed(
-      1
-    )}%`,
+    label: `${item.gender} ${((item.count / totalGenderCount) * 100).toFixed(1)}%`,
     value: item.count,
   }));
+  
+  // Apex chart options with tooltip showing actual value
   const pieGenderOptions = {
     labels: genderData.map((item) => item.gender),
     chart: {
@@ -137,10 +143,11 @@ const ItDashboard = () => {
     },
     tooltip: {
       y: {
-        formatter: (val) => `${((val / totalGenderCount) * 100).toFixed(1)}%`,
+        formatter: (val) => `${val} Members`, // 👈 Show raw value on hover
       },
     },
   };
+  
   //----------------------------------------------------------------------------------------------------------//
 
   const priorityTasks = [
@@ -188,56 +195,56 @@ const ItDashboard = () => {
 
   const executiveTimings = [
     {
-      name: "Mac",
+      name: "Machindranath Parkar",
       building: "DTC",
       unitNo: "002",
       startTime: "9:00AM",
       endTime: "06:00PM",
     },
     {
-      name: "Faizan",
+      name: "Faizan Shaikh",
       building: "DTC",
       unitNo: "004",
       startTime: "10:00AM",
       endTime: "07:00PM",
     },
     {
-      name: "Faizan",
+      name: "Faizan Shaikh",
       building: "ST",
       unitNo: "601(A)",
       startTime: "8:30AM",
       endTime: "05:30PM",
     },
     {
-      name: "Dasmond",
+      name: "Dasmond Goes",
       building: "ST",
       unitNo: "701(A)",
       startTime: "9:15AM",
       endTime: "06:15PM",
     },
     {
-      name: "Dasmond",
+      name: "Dasmond Goes",
       building: "DTC",
       unitNo: "501(B)",
       startTime: "10:00AM",
       endTime: "07:00PM",
     },
     {
-      name: "Rajeev",
+      name: "Rajiv Kumar Pal",
       building: "DTC",
       unitNo: "601(B)",
       startTime: "8:00AM",
       endTime: "04:00PM",
     },
     {
-      name: "Rajeev",
+      name: "Rajiv Kumar Pal",
       building: "ST",
       unitNo: "701(A)",
       startTime: "11:00AM",
       endTime: "08:00PM",
     },
     {
-      name: "Faizan",
+      name: "Faizan Shaikh",
       building: "ST",
       unitNo: "005",
       startTime: "9:45AM",
@@ -255,23 +262,22 @@ const ItDashboard = () => {
   ];
   //----------------------------------------------------------------------------------------------------------//
   const clientComplaints = [
-    { client: "Zomato", complaints: "5" },
-    { client: "SqaudStack", complaints: "6" },
-    { client: "Swiggy", complaints: "3" },
-    { client: "Zimetrics", complaints: "8" },
+    { client: "Zomato", complaints: 1 },
+    { client: "SqaudStack", complaints: 2 },
+    { client: "Swiggy", complaints: 1 },
+    { client: "Zimetrics", complaints: 1 },
   ];
-
+  
   const totalClientComplaints = clientComplaints.reduce(
     (sum, item) => sum + item.complaints,
     0
   );
+  
   const pieComplaintsData = clientComplaints.map((item) => ({
-    label: `${item.client} (${(
-      (item.complaints / totalClientComplaints) *
-      100
-    ).toFixed(1)}%)`,
+    label: `${item.client} (${((item.complaints / totalClientComplaints) * 100).toFixed(1)}%)`,
     value: item.complaints,
   }));
+  
   const pieComplaintsOptions = {
     labels: clientComplaints.map((item) => item.client),
     chart: {
@@ -279,11 +285,11 @@ const ItDashboard = () => {
     },
     tooltip: {
       y: {
-        formatter: (val) =>
-          `${((val / totalClientComplaints) * 100).toFixed(1)}`,
+        formatter: (val) => `${val} complaints`, // ✅ shows actual number
       },
     },
   };
+  
   //----------------------------------------------------------------------------------------------------------//
   const complaintTypes = [
     { type: "WiFi", count: 8 },
@@ -435,6 +441,7 @@ const ItDashboard = () => {
             colors={colors}
             series={pieExecutiveData}
             tooltipValue={executiveTasksCount}
+            width={500}
           />
         </WidgetSection>,
       ],
