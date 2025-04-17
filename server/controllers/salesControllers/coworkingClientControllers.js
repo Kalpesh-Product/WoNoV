@@ -377,7 +377,9 @@ const bulkInsertCoworkingClients = async (req, res, next) => {
     const getClientService = await ClientService.findOne({
       serviceName: "Co-working",
       company,
-    }).lean().exec();
+    })
+      .lean()
+      .exec();
 
     let coWorkingClients = [];
 

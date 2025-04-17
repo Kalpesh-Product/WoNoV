@@ -12,7 +12,7 @@ const FinanceBudgetLayout = () => {
     { label: "Dept. Wise Budget", path: "dept-wise-budget" },
     { label: "Payment Schedule", path: "payment-schedule" },
     { label: "Collections", path: "collections" },
-    { label: "Statuory Payments", path: "statutory-payments" },
+    { label: "Statutory Payments", path: "statutory-payments" },
     { label: "Landlord Payments", path: "landlord-payments" },
   ];
 

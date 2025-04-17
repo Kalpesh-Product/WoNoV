@@ -80,17 +80,19 @@ const HoildaysEvents = ({ title }) => {
             <TextField
               label="Title"
               fullWidth
+              size="small"
               value={newEvent.title}
               onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
             />
             <DatePicker
               label="Date"
+              slotProps={{textField:{size:'small'}}}
               value={newEvent.startDate ? dayjs(newEvent.startDate) : null}
               onChange={(newDate) => setNewEvent({ ...newEvent, startDate: newDate })}
-              renderInput={(params) => <TextField {...params} fullWidth />}
+              renderInput={(params) => <TextField size="small" {...params} fullWidth />}
             />
 
-            <PrimaryButton type="submit" title="add Holiday / Event" />
+            <PrimaryButton type="submit" title="Add Holiday / Event" />
           </form>
         </LocalizationProvider>
       </MuiModal>
