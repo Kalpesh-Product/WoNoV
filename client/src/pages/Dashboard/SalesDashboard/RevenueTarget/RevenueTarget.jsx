@@ -468,7 +468,7 @@ const RevenueTarget = () => {
         padding
         title={"Vertical-wise Revenue Targets"}
         titleLabel={dayjs().format("MMMM YYYY")}
-        TitleAmount={`Total INR ${inrFormat("6800000")}`}>
+        TitleAmount={`INR ${inrFormat("6800000")}`}>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
 
