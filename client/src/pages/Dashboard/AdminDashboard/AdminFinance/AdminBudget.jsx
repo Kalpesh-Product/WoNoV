@@ -26,6 +26,7 @@ import DataCard from "../../../../components/DataCard";
 import { MdTrendingUp } from "react-icons/md";
 import { BsCheckCircleFill } from "react-icons/bs";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
+import BudgetGraph from "../../../../components/graphs/BudgetGraph";
 
 const HrBudget = () => {
   const axios = useAxiosPrivate();
@@ -45,6 +46,16 @@ const HrBudget = () => {
       }
     },
   });
+
+  const utilisedBudget = [
+    125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
+    50000, 120000,
+  ];
+
+  const maxBudget = [
+    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
+    60000, 110000,
+  ];
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -224,7 +235,7 @@ const HrBudget = () => {
     <div className="flex flex-col gap-8">
       <div className="border-default border-borderGray rounded-md">
         <WidgetSection layout={1} titleLabel={"FY 2024-25"} title={"BUDGET"}>
-          <LayerBarGraph options={optionss} data={data} />
+                    <BudgetGraph utilisedData={utilisedBudget} maxBudget={maxBudget} />
         </WidgetSection>
       </div>
 

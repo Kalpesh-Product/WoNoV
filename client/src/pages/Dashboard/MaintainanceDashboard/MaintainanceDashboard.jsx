@@ -578,7 +578,7 @@ const MaintainanceDashboard = () => {
         <DataCard
           route={"per-sq-ft-expense"}
           title={"Total"}
-          data={"350"}
+          data={"INR 350"}
           description={"Expense Per Sq. Ft."}
         />,
         <DataCard
@@ -590,7 +590,7 @@ const MaintainanceDashboard = () => {
         <DataCard
           route={"annual-expenses"}
           title={"Free"}
-          data={"200"}
+          data={"INR 200"}
           description={"Yearly Expense"}
         />,
       ],

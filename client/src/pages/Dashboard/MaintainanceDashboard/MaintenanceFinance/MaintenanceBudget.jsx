@@ -37,6 +37,7 @@ const HrBudget = () => {
     100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
     60000, 110000,
   ];
+  
   const [openModal, setOpenModal] = useState(false);
   const { data: hrFinance = [] } = useQuery({
     queryKey: ["hrFinance"],
