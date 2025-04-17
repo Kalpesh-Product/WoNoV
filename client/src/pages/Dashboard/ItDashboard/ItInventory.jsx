@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { inrFormat } from "../../../utils/currencyFormat";
 import dayjs from "dayjs";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 
 const ItInventory = () => {
   const { auth } = useAuth();
@@ -97,7 +99,6 @@ const ItInventory = () => {
       vendor: { name: "GadgetWorld" },
     },
   ];
-  
 
   console.log(vendorDetials);
 
@@ -147,25 +148,17 @@ const ItInventory = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <PrimaryButton
-          title="Details"
-          handleSubmit={() => handleDetailsClick(params.data)}
-        />
+        <div className="p-2 mb-2 flex gap-2">
+          <span
+            className="text-subtitle cursor-pointer"
+            onClick={() => handleDetailsClick(params.data)}
+          >
+            <MdOutlineRemoveRedEye />
+          </span>
+        </div>
       ),
     },
   ];
-
-  // const { data: assetsList = [] } = useQuery({
-  //   queryKey: ["assetsList"],
-  //   queryFn: async () => {
-  //     try {
-  //       const response = await axios.get("/api/assets/get-assets");
-  //       return response.data;
-  //     } catch (error) {
-  //       throw new Error(error.response.data.message);
-  //     }
-  //   },
-  // });
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -210,7 +203,7 @@ const ItInventory = () => {
         handleClick={handleAddAsset}
       />
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={`${modalMode} Details`}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -227,7 +220,8 @@ const ItInventory = () => {
                           errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                        } `}>
+                        } `}
+                      >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -237,7 +231,8 @@ const ItInventory = () => {
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}>
+                          }}
+                        >
                           <Button
                             variant="outlined"
                             component="label"
@@ -252,7 +247,8 @@ const ItInventory = () => {
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}>
+                            }}
+                          >
                             Select Image
                             <input
                               type="file"
@@ -278,7 +274,8 @@ const ItInventory = () => {
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}>
+                            }}
+                          >
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -295,7 +292,8 @@ const ItInventory = () => {
                       {...field}
                       label="Asset Type"
                       helperText={!!errors.assetType?.message}
-                      select>
+                      select
+                    >
                       <MenuItem value="">Select an Asset Type</MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
@@ -315,7 +313,8 @@ const ItInventory = () => {
                       {...field}
                       select
                       label="Department"
-                      size="small">
+                      size="small"
+                    >
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -336,7 +335,8 @@ const ItInventory = () => {
                       fullWidth
                       select
                       label="Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -356,7 +356,8 @@ const ItInventory = () => {
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}
@@ -491,6 +492,37 @@ const ItInventory = () => {
                 {/* Cancel button for edit mode */}
               </div>
             </form>
+          </div>
+        )}
+
+        {modalMode === "view" && selectedAsset && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+            <DetalisFormatted
+              title="Department"
+              detail={selectedAsset?.department}
+            />
+            <DetalisFormatted title="Category" detail={selectedAsset?.category} />
+            <DetalisFormatted title="Brand" detail={selectedAsset?.brand} />
+            <DetalisFormatted
+              title="Price (INR)"
+              detail={selectedAsset?.price}
+            />
+            <DetalisFormatted
+              title="Quantity"
+              detail={selectedAsset?.quantity}
+            />
+            <DetalisFormatted
+              title="Purchase Date"
+              detail={dayjs(selectedAsset?.purchaseDate).format("DD-MM-YYYY")}
+            />
+            <DetalisFormatted
+              title="Warranty (Months)"
+              detail={selectedAsset?.warranty}
+            />
+            <DetalisFormatted
+              title="Vendor Name"
+              detail={selectedAsset?.vendorName}
+            />
           </div>
         )}
       </MuiModal>

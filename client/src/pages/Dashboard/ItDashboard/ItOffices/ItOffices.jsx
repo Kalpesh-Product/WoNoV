@@ -374,7 +374,7 @@ const ItOffices = () => {
                       flex: 1,
                     },
                     {
-                      headerName: "Actual Revenue (INR)",
+                      headerName: "Expense (INR)",
                       field: "actualRevenue",
                       flex: 1,
                     },

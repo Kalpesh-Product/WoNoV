@@ -734,7 +734,7 @@ export const routes = createBrowserRouter([
                         element: <AdminOffices />,
                       },
                       {
-                        path: "admin-offices/admin-offices-layout/:client",
+                        path: "admin-offices/:client",
                         element: <AdminOfficesLayout />,
                         children: [
                           {
