@@ -110,7 +110,7 @@ const ClientDetails = () => {
           </span>
         </div>
         <div>
-          <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
+          <PrimaryButton handleSubmit={handleEditToggle} title={isEditing ? "Save" : "Edit"} />
         </div>
       </div>
 

@@ -670,49 +670,337 @@ const SalesBudget = () => {
       "isExtraBudget": false
     },
     {
-      "_id": "67c12be4a9f97d94bd2b1906",
-      "expanseName": "Corporate Gifting",
+      "_id": "67c12be4a9f97d94bd2b1907",
+      "expanseName": "Team Outing",
       "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
       "unit": "67ed1b4f3ea0f84ec3068e66",
       "company": "6799f0cd6a01edbe1bc3fcea",
       "expanseType": "Internal",
-      "projectedAmount": 2200,
+      "projectedAmount": 1500,
       "dueDate": "2024-12-18T18:30:00.000Z",
       "status": "Approved",
       "isExtraBudget": false
     },
     {
-      "_id": "67c12be4a9f97d94bd2b1907",
-      "expanseName": "New Year Ad Campaign",
-      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
-      "unit": "67ed1b4f3ea0f84ec3068e67",
-      "company": "6799f0cd6a01edbe1bc3fcea",
-      "expanseType": "External",
-      "projectedAmount": 6700,
-      "dueDate": "2025-01-05T18:30:00.000Z",
-      "status": "Approved",
-      "isExtraBudget": true
-    },
-    {
       "_id": "67c12be4a9f97d94bd2b1908",
-      "expanseName": "Sales Data Analytics Tools",
+      "expanseName": "Client Meetings",
       "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
-      "unit": "67ed1b4f3ea0f84ec3068e68",
+      "unit": "67ed1b4f3ea0f84ec3068e66",
       "company": "6799f0cd6a01edbe1bc3fcea",
       "expanseType": "Internal",
-      "projectedAmount": 3100,
-      "dueDate": "2025-02-14T18:30:00.000Z",
+      "projectedAmount": 3200,
+      "dueDate": "2024-12-18T18:30:00.000Z",
       "status": "Approved",
       "isExtraBudget": false
     },
     {
       "_id": "67c12be4a9f97d94bd2b1909",
-      "expanseName": "Q4 Incentive Budget",
+      "expanseName": "Sales Training",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e66",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 1800,
+      "dueDate": "2024-12-18T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1910",
+      "expanseName": "Event Sponsorship",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e66",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 4500,
+      "dueDate": "2024-12-18T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1911",
+      "expanseName": "Product Samples",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e66",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 2700,
+      "dueDate": "2024-12-18T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1912",
+      "expanseName": "Promotional Campaigns",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e66",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 5200,
+      "dueDate": "2024-12-18T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1913",
+      "expanseName": "Marketing Materials",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e66",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 3900,
+      "dueDate": "2024-12-18T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1914",
+      "expanseName": "Holiday Discounts Promo",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e67",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 7100,
+      "dueDate": "2025-01-05T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": true
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1915",
+      "expanseName": "Billboard Advertising",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e67",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 8200,
+      "dueDate": "2025-01-05T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": true
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1916",
+      "expanseName": "Radio Spot Booking",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e67",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 4900,
+      "dueDate": "2025-01-05T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": true
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1917",
+      "expanseName": "Influencer Collaborations",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e67",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 7300,
+      "dueDate": "2025-01-05T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": true
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1918",
+      "expanseName": "TV Commercials",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e67",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 9200,
+      "dueDate": "2025-01-05T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": true
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1919",
+      "expanseName": "Online Ads Retargeting",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e67",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 6100,
+      "dueDate": "2025-01-05T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": true
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1920",
+      "expanseName": "Magazine Spread",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e67",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "External",
+      "projectedAmount": 5600,
+      "dueDate": "2025-01-05T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": true
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1921",
+      "expanseName": "CRM Subscription",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e68",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 2900,
+      "dueDate": "2025-02-14T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1922",
+      "expanseName": "Lead Generation Tools",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e68",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 3400,
+      "dueDate": "2025-02-14T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1923",
+      "expanseName": "Sales Forecasting Software",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e68",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 3600,
+      "dueDate": "2025-02-14T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1924",
+      "expanseName": "Customer Insights Platform",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e68",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 3300,
+      "dueDate": "2025-02-14T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1925",
+      "expanseName": "Sales Dashboard Integration",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e68",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 2800,
+      "dueDate": "2025-02-14T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1926",
+      "expanseName": "Data Visualization Tools",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e68",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 3000,
+      "dueDate": "2025-02-14T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1927",
+      "expanseName": "Territory Mapping Software",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e68",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 3500,
+      "dueDate": "2025-02-14T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1928",
+      "expanseName": "Quarterly Bonus Payouts",
       "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
       "unit": "67ed1b4f3ea0f84ec3068e69",
       "company": "6799f0cd6a01edbe1bc3fcea",
       "expanseType": "Internal",
-      "projectedAmount": 5000,
+      "projectedAmount": 5400,
+      "dueDate": "2025-03-28T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1929",
+      "expanseName": "Sales Contest Rewards",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e69",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 4700,
+      "dueDate": "2025-03-28T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1930",
+      "expanseName": "Top Performer Awards",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e69",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 5200,
+      "dueDate": "2025-03-28T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1931",
+      "expanseName": "Incentive Trip Budget",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e69",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 5800,
+      "dueDate": "2025-03-28T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1932",
+      "expanseName": "Employee Recognition Gifts",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e69",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 4900,
+      "dueDate": "2025-03-28T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1933",
+      "expanseName": "Q4 Commission Reserve",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e69",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 5300,
+      "dueDate": "2025-03-28T18:30:00.000Z",
+      "status": "Approved",
+      "isExtraBudget": false
+    },
+    {
+      "_id": "67c12be4a9f97d94bd2b1934",
+      "expanseName": "Referral Incentive Fund",
+      "department": { "_id": "6798bab9e469e809084e24aa", "name": "Sales" },
+      "unit": "67ed1b4f3ea0f84ec3068e69",
+      "company": "6799f0cd6a01edbe1bc3fcea",
+      "expanseType": "Internal",
+      "projectedAmount": 5100,
       "dueDate": "2025-03-28T18:30:00.000Z",
       "status": "Approved",
       "isExtraBudget": false
@@ -757,11 +1045,6 @@ const SalesBudget = () => {
 
     return acc;
   }, {});
-
-
-
-
-
 
   // Convert grouped data to array and sort by latest month (descending order)
   const financialData = Object.values(groupedData)
@@ -808,21 +1091,21 @@ const SalesBudget = () => {
           title={"Projected"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "short",
-          })}-24`}
+          })}-25`}
         />
         <DataCard
           data={"INR " + inrFormat("6200000")}
           title={"Actual"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "short",
-          })}-24`}
+          })}-25`}
         />
         <DataCard
           data={"INR " + inrFormat("89000")}
           title={"Requested"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "short",
-          })}-24`}
+          })}-25`}
         />
       </WidgetSection>
 

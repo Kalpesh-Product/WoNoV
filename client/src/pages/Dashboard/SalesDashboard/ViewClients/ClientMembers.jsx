@@ -88,10 +88,10 @@ const ClientMembers = () => {
     },
     {
       srno: "4",
-      employeeName: "Anushri",
+      employeeName: "Priya",
       clientID: "CO004",
       memberID: "MO004",
-      email: "anushri.wono@gmail.com",
+      email: "priya.wono@gmail.com",
       role: "Employee",
       status: "Active",
     },
@@ -115,14 +115,15 @@ const ClientMembers = () => {
     },
     {
       srno: "7",
-      employeeName: "Allan2",
+      employeeName: "Rohit",
       clientID: "CO007",
       memberID: "MO007",
-      email: "allan2.wono@gmail.com",
+      email: "rohit.wono@gmail.com",
       role: "Employee",
-      status: "InActive",
+      status: "Active",
     },
   ];
+  
 
   return (
     <div>

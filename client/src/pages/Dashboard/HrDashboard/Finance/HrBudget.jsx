@@ -149,7 +149,7 @@ const HrBudget = () => {
               {
                 month: "short",
               }
-            )}-24`}
+            )}-25`}
           />
           <DataCard
             data={"INR " + inrFormat("150000")}
@@ -160,7 +160,7 @@ const HrBudget = () => {
               {
                 month: "short",
               }
-            )}-24`}
+            )}-25`}
           />
           <DataCard
             data={"INR " + inrFormat(12000)}
@@ -171,7 +171,7 @@ const HrBudget = () => {
               {
                 month: "short",
               }
-            )}-24`}
+            )}-25`}
           />
         </WidgetSection>
       </div>

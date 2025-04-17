@@ -490,7 +490,7 @@ const MaintainanceDashboard = () => {
                 {
                   month: "short",
                 }
-              )}-24`}
+              )}-25`}
             />
             <DataCard
               data={"INR 35,000"}
@@ -501,7 +501,7 @@ const MaintainanceDashboard = () => {
                 {
                   month: "short",
                 }
-              )}-24`}
+              )}-25`}
             />
             <DataCard
               data={"INR 16,000"}
@@ -512,7 +512,7 @@ const MaintainanceDashboard = () => {
                 {
                   month: "short",
                 }
-              )}-24`}
+              )}-25`}
             />
           </WidgetSection>
         </WidgetSection>,

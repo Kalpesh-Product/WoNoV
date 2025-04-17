@@ -800,7 +800,7 @@ const DeptWiseBudgetDetails = () => {
               {
                 month: "short",
               }
-            )}-24`}
+            )}-25`}
           />
           <DataCard
             data={"INR 45,00,000"}
@@ -810,7 +810,7 @@ const DeptWiseBudgetDetails = () => {
               {
                 month: "short",
               }
-            )}-24`}
+            )}-25`}
           />
           <DataCard
             data={"INR 12,000"}
@@ -820,7 +820,7 @@ const DeptWiseBudgetDetails = () => {
               {
                 month: "short",
               }
-            )}-24`}
+            )}-25`}
           />
         </WidgetSection>
       </div>

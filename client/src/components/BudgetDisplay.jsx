@@ -149,7 +149,7 @@ const BudgetDisplay = ({ budgetData }) => {
           route={"/app/dashboard/it-dashboard/finance/budget"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "short",
-          })}-24`}
+          })}-25`}
         />
         <DataCard
           data={"INR " + inrFormat("3500000")}
@@ -157,7 +157,7 @@ const BudgetDisplay = ({ budgetData }) => {
           route={"/app/dashboard/it-dashboard/finance/budget"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "short",
-          })}-24`}
+          })}-25`}
         />
         <DataCard
           data={"INR " + inrFormat(60000)}
@@ -165,7 +165,7 @@ const BudgetDisplay = ({ budgetData }) => {
           route={"/app/dashboard/it-dashboard/finance/budget"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "short",
-          })}-24`}
+          })}-25`}
         />
       </WidgetSection>
 
