@@ -119,8 +119,7 @@ const ViewAvailability = () => {
             <span className="text-primary text-title">Occupied</span>
             <div
               onClick={() => setImageOpen(true)}
-              className="h-80 w-full  cursor-pointer  p-4 border-[1px] border-borderGray rounded-lg"
-            >
+              className="h-80 w-full  cursor-pointer  p-4 border-[1px] border-borderGray rounded-lg">
               <img
                 className="w-full h-full object-contain"
                 src={imagePreview}
@@ -132,8 +131,7 @@ const ViewAvailability = () => {
             <span className="text-primary text-title">Clear</span>
             <div
               onClick={() => setClearedImageOpen(true)}
-              className="h-80 w-full  cursor-pointer p-4 border-[1px] border-borderGray rounded-lg"
-            >
+              className="h-80 w-full  cursor-pointer p-4 border-[1px] border-borderGray rounded-lg">
               <img
                 className="w-full h-full object-contain"
                 src={clearedImagePreview}
@@ -161,8 +159,7 @@ const ViewAvailability = () => {
               expandIcon={<IoIosArrowDown />}
               aria-controls={`panel-${index}-content`}
               id={`panel-${index}-header`}
-              className="border-b-[1px] border-borderGray"
-            >
+              className="border-b-[1px] border-borderGray">
               <div className="flex justify-between items-center w-full px-4">
                 <span className="text-content font-pmedium">{data.client}</span>
                 <span className=" px-8 text-content font-pmedium">
@@ -191,8 +188,7 @@ const ViewAvailability = () => {
                       <div className="p-2 mb-2 flex gap-2">
                         <span
                           className="text-subtitle cursor-pointer"
-                          onClick={() => handleViewDetails(params.data)}
-                        >
+                          onClick={() => handleViewDetails(params.data)}>
                           <MdOutlineRemoveRedEye />
                         </span>
                       </div>
@@ -211,8 +207,7 @@ const ViewAvailability = () => {
         onClose={() => {
           setOpenModal(false);
           setMemberDetails({});
-        }}
-      >
+        }}>
         <div className="grid grid-cols-2 gap-8 px-2 pb-8 border-b-default border-borderGray">
           <div className="flex items-center justify-between">
             <span className="text-content">Member Name</span>
@@ -250,8 +245,7 @@ const ViewAvailability = () => {
       <MuiModal
         open={imageOpen}
         onClose={() => setImageOpen(false)}
-        title={"Upload occupied space"}
-      >
+        title={"Upload occupied space"}>
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
@@ -269,8 +263,7 @@ const ViewAvailability = () => {
       <MuiModal
         open={clearedImageOpen}
         onClose={() => setClearedImageOpen(false)}
-        title={"Upload clear space"}
-      >
+        title={"Upload clear space"}>
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
