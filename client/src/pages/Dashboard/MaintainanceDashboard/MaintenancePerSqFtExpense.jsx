@@ -29,6 +29,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Nykaa",
               squareFeet: 450,
               actualExpense: 22000,
+              location: "ST-501A",
             },
             {
               buildingName: "Sunteck Kanaka",
@@ -36,6 +37,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Blinkit",
               squareFeet: 550,
               actualExpense: 27500,
+              location: "ST-501B",
             },
             {
               buildingName: "Sunteck Kanaka",
@@ -43,6 +45,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Flipkart",
               squareFeet: 700,
               actualExpense: 32000,
+              location: "ST-501A",
             },
             {
               buildingName: "Sunteck Kanaka",
@@ -50,6 +53,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Myntra",
               squareFeet: 680,
               actualExpense: 31000,
+              location: "ST-501B",
             },
           ],
         },
@@ -63,6 +67,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Reliance Trends",
               squareFeet: 750,
               actualExpense: 35000,
+              location: "ST-601A",
             },
             {
               buildingName: "Sunteck Kanaka",
@@ -70,6 +75,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Tata Cliq",
               squareFeet: 640,
               actualExpense: 29000,
+              location: "ST-602B",
             },
             {
               buildingName: "Sunteck Kanaka",
@@ -77,6 +83,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Ajio",
               squareFeet: 660,
               actualExpense: 30000,
+              location: "ST-601A",
             },
             {
               buildingName: "Sunteck Kanaka",
@@ -84,6 +91,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Zivame",
               squareFeet: 600,
               actualExpense: 27000,
+              location: "ST-602B",
             },
           ],
         },
@@ -97,6 +105,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Byju's",
               squareFeet: 800,
               actualExpense: 40000,
+              location: "ST-701A",
             },
             {
               buildingName: "Sunteck Kanaka",
@@ -104,6 +113,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Unacademy",
               squareFeet: 780,
               actualExpense: 39000,
+              location: "ST-702B",
             },
             {
               buildingName: "Sunteck Kanaka",
@@ -111,6 +121,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Toppr",
               squareFeet: 720,
               actualExpense: 36000,
+              location: "ST-701A",
             },
             {
               buildingName: "Sunteck Kanaka",
@@ -118,6 +129,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Khan Academy",
               squareFeet: 750,
               actualExpense: 37000,
+              location: "ST-702B",
             },
           ],
         },
@@ -131,6 +143,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Zomato",
               squareFeet: 500,
               actualExpense: 25000,
+              location: "DTC-002",
             },
             {
               buildingName: "Dempo Trade Centre",
@@ -138,6 +151,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Swiggy",
               squareFeet: 600,
               actualExpense: 30000,
+              location: "DTC-004",
             },
           ],
         },
@@ -151,6 +165,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Vedantu",
               squareFeet: 760,
               actualExpense: 38000,
+              location: "DTC-706",
             },
             {
               buildingName: "Dempo Trade Centre",
@@ -158,6 +173,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "WhiteHat Jr",
               squareFeet: 700,
               actualExpense: 35000,
+              location: "DTC-703",
             },
             {
               buildingName: "Dempo Trade Centre",
@@ -165,6 +181,7 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "Simplilearn",
               squareFeet: 780,
               actualExpense: 39000,
+              location: "DTC-703",
             },
             {
               buildingName: "Dempo Trade Centre",
@@ -172,12 +189,16 @@ const MaintenancePerSqFtExpense = () => {
               occupant: "UpGrad",
               squareFeet: 740,
               actualExpense: 36500,
+              location: "DTC-706",
             },
           ],
         },
       ],
     },
   ];
+  
+
+  
   
   
   
@@ -232,11 +253,11 @@ const MaintenancePerSqFtExpense = () => {
 
   // Graph Options
   const options = {
-    chart: { type: "bar", toolbar: false, stacked: false, fontFamily: "Poppins-Regular" },
+    chart: { type: "bar", toolbar: false, stacked: false, fontFamily: "Poppins-Regular"},
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
-    yaxis: { title: { text: "Expense (in Rupees)" } },
+    yaxis: { title: { text: "Expense (INR)" } },
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
@@ -270,7 +291,18 @@ const MaintenancePerSqFtExpense = () => {
       </WidgetSection>
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
-      <div>
+      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
+      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+          <div className="flex justify-between items-center w-full px-4 py-2">
+            <span className="text-sm text-muted font-pmedium text-title">
+              LOCATION
+            </span>
+            <span className="px-4 text-sm text-muted font-pmedium text-title flex items-center gap-1">
+              REVENUE
+            </span>
+            
+          </div>
+        </div>
         {selectedMonthData.domains.map((domain, index) => {
           return (
             <Accordion key={index} className="py-4">
@@ -292,14 +324,14 @@ const MaintenancePerSqFtExpense = () => {
                   data={domain.clients}
                   hideFilter
                   columns={[
-                    { header: "Sr No", field: "srNo", flex: 1 },
-                    { header: "Building Name", field: "buildingName", flex: 1 },
-                    { header: "Unit No", field: "unitNo", flex: 1 },
-                    { header: "Occupant", field: "occupant", flex: 1 },
-                    { header: "Square Feet", field: "squareFeet", flex: 1 },
-                    { header: "Actual Expense", field: "actualExpense", flex: 1 },
+                    { headerName: "Sr No", field: "srNo", flex: 1 },
+                    { headerName: "Building Name", field: "buildingName", flex: 1 },
+                    { headerName: "Unit No", field: "unitNo", flex: 1 },
+                    { headerName: "Occupant", field: "occupant", flex: 1 },
+                    { headerName: "Square Feet", field: "squareFeet", flex: 1 },
+                    { headerName: "Actual Expense (INR)", field: "actualExpense", flex: 1 },
                     {
-                      header: "Expense / Sq Ft",
+                      headerName: "Expense / Sq Ft (INR)",
                       field: "expensePerSqFt",
                       flex: 1,
                       valueFormatter: (params) =>

@@ -12,6 +12,7 @@ import {
 import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const MaintenanceAssets = () => {
   const mockBusinessRevenueData = [
@@ -396,7 +397,18 @@ const MaintenanceAssets = () => {
       </WidgetSection>
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
-      <div>
+      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
+      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+          <div className="flex justify-between items-center w-full px-4 py-2">
+            <span className="text-sm text-muted font-pmedium text-title">
+              LOCATION
+            </span>
+            <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
+              REVENUE
+            </span>
+            
+          </div>
+        </div>
         {selectedMonthData.domains.map((domain, index) => {
           return (
             <Accordion key={index} className="py-4">
@@ -409,24 +421,25 @@ const MaintenanceAssets = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()} INR
+                  INR {domain.revenue.toLocaleString()} 
                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 <AgTable
-                  data={domain.clients}
+                  data={domain.clients.map((client,index)=>({...client,srNo:index+1,actualRevenue:`${inrFormat(client.actualRevenue)}`}))}
                   hideFilter
                   columns={[
-                    { header: "Client", field: "client", flex: 1 },
+                    { headerName: "Sr No", field: "srNo", flex: 1 },
+                    { headerName: "Client", field: "client", flex: 1 },
                     {
-                      header: "Representative",
+                      headerName: "Representative",
                       field: "representative",
                       flex: 1,
                     },
-                    { header: "Register Date", field: "registerDate", flex: 1 },
+                    { headerName: "Register Date", field: "registerDate", flex: 1 },
                     {
-                      header: "Actual Revenue",
+                      headerName: "Actual Revenue (INR)",
                       field: "actualRevenue",
                       flex: 1,
                     },
@@ -439,7 +452,7 @@ const MaintenanceAssets = () => {
                       Total Revenue for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                      ₹{domain.revenue.toLocaleString()}
+                      INR {domain.revenue.toLocaleString()}
                     </span>{" "}
                   </div>
                 </div>
