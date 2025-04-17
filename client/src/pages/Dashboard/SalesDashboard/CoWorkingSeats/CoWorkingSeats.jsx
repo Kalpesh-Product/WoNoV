@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
@@ -13,6 +13,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 // JSON data structure for coworking seats and client details
 const jsonData = {
@@ -277,12 +278,12 @@ const jsonData = {
 const CoWorkingSeats = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
-  const [openModal, setOpenModal] = useState(false);
   const [location, setLocation] = useState({});
-    const [viewModalOpen, setViewModalOpen] = useState(false);
-    const [viewDetails, setViewDetails] = useState(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewDetails, setViewDetails] = useState(null);
   const handleViewModal = (data) => {
-    setOpenModal(true);
+    setViewDetails(data);
+    setViewModalOpen(true);
     setLocation(data);
   };
 
@@ -369,7 +370,8 @@ const CoWorkingSeats = () => {
           border
           padding
           title={"Co-Working Seats"}
-          titleLabel={"FY 24-25"}>
+          titleLabel={"FY 24-25"}
+        >
           <BarGraph
             data={series}
             options={options}
@@ -447,7 +449,8 @@ const CoWorkingSeats = () => {
               expandIcon={<IoIosArrowDown />}
               aria-controls={`panel-${index}-content`}
               id={`panel-${index}-header`}
-              className="border-b-[1px] border-borderGray">
+              className="border-b-[1px] border-borderGray"
+            >
               <div className="flex justify-between items-center w-full px-4">
                 <span className="text-subtitle font-pmedium">
                   {domain.month}
@@ -475,15 +478,14 @@ const CoWorkingSeats = () => {
                     headerName: "Action",
                     field: "action",
                     cellRenderer: (params) => (
-                      
-                        <div className="p-2 mb-2  flex gap-2">
-                          <span
-                                     className="text-subtitle cursor-pointer"
-                                     onClick={() => handleViewModal(params.data)}>
-                                     <MdOutlineRemoveRedEye />
-                                   </span>
-                        </div>
-                      
+                      <div className="p-2 mb-2  flex gap-2">
+                        <span
+                          className="text-subtitle cursor-pointer"
+                          onClick={() => handleViewModal(params.data)}
+                        >
+                          <MdOutlineRemoveRedEye />
+                        </span>
+                      </div>
                     ),
                   },
                 ]}
@@ -494,23 +496,14 @@ const CoWorkingSeats = () => {
         ))}
       </div>
 
-     
-       {viewDetails && (
-              <ViewDetailsModal
-                open={viewModalOpen}
-                onClose={() => setViewModalOpen(false)}
-                data={viewDetails}
-                title="Location Details"
-                fields={[
-                  { label: "Location", key: "location" },
-                  { label: "Floor", key: "floor" },
-                  // { label: "Payment Date", key: "date" },
-                  { label: "Total Seats", key: "totalSeats" },
-                  { label: "Booked", key: "booked" },
-                  { label: "Available", key: "available" },
-                ]}
-              />
-            )}
+        <MuiModal open={viewModalOpen} onClose={()=>setViewModalOpen(false)} title={"view details"}>
+          <div className="grid grid-cols-2 gap-4">
+            <DetalisFormatted title={"Floor"} detail={viewDetails?.floor} />
+            <DetalisFormatted title={"Total Seats"} detail={viewDetails?.totalSeats} />
+            <DetalisFormatted title={"Booked"} detail={viewDetails?.booked} />
+            <DetalisFormatted title={"Available"} detail={viewDetails?.available} />
+          </div>
+        </MuiModal>
     </div>
   );
 };

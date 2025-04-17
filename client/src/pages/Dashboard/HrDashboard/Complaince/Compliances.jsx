@@ -60,13 +60,9 @@ const Compliances = () => {
           "& .MuiTab-root": {
             textTransform: "none",
             fontWeight: "medium",
-            padding: "12px 16px",
+            padding: "12px 15px",
             minWidth: "20%", // Ensure tabs have a minimum width for responsiveness
             borderRight: "0.1px solid #d1d5db",
-          },
-          "& .Mui-selected": {
-            backgroundColor: "#1E3D73",
-            color: "#ffff",
           },
           "& .MuiTabs-scrollButtons": {
             "&.Mui-disabled": { opacity: 0.3 }, // Style disabled scroll buttons

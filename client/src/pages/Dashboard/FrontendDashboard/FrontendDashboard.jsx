@@ -275,8 +275,61 @@ const FrontendDashboard = () => {
         <WidgetSection
           layout={1}
           border
+          title={"Site Visitors"}
+          titleLabel={"FY 2024-25"}
+        >
+          <BarGraph data={siteVisitorsData} options={siteVisitorOptions} />
+        </WidgetSection>,
+      ],
+    },
+    {
+      layout: 5,
+      widgets: [
+        <Card
+          icon={<LuHardDriveUpload />}
+          title="Edit website"
+          route={`/app/dashboard/frontend-dashboard/edit-theme/BIZNest/Home`}
+        />,
+        <Card icon={<CgWebsite />} title="New Themes" route={"select-theme"} />,
+        <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
+        <Card icon={<SiGoogleadsense />} title="Data" route={"data"} />,
+        <Card
+          icon={<MdMiscellaneousServices />}
+          title="Settings"
+          route={"settings"}
+        />,
+      ],
+    },
+    {
+      layout: 2,
+      widgets: [
+        <WidgetSection layout={1} border title={"Nation-wise site Visitors"}>
+          <PieChartMui
+            percent={true} // Enable percentage display
+            data={nationWiseData} // Pass processed data
+            options={nationWisePieChart}
+            width={500}
+          />
+        </WidgetSection>,
+        <WidgetSection layout={1} border title={"State-wise site Visitors"}>
+          <PieChartMui
+            percent={true} // Enable percentage display
+            data={goaDistrictData} // Pass processed data
+            options={goaDistrictPieChart}
+            width={500}
+          />
+        </WidgetSection>,
+      ],
+    },
+    {
+      layout: 1,
+      widgets: [
+        <WidgetSection
+          layout={1}
+          border
           title={"Budget v/s Achievements"}
-          titleLabel={"FY 2024-25"}>
+          titleLabel={"FY 2024-25"}
+        >
           {/* <LayerBarGraph data={data} options={options} /> */}
           <BudgetGraph
             utilisedData={utilisedData}
@@ -319,58 +372,6 @@ const FrontendDashboard = () => {
               )}-24`}
             />
           </WidgetSection>
-        </WidgetSection>,
-      ],
-    },
-    {
-      layout: 5,
-      widgets: [
-        <Card
-          icon={<LuHardDriveUpload />}
-          title="Edit website"
-          route={`/app/dashboard/frontend-dashboard/edit-theme/BIZNest/Home`}
-        />,
-        <Card icon={<CgWebsite />} title="New Themes" route={"select-theme"} />,
-        <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
-        <Card icon={<SiGoogleadsense />} title="Data" route={"data"} />,
-        <Card
-          icon={<MdMiscellaneousServices />}
-          title="Settings"
-          route={"settings"}
-        />,
-      ],
-    },
-    {
-      layout: 1,
-      widgets: [
-        <WidgetSection
-          layout={1}
-          border
-          title={"Site Visitors"}
-          titleLabel={"FY 2024-25"}>
-          <BarGraph data={siteVisitorsData} options={siteVisitorOptions} />
-        </WidgetSection>,
-      ],
-    },
-
-    {
-      layout: 2,
-      widgets: [
-        <WidgetSection layout={1} border title={"Nation-wise site Visitors"}>
-          <PieChartMui
-            percent={true} // Enable percentage display
-            data={nationWiseData} // Pass processed data
-            options={nationWisePieChart}
-            width={500}
-          />
-        </WidgetSection>,
-        <WidgetSection layout={1} border title={"State-wise site Visitors"}>
-          <PieChartMui
-            percent={true} // Enable percentage display
-            data={goaDistrictData} // Pass processed data
-            options={goaDistrictPieChart}
-            width={500}
-          />
         </WidgetSection>,
       ],
     },

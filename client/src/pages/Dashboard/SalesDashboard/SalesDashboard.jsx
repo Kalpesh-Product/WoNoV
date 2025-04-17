@@ -264,7 +264,7 @@ const SalesDashboard = () => {
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "50%",
+        columnWidth: "35%",
         borderRadius: 5,
         dataLabels: {
           position: "center",
@@ -352,7 +352,6 @@ const SalesDashboard = () => {
     (sum, item) => sum + item.totalDesks,
     0
   );
-
 
   const totalDeskPercent = simplifiedClientsPie.map((item) => ({
     label: `${item.companyName} ${(
@@ -459,65 +458,67 @@ const SalesDashboard = () => {
   //-----------------------------------------------Conversion of Sector-wise Pie-graph-----------------------------------------------------------//
   const clientMemberBirthday = [
     {
-      id: '1',
-      name: 'Aarav Sharma',
-      birthday: '1990-04-20',
+      id: "1",
+      name: "Aarav Sharma",
+      birthday: "1990-04-20",
       daysLeft: 6,
-      company: 'Zomato'
+      company: "Zomato",
     },
     {
-      id: '2',
-      name: 'Priya Mehta',
-      birthday: '1988-05-02',
+      id: "2",
+      name: "Priya Mehta",
+      birthday: "1988-05-02",
       daysLeft: 18,
-      company: 'Turtlemint'
+      company: "Turtlemint",
     },
     {
-      id: '3',
-      name: 'Rohan Verma',
-      birthday: '1992-04-14',
+      id: "3",
+      name: "Rohan Verma",
+      birthday: "1992-04-14",
       daysLeft: 0,
-      company: 'Infuse'
+      company: "Infuse",
     },
     {
-      id: '4',
-      name: 'Sneha Kapoor',
-      birthday: '1995-04-25',
+      id: "4",
+      name: "Sneha Kapoor",
+      birthday: "1995-04-25",
       daysLeft: 11,
-      company: 'Zimetrics'
+      company: "Zimetrics",
     },
     {
-      id: '5',
-      name: 'Vikram Joshi',
-      birthday: '1991-06-01',
+      id: "5",
+      name: "Vikram Joshi",
+      birthday: "1991-06-01",
       daysLeft: 48,
-      company: 'LanceSoft'
+      company: "LanceSoft",
     },
     {
-      id: '6',
-      name: 'Tanvi Nair',
-      birthday: '1993-04-18',
+      id: "6",
+      name: "Tanvi Nair",
+      birthday: "1993-04-18",
       daysLeft: 4,
-      company: '91HR'
+      company: "91HR",
     },
     {
-      id: '7',
-      name: 'Kunal Desai',
-      birthday: '1990-05-10',
+      id: "7",
+      name: "Kunal Desai",
+      birthday: "1990-05-10",
       daysLeft: 26,
-      company: 'Zimetrics'
+      company: "Zimetrics",
     },
     {
-      id: '8',
-      name: 'Meera Iyer',
-      birthday: '1989-04-30',
+      id: "8",
+      name: "Meera Iyer",
+      birthday: "1989-04-30",
       daysLeft: 16,
-      company: 'Turtlemint'
-    }
-  ]
+      company: "Turtlemint",
+    },
+  ];
 
-const formattedClientMemberBirthday = clientMemberBirthday.map((client)=> ({...client, birthday:dayjs(client.birthday).format("DD-MM-YYYY")}))
-
+  const formattedClientMemberBirthday = clientMemberBirthday.map((client) => ({
+    ...client,
+    birthday: dayjs(client.birthday).format("DD-MM-YYYY"),
+  }));
 
   const meetingsWidgets = [
     {
@@ -668,7 +669,6 @@ const formattedClientMemberBirthday = clientMemberBirthday.map((client)=> ({...c
               data={totalDeskPercent}
               options={clientsDesksPieOptions}
               width={"100%"}
-              
             />
           ) : (
             <CircularProgress color="#1E3D73" />

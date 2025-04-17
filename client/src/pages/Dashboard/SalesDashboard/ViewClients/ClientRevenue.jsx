@@ -1,32 +1,15 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+
 import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
 import { inrFormat } from "../../../../utils/currencyFormat";
 
 const ClientRevenue = () => {
-  const navigate = useNavigate();
 
   const viewEmployeeColumns = [
-    { field: "srno", headerName: "SR No" },
+    { field: "srno", headerName: "SR No", width: 100 },
     {
       field: "employeeName",
       headerName: "Month",
-      cellRenderer: (params) => (
-        <span
-          style={{
-            color: "#1E3D73",
-            textDecoration: "underline",
-            cursor: "pointer",
-          }}
-          onClick={() =>
-            navigate(
-              `/app/dashboard/HR-dashboard/employee/view-employees/${params.data.employmentID}`
-            )
-          }>
-          {params.value}
-        </span>
-      ),
     },
     { field: "employmentID", headerName: "Paid Amount (INR)" },
     { field: "email", headerName: "Due Amount (INR)", flex: 1 },
@@ -60,7 +43,7 @@ const ClientRevenue = () => {
   const rows = [
     {
       srno: "1",
-      employeeName: "January 2025",
+      employeeName: "Jan-25",
       employmentID: inrFormat(430000),
       email: inrFormat(210000),
       role: inrFormat(780000),
@@ -68,7 +51,7 @@ const ClientRevenue = () => {
     },
     {
       srno: "2",
-      employeeName: "December 2024",
+      employeeName: "Dec-24",
       employmentID: inrFormat(520000),
       email: inrFormat(250000),
       role: inrFormat(690000),
@@ -76,7 +59,7 @@ const ClientRevenue = () => {
     },
     {
       srno: "3",
-      employeeName: "November 2024",
+      employeeName: "Nov-24",
       employmentID: inrFormat(480000),
       email: inrFormat(195000),
       role: inrFormat(720000),
@@ -84,7 +67,7 @@ const ClientRevenue = () => {
     },
     {
       srno: "4",
-      employeeName: "October 2024",
+      employeeName: "Oct-24",
       employmentID: inrFormat(600000),
       email: inrFormat(230000),
       role: inrFormat(750000),
@@ -92,7 +75,7 @@ const ClientRevenue = () => {
     },
     {
       srno: "5",
-      employeeName: "September 2024",
+      employeeName: "Sep-24",
       employmentID: inrFormat(510000),
       email: inrFormat(270000),
       role: inrFormat(705000),

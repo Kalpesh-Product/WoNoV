@@ -5,6 +5,7 @@ import { TextField } from "@mui/material";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../../../../components/DetalisFormatted";
 
 const KRA = () => {
   const name = localStorage.getItem("employeeName") || "Employee";
@@ -16,44 +17,44 @@ const KRA = () => {
   const [rows, setRows] = useState([
     {
       id: 1,
-      kra: "2025-01-01",
+      kra: "01-01-2025",
       assignedBy: "Utkarsha Palkar",
-      reviewDate: "2025-01-31",
+      reviewDate: "31-01-2025",
       status: "Reviewed",
       comments: "Met all goals",
     },
     {
       id: 2,
-      kra: "2025-02-01",
+      kra: "01-02-2025",
       assignedBy: "Utkarsha Palkar",
-      reviewDate: "2025-02-28",
+      reviewDate: "28-02-2025",
       status: "Pending",
       comments: "Awaiting feedback",
     },
     {
       id: 3,
-      kra: "2025-03-01",
+      kra: "01-03-2025",
       assignedBy: "Utkarsha Palkar",
-      reviewDate: "2025-03-29",
+      reviewDate: "29-03-2025",
       status: "Reviewed",
       comments: "Great improvement",
     },
     {
       id: 4,
-      kra: "2025-04-01",
+      kra: "01-04-2025",
       assignedBy: "Utkarsha Palkar",
-      reviewDate: "2025-04-30",
+      reviewDate: "30-04-2025",
       status: "In Progress",
       comments: "",
     },
     {
       id: 5,
-      kra: "2025-05-01",
+      kra: "01-05-2025",
       assignedBy: "Utkarsha Palkar",
-      reviewDate: "2025-05-31",
+      reviewDate: "31-05-2025",
       status: "Pending",
       comments: "",
-    },
+    }
   ]);
 
   const handleAddKRA = () => {
@@ -145,13 +146,14 @@ const KRA = () => {
         title="KRA Detail"
       >
         {viewKRA && (
-          <div className="space-y-3 text-sm">
-            <div><strong>Period:</strong>&nbsp; {viewKRA.kra}</div>
-            <div><strong>Assigned By:</strong>&nbsp; {viewKRA.assignedBy}</div>
-            <div><strong>Review Date:</strong>&nbsp; {viewKRA.reviewDate}</div>
-            <div><strong>Comments:</strong>&nbsp; {viewKRA.comments || "No comments"}</div>
-          </div>
+          <>
+            <DetalisFormatted title="Period" detail={viewKRA.kra} />
+            <DetalisFormatted title="Assigned By" detail={viewKRA.assignedBy} />
+            <DetalisFormatted title="Review Date" detail={viewKRA.reviewDate} />
+            <DetalisFormatted title="Comments" detail={viewKRA.comments || "No comments"} />
+          </>
         )}
+
       </MuiModal>
     </div>
   );

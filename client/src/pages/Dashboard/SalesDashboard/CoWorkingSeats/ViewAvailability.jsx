@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
-import occupied from "../../../../assets/biznest/occupancy/occupied.png";
-import cleared from "../../../../assets/biznest/occupancy/cleared.png";
+import occupied from "../../../../assets/biznest/occupancy/occupied-701.jpeg";
+import cleared from "../../../../assets/biznest/occupancy/clear-701.png";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import MuiModal from "../../../../components/MuiModal";
 import { MdOutlineRemoveRedEye, MdUploadFile } from "react-icons/md";
@@ -14,56 +14,56 @@ const mockSalesData = [
   {
     client: "WoNo",
     memberDetails: [
-      { member: "Kalpesh Naik", date: "2024-02-20" },
-      { member: "Aiwinraj KS", date: "2024-02-20" },
-      { member: "Allan Silveira", date: "2024-02-21" },
-      { member: "Sankalp Kalangutkar", date: "2024-02-22" },
-      { member: "Muskan Dodmani", date: "2024-02-22" },
+      { member: "Kalpesh Naik", date: "20-02-2024" },
+      { member: "Aiwinraj KS", date: "20-02-2024" },
+      { member: "Allan Silveira", date: "21-02-2024" },
+      { member: "Sankalp Kalangutkar", date: "22-02-2024" },
+      { member: "Muskan Dodmani", date: "22-02-2024" },
     ],
   },
   {
     client: "Axis Bank",
     memberDetails: [
-      { member: "John Doe", date: "2024-02-25" },
-      { member: "Jane Smith", date: "2024-02-26" },
-      { member: "Bob Johnson", date: "2024-02-26" },
-      { member: "Alice Brown", date: "2024-02-26" },
-      { member: "Mike Davis", date: "2024-02-26" },
+      { member: "Amit Sharma", date: "25-02-2024" },
+      { member: "Priya Verma", date: "26-02-2024" },
+      { member: "Rahul Patel", date: "26-02-2024" },
+      { member: "Anjali Gupta", date: "26-02-2024" },
+      { member: "Vikram Singh", date: "26-02-2024" },
     ],
   },
   {
     client: "SquadStack",
     memberDetails: [
-      { member: "Alex Turner", date: "2024-03-01" },
-      { member: "Emma Watson", date: "2024-03-01" },
-      { member: "Ryan Carter", date: "2024-03-02" },
-      { member: "Sophia Martinez", date: "2024-03-02" },
-      { member: "Liam Parker", date: "2024-03-02" },
-      { member: "Olivia Scott", date: "2024-03-03" },
-      { member: "Noah Adams", date: "2024-03-03" },
-      { member: "Ava Green", date: "2024-03-03" },
-      { member: "Ethan King", date: "2024-03-04" },
-      { member: "Mia Wright", date: "2024-03-04" },
-      { member: "James Baker", date: "2024-03-04" },
-      { member: "Charlotte Hill", date: "2024-03-05" },
-      { member: "Benjamin Evans", date: "2024-03-05" },
-      { member: "Amelia Collins", date: "2024-03-05" },
-      { member: "Lucas Allen", date: "2024-03-06" },
-      { member: "Harper Nelson", date: "2024-03-06" },
-      { member: "Alexander Carter", date: "2024-03-06" },
-      { member: "Ella Mitchell", date: "2024-03-07" },
-      { member: "Daniel Perez", date: "2024-03-07" },
-      { member: "Grace Roberts", date: "2024-03-07" },
+      { member: "Arjun Mehra", date: "01-03-2024" },
+      { member: "Sneha Kapoor", date: "01-03-2024" },
+      { member: "Rohan Malhotra", date: "02-03-2024" },
+      { member: "Kavita Joshi", date: "02-03-2024" },
+      { member: "Nikhil Rana", date: "02-03-2024" },
+      { member: "Divya Nair", date: "03-03-2024" },
+      { member: "Siddharth Iyer", date: "03-03-2024" },
+      { member: "Pooja Desai", date: "03-03-2024" },
+      { member: "Aditya Kulkarni", date: "04-03-2024" },
+      { member: "Meera Saxena", date: "04-03-2024" },
+      { member: "Karan Thakur", date: "04-03-2024" },
+      { member: "Shruti Bhatt", date: "05-03-2024" },
+      { member: "Vivek Chawla", date: "05-03-2024" },
+      { member: "Neha Aggarwal", date: "05-03-2024" },
+      { member: "Pranav Dubey", date: "06-03-2024" },
+      { member: "Aarti Saini", date: "06-03-2024" },
+      { member: "Manish Vyas", date: "06-03-2024" },
+      { member: "Riya Sengupta", date: "07-03-2024" },
+      { member: "Saurabh Mishra", date: "07-03-2024" },
+      { member: "Tanya Grover", date: "07-03-2024" },
     ],
   },
   {
     client: "BDO",
     memberDetails: [
-      { member: "John Doe", date: "2024-02-25" },
-      { member: "Jane Smith", date: "2024-02-26" },
-      { member: "Bob Johnson", date: "2024-02-26" },
-      { member: "Alice Brown", date: "2024-02-26" },
-      { member: "Mike Davis", date: "2024-02-26" },
+      { member: "Suresh Yadav", date: "25-02-2024" },
+      { member: "Lakshmi Menon", date: "26-02-2024" },
+      { member: "Deepak Rawat", date: "26-02-2024" },
+      { member: "Sunita Pillai", date: "26-02-2024" },
+      { member: "Rakesh Jha", date: "26-02-2024" },
     ],
   },
 ];
@@ -119,7 +119,8 @@ const ViewAvailability = () => {
             <span className="text-primary text-title">Occupied</span>
             <div
               onClick={() => setImageOpen(true)}
-              className="h-80 w-full  cursor-pointer">
+              className="h-80 w-full  cursor-pointer  p-4 border-[1px] border-borderGray rounded-lg"
+            >
               <img
                 className="w-full h-full object-contain"
                 src={imagePreview}
@@ -131,7 +132,8 @@ const ViewAvailability = () => {
             <span className="text-primary text-title">Clear</span>
             <div
               onClick={() => setClearedImageOpen(true)}
-              className="h-80 w-full  cursor-pointer">
+              className="h-80 w-full  cursor-pointer p-4 border-[1px] border-borderGray rounded-lg"
+            >
               <img
                 className="w-full h-full object-contain"
                 src={clearedImagePreview}
@@ -143,7 +145,7 @@ const ViewAvailability = () => {
       </div>
       {/* aCCordion section */}
       <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
           <div className="flex justify-between items-center w-full px-4 py-2">
             <span className=" text-sm text-muted font-pmedium text-title">
               CLIENT
@@ -151,7 +153,6 @@ const ViewAvailability = () => {
             <span className="px-8 text-sm text-muted font-pmedium text-title flex items-center gap-1">
               MEMEBER
             </span>
-            
           </div>
         </div>
         {mockSalesData.map((data, index) => (
@@ -160,7 +161,8 @@ const ViewAvailability = () => {
               expandIcon={<IoIosArrowDown />}
               aria-controls={`panel-${index}-content`}
               id={`panel-${index}-header`}
-              className="border-b-[1px] border-borderGray">
+              className="border-b-[1px] border-borderGray"
+            >
               <div className="flex justify-between items-center w-full px-4">
                 <span className="text-content font-pmedium">{data.client}</span>
                 <span className=" px-8 text-content font-pmedium">
@@ -173,7 +175,9 @@ const ViewAvailability = () => {
                 data={data.memberDetails.map((member, idx) => ({
                   ...member,
                   id: idx + 1,
-                  date:dayjs(member.date).format("DD-MM-YYYY")
+                  date: dayjs(
+                    new Date(member.date.split("-").reverse().join("-"))
+                  ).format("DD-MM-YYYY"),
                 }))}
                 hideFilter
                 columns={[
@@ -187,7 +191,8 @@ const ViewAvailability = () => {
                       <div className="p-2 mb-2 flex gap-2">
                         <span
                           className="text-subtitle cursor-pointer"
-                          onClick={() => handleViewModal(params.data)}>
+                          onClick={() => handleViewDetails(params.data)}
+                        >
                           <MdOutlineRemoveRedEye />
                         </span>
                       </div>
@@ -206,7 +211,8 @@ const ViewAvailability = () => {
         onClose={() => {
           setOpenModal(false);
           setMemberDetails({});
-        }}>
+        }}
+      >
         <div className="grid grid-cols-2 gap-8 px-2 pb-8 border-b-default border-borderGray">
           <div className="flex items-center justify-between">
             <span className="text-content">Member Name</span>
@@ -229,9 +235,11 @@ const ViewAvailability = () => {
           onClose={() => setViewModalOpen(false)}
           data={{
             ...viewDetails,
-            date: dayjs(viewDetails.date).format("DD-MM-YYYY"),
+            date: dayjs(
+              new Date(viewDetails.date.split("-").reverse().join("-"))
+            ).format("DD-MM-YYYY"),
           }}
-          title="Tax Payment Detail"
+          title="member details"
           fields={[
             { label: "Member Name", key: "member" },
             { label: "Date Of Joining", key: "date" },
@@ -242,7 +250,8 @@ const ViewAvailability = () => {
       <MuiModal
         open={imageOpen}
         onClose={() => setImageOpen(false)}
-        title={"Upload occupied space"}>
+        title={"Upload occupied space"}
+      >
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
@@ -260,7 +269,8 @@ const ViewAvailability = () => {
       <MuiModal
         open={clearedImageOpen}
         onClose={() => setClearedImageOpen(false)}
-        title={"Upload clear space"}>
+        title={"Upload clear space"}
+      >
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">

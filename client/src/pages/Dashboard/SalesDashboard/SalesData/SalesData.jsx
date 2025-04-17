@@ -10,8 +10,18 @@ dayjs.extend(isSameOrBefore);
 // Annual revenue graph start
 
 const financialYearMonths = [
-  "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
-  "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
+  "Apr-24",
+  "May-24",
+  "Jun-24",
+  "Jul-24",
+  "Aug-24",
+  "Sep-24",
+  "Oct-24",
+  "Nov-24",
+  "Dec-24",
+  "Jan-25",
+  "Feb-25",
+  "Mar-25",
 ];
 
 const annualMonthlyRawData = [
@@ -205,7 +215,7 @@ const sourcingChannelsOptions = {
   plotOptions: {
     bar: {
       dataLabels: { position: "top" },
-      columnWidth: "30%",
+      columnWidth: "35%",
       borderRadius: 3,
     },
   },
@@ -477,7 +487,6 @@ const companyTableColumns = [
   { id: "company", label: "Company" },
   { id: "startDate", label: "Date of Join" },
   { id: "completedTime", label: "Completed Time" },
- 
 ];
 
 // ✅ Processed Table Data (Including Completed Time)
@@ -511,7 +520,7 @@ clientOccupancyData.forEach((company) => {
         name: member.empName,
         birthday: member.dateOfBirth,
         daysLeft: daysLeft,
-        company: company.client
+        company: company.client,
       });
     }
   });
