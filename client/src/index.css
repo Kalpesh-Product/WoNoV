@@ -65,10 +65,10 @@
     font-size: 1.5rem !important;
   }
 
-  /* .MuiTab-root.Mui-selected {
+  .MuiTab-root.Mui-selected {
     background-color: #1E3D73 !important;
     color: #ffffff !important;
-  } */
+  }
   
 
 }
@@ -76,10 +76,10 @@
   font-weight: bold !important;
 }
 
-/* .MuiTab-root.Mui-selected {
+.MuiTab-root.Mui-selected {
   background-color: #1E3D73 !important;
   color: #ffffff !important;
-} */
+}
 
 
 
