@@ -362,7 +362,7 @@ const ItExpenses = () => {
 
   // Graph Options
   const options = {
-    chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular" },
+    chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular",toolbar:false },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
