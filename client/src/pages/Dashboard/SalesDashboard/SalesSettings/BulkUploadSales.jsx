@@ -6,7 +6,8 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 
 const BulkUpload = () => {
-  const uploadItems = ["Upload Budget"];
+  const uploadItems = ["Upload Budget", "Upload Leads", "Upload Deals"];
+
 
   const bulkUploadDataColumns = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
@@ -37,7 +38,7 @@ const BulkUpload = () => {
       </span>
       <hr />
 
-      <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
+      <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1 gap-4">
         {uploadItems.map((index, item) => {
           return (
             <>
