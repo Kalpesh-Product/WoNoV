@@ -133,7 +133,7 @@ const HrDashboard = () => {
         },
       },
     },
-    colors: ["#36BA98", "#E83F25"],
+    colors: ["#54C4A7", "#EB5C45"],
     plotOptions: {
       bar: {
         horizontal: false,

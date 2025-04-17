@@ -93,7 +93,7 @@ const TotalRevenue = () => {
       y: {
         formatter: function (val, { seriesIndex, dataPointIndex }) {
           const actualVal = rawData[seriesIndex]?.data?.[dataPointIndex];
-          return actualVal ? `${actualVal.toLocaleString()} INR` : "No data";
+          return actualVal ? `INR ${actualVal.toLocaleString()}` : "No data";
         },
       },
     },
@@ -131,7 +131,7 @@ const TotalRevenue = () => {
   const totalAnnualRevenue = rawData.reduce((sum, domain) => {
     return sum + domain.data.reduce((acc, monthVal) => acc + monthVal, 0);
   }, 0);
-  const formattedRevenue = `${totalAnnualRevenue.toLocaleString("en-IN")} INR`;
+  const formattedRevenue = `INR ${totalAnnualRevenue.toLocaleString("en-IN")}`;
 
   return (
     <div className="flex flex-col gap-4">
@@ -143,8 +143,21 @@ const TotalRevenue = () => {
       >
         <BarGraph height={400} data={normalizedData} options={options} />
       </WidgetSection>
-
-      <div>
+       
+      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
+      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+          <div className="flex justify-between items-center w-full px-4 py-2">
+            <span className="text-sm text-muted font-pmedium text-title">
+              VERTICALS
+            </span>
+            <span className="w-1/5 text-sm text-muted font-pmedium text-title flex items-center gap-1">
+              REVENUE
+            </span>
+            
+          </div>
+        </div>
+        
+  
         {rawData.map((domain, index) => {
           const totalRevenue = domain.data.reduce((sum, val) => sum + val, 0);
 
@@ -186,17 +199,22 @@ const TotalRevenue = () => {
               month: fullMonthMap[shortMonth],
               year,
               revenue: `${val.toLocaleString()}`,
+              
             };
           }).reverse();
-
+ 
+          const transformRows = rows.map((row,index)=>({...row,srNo:index+1}))
           const columns = [
+            { headerName: "Sr No", field: "srNo", flex: 1 },
             { headerName: "Month", field: "month", flex: 1 },
             { headerName: "Year", field: "year", flex: 1 },
             { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
           ];
 
           return (
-            <Accordion key={index} className="py-4">
+          <div>
+            
+              <Accordion key={index} className="py-4">
               <AccordionSummary
                 expandIcon={<IoIosArrowDown />}
                 aria-controls={`panel-${index}-content`}
@@ -207,27 +225,35 @@ const TotalRevenue = () => {
                   <span className="text-subtitle font-pmedium">
                     {domain.name}
                   </span>
-                  <span className="text-subtitle font-pmedium">
-                    {totalRevenue.toLocaleString()} INR
+                  <span className="w-1/5 text-subtitle font-pmedium px-4">
+                  INR {totalRevenue.toLocaleString()} 
                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails>
                 <AgTable
-                  search={rows.length > 5}
-                  data={rows}
+                  search={transformRows.length > 5}
+                  data={transformRows}
                   columns={columns}
                   tableHeight={300}
                 />
-                <span className="text-sm font-medium mt-2 block">
-                  Total revenue of {domain.name}: ₹
-                  {totalRevenue.toLocaleString()}
-                </span>
+                {/* <span className="text-primary font-pregular">
+                  Total revenue of {domain.name}: INR {totalRevenue.toLocaleString()}
+                </span> */}
+                <span className="text-primary font-pregular">
+                      Total Revenue for {domain.name}:{" "}
+                    </span>
+                    <span className="text-black font-pmedium">
+                      INR {totalRevenue.toLocaleString()}
+                    </span>
               </AccordionDetails>
             </Accordion>
+          </div>
           );
         })}
-      </div>
+
+        </div>
+      
     </div>
   );
 };

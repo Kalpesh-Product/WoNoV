@@ -27,6 +27,7 @@ const ClientMembers = () => {
         </span>
       ),
     },
+    // { field: "Sr No", headerName: "Sr No" },
     { field: "clientID", headerName: "Client ID" },
     { field: "memberID", headerName: "Member ID" },
     { field: "email", headerName: "Email", flex: 1 },

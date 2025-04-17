@@ -473,7 +473,18 @@ const RevenueTarget = () => {
       </WidgetSection>
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
-      <div>
+      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
+      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+          <div className="flex justify-between items-center w-full px-4 py-2">
+            <span className=" text-sm text-muted font-pmedium text-title">
+              VERTICAL
+            </span>
+            <span className="px-8 text-sm text-muted font-pmedium text-title flex items-center gap-1">
+              REVENUE
+            </span>
+            
+          </div>
+        </div>
         {selectedMonthData.domains.map((domain, index) => {
           return (
             <Accordion key={index} className="py-4">
@@ -493,28 +504,36 @@ const RevenueTarget = () => {
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 <AgTable
-                  data={domain.clients}
+                  data={domain.clients.map((client,index) => ({
+                                    ...client,
+                                    registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
+                                    srNo:index+1
+                                  }))}
                   hideFilter
                   columns={[
-                    { header: "Sr.No", field: "srNo", flex: 1 },
-                    { header: "Client Name", field: "client", flex: 1 },
+                    { headerName: "Sr No", field: "srNo", flex: 1 },
+                    { headerName: "Client", field: "client", flex: 1 },
                     {
-                      header: "Representative",
+                      headerName: "Representative",
                       field: "representative",
                       flex: 1,
                     },
-                    { header: "End Of Tenure", field: "registerDate", flex: 1 },
+                    { headerName: "Register Date", field: "registerDate", flex: 1 },
                     {
-                      header: "Target Revenue",
+                      headerName: "Actual Revenue (INR)",
                       field: "actualRevenue",
                       flex: 1,
                     },
                   ]}
                   tableHeight={300}
                 />
-                <span className="block mt-2 font-medium">
-                  Total Revenue for {domain.name}: INR {domain.revenue.toLocaleString()}
-                </span>
+                
+                <span className="text-primary font-pregular">
+                      Total Revenue for {domain.name}:{" "}
+                    </span>
+                    <span className="text-black font-pmedium">
+                      INR&nbsp;{domain.revenue.toLocaleString("en-IN")}
+                    </span>{" "}
               </AccordionDetails>
             </Accordion>
           );

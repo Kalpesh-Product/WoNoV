@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 
 // JSON data structure for coworking seats and client details
 const jsonData = {
@@ -278,7 +279,9 @@ const CoWorkingSeats = () => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
   const [location, setLocation] = useState({});
-  const handleViewDetails = (data) => {
+    const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [viewDetails, setViewDetails] = useState(null);
+  const handleViewModal = (data) => {
     setOpenModal(true);
     setLocation(data);
   };
@@ -428,7 +431,7 @@ const CoWorkingSeats = () => {
         </div>
       </div>
       {/* Accordion Section */}
-      <div>
+      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
         <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
           <div className="flex justify-between items-center w-full px-4 py-2">
             <span className="w-full text-sm text-muted font-pmedium text-title">
@@ -474,16 +477,15 @@ const CoWorkingSeats = () => {
                     headerName: "Action",
                     field: "action",
                     cellRenderer: (params) => (
-                      <>
-                        <div className="p-2 mb-2 flex gap-2">
+                      
+                        <div className="p-2 mb-2  flex gap-2">
                           <span
-                            className="text-subtitle cursor-pointer"
-                            onClick={() => handleViewDetails(params.data)}
-                          >
-                            <MdOutlineRemoveRedEye />
-                          </span>
+                                     className="text-subtitle cursor-pointer"
+                                     onClick={() => handleViewModal(params.data)}>
+                                     <MdOutlineRemoveRedEye />
+                                   </span>
                         </div>
-                      </>
+                      
                     ),
                   },
                 ]}
@@ -494,45 +496,23 @@ const CoWorkingSeats = () => {
         ))}
       </div>
 
-      <MuiModal
-        open={openModal}
-        title={"Location Details"}
-        onClose={() => {
-          setOpenModal(false);
-          setLocation({});
-        }}
-      >
-        <div className="grid grid-cols-2 gap-8 px-2 pb-8 border-b-default border-borderGray">
-          <div className="flex items-center justify-between">
-            <span className="text-content">Location</span>
-            <span className="text-content text-gray-500">
-              {location.location}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-content">Floor</span>
-            <span className="text-content text-gray-500">{location.floor}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-content">Total Seats</span>
-            <span className="text-content text-gray-500">
-              {location.totalSeats}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-content">Booked</span>
-            <span className="text-content text-gray-500">
-              {location.booked}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-content">Available</span>
-            <span className="text-content text-gray-500">
-              {location.available}
-            </span>
-          </div>
-        </div>
-      </MuiModal>
+     
+       {viewDetails && (
+              <ViewDetailsModal
+                open={viewModalOpen}
+                onClose={() => setViewModalOpen(false)}
+                data={viewDetails}
+                title="Location Details"
+                fields={[
+                  { label: "Location", key: "location" },
+                  { label: "Floor", key: "floor" },
+                  // { label: "Payment Date", key: "date" },
+                  { label: "Total Seats", key: "totalSeats" },
+                  { label: "Booked", key: "booked" },
+                  { label: "Available", key: "available" },
+                ]}
+              />
+            )}
     </div>
   );
 };

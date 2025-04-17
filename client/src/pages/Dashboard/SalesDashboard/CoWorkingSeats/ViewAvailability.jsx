@@ -142,15 +142,16 @@ const ViewAvailability = () => {
         </div>
       </div>
       {/* aCCordion section */}
-      <div>
-        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
+      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
           <div className="flex justify-between items-center w-full px-4 py-2">
-            <span className="w-full text-muted font-pmedium text-subtitle">
+            <span className=" text-sm text-muted font-pmedium text-title">
               CLIENT
             </span>
-            <span className="w-full text-muted font-pmedium text-subtitle text-right flex items-center justify-end gap-1">
-              MEMBERS
+            <span className="px-8 text-sm text-muted font-pmedium text-title flex items-center gap-1">
+              MEMEBER
             </span>
+            
           </div>
         </div>
         {mockSalesData.map((data, index) => (
@@ -162,7 +163,7 @@ const ViewAvailability = () => {
               className="border-b-[1px] border-borderGray">
               <div className="flex justify-between items-center w-full px-4">
                 <span className="text-content font-pmedium">{data.client}</span>
-                <span className="text-content font-pmedium">
+                <span className=" px-8 text-content font-pmedium">
                   {data.memberDetails.length} members
                 </span>
               </div>
@@ -172,6 +173,7 @@ const ViewAvailability = () => {
                 data={data.memberDetails.map((member, idx) => ({
                   ...member,
                   id: idx + 1,
+                  date:dayjs(member.date).format("DD-MM-YYYY")
                 }))}
                 hideFilter
                 columns={[
