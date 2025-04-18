@@ -633,7 +633,7 @@ const AdminDashboard = () => {
           description={"Admin Offices"}
         />,
         <DataCard
-          route={"admin-expenses"}
+          // route={"admin-expenses"}
           title={"Total"}
           data={"38"}
           description={"Monthly Due Tasks"}
@@ -641,7 +641,7 @@ const AdminDashboard = () => {
         <DataCard
           route={"admin-expenses"}
           title={"Average"}
-          data={"INR 6,0000"}
+          data={"INR 90,000"}
           description={"Monthly Expense"}
         />,
       ],

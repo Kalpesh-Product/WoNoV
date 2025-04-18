@@ -13,118 +13,285 @@ import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
 import dayjs from "dayjs";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const AdminExecutiveExpenses = () => {
-  const mockBusinessRevenueData = [
+   //Proper columns only in April
+  let mockBusinessRevenueData = [
     {
-      month: "April",
-      domains: [
+      "month": "April",
+      "domains": [
         {
-          name: "ST-701A",
-          revenue: 12000,
-          clients: [
+          "name": "ST-701A",
+          "revenue": 0,
+          "clients": [
             {
-              client: "Zomato",
-              representative: "John Doe",
-              registerDate: "2024-01-15",
-              actualRevenue: 5000,
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-01-15",
+              "actualRevenue": 5200
             },
             {
-              client: "Uber",
-              representative: "Jane Smith",
-              registerDate: "2024-02-10",
-              actualRevenue: 4000,
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-02-10",
+              "actualRevenue": 4300
             },
             {
-              client: "Ola",
-              representative: "Alice Johnson",
-              registerDate: "2024-03-05",
-              actualRevenue: 3000,
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-03-05",
+              "actualRevenue": 3700
             },
-          ],
+            {
+              "client": "Swiggy",
+              "representative": "Priya Mehta",
+              "registerDate": "2024-02-21",
+              "actualRevenue": 4600
+            },
+            {
+              "client": "Dunzo",
+              "representative": "Arjun Verma",
+              "registerDate": "2024-01-10",
+              "actualRevenue": 3900
+            },
+            {
+              "client": "Grofers",
+              "representative": "Meena Rao",
+              "registerDate": "2024-03-01",
+              "actualRevenue": 4100
+            },
+            {
+              "client": "Blinkit",
+              "representative": "Karan Shah",
+              "registerDate": "2024-01-18",
+              "actualRevenue": 4400
+            },
+            {
+              "client": "BigBasket",
+              "representative": "Ravi Nair",
+              "registerDate": "2024-02-28",
+              "actualRevenue": 4800
+            }
+          ]
         },
         {
-          name: "ST-701B",
-          revenue: 8000,
-          clients: [
+          "name": "ST-701B",
+          "revenue": 0,
+          "clients": [
             {
-              client: "Client D",
-              representative: "Bob Brown",
-              registerDate: "2024-01-20",
-              actualRevenue: 4000,
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-02-11",
+              "actualRevenue": 4600
             },
             {
-              client: "Client E",
-              representative: "Charlie White",
-              registerDate: "2024-02-25",
-              actualRevenue: 4000,
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-01-12",
+              "actualRevenue": 4200
             },
-          ],
+            {
+              "client": "Paytm",
+              "representative": "Rachel Black",
+              "registerDate": "2024-03-02",
+              "actualRevenue": 4800
+            },
+            {
+              "client": "Myntra",
+              "representative": "Chloe Grey",
+              "registerDate": "2024-02-20",
+              "actualRevenue": 5000
+            },
+            {
+              "client": "Ajio",
+              "representative": "Neha Verma",
+              "registerDate": "2024-03-10",
+              "actualRevenue": 4700
+            },
+            {
+              "client": "Meesho",
+              "representative": "Yash Shah",
+              "registerDate": "2024-03-16",
+              "actualRevenue": 4300
+            },
+            {
+              "client": "JioMart",
+              "representative": "Deepak Reddy",
+              "registerDate": "2024-01-17",
+              "actualRevenue": 4500
+            },
+            {
+              "client": "Reliance Trends",
+              "representative": "Ritika Sharma",
+              "registerDate": "2024-02-26",
+              "actualRevenue": 4900
+            }
+          ]
         },
         {
-          name: "ST-601A",
-          revenue: 15000,
-          clients: [
-            { client: "Client F",  representative: "Daniel Green",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000, },
-            { client: "Client G",  representative: "Eva Black",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000, },
-            { client: "Client H",  representative: "Frank Blue",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000, },
-          ],
+          "name": "ST-601A",
+          "revenue": 0,
+          "clients": [
+            {
+              "client": "Tata Cliq",
+              "representative": "Ananya Rao",
+              "registerDate": "2024-03-12",
+              "actualRevenue": 5200
+            },
+            {
+              "client": "Lenskart",
+              "representative": "Rohit Sen",
+              "registerDate": "2024-04-18",
+              "actualRevenue": 5100
+            },
+            {
+              "client": "Pepperfry",
+              "representative": "Kiran Das",
+              "registerDate": "2024-05-10",
+              "actualRevenue": 5300
+            },
+            {
+              "client": "Boat",
+              "representative": "Kavya Nair",
+              "registerDate": "2024-01-19",
+              "actualRevenue": 4900
+            },
+            {
+              "client": "Croma",
+              "representative": "Varun Kapoor",
+              "registerDate": "2024-02-15",
+              "actualRevenue": 4700
+            },
+            {
+              "client": "Decathlon",
+              "representative": "Simran Kaur",
+              "registerDate": "2024-03-20",
+              "actualRevenue": 5100
+            },
+            {
+              "client": "FirstCry",
+              "representative": "Amit Jain",
+              "registerDate": "2024-02-27",
+              "actualRevenue": 4600
+            },
+            {
+              "client": "Beardo",
+              "representative": "Vikas Malhotra",
+              "registerDate": "2024-01-08",
+              "actualRevenue": 4900
+            }
+          ]
         },
         {
-          name: "ST-601B",
-          revenue: 15000,
-          clients: [
+          "name": "ST-601B",
+          "revenue": 0,
+          "clients": [
             {
-              client: "Client F",
-              representative: "Daniel Green",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000,
+              "client": "PharmEasy",
+              "representative": "Sanya Gill",
+              "registerDate": "2024-01-22",
+              "actualRevenue": 4700
             },
             {
-              client: "Client G",
-              representative: "Eva Black",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000,
+              "client": "1mg",
+              "representative": "Kunal Bhat",
+              "registerDate": "2024-02-10",
+              "actualRevenue": 4500
             },
             {
-              client: "Client H",
-              representative: "Frank Blue",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000,
+              "client": "Tanishq",
+              "representative": "Divya Joshi",
+              "registerDate": "2024-03-01",
+              "actualRevenue": 4800
             },
-          ],
+            {
+              "client": "Tata Motors",
+              "representative": "Rohan Yadav",
+              "registerDate": "2024-02-13",
+              "actualRevenue": 5000
+            },
+            {
+              "client": "Hero",
+              "representative": "Mehul Desai",
+              "registerDate": "2024-01-26",
+              "actualRevenue": 4600
+            },
+            {
+              "client": "Maruti",
+              "representative": "Shruti Iyer",
+              "registerDate": "2024-03-07",
+              "actualRevenue": 4900
+            },
+            {
+              "client": "Mahindra",
+              "representative": "Nikita Jain",
+              "registerDate": "2024-01-18",
+              "actualRevenue": 4700
+            },
+            {
+              "client": "Oppo",
+              "representative": "Rahul Khanna",
+              "registerDate": "2024-02-24",
+              "actualRevenue": 4600
+            }
+          ]
         },
         {
-          name: "ST-501A",
-          revenue: 15000,
-          clients: [
+          "name": "ST-501A",
+          "revenue": 0,
+          "clients": [
             {
-              client: "Client F",
-              representative: "Daniel Green",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000,
+              "client": "Vivo",
+              "representative": "Sneha Pillai",
+              "registerDate": "2024-01-13",
+              "actualRevenue": 4600
             },
             {
-              client: "Client G",
-              representative: "Eva Black",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000,
+              "client": "Realme",
+              "representative": "Arjun Patel",
+              "registerDate": "2024-02-03",
+              "actualRevenue": 4800
             },
             {
-              client: "Client H",
-              representative: "Frank Blue",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000,
+              "client": "Samsung",
+              "representative": "Tanya Roy",
+              "registerDate": "2024-01-30",
+              "actualRevenue": 5100
             },
-          ],
-        },
-      ],
+            {
+              "client": "OnePlus",
+              "representative": "Aditya Singh",
+              "registerDate": "2024-02-08",
+              "actualRevenue": 5200
+            },
+            {
+              "client": "Apple",
+              "representative": "Siddharth Mehra",
+              "registerDate": "2024-03-12",
+              "actualRevenue": 6300
+            },
+            {
+              "client": "Dell",
+              "representative": "Shreya Naik",
+              "registerDate": "2024-02-16",
+              "actualRevenue": 5400
+            },
+            {
+              "client": "HP",
+              "representative": "Gaurav Shah",
+              "registerDate": "2024-03-22",
+              "actualRevenue": 4900
+            },
+            {
+              "client": "Lenovo",
+              "representative": "Tanvi Agarwal",
+              "registerDate": "2024-01-21",
+              "actualRevenue": 5000
+            }
+          ]
+        }
+      ]
     },
     {
       month: "May",
@@ -341,6 +508,15 @@ const AdminExecutiveExpenses = () => {
     },
   ];
 
+    //Calulation of total revenue of each unit
+    mockBusinessRevenueData = mockBusinessRevenueData.map((data) => ({
+      ...data,
+      domains: data.domains.map((domain) => ({
+        ...domain,
+        revenue: domain.clients.reduce((acc, curr) => acc + curr.actualRevenue, 0)
+      }))
+    }));
+
   const [selectedMonth, setSelectedMonth] = useState(
     mockBusinessRevenueData[0].month
   ); // Default to first month
@@ -370,7 +546,7 @@ const AdminExecutiveExpenses = () => {
   // Prepare Bar Graph Data
   const graphData = [
     {
-      name: "Revenue",
+      name: "Expense",
       data: selectedMonthData.domains.map((domain) => domain.revenue),
     },
   ];
@@ -386,6 +562,11 @@ const AdminExecutiveExpenses = () => {
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
+     tooltip: {
+          y: {
+            formatter: (val) => `INR ${inrFormat(val)}`,
+          },
+        },
     legend: { position: "top" },
     colors: ["#80bf01"],
   };
@@ -458,7 +639,7 @@ const AdminExecutiveExpenses = () => {
                     },
                     { headerName: "Register Date", field: "registerDate", flex: 1 },
                     {
-                      headerName: "Actual Revenue (INR)",
+                      headerName: "Expense (INR)",
                       field: "actualRevenue",
                       flex: 1,
                     },

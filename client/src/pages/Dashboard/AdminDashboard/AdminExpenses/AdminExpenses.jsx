@@ -14,334 +14,1523 @@ import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
+import { inrFormat } from "../../../../utils/currencyFormat";
 
 const AdminExpenses = () => {
   const navigate = useNavigate();
-  const mockBusinessRevenueData = [
+    //Proper columns only in April
+  let mockBusinessRevenueData = [
     {
-      month: "April",
-      domains: [
+      "month": "April",
+      "domains": [
         {
-          name: "ST-701A",
-          revenue: 10,
-          clients: [
+          "name": "ST-701A",
+          "revenue": 15000,
+          "clients": [
             {
-              client: "Zomato",
-              representative: "John Doe",
-              registerDate: "2024-01-15",
-              actualRevenue: 5000,
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-02-20",
+              "actualRevenue": 6725
             },
             {
-              client: "Uber",
-              representative: "Jane Smith",
-              registerDate: "2024-02-10",
-              actualRevenue: 4000,
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-02-20",
+              "actualRevenue": 6450
             },
             {
-              client: "Ola",
-              representative: "Alice Johnson",
-              registerDate: "2024-03-05",
-              actualRevenue: 3000,
-            },
-          ],
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-02-11",
+              "actualRevenue": 7103
+            }
+          ]
         },
         {
-          name: "ST-701B",
-          revenue: 10,
-          clients: [
+          "name": "ST-701B",
+          "revenue": 26000,
+          "clients": [
             {
-              client: "Client D",
-              representative: "Bob Brown",
-              registerDate: "2024-01-20",
-              actualRevenue: 4000,
+              "client": "Myntra",
+              "representative": "Chloe Grey",
+              "registerDate": "2024-02-12",
+              "actualRevenue": 4548
             },
             {
-              client: "Client E",
-              representative: "Charlie White",
-              registerDate: "2024-02-25",
-              actualRevenue: 4000,
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-02-28",
+              "actualRevenue": 5122
             },
-          ],
+            {
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-01-09",
+              "actualRevenue": 6928
+            }
+          ]
         },
         {
-          name: "ST-601A",
-          revenue: 10,
-          clients: [
-            { client: "Client F",  representative: "Daniel Green",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000, },
-            { client: "Client G",  representative: "Eva Black",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000, },
-            { client: "Client H",  representative: "Frank Blue",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000, },
-          ],
+          "name": "ST-601A",
+          "revenue": 15000,
+          "clients": [
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-01-07",
+              "actualRevenue": 6144
+            },
+            {
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-02-09",
+              "actualRevenue": 5285
+            },
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-02-10",
+              "actualRevenue": 6766
+            }
+          ]
         },
         {
-          name: "ST-601B",
-          revenue: 10,
-          clients: [
+          "name": "ST-601B",
+          "revenue": 15000,
+          "clients": [
             {
-              client: "Client F",
-              representative: "Daniel Green",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000,
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-02-20",
+              "actualRevenue": 6102
             },
             {
-              client: "Client G",
-              representative: "Eva Black",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000,
+              "client": "Paytm",
+              "representative": "Rachel Black",
+              "registerDate": "2024-01-10",
+              "actualRevenue": 5696
             },
             {
-              client: "Client H",
-              representative: "Frank Blue",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000,
-            },
-          ],
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-02-14",
+              "actualRevenue": 6519
+            }
+          ]
         },
         {
-          name: "ST-501A",
-          revenue: 10,
-          clients: [
+          "name": "ST-501A",
+          "revenue": 15000,
+          "clients": [
             {
-              client: "Client F",
-              representative: "Daniel Green",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000,
+              "client": "Swiggy",
+              "representative": "Sophie Turner",
+              "registerDate": "2024-01-19",
+              "actualRevenue": 5626
             },
             {
-              client: "Client G",
-              representative: "Eva Black",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000,
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-02-14",
+              "actualRevenue": 6571
             },
             {
-              client: "Client H",
-              representative: "Frank Blue",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-02-24",
+              "actualRevenue": 6875
+            }
+          ]
+        }
+      ]
     },
     {
-      month: "May",
-      domains: [
+      "month": "May",
+      "domains": [
         {
-          name: "Co-Working",
-          revenue: 10,
-          clients: [
+          "name": "ST-701A",
+          "revenue": 15929,
+          "clients": [
             {
-              client: "Client I",
-              representative: "Grace Orange",
-              registerDate: "2024-02-11",
-              actualRevenue: 6000,
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-01-25",
+              "actualRevenue": 6714
             },
             {
-              client: "Client J",
-              representative: "Hank Purple",
-              registerDate: "2024-03-09",
-              actualRevenue: 5000,
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-02-18",
+              "actualRevenue": 5434
             },
             {
-              client: "Client K",
-              representative: "Isabel Cyan",
-              registerDate: "2024-04-14",
-              actualRevenue: 4000,
-            },
-          ],
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-02-28",
+              "actualRevenue": 4620
+            }
+          ]
         },
         {
-          name: "Workation",
-          revenue: 9000,
-          clients: [
+          "name": "ST-701B",
+          "revenue": 15732,
+          "clients": [
             {
-              client: "Client L",
-              representative: "Jack Gray",
-              registerDate: "2024-02-28",
-              actualRevenue: 5000,
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-01-14",
+              "actualRevenue": 6113
             },
             {
-              client: "Client M",
-              representative: "Kara Silver",
-              registerDate: "2024-03-07",
-              actualRevenue: 4000,
+              "client": "Myntra",
+              "representative": "Chloe Grey",
+              "registerDate": "2024-02-07",
+              "actualRevenue": 5967
             },
-          ],
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-01-01",
+              "actualRevenue": 6366
+            }
+          ]
         },
         {
-          name: "Co-Living",
-          revenue: 14000,
-          clients: [
+          "name": "ST-601A",
+          "revenue": 15638,
+          "clients": [
             {
-              client: "Client N",
-              representative: "Leo Gold",
-              registerDate: "2024-05-20",
-              actualRevenue: 6000,
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-01-24",
+              "actualRevenue": 4807
             },
             {
-              client: "Client O",
-              representative: "Mia Platinum",
-              registerDate: "2024-06-08",
-              actualRevenue: 5000,
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-01-03",
+              "actualRevenue": 6205
             },
             {
-              client: "Client P",
-              representative: "Noah Bronze",
-              registerDate: "2024-07-15",
-              actualRevenue: 3000,
-            },
-          ],
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-01-31",
+              "actualRevenue": 5992
+            }
+          ]
         },
-      ],
+        {
+          "name": "ST-601B",
+          "revenue": 15574,
+          "clients": [
+            {
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-02-20",
+              "actualRevenue": 5929
+            },
+            {
+              "client": "Amazon",
+              "representative": "Michael Brown",
+              "registerDate": "2024-01-07",
+              "actualRevenue": 6422
+            },
+            {
+              "client": "Paytm",
+              "representative": "Rachel Black",
+              "registerDate": "2024-03-01",
+              "actualRevenue": 4608
+            }
+          ]
+        },
+        {
+          "name": "ST-501A",
+          "revenue": 15712,
+          "clients": [
+            {
+              "client": "Paytm",
+              "representative": "Rachel Black",
+              "registerDate": "2024-02-14",
+              "actualRevenue": 4674
+            },
+            {
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-01-17",
+              "actualRevenue": 5005
+            },
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-02-28",
+              "actualRevenue": 6340
+            }
+          ]
+        }
+      ]
     },
     {
-      month: "June",
-      domains: [
+      "month": "May",
+      "domains": [
         {
-          name: "Co-Working",
-          revenue: 18000,
-          clients: [
+          "name": "ST-701A",
+          "revenue": 16832,
+          "clients": [
             {
-              client: "Client Q",
-              representative: "Olivia Rose",
-              registerDate: "2024-01-30",
-              actualRevenue: 7000,
+              "client": "Paytm",
+              "representative": "Rachel Black",
+              "registerDate": "2024-02-28",
+              "actualRevenue": 4626
             },
             {
-              client: "Client R",
-              representative: "Peter Brown",
-              registerDate: "2024-02-18",
-              actualRevenue: 6000,
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-02-18",
+              "actualRevenue": 5513
             },
             {
-              client: "Client S",
-              representative: "Quincy Black",
-              registerDate: "2024-03-26",
-              actualRevenue: 5000,
-            },
-          ],
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-01-30",
+              "actualRevenue": 4768
+            }
+          ]
         },
         {
-          name: "Workation",
-          revenue: 10000,
-          clients: [
+          "name": "ST-701B",
+          "revenue": 16404,
+          "clients": [
             {
-              client: "Client T",
-              representative: "Rachel Violet",
-              registerDate: "2024-04-12",
-              actualRevenue: 5000,
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-01-02",
+              "actualRevenue": 4668
             },
             {
-              client: "Client U",
-              representative: "Sam Indigo",
-              registerDate: "2024-05-07",
-              actualRevenue: 5000,
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-02-04",
+              "actualRevenue": 6381
             },
-          ],
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-01-04",
+              "actualRevenue": 5389
+            }
+          ]
         },
         {
-          name: "Co-Living",
-          revenue: 13000,
-          clients: [
+          "name": "ST-601A",
+          "revenue": 16773,
+          "clients": [
             {
-              client: "Client V",
-              representative: "Tina Lilac",
-              registerDate: "2024-06-05",
-              actualRevenue: 6000,
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-02-16",
+              "actualRevenue": 4671
             },
             {
-              client: "Client W",
-              representative: "Umar Yellow",
-              registerDate: "2024-07-08",
-              actualRevenue: 4000,
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-01-04",
+              "actualRevenue": 6968
             },
             {
-              client: "Client X",
-              representative: "Victor Pink",
-              registerDate: "2024-08-15",
-              actualRevenue: 3000,
-            },
-          ],
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-01-30",
+              "actualRevenue": 6067
+            }
+          ]
         },
-      ],
+        {
+          "name": "ST-601B",
+          "revenue": 16776,
+          "clients": [
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-01-14",
+              "actualRevenue": 5094
+            },
+            {
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-02-18",
+              "actualRevenue": 5267
+            },
+            {
+              "client": "Myntra",
+              "representative": "Chloe Grey",
+              "registerDate": "2024-02-09",
+              "actualRevenue": 6008
+            }
+          ]
+        },
+        {
+          "name": "ST-501A",
+          "revenue": 16983,
+          "clients": [
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-02-18",
+              "actualRevenue": 6231
+            },
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-02-29",
+              "actualRevenue": 5345
+            },
+            {
+              "client": "Swiggy",
+              "representative": "Sophie Turner",
+              "registerDate": "2024-01-23",
+              "actualRevenue": 6727
+            }
+          ]
+        }
+      ]
     },
     {
-      month: "July",
-      domains: [
+      "month": "June",
+      "domains": [
         {
-          name: "Co-Working",
-          revenue: 20000,
-          clients: [
+          "name": "ST-701A",
+          "revenue": 17565,
+          "clients": [
             {
-              client: "Client Y",
-              representative: "Wendy Red",
-              registerDate: "2024-03-10",
-              actualRevenue: 8000,
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-01-06",
+              "actualRevenue": 5822
             },
             {
-              client: "Client Z",
-              representative: "Xavier Green",
-              registerDate: "2024-04-14",
-              actualRevenue: 7000,
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-01-27",
+              "actualRevenue": 5864
             },
             {
-              client: "Client AA",
-              representative: "Yara Blue",
-              registerDate: "2024-05-16",
-              actualRevenue: 5000,
-            },
-          ],
+              "client": "Swiggy",
+              "representative": "Sophie Turner",
+              "registerDate": "2024-01-13",
+              "actualRevenue": 5821
+            }
+          ]
         },
         {
-          name: "Workation",
-          revenue: 11000,
-          clients: [
+          "name": "ST-701B",
+          "revenue": 16887,
+          "clients": [
             {
-              client: "Client AB",
-              representative: "Zane Orange",
-              registerDate: "2024-06-20",
-              actualRevenue: 6000,
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-01-10",
+              "actualRevenue": 5264
             },
             {
-              client: "Client AC",
-              representative: "Adam Gray",
-              registerDate: "2024-07-10",
-              actualRevenue: 5000,
+              "client": "Amazon",
+              "representative": "Michael Brown",
+              "registerDate": "2024-01-02",
+              "actualRevenue": 4715
             },
-          ],
+            {
+              "client": "Myntra",
+              "representative": "Chloe Grey",
+              "registerDate": "2024-01-02",
+              "actualRevenue": 5297
+            }
+          ]
         },
         {
-          name: "Co-Living",
-          revenue: 16000,
-          clients: [
+          "name": "ST-601A",
+          "revenue": 17890,
+          "clients": [
             {
-              client: "Client AD",
-              representative: "Betty Silver",
-              registerDate: "2024-08-25",
-              actualRevenue: 7000,
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-01-12",
+              "actualRevenue": 6948
             },
             {
-              client: "Client AE",
-              representative: "Charlie Platinum",
-              registerDate: "2024-09-14",
-              actualRevenue: 6000,
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-01-02",
+              "actualRevenue": 6734
             },
             {
-              client: "Client AF",
-              representative: "David Bronze",
-              registerDate: "2024-10-05",
-              actualRevenue: 3000,
-            },
-          ],
+              "client": "Myntra",
+              "representative": "Chloe Grey",
+              "registerDate": "2024-02-25",
+              "actualRevenue": 6650
+            }
+          ]
         },
-      ],
+        {
+          "name": "ST-601B",
+          "revenue": 16732,
+          "clients": [
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-01-13",
+              "actualRevenue": 6092
+            },
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-01-22",
+              "actualRevenue": 6998
+            },
+            {
+              "client": "Myntra",
+              "representative": "Chloe Grey",
+              "registerDate": "2024-01-07",
+              "actualRevenue": 4910
+            }
+          ]
+        },
+        {
+          "name": "ST-501A",
+          "revenue": 17227,
+          "clients": [
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-02-29",
+              "actualRevenue": 6547
+            },
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-02-25",
+              "actualRevenue": 6950
+            },
+            {
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-02-25",
+              "actualRevenue": 5359
+            }
+          ]
+        }
+      ]
     },
-  ];
+    {
+      "month": "July",
+      "domains": [
+        {
+          "name": "ST-701A",
+          "revenue": 17719,
+          "clients": [
+            {
+              "client": "Paytm",
+              "representative": "Rachel Black",
+              "registerDate": "2024-02-16",
+              "actualRevenue": 5017
+            },
+            {
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-01-29",
+              "actualRevenue": 4908
+            },
+            {
+              "client": "Swiggy",
+              "representative": "Sophie Turner",
+              "registerDate": "2024-01-24",
+              "actualRevenue": 5831
+            }
+          ]
+        },
+        {
+          "name": "ST-701B",
+          "revenue": 17755,
+          "clients": [
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-01-11",
+              "actualRevenue": 5446
+            },
+            {
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-01-02",
+              "actualRevenue": 6899
+            },
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-02-06",
+              "actualRevenue": 6272
+            }
+          ]
+        },
+        {
+          "name": "ST-601A",
+          "revenue": 17892,
+          "clients": [
+            {
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-02-22",
+              "actualRevenue": 5271
+            },
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-02-19",
+              "actualRevenue": 6487
+            },
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-01-09",
+              "actualRevenue": 6141
+            }
+          ]
+        },
+        {
+          "name": "ST-601B",
+          "revenue": 17106,
+          "clients": [
+            {
+              "client": "Swiggy",
+              "representative": "Sophie Turner",
+              "registerDate": "2024-02-14",
+              "actualRevenue": 4981
+            },
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-02-27",
+              "actualRevenue": 5813
+            },
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-01-01",
+              "actualRevenue": 4821
+            }
+          ]
+        },
+        {
+          "name": "ST-501A",
+          "revenue": 18265,
+          "clients": [
+            {
+              "client": "Paytm",
+              "representative": "Rachel Black",
+              "registerDate": "2024-01-27",
+              "actualRevenue": 5497
+            },
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-01-11",
+              "actualRevenue": 6996
+            },
+            {
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-01-06",
+              "actualRevenue": 6052
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "month": "August",
+      "domains": [
+        {
+          "name": "ST-701A",
+          "revenue": 19994,
+          "clients": [
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-02-21",
+              "actualRevenue": 6390
+            },
+            {
+              "client": "Swiggy",
+              "representative": "Sophie Turner",
+              "registerDate": "2024-01-15",
+              "actualRevenue": 4736
+            },
+            {
+              "client": "Paytm",
+              "representative": "Rachel Black",
+              "registerDate": "2024-02-02",
+              "actualRevenue": 5707
+            }
+          ]
+        },
+        {
+          "name": "ST-701B",
+          "revenue": 18660,
+          "clients": [
+            {
+              "client": "Amazon",
+              "representative": "Michael Brown",
+              "registerDate": "2024-02-20",
+              "actualRevenue": 5494
+            },
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-01-14",
+              "actualRevenue": 6508
+            },
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-01-17",
+              "actualRevenue": 4913
+            }
+          ]
+        },
+        {
+          "name": "ST-601A",
+          "revenue": 18532,
+          "clients": [
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-02-24",
+              "actualRevenue": 6923
+            },
+            {
+              "client": "Paytm",
+              "representative": "Rachel Black",
+              "registerDate": "2024-02-12",
+              "actualRevenue": 6990
+            },
+            {
+              "client": "Amazon",
+              "representative": "Michael Brown",
+              "registerDate": "2024-02-02",
+              "actualRevenue": 5383
+            }
+          ]
+        },
+        {
+          "name": "ST-601B",
+          "revenue": 17721,
+          "clients": [
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-01-26",
+              "actualRevenue": 6288
+            },
+            {
+              "client": "Paytm",
+              "representative": "Rachel Black",
+              "registerDate": "2024-02-08",
+              "actualRevenue": 5951
+            },
+            {
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-01-15",
+              "actualRevenue": 5078
+            }
+          ]
+        },
+        {
+          "name": "ST-501A",
+          "revenue": 19286,
+          "clients": [
+            {
+              "client": "Myntra",
+              "representative": "Chloe Grey",
+              "registerDate": "2024-01-27",
+              "actualRevenue": 6503
+            },
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-02-04",
+              "actualRevenue": 6186
+            },
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-02-16",
+              "actualRevenue": 6844
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "month": "September",
+      "domains": [
+        {
+          "name": "ST-701A",
+          "revenue": 18633,
+          "clients": [
+            {
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-01-22",
+              "actualRevenue": 4614
+            },
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-02-13",
+              "actualRevenue": 5893
+            },
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-01-11",
+              "actualRevenue": 6200
+            }
+          ]
+        },
+        {
+          "name": "ST-701B",
+          "revenue": 18808,
+          "clients": [
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-02-10",
+              "actualRevenue": 6143
+            },
+            {
+              "client": "Swiggy",
+              "representative": "Sophie Turner",
+              "registerDate": "2024-02-20",
+              "actualRevenue": 6141
+            },
+            {
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-03-01",
+              "actualRevenue": 6319
+            }
+          ]
+        },
+        {
+          "name": "ST-601A",
+          "revenue": 20217,
+          "clients": [
+            {
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-01-08",
+              "actualRevenue": 5835
+            },
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-02-22",
+              "actualRevenue": 5086
+            },
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-01-08",
+              "actualRevenue": 6591
+            }
+          ]
+        },
+        {
+          "name": "ST-601B",
+          "revenue": 19415,
+          "clients": [
+            {
+              "client": "Swiggy",
+              "representative": "Sophie Turner",
+              "registerDate": "2024-01-17",
+              "actualRevenue": 4552
+            },
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-02-26",
+              "actualRevenue": 4784
+            },
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-01-03",
+              "actualRevenue": 4825
+            }
+          ]
+        },
+        {
+          "name": "ST-501A",
+          "revenue": 18295,
+          "clients": [
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-02-17",
+              "actualRevenue": 4544
+            },
+            {
+              "client": "Amazon",
+              "representative": "Michael Brown",
+              "registerDate": "2024-02-28",
+              "actualRevenue": 5161
+            },
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-02-27",
+              "actualRevenue": 6227
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "month": "October",
+      "domains": [
+        {
+          "name": "ST-701A",
+          "revenue": 21624,
+          "clients": [
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-02-29",
+              "actualRevenue": 6217
+            },
+            {
+              "client": "Amazon",
+              "representative": "Michael Brown",
+              "registerDate": "2024-01-04",
+              "actualRevenue": 6586
+            },
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-01-11",
+              "actualRevenue": 5205
+            }
+          ]
+        },
+        {
+          "name": "ST-701B",
+          "revenue": 20968,
+          "clients": [
+            {
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-01-15",
+              "actualRevenue": 5864
+            },
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-01-11",
+              "actualRevenue": 6484
+            },
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-01-17",
+              "actualRevenue": 4920
+            }
+          ]
+        },
+        {
+          "name": "ST-601A",
+          "revenue": 21398,
+          "clients": [
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-02-05",
+              "actualRevenue": 6868
+            },
+            {
+              "client": "Myntra",
+              "representative": "Chloe Grey",
+              "registerDate": "2024-02-08",
+              "actualRevenue": 5565
+            },
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-01-23",
+              "actualRevenue": 5820
+            }
+          ]
+        },
+        {
+          "name": "ST-601B",
+          "revenue": 21183,
+          "clients": [
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-02-20",
+              "actualRevenue": 5251
+            },
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-02-23",
+              "actualRevenue": 4570
+            },
+            {
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-01-19",
+              "actualRevenue": 6644
+            }
+          ]
+        },
+        {
+          "name": "ST-501A",
+          "revenue": 21286,
+          "clients": [
+            {
+              "client": "Swiggy",
+              "representative": "Sophie Turner",
+              "registerDate": "2024-02-24",
+              "actualRevenue": 5618
+            },
+            {
+              "client": "Paytm",
+              "representative": "Rachel Black",
+              "registerDate": "2024-02-07",
+              "actualRevenue": 5254
+            },
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-01-16",
+              "actualRevenue": 6898
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "month": "November",
+      "domains": [
+        {
+          "name": "ST-701A",
+          "revenue": 19819,
+          "clients": [
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-02-06",
+              "actualRevenue": 5112
+            },
+            {
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-01-03",
+              "actualRevenue": 4573
+            },
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-01-23",
+              "actualRevenue": 6989
+            }
+          ]
+        },
+        {
+          "name": "ST-701B",
+          "revenue": 22369,
+          "clients": [
+            {
+              "client": "Swiggy",
+              "representative": "Sophie Turner",
+              "registerDate": "2024-02-22",
+              "actualRevenue": 5389
+            },
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-01-25",
+              "actualRevenue": 6385
+            },
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-01-16",
+              "actualRevenue": 5379
+            }
+          ]
+        },
+        {
+          "name": "ST-601A",
+          "revenue": 21444,
+          "clients": [
+            {
+              "client": "Myntra",
+              "representative": "Chloe Grey",
+              "registerDate": "2024-01-14",
+              "actualRevenue": 5785
+            },
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-03-01",
+              "actualRevenue": 5200
+            },
+            {
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-01-19",
+              "actualRevenue": 5375
+            }
+          ]
+        },
+        {
+          "name": "ST-601B",
+          "revenue": 20143,
+          "clients": [
+            {
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-02-02",
+              "actualRevenue": 6215
+            },
+            {
+              "client": "Myntra",
+              "representative": "Chloe Grey",
+              "registerDate": "2024-02-08",
+              "actualRevenue": 6973
+            },
+            {
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-02-07",
+              "actualRevenue": 5731
+            }
+          ]
+        },
+        {
+          "name": "ST-501A",
+          "revenue": 21776,
+          "clients": [
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-02-28",
+              "actualRevenue": 5501
+            },
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-01-18",
+              "actualRevenue": 6307
+            },
+            {
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-01-23",
+              "actualRevenue": 6823
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "month": "December",
+      "domains": [
+        {
+          "name": "ST-701A",
+          "revenue": 20049,
+          "clients": [
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-01-03",
+              "actualRevenue": 5186
+            },
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-02-02",
+              "actualRevenue": 6031
+            },
+            {
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-01-08",
+              "actualRevenue": 6045
+            }
+          ]
+        },
+        {
+          "name": "ST-701B",
+          "revenue": 21227,
+          "clients": [
+            {
+              "client": "Amazon",
+              "representative": "Michael Brown",
+              "registerDate": "2024-01-15",
+              "actualRevenue": 6364
+            },
+            {
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-02-08",
+              "actualRevenue": 6491
+            },
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-02-18",
+              "actualRevenue": 5092
+            }
+          ]
+        },
+        {
+          "name": "ST-601A",
+          "revenue": 21556,
+          "clients": [
+            {
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-01-27",
+              "actualRevenue": 5490
+            },
+            {
+              "client": "Amazon",
+              "representative": "Michael Brown",
+              "registerDate": "2024-01-03",
+              "actualRevenue": 5439
+            },
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-02-02",
+              "actualRevenue": 5622
+            }
+          ]
+        },
+        {
+          "name": "ST-601B",
+          "revenue": 19801,
+          "clients": [
+            {
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-01-09",
+              "actualRevenue": 6813
+            },
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-02-23",
+              "actualRevenue": 5607
+            },
+            {
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-01-23",
+              "actualRevenue": 5375
+            }
+          ]
+        },
+        {
+          "name": "ST-501A",
+          "revenue": 23621,
+          "clients": [
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-02-10",
+              "actualRevenue": 4848
+            },
+            {
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-02-06",
+              "actualRevenue": 6688
+            },
+            {
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-01-03",
+              "actualRevenue": 6401
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "month": "January",
+      "domains": [
+        {
+          "name": "ST-701A",
+          "revenue": 21079,
+          "clients": [
+            {
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-01-01",
+              "actualRevenue": 6936
+            },
+            {
+              "client": "Swiggy",
+              "representative": "Sophie Turner",
+              "registerDate": "2024-01-30",
+              "actualRevenue": 6088
+            },
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-01-03",
+              "actualRevenue": 5807
+            }
+          ]
+        },
+        {
+          "name": "ST-701B",
+          "revenue": 24041,
+          "clients": [
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-02-20",
+              "actualRevenue": 6772
+            },
+            {
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-02-23",
+              "actualRevenue": 6560
+            },
+            {
+              "client": "Amazon",
+              "representative": "Michael Brown",
+              "registerDate": "2024-02-01",
+              "actualRevenue": 4701
+            }
+          ]
+        },
+        {
+          "name": "ST-601A",
+          "revenue": 24004,
+          "clients": [
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-02-14",
+              "actualRevenue": 5154
+            },
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-01-07",
+              "actualRevenue": 5502
+            },
+            {
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-02-03",
+              "actualRevenue": 6606
+            }
+          ]
+        },
+        {
+          "name": "ST-601B",
+          "revenue": 21270,
+          "clients": [
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-01-23",
+              "actualRevenue": 5294
+            },
+            {
+              "client": "Amazon",
+              "representative": "Michael Brown",
+              "registerDate": "2024-02-11",
+              "actualRevenue": 6160
+            },
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-01-28",
+              "actualRevenue": 6707
+            }
+          ]
+        },
+        {
+          "name": "ST-501A",
+          "revenue": 22989,
+          "clients": [
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-02-20",
+              "actualRevenue": 6532
+            },
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-01-18",
+              "actualRevenue": 5676
+            },
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-01-15",
+              "actualRevenue": 4599
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "month": "February",
+      "domains": [
+        {
+          "name": "ST-701A",
+          "revenue": 21237,
+          "clients": [
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-01-28",
+              "actualRevenue": 5189
+            },
+            {
+              "client": "Paytm",
+              "representative": "Rachel Black",
+              "registerDate": "2024-01-17",
+              "actualRevenue": 5742
+            },
+            {
+              "client": "Amazon",
+              "representative": "Michael Brown",
+              "registerDate": "2024-01-04",
+              "actualRevenue": 4853
+            }
+          ]
+        },
+        {
+          "name": "ST-701B",
+          "revenue": 21126,
+          "clients": [
+            {
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-01-23",
+              "actualRevenue": 4879
+            },
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-02-14",
+              "actualRevenue": 4811
+            },
+            {
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-02-25",
+              "actualRevenue": 6591
+            }
+          ]
+        },
+        {
+          "name": "ST-601A",
+          "revenue": 22706,
+          "clients": [
+            {
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-01-23",
+              "actualRevenue": 6950
+            },
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-01-25",
+              "actualRevenue": 6154
+            },
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-02-04",
+              "actualRevenue": 4935
+            }
+          ]
+        },
+        {
+          "name": "ST-601B",
+          "revenue": 21234,
+          "clients": [
+            {
+              "client": "Snapdeal",
+              "representative": "Chris Blue",
+              "registerDate": "2024-01-16",
+              "actualRevenue": 5863
+            },
+            {
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-01-18",
+              "actualRevenue": 6864
+            },
+            {
+              "client": "Flipkart",
+              "representative": "Emily White",
+              "registerDate": "2024-02-07",
+              "actualRevenue": 4567
+            }
+          ]
+        },
+        {
+          "name": "ST-501A",
+          "revenue": 22978,
+          "clients": [
+            {
+              "client": "PhonePe",
+              "representative": "Henry Ford",
+              "registerDate": "2024-02-23",
+              "actualRevenue": 6042
+            },
+            {
+              "client": "BigBasket",
+              "representative": "Oliver Grey",
+              "registerDate": "2024-02-20",
+              "actualRevenue": 6629
+            },
+            {
+              "client": "Nykaa",
+              "representative": "Liam Green",
+              "registerDate": "2024-02-13",
+              "actualRevenue": 5177
+            }
+          ]
+        }
+      ]
+    }
+  ]
+
+  //Calulation of total revenue of each unit
+  mockBusinessRevenueData = mockBusinessRevenueData.map((data) => ({
+    ...data,
+    domains: data.domains.map((domain) => ({
+      ...domain,
+      revenue: domain.clients.reduce((acc, curr) => acc + curr.actualRevenue, 0)
+    }))
+  }));
+
 
   const [selectedMonth, setSelectedMonth] = useState(
     mockBusinessRevenueData[0].month
@@ -372,7 +1561,7 @@ const AdminExpenses = () => {
   // Prepare Bar Graph Data
   const graphData = [
     {
-      name: "Revenue",
+      name: "Expense",
       data: selectedMonthData.domains.map((domain) => domain.revenue),
     },
   ];
@@ -383,9 +1572,18 @@ const AdminExpenses = () => {
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
-    yaxis: { title: { text: "Number Of Offices" } },
+    yaxis: { title: { text: "Number Of Offices" },
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `INR ${inrFormat(val)}`,
+      },
+    },
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
+    },
+    dataLabels: {
+      formatter: (val) => `${inrFormat(val)}`,
     },
     legend: { position: "top" },
     colors: ["#80bf01"],
@@ -509,7 +1707,7 @@ const AdminExpenses = () => {
                     },
                     { headerName: "Register Date", field: "registerDate", flex: 1 },
                     {
-                      headerName: "Actual Expense (INR)",
+                      headerName: "Expense (INR)",
                       field: "actualRevenue",
                       flex: 1,
                     },
