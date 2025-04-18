@@ -505,7 +505,7 @@ const MaintainanceDashboard = () => {
           border
           title={"Budget v/s Achievements"}
           titleLabel={"FY 2024-25"}>
-          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
+          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={"finance/budget"} />
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard

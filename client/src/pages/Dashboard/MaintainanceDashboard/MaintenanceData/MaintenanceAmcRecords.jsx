@@ -99,7 +99,7 @@ const MaintenanceAmcRecords = () => {
   });
 
   const assetColumns = [
-    { field: "id", headerName: "Sr No" },
+    { field: "id", headerName: "Sr No", width: 100 },
     { field: "department", headerName: "Department" },
     { field: "inventoryNumber", headerName: "Inventory Number" },
     { field: "category", headerName: "Category" },
@@ -209,6 +209,26 @@ const MaintenanceAmcRecords = () => {
       purchaseDate: "21-11-2024",
       warranty: 12,
     },
+    {
+      department: "Maintenance",
+      inventoryNumber: "0008",
+      category: "Desk",
+      brand: "OfficePro",
+      price: 35000,
+      quantity: 3,
+      purchaseDate: "10-12-2024",
+      warranty: 24,
+    },
+    {
+      department: "Maintenance",
+      inventoryNumber: "0009",
+      category: "Cabinet",
+      brand: "StorageMaster",
+      price: 28000,
+      quantity: 2,
+      purchaseDate: "05-12-2024",
+      warranty: 12,
+    }
   ];
 
   const handleDetailsClick = (asset) => {
@@ -260,7 +280,7 @@ const MaintenanceAmcRecords = () => {
         handleClick={handleAddAsset}
       />
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}  title={modalMode === "view" ? "View Details" : "Add Record"}>
+      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "view" ? "View Details" : "Add Record"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -273,11 +293,10 @@ const MaintenanceAmcRecords = () => {
                     render={({ field }) => (
                       <div
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
-                          errors.assetImage
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } `}
+                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${errors.assetImage
+                          ? "border-red-500"
+                          : "border-gray-300"
+                          } `}
                       >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"

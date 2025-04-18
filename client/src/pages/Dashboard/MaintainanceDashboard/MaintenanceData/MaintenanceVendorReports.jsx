@@ -98,7 +98,7 @@ const MaintenanceVendorReports = () => {
   });
 
   const vendorColumns = [
-    { field: "id", headerName: "Sr No" },
+    { field: "id", headerName: "Sr No", width: 100 },
     { field: "vendorName", headerName: "Vendor Name" },
     { field: "contactPerson", headerName: "Contact Person" },
     { field: "email", headerName: "Email" },
@@ -137,42 +137,88 @@ const MaintenanceVendorReports = () => {
   // });
 
   const vendorData = [
+    // Your existing entries...
     {
-      vendorName: "Elite Furnishings",
-      contactPerson: "Amit Verma",
-      email: "amit@elitefurnishings.com",
-      phone: "9988776655",
-      company: "Elite Furnishings Co.",
-      address: "78, Residency Road, Bangalore",
-      gstNumber: "29AMITX7654D7Z9",
+      vendorName: "Havells India",
+      contactPerson: "Sanjay Gupta",
+      email: "sanjay.gupta@havells.com",
+      phone: "9876543210",
+      company: "Havells India Ltd.",
+      address: "Noida, Uttar Pradesh",
+      gstNumber: "09AAACH1234N1Z8",
     },
     {
-      vendorName: "Godrej Interio",
-      contactPerson: "Rohan Khanna",
-      email: "rohan.khanna@godrejinterio.com",
-      phone: "9988776655",
-      company: "Godrej & Boyce Mfg. Co. Ltd.",
-      address: "Vikhroli, Mumbai, Maharashtra",
-      gstNumber: "27AABCG1111J1Z5",
+      vendorName: "Asian Paints",
+      contactPerson: "Neha Kapoor",
+      email: "neha.kapoor@asianpaints.com",
+      phone: "8765432109",
+      company: "Asian Paints Ltd.",
+      address: "Andheri East, Mumbai, Maharashtra",
+      gstNumber: "27AAACA4567P1Z2",
     },
     {
-      vendorName: "Dell Technologies",
-      contactPerson: "Vikram Patel",
-      email: "vikram.patel@dell.com",
-      phone: "9012345678",
-      company: "Dell India Pvt. Ltd.",
-      address: "Domlur, Bangalore, Karnataka",
-      gstNumber: "29AACCD1111L1Z4",
+      vendorName: "Tata Steel",
+      contactPerson: "Rajiv Menon",
+      email: "rajiv.menon@tatasteel.com",
+      phone: "7654321098",
+      company: "Tata Steel Ltd.",
+      address: "Jamshedpur, Jharkhand",
+      gstNumber: "20AAACT1234Q1Z5",
     },
     {
-      vendorName: "Urban Ladder",
-      contactPerson: "Priya Sharma",
-      email: "priya.sharma@urbanladder.com",
-      phone: "9988001122",
-      company: "Urban Ladder Home Décor Solutions Pvt. Ltd.",
-      address: "Koramangala, Bangalore, Karnataka",
-      gstNumber: "29AAACU4567M1Z9",
+      vendorName: "Infosys",
+      contactPerson: "Ananya Reddy",
+      email: "ananya.reddy@infosys.com",
+      phone: "6543210987",
+      company: "Infosys Limited",
+      address: "Electronic City, Bangalore, Karnataka",
+      gstNumber: "29AAACI4567R1Z3",
     },
+    {
+      vendorName: "Reliance Digital",
+      contactPerson: "Arjun Malhotra",
+      email: "arjun.malhotra@reliancedigital.in",
+      phone: "9876123450",
+      company: "Reliance Retail Ltd.",
+      address: "Bandra Kurla Complex, Mumbai, Maharashtra",
+      gstNumber: "27AAACR7890S1Z6",
+    },
+    {
+      vendorName: "LG Electronics",
+      contactPerson: "Kiran Desai",
+      email: "kiran.desai@lg.com",
+      phone: "8765094321",
+      company: "LG Electronics India Pvt. Ltd.",
+      address: "Greater Noida, Uttar Pradesh",
+      gstNumber: "09AAACL1234T1Z9",
+    },
+    {
+      vendorName: "Whirlpool India",
+      contactPerson: "Meera Joshi",
+      email: "meera.joshi@whirlpool.com",
+      phone: "7658904321",
+      company: "Whirlpool of India Ltd.",
+      address: "Gurugram, Haryana",
+      gstNumber: "06AAACW5678U1Z2",
+    },
+    {
+      vendorName: "Samsung India",
+      contactPerson: "Rahul Mehta",
+      email: "rahul.mehta@samsung.com",
+      phone: "9123456780",
+      company: "Samsung Electronics India Pvt. Ltd.",
+      address: "Sector 62, Noida, Uttar Pradesh",
+      gstNumber: "09AABCS5678V1Z4",
+    },
+    {
+      vendorName: "Bajaj Electricals",
+      contactPerson: "Sneha Iyer",
+      email: "sneha.iyer@bajajelectricals.com",
+      phone: "8899776655",
+      company: "Bajaj Electricals Ltd.",
+      address: "Mumbai Central, Mumbai, Maharashtra",
+      gstNumber: "27AABCB1234W1Z7",
+    }
   ];
 
   const handleDetailsClick = (asset) => {
@@ -217,7 +263,7 @@ const MaintenanceVendorReports = () => {
         handleClick={handleAddAsset}
       />
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}  title={modalMode === "view" ? "View Details" : "Add Vendor"}>
+      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "view" ? "View Details" : "Add Vendor"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -230,11 +276,10 @@ const MaintenanceVendorReports = () => {
                     render={({ field }) => (
                       <div
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
-                          errors.assetImage
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } `}
+                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${errors.assetImage
+                          ? "border-red-500"
+                          : "border-gray-300"
+                          } `}
                       >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"

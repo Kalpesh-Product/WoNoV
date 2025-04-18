@@ -1077,6 +1077,43 @@ const HrBudget = () => {
           <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
         </WidgetSection>
       </div>
+      <div>
+        <WidgetSection layout={3} padding>
+          <DataCard
+            data={"INR 40,000"}
+            title={"Projected"}
+            route={"/app/dashboard/maintenance-dashboard/finance/budget"}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "short",
+              }
+            )}-25`}
+          />
+          <DataCard
+            data={"INR 35,000"}
+            title={"Actual"}
+            route={"/app/dashboard/maintenance-dashboard/finance/budget"}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "short",
+              }
+            )}-25`}
+          />
+          <DataCard
+            data={"INR 16,000"}
+            title={"Requested"}
+            route={"/app/dashboard/maintenance-dashboard/finance/budget"}
+            description={`Current Month: ${new Date().toLocaleString(
+              "default",
+              {
+                month: "short",
+              }
+            )}-25`}
+          />
+        </WidgetSection>
+      </div>
 
       <div className="flex justify-end">
         <PrimaryButton

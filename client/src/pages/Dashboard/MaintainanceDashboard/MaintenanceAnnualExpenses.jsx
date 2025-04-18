@@ -99,7 +99,7 @@ const MaintenanceAnnualExpenses = () => {
   });
 
   const assetColumns = [
-    { field: "id", headerName: "Sr No" },
+    { field: "id", headerName: "Sr No", width: 100 },
     { field: "category", headerName: "Category" },
     { field: "expenseName", headerName: "Expense Name", flex: 1 },
     { field: "amount", headerName: "Amount (INR)" },
@@ -158,6 +158,41 @@ const MaintenanceAnnualExpenses = () => {
       date: "08/04/2024",
       amount: "10,000",
     },
+    {
+      srNo: 6,
+      category: "Cleaning",
+      expenseName: "Monthly Cleaning Service",
+      date: "09/05/2024",
+      amount: "3,000",
+    },
+    {
+      srNo: 7,
+      category: "Maintenance Materials",
+      expenseName: "Painting Services",
+      date: "10/05/2024",
+      amount: "2,000",
+    },
+    {
+      srNo: 8,
+      category: "Maintenance Materials",
+      expenseName: "Floor Tiles Replacement",
+      date: "15/05/2024",
+      amount: "1,500",
+    },
+    {
+      srNo: 9,
+      category: "Repairs",
+      expenseName: "Water Pipe Repair",
+      date: "20/05/2024",
+      amount: "2,500",
+    },
+    {
+      srNo: 10,
+      category: "Repairs",
+      expenseName: "Air Conditioning Overhaul",
+      date: "22/05/2024",
+      amount: "6,000",
+    }
   ];
 
   const handleDetailsClick = (asset) => {

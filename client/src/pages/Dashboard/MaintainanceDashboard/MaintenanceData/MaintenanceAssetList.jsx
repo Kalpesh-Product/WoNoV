@@ -209,6 +209,26 @@ const MaintenanceAssetList = () => {
       purchaseDate: "21-11-2024",
       warranty: 12,
     },
+    {
+      department: "IT",
+      inventoryNumber: "0006",
+      category: "Laptop",
+      brand: "Dell",
+      price: 75000,
+      quantity: 5,
+      purchaseDate: "05-12-2024",
+      warranty: 36,
+    },
+    {
+      department: "Finance",
+      inventoryNumber: "0007",
+      category: "Printer",
+      brand: "HP",
+      price: 25000,
+      quantity: 2,
+      purchaseDate: "18-11-2024",
+      warranty: 12,
+    }
   ];
 
   const handleDetailsClick = (asset) => {

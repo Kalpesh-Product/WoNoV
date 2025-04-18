@@ -99,7 +99,7 @@ const MaintenanceMonthlyInvoice = () => {
   });
 
   const invoiceColumns = [
-    { field: "id", headerName: "Sr No" },
+    { field: "id", headerName: "Sr No", width: 100 },
     { field: "invoiceNumber", headerName: "Invoice Number" },
     { field: "vendor", headerName: "Vendor" },
     { field: "amount", headerName: "Amount" },
@@ -177,7 +177,32 @@ const MaintenanceMonthlyInvoice = () => {
       dueDate: "29-04-2025",
       status: "Unpaid",
     },
+    {
+      invoiceNumber: "INV-MNT-2406",
+      vendor: "Pepperfry",
+      amount: 45000,
+      invoiceDate: "16-04-2025",
+      dueDate: "01-05-2025",
+      status: "Unpaid",
+    },
+    {
+      invoiceNumber: "INV-MNT-2407",
+      vendor: "Flipkart Wholesale",
+      amount: 59000,
+      invoiceDate: "17-04-2025",
+      dueDate: "02-05-2025",
+      status: "Paid",
+    },
+    {
+      invoiceNumber: "INV-MNT-2408",
+      vendor: "OfficeMart",
+      amount: 52000,
+      invoiceDate: "18-04-2025",
+      dueDate: "03-05-2025",
+      status: "Unpaid",
+    },
   ];
+
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -224,7 +249,7 @@ const MaintenanceMonthlyInvoice = () => {
         handleClick={handleAddAsset}
       />
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}  title={modalMode === "view" ? "View Details" : "Add Invoice"}>
+      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "view" ? "View Details" : "Add Invoice"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -237,11 +262,10 @@ const MaintenanceMonthlyInvoice = () => {
                     render={({ field }) => (
                       <div
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
-                          errors.assetImage
+                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                        } `}
+                          } `}
                       >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
