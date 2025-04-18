@@ -12,6 +12,7 @@ import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const ItVendorReports = () => {
   const { auth } = useAuth();
@@ -199,7 +200,7 @@ const ItVendorReports = () => {
   });
 
   const vendorColumns = [
-    { field: "id", headerName: "Sr No",width:100 },
+    { field: "id", headerName: "Sr No", width: 100 },
     { field: "name", headerName: "Vendor Name" },
     { field: "contactPerson", headerName: "Contact Person" },
     { field: "phone", headerName: "Phone" },
@@ -212,10 +213,16 @@ const ItVendorReports = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <div className="p-2 mb-2 flex gap-2">
+        <div className="p-2 mb-2  flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            // onClick={() => handleVendorView(params.data)}
+            onClick={() => {
+              const fullVendor = vendorsList.find(
+                (v) => v.name === params.data.name && v.email === params.data.email
+              );
+              handleDetailsClick(fullVendor);
+            }}
+
           >
             <MdOutlineRemoveRedEye />
           </span>
@@ -277,7 +284,7 @@ const ItVendorReports = () => {
         handleClick={handleAddAsset}
       />
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "add" ? "Add Vendor" : "Vendor Details"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -290,11 +297,10 @@ const ItVendorReports = () => {
                     render={({ field }) => (
                       <div
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
-                          errors.assetImage
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } `}
+                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${errors.assetImage
+                          ? "border-red-500"
+                          : "border-gray-300"
+                          } `}
                       >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
@@ -570,42 +576,23 @@ const ItVendorReports = () => {
         )}
         {modalMode === "view" && selectedAsset && (
           <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">Vendor Details</h2>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <strong>Vendor Name:</strong> {selectedAsset.name}
-              </div>
-              <div>
-                <strong>Contact Person:</strong> {selectedAsset.contactPerson}
-              </div>
-              <div>
-                <strong>Phone:</strong> {selectedAsset.phone}
-              </div>
-              <div>
-                <strong>Email:</strong> {selectedAsset.email}
-              </div>
-              <div>
-                <strong>GST Number:</strong> {selectedAsset.gstNumber}
+              <DetalisFormatted title="Vendor Name" detail={selectedAsset.name} />
+              <DetalisFormatted title="Contact Person" detail={selectedAsset.contactPerson} />
+              <DetalisFormatted title="Phone" detail={selectedAsset.phone} />
+              <DetalisFormatted title="Email" detail={selectedAsset.email} />
+              <DetalisFormatted title="GST Number" detail={selectedAsset.gstNumber} />
+              <div className="col-span-2">
+                <DetalisFormatted title="Address" detail={selectedAsset.address} gap="w-[20%]" />
               </div>
               <div className="col-span-2">
-                <strong>Address:</strong> {selectedAsset.address}
+                <DetalisFormatted title="Services" detail={selectedAsset.services?.join(", ")} gap="w-[20%]" />
               </div>
-              <div className="col-span-2">
-                <strong>Services:</strong> {selectedAsset.services?.join(", ")}
-              </div>
-              <div>
-                <strong>Rating:</strong> {selectedAsset.rating}
-              </div>
-            </div>
-
-            <div className="flex justify-end mt-6">
-              <PrimaryButton
-                title="Close"
-                handleSubmit={() => setIsModalOpen(false)}
-              />
+              <DetalisFormatted title="Rating" detail={selectedAsset.rating} />
             </div>
           </div>
         )}
+
       </MuiModal>
     </>
   );

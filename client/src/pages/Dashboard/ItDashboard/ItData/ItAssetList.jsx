@@ -214,16 +214,30 @@ const ItAssetList = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: (params) => (
-        <div className="p-2 mb-2 flex gap-2">
-          <span
-            className="text-subtitle cursor-pointer"
-          // onClick={() => handleVendorView(params.data)}
-          >
-            <MdOutlineRemoveRedEye />
-          </span>
-        </div>
-      ),
+      cellRenderer: (params) => {
+        return (
+          <div className="p-2 mb-2 flex gap-2">
+            <span
+              className="text-subtitle cursor-pointer"
+              onClick={() => {
+                // Find the full asset object from dummyAssets + assetsList
+                const fullAsset = [...(assetsList || []), ...dummyAssets].find(
+                  (item) =>
+                    item.name === params.data.category &&
+                    item.brand === params.data.brand &&
+                    item.price.toString().includes(params.data.price.replace(/,/g, "")) // fuzzy match in case formatting differs
+                );
+                if (fullAsset) {
+                  handleDetailsClick(fullAsset);
+                }
+              }}
+            >
+              <MdOutlineRemoveRedEye />
+            </span>
+          </div>
+        );
+      }
+
     },
   ];
 
@@ -284,7 +298,7 @@ const ItAssetList = () => {
         handleClick={handleAddAsset}
       />
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "add" ? "Add Asset" : "Asset Details"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -574,6 +588,30 @@ const ItAssetList = () => {
             </form>
           </div>
         )}
+        {modalMode === "view" && selectedAsset && (
+          <div className="p-4 w-full">
+            <div className="grid grid-cols-2 gap-4">
+              <DetalisFormatted title="Asset Name" detail={selectedAsset.name} />
+              <DetalisFormatted title="Department" detail={selectedAsset.department?.name || "N/A"} />
+              <DetalisFormatted title="Brand" detail={selectedAsset.brand || "N/A"} />
+              <DetalisFormatted
+                title="Price"
+                detail={`INR ${Number(selectedAsset.price).toLocaleString("en-IN")}`}
+              />
+              <DetalisFormatted title="Quantity" detail={selectedAsset.quantity} />
+              <DetalisFormatted
+                title="Purchase Date"
+                detail={dayjs(selectedAsset.purchaseDate).format("DD MMM YYYY")}
+              />
+              <DetalisFormatted
+                title="Warranty"
+                detail={`${selectedAsset.warranty} months`}
+              />
+              <DetalisFormatted title="Vendor" detail={selectedAsset.vendor?.name || "N/A"} />
+            </div>
+          </div>
+        )}
+
       </MuiModal>
     </>
   );
