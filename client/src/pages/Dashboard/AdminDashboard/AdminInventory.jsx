@@ -11,6 +11,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
+import { inrFormat } from "../../../utils/currencyFormat";
+import humanDateForamt from "../../../utils/humanDateForamt"
 
 const AdminInventory = () => {
   const { auth } = useAuth();
@@ -63,7 +65,7 @@ const AdminInventory = () => {
     },
   });
 
-  console.log(vendorDetials);
+ 
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
@@ -119,18 +121,77 @@ const AdminInventory = () => {
     },
   ];
 
-  const { data: assetsList = [] } = useQuery({
-    queryKey: ["assetsList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-assets");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
+  // const { data: assetsList = [] } = useQuery({
+  //   queryKey: ["assetsList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-assets");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
 
+  const mixedInventory = [
+    {
+      id: 1,
+      department: "Admin",
+      category: "Electronics",
+      brand: "Dell",
+      price: 55000,
+      quantity: 10,
+      purchaseDate: "2024-01-15",
+      warranty: 24,
+      vendorName: "TechSource Pvt Ltd"
+    },
+    {
+      id: 2,
+      department: "IT",
+      category: "Furniture",
+      brand: "Godrej",
+      price: 12000,
+      quantity: 5,
+      purchaseDate: "2023-12-01",
+      warranty: 36,
+      vendorName: "OfficeComfort Solutions"
+    },
+    {
+      id: 3,
+      department: "HR",
+      category: "Stationery",
+      brand: "Classmate",
+      price: 200,
+      quantity: 100,
+      purchaseDate: "2024-03-10",
+      warranty: 0,
+      vendorName: "SmartOffice Supplies"
+    },
+    {
+      id: 4,
+      department: "Finance",
+      category: "Electronics",
+      brand: "HP",
+      price: 47000,
+      quantity: 7,
+      purchaseDate: "2023-11-25",
+      warranty: 12,
+      vendorName: "Prime IT Distributors"
+    },
+    {
+      id: 5,
+      department: "Tech",
+      category: "Networking",
+      brand: "Cisco",
+      price: 18000,
+      quantity: 4,
+      purchaseDate: "2024-02-05",
+      warranty: 24,
+      vendorName: "NetConnect Systems"
+    }
+  ];
+  
+  
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
     setModalMode("view");
@@ -152,26 +213,22 @@ const AdminInventory = () => {
   return (
     <div className="p-4">
       <AgTable
-        key={assetsList.length}
+        key={mixedInventory.length}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"List Of Inventory"}
         buttonTitle={"Add Inventory"}
         data={[
-          ...assetsList.map((asset, index) => ({
+          ...mixedInventory.map((asset, index) => ({
             id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
+            department: asset.department,
+            category: asset.category,
             brand: asset.brand,
-            price: asset.price,
+            price: inrFormat(asset.price),
             quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
+            purchaseDate:humanDateForamt(asset.purchaseDate),
             warranty: asset.warranty,
-            vendorName: asset.vendor.name,
+            vendorName: asset.vendorName,
           })),
         ]}
         columns={assetColumns}

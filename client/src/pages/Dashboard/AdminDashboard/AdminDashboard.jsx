@@ -633,7 +633,7 @@ const AdminDashboard = () => {
           description={"Admin Offices"}
         />,
         <DataCard
-          route={"admin-expenses"}
+          // route={"admin-expenses"}
           title={"Total"}
           data={"38"}
           description={"Monthly Due Tasks"}
