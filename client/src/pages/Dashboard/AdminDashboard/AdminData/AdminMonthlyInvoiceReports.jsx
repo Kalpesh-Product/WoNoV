@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
 // import AssetModal from "./AssetModal";
@@ -11,6 +11,10 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
+import { inrFormat } from "../../../../utils/currencyFormat";
+import dayjs from "dayjs";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const AdminMonthlyInvoiceReports = () => {
   const { auth } = useAuth();
@@ -63,7 +67,6 @@ const AdminMonthlyInvoiceReports = () => {
     },
   });
 
-  console.log(vendorDetials);
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
@@ -97,13 +100,13 @@ const AdminMonthlyInvoiceReports = () => {
     },
   });
 
-  const assetColumns = [
+  const invoiceColumns = [
     { field: "id", headerName: "Sr No" },
     { field: "department", headerName: "Department" },
     // { field: "assetNumber", headerName: "Asset Number" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
+    { field: "price", headerName: "Price (INR)" },
     { field: "quantity", headerName: "Quantity" },
     { field: "purchaseDate", headerName: "Purchase Date" },
     { field: "warranty", headerName: "Warranty (Months)" },
@@ -111,10 +114,14 @@ const AdminMonthlyInvoiceReports = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <PrimaryButton
-          title="Details"
-          handleSubmit={() => handleDetailsClick(params.data)}
-        />
+         <div className="p-2 mb-2  flex gap-2">
+                  <span
+                    className="text-subtitle cursor-pointer"
+                    onClick={() => handleDetailsClick(params.data)}
+                  >
+                    <MdOutlineRemoveRedEye />
+                  </span>
+                </div>
       ),
     },
   ];
@@ -130,6 +137,102 @@ const AdminMonthlyInvoiceReports = () => {
       }
     },
   });
+
+  const invoiceData = 
+  [
+    {
+      department: { name: "Admin" },
+      name: "Office Chair",
+      brand: "Godrej Interio",
+      price: 8500,
+      quantity: 10,
+      purchaseDate: "2024-04-12",
+      warranty: 24,
+      vendor: { name: "Comfort Seating Co." },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Laser Printer",
+      brand: "Brother",
+      price: 14000,
+      quantity: 2,
+      purchaseDate: "2024-06-18",
+      warranty: 18,
+      vendor: { name: "Print Solutions Pvt Ltd" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Filing Cabinet",
+      brand: "DurableStore",
+      price: 6000,
+      quantity: 5,
+      purchaseDate: "2024-08-08",
+      warranty: 36,
+      vendor: { name: "Office Interiors Ltd" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Wi-Fi Router",
+      brand: "Netgear",
+      price: 4500,
+      quantity: 3,
+      purchaseDate: "2024-07-20",
+      warranty: 24,
+      vendor: { name: "NetCom Solutions" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Work Desk",
+      brand: "Featherlite",
+      price: 9000,
+      quantity: 6,
+      purchaseDate: "2024-09-30",
+      warranty: 48,
+      vendor: { name: "Urban Office Supplies" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Reception Sofa Set",
+      brand: "Nilkamal",
+      price: 30000,
+      quantity: 1,
+      purchaseDate: "2024-11-10",
+      warranty: 60,
+      vendor: { name: "FurniStyle India" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Coffee Machine",
+      brand: "Nescafe",
+      price: 15000,
+      quantity: 1,
+      purchaseDate: "2025-01-15",
+      warranty: 12,
+      vendor: { name: "PantryPlus Services" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Document Shredder",
+      brand: "Kores",
+      price: 10000,
+      quantity: 1,
+      purchaseDate: "2025-02-02",
+      warranty: 24,
+      vendor: { name: "SecureDocs India" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Visitor Register Tablet",
+      brand: "Samsung",
+      price: 28000,
+      quantity: 2,
+      purchaseDate: "2025-03-20",
+      warranty: 24,
+      vendor: { name: "Digital Gateways" },
+    },
+  ];
+  
+  
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -149,32 +252,32 @@ const AdminMonthlyInvoiceReports = () => {
     }
   };
 
+  useEffect(()=>{
+console.log(selectedAsset)
+  },[selectedAsset])
+
   return (
     <>
       <AgTable
-        key={assetsList.length}
+        key={invoiceData.length}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"Monthly Invoice Reports"}
         buttonTitle={"Add Invoice"}
         data={[
-          ...assetsList.map((asset, index) => ({
+          ...invoiceData.map((asset, index) => ({
             id: index + 1,
             department: asset.department.name,
             category: asset.name,
             brand: asset.brand,
-            price: asset.price,
+            price: inrFormat(asset.price),
             quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
+            purchaseDate: dayjs(new Date(asset.purchaseDate)).format("DD-MM-YYYY"),
             warranty: asset.warranty,
             vendorName: asset.vendor.name,
           })),
         ]}
-        columns={assetColumns}
+        columns={invoiceColumns}
         handleClick={handleAddAsset}
       />
 
@@ -459,6 +562,20 @@ const AdminMonthlyInvoiceReports = () => {
                 {/* Cancel button for edit mode */}
               </div>
             </form>
+          </div>
+        )}
+            {modalMode === "view" && selectedAsset && (
+          <div className="p-4">
+            <div className="grid grid-cols-2 gap-4">
+              <DetalisFormatted title="Department" detail={selectedAsset.department} />
+              <DetalisFormatted title="Category" detail={selectedAsset.category} />
+              <DetalisFormatted title="Brand" detail={selectedAsset.brand} />
+              <DetalisFormatted title="Price" detail={`INR ${selectedAsset.price.toLocaleString("en-IN")}`} />
+              <DetalisFormatted title="Quantity" detail={selectedAsset.quantity} />
+              <DetalisFormatted title="Purchase Date" detail={dayjs(selectedAsset.purchaseDate).format("DD-MM-YYYY")} />
+              <DetalisFormatted title="Warranty" detail={`${selectedAsset.warranty} months`} />
+              <DetalisFormatted title="Vendor" detail={selectedAsset.vendorName} />
+            </div>
           </div>
         )}
       </MuiModal>

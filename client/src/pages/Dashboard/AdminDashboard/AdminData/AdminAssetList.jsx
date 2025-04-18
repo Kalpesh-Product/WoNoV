@@ -12,6 +12,9 @@ import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { inrFormat } from "../../../../utils/currencyFormat";
+import dayjs from "dayjs";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const AdminAssetList = () => {
   const { auth } = useAuth();
@@ -103,7 +106,7 @@ const AdminAssetList = () => {
     // { field: "assetNumber", headerName: "Asset Number" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
+    { field: "price", headerName: "Price (INR)" },
     { field: "quantity", headerName: "Quantity" },
     { field: "purchaseDate", headerName: "Purchase Date" },
     { field: "warranty", headerName: "Warranty (Months)" },
@@ -117,7 +120,20 @@ const AdminAssetList = () => {
              
             className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
           >
-            <span className="text-subtitle">
+            <span className="text-subtitle"
+             onClick={() => {
+              // Find the full asset object from dummyAssets + assetsList
+              const fullAsset = [...(assetsList || []), ...dummyAssets].find(
+                (item) =>
+                  item.name === params.data.category &&
+                  item.brand === params.data.brand &&
+                  item.price.toString().includes(params.data.price.replace(/,/g, "")) // fuzzy match in case formatting differs
+              );
+              if (fullAsset) {
+                handleDetailsClick(fullAsset);
+              }
+            }}
+            >
               <MdOutlineRemoveRedEye />
             </span>
           </div>
@@ -138,6 +154,110 @@ const AdminAssetList = () => {
       }
     },
   });
+
+  const dummyAssets = [
+    {
+      department: { name: "Admin" },
+      name: "Office Chair",
+      brand: "Godrej Interio",
+      price: 6500,
+      quantity: 20,
+      purchaseDate: "2024-01-05T00:00:00.000Z",
+      warranty: 12,
+      vendor: { name: "FurniMart" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Conference Table",
+      brand: "Featherlite",
+      price: 18000,
+      quantity: 2,
+      purchaseDate: "2023-12-12T00:00:00.000Z",
+      warranty: 36,
+      vendor: { name: "OfficeWorld" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Filing Cabinet",
+      brand: "Nilkamal",
+      price: 4500,
+      quantity: 10,
+      purchaseDate: "2024-02-20T00:00:00.000Z",
+      warranty: 24,
+      vendor: { name: "FileIt Suppliers" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Water Dispenser",
+      brand: "Blue Star",
+      price: 9500,
+      quantity: 3,
+      purchaseDate: "2024-03-15T00:00:00.000Z",
+      warranty: 12,
+      vendor: { name: "HydroTech" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Air Conditioner",
+      brand: "Voltas",
+      price: 33000,
+      quantity: 5,
+      purchaseDate: "2023-10-01T00:00:00.000Z",
+      warranty: 36,
+      vendor: { name: "CoolPoint Solutions" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "CCTV Camera",
+      brand: "Hikvision",
+      price: 6000,
+      quantity: 8,
+      purchaseDate: "2024-04-10T00:00:00.000Z",
+      warranty: 24,
+      vendor: { name: "SecureView Systems" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Reception Desk",
+      brand: "Urban Ladder",
+      price: 22000,
+      quantity: 1,
+      purchaseDate: "2024-06-25T00:00:00.000Z",
+      warranty: 60,
+      vendor: { name: "FrontDesk Furnishers" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Visitor Sofa Set",
+      brand: "Durian",
+      price: 18500,
+      quantity: 2,
+      purchaseDate: "2024-07-05T00:00:00.000Z",
+      warranty: 36,
+      vendor: { name: "Seating Arrangements Co." },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Storage Rack",
+      brand: "Supreme",
+      price: 3800,
+      quantity: 12,
+      purchaseDate: "2024-08-15T00:00:00.000Z",
+      warranty: 24,
+      vendor: { name: "Storage Solutions India" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Coffee Machine",
+      brand: "Nescafe",
+      price: 12000,
+      quantity: 1,
+      purchaseDate: "2023-11-20T00:00:00.000Z",
+      warranty: 18,
+      vendor: { name: "Appliance Distributors Ltd." },
+    }
+  ];
+  
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -160,24 +280,20 @@ const AdminAssetList = () => {
   return (
     <>
       <AgTable
-        key={assetsList.length}
+        key={dummyAssets.length}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"Asset List"}
         buttonTitle={"Add Asset"}
         data={[
-          ...assetsList.map((asset, index) => ({
+          ...dummyAssets.map((asset, index) => ({
             id: index + 1,
             department: asset.department.name,
             category: asset.name,
             brand: asset.brand,
-            price: asset.price,
+            price:inrFormat(asset.price),
             quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
+            purchaseDate: dayjs(new Date(asset.purchaseDate)).format("DD-MM-YYYY"),
             warranty: asset.warranty,
             vendorName: asset.vendor.name,
           })),
@@ -467,6 +583,29 @@ const AdminAssetList = () => {
                 {/* Cancel button for edit mode */}
               </div>
             </form>
+          </div>
+        )}
+         {modalMode === "view" && selectedAsset && (
+          <div className="p-4 w-full">
+            <div className="grid grid-cols-2 gap-4">
+              <DetalisFormatted title="Asset Name" detail={selectedAsset.name} />
+              <DetalisFormatted title="Department" detail={selectedAsset.department?.name || "N/A"} />
+              <DetalisFormatted title="Brand" detail={selectedAsset.brand || "N/A"} />
+              <DetalisFormatted
+                title="Price"
+                detail={`INR ${Number(selectedAsset.price).toLocaleString("en-IN")}`}
+              />
+              <DetalisFormatted title="Quantity" detail={selectedAsset.quantity} />
+              <DetalisFormatted
+                title="Purchase Date"
+                detail={dayjs(selectedAsset.purchaseDate).format("DD-MM-YYYY")}
+              />
+              <DetalisFormatted
+                title="Warranty"
+                detail={`${selectedAsset.warranty} months`}
+              />
+              <DetalisFormatted title="Vendor" detail={selectedAsset.vendor?.name || "N/A"} />
+            </div>
           </div>
         )}
       </MuiModal>
