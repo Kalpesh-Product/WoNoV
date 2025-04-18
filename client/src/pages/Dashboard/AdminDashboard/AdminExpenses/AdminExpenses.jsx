@@ -14,10 +14,12 @@ import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
+import { inrFormat } from "../../../../utils/currencyFormat";
 
 const AdminExpenses = () => {
   const navigate = useNavigate();
-  const mockBusinessRevenueData = [
+    //Proper columns only in April
+  let mockBusinessRevenueData = [
     {
       "month": "April",
       "domains": [
@@ -29,25 +31,25 @@ const AdminExpenses = () => {
               "client": "Nykaa",
               "representative": "Liam Green",
               "registerDate": "2024-02-20",
-              "actualRevenue": 6114
+              "actualRevenue": 6725
             },
             {
               "client": "Flipkart",
               "representative": "Emily White",
               "registerDate": "2024-02-20",
-              "actualRevenue": 5864
+              "actualRevenue": 6450
             },
             {
               "client": "Uber",
               "representative": "Jane Smith",
               "registerDate": "2024-02-11",
-              "actualRevenue": 6457
+              "actualRevenue": 7103
             }
           ]
         },
         {
           "name": "ST-701B",
-          "revenue": 15000,
+          "revenue": 26000,
           "clients": [
             {
               "client": "Myntra",
@@ -1520,6 +1522,16 @@ const AdminExpenses = () => {
     }
   ]
 
+  //Calulation of total revenue of each unit
+  mockBusinessRevenueData = mockBusinessRevenueData.map((data) => ({
+    ...data,
+    domains: data.domains.map((domain) => ({
+      ...domain,
+      revenue: domain.clients.reduce((acc, curr) => acc + curr.actualRevenue, 0)
+    }))
+  }));
+
+
   const [selectedMonth, setSelectedMonth] = useState(
     mockBusinessRevenueData[0].month
   ); // Default to first month
@@ -1549,7 +1561,7 @@ const AdminExpenses = () => {
   // Prepare Bar Graph Data
   const graphData = [
     {
-      name: "Revenue",
+      name: "Expense",
       data: selectedMonthData.domains.map((domain) => domain.revenue),
     },
   ];
@@ -1560,9 +1572,18 @@ const AdminExpenses = () => {
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
-    yaxis: { title: { text: "Number Of Offices" } },
+    yaxis: { title: { text: "Number Of Offices" },
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `INR ${inrFormat(val)}`,
+      },
+    },
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
+    },
+    dataLabels: {
+      formatter: (val) => `${inrFormat(val)}`,
     },
     legend: { position: "top" },
     colors: ["#80bf01"],
@@ -1686,7 +1707,7 @@ const AdminExpenses = () => {
                     },
                     { headerName: "Register Date", field: "registerDate", flex: 1 },
                     {
-                      headerName: "Actual Expense (INR)",
+                      headerName: "Expense (INR)",
                       field: "actualRevenue",
                       flex: 1,
                     },
