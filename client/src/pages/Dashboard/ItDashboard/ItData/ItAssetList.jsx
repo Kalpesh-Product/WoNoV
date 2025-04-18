@@ -601,7 +601,7 @@ const ItAssetList = () => {
               <DetalisFormatted title="Quantity" detail={selectedAsset.quantity} />
               <DetalisFormatted
                 title="Purchase Date"
-                detail={dayjs(selectedAsset.purchaseDate).format("DD MMM YYYY")}
+                detail={dayjs(selectedAsset.purchaseDate).format("DD-MM-YYYY")}
               />
               <DetalisFormatted
                 title="Warranty"
