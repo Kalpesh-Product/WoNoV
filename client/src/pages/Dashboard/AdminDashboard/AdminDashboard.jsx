@@ -234,18 +234,54 @@ const AdminDashboard = () => {
   };
   //-----------------------------------------------------------------------------------------------------------------//
   const houseKeepingMemberData = [
-    { name: "John", dateOfJoin: "20-02-2025", building: "DTC", unitNo: "002" },
+    { name: "Aryan", dateOfJoin: "20-02-2025", building: "DTC", unitNo: "002" },
     {
-      name: "Alice",
+      name: "Karan",
       dateOfJoin: "27-02-2025",
       building: "ST",
       unitNo: "701(A)",
     },
     {
-      name: "Raj Kumar",
+      name: "Rahul Saxena",
       dateOfJoin: "12-03-2025",
       building: "ST",
       unitNo: "601(B)",
+    },
+    {
+      name: "Aishwarya Sharma",
+      dateOfJoin: "10-04-2025",
+      building: "DTC",
+      unitNo: "103",
+    },
+    {
+      name: "Kavya",
+      dateOfJoin: "25-03-2025",
+      building: "ST",
+      unitNo: "606(C)",
+    },
+    {
+      name: "Siddharth Patel",
+      dateOfJoin: "15-04-2025",
+      building: "DTC",
+      unitNo: "201",
+    },
+    {
+      name: "Rohan Mehra",
+      dateOfJoin: `20-02-${new Date().getFullYear()}`,
+      building: 'DTC',
+      unitNo: '004',
+    },
+    {
+      name: "Aarav Jain",
+      dateOfJoin: `25-03-${new Date().getFullYear()}`,
+      building: 'ST',
+      unitNo: '607(D)',
+    },
+    {
+      name: "Ishaan Kumar",
+      dateOfJoin: `15-04-${new Date().getFullYear()}`,
+      building: 'DTC',
+      unitNo: '202(E)',
     },
   ];
   const houseKeepingMemberColumns = [
@@ -256,7 +292,7 @@ const AdminDashboard = () => {
     { id: "unitNo", label: "Unit No", align: "left" },
   ];
   //-----------------------------------------------------------------------------------------------------------------//
-  const executiveShiftData = [
+  const executiveShiftData =[
     {
       id: 1,
       name: "Amit Sharma",
@@ -269,7 +305,7 @@ const AdminDashboard = () => {
       id: 2,
       name: "Priya Nair",
       building: "ST",
-      unitNo: "701(A)",
+      unitNo: "701(B)",
       startTime: "10:00 AM",
       endTime: "06:00 PM",
     },
@@ -307,13 +343,21 @@ const AdminDashboard = () => {
     },
     {
       id: 7,
-      name: "Anjali Kapoor",
+      name: "Diksha Kandolkar",
       building: "ST",
-      unitNo: "501(B)",
-      startTime: "12:00 PM",
-      endTime: "08:00 PM",
+      unitNo: "501(C)",
+      startTime: "10:30 AM",
+      endTime: "05:30 PM",
     },
-  ];
+    {
+      id: 8,
+      name: "Rahul Dhawan",
+      building: "DTC",
+      unitNo: "004",
+      startTime: "09:00 AM",
+      endTime: "06:00 PM",
+    },
+  ]
 
   const executiveShiftColumns = [
     { id: "id", label: "Sr No", align: "left" },
@@ -340,7 +384,32 @@ const AdminDashboard = () => {
       date: "01-03-2025",
       location: "Garrison Cafe",
     },
-  ];
+    {
+      event: "91 HR Anniversary Celebration",
+      date: "10-04-2025",
+      location: "Garrison Cafe",
+    },
+    {
+      event: "Turtlemint Anniversary Celebration",
+      date: "20-02-2025",
+      location: "Garrison Cafe",
+    },
+    {
+      event: "Lancesoft Anniversary Celebration",
+      date: "25-03-2025",
+      location: "Garrison Cafe",
+    },
+    {
+      event: "Zimetrics Anniversary Celebration",
+      date: "05-04-2025",
+      location: "Garrison Cafe",
+    },
+    {
+      event: "Infuse Anniversary Celebration",
+      date: "02-03-2025",
+      location: "Garrison Cafe",
+    },
+  ]
   const upcomingEventsColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "event", label: "Event", align: "left" },
@@ -404,7 +473,7 @@ const AdminDashboard = () => {
     },
     {
       srNo: 3,
-      name: "Kabir Singh",
+      name: "Kabir Khanna",
       upcomingIn: "1 week",
       dateOfBirth: "1994-04-20",
       company: "Zimetrics",
@@ -512,8 +581,8 @@ const AdminDashboard = () => {
           upComingInDays === 0
             ? "Today"
             : upComingInDays === 1
-            ? "Tomorrow"
-            : `${upComingInDays} days`,
+              ? "Tomorrow"
+              : `${upComingInDays} days`,
         isUpcoming:
           anniversary.isBefore(cutOff) &&
           anniversary.isAfter(today.subtract(1, "day")),
