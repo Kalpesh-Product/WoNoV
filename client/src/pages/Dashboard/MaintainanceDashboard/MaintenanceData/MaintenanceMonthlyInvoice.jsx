@@ -525,7 +525,7 @@ const MaintenanceMonthlyInvoice = () => {
             <DetalisFormatted title="Vendor" detail={selectedAsset.vendor} />
             <DetalisFormatted
               title="Amount"
-              detail={`${selectedAsset.amount} INR`}
+              detail={`INR ${selectedAsset.amount}`}
             />
             <DetalisFormatted
               title="Invoice Date"

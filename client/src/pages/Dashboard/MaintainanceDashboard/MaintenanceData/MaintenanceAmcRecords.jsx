@@ -569,7 +569,7 @@ const MaintenanceAmcRecords = () => {
             <DetalisFormatted title="Brand" detail={selectedAsset.brand} />
             <DetalisFormatted
               title="Price"
-              detail={`₹${selectedAsset.price}`}
+              detail={`INR ${selectedAsset.price}`}
             />
             <DetalisFormatted
               title="Quantity"

@@ -244,7 +244,7 @@ const MaintenanceInventory = () => {
               maximumFractionDigits: 0,
             }),
             quantity: item.quantity,
-            purchaseDate: dayjs(item.purchaseDate).format("DD-MM-YYYY"),
+            purchaseDate: dayjs(new Date(item.purchaseDate.split("-").reverse().join("-"))).format("DD-MM-YYYY"),
             warranty: item.warranty,
           })),
         ]}
@@ -567,7 +567,7 @@ const MaintenanceInventory = () => {
             <DetalisFormatted title="Brand" detail={selectedAsset.brand} />
             <DetalisFormatted
               title="Price"
-              detail={`${selectedAsset.price} INR`}
+              detail={`INR ${selectedAsset.price}`}
             />
             <DetalisFormatted
               title="Quantity"
