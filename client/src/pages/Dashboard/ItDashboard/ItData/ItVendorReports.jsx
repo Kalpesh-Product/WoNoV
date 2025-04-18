@@ -142,6 +142,28 @@ const ItVendorReports = () => {
       services: ["Cloud Hosting", "Data Storage"],
       rating: 4.9,
     },
+    {
+      _id: "v8",
+      name: "Cisco Systems India",
+      contactPerson: "Vikram Singh",
+      phone: "+91-9876123450",
+      email: "vikram.singh@cisco.com",
+      address: "Bengaluru, Karnataka",
+      gstNumber: "29AABCC1234P1Z3",
+      services: ["Networking Equipment", "Cybersecurity Solutions"],
+      rating: 4.7,
+    },
+    {
+      _id: "v9",
+      name: "Lenovo India Pvt Ltd",
+      contactPerson: "Priya Iyer",
+      phone: "+91-8765432109",
+      email: "priya.iyer@lenovo.com",
+      address: "Chennai, Tamil Nadu",
+      gstNumber: "33AABCL1234Q1Z4",
+      services: ["Laptops & Desktops", "Data Center Solutions"],
+      rating: 4.5,
+    }
   ];
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
@@ -177,7 +199,7 @@ const ItVendorReports = () => {
   });
 
   const vendorColumns = [
-    { field: "id", headerName: "Sr No" },
+    { field: "id", headerName: "Sr No",width:100 },
     { field: "name", headerName: "Vendor Name" },
     { field: "contactPerson", headerName: "Contact Person" },
     { field: "phone", headerName: "Phone" },

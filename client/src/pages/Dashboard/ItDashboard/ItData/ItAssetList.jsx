@@ -5,6 +5,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import MuiModal from "../../../../components/MuiModal";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { Controller, useForm } from "react-hook-form";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -12,6 +13,7 @@ import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import dayjs from "dayjs";
 
 const ItAssetList = () => {
   const { auth } = useAuth();
@@ -62,6 +64,86 @@ const ItAssetList = () => {
       warranty: 12,
       vendor: { name: "Tech World" },
     },
+    {
+      department: { name: "IT" },
+      name: "Desktop",
+      brand: "HP",
+      price: 50000,
+      quantity: 10,
+      purchaseDate: "2024-05-20T00:00:00.000Z",
+      warranty: 36,
+      vendor: { name: "Global Computers" },
+    },
+    {
+      department: { name: "IT" },
+      name: "Monitor",
+      brand: "LG",
+      price: 15000,
+      quantity: 8,
+      purchaseDate: "2024-01-10T00:00:00.000Z",
+      warranty: 24,
+      vendor: { name: "Digital Hub" },
+    },
+    {
+      department: { name: "IT" },
+      name: "Printer",
+      brand: "Canon",
+      price: 12000,
+      quantity: 3,
+      purchaseDate: "2023-08-30T00:00:00.000Z",
+      warranty: 12,
+      vendor: { name: "Office Supplies Inc." },
+    },
+    {
+      department: { name: "IT" },
+      name: "Server",
+      brand: "Dell PowerEdge",
+      price: 200000,
+      quantity: 1,
+      purchaseDate: "2024-03-12T00:00:00.000Z",
+      warranty: 60,
+      vendor: { name: "Enterprise IT Solutions" },
+    },
+    {
+      department: { name: "IT" },
+      name: "Switch",
+      brand: "Cisco",
+      price: 25000,
+      quantity: 4,
+      purchaseDate: "2024-07-22T00:00:00.000Z",
+      warranty: 36,
+      vendor: { name: "Networking Pros" },
+    },
+    {
+      department: { name: "IT" },
+      name: "External Hard Drive",
+      brand: "Seagate",
+      price: 8000,
+      quantity: 6,
+      purchaseDate: "2024-09-05T00:00:00.000Z",
+      warranty: 24,
+      vendor: { name: "Data Storage Ltd." },
+    },
+    {
+      department: { name: "IT" },
+      name: "Wireless Keyboard & Mouse",
+      brand: "Logitech",
+      price: 5000,
+      quantity: 15,
+      purchaseDate: "2024-02-18T00:00:00.000Z",
+      warranty: 12,
+      vendor: { name: "Peripherals Unlimited" },
+    },
+    {
+      department: { name: "IT" },
+      name: "Projector",
+      brand: "Epson",
+      price: 35000,
+      quantity: 2,
+      purchaseDate: "2023-12-01T00:00:00.000Z",
+      warranty: 18,
+      vendor: { name: "AV Tech Solutions" },
+    },
   ];
 
   const { data: assetsCategories = [], isPending: assetPending } = useQuery({
@@ -86,8 +168,6 @@ const ItAssetList = () => {
       }
     },
   });
-
-  console.log(vendorDetials);
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
@@ -122,12 +202,12 @@ const ItAssetList = () => {
   });
 
   const assetColumns = [
-    { field: "id", headerName: "Sr No" },
+    { field: "id", headerName: "Sr No", width: 100 },
     { field: "department", headerName: "Department" },
     // { field: "assetNumber", headerName: "Asset Number" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
+    { field: "price", headerName: "Price (INR)" },
     { field: "quantity", headerName: "Quantity" },
     { field: "purchaseDate", headerName: "Purchase Date" },
     { field: "warranty", headerName: "Warranty (Months)" },
@@ -138,7 +218,7 @@ const ItAssetList = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            // onClick={() => handleVendorView(params.data)}
+          // onClick={() => handleVendorView(params.data)}
           >
             <MdOutlineRemoveRedEye />
           </span>
@@ -195,11 +275,7 @@ const ItAssetList = () => {
               asset.price.toLocaleString("en-IN").replace(/,/g, "")
             ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
             quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
+            purchaseDate: dayjs(new Date(asset.purchaseDate)).format("DD-MM-YYYY"),
             warranty: asset.warranty,
             vendorName: asset.vendor.name,
           })),
@@ -221,11 +297,10 @@ const ItAssetList = () => {
                     render={({ field }) => (
                       <div
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
-                          errors.assetImage
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } `}
+                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${errors.assetImage
+                          ? "border-red-500"
+                          : "border-gray-300"
+                          } `}
                       >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"

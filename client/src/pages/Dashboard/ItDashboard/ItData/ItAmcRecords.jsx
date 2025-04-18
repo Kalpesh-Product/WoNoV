@@ -11,6 +11,9 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
+import dayjs from "dayjs";
 
 const ItAmcRecords = () => {
   const { auth } = useAuth();
@@ -98,38 +101,161 @@ const ItAmcRecords = () => {
   });
 
   const assetColumns = [
-    { field: "id", headerName: "Sr No" },
+    { field: "srNo", headerName: "Sr No", width: 100 },
+    { field: "assetName", headerName: "Asset Name" },
     { field: "department", headerName: "Department" },
-    // { field: "assetNumber", headerName: "Asset Number" },
     { field: "category", headerName: "Category" },
+    { field: "subCategory", headerName: "Sub-Category" }, // Optional
     { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
+    { field: "price", headerName: "Price (INR)" },
     { field: "quantity", headerName: "Quantity" },
     { field: "purchaseDate", headerName: "Purchase Date" },
     { field: "warranty", headerName: "Warranty (Months)" },
+    { field: "vendorName", headerName: "Vendor Name" },
     {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <PrimaryButton
-          title="Details"
-          handleSubmit={() => handleDetailsClick(params.data)}
-        />
+        <div className="p-2 mb-2  flex gap-2">
+          <span
+            className="text-subtitle cursor-pointer"
+            onClick={() => {
+              const original = assetsList.find(a => a.name === params.data.assetName);
+              handleDetailsClick(original);
+            }}
+
+          >
+            <MdOutlineRemoveRedEye />
+          </span>
+        </div>
       ),
     },
   ];
 
-  const { data: assetsList = [] } = useQuery({
-    queryKey: ["assetsList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-assets");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+
+  // const { data: assetsList = [] } = useQuery({
+  //   queryKey: ["assetsList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-assets");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+
+  const assetsList = [
+    {
+      name: "Dell Latitude 7420",
+      department: { name: "IT" },
+      category: { categoryName: "Laptop" },
+      subCategory: { categoryName: "Business Series" },
+      brand: "Dell",
+      price: 85000,
+      quantity: 10,
+      purchaseDate: "2023-06-15T00:00:00Z",
+      warranty: 24,
+      vendor: { name: "TechZone Pvt Ltd" },
     },
-  });
+    {
+      name: "HP LaserJet Pro M404n",
+      department: { name: "IT" },
+      category: { categoryName: "Printer" },
+      subCategory: { categoryName: "Laser Printer" },
+      brand: "HP",
+      price: 25000,
+      quantity: 3,
+      purchaseDate: "2023-03-10T00:00:00Z",
+      warranty: 12,
+      vendor: { name: "Office Supplies Co." },
+    },
+    {
+      name: "Cisco Catalyst 2960",
+      department: { name: "IT" },
+      category: { categoryName: "Network Switch" },
+      subCategory: { categoryName: "Managed Switch" },
+      brand: "Cisco",
+      price: 120000,
+      quantity: 2,
+      purchaseDate: "2022-11-20T00:00:00Z",
+      warranty: 36,
+      vendor: { name: "NetCom Solutions" },
+    },
+    {
+      name: "APC Smart-UPS 1500VA",
+      department: { name: "IT" },
+      category: { categoryName: "UPS" },
+      subCategory: { categoryName: "Rack-mounted" },
+      brand: "APC",
+      price: 45000,
+      quantity: 4,
+      purchaseDate: "2023-01-05T00:00:00Z",
+      warranty: 24,
+      vendor: { name: "PowerTech India" },
+    },
+    {
+      name: "MacBook Pro 14\" M1",
+      department: { name: "IT" },
+      category: { categoryName: "Laptop" },
+      subCategory: { categoryName: "Developer Machine" },
+      brand: "Apple",
+      price: 180000,
+      quantity: 5,
+      purchaseDate: "2023-07-12T00:00:00Z",
+      warranty: 12,
+      vendor: { name: "iStore India" },
+    },
+    {
+      name: "Lenovo ThinkPad E15",
+      department: { name: "IT" },
+      category: { categoryName: "Laptop" },
+      subCategory: { categoryName: "Engineering" },
+      brand: "Lenovo",
+      price: 70000,
+      quantity: 6,
+      purchaseDate: "2022-12-01T00:00:00Z",
+      warranty: 24,
+      vendor: { name: "Lenovo Authorized Partner" },
+    },
+    {
+      name: "Samsung 32” Monitor",
+      department: { name: "IT" },
+      category: { categoryName: "Monitor" },
+      subCategory: { categoryName: "Wide Screen" },
+      brand: "Samsung",
+      price: 18000,
+      quantity: 8,
+      purchaseDate: "2023-08-08T00:00:00Z",
+      warranty: 18,
+      vendor: { name: "Vision Displays" },
+    },
+    {
+      name: "Microsoft Surface Pro 9",
+      department: { name: "IT" },
+      category: { categoryName: "Tablet" },
+      subCategory: { categoryName: "Business Tablet" },
+      brand: "Microsoft",
+      price: 140000,
+      quantity: 3,
+      purchaseDate: "2023-09-25T00:00:00Z",
+      warranty: 12,
+      vendor: { name: "MS Partner India" },
+    },
+    {
+      name: "Fortinet Firewall 60F",
+      department: { name: "IT" },
+      category: { categoryName: "Firewall" },
+      subCategory: { categoryName: "Enterprise" },
+      brand: "Fortinet",
+      price: 95000,
+      quantity: 1,
+      purchaseDate: "2022-10-18T00:00:00Z",
+      warranty: 36,
+      vendor: { name: "CyberSec Solutions" },
+    },
+  ];
+
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -159,26 +285,25 @@ const ItAmcRecords = () => {
         buttonTitle={"Add Record"}
         data={[
           ...assetsList.map((asset, index) => ({
-            id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
+            srNo: index + 1,
+            assetName: asset.name,
+            department: asset.department?.name || "N/A",
+            category: asset.category?.categoryName || "N/A", // assumes category is an object
+            subCategory: asset.subCategory?.categoryName || "N/A", // if using subCategory
             brand: asset.brand,
-            price: Number(asset.price.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+            price: Number(asset.price).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
             quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
+            purchaseDate: dayjs(new Date(asset.purchaseDate)).format("DD-MM-YYYY"),
             warranty: asset.warranty,
-            vendorName: asset.vendor.name,
+            vendorName: asset.vendor?.name || "N/A",
           })),
         ]}
+
         columns={assetColumns}
         handleClick={handleAddAsset}
       />
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "add" ? "Add Record" : "AMC Details"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -191,11 +316,10 @@ const ItAmcRecords = () => {
                     render={({ field }) => (
                       <div
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
-                          errors.assetImage
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } `}>
+                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${errors.assetImage
+                          ? "border-red-500"
+                          : "border-gray-300"
+                          } `}>
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -459,6 +583,28 @@ const ItAmcRecords = () => {
                 {/* Cancel button for edit mode */}
               </div>
             </form>
+          </div>
+        )}
+        {modalMode === "view" && selectedAsset && (
+          <div className="p-4 w-full">
+            <div className="grid grid-cols-2 gap-4">
+              <DetalisFormatted title="Asset Name" detail={selectedAsset.name} />
+              <DetalisFormatted title="Department" detail={selectedAsset.department?.name || "N/A"} />
+              <DetalisFormatted title="Category" detail={selectedAsset.category?.categoryName || "N/A"} />
+              <DetalisFormatted title="Sub-Category" detail={selectedAsset.subCategory?.categoryName || "N/A"} />
+              <DetalisFormatted title="Brand" detail={selectedAsset.brand} />
+              <DetalisFormatted
+                title="Price"
+                detail={`INR ${Number(selectedAsset.price).toLocaleString("en-IN")}`}
+              />
+              <DetalisFormatted title="Quantity" detail={selectedAsset.quantity} />
+              <DetalisFormatted
+                title="Purchase Date"
+                detail={dayjs(new Date(selectedAsset.purchaseDate)).format("DD-MM-YYYY")}
+              />
+              <DetalisFormatted title="Warranty" detail={`${selectedAsset.warranty} months`} />
+              <DetalisFormatted title="Vendor" detail={selectedAsset.vendor?.name || "N/A"} />
+            </div>
           </div>
         )}
       </MuiModal>

@@ -11,6 +11,9 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
+import dayjs from "dayjs";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const ItMonthlyInvoice = () => {
   const { auth } = useAuth();
@@ -98,12 +101,12 @@ const ItMonthlyInvoice = () => {
   });
 
   const assetColumns = [
-    { field: "id", headerName: "Sr No" },
+    { field: "id", headerName: "Sr No", width: "100" },
     { field: "department", headerName: "Department" },
     // { field: "assetNumber", headerName: "Asset Number" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
+    { field: "price", headerName: "Price (INR)" },
     { field: "quantity", headerName: "Quantity" },
     { field: "purchaseDate", headerName: "Purchase Date" },
     { field: "warranty", headerName: "Warranty (Months)" },
@@ -111,25 +114,124 @@ const ItMonthlyInvoice = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <PrimaryButton
-          title="Details"
-          handleSubmit={() => handleDetailsClick(params.data)}
-        />
+        <div className="p-2 mb-2  flex gap-2">
+          <span
+            className="text-subtitle cursor-pointer"
+            onClick={() => handleDetailsClick(params.data)}
+          >
+            <MdOutlineRemoveRedEye />
+          </span>
+        </div>
       ),
     },
   ];
 
-  const { data: assetsList = [] } = useQuery({
-    queryKey: ["assetsList"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-assets");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+  // const { data: assetsList = [] } = useQuery({
+  //   queryKey: ["assetsList"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/assets/get-assets");
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
+
+  // Dummy data for assetsList
+  const assetsList = [
+    {
+      department: { name: "IT" },
+      name: "Laptop",
+      brand: "Dell",
+      price: 65000,
+      quantity: 5,
+      purchaseDate: "2024-06-15",
+      warranty: 24,
+      vendor: { name: "Tech Vendor Pvt Ltd" },
     },
-  });
+    {
+      department: { name: "Finance" },
+      name: "Printer",
+      brand: "HP",
+      price: 12000,
+      quantity: 2,
+      purchaseDate: "2023-11-20",
+      warranty: 12,
+      vendor: { name: "Office Essentials Ltd" },
+    },
+    {
+      department: { name: "HR" },
+      name: "Monitor",
+      brand: "Samsung",
+      price: 18000,
+      quantity: 4,
+      purchaseDate: "2024-01-10",
+      warranty: 18,
+      vendor: { name: "Display World" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Router",
+      brand: "TP-Link",
+      price: 4000,
+      quantity: 3,
+      purchaseDate: "2024-03-05",
+      warranty: 12,
+      vendor: { name: "NetCom Solutions" },
+    },
+    {
+      department: { name: "IT" },
+      name: "Desktop",
+      brand: "Lenovo",
+      price: 55000,
+      quantity: 6,
+      purchaseDate: "2023-08-01",
+      warranty: 36,
+      vendor: { name: "Tech Vendor Pvt Ltd" },
+    },
+    {
+      department: { name: "Support" },
+      name: "Tablet",
+      brand: "Apple",
+      price: 70000,
+      quantity: 2,
+      purchaseDate: "2024-02-18",
+      warranty: 12,
+      vendor: { name: "iStore India" },
+    },
+    {
+      department: { name: "Marketing" },
+      name: "Camera",
+      brand: "Canon",
+      price: 45000,
+      quantity: 1,
+      purchaseDate: "2024-04-10",
+      warranty: 24,
+      vendor: { name: "Visual Gear" },
+    },
+    {
+      department: { name: "Sales" },
+      name: "Projector",
+      brand: "Epson",
+      price: 32000,
+      quantity: 1,
+      purchaseDate: "2023-10-12",
+      warranty: 18,
+      vendor: { name: "AV Experts" },
+    },
+    {
+      department: { name: "HR" },
+      name: "Phone",
+      brand: "OnePlus",
+      price: 30000,
+      quantity: 4,
+      purchaseDate: "2024-05-01",
+      warranty: 24,
+      vendor: { name: "Mobile Hub" },
+    },
+  ];
+
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -165,11 +267,7 @@ const ItMonthlyInvoice = () => {
             brand: asset.brand,
             price: Number(asset.price.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
             quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
+            purchaseDate: dayjs(new Date(asset.purchaseDate)).format("DD-MM-YYYY"),
             warranty: asset.warranty,
             vendorName: asset.vendor.name,
           })),
@@ -178,7 +276,7 @@ const ItMonthlyInvoice = () => {
         handleClick={handleAddAsset}
       />
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "add" ? "Add Invoice" : "Asset Details"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -191,11 +289,10 @@ const ItMonthlyInvoice = () => {
                     render={({ field }) => (
                       <div
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
-                          errors.assetImage
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } `}>
+                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${errors.assetImage
+                          ? "border-red-500"
+                          : "border-gray-300"
+                          } `}>
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -461,7 +558,24 @@ const ItMonthlyInvoice = () => {
             </form>
           </div>
         )}
+        {modalMode === "view" && selectedAsset && (
+          <div className="p-4">
+            <div className="grid grid-cols-2 gap-4">
+              <DetalisFormatted title="Department" detail={selectedAsset.department} />
+              <DetalisFormatted title="Category" detail={selectedAsset.name} />
+              <DetalisFormatted title="Brand" detail={selectedAsset.brand} />
+              <DetalisFormatted title="Price" detail={`INR ${selectedAsset.price.toLocaleString("en-IN")}`} />
+              <DetalisFormatted title="Quantity" detail={selectedAsset.quantity} />
+              <DetalisFormatted title="Purchase Date" detail={dayjs(selectedAsset.purchaseDate).format("DD-MM-YYYY")} />
+              <DetalisFormatted title="Warranty" detail={`${selectedAsset.warranty} months`} />
+              <DetalisFormatted title="Vendor" detail={selectedAsset.vendor?.name} />
+            </div>
+          </div>
+        )}
       </MuiModal>
+
+
+
     </>
   );
 };
