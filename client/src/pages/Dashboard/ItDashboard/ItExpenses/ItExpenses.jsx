@@ -27,42 +27,84 @@ const ItExpenses = () => {
           revenue: 10,
           clients: [
             {
-              client: "Zomato",
-              representative: "John Doe",
-              registerDate: "2024-01-15",
-              actualRevenue: 5000,
+              "client": "Zomato",
+              "representative": "John Doe",
+              "registerDate": "2024-01-15",
+              "actualRevenue": 5000
             },
             {
-              client: "Uber",
-              representative: "Jane Smith",
-              registerDate: "2024-02-10",
-              actualRevenue: 4000,
+              "client": "Uber",
+              "representative": "Jane Smith",
+              "registerDate": "2024-02-10",
+              "actualRevenue": 4000
             },
             {
-              client: "Ola",
-              representative: "Alice Johnson",
-              registerDate: "2024-03-05",
-              actualRevenue: 3000,
+              "client": "Ola",
+              "representative": "Alice Johnson",
+              "registerDate": "2024-03-05",
+              "actualRevenue": 3000
             },
-          ],
+            {
+              "client": "Swiggy",
+              "representative": "Bob Williams",
+              "registerDate": "2024-04-12",
+              "actualRevenue": 4500
+            },
+            {
+              "client": "Lyft",
+              "representative": "Charlie Brown",
+              "registerDate": "2024-05-20",
+              "actualRevenue": 3500
+            },
+            {
+              "client": "DoorDash",
+              "representative": "David Miller",
+              "registerDate": "2024-06-08",
+              "actualRevenue": 6000
+            }
+          ]
         },
         {
           name: "ST-701B",
           revenue: 10,
           clients: [
             {
-              client: "Client D",
-              representative: "Bob Brown",
-              registerDate: "2024-01-20",
-              actualRevenue: 4000,
+              "client": "Client D",
+              "representative": "Bob Brown",
+              "registerDate": "2024-01-20",
+              "actualRevenue": 4000
             },
             {
-              client: "Client E",
-              representative: "Charlie White",
-              registerDate: "2024-02-25",
-              actualRevenue: 4000,
+              "client": "Client E",
+              "representative": "Charlie White",
+              "registerDate": "2024-02-25",
+              "actualRevenue": 4000
             },
-          ],
+            {
+              "client": "Client F",
+              "representative": "Diana Green",
+              "registerDate": "2024-03-10",
+              "actualRevenue": 4500
+            },
+            {
+              "client": "Client G",
+              "representative": "Eve Black",
+              "registerDate": "2024-04-05",
+              "actualRevenue": 3500
+            },
+            {
+              "client": "Client H",
+              "representative": "Frank Gray",
+              "registerDate": "2024-05-15",
+              "actualRevenue": 5000
+            },
+            {
+              "client": "Client I",
+              "representative": "Grace Blue",
+              "registerDate": "2024-06-20",
+              "actualRevenue": 3000
+            }
+          ]
         },
         {
           name: "ST-601A",

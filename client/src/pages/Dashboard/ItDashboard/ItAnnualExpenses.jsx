@@ -15,11 +15,11 @@ const ItAnnualExpenses = () => {
     setOpenModal(true);
   };
   const expenseColumns = [
-    { field: "id", headerName: "Sr No" }, // Updated here
+    { field: "id", headerName: "Sr No", width: 100 }, // Updated here
     { field: "category", headerName: "Category" },
     { field: "expenseName", headerName: "Expense Name" },
     { field: "date", headerName: "Date" },
-    { field: "amount", headerName: "Amount (INR)" },
+    { field: "amount", headerName: "Amount (INR)", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -142,7 +142,7 @@ const ItAnnualExpenses = () => {
           <DetalisFormatted
             title="Amount (INR)"
             gap={"w-full"}
-            detail={inrFormat(data?.amount)}
+            detail={`INR ${data?.amount}`}
           />
         </div>
       </MuiModal>
