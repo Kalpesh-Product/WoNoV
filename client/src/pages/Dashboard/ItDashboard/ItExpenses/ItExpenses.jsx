@@ -24,91 +24,91 @@ const ItExpenses = () => {
       domains: [
         {
           name: "ST-701A",
-          revenue: 10,
+          revenue: 21079,
           clients: [
             {
-              "client": "Zomato",
-              "representative": "John Doe",
-              "registerDate": "2024-01-15",
-              "actualRevenue": 5000
+              client: "Zomato",
+              representative: "John Doe",
+              registerDate: "2024-01-15",
+              actualRevenue: 5000,
             },
             {
-              "client": "Uber",
-              "representative": "Jane Smith",
-              "registerDate": "2024-02-10",
-              "actualRevenue": 4000
+              client: "Uber",
+              representative: "Jane Smith",
+              registerDate: "2024-02-10",
+              actualRevenue: 4000,
             },
             {
-              "client": "Ola",
-              "representative": "Alice Johnson",
-              "registerDate": "2024-03-05",
-              "actualRevenue": 3000
+              client: "Ola",
+              representative: "Alice Johnson",
+              registerDate: "2024-03-05",
+              actualRevenue: 3000,
             },
             {
-              "client": "Swiggy",
-              "representative": "Bob Williams",
-              "registerDate": "2024-04-12",
-              "actualRevenue": 4500
+              client: "Swiggy",
+              representative: "Bob Williams",
+              registerDate: "2024-04-12",
+              actualRevenue: 4500,
             },
             {
-              "client": "Lyft",
-              "representative": "Charlie Brown",
-              "registerDate": "2024-05-20",
-              "actualRevenue": 3500
+              client: "Lyft",
+              representative: "Charlie Brown",
+              registerDate: "2024-05-20",
+              actualRevenue: 3500,
             },
             {
-              "client": "DoorDash",
-              "representative": "David Miller",
-              "registerDate": "2024-06-08",
-              "actualRevenue": 6000
-            }
-          ]
+              client: "DoorDash",
+              representative: "David Miller",
+              registerDate: "2024-06-08",
+              actualRevenue: 6000,
+            },
+          ],
         },
         {
           name: "ST-701B",
-          revenue: 10,
+          revenue: 20079,
           clients: [
             {
-              "client": "Client D",
-              "representative": "Bob Brown",
-              "registerDate": "2024-01-20",
-              "actualRevenue": 4000
+              client: "Client D",
+              representative: "Bob Brown",
+              registerDate: "2024-01-20",
+              actualRevenue: 4000,
             },
             {
-              "client": "Client E",
-              "representative": "Charlie White",
-              "registerDate": "2024-02-25",
-              "actualRevenue": 4000
+              client: "Client E",
+              representative: "Charlie White",
+              registerDate: "2024-02-25",
+              actualRevenue: 4000,
             },
             {
-              "client": "Client F",
-              "representative": "Diana Green",
-              "registerDate": "2024-03-10",
-              "actualRevenue": 4500
+              client: "Client F",
+              representative: "Diana Green",
+              registerDate: "2024-03-10",
+              actualRevenue: 4500,
             },
             {
-              "client": "Client G",
-              "representative": "Eve Black",
-              "registerDate": "2024-04-05",
-              "actualRevenue": 3500
+              client: "Client G",
+              representative: "Eve Black",
+              registerDate: "2024-04-05",
+              actualRevenue: 3500,
             },
             {
-              "client": "Client H",
-              "representative": "Frank Gray",
-              "registerDate": "2024-05-15",
-              "actualRevenue": 5000
+              client: "Client H",
+              representative: "Frank Gray",
+              registerDate: "2024-05-15",
+              actualRevenue: 5000,
             },
             {
-              "client": "Client I",
-              "representative": "Grace Blue",
-              "registerDate": "2024-06-20",
-              "actualRevenue": 3000
-            }
-          ]
+              client: "Client I",
+              representative: "Grace Blue",
+              registerDate: "2024-06-20",
+              actualRevenue: 3000,
+            },
+          ],
         },
         {
           name: "ST-601A",
-          revenue: 10,
+          revenue: 23065,
           clients: [
             { client: "Client F", revenue: 5000 },
             { client: "Client G", revenue: 7000 },
@@ -117,7 +117,7 @@ const ItExpenses = () => {
         },
         {
           name: "ST-601B",
-          revenue: 10,
+          revenue: 30678,
           clients: [
             {
               client: "Client F",
@@ -141,7 +141,7 @@ const ItExpenses = () => {
         },
         {
           name: "ST-501A",
-          revenue: 10,
+          revenue: 24689,
           clients: [
             {
               client: "Client F",
@@ -397,18 +397,28 @@ const ItExpenses = () => {
   // Prepare Bar Graph Data
   const graphData = [
     {
-      name: "Revenue",
+      name: "Expense",
       data: selectedMonthData.domains.map((domain) => domain.revenue),
     },
   ];
 
   // Graph Options
   const options = {
-    chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular",toolbar:false },
+    chart: {
+      type: "bar",
+      stacked: false,
+      fontFamily: "Poppins-Regular",
+      toolbar: false,
+    },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
     yaxis: { title: { text: "Number Of Offices" } },
+    tooltip: {
+      y: {
+        formatter: (val) => `INR ${inrFormat(val)}`,
+      },
+    },
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
@@ -443,15 +453,14 @@ const ItExpenses = () => {
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
       <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
           <div className="flex justify-between items-center w-full px-4 py-2">
             <span className="text-sm text-muted font-pmedium text-title">
               LOCATION
             </span>
             <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
-            EXPENSE
+              EXPENSE
             </span>
-            
           </div>
         </div>
         {selectedMonthData.domains.map((domain, index) => {
@@ -490,21 +499,27 @@ const ItExpenses = () => {
                   </div>
                   <div className="w-4/12 ">
                     <p className="text-subtitle text-primary p-6 w-fit">
-                      <span className="font-bold">Admin Lead: </span>
+                      <span className="font-bold">IT Lead: </span>
                       Machindranath Parkar
                     </p>
                   </div>
                 </div>
                 {/* Details End */}
                 <AgTable
-                  data={domain.clients.map((client,index)=>({...client,srNo:index+1,
-                                     registerDate:dayjs(client.registerDate).format("DD-MM-YYYY"),
-                                     actualRevenue:inrFormat(client.actualRevenue)
-                                   }))}
+                  data={domain.clients.map((client, index) => ({
+                    ...client,
+                    srNo: index + 1,
+                    registerDate: dayjs(client.registerDate).format(
+                      "DD-MM-YYYY"
+                    ),
+                    actualRevenue: inrFormat(client.actualRevenue),
+                  }))}
                   hideFilter
                   columns={[
                     {
-                      headerName: "Sr No", field: "srNo", flex: 1 
+                      headerName: "Sr No",
+                      field: "srNo",
+                      flex: 1,
                       // cellRenderer: (params) => (
                       //   <span
                       //     style={{
@@ -559,7 +574,11 @@ const ItExpenses = () => {
                       field: "representative",
                       flex: 1,
                     },
-                    { headerName: "Register Date", field: "registerDate", flex: 1 },
+                    {
+                      headerName: "Register Date",
+                      field: "registerDate",
+                      flex: 1,
+                    },
                     {
                       headerName: "Actual Expense (INR)",
                       field: "actualRevenue",

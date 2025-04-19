@@ -26,42 +26,42 @@ const ItPerSqInternetExpense = () => {
           revenue: 12000,
           clients: [
             {
-              "client": "Zomato",
-              "representative": "Rohan Mehta",
-              "registerDate": "2024-01-15",
-              "actualRevenue": 5000
+              client: "Zomato",
+              representative: "Rohan Mehta",
+              registerDate: "2024-01-15",
+              actualRevenue: 5000,
             },
             {
-              "client": "Uber",
-              "representative": "Priya Sharma",
-              "registerDate": "2024-02-10",
-              "actualRevenue": 4000
+              client: "Uber",
+              representative: "Priya Sharma",
+              registerDate: "2024-02-10",
+              actualRevenue: 4000,
             },
             {
-              "client": "Ola",
-              "representative": "Aditi Menon",
-              "registerDate": "2024-03-05",
-              "actualRevenue": 3000
+              client: "Ola",
+              representative: "Aditi Menon",
+              registerDate: "2024-03-05",
+              actualRevenue: 3000,
             },
             {
-              "client": "Swiggy",
-              "representative": "Arjun Patel",
-              "registerDate": "2024-04-12",
-              "actualRevenue": 4500
+              client: "Swiggy",
+              representative: "Arjun Patel",
+              registerDate: "2024-04-12",
+              actualRevenue: 4500,
             },
             {
-              "client": "Amazon",
-              "representative": "Neha Gupta",
-              "registerDate": "2024-05-20",
-              "actualRevenue": 6000
+              client: "Amazon",
+              representative: "Neha Gupta",
+              registerDate: "2024-05-20",
+              actualRevenue: 6000,
             },
             {
-              "client": "Flipkart",
-              "representative": "Vikram Singh",
-              "registerDate": "2024-06-08",
-              "actualRevenue": 5500
-            }
-          ]
+              client: "Flipkart",
+              representative: "Vikram Singh",
+              registerDate: "2024-06-08",
+              actualRevenue: 5500,
+            },
+          ],
         },
         {
           name: "ST-701B",
@@ -69,42 +69,42 @@ const ItPerSqInternetExpense = () => {
           revenue: 8000,
           clients: [
             {
-              "client": "Swiggy",
-              "representative": "Ravi Kapoor",
-              "registerDate": "2024-01-20",
-              "actualRevenue": 4000
+              client: "Swiggy",
+              representative: "Ravi Kapoor",
+              registerDate: "2024-01-20",
+              actualRevenue: 4000,
             },
             {
-              "client": "Flipkart",
-              "representative": "Neha Iyer",
-              "registerDate": "2024-02-25",
-              "actualRevenue": 4000
+              client: "Flipkart",
+              representative: "Neha Iyer",
+              registerDate: "2024-02-25",
+              actualRevenue: 4000,
             },
             {
-              "client": "Zomato",
-              "representative": "Priya Sharma",
-              "registerDate": "2024-03-15",
-              "actualRevenue": 5000
+              client: "Zomato",
+              representative: "Priya Sharma",
+              registerDate: "2024-03-15",
+              actualRevenue: 5000,
             },
             {
-              "client": "Uber",
-              "representative": "Aditya Joshi",
-              "registerDate": "2024-04-05",
-              "actualRevenue": 4500
+              client: "Uber",
+              representative: "Aditya Joshi",
+              registerDate: "2024-04-05",
+              actualRevenue: 4500,
             },
             {
-              "client": "Amazon",
-              "representative": "Ananya Reddy",
-              "registerDate": "2024-05-12",
-              "actualRevenue": 6000
+              client: "Amazon",
+              representative: "Ananya Reddy",
+              registerDate: "2024-05-12",
+              actualRevenue: 6000,
             },
             {
-              "client": "Ola",
-              "representative": "Karan Malhotra",
-              "registerDate": "2024-06-18",
-              "actualRevenue": 3500
-            }
-          ]
+              client: "Ola",
+              representative: "Karan Malhotra",
+              registerDate: "2024-06-18",
+              actualRevenue: 3500,
+            },
+          ],
         },
         {
           name: "ST-601A",
@@ -112,42 +112,42 @@ const ItPerSqInternetExpense = () => {
           revenue: 15000,
           clients: [
             {
-              "client": "Paytm",
-              "representative": "Ravi Malhotra",
-              "registerDate": "2024-02-08",
-              "actualRevenue": 5000
+              client: "Paytm",
+              representative: "Ravi Malhotra",
+              registerDate: "2024-02-08",
+              actualRevenue: 5000,
             },
             {
-              "client": "BigBasket",
-              "representative": "Sneha Kulkarni",
-              "registerDate": "2024-03-12",
-              "actualRevenue": 7000
+              client: "BigBasket",
+              representative: "Sneha Kulkarni",
+              registerDate: "2024-03-12",
+              actualRevenue: 7000,
             },
             {
-              "client": "BYJU'S",
-              "representative": "Aditya Ghosh",
-              "registerDate": "2024-04-05",
-              "actualRevenue": 3000
+              client: "BYJU'S",
+              representative: "Aditya Ghosh",
+              registerDate: "2024-04-05",
+              actualRevenue: 3000,
             },
             {
-              "client": "Zomato",
-              "representative": "Priya Verma",
-              "registerDate": "2024-05-18",
-              "actualRevenue": 4500
+              client: "Zomato",
+              representative: "Priya Verma",
+              registerDate: "2024-05-18",
+              actualRevenue: 4500,
             },
             {
-              "client": "Swiggy",
-              "representative": "Arjun Rao",
-              "registerDate": "2024-06-22",
-              "actualRevenue": 6000
+              client: "Swiggy",
+              representative: "Arjun Rao",
+              registerDate: "2024-06-22",
+              actualRevenue: 6000,
             },
             {
-              "client": "Ola",
-              "representative": "Kiran Patel",
-              "registerDate": "2024-07-10",
-              "actualRevenue": 4000
-            }
-          ]
+              client: "Ola",
+              representative: "Kiran Patel",
+              registerDate: "2024-07-10",
+              actualRevenue: 4000,
+            },
+          ],
         },
         {
           name: "ST-601B",
@@ -155,42 +155,42 @@ const ItPerSqInternetExpense = () => {
           revenue: 15000,
           clients: [
             {
-              "client": "Paytm",
-              "representative": "Ankit Verma",
-              "registerDate": "2024-03-12",
-              "actualRevenue": 5000
+              client: "Paytm",
+              representative: "Ankit Verma",
+              registerDate: "2024-03-12",
+              actualRevenue: 5000,
             },
             {
-              "client": "BigBasket",
-              "representative": "Sneha Reddy",
-              "registerDate": "2024-04-18",
-              "actualRevenue": 7000
+              client: "BigBasket",
+              representative: "Sneha Reddy",
+              registerDate: "2024-04-18",
+              actualRevenue: 7000,
             },
             {
-              "client": "BYJU'S",
-              "representative": "Vikram Das",
-              "registerDate": "2024-05-10",
-              "actualRevenue": 3000
+              client: "BYJU'S",
+              representative: "Vikram Das",
+              registerDate: "2024-05-10",
+              actualRevenue: 3000,
             },
             {
-              "client": "Zomato",
-              "representative": "Priya Sharma",
-              "registerDate": "2024-06-05",
-              "actualRevenue": 4500
+              client: "Zomato",
+              representative: "Priya Sharma",
+              registerDate: "2024-06-05",
+              actualRevenue: 4500,
             },
             {
-              "client": "Ola",
-              "representative": "Rahul Kapoor",
-              "registerDate": "2024-07-15",
-              "actualRevenue": 4000
+              client: "Ola",
+              representative: "Rahul Kapoor",
+              registerDate: "2024-07-15",
+              actualRevenue: 4000,
             },
             {
-              "client": "Swiggy",
-              "representative": "Neha Gupta",
-              "registerDate": "2024-08-20",
-              "actualRevenue": 6000
-            }
-          ]
+              client: "Swiggy",
+              representative: "Neha Gupta",
+              registerDate: "2024-08-20",
+              actualRevenue: 6000,
+            },
+          ],
         },
         {
           name: "ST-501A",
@@ -198,42 +198,42 @@ const ItPerSqInternetExpense = () => {
           revenue: 15000,
           clients: [
             {
-              "client": "Paytm",
-              "representative": "Ankit Verma",
-              "registerDate": "2024-03-12",
-              "actualRevenue": 5000
+              client: "Paytm",
+              representative: "Ankit Verma",
+              registerDate: "2024-03-12",
+              actualRevenue: 5000,
             },
             {
-              "client": "BigBasket",
-              "representative": "Sneha Reddy",
-              "registerDate": "2024-04-18",
-              "actualRevenue": 7000
+              client: "BigBasket",
+              representative: "Sneha Reddy",
+              registerDate: "2024-04-18",
+              actualRevenue: 7000,
             },
             {
-              "client": "BYJU'S",
-              "representative": "Vikram Das",
-              "registerDate": "2024-05-10",
-              "actualRevenue": 3000
+              client: "BYJU'S",
+              representative: "Vikram Das",
+              registerDate: "2024-05-10",
+              actualRevenue: 3000,
             },
             {
-              "client": "Zomato",
-              "representative": "Priya Sharma",
-              "registerDate": "2024-06-05",
-              "actualRevenue": 4500
+              client: "Zomato",
+              representative: "Priya Sharma",
+              registerDate: "2024-06-05",
+              actualRevenue: 4500,
             },
             {
-              "client": "Ola",
-              "representative": "Rahul Kapoor",
-              "registerDate": "2024-07-15",
-              "actualRevenue": 4000
+              client: "Ola",
+              representative: "Rahul Kapoor",
+              registerDate: "2024-07-15",
+              actualRevenue: 4000,
             },
             {
-              "client": "Swiggy",
-              "representative": "Neha Gupta",
-              "registerDate": "2024-08-20",
-              "actualRevenue": 6000
-            }
-          ]
+              client: "Swiggy",
+              representative: "Neha Gupta",
+              registerDate: "2024-08-20",
+              actualRevenue: 6000,
+            },
+          ],
         },
       ],
     },
@@ -247,42 +247,42 @@ const ItPerSqInternetExpense = () => {
           totalSqFt: 2100,
           clients: [
             {
-              "client": "Infosys Ventures",
-              "representative": "Ritika Nair",
-              "registerDate": "2024-02-11",
-              "actualRevenue": 6000
+              client: "Infosys Ventures",
+              representative: "Ritika Nair",
+              registerDate: "2024-02-11",
+              actualRevenue: 6000,
             },
             {
-              "client": "Tata Innovations",
-              "representative": "Harsh Vardhan",
-              "registerDate": "2024-03-09",
-              "actualRevenue": 5000
+              client: "Tata Innovations",
+              representative: "Harsh Vardhan",
+              registerDate: "2024-03-09",
+              actualRevenue: 5000,
             },
             {
-              "client": "RedDot Labs",
-              "representative": "Ishita Rao",
-              "registerDate": "2024-04-14",
-              "actualRevenue": 4000
+              client: "RedDot Labs",
+              representative: "Ishita Rao",
+              registerDate: "2024-04-14",
+              actualRevenue: 4000,
             },
             {
-              "client": "Wipro Digital",
-              "representative": "Arjun Menon",
-              "registerDate": "2024-05-22",
-              "actualRevenue": 5500
+              client: "Wipro Digital",
+              representative: "Arjun Menon",
+              registerDate: "2024-05-22",
+              actualRevenue: 5500,
             },
             {
-              "client": "TechMahindra Labs",
-              "representative": "Priyanka Iyer",
-              "registerDate": "2024-06-17",
-              "actualRevenue": 4500
+              client: "TechMahindra Labs",
+              representative: "Priyanka Iyer",
+              registerDate: "2024-06-17",
+              actualRevenue: 4500,
             },
             {
-              "client": "HCL Technologies",
-              "representative": "Vikram Sethi",
-              "registerDate": "2024-07-05",
-              "actualRevenue": 6500
-            }
-          ]
+              client: "HCL Technologies",
+              representative: "Vikram Sethi",
+              registerDate: "2024-07-05",
+              actualRevenue: 6500,
+            },
+          ],
         },
         {
           name: "Workation",
@@ -290,42 +290,42 @@ const ItPerSqInternetExpense = () => {
           totalSqFt: 2120,
           clients: [
             {
-              "client": "Himalayan Escapes",
-              "representative": "Jignesh Patel",
-              "registerDate": "2024-02-28",
-              "actualRevenue": 5000
+              client: "Himalayan Escapes",
+              representative: "Jignesh Patel",
+              registerDate: "2024-02-28",
+              actualRevenue: 5000,
             },
             {
-              "client": "Kerala Nomads",
-              "representative": "Kavya Menon",
-              "registerDate": "2024-03-07",
-              "actualRevenue": 4000
+              client: "Kerala Nomads",
+              representative: "Kavya Menon",
+              registerDate: "2024-03-07",
+              actualRevenue: 4000,
             },
             {
-              "client": "Goa Coastal Retreats",
-              "representative": "Rohan Fernandes",
-              "registerDate": "2024-04-15",
-              "actualRevenue": 4500
+              client: "Goa Coastal Retreats",
+              representative: "Rohan Fernandes",
+              registerDate: "2024-04-15",
+              actualRevenue: 4500,
             },
             {
-              "client": "Rajasthan Heritage Tours",
-              "representative": "Priya Singh Rathore",
-              "registerDate": "2024-05-22",
-              "actualRevenue": 6000
+              client: "Rajasthan Heritage Tours",
+              representative: "Priya Singh Rathore",
+              registerDate: "2024-05-22",
+              actualRevenue: 6000,
             },
             {
-              "client": "Andaman Dive Adventures",
-              "representative": "Arjun Nair",
-              "registerDate": "2024-06-18",
-              "actualRevenue": 5500
+              client: "Andaman Dive Adventures",
+              representative: "Arjun Nair",
+              registerDate: "2024-06-18",
+              actualRevenue: 5500,
             },
             {
-              "client": "North-East Explorers",
-              "representative": "Meera Das",
-              "registerDate": "2024-07-05",
-              "actualRevenue": 4800
-            }
-          ]
+              client: "North-East Explorers",
+              representative: "Meera Das",
+              registerDate: "2024-07-05",
+              actualRevenue: 4800,
+            },
+          ],
         },
         {
           name: "Co-Living",
@@ -333,42 +333,42 @@ const ItPerSqInternetExpense = () => {
           totalSqFt: 1970,
           clients: [
             {
-              "client": "Zolo Living",
-              "representative": "Lakshya Mehra",
-              "registerDate": "2024-05-20",
-              "actualRevenue": 6000
+              client: "Zolo Living",
+              representative: "Lakshya Mehra",
+              registerDate: "2024-05-20",
+              actualRevenue: 6000,
             },
             {
-              "client": "Colive South",
-              "representative": "Megha Joshi",
-              "registerDate": "2024-06-08",
-              "actualRevenue": 5000
+              client: "Colive South",
+              representative: "Megha Joshi",
+              registerDate: "2024-06-08",
+              actualRevenue: 5000,
             },
             {
-              "client": "StayAbode",
-              "representative": "Nikhil Reddy",
-              "registerDate": "2024-07-15",
-              "actualRevenue": 3000
+              client: "StayAbode",
+              representative: "Nikhil Reddy",
+              registerDate: "2024-07-15",
+              actualRevenue: 3000,
             },
             {
-              "client": "Stanza Living",
-              "representative": "Aarav Sharma",
-              "registerDate": "2024-08-10",
-              "actualRevenue": 5500
+              client: "Stanza Living",
+              representative: "Aarav Sharma",
+              registerDate: "2024-08-10",
+              actualRevenue: 5500,
             },
             {
-              "client": "Oxford Caps",
-              "representative": "Ishita Patel",
-              "registerDate": "2024-09-05",
-              "actualRevenue": 4500
+              client: "Oxford Caps",
+              representative: "Ishita Patel",
+              registerDate: "2024-09-05",
+              actualRevenue: 4500,
             },
             {
-              "client": "YourSpace",
-              "representative": "Rohan Malhotra",
-              "registerDate": "2024-10-18",
-              "actualRevenue": 4000
-            }
-          ]
+              client: "YourSpace",
+              representative: "Rohan Malhotra",
+              registerDate: "2024-10-18",
+              actualRevenue: 4000,
+            },
+          ],
         },
       ],
     },
@@ -382,42 +382,42 @@ const ItPerSqInternetExpense = () => {
           totalSqFt: 2000,
           clients: [
             {
-              "client": "Zomato",
-              "representative": "Rajeev Mehta",
-              "registerDate": "2024-01-30",
-              "actualRevenue": 7000
+              client: "Zomato",
+              representative: "Rajeev Mehta",
+              registerDate: "2024-01-30",
+              actualRevenue: 7000,
             },
             {
-              "client": "Paytm",
-              "representative": "Nisha Reddy",
-              "registerDate": "2024-02-18",
-              "actualRevenue": 6000
+              client: "Paytm",
+              representative: "Nisha Reddy",
+              registerDate: "2024-02-18",
+              actualRevenue: 6000,
             },
             {
-              "client": "BYJU'S",
-              "representative": "Prakash Nair",
-              "registerDate": "2024-03-26",
-              "actualRevenue": 5000
+              client: "BYJU'S",
+              representative: "Prakash Nair",
+              registerDate: "2024-03-26",
+              actualRevenue: 5000,
             },
             {
-              "client": "Swiggy",
-              "representative": "Arjun Kapoor",
-              "registerDate": "2024-04-15",
-              "actualRevenue": 6500
+              client: "Swiggy",
+              representative: "Arjun Kapoor",
+              registerDate: "2024-04-15",
+              actualRevenue: 6500,
             },
             {
-              "client": "Ola Cabs",
-              "representative": "Priya Sharma",
-              "registerDate": "2024-05-22",
-              "actualRevenue": 5500
+              client: "Ola Cabs",
+              representative: "Priya Sharma",
+              registerDate: "2024-05-22",
+              actualRevenue: 5500,
             },
             {
-              "client": "Flipkart",
-              "representative": "Vikram Patel",
-              "registerDate": "2024-06-10",
-              "actualRevenue": 4500
-            }
-          ]
+              client: "Flipkart",
+              representative: "Vikram Patel",
+              registerDate: "2024-06-10",
+              actualRevenue: 4500,
+            },
+          ],
         },
         {
           name: "Workation",
@@ -559,8 +559,13 @@ const ItPerSqInternetExpense = () => {
   // Prepare Bar Graph Data
   const graphData = [
     {
-      name: "Internet Expense",
-      data: selectedMonthData.domains.map((domain) => domain.revenue),
+      name: "Internet Expense Per Sq. Ft.",
+      // data: selectedMonthData.domains.map((domain) => domain.revenue),
+      data: selectedMonthData.domains.map((domain) =>
+        inrFormat(Math.round((domain.revenue / domain.totalSqFt) * 2) / 2)
+      ),
+      // data: selectedMonthData.domains.map((domain) => domain.totalSqFt),
+      // data: selectedMonthData.domains.map((domain) => domain.clients),
     },
   ];
 
@@ -579,6 +584,11 @@ const ItPerSqInternetExpense = () => {
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
+    tooltip: {
+      y: {
+        formatter: (val) => `INR ${inrFormat(val)}`,
+      },
+    },
     legend: { position: "top" },
     colors: ["#80bf01"],
   };
@@ -593,8 +603,7 @@ const ItPerSqInternetExpense = () => {
             label="Select Month"
             value={selectedMonth}
             onChange={handleMonthChange}
-            sx={{ width: "200px" }}
-          >
+            sx={{ width: "200px" }}>
             {mockBusinessRevenueData.map((data) => (
               <MenuItem key={data.month} value={data.month}>
                 {data.month}
@@ -630,8 +639,7 @@ const ItPerSqInternetExpense = () => {
               <AccordionSummary
                 expandIcon={<IoIosArrowDown />}
                 aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}
-              >
+                id={`panel-${index}-header`}>
                 <div className="flex justify-between items-center w-full px-4">
                   <span className="text-subtitle font-pmedium">
                     {domain.name}
