@@ -323,7 +323,7 @@ const MaintenanceExpenses = () => {
   // Prepare Bar Graph Data
   const graphData = [
     {
-      name: "Revenue",
+      name: "Expanse",
       data: selectedMonthData.domains.map((domain) => domain.expense),
     },
   ];
