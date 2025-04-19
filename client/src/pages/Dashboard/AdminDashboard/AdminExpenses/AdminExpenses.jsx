@@ -1653,7 +1653,7 @@ const AdminExpenses = () => {
                       onClick={() => {
                         localStorage.setItem("client", domain.name);
                         navigate(
-                          `/app/dashboard/admin-dashboard/admin-offices/admin-offices-layout/${domain.name}`
+                          `app/dashboard/admin-dashboard/admin-expenses/admin-expenses-layout/${domain.name}`
                         );
                       }}>
                       View Layout {domain.name}

@@ -489,7 +489,7 @@ const ItOffices = () => {
                       onClick={() => {
                         localStorage.setItem("client", domain.name);
                         navigate(
-                          `/app/dashboard/admin-dashboard/admin-offices/admin-offices-layout/${domain.name}`
+                          `/app/dashboard/it-dashboard/it-offices/it-offices-layout/${domain.name}`
                         );
                       }}
                     >
