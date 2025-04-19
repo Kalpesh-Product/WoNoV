@@ -268,20 +268,20 @@ const AdminDashboard = () => {
     {
       name: "Rohan Mehra",
       dateOfJoin: `20-02-${new Date().getFullYear()}`,
-      building: 'DTC',
-      unitNo: '004',
+      building: "DTC",
+      unitNo: "004",
     },
     {
       name: "Aarav Jain",
       dateOfJoin: `25-03-${new Date().getFullYear()}`,
-      building: 'ST',
-      unitNo: '607(D)',
+      building: "ST",
+      unitNo: "607(D)",
     },
     {
       name: "Ishaan Kumar",
       dateOfJoin: `15-04-${new Date().getFullYear()}`,
-      building: 'DTC',
-      unitNo: '202(E)',
+      building: "DTC",
+      unitNo: "202(E)",
     },
   ];
   const houseKeepingMemberColumns = [
@@ -292,7 +292,7 @@ const AdminDashboard = () => {
     { id: "unitNo", label: "Unit No", align: "left" },
   ];
   //-----------------------------------------------------------------------------------------------------------------//
-  const executiveShiftData =[
+  const executiveShiftData = [
     {
       id: 1,
       name: "Amit Sharma",
@@ -357,7 +357,7 @@ const AdminDashboard = () => {
       startTime: "09:00 AM",
       endTime: "06:00 PM",
     },
-  ]
+  ];
 
   const executiveShiftColumns = [
     { id: "id", label: "Sr No", align: "left" },
@@ -409,7 +409,7 @@ const AdminDashboard = () => {
       date: "02-03-2025",
       location: "Garrison Cafe",
     },
-  ]
+  ];
   const upcomingEventsColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "event", label: "Event", align: "left" },
@@ -581,8 +581,8 @@ const AdminDashboard = () => {
           upComingInDays === 0
             ? "Today"
             : upComingInDays === 1
-              ? "Tomorrow"
-              : `${upComingInDays} days`,
+            ? "Tomorrow"
+            : `${upComingInDays} days`,
         isUpcoming:
           anniversary.isBefore(cutOff) &&
           anniversary.isAfter(today.subtract(1, "day")),
@@ -702,7 +702,7 @@ const AdminDashboard = () => {
           description={"Admin Offices"}
         />,
         <DataCard
-          // route={"admin-expenses"}
+          route={"/app/tasks"}
           title={"Total"}
           data={"38"}
           description={"Monthly Due Tasks"}

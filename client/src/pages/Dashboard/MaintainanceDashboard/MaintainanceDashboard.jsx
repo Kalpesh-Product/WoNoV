@@ -505,7 +505,11 @@ const MaintainanceDashboard = () => {
           border
           title={"Budget v/s Achievements"}
           titleLabel={"FY 2024-25"}>
-          <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} route={"finance/budget"} />
+          <BudgetGraph
+            utilisedData={utilisedData}
+            maxBudget={maxBudget}
+            route={"finance/budget"}
+          />
           <hr />
           <WidgetSection layout={3} padding>
             <DataCard
@@ -586,7 +590,7 @@ const MaintainanceDashboard = () => {
           description={"Offices Under Maintenance"}
         />,
         <DataCard
-          // route={"revenue"}
+          route={"/app/tasks"}
           title={"Total"}
           data={"38"}
           description={"Monthly Due Tasks"}

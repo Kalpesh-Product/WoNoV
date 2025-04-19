@@ -16,282 +16,322 @@ import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
 
 const AdminExecutiveExpenses = () => {
-   //Proper columns only in April
+  //Proper columns only in April
   let mockBusinessRevenueData = [
     {
-      "month": "April",
-      "domains": [
+      month: "April",
+      domains: [
         {
-          "name": "ST-701A",
-          "revenue": 0,
-          "clients": [
+          name: "ST-701A",
+          revenue: 0,
+          clients: [
             {
-              "client": "Zomato",
-              "representative": "John Doe",
-              "registerDate": "2024-01-15",
-              "actualRevenue": 5200
+              client: "Zomato",
+              representative: "John Doe",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-01-15",
+              actualRevenue: 5200,
             },
             {
-              "client": "Uber",
-              "representative": "Jane Smith",
-              "registerDate": "2024-02-10",
-              "actualRevenue": 4300
+              client: "Uber",
+              representative: "Jane Smith",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-10",
+              actualRevenue: 4300,
             },
             {
-              "client": "Ola",
-              "representative": "Alice Johnson",
-              "registerDate": "2024-03-05",
-              "actualRevenue": 3700
+              client: "Ola",
+              representative: "Alice Johnson",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-03-05",
+              actualRevenue: 3700,
             },
             {
-              "client": "Swiggy",
-              "representative": "Priya Mehta",
-              "registerDate": "2024-02-21",
-              "actualRevenue": 4600
+              client: "Swiggy",
+              representative: "Priya Mehta",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-21",
+              actualRevenue: 4600,
             },
             {
-              "client": "Dunzo",
-              "representative": "Arjun Verma",
-              "registerDate": "2024-01-10",
-              "actualRevenue": 3900
+              client: "Dunzo",
+              representative: "Arjun Verma",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-01-10",
+              actualRevenue: 3900,
             },
             {
-              "client": "Grofers",
-              "representative": "Meena Rao",
-              "registerDate": "2024-03-01",
-              "actualRevenue": 4100
+              client: "Grofers",
+              representative: "Meena Rao",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-03-01",
+              actualRevenue: 4100,
             },
             {
-              "client": "Blinkit",
-              "representative": "Karan Shah",
-              "registerDate": "2024-01-18",
-              "actualRevenue": 4400
+              client: "Blinkit",
+              representative: "Karan Shah",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-01-18",
+              actualRevenue: 4400,
             },
             {
-              "client": "BigBasket",
-              "representative": "Ravi Nair",
-              "registerDate": "2024-02-28",
-              "actualRevenue": 4800
-            }
-          ]
+              client: "BigBasket",
+              representative: "Ravi Nair",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-28",
+              actualRevenue: 4800,
+            },
+          ],
         },
         {
-          "name": "ST-701B",
-          "revenue": 0,
-          "clients": [
+          name: "ST-701B",
+          revenue: 0,
+          clients: [
             {
-              "client": "PhonePe",
-              "representative": "Henry Ford",
-              "registerDate": "2024-02-11",
-              "actualRevenue": 4600
+              client: "PhonePe",
+              representative: "Henry Ford",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-11",
+              actualRevenue: 4600,
             },
             {
-              "client": "Snapdeal",
-              "representative": "Chris Blue",
-              "registerDate": "2024-01-12",
-              "actualRevenue": 4200
+              client: "Snapdeal",
+              representative: "Chris Blue",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-01-12",
+              actualRevenue: 4200,
             },
             {
-              "client": "Paytm",
-              "representative": "Rachel Black",
-              "registerDate": "2024-03-02",
-              "actualRevenue": 4800
+              client: "Paytm",
+              representative: "Rachel Black",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-03-02",
+              actualRevenue: 4800,
             },
             {
-              "client": "Myntra",
-              "representative": "Chloe Grey",
-              "registerDate": "2024-02-20",
-              "actualRevenue": 5000
+              client: "Myntra",
+              representative: "Chloe Grey",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-20",
+              actualRevenue: 5000,
             },
             {
-              "client": "Ajio",
-              "representative": "Neha Verma",
-              "registerDate": "2024-03-10",
-              "actualRevenue": 4700
+              client: "Ajio",
+              representative: "Neha Verma",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-03-10",
+              actualRevenue: 4700,
             },
             {
-              "client": "Meesho",
-              "representative": "Yash Shah",
-              "registerDate": "2024-03-16",
-              "actualRevenue": 4300
+              client: "Meesho",
+              representative: "Yash Shah",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-03-16",
+              actualRevenue: 4300,
             },
             {
-              "client": "JioMart",
-              "representative": "Deepak Reddy",
-              "registerDate": "2024-01-17",
-              "actualRevenue": 4500
+              client: "JioMart",
+              representative: "Deepak Reddy",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-01-17",
+              actualRevenue: 4500,
             },
             {
-              "client": "Reliance Trends",
-              "representative": "Ritika Sharma",
-              "registerDate": "2024-02-26",
-              "actualRevenue": 4900
-            }
-          ]
+              client: "Reliance Trends",
+              representative: "Ritika Sharma",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-26",
+              actualRevenue: 4900,
+            },
+          ],
         },
         {
-          "name": "ST-601A",
-          "revenue": 0,
-          "clients": [
+          name: "ST-601A",
+          revenue: 0,
+          clients: [
             {
-              "client": "Tata Cliq",
-              "representative": "Ananya Rao",
-              "registerDate": "2024-03-12",
-              "actualRevenue": 5200
+              client: "Tata Cliq",
+              representative: "Ananya Rao",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-03-12",
+              actualRevenue: 5200,
             },
             {
-              "client": "Lenskart",
-              "representative": "Rohit Sen",
-              "registerDate": "2024-04-18",
-              "actualRevenue": 5100
+              client: "Lenskart",
+              representative: "Rohit Sen",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-04-18",
+              actualRevenue: 5100,
             },
             {
-              "client": "Pepperfry",
-              "representative": "Kiran Das",
-              "registerDate": "2024-05-10",
-              "actualRevenue": 5300
+              client: "Pepperfry",
+              representative: "Kiran Das",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-05-10",
+              actualRevenue: 5300,
             },
             {
-              "client": "Boat",
-              "representative": "Kavya Nair",
-              "registerDate": "2024-01-19",
-              "actualRevenue": 4900
+              client: "Boat",
+              representative: "Kavya Nair",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-01-19",
+              actualRevenue: 4900,
             },
             {
-              "client": "Croma",
-              "representative": "Varun Kapoor",
-              "registerDate": "2024-02-15",
-              "actualRevenue": 4700
+              client: "Croma",
+              representative: "Varun Kapoor",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-15",
+              actualRevenue: 4700,
             },
             {
-              "client": "Decathlon",
-              "representative": "Simran Kaur",
-              "registerDate": "2024-03-20",
-              "actualRevenue": 5100
+              client: "Decathlon",
+              representative: "Simran Kaur",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-03-20",
+              actualRevenue: 5100,
             },
             {
-              "client": "FirstCry",
-              "representative": "Amit Jain",
-              "registerDate": "2024-02-27",
-              "actualRevenue": 4600
+              client: "FirstCry",
+              representative: "Amit Jain",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-27",
+              actualRevenue: 4600,
             },
             {
-              "client": "Beardo",
-              "representative": "Vikas Malhotra",
-              "registerDate": "2024-01-08",
-              "actualRevenue": 4900
-            }
-          ]
+              client: "Beardo",
+              representative: "Vikas Malhotra",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-01-08",
+              actualRevenue: 4900,
+            },
+          ],
         },
         {
-          "name": "ST-601B",
-          "revenue": 0,
-          "clients": [
+          name: "ST-601B",
+          revenue: 0,
+          clients: [
             {
-              "client": "PharmEasy",
-              "representative": "Sanya Gill",
-              "registerDate": "2024-01-22",
-              "actualRevenue": 4700
+              client: "PharmEasy",
+              representative: "Sanya Gill",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-01-22",
+              actualRevenue: 4700,
             },
             {
-              "client": "1mg",
-              "representative": "Kunal Bhat",
-              "registerDate": "2024-02-10",
-              "actualRevenue": 4500
+              client: "1mg",
+              representative: "Kunal Bhat",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-10",
+              actualRevenue: 4500,
             },
             {
-              "client": "Tanishq",
-              "representative": "Divya Joshi",
-              "registerDate": "2024-03-01",
-              "actualRevenue": 4800
+              client: "Tanishq",
+              representative: "Divya Joshi",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-03-01",
+              actualRevenue: 4800,
             },
             {
-              "client": "Tata Motors",
-              "representative": "Rohan Yadav",
-              "registerDate": "2024-02-13",
-              "actualRevenue": 5000
+              client: "Tata Motors",
+              representative: "Rohan Yadav",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-13",
+              actualRevenue: 5000,
             },
             {
-              "client": "Hero",
-              "representative": "Mehul Desai",
-              "registerDate": "2024-01-26",
-              "actualRevenue": 4600
+              client: "Hero",
+              representative: "Mehul Desai",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-01-26",
+              actualRevenue: 4600,
             },
             {
-              "client": "Maruti",
-              "representative": "Shruti Iyer",
-              "registerDate": "2024-03-07",
-              "actualRevenue": 4900
+              client: "Maruti",
+              representative: "Shruti Iyer",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-03-07",
+              actualRevenue: 4900,
             },
             {
-              "client": "Mahindra",
-              "representative": "Nikita Jain",
-              "registerDate": "2024-01-18",
-              "actualRevenue": 4700
+              client: "Mahindra",
+              representative: "Nikita Jain",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-01-18",
+              actualRevenue: 4700,
             },
             {
-              "client": "Oppo",
-              "representative": "Rahul Khanna",
-              "registerDate": "2024-02-24",
-              "actualRevenue": 4600
-            }
-          ]
+              client: "Oppo",
+              representative: "Rahul Khanna",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-24",
+              actualRevenue: 4600,
+            },
+          ],
         },
         {
-          "name": "ST-501A",
-          "revenue": 0,
-          "clients": [
+          name: "ST-501A",
+          revenue: 0,
+          clients: [
             {
-              "client": "Vivo",
-              "representative": "Sneha Pillai",
-              "registerDate": "2024-01-13",
-              "actualRevenue": 4600
+              client: "Vivo",
+              representative: "Sneha Pillai",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-01-13",
+              actualRevenue: 4600,
             },
             {
-              "client": "Realme",
-              "representative": "Arjun Patel",
-              "registerDate": "2024-02-03",
-              "actualRevenue": 4800
+              client: "Realme",
+              representative: "Arjun Patel",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-03",
+              actualRevenue: 4800,
             },
             {
-              "client": "Samsung",
-              "representative": "Tanya Roy",
-              "registerDate": "2024-01-30",
-              "actualRevenue": 5100
+              client: "Samsung",
+              representative: "Tanya Roy",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-01-30",
+              actualRevenue: 5100,
             },
             {
-              "client": "OnePlus",
-              "representative": "Aditya Singh",
-              "registerDate": "2024-02-08",
-              "actualRevenue": 5200
+              client: "OnePlus",
+              representative: "Aditya Singh",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-08",
+              actualRevenue: 5200,
             },
             {
-              "client": "Apple",
-              "representative": "Siddharth Mehra",
-              "registerDate": "2024-03-12",
-              "actualRevenue": 6300
+              client: "Apple",
+              representative: "Siddharth Mehra",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-03-12",
+              actualRevenue: 6300,
             },
             {
-              "client": "Dell",
-              "representative": "Shreya Naik",
-              "registerDate": "2024-02-16",
-              "actualRevenue": 5400
+              client: "Dell",
+              representative: "Shreya Naik",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-02-16",
+              actualRevenue: 5400,
             },
             {
-              "client": "HP",
-              "representative": "Gaurav Shah",
-              "registerDate": "2024-03-22",
-              "actualRevenue": 4900
+              client: "HP",
+              representative: "Gaurav Shah",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-03-22",
+              actualRevenue: 4900,
             },
             {
-              "client": "Lenovo",
-              "representative": "Tanvi Agarwal",
-              "registerDate": "2024-01-21",
-              "actualRevenue": 5000
-            }
-          ]
-        }
-      ]
+              client: "Lenovo",
+              representative: "Tanvi Agarwal",
+              adminLead: "Anne Fernandes",
+              registerDate: "2024-01-21",
+              actualRevenue: 5000,
+            },
+          ],
+        },
+      ],
     },
     {
       month: "May",
@@ -303,18 +343,21 @@ const AdminExecutiveExpenses = () => {
             {
               client: "Client I",
               representative: "Grace Orange",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-02-11",
               actualRevenue: 6000,
             },
             {
               client: "Client J",
               representative: "Hank Purple",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-03-09",
               actualRevenue: 5000,
             },
             {
               client: "Client K",
               representative: "Isabel Cyan",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-04-14",
               actualRevenue: 4000,
             },
@@ -327,12 +370,14 @@ const AdminExecutiveExpenses = () => {
             {
               client: "Client L",
               representative: "Jack Gray",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-02-28",
               actualRevenue: 5000,
             },
             {
               client: "Client M",
               representative: "Kara Silver",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-03-07",
               actualRevenue: 4000,
             },
@@ -345,18 +390,21 @@ const AdminExecutiveExpenses = () => {
             {
               client: "Client N",
               representative: "Leo Gold",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-05-20",
               actualRevenue: 6000,
             },
             {
               client: "Client O",
               representative: "Mia Platinum",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-06-08",
               actualRevenue: 5000,
             },
             {
               client: "Client P",
               representative: "Noah Bronze",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-07-15",
               actualRevenue: 3000,
             },
@@ -374,18 +422,21 @@ const AdminExecutiveExpenses = () => {
             {
               client: "Client Q",
               representative: "Olivia Rose",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-01-30",
               actualRevenue: 7000,
             },
             {
               client: "Client R",
               representative: "Peter Brown",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-02-18",
               actualRevenue: 6000,
             },
             {
               client: "Client S",
               representative: "Quincy Black",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-03-26",
               actualRevenue: 5000,
             },
@@ -398,12 +449,14 @@ const AdminExecutiveExpenses = () => {
             {
               client: "Client T",
               representative: "Rachel Violet",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-04-12",
               actualRevenue: 5000,
             },
             {
               client: "Client U",
               representative: "Sam Indigo",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-05-07",
               actualRevenue: 5000,
             },
@@ -416,18 +469,21 @@ const AdminExecutiveExpenses = () => {
             {
               client: "Client V",
               representative: "Tina Lilac",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-06-05",
               actualRevenue: 6000,
             },
             {
               client: "Client W",
               representative: "Umar Yellow",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-07-08",
               actualRevenue: 4000,
             },
             {
               client: "Client X",
               representative: "Victor Pink",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-08-15",
               actualRevenue: 3000,
             },
@@ -445,18 +501,21 @@ const AdminExecutiveExpenses = () => {
             {
               client: "Client Y",
               representative: "Wendy Red",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-03-10",
               actualRevenue: 8000,
             },
             {
               client: "Client Z",
               representative: "Xavier Green",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-04-14",
               actualRevenue: 7000,
             },
             {
               client: "Client AA",
               representative: "Yara Blue",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-05-16",
               actualRevenue: 5000,
             },
@@ -469,12 +528,14 @@ const AdminExecutiveExpenses = () => {
             {
               client: "Client AB",
               representative: "Zane Orange",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-06-20",
               actualRevenue: 6000,
             },
             {
               client: "Client AC",
               representative: "Adam Gray",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-07-10",
               actualRevenue: 5000,
             },
@@ -487,18 +548,21 @@ const AdminExecutiveExpenses = () => {
             {
               client: "Client AD",
               representative: "Betty Silver",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-08-25",
               actualRevenue: 7000,
             },
             {
               client: "Client AE",
               representative: "Charlie Platinum",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-09-14",
               actualRevenue: 6000,
             },
             {
               client: "Client AF",
               representative: "David Bronze",
+              adminLead: "Anne Fernandes",
               registerDate: "2024-10-05",
               actualRevenue: 3000,
             },
@@ -508,14 +572,17 @@ const AdminExecutiveExpenses = () => {
     },
   ];
 
-    //Calulation of total revenue of each unit
-    mockBusinessRevenueData = mockBusinessRevenueData.map((data) => ({
-      ...data,
-      domains: data.domains.map((domain) => ({
-        ...domain,
-        revenue: domain.clients.reduce((acc, curr) => acc + curr.actualRevenue, 0)
-      }))
-    }));
+  //Calulation of total revenue of each unit
+  mockBusinessRevenueData = mockBusinessRevenueData.map((data) => ({
+    ...data,
+    domains: data.domains.map((domain) => ({
+      ...domain,
+      revenue: domain.clients.reduce(
+        (acc, curr) => acc + curr.actualRevenue,
+        0
+      ),
+    })),
+  }));
 
   const [selectedMonth, setSelectedMonth] = useState(
     mockBusinessRevenueData[0].month
@@ -531,17 +598,18 @@ const AdminExecutiveExpenses = () => {
     (data) => data.month === selectedMonth
   );
 
-   if (selectedMonthData) {
-      selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
-        const updatedClients = domain.clients.map((client, index) => ({
-          ...client,
-          srNo: index + 1,
-          registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
-          actualRevenue:Number(client.actualRevenue).toLocaleString("en-IN")
-        }));
-        return { ...domain, clients: updatedClients };
-      });
-    }
+  if (selectedMonthData) {
+    selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
+      const updatedClients = domain.clients.map((client, index) => ({
+        ...client,
+        srNo: index + 1,
+        registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
+        adminLead: client.adminLead,
+        actualRevenue: Number(client.actualRevenue).toLocaleString("en-IN"),
+      }));
+      return { ...domain, clients: updatedClients };
+    });
+  }
 
   // Prepare Bar Graph Data
   const graphData = [
@@ -553,8 +621,12 @@ const AdminExecutiveExpenses = () => {
 
   // Graph Options
   const options = {
-    chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular",toolbar:false
-     },
+    chart: {
+      type: "bar",
+      stacked: false,
+      fontFamily: "Poppins-Regular",
+      toolbar: false,
+    },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
     },
@@ -562,11 +634,11 @@ const AdminExecutiveExpenses = () => {
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
-     tooltip: {
-          y: {
-            formatter: (val) => `INR ${inrFormat(val)}`,
-          },
-        },
+    tooltip: {
+      y: {
+        formatter: (val) => `INR ${inrFormat(val)}`,
+      },
+    },
     legend: { position: "top" },
     colors: ["#80bf01"],
   };
@@ -598,7 +670,7 @@ const AdminExecutiveExpenses = () => {
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
       <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
           <div className="flex justify-between items-center w-full px-4 py-2">
             <span className="text-sm text-muted font-pmedium text-title">
               LOCATION
@@ -606,7 +678,6 @@ const AdminExecutiveExpenses = () => {
             <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
               EXPENSE
             </span>
-            
           </div>
         </div>
         {selectedMonthData.domains.map((domain, index) => {
@@ -637,7 +708,12 @@ const AdminExecutiveExpenses = () => {
                       field: "representative",
                       flex: 1,
                     },
-                    { headerName: "Register Date", field: "registerDate", flex: 1 },
+                    {
+                      headerName: "Register Date",
+                      field: "registerDate",
+                      flex: 1,
+                    },
+                    { headerName: "Admin Lead", field: "adminLead", flex: 1 },
                     {
                       headerName: "Expense (INR)",
                       field: "actualRevenue",

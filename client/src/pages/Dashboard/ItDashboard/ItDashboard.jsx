@@ -38,14 +38,16 @@ const ItDashboard = () => {
     { unit: "ST-701A", tasks: 25 },
     { unit: "ST-701B", tasks: 30 },
   ];
-  
+
   const totalUnitWiseTask = taskData.reduce((sum, item) => sum + item.tasks, 0);
-  
+
   const unitWisePieData = taskData.map((item) => ({
-    label: `${item.unit} (${((item.tasks / totalUnitWiseTask) * 100).toFixed(1)}%)`,
+    label: `${item.unit} (${((item.tasks / totalUnitWiseTask) * 100).toFixed(
+      1
+    )}%)`,
     value: item.tasks,
   }));
-  
+
   const unitPieChartOptions = {
     labels: unitWisePieData.map((item) => item.label),
     chart: {
@@ -62,7 +64,6 @@ const ItDashboard = () => {
       },
     },
   };
-  
 
   // ------------------------------------------------------------------------------------------------------------------//
   const executiveTasks = [
@@ -88,18 +89,21 @@ const ItDashboard = () => {
     { unit: "ST-601A", expense: 11500 },
     { unit: "ST-601B", expense: 10000 },
   ];
-  
+
   const totalUnitWiseExpense = unitWiseExpense.reduce(
     (sum, item) => sum + item.expense,
     0
   );
-  
+
   // Label shows % but value used for actual data
   const pieUnitWiseExpenseData = unitWiseExpense.map((item) => ({
-    label: `${item.unit} (${((item.expense / totalUnitWiseExpense) * 100).toFixed(1)}%)`,
+    label: `${item.unit} (${(
+      (item.expense / totalUnitWiseExpense) *
+      100
+    ).toFixed(1)}%)`,
     value: item.expense,
   }));
-  
+
   const pieUnitWiseExpenseOptions = {
     labels: unitWiseExpense.map((item) => item.unit),
     chart: {
@@ -116,25 +120,27 @@ const ItDashboard = () => {
       },
     },
   };
-  
+
   //----------------------------------------------------------------------------------------------------------//
   const genderData = [
     { gender: "Male", count: 45 },
     { gender: "Female", count: 40 },
   ];
-  
+
   // Calculate total for reference
   const totalGenderCount = genderData.reduce(
     (sum, item) => sum + item.count,
     0
   );
-  
+
   // Prepare pie chart data with labels showing % but values are actual
   const pieGenderData = genderData.map((item) => ({
-    label: `${item.gender} ${((item.count / totalGenderCount) * 100).toFixed(1)}%`,
+    label: `${item.gender} ${((item.count / totalGenderCount) * 100).toFixed(
+      1
+    )}%`,
     value: item.count,
   }));
-  
+
   // Apex chart options with tooltip showing actual value
   const pieGenderOptions = {
     labels: genderData.map((item) => item.gender),
@@ -147,7 +153,7 @@ const ItDashboard = () => {
       },
     },
   };
-  
+
   //----------------------------------------------------------------------------------------------------------//
 
   const priorityTasks = [
@@ -267,17 +273,20 @@ const ItDashboard = () => {
     { client: "Swiggy", complaints: 1 },
     { client: "Zimetrics", complaints: 1 },
   ];
-  
+
   const totalClientComplaints = clientComplaints.reduce(
     (sum, item) => sum + item.complaints,
     0
   );
-  
+
   const pieComplaintsData = clientComplaints.map((item) => ({
-    label: `${item.client} (${((item.complaints / totalClientComplaints) * 100).toFixed(1)}%)`,
+    label: `${item.client} (${(
+      (item.complaints / totalClientComplaints) *
+      100
+    ).toFixed(1)}%)`,
     value: item.complaints,
   }));
-  
+
   const pieComplaintsOptions = {
     labels: clientComplaints.map((item) => item.client),
     chart: {
@@ -289,7 +298,7 @@ const ItDashboard = () => {
       },
     },
   };
-  
+
   //----------------------------------------------------------------------------------------------------------//
   const complaintTypes = [
     { type: "WiFi", count: 8 },
@@ -399,6 +408,7 @@ const ItDashboard = () => {
           route={"IT-offices"}
         />,
         <DataCard
+          route={"/app/tasks"}
           data={"58"}
           title={"Total"}
           description={"Due Tasks This Month"}
