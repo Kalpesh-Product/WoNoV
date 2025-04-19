@@ -13,20 +13,20 @@ import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-picker
 import { Controller, useForm } from "react-hook-form";
 import MuiModal from "../../../../../components/MuiModal";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
 import dayjs from "dayjs";
 import { toast } from "sonner";
 
 const Leaves = () => {
   const axios = useAxiosPrivate();
     const queryClient = useQueryClient();
-    const { control, reset, handleSubmit } = useForm({
+    const { control, reset, handleSubmit, formState: { errors }} = useForm({
       defaultValues: {
         fromDate: null,
         toDate: null,
         leavetype:"",
         leavePeriod:null,
-        hours:0,
+        hours:null,
         description:""
       },
     });
@@ -91,6 +91,9 @@ const Leaves = () => {
       },
     ],
   };
+
+  const leaveType = ["Privileged","Sick"]
+  const leavePeriod = ["Partial","Single","Multiple"]
 
   // Prepare data for ApexCharts
   const months = leavesData.monthlyData.map((entry) => entry.month);
@@ -317,34 +320,76 @@ const Leaves = () => {
                       </LocalizationProvider>
                     )}
                   />
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Controller
-                      name="inTime"
-                      control={control}
-                      render={({ field }) => (
-                        <TimePicker
-                          {...field}
-                          label={"Select In-Time"}
-                          slotProps={{ textField: { size: "small" } }}
-                          render={(params) => <TextField {...params} fullWidth />}
-                        />
-                      )}
+                 <Controller
+                  name="hours"
+                  control={control}
+                  rules={{ required: "Hours is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      size="small"
+                      {...field}
+                      label="Hours"
+                      type="number"
+                      // helperText={errors.quantity?.message}
                     />
-                  </LocalizationProvider>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Controller
-                      name="outTime"
-                      control={control}
-                      render={({ field }) => (
-                        <TimePicker
-                          {...field}
-                          label={"Select Out-Time"}
-                          slotProps={{ textField: { size: "small" } }}
-                          render={(params) => <TextField {...params} fullWidth />}
-                        />
-                      )}
-                    />
-                  </LocalizationProvider>
+                  )}
+                />
+                <Controller
+                    name="Leavetype"
+                                  control={control}
+                                  defaultValue=""
+                                  rules={{ required: "Leavetype is required" }}
+                                  render={({ field }) => (
+                                    <TextField
+                                      {...field}
+                                      fullWidth
+                                      select
+                                      label="Leavetype"
+                                      size="small"
+                                    >
+                                      {leaveType.map((type) => (
+                                        <MenuItem key={leaveType.length} value={type}>
+                                          {type}
+                                        </MenuItem>
+                                      ))}
+                                    </TextField>
+                    )}
+                />
+                <Controller
+                    name="LeavePeriod"
+                                  control={control}
+                                  defaultValue=""
+                                  rules={{ required: "LeavePeriod is required" }}
+                                  render={({ field }) => (
+                                    <TextField
+                                      {...field}
+                                      fullWidth
+                                      select
+                                      label="LeavePeriod"
+                                      size="small"
+                                    >
+                                      {leavePeriod.map((period) => (
+                                        <MenuItem key={leavePeriod.length} value={period}>
+                                          {period}
+                                        </MenuItem>
+                                      ))}
+                                    </TextField>
+                    )}
+                />
+                 <Controller
+                                name="description"
+                                rules={{ required: "Please specify your description" }}
+                                control={control}
+                                render={({ field }) => (
+                                  <>
+                                    <TextField
+                                      {...field}
+                                      size="small"
+                                      label="Description"
+                                    />
+                                  </>
+                                )}
+                              />
       
                   <div className="flex items-center justify-center gap-4">
                     <SecondaryButton

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 // import AssetModal from "./AssetModal";
@@ -69,109 +69,132 @@ const ItInventory = () => {
 
   const assetsList = [
     {
-      department: { name: "IT" },
-      name: "Laptop",
-      brand: "Dell",
-      price: 60000,
-      quantity: 5,
-      purchaseDate: new Date().toISOString(),
-      warranty: 24,
-      vendor: { name: "TechVendor Pvt Ltd" },
+      "department": {
+        "name": "IT"
+      },
+      "name": "Laptop",
+      "brand": "Dell",
+      "price": 60000,
+      "quantity": 5,
+      "purchaseDate": "2024-04-27T00:00:00",
+      "warranty": 24,
+      "vendor": {
+        "name": "TechVendor Pvt Ltd"
+      }
     },
     {
-      department: { name: "Admin" },
-      name: "Printer",
-      brand: "HP",
-      price: 15000,
-      quantity: 2,
-      purchaseDate: new Date("2024-12-01").toISOString(),
-      warranty: 12,
-      vendor: { name: "OfficeNeeds Co" },
+      "department": {
+        "name": "IT"
+      },
+      "name": "Router",
+      "brand": "Cisco",
+      "price": 20000,
+      "quantity": 3,
+      "purchaseDate": "2024-05-03T00:00:00",
+      "warranty": 36,
+      "vendor": {
+        "name": "Network Hub"
+      }
     },
     {
-      department: { name: "Finance" },
-      name: "Monitor",
-      brand: "LG",
-      price: 12000,
-      quantity: 10,
-      purchaseDate: new Date("2023-06-15").toISOString(),
-      warranty: 18,
-      vendor: { name: "GadgetWorld" },
+      "department": {
+        "name": "IT"
+      },
+      "name": "External Hard Drive",
+      "brand": "Seagate",
+      "price": 7000,
+      "quantity": 10,
+      "purchaseDate": "2024-06-04T00:00:00",
+      "warranty": 12,
+      "vendor": {
+        "name": "Storage Solutions"
+      }
     },
     {
-      department: { name: "HR" },
-      name: "Projector",
-      brand: "Epson",
-      price: 45000,
-      quantity: 1,
-      purchaseDate: new Date("2024-02-20").toISOString(),
-      warranty: 24,
-      vendor: { name: "AV Solutions" },
+      "department": {
+        "name": "IT"
+      },
+      "name": "Firewall Appliance",
+      "brand": "Fortinet",
+      "price": 85000,
+      "quantity": 1,
+      "purchaseDate": "2024-07-12T00:00:00",
+      "warranty": 36,
+      "vendor": {
+        "name": "CyberSec Solutions"
+      }
     },
     {
-      department: { name: "IT" },
-      name: "Router",
-      brand: "Cisco",
-      price: 20000,
-      quantity: 3,
-      purchaseDate: new Date("2023-11-10").toISOString(),
-      warranty: 36,
-      vendor: { name: "Network Hub" },
+      "department": {
+        "name": "IT"
+      },
+      "name": "Network Switch",
+      "brand": "Netgear",
+      "price": 15000,
+      "quantity": 4,
+      "purchaseDate": "2024-08-07T00:00:00",
+      "warranty": 24,
+      "vendor": {
+        "name": "Network Hub"
+      }
     },
     {
-      department: { name: "Admin" },
-      name: "Scanner",
-      brand: "Canon",
-      price: 8000,
-      quantity: 4,
-      purchaseDate: new Date("2024-03-05").toISOString(),
-      warranty: 12,
-      vendor: { name: "OfficeNeeds Co" },
+      "department": {
+        "name": "IT"
+      },
+      "name": "Server Rack",
+      "brand": "APC",
+      "price": 95000,
+      "quantity": 1,
+      "purchaseDate": "2024-09-14T00:00:00",
+      "warranty": 60,
+      "vendor": {
+        "name": "InfraTech India"
+      }
     },
     {
-      department: { name: "Marketing" },
-      name: "Tablet",
-      brand: "Samsung",
-      price: 25000,
-      quantity: 6,
-      purchaseDate: new Date("2023-09-01").toISOString(),
-      warranty: 18,
-      vendor: { name: "GadgetWorld" },
+      "department": {
+        "name": "IT"
+      },
+      "name": "KVM Switch",
+      "brand": "Aten",
+      "price": 12000,
+      "quantity": 2,
+      "purchaseDate": "2024-10-04T00:00:00",
+      "warranty": 36,
+      "vendor": {
+        "name": "DataCenter Supplies"
+      }
     },
     {
-      department: { name: "Finance" },
-      name: "Desktop Computer",
-      brand: "Lenovo",
-      price: 50000,
-      quantity: 7,
-      purchaseDate: new Date("2024-06-18").toISOString(),
-      warranty: 24,
-      vendor: { name: "TechVendor Pvt Ltd" },
+      "department": {
+        "name": "IT"
+      },
+      "name": "Patch Panel",
+      "brand": "D-Link",
+      "price": 3000,
+      "quantity": 6,
+      "purchaseDate": "2024-11-04T00:00:00",
+      "warranty": 24,
+      "vendor": {
+        "name": "CableTech Systems"
+      }
     },
     {
-      department: { name: "HR" },
-      name: "Conference Phone",
-      brand: "Polycom",
-      price: 30000,
-      quantity: 1,
-      purchaseDate: new Date("2024-01-15").toISOString(),
-      warranty: 24,
-      vendor: { name: "AV Solutions" },
-    },
-    {
-      department: { name: "IT" },
-      name: "External Hard Drive",
-      brand: "Seagate",
-      price: 7000,
-      quantity: 10,
-      purchaseDate: new Date("2023-10-10").toISOString(),
-      warranty: 12,
-      vendor: { name: "Storage Solutions" },
-    },
-  ];
-  
-
-  console.log(vendorDetials);
+      "department": {
+        "name": "IT"
+      },
+      "name": "Uninterruptible Power Supply (UPS)",
+      "brand": "APC",
+      "price": 22000,
+      "quantity": 2,
+      "purchaseDate": "2024-12-20T00:00:00",
+      "warranty": 36,
+      "vendor": {
+        "name": "PowerSafe Solutions"
+      }
+    }
+  ]
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
@@ -248,6 +271,7 @@ const ItInventory = () => {
       addAsset(data);
     }
   };
+
 
   return (
     <div className="p-4">
@@ -576,7 +600,7 @@ const ItInventory = () => {
             <DetalisFormatted title="Brand" detail={selectedAsset?.brand} />
             <DetalisFormatted
               title="Price (INR)"
-              detail={selectedAsset?.price}
+              detail={`INR ${selectedAsset?.price}`}
             />
             <DetalisFormatted
               title="Quantity"
@@ -584,7 +608,7 @@ const ItInventory = () => {
             />
             <DetalisFormatted
               title="Purchase Date"
-              detail={dayjs(selectedAsset?.purchaseDate).format("DD-MM-YYYY")}
+              detail={selectedAsset?.purchaseDate}
             />
             <DetalisFormatted
               title="Warranty (Months)"
