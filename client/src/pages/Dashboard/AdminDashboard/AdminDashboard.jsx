@@ -268,20 +268,20 @@ const AdminDashboard = () => {
     {
       name: "Rohan Mehra",
       dateOfJoin: `20-02-${new Date().getFullYear()}`,
-      building: 'DTC',
-      unitNo: '004',
+      building: "DTC",
+      unitNo: "004",
     },
     {
       name: "Aarav Jain",
       dateOfJoin: `25-03-${new Date().getFullYear()}`,
-      building: 'ST',
-      unitNo: '607(D)',
+      building: "ST",
+      unitNo: "607(D)",
     },
     {
       name: "Ishaan Kumar",
       dateOfJoin: `15-04-${new Date().getFullYear()}`,
-      building: 'DTC',
-      unitNo: '202(E)',
+      building: "DTC",
+      unitNo: "202(E)",
     },
   ];
   const houseKeepingMemberColumns = [
@@ -292,7 +292,7 @@ const AdminDashboard = () => {
     { id: "unitNo", label: "Unit No", align: "left" },
   ];
   //-----------------------------------------------------------------------------------------------------------------//
-  const executiveShiftData =[
+  const executiveShiftData = [
     {
       id: 1,
       name: "Amit Sharma",
@@ -357,7 +357,7 @@ const AdminDashboard = () => {
       startTime: "09:00 AM",
       endTime: "06:00 PM",
     },
-  ]
+  ];
 
   const executiveShiftColumns = [
     { id: "id", label: "Sr No", align: "left" },
@@ -409,7 +409,7 @@ const AdminDashboard = () => {
       date: "02-03-2025",
       location: "Garrison Cafe",
     },
-  ]
+  ];
   const upcomingEventsColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "event", label: "Event", align: "left" },
@@ -461,29 +461,113 @@ const AdminDashboard = () => {
       srNo: 1,
       name: "Aarav Mehta",
       upcomingIn: "3 days",
-      dateOfBirth: "1996-04-15",
+      dateOfBirth: "1996-04-22",
       company: "Zomato",
     },
     {
       srNo: 2,
       name: "Riya Sharma",
       upcomingIn: "5 days",
-      dateOfBirth: "1992-04-17",
+      dateOfBirth: "1992-04-24",
       company: "SquadStack",
     },
     {
       srNo: 3,
       name: "Kabir Khanna",
-      upcomingIn: "1 week",
-      dateOfBirth: "1994-04-20",
+      upcomingIn: "7 days",
+      dateOfBirth: "1994-04-26",
       company: "Zimetrics",
     },
     {
       srNo: 4,
       name: "Sneha Patel",
-      upcomingIn: "2 weeks",
-      dateOfBirth: "1997-04-26",
+      upcomingIn: "9 days",
+      dateOfBirth: "1997-04-28",
       company: "IBDO",
+    },
+    {
+      srNo: 5,
+      name: "Vikram Singh",
+      upcomingIn: "1 day",
+      dateOfBirth: "1995-04-20",
+      company: "Flipkart",
+    },
+    {
+      srNo: 6,
+      name: "Ananya Gupta",
+      upcomingIn: "2 days",
+      dateOfBirth: "1993-04-21",
+      company: "Nykaa",
+    },
+    {
+      srNo: 7,
+      name: "Rohan Desai",
+      upcomingIn: "3 days",
+      dateOfBirth: "1998-04-22",
+      company: "Paytm",
+    },
+    {
+      srNo: 8,
+      name: "Priya Nair",
+      upcomingIn: "4 days",
+      dateOfBirth: "1990-04-23",
+      company: "Amazon",
+    },
+    {
+      srNo: 9,
+      name: "Arjun Reddy",
+      upcomingIn: "5 days",
+      dateOfBirth: "1996-04-24",
+      company: "Swiggy",
+    },
+    {
+      srNo: 10,
+      name: "Meera Iyer",
+      upcomingIn: "6 days",
+      dateOfBirth: "1994-04-25",
+      company: "Ola",
+    },
+    {
+      srNo: 11,
+      name: "Nikhil Joshi",
+      upcomingIn: "7 days",
+      dateOfBirth: "1992-04-26",
+      company: "Myntra",
+    },
+    {
+      srNo: 12,
+      name: "Sanya Kapoor",
+      upcomingIn: "8 days",
+      dateOfBirth: "1997-04-27",
+      company: "Uber",
+    },
+    {
+      srNo: 13,
+      name: "Ishaan Malhotra",
+      upcomingIn: "10 days",
+      dateOfBirth: "1995-04-29",
+      company: "Zomato",
+    },
+    {
+      srNo: 14,
+      name: "Tara Bose",
+      upcomingIn: "11 days",
+      dateOfBirth: "1993-04-30",
+      company: "SquadStack",
+    },
+    {
+      srNo: 15,
+      name: "Aditya Rao",
+      upcomingIn: "15 days",
+      dateOfBirth: "1991-05-04",
+      company: "Flipkart",
+    },
+    {
+      srNo: 16,
+      name: "Kavya Menon",
+      upcomingIn: "20 days",
+      dateOfBirth: "1996-05-09",
+      company: "Nykaa",
     },
   ];
 
@@ -527,37 +611,72 @@ const AdminDashboard = () => {
     {
       srNo: 1,
       client: "Zomato",
-      dateOfJoin: "22-03-2020", // Anniversary on 22 Apr 2025 → in 10 days
+      dateOfJoin: "22-03-2020", // Anniversary on 22 Mar 2025 → passed, next in ~337 days
       completedYears: 5,
-      upComingIn: "10 days",
+      upComingIn: "337 days",
     },
     {
       srNo: 2,
       client: "Flipkart",
-      dateOfJoin: "19-01-2023", // Anniversary on 19 Apr 2025 → in 7 days
+      dateOfJoin: "19-01-2023", // Anniversary on 19 Jan 2025 → passed, next in ~305 days
       completedYears: 2,
-      upComingIn: "7 days",
+      upComingIn: "305 days",
     },
     {
       srNo: 3,
       client: "Nykaa",
-      dateOfJoin: "18-03-2022", // Anniversary on 18 Apr 2025 → in 6 days
+      dateOfJoin: "18-03-2022", // Anniversary on 18 Mar 2025 → passed, next in ~333 days
       completedYears: 3,
-      upComingIn: "6 days",
+      upComingIn: "333 days",
     },
     {
       srNo: 4,
       client: "SquadStack",
-      dateOfJoin: "16-04-2021", // Anniversary on 16 Apr 2025 → in 4 days
+      dateOfJoin: "16-04-2021", // Anniversary on 16 Apr 2025 → in 3 days
       completedYears: 4,
-      upComingIn: "4 days",
+      upComingIn: "3 days",
     },
     {
       srNo: 5,
       client: "Paytm",
-      dateOfJoin: "14-02-2024", // Anniversary on 14 Apr 2025 → in 2 days
+      dateOfJoin: "14-02-2024", // Anniversary on 14 Feb 2025 → passed, next in ~301 days
       completedYears: 1,
-      upComingIn: "2 days",
+      upComingIn: "301 days",
+    },
+    {
+      srNo: 6,
+      client: "Amazon",
+      dateOfJoin: "25-04-2023", // Anniversary on 25 Apr 2025 → in 6 days
+      completedYears: 2,
+      upComingIn: "6 days",
+    },
+    {
+      srNo: 7,
+      client: "Swiggy",
+      dateOfJoin: "10-05-2022", // Anniversary on 10 May 2025 → in 21 days
+      completedYears: 3,
+      upComingIn: "21 days",
+    },
+    {
+      srNo: 8,
+      client: "Ola",
+      dateOfJoin: "30-06-2021", // Anniversary on 30 Jun 2025 → in 72 days
+      completedYears: 4,
+      upComingIn: "72 days",
+    },
+    {
+      srNo: 9,
+      client: "Myntra",
+      dateOfJoin: "15-08-2024", // Anniversary on 15 Aug 2025 → in 118 days
+      completedYears: 0,
+      upComingIn: "118 days",
+    },
+    {
+      srNo: 10,
+      client: "Uber",
+      dateOfJoin: "05-03-2020", // Anniversary on 5 Mar 2025 → passed, next in ~320 days
+      completedYears: 5,
+      upComingIn: "320 days",
     },
   ];
 
@@ -581,8 +700,8 @@ const AdminDashboard = () => {
           upComingInDays === 0
             ? "Today"
             : upComingInDays === 1
-              ? "Tomorrow"
-              : `${upComingInDays} days`,
+            ? "Tomorrow"
+            : `${upComingInDays} days`,
         isUpcoming:
           anniversary.isBefore(cutOff) &&
           anniversary.isAfter(today.subtract(1, "day")),
@@ -702,7 +821,7 @@ const AdminDashboard = () => {
           description={"Admin Offices"}
         />,
         <DataCard
-          // route={"admin-expenses"}
+          route={"/app/tasks"}
           title={"Total"}
           data={"38"}
           description={"Monthly Due Tasks"}

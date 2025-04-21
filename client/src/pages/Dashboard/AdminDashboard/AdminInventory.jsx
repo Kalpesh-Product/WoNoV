@@ -65,7 +65,7 @@ const AdminInventory = () => {
     },
   });
 
- 
+
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
@@ -190,8 +190,8 @@ const AdminInventory = () => {
       vendorName: "NetConnect Systems"
     }
   ];
-  
-  
+
+
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
     setModalMode("view");
@@ -226,7 +226,7 @@ const AdminInventory = () => {
             brand: asset.brand,
             price: inrFormat(asset.price),
             quantity: asset.quantity,
-            purchaseDate:humanDateForamt(asset.purchaseDate),
+            purchaseDate: humanDateForamt(asset.purchaseDate),
             warranty: asset.warranty,
             vendorName: asset.vendorName,
           })),
@@ -235,290 +235,181 @@ const AdminInventory = () => {
         handleClick={handleAddAsset}
       />
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add inventory">
         {modalMode === "add" && (
-          <div>
-            <form onSubmit={handleSubmit(handleFormSubmit)}>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <Controller
-                    name="image"
-                    control={control}
-                    rules={{ required: "Asset image is required" }}
-                    render={({ field }) => (
-                      <div
-                        {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
-                          errors.assetImage
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } `}>
-                        <div
-                          className="w-full h-48 flex justify-center items-center relative"
-                          style={{
-                            backgroundImage: previewImage
-                              ? `url(${previewImage})`
-                              : "none",
-                            backgroundSize: "contain",
-                            backgroundPosition: "center",
-                            backgroundRepeat: "no-repeat",
-                          }}>
-                          <Button
-                            variant="outlined"
-                            component="label"
-                            sx={{
-                              position: "absolute",
-                              bottom: 8,
-                              right: 8,
-                              backgroundColor: "rgba(255, 255, 255, 0.7)",
-                              color: "#000",
-                              fontSize: "16px",
-                              fontWeight: "bold",
-                              padding: "8px 16px",
-                              borderRadius: "8px",
-                              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}>
-                            Select Image
-                            <input
-                              type="file"
-                              accept="image/*"
-                              hidden
-                              onChange={(e) => {
-                                if (e.target.files.length > 0) {
-                                  field.onChange(e.target.files);
-                                  setPreviewImage(previewImage);
-                                } else {
-                                  field.onChange(null);
-                                }
-                              }}
-                            />
-                          </Button>
-                        </div>
-                        {errors.assetImage && (
-                          <FormHelperText
-                            error
-                            sx={{
-                              position: "absolute",
-                              top: "50%",
-                              left: "50%",
-                              transform: "translate(-50%, -50%)",
-                              margin: 0,
-                            }}>
-                            {errors.assetImage.message}
-                          </FormHelperText>
-                        )}
-                      </div>
-                    )}
+          <form onSubmit={handleSubmit(handleFormSubmit)}>
+            <div className="grid grid-cols-1 gap-4">
+              {/* Category */}
+              <Controller
+                name="category"
+                control={control}
+                rules={{ required: "Category is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Category"
+                    size="small"
+                    select
+                    error={!!errors.category}
+                    helperText={errors.category?.message}
+                    fullWidth
+                  >
+                    {assetsCategories?.map((cat) => (
+                      <MenuItem key={cat} value={cat}>
+                        {cat}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+
+              {/* Department */}
+              <Controller
+                name="department"
+                control={control}
+                rules={{ required: "Department is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Department"
+                    size="small"
+                    error={!!errors.department}
+                    helperText={errors.department?.message}
+                    fullWidth
                   />
-                </div>
-                <Controller
-                  name="assetType"
-                  control={control}
-                  rules={{ required: "Department is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Asset Type"
-                      helperText={!!errors.assetType?.message}
-                      select>
-                      <MenuItem value="">Select an Asset Type</MenuItem>
-                      <MenuItem value="Physical">Physical</MenuItem>
-                      <MenuItem value="Digital">Digital</MenuItem>
-                    </TextField>
-                  )}
-                />
+                )}
+              />
 
-                <Controller
-                  name="department"
-                  control={control}
-                  rules={{ required: "Department is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      error={!!errors.department}
-                      helperText={errors.department?.message}
-                      fullWidth
-                      {...field}
-                      select
-                      label="Department"
-                      size="small">
-                      {auth.user.company.selectedDepartments?.map((dept) => (
-                        <MenuItem key={dept._id} value={dept._id}>
-                          {dept.name}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-
-                <Controller
-                  name="categoryId"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Category is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      select
-                      label="Category"
-                      size="small">
-                      {assetsCategories.map((category) => (
-                        <MenuItem key={category._id} value={category._id}>
-                          {category.categoryName}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-                <Controller
-                  name="subCategoryId"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Sub-Category is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      select
-                      label="Sub-Category"
-                      size="small">
-                      {assetsCategories.subCategories?.map((subCategory) => (
-                        <MenuItem key={subCategory._id} value={subCategory._id}>
-                          {subCategory.categoryName}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-
-                {/* Department & Category */}
-                <Controller
-                  name="brand"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Brand is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      size="small"
-                      {...field}
-                      label="Brand Name"
-                      error={!!errors.brand}
-                      helperText={errors.brand?.message}
-                    />
-                  )}
-                />
-                {/* Quantity & Price */}
-                <Controller
-                  name="quantity"
-                  control={control}
-                  rules={{ required: "Quantity is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      size="small"
-                      {...field}
-                      label="Quantity"
-                      type="number"
-                      error={!!errors.quantity}
-                      helperText={errors.quantity?.message}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="price"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Price is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      size="small"
-                      {...field}
-                      label="Price"
-                      type="number"
-                      className=""
-                      error={!!errors.price}
-                      helperText={errors.price?.message}
-                    />
-                  )}
-                />
-
-                {/* <Controller
-              name="vendor"
-              control={control}
-              defaultValue=""
-              rules={{ required: "Vendor Name is required" }}
-              render={({ field }) => (
-                <TextField
-                  select
-                  {...field}
-                  label="Vendor Name"
-                  size="small"
-                  error={!!errors.department}
-                  helperText={errors.department?.message}
-                  fullWidth>
-                  {vendorDetials.map((vendor) => (
-                    <MenuItem key={vendor} value={vendor}>
-                      {vendor}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            /> */}
-                {/* Purchase Date & Warranty */}
-
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <Controller
-                    name="purchaseDate"
-                    control={control}
-                    defaultValue={null}
-                    rules={{ required: "Purchase Date is required" }}
-                    render={({ field }) => (
-                      <DatePicker
-                        {...field}
-                        label="Purchase Date"
-                        slotProps={{
-                          textField: {
-                            size: "small",
-                            error: !!errors.purchaseDate,
-                            helperText: errors?.purchaseDate?.message,
-                          },
-                        }}
-                        className="w-full"
-                      />
-                    )}
+              {/* Brand */}
+              <Controller
+                name="brand"
+                control={control}
+                rules={{ required: "Brand is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Brand"
+                    size="small"
+                    error={!!errors.brand}
+                    helperText={errors.brand?.message}
+                    fullWidth
                   />
-                </LocalizationProvider>
+                )}
+              />
 
+              {/* Price */}
+              <Controller
+                name="price"
+                control={control}
+                rules={{ required: "Price is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Price"
+                    type="number"
+                    size="small"
+                    error={!!errors.price}
+                    helperText={errors.price?.message}
+                    fullWidth
+                  />
+                )}
+              />
+
+              {/* Quantity */}
+              <Controller
+                name="quantity"
+                control={control}
+                rules={{ required: "Quantity is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Quantity"
+                    type="number"
+                    size="small"
+                    error={!!errors.quantity}
+                    helperText={errors.quantity?.message}
+                    fullWidth
+                  />
+                )}
+              />
+
+              {/* Purchase Date */}
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <Controller
-                  name="warranty"
+                  name="purchaseDate"
                   control={control}
-                  defaultValue=""
-                  rules={{ required: "Warranty is required" }}
+                  rules={{ required: "Purchase date is required" }}
                   render={({ field }) => (
-                    <TextField
-                      size="small"
+                    <DatePicker
                       {...field}
-                      label="Warranty (Months)"
-                      type="number"
-                      error={!!errors.warranty}
-                      helperText={errors.warranty?.message}
+                      label="Purchase Date"
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          error: !!errors.purchaseDate,
+                          helperText: errors.purchaseDate?.message,
+                          fullWidth: true,
+                        },
+                      }}
                     />
                   )}
                 />
-                <FormHelperText>{errors.category?.message}</FormHelperText>
-              </div>
-              {/* Main end div*/}
-              {/* Conditionally render submit/edit button */}
-              <div className="flex gap-4 justify-center items-center mt-4">
-                <PrimaryButton
-                  title={modalMode === "add" ? "Submit" : "Update"}
-                />
-                {/* Cancel button for edit mode */}
-              </div>
-            </form>
-          </div>
+              </LocalizationProvider>
+
+              {/* Warranty */}
+              <Controller
+                name="warranty"
+                control={control}
+                rules={{ required: "Warranty is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Warranty (Months)"
+                    type="number"
+                    size="small"
+                    error={!!errors.warranty}
+                    helperText={errors.warranty?.message}
+                    fullWidth
+                  />
+                )}
+              />
+
+              {/* Vendor */}
+              <Controller
+                name="vendor"
+                control={control}
+                rules={{ required: "Vendor is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Vendor"
+                    size="small"
+                    select
+                    error={!!errors.vendor}
+                    helperText={errors.vendor?.message}
+                    fullWidth
+                  >
+                    {vendorDetials?.map((vendor) => (
+                      <MenuItem key={vendor._id} value={vendor.name}>
+                        {vendor.name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+            </div>
+
+            <div className="flex gap-4 justify-center items-center mt-4">
+              <PrimaryButton title="Submit" handleSubmit={() => {
+                toast.success("Added item successfully")
+                setIsModalOpen(false)
+              }} />
+            </div>
+          </form>
         )}
       </MuiModal>
+
     </div>
   );
 };

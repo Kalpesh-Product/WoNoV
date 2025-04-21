@@ -385,8 +385,11 @@ const ItPerSqExpense = () => {
   // Prepare Bar Graph Data
   const graphData = [
     {
-      name: "Internet Expense",
-      data: selectedMonthData.domains.map((domain) => domain.revenue),
+      name: "IT Expense Per Sq. Ft.",
+      // data: selectedMonthData.domains.map((domain) => domain.revenue),
+      data: selectedMonthData.domains.map((domain) =>
+        inrFormat(Math.round((domain.revenue / domain.totalSqFt) * 2) / 2)
+      ),
     },
   ];
 
@@ -405,6 +408,11 @@ const ItPerSqExpense = () => {
     plotOptions: {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
+    tooltip: {
+      y: {
+        formatter: (val) => `INR ${inrFormat(val)}`,
+      },
+    },
     legend: { position: "top" },
     colors: ["#80bf01"],
   };
@@ -419,8 +427,7 @@ const ItPerSqExpense = () => {
             label="Select Month"
             value={selectedMonth}
             onChange={handleMonthChange}
-            sx={{ width: "200px" }}
-          >
+            sx={{ width: "200px" }}>
             {mockBusinessRevenueData.map((data) => (
               <MenuItem key={data.month} value={data.month}>
                 {data.month}
@@ -431,7 +438,7 @@ const ItPerSqExpense = () => {
       </div>
 
       {/* Bar Graph Component */}
-      <WidgetSection layout={1} title={"Internet Expense Per Sq Ft"} border>
+      <WidgetSection layout={1} title={"Expense Per Sq Ft"} border>
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
 
@@ -456,8 +463,7 @@ const ItPerSqExpense = () => {
               <AccordionSummary
                 expandIcon={<IoIosArrowDown />}
                 aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}
-              >
+                id={`panel-${index}-header`}>
                 <div className="flex justify-between items-center w-full px-4">
                   <span className="text-subtitle font-pmedium">
                     {domain.name}

@@ -100,11 +100,11 @@ const AdminAnnualExpenses = () => {
   const annualExpenseColumns = [
     { field: "id", headerName: "Sr No" },
     { field: "category", headerName: "Category" },
-    { field: "expenseName", headerName: "Expense Name",flex:1 },
+    { field: "expenseName", headerName: "Expense Name", flex: 1 },
     { field: "date", headerName: "Date" },
     { field: "amount", headerName: "Amount (INR)" }
   ];
-  
+
 
   const { data: assetsList = [] } = useQuery({
     queryKey: ["assetsList"],
@@ -150,7 +150,7 @@ const AdminAnnualExpenses = () => {
       amount: 10000,
     },
   ];
-  
+
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -183,256 +183,83 @@ const AdminAnnualExpenses = () => {
             id: index + 1,
             category: asset.category,
             expenseName: asset.expenseName,
-            date:  dayjs(asset.date).format("DD-MM-YYYY"),
+            date: dayjs(asset.date).format("DD-MM-YYYY"),
             amount: Number(asset.amount.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
           })),
         ]}
-        
+
         columns={annualExpenseColumns}
         handleClick={handleAddAsset}
       />
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Expense">
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <Controller
-                    name="image"
-                    control={control}
-                    rules={{ required: "Asset image is required" }}
-                    render={({ field }) => (
-                      <div
-                        {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
-                          errors.assetImage
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } `}>
-                        <div
-                          className="w-full h-48 flex justify-center items-center relative"
-                          style={{
-                            backgroundImage: previewImage
-                              ? `url(${previewImage})`
-                              : "none",
-                            backgroundSize: "contain",
-                            backgroundPosition: "center",
-                            backgroundRepeat: "no-repeat",
-                          }}>
-                          <Button
-                            variant="outlined"
-                            component="label"
-                            sx={{
-                              position: "absolute",
-                              bottom: 8,
-                              right: 8,
-                              backgroundColor: "rgba(255, 255, 255, 0.7)",
-                              color: "#000",
-                              fontSize: "16px",
-                              fontWeight: "bold",
-                              padding: "8px 16px",
-                              borderRadius: "8px",
-                              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}>
-                            Select Image
-                            <input
-                              type="file"
-                              accept="image/*"
-                              hidden
-                              onChange={(e) => {
-                                if (e.target.files.length > 0) {
-                                  field.onChange(e.target.files);
-                                  setPreviewImage(previewImage);
-                                } else {
-                                  field.onChange(null);
-                                }
-                              }}
-                            />
-                          </Button>
-                        </div>
-                        {errors.assetImage && (
-                          <FormHelperText
-                            error
-                            sx={{
-                              position: "absolute",
-                              top: "50%",
-                              left: "50%",
-                              transform: "translate(-50%, -50%)",
-                              margin: 0,
-                            }}>
-                            {errors.assetImage.message}
-                          </FormHelperText>
-                        )}
-                      </div>
-                    )}
-                  />
-                </div>
+              <div className="grid grid-cols-1 gap-4">
                 <Controller
-                  name="assetType"
+                  name="category"
                   control={control}
-                  rules={{ required: "Department is required" }}
+                  rules={{ required: "Category is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Asset Type"
+                      label="Category"
+                      size="small"
                       helperText={!!errors.assetType?.message}
-                      select>
-                      <MenuItem value="">Select an Asset Type</MenuItem>
-                      <MenuItem value="Physical">Physical</MenuItem>
-                      <MenuItem value="Digital">Digital</MenuItem>
+                      select
+                    >
+                      <MenuItem value="" disabled>
+                        Select an Asset Type
+                      </MenuItem>
+                      <MenuItem value="OfficeSupplies">Office Supplies</MenuItem>
+                      <MenuItem value="FacilityManagement">Facility Management</MenuItem>
+                      <MenuItem value="TravelArrangements">Travel Arrangements</MenuItem>
                     </TextField>
                   )}
                 />
 
                 <Controller
-                  name="department"
+                  name="expenseName"
                   control={control}
-                  rules={{ required: "Department is required" }}
+                  rules={{ required: "Expense Name is required" }}
                   render={({ field }) => (
                     <TextField
                       error={!!errors.department}
                       helperText={errors.department?.message}
                       fullWidth
                       {...field}
-                      select
-                      label="Department"
-                      size="small">
-                      {auth.user.company.selectedDepartments?.map((dept) => (
-                        <MenuItem key={dept._id} value={dept._id}>
-                          {dept.name}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                      label="Expense Name"
+                      size="small"
+                    />
                   )}
                 />
-
                 <Controller
-                  name="categoryId"
+                  name="amount"
                   control={control}
-                  defaultValue=""
-                  rules={{ required: "Category is required" }}
+                  rules={{ required: "Amount is required" }}
                   render={({ field }) => (
                     <TextField
-                      {...field}
+                      error={!!errors.department}
+                      helperText={errors.department?.message}
                       fullWidth
-                      select
-                      label="Category"
-                      size="small">
-                      {assetsCategories.map((category) => (
-                        <MenuItem key={category._id} value={category._id}>
-                          {category.categoryName}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-                <Controller
-                  name="subCategoryId"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Sub-Category is required" }}
-                  render={({ field }) => (
-                    <TextField
                       {...field}
-                      fullWidth
-                      select
-                      label="Sub-Category"
-                      size="small">
-                      {assetsCategories.subCategories?.map((subCategory) => (
-                        <MenuItem key={subCategory._id} value={subCategory._id}>
-                          {subCategory.categoryName}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-
-                {/* Department & Category */}
-                <Controller
-                  name="brand"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Brand is required" }}
-                  render={({ field }) => (
-                    <TextField
+                      label="Amount"
                       size="small"
-                      {...field}
-                      label="Brand Name"
-                      error={!!errors.brand}
-                      helperText={errors.brand?.message}
                     />
                   )}
                 />
-                {/* Quantity & Price */}
-                <Controller
-                  name="quantity"
-                  control={control}
-                  rules={{ required: "Quantity is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      size="small"
-                      {...field}
-                      label="Quantity"
-                      type="number"
-                      error={!!errors.quantity}
-                      helperText={errors.quantity?.message}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="price"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Price is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      size="small"
-                      {...field}
-                      label="Price"
-                      type="number"
-                      className=""
-                      error={!!errors.price}
-                      helperText={errors.price?.message}
-                    />
-                  )}
-                />
-
-                {/* <Controller
-              name="vendor"
-              control={control}
-              defaultValue=""
-              rules={{ required: "Vendor Name is required" }}
-              render={({ field }) => (
-                <TextField
-                  select
-                  {...field}
-                  label="Vendor Name"
-                  size="small"
-                  error={!!errors.department}
-                  helperText={errors.department?.message}
-                  fullWidth>
-                  {vendorDetials.map((vendor) => (
-                    <MenuItem key={vendor} value={vendor}>
-                      {vendor}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            /> */}
-                {/* Purchase Date & Warranty */}
-
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <Controller
-                    name="purchaseDate"
+                    name="expenseDate"
                     control={control}
                     defaultValue={null}
-                    rules={{ required: "Purchase Date is required" }}
+                    rules={{ required: "Date is required" }}
                     render={({ field }) => (
                       <DatePicker
                         {...field}
-                        label="Purchase Date"
+                        label="Date"
+                        format="DD-MM-YYYY"
                         slotProps={{
                           textField: {
                             size: "small",
@@ -445,29 +272,15 @@ const AdminAnnualExpenses = () => {
                     )}
                   />
                 </LocalizationProvider>
-
-                <Controller
-                  name="warranty"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Warranty is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      size="small"
-                      {...field}
-                      label="Warranty (Months)"
-                      type="number"
-                      error={!!errors.warranty}
-                      helperText={errors.warranty?.message}
-                    />
-                  )}
-                />
-                <FormHelperText>{errors.category?.message}</FormHelperText>
               </div>
               {/* Main end div*/}
               {/* Conditionally render submit/edit button */}
               <div className="flex gap-4 justify-center items-center mt-4">
                 <PrimaryButton
+                  handleSubmit={() => {
+                    toast.success("Expense type added succesfully");
+                    setIsModalOpen(false);
+                  }}
                   title={modalMode === "add" ? "Submit" : "Update"}
                 />
                 {/* Cancel button for edit mode */}
