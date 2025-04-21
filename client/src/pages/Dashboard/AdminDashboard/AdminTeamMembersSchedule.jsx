@@ -43,9 +43,9 @@ const AdminTeamMembersSchedule = () => {
     },
   });
 
-  const {handleSubmit:updateUser, reset: updateUserReset, control: updateUserControl} = useForm({
-    defaultValues:{
-      meetingId : "",
+  const { handleSubmit: updateUser, reset: updateUserReset, control: updateUserControl } = useForm({
+    defaultValues: {
+      meetingId: "",
     }
   })
 
@@ -210,7 +210,7 @@ const AdminTeamMembersSchedule = () => {
         />
       ) : (
         <div className="flex justify-center items-center h-[60vh]">
-          <CircularProgress />
+          <CircularProgress color="#1E3D73"/>
         </div>
       )}
 
