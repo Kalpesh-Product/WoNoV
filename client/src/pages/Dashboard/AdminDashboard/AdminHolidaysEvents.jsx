@@ -3,6 +3,7 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import AgTable from "../../../components/AgTable";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
 
 const AdminHolidaysEvents = ({ title }) => {
   const axios = useAxiosPrivate();
@@ -94,7 +95,7 @@ const AdminHolidaysEvents = ({ title }) => {
             ...holidayEvents.map((holidays, index) => ({
               id: index + 1, // Auto-increment Sr No
               title: holidays.title, // Birthday Name
-              start: new Date(holidays.start).toLocaleDateString(), // Format as readable date
+              start: dayjs(new Date(holidays.start)).format("DD-MM-YYYY"), // Format as readable date
             })),
           ]}
         />
