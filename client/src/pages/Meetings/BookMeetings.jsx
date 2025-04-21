@@ -14,10 +14,11 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import AgTable from "../../components/AgTable";
 import useAuth from "../../hooks/useAuth";
-import { MdEventSeat } from "react-icons/md";
+import { MdEventSeat, MdOutlineRateReview, MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../components/MuiModal";
 import { queryClient } from "../../main";
 import CustomRating from "../../components/CustomRating";
+import DetalisFormatted from "../../components/DetalisFormatted";
 
 const BookMeetings = () => {
   // ------------------------------Initializations ------------------------------------//
@@ -60,6 +61,14 @@ const BookMeetings = () => {
 
   // ------------------------------ API Integrations ------------------------------------//
   // Fetch all Meeting Rooms
+
+  const [detailsModal, setDetailsModal] = useState(false);
+
+  const handleViewDetails = (meeting) => {
+    setSelectedMeeting(meeting);
+    setDetailsModal(true);
+  };
+
   const {
     data: allMeetingRooms = [],
     isLoading: meetingRoomsLoading,
@@ -75,8 +84,8 @@ const BookMeetings = () => {
   // Filter meeting rooms based on selected location
   const filteredMeetingRooms = selectedUnitId
     ? allMeetingRooms.filter(
-        (room) => room.location?.building?._id === selectedUnitId
-      )
+      (room) => room.location?.building?._id === selectedUnitId
+    )
     : [];
 
   const groupedRooms = filteredMeetingRooms.reduce((acc, room) => {
@@ -152,29 +161,39 @@ const BookMeetings = () => {
     },
     {
       field: "actions",
-      headerName: "Action",
+      headerName: "Actions",
       cellRenderer: (params) => {
         const rawReview = params.data?.reviews;
 
-        // Normalize: treat review as an array even if it's an object
         const meetingReviews = Array.isArray(rawReview)
           ? rawReview
           : rawReview
-          ? [rawReview]
-          : [];
+            ? [rawReview]
+            : [];
 
-        return meetingReviews.length > 0 ? (
-          "Review added"
-        ) : (
-          <div className="p-2">
-            <PrimaryButton
-              title={"Add review"}
-              handleSubmit={() => handleAddReview(params.data)}
-            />
+        return (
+          <div className="p-2 flex items-center gap-2">
+            {meetingReviews.length > 0 ? (
+              "Review added"
+            ) : (
+              <span
+                onClick={() => handleAddReview(params.data)}
+                className="cursor-pointer"
+              >
+                <MdOutlineRateReview size={20} />
+              </span>
+            )}
+            <span
+              className="text-subtitle cursor-pointer"
+              onClick={() => handleViewDetails(params.data)}
+            >
+              <MdOutlineRemoveRedEye />
+            </span>
           </div>
         );
       },
-    },
+    }
+
   ];
   // ------------------------------ API Integrations ------------------------------------//
 
@@ -283,11 +302,10 @@ const BookMeetings = () => {
                           </div>
                           <div>
                             <div
-                              className={` w-2 h-2 rounded-full  ${
-                                room.status === "Available"
-                                  ? "bg-green-400"
-                                  : "bg-red-600"
-                              }`}></div>
+                              className={` w-2 h-2 rounded-full  ${room.status === "Available"
+                                ? "bg-green-400"
+                                : "bg-red-600"
+                                }`}></div>
                           </div>
                         </div>
                       </MenuItem>
@@ -380,6 +398,23 @@ const BookMeetings = () => {
           />
         </form>
       </MuiModal>
+      <MuiModal
+        open={detailsModal}
+        onClose={() => setDetailsModal(false)}
+        title={"Meeting Details"}
+      >
+        {selectedMeeting ? (
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+            <DetalisFormatted title="Agenda" detail={selectedMeeting?.agenda || "N/A"} />
+            <DetalisFormatted title="Date" detail={selectedMeeting?.date || "N/A"} />
+            <DetalisFormatted title="Room" detail={selectedMeeting?.roomName || "N/A"} />
+            <DetalisFormatted title="Location" detail={selectedMeeting?.location || "N/A"} />
+          </div>
+        ) : (
+          <CircularProgress />
+        )}
+      </MuiModal>
+
     </div>
   );
 };
