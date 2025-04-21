@@ -1,17 +1,38 @@
-import React from "react";
+import { useState } from "react";
 import PrimaryButton from "../../../components/PrimaryButton";
 import AgTable from "../../../components/AgTable";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
+import { TextField } from "@mui/material";
+import MuiModal from "../../../components/MuiModal";
+import { DatePicker } from "@mui/x-date-pickers";
 
 const AdminHolidaysEvents = ({ title }) => {
   const axios = useAxiosPrivate();
   const holdiayEvents = [
-    { field: "id", headerName: "SR No", flex: 1 },
+    { field: "id", headerName: "SR No", width: 100 },
     { field: "title", headerName: "Holiday / Event Name", flex: 1 },
     { field: "start", headerName: "Date", flex: 1 },
   ];
+
+  const [modalOpen, setModalOpen] = useState(false); // For opening/closing modal
+  const [newEvent, setNewEvent] = useState({ title: "", startDate: null }); // Form state
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post("/api/events/create", {
+        title: newEvent.title,
+        start: newEvent.startDate,
+      });
+      setNewEvent({ title: "", startDate: null }); // Clear form
+      setModalOpen(false); // Close modal
+      // You may want to trigger a refetch here if you're using React Query
+    } catch (error) {
+      console.error("Failed to create holiday/event:", error);
+    }
+  };
 
   const rows = [
     {
@@ -82,7 +103,7 @@ const AdminHolidaysEvents = ({ title }) => {
     <div className="p-4">
       <div className="flex justify-between items-center pb-4">
         <span className="text-title font-pmedium text-primary">{title}</span>
-        <PrimaryButton title={"Add Holiday / Event"} />
+        <PrimaryButton title={"Add Holiday / Event"} handleSubmit={() => setModalOpen(true)} />
       </div>
 
       <div>
@@ -100,6 +121,28 @@ const AdminHolidaysEvents = ({ title }) => {
           ]}
         />
       </div>
+      <MuiModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title="Add Holiday / Event"
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <TextField
+            label="Title"
+            fullWidth
+            size="small"
+            value={newEvent.title}
+            onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+          />
+          <DatePicker
+            label="Date"
+            slotProps={{ textField: { size: 'small' } }}
+            value={newEvent.startDate ? dayjs(newEvent.startDate) : null}
+            onChange={(newDate) => setNewEvent({ ...newEvent, startDate: newDate })}
+          />
+          <PrimaryButton type="submit" title="Add Holiday / Event" />
+        </form>
+      </MuiModal>
     </div>
   );
 };
