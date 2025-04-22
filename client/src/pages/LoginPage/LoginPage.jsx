@@ -12,7 +12,7 @@ import LoginWithFacebookImage from "../../assets/WONO_images/img/login_images/lo
 import LoginWithEmailImage from "../../assets/WONO_images/img/login_images/email-icon.png";
 import WonoLogo from "../../assets/WONO_images/img/WONO.png";
 import Footer from "../../components/Footer";
-import { CircularProgress, InputAdornment, IconButton  } from "@mui/material";
+import { CircularProgress, InputAdornment, IconButton } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const LoginPage = () => {
@@ -65,21 +65,21 @@ const LoginPage = () => {
         <div>
           <img src={WonoLogo} alt="wono" />
         </div>
-          <div className="flex items-center uppercase">
-            <ul className="flex gap-5 text-white uppercase font-thin">
-              <li className="cursor-pointer">Modules</li>
-              <li className="cursor-pointer">Themes</li>
-              <li className="cursor-pointer">Leads</li>
-              <li className="cursor-pointer">Capital</li>
-              <li className="cursor-pointer">Career</li>
-            </ul>
-          </div>
+        <div className="flex items-center uppercase">
+          <ul className="flex gap-5 text-white uppercase font-thin">
+            <li className="cursor-pointer">Modules</li>
+            <li className="cursor-pointer">Themes</li>
+            <li className="cursor-pointer">Leads</li>
+            <li className="cursor-pointer">Capital</li>
+            <li className="cursor-pointer">Career</li>
+          </ul>
+        </div>
         <div className="flex gap-6">
           <div className="flex gap-6">
-            <button className="bg-white text-black py-2 px-3 rounded-full uppercase">
+            <button className="bg-white text-black py-2 px-6 rounded-full uppercase">
               Sign-In
             </button>
-            <button className="bg-sky-400 text-black py-2 px-3 rounded-full uppercase">
+            <button className="bg-sky-400 text-white py-2 px-6 rounded-full uppercase">
               Sign-Up
             </button>
           </div>
@@ -95,8 +95,7 @@ const LoginPage = () => {
                 sx={{ flexGrow: 1 }}
                 onSubmit={handleLogin}
                 noValidate
-                autoComplete="off"
-              >
+                autoComplete="off">
                 <Grid container spacing={2}>
                   <Grid item xs={12} sx={{ width: "100%" }}>
                     <TextField
@@ -124,9 +123,12 @@ const LoginPage = () => {
                             <IconButton
                               onClick={() => setShowPassword(!showPassword)}
                               edge="end"
-                              size="small"
-                            >
-                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                              size="small">
+                              {showPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
                             </IconButton>
                           </InputAdornment>
                         ),
@@ -139,8 +141,7 @@ const LoginPage = () => {
                     <Box p={0} mt={2}>
                       <Link
                         to="/forgot-password"
-                        style={{ textDecoration: "none" }}
-                      >
+                        style={{ textDecoration: "none" }}>
                         Forgot Password?
                       </Link>
                     </Box>
@@ -151,8 +152,7 @@ const LoginPage = () => {
                       <button
                         disabled={loading}
                         type="submit"
-                        className="loginButtonStyling text-decoration-none"
-                      >
+                        className="loginButtonStyling text-decoration-none">
                         {loading ? (
                           <CircularProgress size={20} color="white" />
                         ) : (
