@@ -12,11 +12,19 @@ const addTicketIssue = async (req, res, next) => {
   const { user, company, ip } = req;
 
   try {
-    const { title, department, priority = "Low" } = req.body;
+    const { title, department, priority = "Low", resolveTime } = req.body;
 
     if (!title) {
       throw new CustomError(
         "Title is required",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+    if (!resolveTime) {
+      throw new CustomError(
+        "Resolve time is required",
         logPath,
         logAction,
         logSourceKey
@@ -48,7 +56,11 @@ const addTicketIssue = async (req, res, next) => {
       },
       {
         $push: {
-          "selectedDepartments.$.ticketIssues": { title, priority },
+          "selectedDepartments.$.ticketIssues": {
+            title,
+            priority,
+            resolveTime,
+          },
         },
       },
       { new: true }
@@ -157,7 +169,7 @@ const getNewTicketIssues = async (req, res, next) => {
   }
 };
 
-const rejectTicketIssue = async (req, res, n) => {
+const rejectTicketIssue = async (req, res, next) => {
   const logPath = "tickets/TicketLog";
   const logAction = "Reject New Ticket";
   const logSourceKey = "newTicket";
@@ -210,50 +222,6 @@ const rejectTicketIssue = async (req, res, n) => {
         new CustomError(error.message, logPath, logAction, logSourceKey, 500)
       );
     }
-  }
-};
-
-const TicketSettings = async (req, res, next) => {
-  const { user, company } = req;
-  try {
-    // Fetch today's tickets for the logged-in user
-    const tickets = await Ticket.find({
-      company,
-    })
-      .select("raisedBy raisedToDepartment status ticket description")
-      .populate([
-        { path: "raisedBy", select: "firstName lastName" },
-        { path: "raisedToDepartment", select: "name" },
-      ])
-      .lean()
-      .exec();
-
-    if (!tickets.length) {
-      return res.status(200).json([]);
-    }
-
-    // Fetch the company's selected departments with ticket issues
-    const foundCompany = await Company.findOne({ _id: company })
-      .select("selectedDepartments")
-      .lean()
-      .exec();
-
-    if (!foundCompany) {
-      return res.status(400).josn({ message: "Company not found" });
-    }
-
-    // Extract the ticket priority from the company's selected departments
-    const updatedTickets = tickets.map((ticket) => {
-      const newTicket = foundCompany.selectedDepartments.find((ticket) =>
-        ticket.ticketIssues.map((t) => t.title !== ticket)
-      );
-
-      return newTicket;
-    });
-
-    return res.status(200).json(updatedTickets);
-  } catch (error) {
-    next(error);
   }
 };
 

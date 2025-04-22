@@ -316,6 +316,8 @@ const getAllTickets = async (req, res, next) => {
           },
         },
         { path: "raisedToDepartment", select: "name" },
+        { path: "acceptedBy", select: "firstName middleName lastName" },
+        { path: "assignees", select: "firstName middleName lastName" },
       ])
       .lean()
       .exec();
@@ -1210,6 +1212,61 @@ const filterTodayTickets = async (req, res, next) => {
   }
 };
 
+const getOtherTickets = async (req, res, next) => {
+  const { user, company } = req;
+  const { department } = req.params;
+  try {
+    // Fetch today's tickets for the logged-in user
+    const tickets = await Ticket.find({
+      company,
+      raisedToDepartment: { $in: [department] },
+    })
+      .select("raisedBy raisedToDepartment status ticket description")
+      .populate([
+        {
+          path: "raisedBy",
+          select: "firstName lastName departments",
+          populate: {
+            path: "departments",
+            select: "name",
+            model: "Department",
+          },
+        },
+        ,
+        { path: "raisedToDepartment", select: "name" },
+      ])
+      .lean()
+      .exec();
+
+    if (!tickets.length) {
+      return res.status(200).json([]);
+    }
+
+    // Fetch the company's selected departments with ticket issues
+    const foundCompany = await Company.findOne({ _id: company })
+      .select("selectedDepartments")
+      .lean()
+      .exec();
+
+    if (!foundCompany) {
+      return res.status(400).josn({ message: "Company not found" });
+    }
+
+    // Extract the ticket priority from the company's selected departments
+    const updatedTickets = tickets.filter((ticket) => {
+      const isNotFoundInAnyDepartment = foundCompany.selectedDepartments.every(
+        (dept) =>
+          dept.ticketIssues.every((issue) => issue.title !== ticket.ticket)
+      );
+      return isNotFoundInAnyDepartment;
+    });
+
+    return res.status(200).json(updatedTickets);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   raiseTicket,
   getTickets,
@@ -1224,4 +1281,5 @@ module.exports = {
   filterMyTickets,
   filterTodayTickets,
   ticketData,
+  getOtherTickets,
 };

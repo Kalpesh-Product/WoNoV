@@ -87,7 +87,8 @@ const TicketReports = () => {
       ),
     },
   ];
-  
+
+
   return (
     <div className="flex flex-col gap-8 p-4">
       <div>
@@ -125,7 +126,7 @@ const TicketReports = () => {
                   }`.trim(),
                   description: item.description || "",
                   status: item.status || "",
-                  assignees: item.assignees || "",
+                  assignees: item.assignees?.map((assignee)=> (`${assignee.firstName} ${assignee.lastName}`)) || "",
                   company: item.company?.companyName,
                   createdAt:  dayjs(item.createdAt).format("DD-MM-YYYY") || "",
                   updatedAt: humanDate(item.updatedAt) || "",
@@ -155,10 +156,6 @@ const TicketReports = () => {
             detail={selectedMeeting?.raisedToDepartment || ""}
           />
           <DetalisFormatted
-            title={"Company"}
-            detail={selectedMeeting?.company || ""}
-          />
-          <DetalisFormatted
             title={"Raised By"}
             detail={`${selectedMeeting?.raisedBy}`}
           />
@@ -176,16 +173,8 @@ const TicketReports = () => {
             }
           />
           <DetalisFormatted
-            title={"Created At"}
-            detail={humanDate(selectedMeeting?.createdAt)}
-          />
-          <DetalisFormatted
-            title={"Updated At"}
-            detail={humanDate(selectedMeeting?.updatedAt)}
-          />
-          <DetalisFormatted
             title={"Accepted By"}
-            detail={selectedMeeting?.acceptedBy || ""}
+            detail={selectedMeeting.acceptedBy || "None"}
           />
         </div>
         ) : <CircularProgress />}

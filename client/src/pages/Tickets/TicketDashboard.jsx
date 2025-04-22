@@ -41,7 +41,7 @@ const TicketDashboard = () => {
     pendingTickets: ticketsData.filter((item) => item.status === "Pending")
       .length,
     acceptedTickets: ticketsData.filter((item) => item.acceptedBy).length,
-    assignedTickets: ticketsData.filter((item) => item.assignees.length > 0).length,
+    assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0).length,
     escalatedTickets: ticketsData.filter((item)=>item.status === "Escalated").length,
   };
 

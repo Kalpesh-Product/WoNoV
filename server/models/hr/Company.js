@@ -47,6 +47,10 @@ const companySchema = new mongoose.Schema({
             enum: ["High", "Medium", "Low"],
             default: "Low",
           },
+          resolveTime: {
+            type: Number,
+            default: 0, //minutes
+          },
         },
       ],
       policies: [
