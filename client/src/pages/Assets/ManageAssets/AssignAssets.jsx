@@ -16,9 +16,10 @@ const AssignAssets = () => {
     "HR",
     "IT",
     "Finance",
-    "Marketing",
+    "Tech",
     "Admin",
-    "Operations",
+    "Sales",
+    "Maintenance",
   ];
   const floors = ["ST-701A", "ST-701B", "ST-601A", "ST501A", "G-1"];
   const meetingRooms = [
