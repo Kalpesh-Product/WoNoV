@@ -62,16 +62,39 @@ const LoginPage = () => {
   return (
     <>
       <div className="bg-black flex justify-around py-4">
-        <div>
+        <div className="cursor-pointer"
+        onClick={() => {
+          window.location.href = "https://www.wono.co";
+        }}
+        >
           <img src={WonoLogo} alt="wono" />
         </div>
           <div className="flex items-center uppercase">
             <ul className="flex gap-5 text-white uppercase font-thin">
-              <li className="cursor-pointer">Modules</li>
-              <li className="cursor-pointer">Themes</li>
-              <li className="cursor-pointer">Leads</li>
-              <li className="cursor-pointer">Capital</li>
-              <li className="cursor-pointer">Career</li>
+              <li className="cursor-pointer" 
+                    onClick={() => {
+                    window.location.href = "https://www.wono.co/modules";
+                  }}
+              >Modules</li>
+              <li className="cursor-pointer"
+               onClick={() => {
+                window.location.href = "https://www.wono.co/themes";
+              }}>Themes</li>
+              <li className="cursor-pointer"
+               onClick={() => {
+                window.location.href = "https://www.wono.co/leads";
+              }}
+              >Leads</li>
+              <li className="cursor-pointer"
+               onClick={() => {
+                window.location.href = "https://www.wono.co/capital";
+              }}
+              >Capital</li>
+              <li className="cursor-pointer"
+               onClick={() => {
+                window.location.href = "https://www.wono.co/career";
+              }}
+              >Career</li>
             </ul>
           </div>
         <div className="flex gap-6">
@@ -79,7 +102,11 @@ const LoginPage = () => {
             <button className="bg-white text-black py-2 px-3 rounded-full uppercase">
               Sign-In
             </button>
-            <button className="bg-sky-400 text-black py-2 px-3 rounded-full uppercase">
+            <button className="bg-sky-400 text-black py-2 px-3 rounded-full uppercase"
+             onClick={() => {
+              window.location.href = "https://www.wono.co/register";
+            }}
+            >
               Sign-Up
             </button>
           </div>
@@ -183,7 +210,7 @@ const LoginPage = () => {
           </div>
           <div className="loginRightContainer">
             <div className="loginWithSection d-flex flex-column justify-content-center align-items-center">
-              <div className="loginWithSection d-flex flex-column justify-content-center align-items-center">
+              <div className="loginWithSection d-flex flex-column justify-content-center align-items-center cursor-pointer">
                 <div className="LoginWithGoogleContainer loginWithBox loginWithGoogleBox d-flex justify-content-between align-items-center centerElement">
                   <div className="loginWithIconBox loginWithGoogleIconBox centerElement">
                     <img
@@ -197,7 +224,7 @@ const LoginPage = () => {
                   </div>
                 </div>
               </div>
-              <div className="LoginWithFacebookContainer loginWithBox loginWithFacebookBox d-flex justify-content-between align-items-center centerElement">
+              <div className="LoginWithFacebookContainer loginWithBox loginWithFacebookBox d-flex justify-content-between align-items-center centerElement cursor-pointer">
                 <div className="loginWithIconBox loginWithFacebookIconBox centerElement">
                   <img
                     src={LoginWithFacebookImage}
