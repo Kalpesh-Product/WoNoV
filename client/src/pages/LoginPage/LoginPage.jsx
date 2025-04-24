@@ -12,7 +12,7 @@ import LoginWithFacebookImage from "../../assets/WONO_images/img/login_images/lo
 import LoginWithEmailImage from "../../assets/WONO_images/img/login_images/email-icon.png";
 import WonoLogo from "../../assets/WONO_images/img/WONO.png";
 import Footer from "../../components/Footer";
-import { CircularProgress, InputAdornment, IconButton  } from "@mui/material";
+import { CircularProgress, InputAdornment, IconButton } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const LoginPage = () => {
@@ -62,26 +62,33 @@ const LoginPage = () => {
   return (
     <>
       <div className="bg-black flex justify-around py-4">
-        <div>
-          <img src={WonoLogo} alt="wono" />
-        </div>
-          <div className="flex items-center uppercase">
-            <ul className="flex gap-5 text-white uppercase font-thin">
-              <li className="cursor-pointer">Modules</li>
-              <li className="cursor-pointer">Themes</li>
-              <li className="cursor-pointer">Leads</li>
-              <li className="cursor-pointer">Capital</li>
-              <li className="cursor-pointer">Career</li>
-            </ul>
+        <a href="https://wono.co">
+          <div>
+            <img src={WonoLogo} alt="wono" />
           </div>
+        </a>
+
+        <div className="flex items-center uppercase">
+          <ul className="flex gap-5 text-white uppercase font-thin">
+            <li className="cursor-pointer">Modules</li>
+            <li className="cursor-pointer">Themes</li>
+            <li className="cursor-pointer">Leads</li>
+            <li className="cursor-pointer">Capital</li>
+            <li className="cursor-pointer">Career</li>
+          </ul>
+        </div>
         <div className="flex gap-6">
           <div className="flex gap-6">
-            <button className="bg-white text-black py-2 px-3 rounded-full uppercase">
-              Sign-In
-            </button>
-            <button className="bg-sky-400 text-black py-2 px-3 rounded-full uppercase">
-              Sign-Up
-            </button>
+            <a href="https://wonofe.vercel.app">
+              <button className="bg-white text-black py-2 px-4 rounded-full uppercase">
+                Sign-In
+              </button>
+            </a>
+            <a href="https://www.wono.co/register">
+              <button className="bg-sky-400 text-black py-2 px-4 rounded-full uppercase">
+                Sign-Up
+              </button>
+            </a>
           </div>
         </div>
       </div>
@@ -126,7 +133,11 @@ const LoginPage = () => {
                               edge="end"
                               size="small"
                             >
-                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                              {showPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
                             </IconButton>
                           </InputAdornment>
                         ),
