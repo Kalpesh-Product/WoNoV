@@ -63,11 +63,11 @@ const LoginPage = () => {
     }
   };
   const navItems = [
-    { label: "Modules", link: "/modules" },
-    { label: "Themes", link: "/themes" },
-    { label: "Leads", link: "/leads" },
-    { label: "Capital", link: "/capital" },
-    { label: "Career", link: "/career" },
+    { label: "Modules", link: "https://wono.co/modules" },
+    { label: "Themes", link: "https://wono.co/themes" },
+    { label: "Leads", link: "https://wono.co/leads" },
+    { label: "Capital", link: "https://wono.co/capital" },
+    { label: "Career", link: "https://wono.co/career" },
   ];
 
   return (
