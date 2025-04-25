@@ -214,14 +214,14 @@ const LoginPage = () => {
                   p={0}
                   sx={{ marginBottom: "1rem" }}
                 >
-                  <Box p={0} mt={2}>
+                  <div className="mt-2 flex justify-between">
                     <Link
                       to="https://wono.co/forgot-password"
                       className="hover:underline text-black"
                     >
                       Forgot Password?
                     </Link>
-                  </Box>
+                  </div>
                 </Grid>
                 <div className="flex flex-col justify-center w-full items-center gap-4">
                   <Grid item xs={12}>
@@ -239,6 +239,17 @@ const LoginPage = () => {
                       </button>
                     </div>
                   </Grid>
+                  <p>
+                    Don't have an account?{" "}
+                    <span
+                      onClick={() =>
+                        (window.location.href = "https://wono.co/register")
+                      }
+                      className="underline hover:text-primary cursor-pointer"
+                    >
+                      Sign Up
+                    </span>
+                  </p>
                 </div>
               </Box>
             </Container>
