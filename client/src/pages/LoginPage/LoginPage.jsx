@@ -63,6 +63,7 @@ const LoginPage = () => {
     }
   };
   const navItems = [
+    { label: "Home", link: "https://wono.co" },
     { label: "Modules", link: "https://wono.co/modules" },
     { label: "Themes", link: "https://wono.co/themes" },
     { label: "Leads", link: "https://wono.co/leads" },
@@ -131,7 +132,7 @@ const LoginPage = () => {
                 className="cursor-pointer hover:text-gray-400"
                 onClick={() => setDrawerOpen(false)}
               >
-                <a href={item.link} className="block w-full">
+                <a href={item.link} className="block w-full uppercase">
                   {item.label}
                 </a>
               </div>
