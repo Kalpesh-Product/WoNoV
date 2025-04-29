@@ -136,7 +136,7 @@ const LoginPage = () => {
                   {item.label}
                 </a>
               </div>
-              <hr className="w-[80%] h-[0.5px] text-gray-300" />
+              <hr className="w-[80%] text-gray-300" />
             </>
           ))}
 
