@@ -124,7 +124,7 @@ const LoginPage = () => {
         </div>
 
         {/* Drawer Body */}
-        <div className="w-96 h-screen p-6 flex flex-col gap-6 items-center uppercase bg-black text-white text-center">
+        <div className="w-96 h-screen p-6 flex flex-col gap-8 items-center uppercase bg-black text-white text-center">
           {navItems.map((item, index) => (
             <>
               <div
@@ -145,7 +145,7 @@ const LoginPage = () => {
             <div>
               <a
                 href="https://wonofe.vercel.app"
-                className="block px-4 py-2 uppercase bg-white text-black mx-auto w-max rounded-full"
+                className="block px-10 py-2 uppercase bg-white text-black mx-auto w-max rounded-full"
               >
                 Sign In
               </a>
@@ -154,7 +154,7 @@ const LoginPage = () => {
             <div>
               <a
                 href="https://wono.co/register"
-                className="block px-4 py-2 uppercase bg-[#0aa9ef] text-black mx-auto w-max rounded-full"
+                className="block px-10 py-2 uppercase bg-[#0aa9ef] text-white mx-auto w-max rounded-full"
               >
                 Sign Up
               </a>
