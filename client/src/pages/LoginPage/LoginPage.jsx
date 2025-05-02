@@ -93,12 +93,12 @@ const LoginPage = () => {
         <div className="hidden md:flex gap-4">
           <a href="https://wonofe.vercel.app">
             <button className="bg-white text-black py-2 px-4 rounded-full uppercase">
-              Sign-In
+              Sign In
             </button>
           </a>
           <a href="https://www.wono.co/register">
             <button className="bg-sky-400 text-white py-2 px-4 rounded-full uppercase">
-              Sign-Up
+              Sign Up
             </button>
           </a>
         </div>
@@ -242,7 +242,7 @@ const LoginPage = () => {
                         {loading ? (
                           <CircularProgress size={20} color="white" />
                         ) : (
-                          "Sign In"
+                          "SIGN IN"
                         )}
                       </button>
                     </div>
