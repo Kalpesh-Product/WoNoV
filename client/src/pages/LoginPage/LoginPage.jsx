@@ -167,7 +167,11 @@ const LoginPage = () => {
         <h1 className="text-center text-4xl font-bold">LOG IN</h1>
         <div className="loginDividingContainer shrink-container">
           <div className="loginLeftContainer">
-            <Container maxWidth="md" style={{ padding: "3rem 0 0" }}>
+            <Container
+              maxWidth="lg"
+              style={{ padding: "3rem 0 0" }}
+              direction={{ xs: "column", md: "row" }}
+            >
               <Box
                 component="form"
                 sx={{ flexGrow: 1 }}
@@ -175,8 +179,10 @@ const LoginPage = () => {
                 noValidate
                 autoComplete="off"
               >
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sx={{ width: "100%" }}>
+                <div
+                className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+                >
+                  <Grid item xs={12}>
                     <TextField
                       label="Email"
                       variant="outlined"
@@ -187,7 +193,7 @@ const LoginPage = () => {
                     />
                   </Grid>
 
-                  <Grid item xs={12} sx={{ width: "100%" }}>
+                  <Grid item xs={12}>
                     <TextField
                       label="Password"
                       variant="outlined"
@@ -215,13 +221,9 @@ const LoginPage = () => {
                       }}
                     />
                   </Grid>
-                </Grid>
-                <Grid
-                  style={{ paddingTop: "0" }}
-                  p={0}
-                  sx={{ marginBottom: "1rem" }}
-                >
-                  <div className="mt-2 flex justify-between">
+                </div>
+
+                <div className="mt-2 col-span-2 text-end">
                     <Link
                       to="https://wono.co/forgot-password"
                       className="hover:underline text-black"
@@ -229,7 +231,6 @@ const LoginPage = () => {
                       Forgot Password?
                     </Link>
                   </div>
-                </Grid>
                 <div className="flex flex-col justify-center w-full items-center gap-4">
                   <Grid item xs={12}>
                     <div className="centerInPhone">
@@ -260,70 +261,6 @@ const LoginPage = () => {
                 </div>
               </Box>
             </Container>
-          </div>
-          <div className="fullHeight LoginMiddleContainer">
-            <div className="vertical-line lineSideMargin">
-              <hr className="hrHeight" />
-            </div>
-            <div className="lineSideMargin">or</div>
-            <div className="vertical-line lineSideMargin">
-              <hr className="hrHeight" />
-            </div>
-          </div>
-          <div className="phoneDividerContainer">
-            <div className="phoneDivider w-100">
-              <div className="w-100 bg-secondary border-secondary border-bottom line-height"></div>
-              <div className="w-100 text-center">or</div>
-              <div className="w-100 bg-secondary border-secondary border-bottom line-height"></div>
-            </div>
-          </div>
-          <div className="loginRightContainer">
-            <div className="loginWithSection d-flex flex-column justify-content-center align-items-center">
-              <div className="loginWithSection d-flex flex-column justify-content-center align-items-center">
-                <div className="LoginWithGoogleContainer loginWithBox loginWithGoogleBox d-flex justify-content-between align-items-center centerElement">
-                  <div className="loginWithIconBox loginWithGoogleIconBox centerElement">
-                    <img
-                      src={LoginWithGoogleImage}
-                      alt="Google Icon"
-                      className="imageDimensions"
-                    />
-                  </div>
-                  <div className="LoginWithGoogleText LoginWithText w-100 centerElement-social">
-                    <div>Continue with Google</div>
-                  </div>
-                </div>
-              </div>
-              <div className="LoginWithFacebookContainer loginWithBox loginWithFacebookBox d-flex justify-content-between align-items-center centerElement">
-                <div className="loginWithIconBox loginWithFacebookIconBox centerElement">
-                  <img
-                    src={LoginWithFacebookImage}
-                    alt="Facebook Icon"
-                    className="imageDimensions"
-                  />
-                </div>
-                <div className="LoginWithFacebookText LoginWithText w-100 centerElement-social">
-                  <div>Continue with Facebook</div>
-                </div>
-
-                <div className="login-empty-padding"></div>
-              </div>
-              {/*  */}
-              <Link to="/register" className="text-decoration-none">
-                <div className="LoginWithEmailContainer loginWithBox loginWithEmailBox d-flex justify-content-between align-items-center centerElement">
-                  <div className="loginWithIconBox loginWithEmailIconBox centerElement">
-                    <img
-                      src={LoginWithEmailImage}
-                      alt="Email Icon"
-                      className="imageDimensions"
-                    />
-                  </div>
-                  <div className="LoginWithEmailText LoginWithText w-100 centerElement-social">
-                    <div>Continue with Email</div>
-                  </div>
-                </div>
-              </Link>
-              {/*  */}
-            </div>
           </div>
         </div>
       </div>
