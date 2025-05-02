@@ -164,7 +164,7 @@ const LoginPage = () => {
       </Drawer>
       {/* Header */}
       <div className="login-section loginTopPadding loginBottomPadding poppinsRegular heightPadding">
-        <h1 className="text-center text-4xl font-bold">LOG IN</h1>
+        <h1 className="text-center text-4xl font-bold">SIGN IN</h1>
         <div className="loginDividingContainer shrink-container">
           <div className="loginLeftContainer">
             <Container
@@ -231,7 +231,7 @@ const LoginPage = () => {
                       Forgot Password?
                     </Link>
                   </div>
-                <div className="flex flex-col justify-center w-full items-center gap-4">
+                <div className="flex flex-col justify-center w-full items-center gap-4 mt-4">
                   <Grid item xs={12}>
                     <div className="centerInPhone">
                       <button
@@ -242,7 +242,7 @@ const LoginPage = () => {
                         {loading ? (
                           <CircularProgress size={20} color="white" />
                         ) : (
-                          "Login"
+                          "Sign In"
                         )}
                       </button>
                     </div>
