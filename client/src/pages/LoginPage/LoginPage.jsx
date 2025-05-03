@@ -73,7 +73,7 @@ const LoginPage = () => {
   return (
     <>
       {/* Header */}
-      <div className="bg-black flex justify-between items-center py-4 px-6 md:px-28">
+      <div className="bg-black flex justify-between items-center py-6 px-6 md:px-28">
         {/* Logo */}
         <a href="https://wono.co">
           <img src={WonoLogo} alt="wono" className="w-28" />
