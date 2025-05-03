@@ -185,7 +185,7 @@ const LoginPage = () => {
                   <Grid item xs={12}>
                     <TextField
                       label="Email"
-                      variant="outlined"
+                      variant="standard"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -196,7 +196,7 @@ const LoginPage = () => {
                   <Grid item xs={12}>
                     <TextField
                       label="Password"
-                      variant="outlined"
+                      variant="standard"
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
