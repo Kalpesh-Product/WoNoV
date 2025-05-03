@@ -124,19 +124,20 @@ const LoginPage = () => {
 
         {/* Drawer Body */}
         <div className="w-96 h-screen p-6 flex flex-col gap-8 items-center uppercase bg-black text-white text-center">
+          <div
+            className="cursor-pointer hover:text-gray-400"
+            onClick={() => setDrawerOpen(false)}
+          >
+            <a href="https://wono.co/" className="block w-full uppercase">
+              Home
+            </a>
+          </div>
+          <hr className="w-[80%] text-gray-300" />
+
+          {/* Dynamic nav items */}
           {navItems.map((item, index) => (
-            <>
+            <React.Fragment key={index}>
               <div
-                className="cursor-pointer hover:text-gray-400"
-                onClick={() => setDrawerOpen(false)}
-              >
-                <a href={"https://wono.co/"} className="block w-full uppercase">
-                  Home
-                </a>
-              </div>
-              <hr className="w-[80%] text-gray-300" />
-              <div
-                key={index}
                 className="cursor-pointer hover:text-gray-400"
                 onClick={() => setDrawerOpen(false)}
               >
@@ -145,7 +146,7 @@ const LoginPage = () => {
                 </a>
               </div>
               <hr className="w-[80%] text-gray-300" />
-            </>
+            </React.Fragment>
           ))}
 
           {/* Sign In button */}
