@@ -130,7 +130,7 @@ const LoginPage = () => {
                 className="cursor-pointer hover:text-gray-400"
                 onClick={() => setDrawerOpen(false)}
               >
-                <a href={'https://wono.co/'} className="block w-full uppercase">
+                <a href={"https://wono.co/"} className="block w-full uppercase">
                   Home
                 </a>
               </div>
@@ -187,9 +187,7 @@ const LoginPage = () => {
                 noValidate
                 autoComplete="off"
               >
-                <div
-                className="grid grid-cols-1 lg:grid-cols-2 gap-4"
-                >
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <Grid item xs={12}>
                     <TextField
                       label="Email"
@@ -232,40 +230,42 @@ const LoginPage = () => {
                 </div>
 
                 <div className="mt-2 col-span-2 text-end">
-                    <Link
-                      to="https://wono.co/forgot-password"
-                      className="hover:underline text-black"
-                    >
-                      Forgot Password?
-                    </Link>
-                  </div>
-                <div className="flex flex-col justify-center w-full items-center gap-4 mt-4">
-                  <Grid item xs={12}>
-                    <div className="centerInPhone">
-                      <button
-                        disabled={loading}
-                        type="submit"
-                        className="loginButtonStyling text-decoration-none text-subtitle w-40"
+                  <Link
+                    to="https://wono.co/forgot-password"
+                    className="hover:underline text-black"
+                  >
+                    Forgot Password?
+                  </Link>
+                </div>
+                <div className="flex">
+                  <div className="flex flex-col justify-center w-full items-center gap-4 mt-4">
+                    <Grid item xs={12}>
+                      <div className="centerInPhone">
+                        <button
+                          disabled={loading}
+                          type="submit"
+                          className="loginButtonStyling text-decoration-none text-subtitle w-40"
+                        >
+                          {loading ? (
+                            <CircularProgress size={20} color="white" />
+                          ) : (
+                            "SIGN IN"
+                          )}
+                        </button>
+                      </div>
+                    </Grid>
+                    <p className="text-[0.9rem]">
+                      Don't have an account?{" "}
+                      <span
+                        onClick={() =>
+                          (window.location.href = "https://wono.co/register")
+                        }
+                        className="underline hover:text-primary cursor-pointer"
                       >
-                        {loading ? (
-                          <CircularProgress size={20} color="white" />
-                        ) : (
-                          "SIGN IN"
-                        )}
-                      </button>
-                    </div>
-                  </Grid>
-                  <p>
-                    Don't have an account?{" "}
-                    <span
-                      onClick={() =>
-                        (window.location.href = "https://wono.co/register")
-                      }
-                      className="underline hover:text-primary cursor-pointer"
-                    >
-                      Sign Up
-                    </span>
-                  </p>
+                        Sign Up
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </Box>
             </Container>
