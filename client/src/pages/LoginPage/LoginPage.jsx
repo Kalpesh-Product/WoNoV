@@ -63,7 +63,6 @@ const LoginPage = () => {
     }
   };
   const navItems = [
-    { label: "Home", link: "https://wono.co" },
     { label: "Modules", link: "https://wono.co/modules" },
     { label: "Themes", link: "https://wono.co/themes" },
     { label: "Leads", link: "https://wono.co/leads" },
@@ -127,6 +126,15 @@ const LoginPage = () => {
         <div className="w-96 h-screen p-6 flex flex-col gap-8 items-center uppercase bg-black text-white text-center">
           {navItems.map((item, index) => (
             <>
+              <div
+                className="cursor-pointer hover:text-gray-400"
+                onClick={() => setDrawerOpen(false)}
+              >
+                <a href={'https://wono.co/'} className="block w-full uppercase">
+                  Home
+                </a>
+              </div>
+              <hr className="w-[80%] text-gray-300" />
               <div
                 key={index}
                 className="cursor-pointer hover:text-gray-400"
