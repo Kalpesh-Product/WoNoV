@@ -233,7 +233,7 @@ const fetchUser = async (req, res, next) => {
       const users = await User.find({
         departments: deptId,
         company,
-        isActive: true
+        isActive: true,
       })
         .select("-password")
         .populate([
@@ -310,12 +310,6 @@ const fetchSingleUser = async (req, res) => {
       workLocation: user.workLocation || "",
       employeeType: user.employeeType?.name || "",
       department: user.departments?.[0]?.name || "",
-      reportsTo:
-        reportsTo.length > 0
-          ? reportsTo.map((user) =>
-            `${user.firstName || ""} ${user.lastName || ""}`.trim()
-          )
-          : "",
       jobTitle: user.designation || "",
       jobDescription: "",
       shift: user.policies?.shift || "",
