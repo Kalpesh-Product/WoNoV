@@ -16,6 +16,16 @@ const RecievedTickets = ({ title }) => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const [selectedTicketId, setSelectedTicketId] = useState(null);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedTicket, setSelectedTicket] = useState(null);
+
+  const handleRejectClick = (ticket) => {
+    setSelectedTicket(ticket);
+    setRejectModalOpen(true);
+  };
+
+
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["tickets"],
@@ -130,8 +140,8 @@ const RecievedTickets = ({ title }) => {
     if (!tickets.length) {
       return [];
     }
-    return tickets.map((ticket,index) => ({
-      srNo: index+1,
+    return tickets.map((ticket, index) => ({
+      srNo: index + 1,
       id: ticket._id,
       raisedBy: ticket.raisedBy?.firstName || "Unknown",
       fromDepartment:
@@ -140,6 +150,24 @@ const RecievedTickets = ({ title }) => {
       status: ticket.status || "Pending",
     }));
   };
+
+  const handleRejectSubmit = async () => {
+    if (!rejectionReason.trim()) return;
+
+    try {
+      await axios.post(`/api/tickets/reject/${selectedTicket._id}`, {
+        reason: rejectionReason,
+      });
+
+      setRejectModalOpen(false);
+      setRejectionReason("");
+      setSelectedTicket(null);
+      // refetch or invalidate query if needed
+    } catch (error) {
+      console.error("Rejection failed", error);
+    }
+  };
+
 
   // Example usage
   const rows = isLoading ? [] : transformTicketsData(tickets);
@@ -204,20 +232,20 @@ const RecievedTickets = ({ title }) => {
               },
               // Conditionally add "Assign"
               ...(auth.user.role.length > 0 &&
-              (auth.user.role[0].roleTitle === "Master Admin" ||
-                auth.user.role[0].roleTitle === "Super Admin" ||
-                auth.user.role[0].roleTitle.endsWith("Admin"))
+                (auth.user.role[0].roleTitle === "Master Admin" ||
+                  auth.user.role[0].roleTitle === "Super Admin" ||
+                  auth.user.role[0].roleTitle.endsWith("Admin"))
                 ? [
-                    {
-                      label: "Assign",
-                      onClick: () => handleOpenAssignModal(params.data.id),
-                    },
-                    {
-                      label: "Reject",
-                      onClick: () => rejectMutate(params.data),
-                      isLoading: isLoading,
-                    },
-                  ]
+                  {
+                    label: "Assign",
+                    onClick: () => handleOpenAssignModal(params.data.id),
+                  },
+                  {
+                    label: "Reject",
+                    onClick: () => handleRejectClick(params.data), // opens modal instead
+                  }
+
+                ]
                 : []),
             ]}
           />
@@ -275,6 +303,23 @@ const RecievedTickets = ({ title }) => {
           </div>
         </form>
       </MuiModal>
+
+      <MuiModal open={rejectModalOpen} setOpen={setRejectModalOpen} title="Reject Ticket" onClose={() => setRejectModalOpen(false)}>
+        <div className="flex flex-col gap-4">
+          <textarea
+            placeholder="Please mention the reason for rejection..."
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            className="w-full p-2 border rounded resize-none min-h-[100px]"
+          />
+          <button
+            onClick={handleRejectSubmit}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
+            Submit Rejection
+          </button>
+        </div>
+      </MuiModal>
+
     </div>
   );
 };

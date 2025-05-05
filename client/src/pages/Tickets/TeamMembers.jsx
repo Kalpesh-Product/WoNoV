@@ -1,6 +1,5 @@
 import React from "react";
 import AgTable from "../../components/AgTable";
-import PrimaryButton from "../../components/PrimaryButton";
 
 const TeamMembers = () => {
   const AvatarCellRenderer = (props) => {
@@ -34,17 +33,16 @@ const TeamMembers = () => {
     );
   };
   const laptopColumns = [
-   
-    { field: "srNo", headerName: "Sr No" },
-    { field: "name", headerName: "Name", cellRenderer: AvatarCellRenderer, },
+    { field: "srNo", headerName: "Sr No", flex: 0.5 },
+    { field: "name", headerName: "Name", cellRenderer: AvatarCellRenderer, flex: 1.5 },
     { field: "role", headerName: "Role", flex: 1 },
     { field: "department", headerName: "Department", flex: 1 },
     { field: "assignedToday", headerName: "Assigned Today", flex: 1 },
     { field: "totalassigned", headerName: "Total Assigned", flex: 1 },
-
     { field: "totalresolved", headerName: "Total Resolved", flex: 1 },
     { field: "resolutiontime", headerName: "Resolution Time", flex: 1 },
   ];
+
   const rows = [
     {
       srNo: 1,
@@ -78,9 +76,9 @@ const TeamMembers = () => {
     },
     {
       srNo: 4,
-      name: "Aaron Pires",
-      department: "Sales",
-      role: "Manager",
+      name: "Samiksha Shrikant",
+      department: "Administration",
+      role: "Desk Receptionist",
       assignedToday: "6",
       totalassigned: "35",
       totalresolved: "28",

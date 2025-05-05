@@ -228,7 +228,7 @@ const AdminDashboard = () => {
     },
     tooltip: {
       y: {
-        formatter: (val) => `${((val / totalGenderCount) * 100).toFixed(1)}%`,
+        formatter: (val) => `${val}`,
       },
     },
   };

@@ -374,7 +374,7 @@ const MeetingDashboard = () => {
       title: { text: "Utilization (%)" },
       labels: {
         formatter: function (value) {
-          return Math.round(value) + "%"; // Removes decimals
+          return Math.round(value); // Removes decimals
         },
       },
     },
@@ -622,11 +622,13 @@ const MeetingDashboard = () => {
           title={"Total"}
           data={totalDurationInHours}
           description={"Hours Booked"}
+          route={"reports"}
         />,
         <DataCard
           title={"Total"}
           data={meetingsData.length || 0}
           description={"Unique Bookings"}
+          route={"reports"}
         />,
         <DataCard
           title={"Total"}
@@ -635,6 +637,7 @@ const MeetingDashboard = () => {
               .length || 0
           }
           description={"BIZ Nest Bookings"}
+          route={"reports"}
         />,
         <DataCard
           title={"Total"}
@@ -643,6 +646,7 @@ const MeetingDashboard = () => {
               .length
           }
           description={"Guest Bookings"}
+          route={"reports"}
         />,
         <DataCard
           title={"Average"}
@@ -657,6 +661,7 @@ const MeetingDashboard = () => {
             ).toFixed(2)
           )}
           description={"Hours Booked"}
+          route={"reports"}
         />,
         <DataCard
           title={"Total"}
@@ -669,6 +674,7 @@ const MeetingDashboard = () => {
               ) / 60
           }
           description={"Hours Cancelled"}
+          route={"reports"}
         />,
       ],
     },
@@ -716,6 +722,7 @@ const MeetingDashboard = () => {
           layout={1}
           border
           title={"External Guests Visited"}
+          titleLabel={`${new Date().toLocaleString("default", { month: "short" })}-${new Date().getFullYear().toString().slice(-2)}`}
           padding>
           <BarGraph data={externalGuestsData} options={externalGuestsOptions} />
         </WidgetSection>,
@@ -723,6 +730,7 @@ const MeetingDashboard = () => {
           layout={1}
           border
           title={"Average Occupancy Of Rooms in %"}
+          titleLabel={`${new Date().toLocaleString("default", { month: "short" })}-${new Date().getFullYear().toString().slice(-2)}`}
           padding>
           <BarGraph
             data={averageOccupancySeries}

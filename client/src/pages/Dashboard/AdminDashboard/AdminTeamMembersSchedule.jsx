@@ -43,9 +43,9 @@ const AdminTeamMembersSchedule = () => {
     },
   });
 
-  const {handleSubmit:updateUser, reset: updateUserReset, control: updateUserControl} = useForm({
-    defaultValues:{
-      meetingId : "",
+  const { handleSubmit: updateUser, reset: updateUserReset, control: updateUserControl } = useForm({
+    defaultValues: {
+      meetingId: "",
     }
   })
 
@@ -84,8 +84,7 @@ const AdminTeamMembersSchedule = () => {
       try {
         const adminDepId = "6798bae6e469e809084e24a4";
         const response = await axios.get(
-          `/api/administration/fetch-weekly-unit/${adminDepId}`
-        );
+          `/api/administration/fetch-weekly-unit/${adminDepId}`);
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -116,7 +115,7 @@ const AdminTeamMembersSchedule = () => {
 
   //----------------------------------------API---------------------------------------//
   const memberColumns = [
-    { field: "id", headerName: "Sr. No.", width: 100 },
+    { field: "id", headerName: "Sr No", width: 100 },
     { field: "name", headerName: "Name", flex: 1 },
     { field: "manager", headerName: "Manager" },
     { field: "unitNo", headerName: "Unit" },
@@ -210,7 +209,7 @@ const AdminTeamMembersSchedule = () => {
         />
       ) : (
         <div className="flex justify-center items-center h-[60vh]">
-          <CircularProgress />
+          <CircularProgress color="#1E3D73"/>
         </div>
       )}
 

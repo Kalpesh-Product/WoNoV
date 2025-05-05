@@ -34,7 +34,7 @@ const TicketDashboard = () => {
     },
   });
 
-  const ticketsFilteredData =  {
+  const ticketsFilteredData = {
     openTickets: ticketsData.filter((item) => item.status === "Open").length,
     closedTickets: ticketsData.filter((item) => item.status === "Closed")
       .length,
@@ -42,7 +42,7 @@ const TicketDashboard = () => {
       .length,
     acceptedTickets: ticketsData.filter((item) => item.acceptedBy).length,
     assignedTickets: ticketsData.filter((item) => item.assignees.length > 0).length,
-    escalatedTickets: ticketsData.filter((item)=>item.status === "Escalated").length,
+    escalatedTickets: ticketsData.filter((item) => item.status === "Escalated").length,
   };
 
 
@@ -64,7 +64,7 @@ const TicketDashboard = () => {
       departmentCountMap[dept] = (departmentCountMap[dept] || 0) + 1;
     }
   });
-  
+
   const donutSeries = masterDepartments.map(dept => departmentCountMap[dept] || 0);
 
   const ticketWidgets = [
@@ -117,7 +117,7 @@ const TicketDashboard = () => {
           layout={1}
           padding
           border
-          titleLabel={"Last Month"}
+          titleLabel={`${new Date(new Date().getFullYear(), new Date().getMonth() - 1).toLocaleString("default", { month: "short" })}-${new Date(new Date().getFullYear(), new Date().getMonth() - 1).getFullYear().toString().slice(-2)}`}
           title={"Total Tickets"}>
           <DonutChart
             series={[9, 5, 7]}
@@ -131,7 +131,7 @@ const TicketDashboard = () => {
           layout={1}
           padding
           border
-          titleLabel={"Current month"}
+          titleLabel={`${new Date().toLocaleString("default", { month: "short" })}-${new Date().getFullYear().toString().slice(-2)}`}
           title={"Department Tickets"}>
           <DonutChart
             series={donutSeries}
@@ -217,7 +217,7 @@ const TicketDashboard = () => {
           descriptionData={[
             {
               title: "Accepted Tickets",
-              value: ticketsFilteredData.acceptedBy? ticketsFilteredData.acceptedBy : 0,
+              value: ticketsFilteredData.acceptedBy ? ticketsFilteredData.acceptedBy : 0,
               route: "/app/tickets/manage-tickets",
             },
             {

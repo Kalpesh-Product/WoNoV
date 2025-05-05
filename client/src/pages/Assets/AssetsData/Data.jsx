@@ -109,7 +109,7 @@ const assetUtilizationOptions = {
   },
   tooltip: {
     enabled: true,
-    shared: false, // Ensures that no blue dot appears
+    shared: false,
     custom: function ({ seriesIndex, dataPointIndex, w }) {
       const month = financialYearMonths[dataPointIndex];
       const totalValue = totalAssetValues[month].toFixed(2);
@@ -118,18 +118,25 @@ const assetUtilizationOptions = {
       const damaged = assetsDamaged[month];
 
       return `
-                <div style="padding: 10px; background: white; border-radius: 5px; box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);">
-                    <div style="padding-bottom : 5px; border-bottom: 1px solid gray; margin-bottom:10px">
-                        <strong>${month}</strong><br>
-                    </div> 
-                    Total Assets Value: ₹${totalValue} Cr<br>
-                    Asset Value Used: ₹${usedValue} Cr<br>
-                    Under Maintenance: ₹${underMaintenance} k<br>
-                    Assets Damaged: ₹${damaged} k
-                </div>
-            `;
+        <div style="padding: 10px; background: white; border-radius: 5px; box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);">
+          <div style="padding-bottom : 5px; border-bottom: 1px solid gray; margin-bottom:10px">
+            <strong>${month}</strong><br>
+          </div> 
+          Total Assets Value: ₹${totalValue} Cr<br>
+          Asset Value Used: ₹${usedValue} Cr<br>
+          Under Maintenance: ₹${underMaintenance} k<br>
+          Assets Damaged: ₹${damaged} k
+        </div>
+      `;
     },
+    fixed: {
+      enabled: true,
+      position: 'bottomRight', // Or try 'bottomLeft', depending on preference
+      offsetX: 0,
+      offsetY: -10, // Adjust to move tooltip closer to base
+    }
   },
+
   plotOptions: {
     bar: {
       dataLabels: {

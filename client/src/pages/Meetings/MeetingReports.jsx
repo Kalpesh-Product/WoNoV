@@ -8,6 +8,7 @@ import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { useEffect, useState } from "react";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import dayjs from "dayjs";
 
 const MeetingReports = () => {
   const axios = useAxiosPrivate();
@@ -162,7 +163,7 @@ const MeetingReports = () => {
                 buildingName: item.location?.building?.buildingName,
                 meetingType: item.meetingType,
                 housekeepingStatus: item.housekeepingStatus,
-                date: item.date,
+                date: dayjs(item.date).format("DD-MM-YYYY"),
                 startTime: item.startTime,
                 endTime: item.endTime,
                 duration: item.duration,
