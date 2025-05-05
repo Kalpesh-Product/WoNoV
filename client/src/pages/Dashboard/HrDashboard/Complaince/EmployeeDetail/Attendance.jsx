@@ -19,7 +19,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import SecondaryButton from "../../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../../components/PrimaryButton";
-import { TextField } from "@mui/material";
+import { Skeleton, TextField } from "@mui/material";
 import humanTime from "../../../../../utils/humanTime";
 
 const Attendance = () => {
@@ -46,7 +46,7 @@ const Attendance = () => {
     }
   };
 
-  const { data: attendance=[], isLoading } = useQuery({
+  const { data: attendance = [], isLoading } = useQuery({
     queryKey: ["attendance"],
     queryFn: fetchAttendance,
   });
@@ -402,54 +402,58 @@ const Attendance = () => {
       </div>
 
       <div>
-        <AgTable
-          key={isLoading ? 1 : attendance.length}
-          tableTitle={`${name}'s Attendance Table`}
-          buttonTitle={"Correction Request"}
-          handleClick={() => {
-            setOpenModal(true);
-          }}
-          search={true}
-          searchColumn={"Date"}
-          data={
-            isLoading
-              ? [
-                  {
-                    id: "loading",
-                    date: "Loading...",
-                    inTime: "-",
-                    outTime: "-",
-                    workHours: "-",
-                    breakHours: "-",
-                    totalHours: "-",
-                    entryType: "-",
-                  },
-                ]
-              : attendance.map((record, index) => ({
-                  id: index + 1,
-                  // date: humanDate(record.date),
-                  date: humanDate(record.inTime) ,
-                  inTime: humanTime(record.inTime),
-                  outTime: humanTime(record.outTime),
-                  // workHours: record.workHours,
-                  // workHours: "8",
-                  workHours: formatHours(
-                    new Date(record.outTime) - new Date(record.inTime)
-                  ),
-                  // breakHours: record.breakHours,
-                  breakHours: "1",
-                  // totalHours: record.totalHours,
-                  // totalHours: "9",
-                  totalHours: formatHours(
-                    new Date(record.outTime) -
-                      new Date(record.inTime) -
-                      1 * 60 * 60 * 1000
-                  ),
-                  entryType: record.entryType,
-                }))
-          }
-          columns={attendanceColumns}
-        />
+        {!isLoading ? (
+          <AgTable
+            key={isLoading ? 1 : attendance.length}
+            tableTitle={`${name}'s Attendance Table`}
+            buttonTitle={"Correction Request"}
+            handleClick={() => {
+              setOpenModal(true);
+            }}
+            search={true}
+            searchColumn={"Date"}
+            data={
+              isLoading
+                ? [
+                    {
+                      id: "loading",
+                      date: "Loading...",
+                      inTime: "-",
+                      outTime: "-",
+                      workHours: "-",
+                      breakHours: "-",
+                      totalHours: "-",
+                      entryType: "-",
+                    },
+                  ]
+                : attendance.map((record, index) => ({
+                    id: index + 1,
+                    // date: humanDate(record.date),
+                    date: humanDate(record.inTime),
+                    inTime: humanTime(record.inTime),
+                    outTime: humanTime(record.outTime),
+                    // workHours: record.workHours,
+                    // workHours: "8",
+                    workHours: formatHours(
+                      new Date(record.outTime) - new Date(record.inTime)
+                    ),
+                    // breakHours: record.breakHours,
+                    breakHours: "1",
+                    // totalHours: record.totalHours,
+                    // totalHours: "9",
+                    totalHours: formatHours(
+                      new Date(record.outTime) -
+                        new Date(record.inTime) -
+                        1 * 60 * 60 * 1000
+                    ),
+                    entryType: record.entryType,
+                  }))
+            }
+            columns={attendanceColumns}
+          />
+        ) : (
+          <Skeleton height={300} width={"100%"} />
+        )}
       </div>
       <MuiModal
         title={"Correction Request"}

@@ -57,43 +57,45 @@ const HrBudget = () => {
   };
 
   // Transform data into the required format
-  const groupedData = hrFinance.reduce((acc, item) => {
-    const month = dayjs(item.dueDate).format("MMM-YYYY"); // Extracting month and year
+  const groupedData = !isHrLoading
+    ? []
+    : hrFinance?.reduce((acc, item) => {
+        const month = dayjs(item.dueDate).format("MMM-YYYY"); // Extracting month and year
 
-    if (!acc[month]) {
-      acc[month] = {
-        month,
-        latestDueDate: item.dueDate, // Store latest due date for sorting
-        projectedAmount: 0,
-        amount: 0,
-        tableData: {
-          rows: [],
-          columns: [
-            { field: "expanseName", headerName: "Expense Name", flex: 1 },
-            // { field: "department", headerName: "Department", flex: 200 },
-            { field: "expanseType", headerName: "Expense Type", flex: 1 },
-            { field: "projectedAmount", headerName: "Amount", flex: 1 },
-            { field: "dueDate", headerName: "Due Date", flex: 1 },
-            { field: "status", headerName: "Status", flex: 1 },
-          ],
-        },
-      };
-    }
+        if (!acc[month]) {
+          acc[month] = {
+            month,
+            latestDueDate: item.dueDate, // Store latest due date for sorting
+            projectedAmount: 0,
+            amount: 0,
+            tableData: {
+              rows: [],
+              columns: [
+                { field: "expanseName", headerName: "Expense Name", flex: 1 },
+                // { field: "department", headerName: "Department", flex: 200 },
+                { field: "expanseType", headerName: "Expense Type", flex: 1 },
+                { field: "projectedAmount", headerName: "Amount", flex: 1 },
+                { field: "dueDate", headerName: "Due Date", flex: 1 },
+                { field: "status", headerName: "Status", flex: 1 },
+              ],
+            },
+          };
+        }
 
-    acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
-    acc[month].amount += item.projectedAmount; // Summing the total amount per month
-    acc[month].tableData.rows.push({
-      id: item._id,
-      expanseName: item.expanseName,
-      department: item.department,
-      expanseType: item.expanseType,
-      projectedAmount: item.projectedAmount.toFixed(2), // Ensuring two decimal places
-      dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
-      status: item.status,
-    });
+        acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
+        acc[month].amount += item.projectedAmount; // Summing the total amount per month
+        acc[month].tableData.rows.push({
+          id: item._id,
+          expanseName: item.expanseName,
+          department: item.department,
+          expanseType: item.expanseType,
+          projectedAmount: item.projectedAmount.toFixed(2), // Ensuring two decimal places
+          dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
+          status: item.status,
+        });
 
-    return acc;
-  }, {});
+        return acc;
+      }, {});
 
   // Convert grouped data to array and sort by latest month (descending order)
   const financialData = Object.values(groupedData)
@@ -192,14 +194,11 @@ const HrBudget = () => {
           handleSubmit={() => setOpenModal(true)}
         />
       </div>
-      {!isHrLoading ? (
-        <AllocatedBudget
-          financialData={financialData}
-          groupedData={groupedData}
-        />
-      ) : (
-        <Skeleton height={300} width={"100%"} />
-      )}
+
+      <AllocatedBudget
+        financialData={financialData}
+        groupedData={isHrLoading ? groupedData : <CircularProgress />}
+      />
 
       <MuiModal
         title="Request Budget"
