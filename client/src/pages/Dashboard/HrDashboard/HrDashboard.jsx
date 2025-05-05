@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
+import { transformBudgetData } from "../../../utils/transformBudgetData";
 
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -187,22 +188,23 @@ const HrDashboard = () => {
 
   //firstgraph
 
-  const utilisedData = [
-    1250000, 1500000, 990000, 850000, 700000, 500000, 800000, 950000, 1000000,
-    650000, 500000, 1200000,
-  ];
+  const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
+    queryKey: ["hrFinance"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
+            `
+        );
+        return transformBudgetData(response.data.allBudgets);
+      } catch (error) {
+        throw new Error("Error fetching data");
+      }
+    },
+  });
 
-  const maxBudget = [
-    1000000, 1200000, 1000000, 1000000, 800000, 600000, 850000, 950000, 1000000,
-    700000, 600000, 1100000,
-  ];
-  const defaultData = utilisedData.map((value) =>
-    Math.max(100 - Math.min(value, 100), 0)
-  );
-  const utilisedStack = utilisedData.map((value) => Math.min(value, 100));
-  const exceededData = utilisedData.map((value) =>
-    value > 100 ? value - 100 : 0
-  );
+
+
 
   const columns = [
     { id: "id", label: "Sr No", align: "left" },
@@ -461,17 +463,23 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection
             layout={1}
             border
             title={"Budget v/s Achievements"}
-            titleLabel={"FY 2024-25"}>
-            <BudgetGraph
-              utilisedData={utilisedData}
-              maxBudget={maxBudget}
-              route={"finance/budget"}
-            />
+            titleLabel={"FY 2024-25"}
+          >
+            {!isHrFinanceLoading ? (
+              <BudgetGraph
+                utilisedData={hrFinance?.utilisedBudget}
+                maxBudget={hrFinance?.projectedBudget}
+                route={"finance/budget"}
+              />
+            ) : (
+              <Skeleton variant="rectangular" width="100%" height={300} />
+            )}
 
             <hr />
             <WidgetSection layout={3} padding>
@@ -480,27 +488,27 @@ const HrDashboard = () => {
                 title={"Projected"}
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
-                "default",
-                { month: "short" }
-              )}-25`}
+                  "default",
+                  { month: "short" }
+                )}-25`}
               />
               <DataCard
                 data={"INR " + inrFormat("150000")}
                 title={"Actual"}
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
-                "default",
-                { month: "short" }
-              )}-25`}
+                  "default",
+                  { month: "short" }
+                )}-25`}
               />
               <DataCard
                 data={"INR " + inrFormat(12000)}
                 title={"Requested"}
                 route={"/app/dashboard/hr-dashboard/finance/budget"}
                 description={`Current Month : ${new Date().toLocaleString(
-                "default",
-                { month: "short" }
-              )}-25`}
+                  "default",
+                  { month: "short" }
+                )}-25`}
               />
             </WidgetSection>
           </WidgetSection>
@@ -536,7 +544,7 @@ const HrDashboard = () => {
       widgets: [
         <DataCard
           title="Active"
-          data="28"
+          data={usersQuery.isLoading ? [] : usersQuery.data?.length || '29'}
           description="Current Headcount"
           route={"employee/view-employees"}
         />,
@@ -582,13 +590,15 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection
             layout={1}
             border
             padding
             titleLabel={"FY 2024-25"}
-            title={"Department Wise Tasks Vs Achievements "}>
+            title={"Department Wise Tasks Vs Achievements "}
+          >
             <BarGraph
               data={rawSeries}
               options={options}

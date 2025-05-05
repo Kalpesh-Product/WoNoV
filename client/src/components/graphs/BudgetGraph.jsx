@@ -2,20 +2,20 @@ import React from "react";
 import Chart from "react-apexcharts";
 import { useNavigate } from "react-router-dom";
 
-const BudgetGraph = ({utilisedData,maxBudget,route}) => {
-    const navigate = useNavigate()
+const BudgetGraph = ({ utilisedData, maxBudget, route }) => {
+  const navigate = useNavigate();
 
-    const utilisedPercent = utilisedData.map((val, i) =>
-        Math.min((val / maxBudget[i]) * 100, 100)
-      );
-    
-      const defaultPercent = utilisedData.map((val, i) =>
-        Math.max(0, 100 - Math.min((val / maxBudget[i]) * 100, 100))
-      );
-    
-      const exceededPercent = utilisedData.map((val, i) =>
-        val > maxBudget[i] ? ((val - maxBudget[i]) / maxBudget[i]) * 100 : 0
-      );   
+  const utilisedPercent = utilisedData?.map((val, i) =>
+    Math.min((val / maxBudget[i]) * 100, 100)
+  );
+
+  const defaultPercent = utilisedData?.map((val, i) =>
+    Math.max(0, 100 - Math.min((val / maxBudget[i]) * 100, 100))
+  );
+
+  const exceededPercent = utilisedData?.map((val, i) =>
+    val > maxBudget[i] ? ((val - maxBudget[i]) / maxBudget[i]) * 100 : 0
+  );
 
   const data = [
     { name: "Utilised Budget", data: utilisedPercent },
@@ -29,11 +29,11 @@ const BudgetGraph = ({utilisedData,maxBudget,route}) => {
       toolbar: { show: false },
       stacked: true,
       fontFamily: "Poppins-Regular",
-      events : {
-        dataPointSelection: ()=>navigate(route)
+      events: {
+        dataPointSelection: () => navigate(route),
+      },
     },
-    },
-    
+
     plotOptions: {
       bar: {
         horizontal: false,

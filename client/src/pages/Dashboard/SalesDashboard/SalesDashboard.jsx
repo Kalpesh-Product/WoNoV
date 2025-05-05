@@ -182,7 +182,7 @@ const SalesDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/company/fetch-units");
-     
+
         return response.data;
       } catch (error) {
         console.error("Error fetching clients data:", error);
@@ -191,17 +191,16 @@ const SalesDashboard = () => {
   });
   //-----------------------------------------------API-----------------------------------------------------------//
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
-  const totalCoWorkingSeats = unitsData.reduce(
-    (sum, item) =>
-      sum +
-      (item.openDesks
-        ? item.openDesks
-        : 0 + item.cabinDesks
-        ? item.cabinDesks
-        : 0),
-    0
-  );
- 
+  const totalCoWorkingSeats = unitsData
+    .filter((item) => item.isActive === true)
+    .reduce(
+      (sum, item) =>
+        sum +
+        (item.openDesks ? item.openDesks : 0) +
+        (item.cabinDesks ? item.cabinDesks : 0),
+      0
+    );
+
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
   //-----------------------------------------------Conversion of leads into graph-----------------------------------------------------------//
 
@@ -216,7 +215,6 @@ const SalesDashboard = () => {
 
       const createdMonth = `${dayjs(lead.startDate).month()}`; // 0 = Jan, 11 = Dec
 
-    
       // Initialize if domain not yet seen
       if (!domainMap[domain]) {
         domainMap[domain] = Array(12).fill(0);
@@ -528,7 +526,8 @@ const SalesDashboard = () => {
           border
           title={"Annual Monthly Revenue"}
           titleLabel={"FY 2024-25"}
-          TitleAmount={`INR ${inrFormat("20900000")}`}>
+          TitleAmount={`INR ${inrFormat("20900000")}`}
+        >
           <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} />
         </WidgetSection>,
       ],
@@ -561,10 +560,10 @@ const SalesDashboard = () => {
         <DataCard
           route={"co-working-seats"}
           title={"Actual"}
-          // data={`${((totalClientsDesks / totalCoWorkingSeats) * 100).toFixed(
-          //   1
-          // )}%`}
-          data={"96.32%"} // note from sankalp: I am changing this for investor purposes
+          data={`${((totalClientsDesks / totalCoWorkingSeats) * 100).toFixed(
+            0
+          )}%`}
+          // data={"96.32%"}
           description={"Occupancy"}
         />,
         <DataCard
@@ -582,21 +581,21 @@ const SalesDashboard = () => {
         <DataCard
           route={"co-working-seats"}
           title={"Total"}
-          // data={totalCoWorkingSeats} //note from sankalp: i am interchanging these two for inverstor purposes
-          data={totalClientsDesks}
+          data={totalCoWorkingSeats}
+          // data={totalClientsDesks}
           description={"Co-working Seats"}
         />,
         <DataCard
           route={"co-working-seats"}
           title={"Booked"}
-          // data={totalClientsDesks}
-          data={totalCoWorkingSeats}
+          data={totalClientsDesks}
+          // data={totalCoWorkingSeats}
           description={"Co-working Seats"}
         />,
         <DataCard
           route={"co-working-seats"}
           title={"Free"}
-          data={Math.abs(totalCoWorkingSeats - totalClientsDesks)}
+          data={totalCoWorkingSeats - totalClientsDesks}
           description={"Co-working Seats"}
         />,
       ],
@@ -609,7 +608,8 @@ const SalesDashboard = () => {
           layout={1}
           title={"Monthly Unique Leads"}
           titleLabel={"FY 2024-25"}
-          border>
+          border
+        >
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
@@ -632,7 +632,8 @@ const SalesDashboard = () => {
           layout={1}
           title={"Sourcing Channels"}
           titleLabel={"FY 2024-25"}
-          border>
+          border
+        >
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
@@ -651,25 +652,23 @@ const SalesDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection layout={1} title={"Sector-wise Occupancy"} border >
+        <WidgetSection layout={1} title={"Sector-wise Occupancy"} border>
           {!isClientsDataPending ? (
             <PieChartMui
               data={sectorPieData}
               options={sectorPieChartOptions}
               width={"100%"}
-              
             />
           ) : (
             <CircularProgress color="#1E3D73" />
           )}
         </WidgetSection>,
-        <WidgetSection layout={1} title={"Client-wise Occupancy"} border >
+        <WidgetSection layout={1} title={"Client-wise Occupancy"} border>
           {!isClientsDataPending ? (
             <PieChartMui
               data={totalDeskPercent}
               options={clientsDesksPieOptions}
               width={"100%"}
-              
             />
           ) : (
             <CircularProgress color="#1E3D73" />
