@@ -82,9 +82,15 @@ const EditDetails = () => {
     reset();
   };
 
-  const transformEmployeeData = isLoading ? [] : {...employeeData,dob:dayjs(employeeData.dob,"DD/MM/YYYY").format("DD-MM-YYYY"),
-    startDate:dayjs(employeeData.startDate, "DD/MM/YYYY").format("DD-MM-YYYY")}
-
+  const transformEmployeeData = isLoading
+    ? []
+    : {
+        ...employeeData,
+        dob: dayjs(employeeData.dob, "DD/MM/YYYY").format("DD-MM-YYYY"),
+        startDate: dayjs(employeeData.startDate, "DD/MM/YYYY").format(
+          "DD-MM-YYYY"
+        ),
+      };
 
   return (
     <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4 ">
@@ -94,9 +100,16 @@ const EditDetails = () => {
             Edit Employee
           </span>
         </div>
+        {!isEditing ? (
+          
         <div>
           <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
         </div>
+        ) : (
+          <div>
+          <PrimaryButton handleSubmit={()=>setIsEditing(false)} title={"Cancel"} />
+        </div>
+        )}
       </div>
 
       <div className="h-[51vh] overflow-y-auto">
@@ -467,18 +480,19 @@ const EditDetails = () => {
                 </div>
               </div>
             </div>
-
-            <div className="flex items-center justify-center gap-2 py-4">
-              <PrimaryButton
-                title={isEditing ? "Submit" : "Edit"}
-                handleSubmit={
-                  isEditing ? handleSubmit(onSubmit) : handleEditToggle
-                }
-              />
-              {isEditing && (
-                <SecondaryButton title={"Reset"} handleSubmit={handleReset} />
-              )}
-            </div>
+            {isEditing && (
+              <div className="flex items-center justify-center gap-2 py-4">
+                <PrimaryButton
+                  title={"Submit"}
+                  handleSubmit={
+                    isEditing ? handleSubmit(onSubmit) : handleEditToggle
+                  }
+                />
+                {isEditing && (
+                  <SecondaryButton title={"Reset"} handleSubmit={handleReset} />
+                )}
+              </div>
+            )}
           </form>
         </div>
       </div>

@@ -1,7 +1,14 @@
 import React, { useState } from "react";
 import LayerBarGraph from "../../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
-import { TextField, Select, MenuItem, FormControl } from "@mui/material";
+import {
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  CircularProgress,
+  Skeleton,
+} from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -19,7 +26,7 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 const HrBudget = () => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
-  const { data: hrFinance = [] } = useQuery({
+  const { data: hrFinance = [], isLoading: isHrLoading } = useQuery({
     queryKey: ["hrFinance"],
     queryFn: async () => {
       try {
@@ -134,7 +141,8 @@ const HrBudget = () => {
           layout={1}
           title={"Budget v/s Achievements"}
           titleLabel={"FY 2024-25"}
-          border>
+          border
+        >
           <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
         </WidgetSection>
       </div>
@@ -184,16 +192,20 @@ const HrBudget = () => {
           handleSubmit={() => setOpenModal(true)}
         />
       </div>
-
-      <AllocatedBudget
-        financialData={financialData}
-        groupedData={groupedData}
-      />
+      {!isHrLoading ? (
+        <AllocatedBudget
+          financialData={financialData}
+          groupedData={groupedData}
+        />
+      ) : (
+        <Skeleton height={300} width={"100%"} />
+      )}
 
       <MuiModal
         title="Request Budget"
         open={openModal}
-        onClose={() => setOpenModal(false)}>
+        onClose={() => setOpenModal(false)}
+      >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Expense Name */}
           <Controller

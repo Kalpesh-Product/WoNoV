@@ -20,6 +20,8 @@ import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
+import { calculateAverageAttendance } from "../../../utils/calculateAverageAttendance ";
+import { calculateAverageDailyWorkingHours } from "../../../utils/calculateAverageDailyWorkingHours ";
 
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -203,9 +205,28 @@ const HrDashboard = () => {
     },
   });
 
+  const { data: attendanceData = [], isLoading: isAttendanceLoading } =
+    useQuery({
+      queryKey: ["attendance"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/company/company-attandances");
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response.data.message);
+        }
+      },
+    });
 
-
-
+  const { companyAttandances = [], workingDays } = attendanceData;
+  const averageAttendance = calculateAverageAttendance(
+    companyAttandances,
+    workingDays
+  );
+  const averageWorkingHours = calculateAverageDailyWorkingHours(
+    companyAttandances,
+    workingDays
+  );
   const columns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "title", label: "Name", align: "left" },
@@ -544,7 +565,7 @@ const HrDashboard = () => {
       widgets: [
         <DataCard
           title="Active"
-          data={usersQuery.isLoading ? [] : usersQuery.data?.length || '29'}
+          data={usersQuery.isLoading ? [] : usersQuery.data?.length || "29"}
           description="Current Headcount"
           route={"employee/view-employees"}
         />,
@@ -566,18 +587,30 @@ const HrDashboard = () => {
           description="Monthly Attrition"
           route={"employee/view-employees"}
         />,
-        <DataCard
-          title="Average"
-          data="92%"
-          description="Attendance"
-          route={"employee/view-employees"}
-        />,
-        <DataCard
-          title="Average"
-          data="8.1hr"
-          description="Working Hours"
-          route={"employee/view-employees"}
-        />,
+        !isAttendanceLoading ? (
+          <DataCard
+            title="Average"
+            data={
+              averageAttendance
+                ? `${Number(averageAttendance).toFixed(0)}%`
+                : "0%"
+            }
+            description="Attendance"
+            route={"employee/view-employees"}
+          />
+        ) : (
+          <Skeleton variant="rectangular" width="100%" height={"100%"} />
+        ),
+        !isAttendanceLoading ? (
+          <DataCard
+            title="Average"
+            data={averageWorkingHours ? `${averageWorkingHours}h` : "0h"}
+            description="Working Hours"
+            route={"employee/view-employees"}
+          />
+        ) : (
+          <Skeleton variant="rectangular" width="100%" height={"100%"} />
+        ),
       ],
     },
     {

@@ -7,7 +7,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { CircularProgress } from "@mui/material";
 import Abrar from "../assets/abrar.jpeg"
 
-const AccessTree = () => {
+const AccessTree = ({clickState}) => {
   const location = useLocation();
   const [selectedUsers, setSelectedUsers] = useState([]);
   const axios = useAxiosPrivate();
@@ -91,6 +91,7 @@ const AccessTree = () => {
         user={hierarchy}
         handleSelectUser={(user) => handleSelectUser(user, 0)}
         isTopLevel={true}
+        click={clickState}
       />
 
       {selectedUsers.map((user, index) => (
@@ -113,6 +114,7 @@ const AccessTree = () => {
               <HierarchyCard
                 key={subordinate.empId}
                 user={subordinate}
+                click={clickState}
                 handleSelectUser={(user) => handleSelectUser(user, index + 1)}
               />
             ))}
@@ -123,7 +125,7 @@ const AccessTree = () => {
   );
 };
 
-const HierarchyCard = ({ user, handleSelectUser, isTopLevel }) => {
+const HierarchyCard = ({ user, handleSelectUser, isTopLevel, click = true }) => {
   const navigate = useNavigate();
 
   const getInitials = (name) => {
@@ -142,7 +144,7 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel }) => {
       }`}
     >
       <div
-        onClick={() => navigate("permissions", { state: { user } })}
+        onClick={() => {click ? navigate("permissions", { state: { user } }) : ''} }
         className="bg-primary text-white p-2 pt-4 rounded-t-md"
       >
         <div className="w-full flex flex-col justify-center">
