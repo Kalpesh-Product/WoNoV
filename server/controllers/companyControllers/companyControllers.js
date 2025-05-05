@@ -446,7 +446,6 @@ const getCompanyAttandances = async (req, res, next) => {
     const holidays = await Events.find({ company, type: "Holiday" })
       .lean()
       .exec();
-
     const workingDays = 365 - (holidays.length + sundays);
     res.status(200).json({ companyAttandances, workingDays });
   } catch (error) {
@@ -468,5 +467,5 @@ module.exports = {
   getCompanyData,
   getCompanyLogo,
   getHierarchy,
-  getCompanyAttandances
+  getCompanyAttandances,
 };
