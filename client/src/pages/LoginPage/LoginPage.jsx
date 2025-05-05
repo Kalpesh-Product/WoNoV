@@ -12,11 +12,15 @@ import LoginWithFacebookImage from "../../assets/WONO_images/img/login_images/lo
 import LoginWithEmailImage from "../../assets/WONO_images/img/login_images/email-icon.png";
 import WonoLogo from "../../assets/WONO_images/img/WONO.png";
 import Footer from "../../components/Footer";
-import { CircularProgress, InputAdornment, IconButton  } from "@mui/material";
+import { CircularProgress, InputAdornment, IconButton } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { Drawer, List, ListItem, ListItemText } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import { IoCloseSharp } from "react-icons/io5";
 
 const LoginPage = () => {
   const { auth, setAuth } = useAuth();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,60 +62,100 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
+  const navItems = [
+    { label: "Modules", link: "https://wono.co/modules" },
+    { label: "Themes", link: "https://wono.co/themes" },
+    { label: "Leads", link: "https://wono.co/leads" },
+    { label: "Capital", link: "https://wono.co/capital" },
+    { label: "Career", link: "https://wono.co/career" },
+  ];
 
   return (
     <>
-      <div className="bg-black flex justify-around py-4">
-        <div className="cursor-pointer"
-        onClick={() => {
-          window.location.href = "https://www.wono.co";
-        }}
-        >
-          <img src={WonoLogo} alt="wono" />
-        </div>
-          <div className="flex items-center uppercase">
-            <ul className="flex gap-5 text-white uppercase font-thin">
-              <li className="cursor-pointer" 
-                    onClick={() => {
-                    window.location.href = "https://www.wono.co/modules";
-                  }}
-              >Modules</li>
-              <li className="cursor-pointer"
-               onClick={() => {
-                window.location.href = "https://www.wono.co/themes";
-              }}>Themes</li>
-              <li className="cursor-pointer"
-               onClick={() => {
-                window.location.href = "https://www.wono.co/leads";
-              }}
-              >Leads</li>
-              <li className="cursor-pointer"
-               onClick={() => {
-                window.location.href = "https://www.wono.co/capital";
-              }}
-              >Capital</li>
-              <li className="cursor-pointer"
-               onClick={() => {
-                window.location.href = "https://www.wono.co/career";
-              }}
-              >Career</li>
-            </ul>
-          </div>
-        <div className="flex gap-6">
-          <div className="flex gap-6">
-            <button className="bg-white text-black py-2 px-3 rounded-full uppercase">
+      {/* Header */}
+      <div className="bg-black flex justify-between items-center py-4 px-6 md:px-28">
+        {/* Logo */}
+        <a href="https://wono.co">
+          <img src={WonoLogo} alt="wono" className="w-28" />
+        </a>
+
+        {/* Desktop Nav */}
+        <ul className="hidden md:flex gap-6 text-white uppercase font-thin items-center">
+          {navItems.map((item, idx) => (
+            <li key={idx} className="cursor-pointer hover:underline">
+              <a href={item.link}>{item.label}</a>
+            </li>
+          ))}
+        </ul>
+
+        {/* Desktop Buttons */}
+        <div className="hidden md:flex gap-4">
+          <a href="https://wonofe.vercel.app">
+            <button className="bg-white text-black py-2 px-4 rounded-full uppercase">
               Sign-In
             </button>
-            <button className="bg-sky-400 text-black py-2 px-3 rounded-full uppercase"
-             onClick={() => {
-              window.location.href = "https://www.wono.co/register";
-            }}
-            >
+          </a>
+          <a href="https://www.wono.co/register">
+            <button className="bg-sky-400 text-white py-2 px-4 rounded-full uppercase">
               Sign-Up
             </button>
+          </a>
+        </div>
+
+        {/* Mobile Menu Button */}
+        <div className="md:hidden">
+          <div onClick={() => setDrawerOpen(true)} className="text-white">
+            <MenuIcon />
           </div>
         </div>
       </div>
+      {/* Mobile Drawer */}
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      >
+        {/* Drawer Header */}
+        <div className="w-full bg-black text-white flex justify-end items-center border-b border-gray-700 p-4 text-2xl">
+          <button onClick={() => setDrawerOpen(false)}>
+            <IoCloseSharp />
+          </button>
+        </div>
+
+        {/* Drawer Body */}
+        <div className="w-96 h-screen p-6 flex flex-col gap-6 uppercase bg-black text-white text-center">
+          {navItems.map((item, index) => (
+            <div
+              key={index}
+              className="cursor-pointer hover:text-gray-400"
+              onClick={() => setDrawerOpen(false)}
+            >
+              <a href={item.link} className="block w-full">
+                {item.label}
+              </a>
+            </div>
+          ))}
+
+          {/* Sign In button */}
+          <div>
+            <a
+              href="https://wonofe.vercel.app"
+              className="block px-4 py-2 uppercase bg-white text-black mx-auto w-max rounded-full"
+            >
+              Sign In
+            </a>
+          </div>
+          <div>
+            <a
+              href="https://wono.co/register"
+              className="block px-4 py-2 uppercase bg-[#0aa9ef] text-black mx-auto w-max rounded-full"
+            >
+              Sign Up
+            </a>
+          </div>
+        </div>
+      </Drawer>
+      {/* Header */}
       <div className="login-section loginTopPadding loginBottomPadding poppinsRegular heightPadding">
         <h1 className="text-center text-4xl font-bold">LOG IN</h1>
         <div className="loginDividingContainer shrink-container">
@@ -153,7 +197,11 @@ const LoginPage = () => {
                               edge="end"
                               size="small"
                             >
-                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                              {showPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
                             </IconButton>
                           </InputAdornment>
                         ),
@@ -161,24 +209,27 @@ const LoginPage = () => {
                     />
                   </Grid>
                 </Grid>
-                <div className="flex flex-col justify-center w-full items-start gap-4">
-                  <Grid style={{ paddingTop: "0" }} p={0}>
-                    <Box p={0} mt={2}>
-                      <Link
-                        to="/forgot-password"
-                        style={{ textDecoration: "none" }}
-                      >
-                        Forgot Password?
-                      </Link>
-                    </Box>
-                  </Grid>
-
+                <Grid
+                  style={{ paddingTop: "0" }}
+                  p={0}
+                  sx={{ marginBottom: "1rem" }}
+                >
+                  <Box p={0} mt={2}>
+                    <Link
+                      to="https://wono.co/forgot-password"
+                      className="hover:underline text-black"
+                    >
+                      Forgot Password?
+                    </Link>
+                  </Box>
+                </Grid>
+                <div className="flex flex-col justify-center w-full items-center gap-4">
                   <Grid item xs={12}>
                     <div className="centerInPhone">
                       <button
                         disabled={loading}
                         type="submit"
-                        className="loginButtonStyling text-decoration-none"
+                        className="loginButtonStyling text-decoration-none text-subtitle w-40"
                       >
                         {loading ? (
                           <CircularProgress size={20} color="white" />
