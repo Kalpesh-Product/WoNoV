@@ -80,17 +80,13 @@ const getDepartments = async (req, res, next) => {
   try {
     // Fetch all departments
     const departments = await Department.find()
-      .populate("company", "companyName") // Populate company reference with selected fields
-      .populate("admin", "name email") // Populate admin reference with selected fields
-      .populate("designations", "title responsibilities") // Populate admin reference with selected fields
+      //  .populate("company", "companyName") // Populate company reference with selected fields
+      //.populate("admin", "name email") // Populate admin reference with selected fields
+      //.populate("designations", "title responsibilities") // Populate admin reference with selected fields
       .exec();
 
-    res.status(200).json({
-      message: "Departments fetched successfully",
-      departments,
-    });
+    return res.status(200).json(departments);
   } catch (error) {
-    console.error("Error fetching departments:", error);
     next(error);
   }
 };

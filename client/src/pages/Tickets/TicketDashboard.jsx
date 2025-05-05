@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import WidgetSection from "../../components/WidgetSection";
 import AreaGraph from "../../components/graphs/AreaGraph";
 import Card from "../../components/Card";
@@ -34,38 +34,85 @@ const TicketDashboard = () => {
     },
   });
 
-  const ticketsFilteredData = {
+  const { data: departments = [], departmentsIsLoading } = useQuery({
+    queryKey: ["departments-data"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/departments/get-departments`
+        );
+
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching departments:", error);
+        throw new Error("Failed to fetch departments");
+      }
+    },
+  });
+  
+  const ticketsFilteredData =  {
     openTickets: ticketsData.filter((item) => item.status === "Open").length,
     closedTickets: ticketsData.filter((item) => item.status === "Closed")
       .length,
     pendingTickets: ticketsData.filter((item) => item.status === "Pending")
       .length,
-    acceptedTickets: ticketsData.filter((item) => item.acceptedBy).length,
-    assignedTickets: ticketsData.filter((item) => item.assignees.length > 0).length,
-    escalatedTickets: ticketsData.filter((item) => item.status === "Escalated").length,
+      acceptedTickets: ticketsData
+      .filter((item) => item.acceptedBy?._id === auth.user?._id).filter((item)=>item.status === "In Progress").length,
+    assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0).length,
+    escalatedTickets: ticketsData.filter((item)=>item.status === "Escalated").length,
   };
 
 
-
-  const masterDepartments = [
-    "IT",
-    "Admin",
-    "Tech",
-    "HR",
-    "Finance",
-    "Sales",
-    "Maintenance",
-  ];
+  const masterDepartments = !departmentsIsLoading ? departments.map((dept)=>dept.name) : []
+  
   const departmentCountMap = {};
 
-  ticketsData.forEach(item => {
+  const lastMonth = new Date().getMonth();  
+  const currentYear = new Date().getFullYear();
+  
+  const lastMonthTickets = ticketsData.filter((ticket) => {
+    const createdAt = new Date(ticket.createdAt);
+    console.log(createdAt.getMonth(),"===",lastMonth)
+    return (
+      createdAt.getMonth() - 1  === lastMonth - 1  &&
+      createdAt.getFullYear() === currentYear
+    );
+  });
+
+
+  const currentMonth = new Date().getMonth();  
+  
+  const currentMonthTickets = ticketsData.filter((ticket) => {
+    const createdAt = new Date(ticket.createdAt);
+    return (
+      createdAt.getMonth() + 1 === currentMonth + 1 &&
+      createdAt.getFullYear() === currentYear
+    );
+  });
+
+
+  currentMonthTickets.forEach(item => {
     const dept = item.raisedToDepartment.name;
     if (dept) {
       departmentCountMap[dept] = (departmentCountMap[dept] || 0) + 1;
     }
   });
+  
+  const donutSeries =   masterDepartments.map(dept => departmentCountMap[dept] || 0) ;
 
-  const donutSeries = masterDepartments.map(dept => departmentCountMap[dept] || 0);
+  //Task Priority data for widget
+  console.log(lastMonthTickets)
+  const priorityCountMap = {};
+
+  lastMonthTickets.forEach(item => {
+    const priority = item.priority;
+    if (priority) {
+      priorityCountMap[priority] = (priorityCountMap[priority] || 0) + 1;
+    }
+  });
+  
+  const series =   lastMonthTickets.map(priority => priorityCountMap[priority] || 0) ;
+  console.log(series)
 
   const ticketWidgets = [
     {
@@ -194,17 +241,17 @@ const TicketDashboard = () => {
           descriptionData={[
             {
               title: "Open Tickets",
-              value: "5",
+              value: ticketsFilteredData.openTickets,
               route: "/app/tickets/manage-tickets",
             },
             {
               title: "Closed Tickets",
-              value: "7",
+              value: ticketsFilteredData.closedTickets,
               route: "/app/tickets/manage-tickets",
             },
             {
               title: "Pending Tickets",
-              value: "1",
+              value: ticketsFilteredData.pendingTickets,
               route: "/app/tickets/manage-tickets",
             },
           ]}
@@ -217,12 +264,13 @@ const TicketDashboard = () => {
           descriptionData={[
             {
               title: "Accepted Tickets",
-              value: ticketsFilteredData.acceptedBy ? ticketsFilteredData.acceptedBy : 0,
+              value: ticketsFilteredData.acceptedTickets,
               route: "/app/tickets/manage-tickets",
             },
             {
               title: "Assigned Tickets",
-              value: ticketsFilteredData.assignedTickets ? ticketsFilteredData.assignedTickets : 0,
+              // value: ticketsFilteredData.assignedTickets ? ticketsFilteredData.assignedTickets : 0,
+              value: 0,
               route: "/app/tickets/manage-tickets",
             },
             {
@@ -235,6 +283,7 @@ const TicketDashboard = () => {
       ],
     },
   ];
+
   return (
     <div>
       <div>

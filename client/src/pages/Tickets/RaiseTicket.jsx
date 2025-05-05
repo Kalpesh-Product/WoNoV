@@ -101,7 +101,7 @@ const RaiseTicket = () => {
       reset();
     },
     onError: function (data) {
-      toast.error(data.message || "Something went wrong");
+      toast.error(data.response.data.message || "Something went wrong");
     },
   });
 

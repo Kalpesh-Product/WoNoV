@@ -44,7 +44,9 @@ const addRoom = async (req, res, next) => {
       );
     }
 
-    const isValidLocation = await Unit.findOne({ _id: location }).lean().exec();
+    const isValidLocation = await Unit.findById({ _id: location })
+      .lean()
+      .exec();
 
     if (!isValidLocation) {
       throw new CustomError(
@@ -62,9 +64,7 @@ const addRoom = async (req, res, next) => {
 
     if (req.file) {
       const file = req.file;
-      const buffer = await sharp(file.buffer)
-        .webp({ quality: 80 })
-        .toBuffer();
+      const buffer = await sharp(file.buffer).webp({ quality: 80 }).toBuffer();
 
       const base64Image = `data:irmage/webp;base64,${buffer.toString(
         "base64"

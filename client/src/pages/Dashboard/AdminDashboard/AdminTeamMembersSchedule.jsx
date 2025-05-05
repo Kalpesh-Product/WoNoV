@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
@@ -116,9 +116,9 @@ const AdminTeamMembersSchedule = () => {
   //----------------------------------------API---------------------------------------//
   const memberColumns = [
     { field: "id", headerName: "Sr No", width: 100 },
-    { field: "name", headerName: "Name", flex: 1 },
+    { field: "name", headerName: "Name" },
     { field: "manager", headerName: "Manager" },
-    { field: "unitNo", headerName: "Unit" },
+    { field: "unitNo", headerName: "Unit",flex:"1" },
     {
       field: "actions",
       headerName: "Actions",
@@ -169,6 +169,7 @@ const AdminTeamMembersSchedule = () => {
   };
   //---------------------------------------Event Handlers------------------------------//
 
+
   return (
     <div className="p-4">
       {!isUnitAssignees ? (
@@ -189,7 +190,7 @@ const AdminTeamMembersSchedule = () => {
             endDate: item.endDate,
             locationId: item.location?._id,
             unitName: item.location?.unitName,
-            unitNo: item.location?.unitNo,
+            unitNo: `${item.location?.building?.buildingName} ${item.location?.unitNo}`,
             buildingId: item.location?.building?._id,
             buildingName: item.location?.building?.buildingName,
             createdAt: item.createdAt,
@@ -216,7 +217,7 @@ const AdminTeamMembersSchedule = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={"Assign Member"}
+        title={"Assign Substitute"}
       >
         {modalMode === "add" && (
           <div>
