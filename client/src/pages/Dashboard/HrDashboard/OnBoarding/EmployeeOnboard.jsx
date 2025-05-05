@@ -5,7 +5,30 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 
 const EmployeeOnboard = () => {
-  const { control, handleSubmit, reset } = useForm();
+  const { control, handleSubmit, reset, formState:{errors} } = useForm({
+    defaultValues : {
+      firstName : "",
+      middleName : "",
+      lastName : "",
+      gender : "",
+      dob : null,
+      mobileNumber : "",
+      startDate : null,
+      workLocation : "",
+      employeeType : "",
+      department : "",
+      reportsTo : "",
+      jobTitle : "",
+      jobDescription : "",
+      shift : "",
+      workSchedulePolicy : "",
+      attendanceSource : "",
+      leavePolicy : "",
+      holidayPolicy : "",
+      aadharId : "",
+      pan : "",
+    }
+  });
 
   const onSubmit = (data) => {};
 
