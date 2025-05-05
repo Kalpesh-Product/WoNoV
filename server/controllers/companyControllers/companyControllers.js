@@ -434,7 +434,6 @@ const getCompanyAttandances = async (req, res, next) => {
     const loggedInUser = req.user;
     const { company } = req;
     const companyAttandances = await Attandance.find({ company }).lean().exec();
-    console.log(companyAttandances.length)
     let sundays = 0;
     let year = new Date().getFullYear().toString();
     for (let month = 0; month < 12; month++) {
