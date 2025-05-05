@@ -131,94 +131,15 @@ const onboardVendor = async (req, res, next) => {
 };
 
 const fetchVendors = async (req, res, next) => {
-  try {
-    const userId = req.user;
-
-    // Fetch user details along with role and department information
-    const user = await User.findOne({ _id: userId })
-      .select("company departments role")
-      .populate([{ path: "role", select: "roleTitle" }])
-      .lean()
-      .exec();
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Check if the user is a Master Admin or Super Admin
-    if (
-      user.role.some(
-        (role) =>
-          role.roleTitle === "Master Admin" || role.roleTitle === "Super Admin"
-      )
-    ) {
-      // Fetch all vendors for the company
-      const vendors = await Vendor.find({ company: user.company })
-        .lean()
-        .exec();
-      return res.status(200).json(vendors);
-    }
-
-    // Fetch the company and check if the user is an admin of any department
-    const company = await Company.findOne({ _id: user.company })
-      .populate([
-        {
-          path: "selectedDepartments.department",
-          select: "name",
-        },
-        {
-          path: "selectedDepartments.admin",
-          select: "name email", // Select relevant fields
-        },
-      ])
-      .lean()
-      .exec();
-
-    if (!company) {
-      return res.status(404).json({ message: "Company not found" });
-    }
-
-    // Get departments where the user is an admin
-    const adminDepartments = company.selectedDepartments.filter((dept) =>
-      dept.admin.some((adminId) => adminId.toString() === user._id.toString())
-    );
-
-    if (adminDepartments.length === 0) {
-      return res
-        .status(403)
-        .json({ message: "User is not an admin of any department" });
-    }
-
-    // Get department IDs
-
-    const adminDepartmentIds = adminDepartments.map(
-      (dept) => dept.department._id
-    );
-
-    // Fetch vendors belonging to those departments
-    const vendors = await Vendor.find({
-      departmentId: { $in: adminDepartmentIds },
-    })
-      .lean()
-      .exec();
-
+  const company = req.company;
+  const { departmentId } = req.params;
+  let vendors;
+  if (departmentId) {
+    vendors = await Vendor.find({ company, departmentId }).lean().exec();
     return res.status(200).json(vendors);
-  } catch (error) {
-    next(error);
   }
-};
-
-const bulkInsertVendor = async (req, res, next) => {
-  try {
-    const vendorCsv = req.file;
-    if (!req.file) {
-      return res
-        .status(400)
-        .json({ message: "please provide a valid csv file" });
-    }
-  } catch (error) {
-    next(error);
-  }
+  vendors = await Vendor.find({ company }).lean().exec();
+  return res.status(200).json(vendors);
 };
 
 module.exports = { onboardVendor, fetchVendors };

@@ -5,5 +5,5 @@ const {
 } = require("../controllers/vendorControllers/vendorController");
 
 router.post("/onboard-vendor", onboardVendor);
-router.get("/get-vendors", fetchVendors);
+router.get("/get-vendors/:departmentId", fetchVendors);
 module.exports = router;

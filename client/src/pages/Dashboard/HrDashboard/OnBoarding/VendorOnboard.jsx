@@ -7,9 +7,12 @@ import AgTable from "../../../../components/AgTable";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Country, State } from "country-state-city";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import useAuth from "../../../../hooks/useAuth";
+import MuiModal from "../../../../components/MuiModal";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const VendorOnboard = () => {
   const { auth } = useAuth();
@@ -19,7 +22,8 @@ const VendorOnboard = () => {
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState("");
-  const [fetched, setFetched] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState(null);
 
   useEffect(() => {
     setCountries(Country.getAllCountries());
@@ -31,11 +35,11 @@ const VendorOnboard = () => {
     setStates(State.getStatesOfCountry(countryCode));
   };
 
-  const { mutate: vendorDetails, isPending: isPending } = useMutation({
+  const { mutate: vendorDetails, isPending } = useMutation({
     mutationFn: async (data) => {
       const response = await axios.post(`/api/vendors/onboard-vendor`, {
         ...data,
-        departmentId: auth.user.departments[0]._id || 'id',
+        departmentId: auth.user.departments[0]._id || "id",
       });
 
       return response.data;
@@ -48,13 +52,27 @@ const VendorOnboard = () => {
     },
   });
 
+  const {
+    data,
+    isPending: isVendorFetchingPending,
+    error,
+  } = useQuery({
+    queryKey: ["vendors", "6798bab9e469e809084e249e"],
+    queryFn: async function () {
+      const response = await axios.get(
+        "/api/vendors/get-vendors/6798bab9e469e809084e249e"
+      );
+      return response.data;
+    },
+  });
+
   const vendorColumns = [
     {
       headerName: "S.No",
       valueGetter: (params) => params.node.rowIndex + 1,
       width: 80,
     },
-    { field: "vendorID", headerName: "Vendor ID", width: 100 },
+    { field: "vendorID", headerName: "Vendor ID", width: 120 },
     {
       field: "vendorName",
       headerName: "Vendor Name",
@@ -68,7 +86,8 @@ const VendorOnboard = () => {
           }}
           onClick={() =>
             navigate(
-              `/app/dashboard/HR-dashboard/data/vendor/${params.data.vendorName}`
+              `/app/dashboard/HR-dashboard/data/vendor/${params.data.vendorName}`,
+              { state: params.data }
             )
           }
         >
@@ -79,61 +98,61 @@ const VendorOnboard = () => {
     {
       field: "status",
       headerName: "Status",
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          Active: { backgroundColor: "#90EE90", color: "#006400" },
-          "In Active": { backgroundColor: "#FFECC5", color: "#CC8400" },
-        };
-
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return (
-          <Chip
-            label={params.value}
-            style={{
-              backgroundColor,
-              color,
-            }}
-          />
-        );
-      },
+      width: 130,
+      cellRenderer: (params) => (
+        <Chip
+          label={params.value}
+          color={params.value === "Active" ? "success" : "default"}
+          size="small"
+        />
+      ),
     },
     {
-      field: "actions",
       headerName: "Action",
+      field: "action",
+      width: 150,
       cellRenderer: (params) => (
-        <div className="p-2 mb-2 flex gap-2">
-          <span className="text-primary hover:underline text-content cursor-pointer">
-            View Details
-          </span>
-        </div>
+        <>
+          <div className="flex gap-2 items-center">
+            <div
+              onClick={() => {
+                
+                  setOpenModal(true);
+                  setSelectedVendor(params.data);
+              }}
+              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+            >
+              <span className="text-subtitle">
+                <MdOutlineRemoveRedEye />
+              </span>
+            </div>
+          </div>
+        </>
       ),
     },
   ];
 
-
-  const rows = [
-    {
-      id: 1,
-      vendorName: "Sumo Payroll",
-      vendorID: "V001",
-      status: "Active",
-    },
-    {
-      id: 2,
-      vendorName: "Payroll Y",
-      vendorID: "V002",
-      status: "In Active",
-    },
-    {
-      id: 3,
-      vendorName: "Bakery",
-      vendorID: "V003",
-      status: "Active",
-    },
-  ];
+  const rows =
+    data
+      ?.filter(
+        (vendor) =>
+          vendor.departmentId === "6798bab9e469e809084e249e" &&
+          vendor.company === "6799f0cd6a01edbe1bc3fcea"
+      )
+      .map((vendor, index) => ({
+        id: index + 1,
+        vendorID: vendor._id.slice(-4).toUpperCase(),
+        vendorName: vendor.name,
+        address: vendor.address,
+        state: vendor.state,
+        country: vendor.country,
+        partyType: vendor.partyType,
+        assesseeOfOtherTerritory: vendor.assesseeOfOtherTerritory,
+        isEcommerceOperator: vendor.isEcommerceOperator,
+        isDeemedExporter: vendor.isDeemedExporter,
+        isTransporter: vendor.isTransporter,
+        status: vendor.status,
+      })) || [];
 
   const onSubmit = (data) => {
     vendorDetails(data);
@@ -160,17 +179,20 @@ const VendorOnboard = () => {
                   Basic Information
                 </span>
               </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
                 <Controller
                   name="name"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
+                  rules={{ required: "Vendor Name is required" }}
+                  render={({ field, fieldState: { error } }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Vendor Name"
                       fullWidth
+                      error={!!error}
+                      helperText={error?.message}
                     />
                   )}
                 />
@@ -179,12 +201,15 @@ const VendorOnboard = () => {
                   name="address"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
+                  rules={{ required: "Address is required" }}
+                  render={({ field, fieldState: { error } }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Address"
                       fullWidth
+                      error={!!error}
+                      helperText={error?.message}
                     />
                   )}
                 />
@@ -193,7 +218,8 @@ const VendorOnboard = () => {
                   name="country"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
+                  rules={{ required: "Country is required" }}
+                  render={({ field, fieldState: { error } }) => (
                     <Select
                       {...field}
                       fullWidth
@@ -203,6 +229,7 @@ const VendorOnboard = () => {
                         handleCountryChange(e.target.value);
                       }}
                       size="small"
+                      error={!!error}
                     >
                       <MenuItem value="">Select Country</MenuItem>
                       {countries.map((country) => (
@@ -218,13 +245,15 @@ const VendorOnboard = () => {
                   name="state"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
+                  rules={{ required: "State is required" }}
+                  render={({ field, fieldState: { error } }) => (
                     <Select
                       {...field}
                       fullWidth
                       displayEmpty
                       size="small"
                       disabled={!selectedCountry}
+                      error={!!error}
                     >
                       <MenuItem value="">Select State</MenuItem>
                       {states.map((state) => (
@@ -240,58 +269,90 @@ const VendorOnboard = () => {
                   name="pinCode"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
+                  rules={{
+                    required: "Pin Code is required",
+                    pattern: {
+                      value: /^[1-9][0-9]{5}$/,
+                      message: "Invalid Pin Code (e.g., 560001)",
+                    },
+                  }}
+                  render={({ field, fieldState: { error } }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Pin Code"
                       fullWidth
+                      error={!!error}
+                      helperText={error?.message}
                     />
                   )}
                 />
+
                 <Controller
                   name="panItNo"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
+                  rules={{
+                    pattern: {
+                      value: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
+                      message: "Invalid PAN (e.g., ABCDE1234F)",
+                    },
+                  }}
+                  render={({ field, fieldState: { error } }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="PAN IT No"
                       fullWidth
+                      error={!!error}
+                      helperText={error?.message}
                     />
                   )}
                 />
+
                 <Controller
                   name="gstUin"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
+                  rules={{
+                    pattern: {
+                      value:
+                        /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/,
+                      message: "Invalid GST UIN",
+                    },
+                  }}
+                  render={({ field, fieldState: { error } }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="GST UIN"
                       fullWidth
+                      error={!!error}
+                      helperText={error?.message}
                     />
                   )}
                 />
+
                 <Controller
                   name="registrationType"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
+                  rules={{ required: "Registration Type is required" }}
+                  render={({ field, fieldState: { error } }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Registration Type"
                       fullWidth
+                      error={!!error}
+                      helperText={error?.message}
                     />
                   )}
                 />
               </div>
             </div>
             <div>
-              {/* Section: Job Information */}
+              {/* Section: Other Information */}
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">
                   Other Information
@@ -302,8 +363,15 @@ const VendorOnboard = () => {
                   name="assesseeOfOtherTerritory"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
-                    <Select fullWidth size="small" {...field} displayEmpty>
+                  rules={{ required: "This field is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      fullWidth
+                      size="small"
+                      {...field}
+                      displayEmpty
+                      error={!!error}
+                    >
                       <MenuItem disabled value="">
                         Assessee Of Other Territory
                       </MenuItem>
@@ -312,12 +380,20 @@ const VendorOnboard = () => {
                     </Select>
                   )}
                 />
+
                 <Controller
                   name="isEcommerceOperator"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
-                    <Select fullWidth size="small" {...field} displayEmpty>
+                  rules={{ required: "This field is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      fullWidth
+                      size="small"
+                      {...field}
+                      displayEmpty
+                      error={!!error}
+                    >
                       <MenuItem disabled value="">
                         Is Ecommerce Operator
                       </MenuItem>
@@ -326,12 +402,20 @@ const VendorOnboard = () => {
                     </Select>
                   )}
                 />
+
                 <Controller
                   name="isDeemedExporter"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
-                    <Select fullWidth size="small" {...field} displayEmpty>
+                  rules={{ required: "This field is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      fullWidth
+                      size="small"
+                      {...field}
+                      displayEmpty
+                      error={!!error}
+                    >
                       <MenuItem disabled value="">
                         Is Deemed Exporter
                       </MenuItem>
@@ -345,11 +429,17 @@ const VendorOnboard = () => {
                   name="partyType"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
-                    <Select {...field} size="small" displayEmpty>
+                  rules={{ required: "Party Type is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      {...field}
+                      size="small"
+                      displayEmpty
+                      error={!!error}
+                    >
                       <MenuItem value="">Party Type</MenuItem>
                       <MenuItem value="Domestic">Domestic</MenuItem>
-                      <MenuItem value="INternational">International</MenuItem>
+                      <MenuItem value="International">International</MenuItem>
                     </Select>
                   )}
                 />
@@ -358,12 +448,21 @@ const VendorOnboard = () => {
                   name="gstinUin"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
+                  rules={{
+                    pattern: {
+                      value:
+                        /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/,
+                      message: "Invalid GSTIN UIN",
+                    },
+                  }}
+                  render={({ field, fieldState: { error } }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="GST IN UIN"
                       fullWidth
+                      error={!!error}
+                      helperText={error?.message}
                     />
                   )}
                 />
@@ -372,8 +471,15 @@ const VendorOnboard = () => {
                   name="isTransporter"
                   control={control}
                   defaultValue=""
-                  render={({ field }) => (
-                    <Select fullWidth size="small" {...field} displayEmpty>
+                  rules={{ required: "This field is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      fullWidth
+                      size="small"
+                      {...field}
+                      displayEmpty
+                      error={!!error}
+                    >
                       <MenuItem disabled value="">
                         Is Transporter
                       </MenuItem>
@@ -389,7 +495,11 @@ const VendorOnboard = () => {
           {/* Submit Button */}
           <div className="flex items-center justify-center gap-4">
             <PrimaryButton type="submit" title={"Submit"} />
-            <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
+            <SecondaryButton
+              handleSubmit={handleReset}
+              title={"Reset"}
+              type="button"
+            />
           </div>
         </form>
       </div>
@@ -404,6 +514,57 @@ const VendorOnboard = () => {
           />
         </div>
       </div>
+      <MuiModal
+        open={openModal}
+        onClose={() => {
+          setOpenModal(false);
+          setSelectedVendor(null);
+        }}
+        title="Vendor Details"
+      >
+        <div className="flex flex-col gap-3">
+          <>
+            <DetalisFormatted
+              title="Vendor Name"
+              detail={selectedVendor?.vendorName}
+            />
+            <DetalisFormatted
+              title="Vendor ID"
+              detail={selectedVendor?.vendorID}
+            />
+            <DetalisFormatted
+              title="Address"
+              detail={selectedVendor?.address}
+            />
+            <DetalisFormatted
+              title="Country"
+              detail={selectedVendor?.country}
+            />
+            <DetalisFormatted title="State" detail={selectedVendor?.state} />
+            <DetalisFormatted
+              title="Party Type"
+              detail={selectedVendor?.partyType}
+            />
+            <DetalisFormatted
+              title="Assessee Of Other Territory"
+              detail={selectedVendor?.assesseeOfOtherTerritory ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title="Ecommerce Operator"
+              detail={selectedVendor?.isEcommerceOperator ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title="Deemed Exporter"
+              detail={selectedVendor?.isDeemedExporter ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title="Transporter"
+              detail={selectedVendor?.isTransporter ? "Yes" : "No"}
+            />
+            <DetalisFormatted title="Status" detail={selectedVendor?.status} />
+          </>
+        </div>
+      </MuiModal>
     </div>
   );
 };
