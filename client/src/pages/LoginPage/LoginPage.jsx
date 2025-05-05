@@ -73,7 +73,7 @@ const LoginPage = () => {
   return (
     <>
       {/* Header */}
-      <div className="bg-black flex justify-between items-center py-4 px-6 md:px-28">
+      <div className="bg-black flex justify-between items-center py-6 px-6 md:px-28">
         {/* Logo */}
         <a href="https://wono.co">
           <img src={WonoLogo} alt="wono" className="w-28" />
@@ -92,12 +92,12 @@ const LoginPage = () => {
         <div className="hidden md:flex gap-4">
           <a href="https://wonofe.vercel.app">
             <button className="bg-white text-black py-2 px-4 rounded-full uppercase">
-              Sign-In
+              Sign In
             </button>
           </a>
           <a href="https://www.wono.co/register">
             <button className="bg-sky-400 text-white py-2 px-4 rounded-full uppercase">
-              Sign-Up
+              Sign Up
             </button>
           </a>
         </div>
@@ -123,44 +123,64 @@ const LoginPage = () => {
         </div>
 
         {/* Drawer Body */}
-        <div className="w-96 h-screen p-6 flex flex-col gap-6 uppercase bg-black text-white text-center">
+        <div className="w-96 h-screen p-6 flex flex-col gap-8 items-center uppercase bg-black text-white text-center">
+          <div
+            className="cursor-pointer hover:text-gray-400"
+            onClick={() => setDrawerOpen(false)}
+          >
+            <a href="https://wono.co/" className="block w-full uppercase">
+              Home
+            </a>
+          </div>
+          <hr className="w-[80%] text-gray-300" />
+
+          {/* Dynamic nav items */}
           {navItems.map((item, index) => (
-            <div
-              key={index}
-              className="cursor-pointer hover:text-gray-400"
-              onClick={() => setDrawerOpen(false)}
-            >
-              <a href={item.link} className="block w-full">
-                {item.label}
-              </a>
-            </div>
+            <React.Fragment key={index}>
+              <div
+                className="cursor-pointer hover:text-gray-400"
+                onClick={() => setDrawerOpen(false)}
+              >
+                <a href={item.link} className="block w-full uppercase">
+                  {item.label}
+                </a>
+              </div>
+              <hr className="w-[80%] text-gray-300" />
+            </React.Fragment>
           ))}
 
           {/* Sign In button */}
-          <div>
-            <a
-              href="https://wonofe.vercel.app"
-              className="block px-4 py-2 uppercase bg-white text-black mx-auto w-max rounded-full"
-            >
-              Sign In
-            </a>
-          </div>
-          <div>
-            <a
-              href="https://wono.co/register"
-              className="block px-4 py-2 uppercase bg-[#0aa9ef] text-black mx-auto w-max rounded-full"
-            >
-              Sign Up
-            </a>
+          <div className="flex flex-col w-full items-center gap-6">
+            <div>
+              <a
+                href="https://wonofe.vercel.app"
+                className="block px-10 py-2 uppercase bg-white text-black mx-auto w-max rounded-full"
+              >
+                Sign In
+              </a>
+            </div>
+            <hr className="w-[75%]" />
+            <div>
+              <a
+                href="https://wono.co/register"
+                className="block px-10 py-2 uppercase bg-[#0aa9ef] text-white mx-auto w-max rounded-full"
+              >
+                Sign Up
+              </a>
+            </div>
           </div>
         </div>
       </Drawer>
       {/* Header */}
       <div className="login-section loginTopPadding loginBottomPadding poppinsRegular heightPadding">
-        <h1 className="text-center text-4xl font-bold">LOG IN</h1>
+        <h1 className="text-center text-4xl font-bold">SIGN IN</h1>
         <div className="loginDividingContainer shrink-container">
           <div className="loginLeftContainer">
-            <Container maxWidth="md" style={{ padding: "3rem 0 0" }}>
+            <Container
+              maxWidth="lg"
+              style={{ padding: "3rem 0 0" }}
+              direction={{ xs: "column", md: "row" }}
+            >
               <Box
                 component="form"
                 sx={{ flexGrow: 1 }}
@@ -168,11 +188,11 @@ const LoginPage = () => {
                 noValidate
                 autoComplete="off"
               >
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sx={{ width: "100%" }}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <Grid item xs={12}>
                     <TextField
                       label="Email"
-                      variant="outlined"
+                      variant="standard"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -180,10 +200,10 @@ const LoginPage = () => {
                     />
                   </Grid>
 
-                  <Grid item xs={12} sx={{ width: "100%" }}>
+                  <Grid item xs={12}>
                     <TextField
                       label="Password"
-                      variant="outlined"
+                      variant="standard"
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -208,104 +228,48 @@ const LoginPage = () => {
                       }}
                     />
                   </Grid>
-                </Grid>
-                <Grid
-                  style={{ paddingTop: "0" }}
-                  p={0}
-                  sx={{ marginBottom: "1rem" }}
-                >
-                  <Box p={0} mt={2}>
-                    <Link
-                      to="https://wono.co/forgot-password"
-                      className="hover:underline text-black"
-                    >
-                      Forgot Password?
-                    </Link>
-                  </Box>
-                </Grid>
-                <div className="flex flex-col justify-center w-full items-center gap-4">
-                  <Grid item xs={12}>
-                    <div className="centerInPhone">
-                      <button
-                        disabled={loading}
-                        type="submit"
-                        className="loginButtonStyling text-decoration-none text-subtitle w-40"
+                </div>
+
+                <div className="mt-2 col-span-2 text-end">
+                  <Link
+                    to="https://wono.co/forgot-password"
+                    className="hover:underline text-black"
+                  >
+                    Forgot Password?
+                  </Link>
+                </div>
+                <div className="flex">
+                  <div className="flex flex-col justify-center w-full items-center gap-4 mt-4">
+                    <Grid item xs={12}>
+                      <div className="centerInPhone">
+                        <button
+                          disabled={loading}
+                          type="submit"
+                          className="loginButtonStyling text-decoration-none text-subtitle w-40"
+                        >
+                          {loading ? (
+                            <CircularProgress size={20} color="white" />
+                          ) : (
+                            "SIGN IN"
+                          )}
+                        </button>
+                      </div>
+                    </Grid>
+                    <p className="text-[0.9rem]">
+                      Don't have an account?{" "}
+                      <span
+                        onClick={() =>
+                          (window.location.href = "https://wono.co/register")
+                        }
+                        className="underline hover:text-primary cursor-pointer"
                       >
-                        {loading ? (
-                          <CircularProgress size={20} color="white" />
-                        ) : (
-                          "Login"
-                        )}
-                      </button>
-                    </div>
-                  </Grid>
+                        Sign Up
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </Box>
             </Container>
-          </div>
-          <div className="fullHeight LoginMiddleContainer">
-            <div className="vertical-line lineSideMargin">
-              <hr className="hrHeight" />
-            </div>
-            <div className="lineSideMargin">or</div>
-            <div className="vertical-line lineSideMargin">
-              <hr className="hrHeight" />
-            </div>
-          </div>
-          <div className="phoneDividerContainer">
-            <div className="phoneDivider w-100">
-              <div className="w-100 bg-secondary border-secondary border-bottom line-height"></div>
-              <div className="w-100 text-center">or</div>
-              <div className="w-100 bg-secondary border-secondary border-bottom line-height"></div>
-            </div>
-          </div>
-          <div className="loginRightContainer">
-            <div className="loginWithSection d-flex flex-column justify-content-center align-items-center">
-              <div className="loginWithSection d-flex flex-column justify-content-center align-items-center cursor-pointer">
-                <div className="LoginWithGoogleContainer loginWithBox loginWithGoogleBox d-flex justify-content-between align-items-center centerElement">
-                  <div className="loginWithIconBox loginWithGoogleIconBox centerElement">
-                    <img
-                      src={LoginWithGoogleImage}
-                      alt="Google Icon"
-                      className="imageDimensions"
-                    />
-                  </div>
-                  <div className="LoginWithGoogleText LoginWithText w-100 centerElement-social">
-                    <div>Continue with Google</div>
-                  </div>
-                </div>
-              </div>
-              <div className="LoginWithFacebookContainer loginWithBox loginWithFacebookBox d-flex justify-content-between align-items-center centerElement cursor-pointer">
-                <div className="loginWithIconBox loginWithFacebookIconBox centerElement">
-                  <img
-                    src={LoginWithFacebookImage}
-                    alt="Facebook Icon"
-                    className="imageDimensions"
-                  />
-                </div>
-                <div className="LoginWithFacebookText LoginWithText w-100 centerElement-social">
-                  <div>Continue with Facebook</div>
-                </div>
-
-                <div className="login-empty-padding"></div>
-              </div>
-              {/*  */}
-              <Link to="/register" className="text-decoration-none">
-                <div className="LoginWithEmailContainer loginWithBox loginWithEmailBox d-flex justify-content-between align-items-center centerElement">
-                  <div className="loginWithIconBox loginWithEmailIconBox centerElement">
-                    <img
-                      src={LoginWithEmailImage}
-                      alt="Email Icon"
-                      className="imageDimensions"
-                    />
-                  </div>
-                  <div className="LoginWithEmailText LoginWithText w-100 centerElement-social">
-                    <div>Continue with Email</div>
-                  </div>
-                </div>
-              </Link>
-              {/*  */}
-            </div>
           </div>
         </div>
       </div>
