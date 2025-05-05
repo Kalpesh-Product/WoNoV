@@ -43,7 +43,7 @@ const raiseTicket = async (req, res, next) => {
       description.replace(/\s/g, "").length > 100
     ) {
       throw new CustomError(
-        "Invalid description provided",
+        "Description should not exceed 100 characters.",
         logPath,
         logAction,
         logSourceKey
@@ -323,10 +323,35 @@ const getAllTickets = async (req, res, next) => {
       .exec();
 
     if (!matchingTickets.length) {
-      return res.status(200).json(matchingTickets);
+      return res.status(400).json({ message: "No tickets found" });
     }
 
-    return res.status(200).json(matchingTickets);
+    //Get pre-defined tickets
+    const foundCompany = await Company.findOne({ _id: company })
+      .select("selectedDepartments")
+      .lean()
+      .exec();
+
+    if (!foundCompany) {
+      return res.status(400).josn({ message: "Company not found" });
+    }
+
+    // Extract the ticket priority from the company's selected departments
+    const updatedTickets = matchingTickets.map((ticket) => {
+      let updatedTicket = { ...ticket };
+
+      foundCompany.selectedDepartments.forEach((dept) => {
+        dept.ticketIssues.forEach((issue) => {
+          if (issue.title === ticket.ticket) {
+            updatedTicket.priority = issue.priority;
+          }
+        });
+      });
+
+      return updatedTicket;
+    });
+
+    return res.status(200).json(updatedTickets);
   } catch (error) {
     next(error);
   }
@@ -627,6 +652,9 @@ const ticketData = async (req, res, next) => {
       ])
       .lean()
       .exec();
+
+    console.log(tickets);
+
     res.status(200).json(tickets);
   } catch (error) {
     next(error);

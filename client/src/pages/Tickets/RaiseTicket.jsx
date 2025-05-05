@@ -99,7 +99,7 @@ const RaiseTicket = () => {
       reset();
     },
     onError: function (data) {
-      toast.error(data.message || "Something went wrong");
+      toast.error(data.response.data.message || "Something went wrong");
     },
   });
 
@@ -133,7 +133,7 @@ const RaiseTicket = () => {
   };
 
   const recievedTicketsColumns = [
-    { field: "id", headerName: "Sr No", sort: "desc" },
+    { field: "id", headerName: "Sr No",},
     { field: "raisedBy", headerName: "Raised By" },
     { field: "raisedTo", headerName: "To Department" },
     { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
