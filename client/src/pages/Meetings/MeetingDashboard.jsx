@@ -88,7 +88,7 @@ const MeetingDashboard = () => {
   });
 
   const meetingColumns = [
-    { id: "id", label: "ID", align: "left" },
+    { id: "id", label: "Sr No", align: "left" },
     { id: "roomName", label: "Meeting Rooms", align: "left" },
     { id: "unitName", label: "Location", align: "left" },
     { id: "endTime", label: "End Time", align: "left" },
