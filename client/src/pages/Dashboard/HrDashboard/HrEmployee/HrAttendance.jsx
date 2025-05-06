@@ -21,6 +21,19 @@ const HrAttendance = () => {
       }
     },
   });
+
+   const { data: attendanceData = [], isLoading: isAttendanceLoading } =
+      useQuery({
+        queryKey: ["attendance"],
+        queryFn: async () => {
+          try {
+            const response = await axios.get("/api/company/company-attandances");
+            return response.data;
+          } catch (error) {
+            throw new Error(error.response.data.message);
+          }
+        },
+      });
   
 
   const viewEmployeeColumns = [
