@@ -7,9 +7,11 @@ import AgTable from "../AgTable";
 import dayjs from "dayjs";
 import { MdTrendingUp } from "react-icons/md";
 import { BsCheckCircleFill } from "react-icons/bs";
+import { CircularProgress } from "@mui/material";
 
-const AllocatedBudget = ({ financialData }) => {
-  return financialData ? (
+const AllocatedBudget = ({ financialData,isLoading }) => {
+  return !isLoading ? 
+  (
     <div>
       <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
         {/* Top Bar: Allocated Budget */}
@@ -40,7 +42,7 @@ const AllocatedBudget = ({ financialData }) => {
         </div>
 
         {/* Accordion Section */}
-        {financialData.map((data, index) => (
+        {financialData?.map((data, index) => (
           <Accordion key={index} className="py-4">
             <AccordionSummary
               expandIcon={<IoIosArrowDown />}
@@ -94,7 +96,7 @@ const AllocatedBudget = ({ financialData }) => {
       </div>
     </div>
   ) : (
-    <p>Loading...</p>
+     <CircularProgress/>
   );
 };
 
