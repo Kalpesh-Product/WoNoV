@@ -18,6 +18,7 @@ const TicketDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
+  console.log(auth.user)
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
     queryFn: async () => {
@@ -59,9 +60,8 @@ const TicketDashboard = () => {
       acceptedTickets: ticketsData
       .filter((item) => item.acceptedBy?._id === auth.user?._id).filter((item)=>item.status === "In Progress").length,
     assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0).length,
-    escalatedTickets: ticketsData.filter((item)=>item.status === "Escalated").length,
+    escalatedTickets: ticketsData.filter((item)=> auth.user.departments.includes(item.raisedToDepartment) && item.status === "Escalated").length,
   };
-
 
   const masterDepartments = !departmentsIsLoading ? departments.map((dept)=>dept.name) : []
   

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import LayerBarGraph from "../../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
 import {
@@ -57,7 +57,7 @@ const HrBudget = () => {
   };
 
   // Transform data into the required format
-  const groupedData = !isHrLoading
+  const groupedData = isHrLoading
     ? []
     : hrFinance?.reduce((acc, item) => {
         const month = dayjs(item.dueDate).format("MMM-YYYY"); // Extracting month and year
@@ -136,6 +136,7 @@ const HrBudget = () => {
     100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
     60000, 110000,
   ];
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -197,7 +198,7 @@ const HrBudget = () => {
 
       <AllocatedBudget
         financialData={financialData}
-        groupedData={isHrLoading ? groupedData : <CircularProgress />}
+        isLoading={isHrLoading}
       />
 
       <MuiModal
