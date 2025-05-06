@@ -449,7 +449,7 @@ const getCompanyAttandances = async (req, res, next) => {
       .lean()
       .exec();
     const workingDays = 365 - (holidays.length + sundays);
-    res.status(200).json({ companyAttandances, workingDays });
+    res.status(200).json({ companyAttandances, workingDays, holidays });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);
