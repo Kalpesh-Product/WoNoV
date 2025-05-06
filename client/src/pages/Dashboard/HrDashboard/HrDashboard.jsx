@@ -23,6 +23,7 @@ import { transformBudgetData } from "../../../utils/transformBudgetData";
 import { calculateAverageAttendance } from "../../../utils/calculateAverageAttendance ";
 import { calculateAverageDailyWorkingHours } from "../../../utils/calculateAverageDailyWorkingHours ";
 import FinanceCard from "../../../components/FinanceCard";
+import HrExpenseGraph from "../../../components/graphs/HrExpenseGraph";
 
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -59,6 +60,173 @@ const HrDashboard = () => {
       }
     },
   });
+
+  //--------------------HR BUDGET---------------------------//
+  const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
+    queryKey: ["hrFinance"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
+            `
+        );
+
+        console.log(transformBudgetData(response.data.allBudgets));
+        return transformBudgetData(response.data.allBudgets);
+      } catch (error) {
+        throw new Error("Error fetching data");
+      }
+    },
+  });
+  const totalExpense = hrFinance?.projectedBudget?.reduce(
+    (sum, val) => sum + (val || 0),
+    0
+  );
+
+  //--------------------HR BUDGET---------------------------//
+
+  //-------------------HR Expense graph start--------------------//
+
+  const expenseRawSeries = [
+    {
+      name: "Sales Assigned",
+      // data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 20, 15],
+      data: hrFinance?.utilisedBudget,
+      group: "total",
+    },
+    {
+      name: "IT Assigned",
+      data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 25, 10],
+      group: "total",
+    },
+    {
+      name: "Tech Assigned",
+      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 30, 30],
+      group: "total",
+    },
+
+    {
+      name: "Admin Assigned",
+      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 10, 10],
+      group: "total",
+    },
+    {
+      name: "Maintainance Assigned",
+      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 5, 3],
+      group: "total",
+    },
+    // {
+    //   name: "Space Completed",
+    //   data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    //   group: "space",
+    // },
+    // {
+    //   name: "Sales Completed",
+    //   data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 10, 10],
+    //   group: "completed",
+    // },
+    // {
+    //   name: "IT Completed",
+    //   data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 20, 10],
+    //   group: "completed",
+    // },
+
+    // {
+    //   name: "Tech Completed",
+    //   data: [45, 40, 30, 45, 50, 40, 55, 50, 60, 65, 30, 30],
+    //   group: "completed",
+    // },
+    // {
+    //   name: "Admin Completed",
+    //   data: [40, 30, 40, 52, 46, 40, 60, 59, 50, 70, 8, 10],
+    //   group: "completed",
+    // },
+    // {
+    //   name: "Maintainance Completed",
+    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 4, 1],
+    //   group: "completed",
+    // },
+  ];
+
+  const expenseOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+
+      stacked: true,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/tasks");
+        },
+      },
+    },
+    colors: ["#54C4A7", "#EB5C45"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+        borderRadiusApplication: "none",
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => inrFormat(val), // <-- format here
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+      offsetY: -22,
+    },
+    xaxis: {
+      categories: [
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
+      ],
+      title: {
+        text: "  ",
+      },
+    },
+    yaxis: {
+      // max: 3000000,
+      title: { text: "Amount In Lakhs (INR)" },
+      labels: {
+        formatter: (val) => `${Math.round(val)}`,
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
+
+    tooltip: {
+      y: {
+        formatter: (val, { seriesIndex, dataPointIndex }) => {
+          const rawData = rawSeries[seriesIndex]?.data[dataPointIndex];
+          return `${rawData} Tasks`;
+        },
+      },
+    },
+  };
+
+  //-------------------HR Expense graph end--------------------//
 
   //-------------------Tasks vs Achievements graph--------------------//
 
@@ -192,28 +360,6 @@ const HrDashboard = () => {
   };
 
   //-------------------Tasks vs Achievements graph--------------------//
-
-  //--------------------HR BUDGET---------------------------//
-  const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
-    queryKey: ["hrFinance"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get(
-          `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
-            `
-        );
-        return transformBudgetData(response.data.allBudgets);
-      } catch (error) {
-        throw new Error("Error fetching data");
-      }
-    },
-  });
-  const totalExpense = hrFinance?.projectedBudget?.reduce(
-    (sum, val) => sum + (val || 0),
-    0
-  );
-
-  //--------------------HR BUDGET---------------------------//
 
   //--------------------Attendance Data---------------//
   const { data: attendanceData = [], isLoading: isAttendanceLoading } =
@@ -375,14 +521,14 @@ const HrDashboard = () => {
   //--------------------New Data card data -----------------------//
   const HrExpenses = {
     cardTitle: "Expenses",
-    timePeriod: "FY 2024-25",
+    // timePeriod: "FY 2024-25",
     descriptionData: [
       {
-        title: "FY 2024-25 Expense",
+        title: "FY 2024-25",
         value: `INR ${inrFormat(totalExpense)}`,
       },
       {
-        title: "March 2025 Expense",
+        title: "March 2025",
         value: "INR 27,00,000",
       },
       {
@@ -395,7 +541,7 @@ const HrDashboard = () => {
   };
   const HrAverageExpense = {
     cardTitle: "Averages",
-    timePeriod: "FY 2024-25",
+    // timePeriod: "FY 2024-25",
     descriptionData: [
       {
         title: "Annual Average Expense",
@@ -417,7 +563,9 @@ const HrDashboard = () => {
       },
       {
         title: "Average Hours",
-        value: averageWorkingHours ? `${Number(averageWorkingHours)+3.7}h` : "0h",
+        value: averageWorkingHours
+          ? `${Number(averageWorkingHours) + 3.7}h`
+          : "0h",
       },
     ],
   };
@@ -487,56 +635,69 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection
             layout={1}
             border
-            title={"BIZ Nest HR DEPARTMENT  EXPENSE FY 2024-25"}
-            // titleLabel={"FY 2024-25"}
-          >
-            {!isHrFinanceLoading ? (
-              <BudgetGraph
-                utilisedData={hrFinance?.utilisedBudget}
-                maxBudget={hrFinance?.projectedBudget}
-                route={"finance/budget"}
-              />
-            ) : (
-              <Skeleton variant="rectangular" width="100%" height={300} />
-            )}
+            padding
+            titleLabel={"FY 2024-25"}
+            TitleAmount={"INR 23,13,365"}
+            title={"BIZ Nest HR DEPARTMENT EXPENSE"}>
+            <BarGraph
+              data={expenseRawSeries}
+              options={expenseOptions}
+              departments={["Sales", "IT", "Tech", "Admin", "Maintainance"]}
+              // departments={["FY 2024-25", "FY 2025-26"]}
+            />
           </WidgetSection>
         </Suspense>,
       ],
     },
-    {
-      layout: 6,
-      widgets: [
-        { icon: <CgWebsite />, title: "Employee", route: "employee" },
-        { icon: <LuHardDriveUpload />, title: "Company", route: "company" },
-        { icon: <SiCashapp />, title: "Finance", route: "finance" },
-        { icon: <CgWebsite />, title: "Mix Bag", route: "#" },
-        { icon: <SiGoogleadsense />, title: "Data", route: "data" },
-        {
-          icon: <MdMiscellaneousServices />,
-          title: "Settings",
-          route: "settings/bulk-upload",
-        },
-      ]
-        .filter((widget) => accessibleModules.has(widget.title)) // ✅ Filter widgets
-        .map((widget, index) => (
-          <Card
-            key={index}
-            icon={widget.icon}
-            title={widget.title}
-            route={widget.route}
-          />
-        )), // ✅ Convert objects into JSX elements
-    },
+    // {
+    //   layout: 1,
+    //   widgets: [
+    //     <Suspense
+    //       fallback={
+    //         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+
+    //           <Skeleton variant="text" width={200} height={30} />
+    //           <Skeleton variant="rectangular" width="100%" height={300} />
+    //         </Box>
+    //       }>
+    //       <WidgetSection
+    //         layout={1}
+    //         border
+    //         title={"BIZ Nest HR DEPARTMENT  EXPENSE FY 2024-25"}
+    //         // titleLabel={"FY 2024-25"}
+    //       >
+    //         {!isHrFinanceLoading ? (
+    //           // <BudgetGraph
+    //           //   utilisedData={hrFinance?.utilisedBudget}
+    //           //   maxBudget={hrFinance?.projectedBudget}
+    //           //   route={"finance/budget"}
+    //           // />
+    //           <HrExpenseGraph
+    //             utilisedData={hrFinance?.utilisedBudget}
+    //             maxBudget={hrFinance?.projectedBudget}
+    //             route={"finance/budget"}
+    //           />
+    //         ) : (
+    //           // <BarGraph
+    //           //   height={400}
+    //           //   data={averageBookingSeries}
+    //           //   options={averageBookingOptions}
+    //           // />
+    //           <Skeleton variant="rectangular" width="100%" height={300} />
+    //         )}
+    //       </WidgetSection>
+    //     </Suspense>,
+    //   ],
+    // },
     {
       layout: 2,
       widgets: [
-        <FinanceCard {...HrExpenses} />,
-        <FinanceCard {...HrAverageExpense} />,
+        <FinanceCard titleCenter {...HrExpenses} />,
+        <FinanceCard titleCenter {...HrAverageExpense} />,
 
         // <DataCard
         //   title="Average"
@@ -577,6 +738,30 @@ const HrDashboard = () => {
       ],
     },
     {
+      layout: 6,
+      widgets: [
+        { icon: <CgWebsite />, title: "Employee", route: "employee" },
+        { icon: <LuHardDriveUpload />, title: "Company", route: "company" },
+        { icon: <SiCashapp />, title: "Finance", route: "finance" },
+        { icon: <CgWebsite />, title: "Mix Bag", route: "#" },
+        { icon: <SiGoogleadsense />, title: "Data", route: "data" },
+        {
+          icon: <MdMiscellaneousServices />,
+          title: "Settings",
+          route: "settings/bulk-upload",
+        },
+      ]
+        .filter((widget) => accessibleModules.has(widget.title)) // ✅ Filter widgets
+        .map((widget, index) => (
+          <Card
+            key={index}
+            icon={widget.icon}
+            title={widget.title}
+            route={widget.route}
+          />
+        )), // ✅ Convert objects into JSX elements
+    },
+    {
       layout: 1,
       widgets: [
         <Suspense
@@ -586,15 +771,13 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection
             layout={1}
             border
             padding
             titleLabel={"FY 2024-25"}
-            title={"Department Wise Tasks Vs Achievements "}
-          >
+            title={"Department Wise KPA Vs Achievements "}>
             <BarGraph
               data={rawSeries}
               options={options}
@@ -652,7 +835,7 @@ const HrDashboard = () => {
         ),
 
         <MuiTable
-          Title="Current Months Holidays and Events"
+          Title="Current Months Holiday List"
           columns={columns2}
           rows={holidayEvents.map((holiday, index) => ({
             id: index + 1,

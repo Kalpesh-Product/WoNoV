@@ -53,35 +53,17 @@ const BarGraph = ({
   };
 
   return (
-    <div className="bg-white rounded-md">
+    <div className="bg-white rounded-md pt-2">
       {/* Header with title, year dropdown and department switcher */}
       <div className="flex justify-end items-center w-full">
         <div className="flex gap-4 items-center mx-8">
           {year && (
-            <FormControl size="small" sx={{marginBottom:"1rem"}}>
+            <FormControl size="small" sx={{ marginBottom: "1rem" }}>
               <Select value={selectedYear} onChange={handleYearChange}>
                 <MenuItem value="2023-2024">2023-2024</MenuItem>
                 <MenuItem value="2024-2025">2024-2025</MenuItem>
               </Select>
             </FormControl>
-          )}
-          {departments && (
-            <div className="flex items-center pt-2">
-              <SecondaryButton
-                title={<MdNavigateBefore />}
-                handleSubmit={handlePrev}
-                disabled={departmentIndex === 0}
-              />
-              <div className="text-sm min-w-[120px] text-center">
-                {currentDepartment}
-              </div>
-
-              <SecondaryButton
-                title={<MdNavigateNext />}
-                handleSubmit={handleNext}
-                disabled={departmentIndex === departments.length - 1}
-              />
-            </div>
           )}
         </div>
       </div>
@@ -109,6 +91,27 @@ const BarGraph = ({
         type="bar"
         height={height || 350}
       />
+
+      {departments && (
+        <div className=" flex justify-center items-center">
+          <div className="flex items-center pb-4">
+            <SecondaryButton
+              title={<MdNavigateBefore />}
+              handleSubmit={handlePrev}
+              disabled={departmentIndex === 0}
+            />
+            <div className="text-sm min-w-[120px] text-center">
+              {currentDepartment}
+            </div>
+
+            <SecondaryButton
+              title={<MdNavigateNext />}
+              handleSubmit={handleNext}
+              disabled={departmentIndex === departments.length - 1}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
