@@ -1,33 +1,45 @@
 import { Avatar, Button, Chip, TextField } from "@mui/material";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { toast } from "sonner";
 import AgTable from "../../../../components/AgTable";
+import { useLocation } from "react-router-dom";
 
 const ViewVendors = () => {
-  const { control, handleSubmit, reset } = useForm({
-    defaultValues: {
-      name: "Sumo Payroll",
-      address: "Panaji",
-      state: "Goa",
-      country: "India",
-      pinCode: "403001",
-      gst: "BMW00044556677",
-      email: "sumo@email.com",
-      registrationType: "regular",
-      assesseeOT: "No",
-      eCommerceOperator: "Yes",
-      deemedExporter: "Yes",
-      partyName: "Sumo",
-      gstIn: "HJM8899007766",
-      isTransporter: "Yes",
-    },
-  });
+  const { control, handleSubmit, reset, setValue, getValues } = useForm();
 
   const [isEditing, setIsEditing] = useState(false);
+  const location = useLocation();
+  const { state } = location;
 
+  useEffect(() => {
+    if (state) {
+      const mapping = {
+        name: state.vendorName,
+        address: state.address,
+        state: state.state,
+        country: state.country,
+        pinCode: state.address?.match(/\b\d{6}\b/)?.[0] || "",
+        gst: "N/A", // assuming GST is not provided
+        email: "N/A", // assuming Email is not provided
+        registrationType: "regular", // default/fallback
+        assesseeOT: state.assesseeOfOtherTerritory ? "Yes" : "No",
+        eCommerceOperator: state.isEcommerceOperator ? "Yes" : "No",
+        deemedExporter: state.isDeemedExporter ? "Yes" : "No",
+        partyName: state.vendorName,
+        gstIn: "N/A", // assuming GSTIN is not provided
+        isTransporter: state.isTransporter ? "Yes" : "No",
+      };
+
+      Object.entries(mapping).forEach(([key, value]) => {
+        setValue(key, value);
+      });
+    }
+  }, [state, setValue]);
+
+  console.log(state);
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
   };
@@ -41,53 +53,25 @@ const ViewVendors = () => {
     reset();
   };
 
-
-  const kraColumn = [
-    { field: "purchaseName", headerName: "KRAs" ,flex:1},
-    { field: "vendorId", headerName: "KRAs" ,flex:1},
-    {
-        field: "paymentStatus",
-        headerName: "Payment Status",
-        cellRenderer: (params) => {
-          const statusColorMap = {
-            Paid: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-            "Pending": { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-          };
-  
-          const { backgroundColor, color } = statusColorMap[params.value] || {
-            backgroundColor: "gray",
-            color: "white",
-          };
-          return (
-            <>
-              <Chip
-                label={params.value}
-                style={{
-                  backgroundColor,
-                  color,
-                }}
-              />
-            </>
-          );
-        },
-      },
+  const mailingFields = [
+    "name",
+    "address",
+    "state",
+    "country",
+    "pinCode",
+    "gst",
+    "email",
   ];
 
-  const rows = [
-    {
-        id: 1,
-        purchaseName: 'Purchase 1',
-        vendorId : "V001",
-        paymentStatus : "Paid"
-    },
-    {
-        id: 2,
-        purchaseName: 'Purchase 2',
-        vendorId : "V001",
-        paymentStatus : "Pending"
-    },
-    
-];
+  const gstFields = [
+    "registrationType",
+    "assesseeOT",
+    "eCommerceOperator",
+    "deemedExporter",
+    "partyName",
+    "gstIn",
+    "isTransporter",
+  ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -111,7 +95,6 @@ const ViewVendors = () => {
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  {/* Section: Basic Information */}
                   <div className="pb-4 border-b-default border-borderGray">
                     <span className="text-subtitle font-pmedium">
                       Mailing Details
@@ -119,15 +102,7 @@ const ViewVendors = () => {
                   </div>
 
                   <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                    {[
-                      "name",
-                      "address",
-                      "state",
-                      "country",
-                      "pinCode",
-                      "gst",
-                      "email",
-                    ].map((fieldKey) => (
+                    {mailingFields.map((fieldKey) => (
                       <div key={fieldKey}>
                         {isEditing ? (
                           <Controller
@@ -151,14 +126,14 @@ const ViewVendors = () => {
                                 {fieldKey
                                   .replace(/([A-Z])/g, " $1")
                                   .replace(/^./, (str) => str.toUpperCase())}
-                              </span>{" "}
+                              </span>
                             </div>
-                            <div className="">
+                            <div>
                               <span>:</span>
                             </div>
                             <div className="w-full">
                               <span className="text-gray-500">
-                                {control._defaultValues[fieldKey]}
+                                {getValues(fieldKey)}
                               </span>
                             </div>
                           </div>
@@ -169,7 +144,6 @@ const ViewVendors = () => {
                 </div>
 
                 <div>
-                  {/* Section: Job Information */}
                   <div className="pb-4 border-b-default border-borderGray">
                     <span className="text-subtitle font-pmedium">
                       GST Details
@@ -177,15 +151,7 @@ const ViewVendors = () => {
                   </div>
 
                   <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                    {[
-                      "registrationType",
-                      "assesseeOT",
-                      "eCommerceOperator",
-                      "deemedExporter",
-                      "partyName",
-                      "gstIn",
-                      "isTransporter",
-                    ].map((fieldKey) => (
+                    {gstFields.map((fieldKey) => (
                       <div key={fieldKey}>
                         {isEditing ? (
                           <Controller
@@ -209,14 +175,14 @@ const ViewVendors = () => {
                                 {fieldKey
                                   .replace(/([A-Z])/g, " $1")
                                   .replace(/^./, (str) => str.toUpperCase())}
-                              </span>{" "}
+                              </span>
                             </div>
-                            <div className="">
+                            <div>
                               <span>:</span>
                             </div>
                             <div className="w-full">
                               <span className="text-gray-500">
-                                {control._defaultValues[fieldKey]}
+                                {getValues(fieldKey)}
                               </span>
                             </div>
                           </div>
@@ -226,31 +192,9 @@ const ViewVendors = () => {
                   </div>
                 </div>
               </div>
-
-              <div className="flex items-center justify-center gap-2 py-4">
-                <PrimaryButton
-                  title={isEditing ? "Submit" : "Edit"}
-                  handleSubmit={
-                    isEditing ? handleSubmit(onSubmit) : handleEditToggle
-                  }
-                />
-                {isEditing && (
-                  <SecondaryButton title={"Reset"} handleSubmit={handleReset} />
-                )}
-              </div>
             </form>
           </div>
         </div>
-      </div>
-
-      <div>
-        <AgTable
-          search={true}
-          searchColumn={"Purchase Name"}
-          tableTitle={"Purchases"}
-          data={rows}
-          columns={kraColumn}
-        />
       </div>
     </div>
   );

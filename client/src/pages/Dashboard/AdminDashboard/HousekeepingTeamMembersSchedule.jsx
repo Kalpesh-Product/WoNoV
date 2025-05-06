@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 // import AssetModal from "./AssetModal";
@@ -8,142 +8,186 @@ import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
+import { Button, CircularProgress, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { HiOutlinePencilSquare } from "react-icons/hi2";
+import DetalisFormatted from "../../../components/DetalisFormatted";
+import { DateRange } from "@mui/icons-material";
+import humanDate from "../../../utils/humanDateForamt";
+import { queryClient } from "../../../main";
 
 const HousekeepingTeamMembersSchedule = () => {
-  const navigate = useNavigate();
 
-  const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState(null);
-  const [previewImage, setPreviewImage] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);  
+  const [selectionRange, setSelectionRange] = useState({
+    startDate: new Date(),
+    endDate: new Date(),
+    key: "selection",
+  });
   const {
     handleSubmit,
     control,
+    setValue,
+    reset,
     formState: { errors },
   } = useForm({
     defaultValues: {
-      name: "",
-      assetType: "",
-      vendor: "",
-      purchaseDate: null,
-      quantity: null,
-      price: null,
-      warranty: null,
-      image: null,
-      brand: "",
-      department: "",
-      status: "",
-      assignedTo: "",
+      employee: "",
+      location: "",
+      startDate: new Date(),
+      endDate: new Date(),
     },
   });
 
-  const { data: assetsCategories = [], isPending: assetPending } = useQuery({
-    queryKey: ["assetsCategories"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-category");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
-  const { data: vendorDetials = [], isPending: isVendorDetails } = useQuery({
-    queryKey: ["vendorDetials"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/vendors/get-vendors");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
-
-  console.log(vendorDetials);
-
-  const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
-    mutationKey: ["addAsset"],
-    mutationFn: async (data) => {
-      const formData = new FormData();
-
-      formData.append("name", data.name);
-      formData.append("assetType", data.assetType);
-      formData.append("vendor", data.vendor);
-      formData.append("purchaseDate", data.purchaseDate);
-      formData.append("quantity", Number(data.quantity));
-      formData.append("price", Number(data.price));
-      formData.append("warranty", Number(data.warranty));
-      if (data.image) {
-        formData.append("image", data.image);
-      }
-      formData.append("brand", data.brand);
-      formData.append("department", data.department);
-      formData.append("status", data.status);
-      formData.append("assignedTo", data.assignedTo);
-
-      const response = await axios.post("/api/assets/create-asset");
-      return response.data;
-    },
-    onSuccess: function (data) {
-      toast.success(data.message);
-      setIsModalOpen(false);
-    },
-    onError: function (error) {
-      toast.error(error.message);
-    },
-  });
-
-  const assetColumns = [
-    { field: "id", headerName: "ID" },
-    { field: "department", headerName: "Department" },
-    // { field: "assetNumber", headerName: "Asset Number" },
-    { field: "category", headerName: "Category" },
-    { field: "brand", headerName: "Brand" },
-    // { field: "price", headerName: "Price" },
-    // { field: "quantity", headerName: "Quantity" },
-    // { field: "purchaseDate", headerName: "Purchase Date" },
-    // { field: "warranty", headerName: "Warranty (Months)" },
-    // {
-    //   field: "actions",
-    //   headerName: "Actions",
-    //   cellRenderer: (params) => (
-    //     <PrimaryButton
-    //       title="View Calendar"
-    //       handleSubmit={() => handleDetailsClick(params.data)}
-    //     />
-    //   ),
-    // },
+  const unitAssignees = [
     {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <PrimaryButton
-          title="View Calendar"
-          handleSubmit={() =>
-            navigate(
-              `/app/dashboard/admin-dashboard/housekeeping-members-calendar/${params.data.id}`,
-              {
-                state: { asset: params.data },
-              }
-            )
-          }
-        />
-      ),
+      "employee": {
+        "id": {
+          "_id": "emp001",
+          "firstName": "Gunaraj",
+          "lastName": ""
+        },
+        "isActive": true,
+        "isReassigned": false
+      },
+      "location": {
+        "_id": "loc001",
+        "unitNo": "5B",
+        "unitName": "5th B Wing",
+        "building": {
+          "_id": "bld001",
+          "buildingName": "Sunteck Kanaka"
+        }
+      },
+      "startDate": "2025-04-07T00:00:00.000Z",
+      "endDate": "2025-04-12T00:00:00.000Z",
+      "manager": "Machindranath Parkar"
     },
+    {
+      "employee": {
+        "id": {
+          "_id": "emp001",
+          "firstName": "Gunaraj",
+          "lastName": ""
+        },
+        "isActive": true,
+        "isReassigned": false
+      },
+      "location": {
+        "_id": "loc002",
+        "unitNo": "6A",
+        "unitName": "6th A Wing",
+        "building": {
+          "_id": "bld001",
+          "buildingName": "Sunteck Kanaka"
+        }
+      },
+      "startDate": "2025-04-07T00:00:00.000Z",
+      "endDate": "2025-04-12T00:00:00.000Z",
+      "manager": "Machindranath Parkar"
+    },
+    {
+      "employee": {
+        "id": {
+          "_id": "emp002",
+          "firstName": "Shamim",
+          "lastName": ""
+        },
+        "isActive": true,
+        "isReassigned": false
+      },
+      "location": {
+        "_id": "loc003",
+        "unitNo": "7A",
+        "unitName": "7th A Wing",
+        "building": {
+          "_id": "bld001",
+          "buildingName": "Sunteck Kanaka"
+        }
+      },
+      "startDate": "2025-04-07T00:00:00.000Z",
+      "endDate": "2025-04-12T00:00:00.000Z",
+      "manager": "Machindranath Parkar"
+    },
+    {
+      "employee": {
+        "id": {
+          "_id": "emp003",
+          "firstName": "Shreya",
+          "lastName": ""
+        },
+        "isActive": true,
+        "isReassigned": false
+      },
+      "location": {
+        "_id": "loc004",
+        "unitNo": "7B",
+        "unitName": "7th B Wing",
+        "building": {
+          "_id": "bld001",
+          "buildingName": "Sunteck Kanaka"
+        }
+      },
+      "startDate": "2025-04-07T00:00:00.000Z",
+      "endDate": "2025-04-12T00:00:00.000Z",
+      "manager": "Machindranath Parkar"
+    },
+    {
+      "employee": {
+        "id": {
+          "_id": "emp004",
+          "firstName": "Farida",
+          "lastName": ""
+        },
+        "isActive": true,
+        "isReassigned": false
+      },
+      "location": {
+        "_id": "loc005",
+        "unitNo": "DTC GF",
+        "unitName": "DTC Grd Floor",
+        "building": {
+          "_id": "bld001",
+          "buildingName": "Sunteck Kanaka"
+        }
+      },
+      "startDate": "2025-04-07T00:00:00.000Z",
+      "endDate": "2025-04-12T00:00:00.000Z",
+      "manager": "Machindranath Parkar"
+    }
   ];
+  
+  
+  // const { data: unitAssignees = [], isLoading: isUnitAssignees } = useQuery({
+  //   queryKey: ["unitAssignees"],
+  //   queryFn: async () => {
+  //     try {
+  //       const adminDepId = "6798bae6e469e809084e24a4";
+  //       const response = await axios.get(
+  //         `/api/administration/fetch-weekly-unit/${adminDepId}`);
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
 
-  const { data: assetsList = [] } = useQuery({
-    queryKey: ["assetsList"],
+  const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
+    queryKey: ["employees"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/assets/get-assets");
+        const adminDepId = "6798bae6e469e809084e24a4";
+        const response = await axios.get(`/api/users/fetch-users`, {
+          params: {
+            deptId: adminDepId,
+          },
+        });
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -151,338 +195,347 @@ const HousekeepingTeamMembersSchedule = () => {
     },
   });
 
-  const handleDetailsClick = (asset) => {
-    setSelectedAsset(asset);
-    setModalMode("view");
+  const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
+    queryKey: ["unitsData"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/company/fetch-units");
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching clients data:", error);
+      }
+    },
+  });
+
+ const { mutate: assignMember, isPending: isAssignMemberPending } =
+     useMutation({
+       mutationKey: ["assignMember"],
+       mutationFn: async (data) => {
+         const response = await axios.post(
+           "/api/administration/assign-weekly-unit",
+           data
+         );
+         return response.data;
+       },
+       onSuccess: (data) => {
+         queryClient.invalidateQueries({ queryKey: ["unitAssignees"] });
+         toast.success(data.message || "Data submitted successfully!");
+         reset();
+         setIsModalOpen(false);
+       },
+       onError: (error) => {
+         toast.error(error.message || "Error submitting data");
+       },
+     });
+
+  const memberColumns = [
+     { field: "id", headerName: "Sr No", width: 100 },
+     { field: "name", headerName: "Name" },
+     { field: "manager", headerName: "Manager" },
+     { field: "unitNo", headerName: "Unit",flex:"1" },
+     {
+       field: "actions",
+       headerName: "Actions",
+       cellRenderer: (params) => (
+         <div className="flex items-center gap-4 py-2">
+           <span
+             onClick={() => handleViewUser(params.data)}
+             className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
+           >
+             <MdOutlineRemoveRedEye />
+           </span>
+           <span
+             onClick={() => handleEditUser(params.data)}
+             className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
+           >
+             <HiOutlinePencilSquare />
+           </span>
+         </div>
+       ),
+     },
+  
+   ];
+
+  const handleAddUser = () => {
+    setModalMode("add");
     setIsModalOpen(true);
   };
 
-  const handleAddAsset = () => {
-    setModalMode("add");
-    setSelectedAsset(null);
+  const handleDateSelect = (ranges) => {
+    const { startDate, endDate } = ranges.selection;
+    setSelectionRange(ranges.selection);
+    // Update form state
+    setValue("startDate", startDate);
+    setValue("endDate", endDate);
+  };
+
+  const handleViewUser = (user) => {
+    setModalMode("view");
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
+
+  const handleEditUser = (user) => {
+    setModalMode("edit");
     setIsModalOpen(true);
   };
 
   const handleFormSubmit = (data) => {
-    if (modalMode === "add") {
-      addAsset(data);
-    }
+    assignMember(data);
   };
 
+  
   return (
-    <>
-      <AgTable
-        key={assetsList.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"Housekeeping Members Schedule"}
-        buttonTitle={"Add Asset"}
-        data={[
-          ...assetsList.map((asset, index) => ({
+    <div className="p-4">
+     {unitAssignees.length > 0 ? (
+        <AgTable
+          key={unitAssignees.length}
+          search={true}
+          tableTitle={"Housekeeping Members Schedule"}
+          buttonTitle={"Assign Member"}
+          data={unitAssignees.map((item, index) => ({
             id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price: asset.price,
-            quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
-          })),
-        ]}
-        columns={assetColumns}
-        handleClick={handleAddAsset}
-      />
+            meetingId: item._id,
+            employeeId: item.employee?.id?._id,
+            name: `${item.employee?.id?.firstName} ${item.employee?.id?.lastName}`,
+            isEmployeeAvailable: item.employee?.isActive,
+            assignmentId: item._id,
+            manager: item.manager,
+            startDate: item.startDate,
+            endDate: item.endDate,
+            locationId: item.location?._id,
+            unitName: item.location?.unitName,
+            unitNo: `${item.location?.building?.buildingName} ${item.location?.unitNo}`,
+            buildingId: item.location?.building?._id,
+            buildingName: item.location?.building?.buildingName,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            substitutions: item.substitutions?.map((sub) => ({
+              substitutionId: sub._id,
+              substituteId: sub.substitute?._id,
+              substituteFirstName: sub.substitute?.firstName,
+              substituteLastName: sub.substitute?.lastName,
+              fromDate: sub.fromDate,
+              toDate: sub.toDate,
+              isActive: sub.isActive,
+            })),
+          }))}
+          columns={memberColumns}
+          handleClick={handleAddUser}
+        />
+      ) : (
+        <div className="flex justify-center items-center h-[60vh]">
+          <CircularProgress />
+        </div>
+      )}
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        {modalMode === "add" && (
+<MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={"Assign Substitute"}
+      >
+         {modalMode === "add" && (
           <div>
-            <form onSubmit={handleSubmit(handleFormSubmit)}>
-              <div className="grid grid-cols-2 gap-4">
+            <form
+              onSubmit={handleSubmit(handleFormSubmit)}
+              className="flex flex-col gap-4"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <Controller
-                    name="image"
+                    name="employee"
+                    rules={{ required: "Select a Member" }}
                     control={control}
-                    rules={{ required: "Asset image is required" }}
                     render={({ field }) => (
-                      <div
+                      <TextField
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
-                          errors.assetImage
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } `}>
-                        <div
-                          className="w-full h-48 flex justify-center items-center relative"
-                          style={{
-                            backgroundImage: previewImage
-                              ? `url(${previewImage})`
-                              : "none",
-                            backgroundSize: "contain",
-                            backgroundPosition: "center",
-                            backgroundRepeat: "no-repeat",
-                          }}>
-                          <Button
-                            variant="outlined"
-                            component="label"
-                            sx={{
-                              position: "absolute",
-                              bottom: 8,
-                              right: 8,
-                              backgroundColor: "rgba(255, 255, 255, 0.7)",
-                              color: "#000",
-                              fontSize: "16px",
-                              fontWeight: "bold",
-                              padding: "8px 16px",
-                              borderRadius: "8px",
-                              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}>
-                            Select Image
-                            <input
-                              type="file"
-                              accept="image/*"
-                              hidden
-                              onChange={(e) => {
-                                if (e.target.files.length > 0) {
-                                  field.onChange(e.target.files);
-                                  setPreviewImage(previewImage);
-                                } else {
-                                  field.onChange(null);
-                                }
-                              }}
-                            />
-                          </Button>
-                        </div>
-                        {errors.assetImage && (
-                          <FormHelperText
-                            error
-                            sx={{
-                              position: "absolute",
-                              top: "50%",
-                              left: "50%",
-                              transform: "translate(-50%, -50%)",
-                              margin: 0,
-                            }}>
-                            {errors.assetImage.message}
-                          </FormHelperText>
+                        label="Select Member"
+                        fullWidth
+                        size="small"
+                        select
+                        error={!!errors.employee}
+                        helperText={errors.employee?.message}
+                      >
+                        <MenuItem value="" disabled>
+                          Select a Member
+                        </MenuItem>
+                        {!isEmployeesLoading ? (
+                          employees.map((item) => (
+                            <MenuItem key={item._id} value={item._id}>
+                              {item.firstName} {item.lastName}
+                            </MenuItem>
+                          ))
+                        ) : (
+                          <CircularProgress />
                         )}
-                      </div>
+                      </TextField>
                     )}
                   />
                 </div>
-                <Controller
-                  name="assetType"
-                  control={control}
-                  rules={{ required: "Department is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Asset Type"
-                      helperText={!!errors.assetType?.message}
-                      select>
-                      <MenuItem value="">Select an Asset Type</MenuItem>
-                      <MenuItem value="Physical">Physical</MenuItem>
-                      <MenuItem value="Digital">Digital</MenuItem>
-                    </TextField>
-                  )}
-                />
-
-                <Controller
-                  name="department"
-                  control={control}
-                  rules={{ required: "Department is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      error={!!errors.department}
-                      helperText={errors.department?.message}
-                      fullWidth
-                      {...field}
-                      select
-                      label="Department"
-                      size="small">
-                      {auth.user.company.selectedDepartments?.map((dept) => (
-                        <MenuItem key={dept._id} value={dept._id}>
-                          {dept.name}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-
-                <Controller
-                  name="categoryId"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Category is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      select
-                      label="Category"
-                      size="small">
-                      {assetsCategories.map((category) => (
-                        <MenuItem key={category._id} value={category._id}>
-                          {category.categoryName}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-                <Controller
-                  name="subCategoryId"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Sub-Category is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      select
-                      label="Sub-Category"
-                      size="small">
-                      {assetsCategories.subCategories?.map((subCategory) => (
-                        <MenuItem key={subCategory._id} value={subCategory._id}>
-                          {subCategory.categoryName}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-
-                {/* Department & Category */}
-                <Controller
-                  name="brand"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Brand is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      size="small"
-                      {...field}
-                      label="Brand Name"
-                      error={!!errors.brand}
-                      helperText={errors.brand?.message}
-                    />
-                  )}
-                />
-                {/* Quantity & Price */}
-                <Controller
-                  name="quantity"
-                  control={control}
-                  rules={{ required: "Quantity is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      size="small"
-                      {...field}
-                      label="Quantity"
-                      type="number"
-                      error={!!errors.quantity}
-                      helperText={errors.quantity?.message}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="price"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Price is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      size="small"
-                      {...field}
-                      label="Price"
-                      type="number"
-                      className=""
-                      error={!!errors.price}
-                      helperText={errors.price?.message}
-                    />
-                  )}
-                />
-
-                {/* <Controller
-              name="vendor"
-              control={control}
-              defaultValue=""
-              rules={{ required: "Vendor Name is required" }}
-              render={({ field }) => (
-                <TextField
-                  select
-                  {...field}
-                  label="Vendor Name"
-                  size="small"
-                  error={!!errors.department}
-                  helperText={errors.department?.message}
-                  fullWidth>
-                  {vendorDetials.map((vendor) => (
-                    <MenuItem key={vendor} value={vendor}>
-                      {vendor}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            /> */}
-                {/* Purchase Date & Warranty */}
-
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <div className="col-span-2 w-full">
+                  <DateRange
+                    ranges={[selectionRange]}
+                    onChange={handleDateSelect}
+                    moveRangeOnFirstSelection={false}
+                  />
+                </div>
+                <div className="col-span-2">
                   <Controller
-                    name="purchaseDate"
+                    name="location"
+                    rules={{ required: "Unit is required" }}
                     control={control}
-                    defaultValue={null}
-                    rules={{ required: "Purchase Date is required" }}
                     render={({ field }) => (
-                      <DatePicker
+                      <TextField
                         {...field}
-                        label="Purchase Date"
-                        slotProps={{
-                          textField: {
-                            size: "small",
-                            error: !!errors.purchaseDate,
-                            helperText: errors?.purchaseDate?.message,
-                          },
-                        }}
-                        className="w-full"
-                      />
+                        label={"Select Unit"}
+                        size="small"
+                        fullWidth
+                        error={!!errors.location}
+                        helperText={errors.unitId?.message}
+                        select
+                      >
+                        <MenuItem value="" disabled>
+                          Select Unit
+                        </MenuItem>
+                        {!isUnitsPending.length > 0 ? (
+                          unitsData.map((item) => (
+                            <MenuItem key={item._id} value={item._id}>
+                              {item.unitNo}
+                            </MenuItem>
+                          ))
+                        ) : (
+                          <CircularProgress />
+                        )}
+                      </TextField>
                     )}
                   />
-                </LocalizationProvider>
-
-                <Controller
-                  name="warranty"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Warranty is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      size="small"
-                      {...field}
-                      label="Warranty (Months)"
-                      type="number"
-                      error={!!errors.warranty}
-                      helperText={errors.warranty?.message}
-                    />
-                  )}
-                />
-                <FormHelperText>{errors.category?.message}</FormHelperText>
+                </div>
               </div>
-              {/* Main end div*/}
-              {/* Conditionally render submit/edit button */}
-              <div className="flex gap-4 justify-center items-center mt-4">
+              <div className=" w-full">
                 <PrimaryButton
-                  title={modalMode === "add" ? "Submit" : "Update"}
+                  title="Submit"
+                  externalStyles={"w-full"}
+                  isLoading={isAssignMemberPending}
+                  disabled={isAssignMemberPending}
                 />
-                {/* Cancel button for edit mode */}
               </div>
             </form>
           </div>
         )}
+
+        {modalMode === "view" && selectedUser && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <DetalisFormatted title="Name" detail={selectedUser.name} />
+            <DetalisFormatted
+              title="Member Status"
+              gap={"w-full"}
+              detail={selectedUser.isEmployeeActive ? "Active" : "InActive"}
+            />
+            <DetalisFormatted
+              title="Unit Name"
+              detail={selectedUser.unitName}
+            />
+            <DetalisFormatted
+              title="Building Name"
+              gap={"w-full"}
+              detail={selectedUser.buildingName}
+            />
+
+            {/* DateRange picker view-only*/}
+            <div className="md:col-span-2">
+              <h3 className="text-subtitle font-pmedium text-gray-700 mb-1">
+                Date Range
+              </h3>
+              <div className="border border-borderGray rounded-2xl overflow-hidden shadow-sm">
+                <DateRange
+                  ranges={[
+                    {
+                      startDate: new Date(selectedUser.startDate),
+                      endDate: new Date(selectedUser.endDate),
+                      key: "selection",
+                    },
+                  ]}
+                  onChange={() => {
+                    "";
+                  }}
+                  editableDateInputs={false}
+                  showDateDisplay={false}
+                  moveRangeOnFirstSelection={false}
+                  disabledDay={() => true}
+                />
+              </div>
+            </div>
+
+            <div className="md:col-span-2 mt-2">
+              <h3 className="text-subtitle font-pmedium text-gray-700 mb-3">
+                Substitutes
+              </h3>
+              {selectedUser.substitutions?.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-8">
+                  {selectedUser.substitutions.map((sub, index) => (
+                    <div
+                      key={sub.substitutionId}
+                      className="flex flex-col gap-2 border border-borderGray rounded-2xl p-4"
+                    >
+                      <h4 className="text-subtitle font-pmedium text-primary mb-2">
+                        Substitute {index + 1}
+                      </h4>
+                      <DetalisFormatted
+                        title="First Name"
+                        detail={sub.substituteFirstName}
+                      />
+                      <DetalisFormatted
+                        title="Last Name"
+                        detail={sub.substituteLastName}
+                      />
+                      <DetalisFormatted
+                        title="From"
+                        detail={humanDate(sub.fromDate)}
+                      />
+                      <DetalisFormatted
+                        title="To"
+                        detail={humanDate(sub.toDate)}
+                      />
+                      <DetalisFormatted
+                        title="Is Active"
+                        detail={sub.isActive ? "Yes" : "No"}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500 italic">
+                  No substitute assigned
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {modalMode === "edit" && selectedUser && (
+          <>
+            <form onSubmit={""}>
+              <div className="border border-borderGray rounded-2xl overflow-hidden shadow-sm">
+                <DateRange
+                  ranges={[
+                    {
+                      startDate: new Date(selectedUser.startDate),
+                      endDate: new Date(selectedUser.endDate),
+                      key: "selection",
+                    },
+                  ]}
+                  onChange={() => {
+                    "";
+                  }}
+                  editableDateInputs={false}
+                  showDateDisplay={false}
+                  moveRangeOnFirstSelection={false}
+                />
+              </div>
+            </form>
+          </>
+        )} 
       </MuiModal>
-    </>
+    </div>
   );
 };
 

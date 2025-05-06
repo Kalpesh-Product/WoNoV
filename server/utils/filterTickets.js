@@ -11,6 +11,7 @@ function generateQuery(queryMapping, roles) {
         (userRole) => userRole === roleTitle || userRole.endsWith(roleTitle)
       )
     ) || "None";
+
   return queryMapping[matchedRole] || {};
 }
 
@@ -66,12 +67,16 @@ async function filterAcceptedAssignedTickets(user, roles, userDepartments) {
     "Master Admin": {
       $or: [
         {
-          $and: [{ acceptedBy: { $exists: true } }, { status: "In Progress" }],
+          $and: [
+            { acceptedBy: { $exists: true } },
+            { raisedToDepartment: { $in: userDepartments } },
+            { status: "In Progress" },
+          ],
         },
         {
           $and: [
             { assignees: { $exists: true, $ne: [] } },
-
+            { raisedToDepartment: { $in: userDepartments } },
             { status: "In Progress" },
           ],
         },
@@ -80,12 +85,16 @@ async function filterAcceptedAssignedTickets(user, roles, userDepartments) {
     "Super Admin": {
       $or: [
         {
-          $and: [{ acceptedBy: { $exists: true } }, { status: "In Progress" }],
+          $and: [
+            { acceptedBy: { $exists: true } },
+            { raisedToDepartment: { $in: userDepartments } },
+            { status: "In Progress" },
+          ],
         },
         {
           $and: [
             { assignees: { $exists: true, $ne: [] } },
-
+            { raisedToDepartment: { $in: userDepartments } },
             { status: "In Progress" },
           ],
         },
@@ -125,10 +134,18 @@ async function filterAcceptedAssignedTickets(user, roles, userDepartments) {
 async function filterAcceptedTickets(user, roles, userDepartments) {
   const queryMapping = {
     "Master Admin": {
-      $and: [{ acceptedBy: { $exists: true } }, { status: "In Progress" }],
+      $and: [
+        { acceptedBy: { $exists: true } },
+        { raisedToDepartment: { $in: userDepartments } },
+        { status: "In Progress" },
+      ],
     },
     "Super Admin": {
-      $and: [{ acceptedBy: { $exists: true } }, { status: "In Progress" }],
+      $and: [
+        { acceptedBy: { $exists: true } },
+        { raisedToDepartment: { $in: userDepartments } },
+        { status: "In Progress" },
+      ],
     },
     Admin: {
       $and: [
@@ -152,14 +169,14 @@ async function filterAssignedTickets(user, roles, userDepartments) {
     "Master Admin": {
       $and: [
         { assignees: { $exists: true, $ne: [] } },
-
+        { raisedToDepartment: { $in: userDepartments } },
         { status: "In Progress" },
       ],
     },
     "Super Admin": {
       $and: [
         { assignees: { $exists: true, $ne: [] } },
-
+        { raisedToDepartment: { $in: userDepartments } },
         { status: "In Progress" },
       ],
     },
@@ -228,9 +245,10 @@ async function filterSupportTickets(user, roles, userDepartments) {
       })
       .select("-company");
 
-    if (matchedRole === "Master Admin" || matchedRole === "Super Admin") {
-      return supportTickets;
-    } else if (matchedRole === "Admin") {
+    // if (matchedRole === "Master Admin" || matchedRole === "Super Admin") {
+    //   return supportTickets;
+    // }
+    if (matchedRole.endsWith("Admin")) {
       let adminTickets = supportTickets.filter((ticket) => {
         return userDepartments.some((dept) => {
           return ticket.ticket.raisedToDepartment._id.equals(
@@ -255,12 +273,14 @@ async function filterSupportTickets(user, roles, userDepartments) {
 async function filterEscalatedTickets(roles, userDepartments) {
   const queryMapping = {
     "Master Admin": {
-      // escalatedTo: { $exists: true, $ne: [] },
-      status: "Escalated",
+      $and: [
+        { raisedToDepartment: { $in: userDepartments }, status: "Escalated" },
+      ],
     },
     "Super Admin": {
-      // escalatedTo: { $exists: true, $ne: [] },
-      status: "Escalated",
+      $and: [
+        { raisedToDepartment: { $in: userDepartments }, status: "Escalated" },
+      ],
     },
     Admin: {
       $and: [
@@ -268,12 +288,6 @@ async function filterEscalatedTickets(roles, userDepartments) {
           raisedToDepartment: { $in: userDepartments },
           status: { $ne: "Closed" },
         },
-        // {
-        //   escalatedTo: {
-        //     $exists: true,
-        //     $ne: [],
-        //   },
-        // },
         { status: "Escalated" },
       ],
     },
@@ -291,10 +305,16 @@ async function filterEscalatedTickets(roles, userDepartments) {
 async function filterCloseTickets(user, roles, userDepartments) {
   const queryMapping = {
     "Master Admin": {
-      $and: [{ status: "Closed" }, { raisedBy: { $ne: user } }],
+      $and: [
+        { status: "Closed" },
+        { raisedToDepartment: { $in: userDepartments } },
+      ],
     },
     "Super Admin": {
-      $and: [{ status: "Closed" }, { raisedBy: { $ne: user } }],
+      $and: [
+        { status: "Closed" },
+        { raisedToDepartment: { $in: userDepartments } },
+      ],
     },
     Admin: {
       $and: [

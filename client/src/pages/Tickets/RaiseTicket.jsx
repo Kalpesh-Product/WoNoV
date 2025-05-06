@@ -17,15 +17,17 @@ import { TextField, MenuItem } from "@mui/material";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { Controller, useForm } from "react-hook-form";
 import { LuImageUp, LuImageUpscale } from "react-icons/lu";
-import { MdDelete } from "react-icons/md";
+import { MdDelete, MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../components/MuiModal";
 import { queryClient } from "../../main";
+import DetalisFormatted from "../../components/DetalisFormatted";
 
 const RaiseTicket = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [preview, setPreview] = useState(null);
   const [ticketIssues, setTicketIssues] = useState([]); // State for ticket issues
   const [openModal, setOpenModal] = useState(false);
+  const [viewTicketDetails, setViewTicketDetails] = useState({})
   const axios = useAxiosPrivate();
   const imageRef = useRef();
 
@@ -99,7 +101,7 @@ const RaiseTicket = () => {
       reset();
     },
     onError: function (data) {
-      toast.error(data.message || "Something went wrong");
+      toast.error(data.response.data.message || "Something went wrong");
     },
   });
 
@@ -132,70 +134,92 @@ const RaiseTicket = () => {
     return otherTicket ? otherTicket._id : null;
   };
 
+  const handleViewTicketDetails = (ticket) => {
+    setViewTicketDetails(ticket);
+    setOpenModal(true);
+  };
+
+
   const recievedTicketsColumns = [
-    { field: "id", headerName: "Sr No", sort: "desc" },
-    { field: "raisedBy", headerName: "Raised By" },
-    { field: "raisedTo", headerName: "To Department" },
-    { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
-    { field: "description", headerName: "Description", flex: 1 },
+    { field: "id", headerName: "Sr No", width: 80, sort: "desc" },
+    { field: "raisedBy", headerName: "Raised By", width: 150 },
+    { field: "raisedTo", headerName: "To Department", width: 150 },
+    { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
+    { field: "description", headerName: "Description", width: 300 },
 
     {
       field: "priority",
       headerName: "Priority",
+      width: 130,
       cellRenderer: (params) => {
         const statusColorMap = {
-          High: { backgroundColor: "#FFC5C5", color: "#8B0000" }, // Light red bg, dark red font
-          Medium: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-          Low: { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+          High: { backgroundColor: "#FFC5C5", color: "#8B0000" },
+          Medium: { backgroundColor: "#FFECC5", color: "#CC8400" },
+          Low: { backgroundColor: "#ADD8E6", color: "#00008B" },
         };
 
         const { backgroundColor, color } = statusColorMap[params.value] || {
           backgroundColor: "gray",
           color: "white",
         };
+
         return (
-          <>
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-          </>
+          <Chip
+            label={params.value}
+            style={{
+              backgroundColor,
+              color,
+            }}
+          />
         );
       },
     },
     {
       field: "status",
       headerName: "Status",
+      width: 140,
       cellRenderer: (params) => {
         const statusColorMap = {
-          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-          "in-progress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
-          resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-          open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
-          completed: { backgroundColor: "#D3D3D3", color: "#696969" }, // Light gray bg, dark gray font
+          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
+          "in-progress": { backgroundColor: "#ADD8E6", color: "#00008B" },
+          resolved: { backgroundColor: "#90EE90", color: "#006400" },
+          open: { backgroundColor: "#E6E6FA", color: "#4B0082" },
+          completed: { backgroundColor: "#D3D3D3", color: "#696969" },
         };
 
         const { backgroundColor, color } = statusColorMap[params.value] || {
           backgroundColor: "gray",
           color: "white",
         };
+
         return (
-          <>
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-          </>
+          <Chip
+            label={params.value}
+            style={{
+              backgroundColor,
+              color,
+            }}
+          />
         );
       },
     },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 100,
+      cellRenderer: (params) => (
+        <div className="p-2 mb-2 flex gap-2">
+          <span
+            className="text-subtitle cursor-pointer"
+            onClick={() => handleViewTicketDetails(params.data)}
+          >
+            <MdOutlineRemoveRedEye />
+          </span>
+        </div>
+      ),
+    },
   ];
+
 
   return (
     <div className="p-4 flex flex-col gap-4">
@@ -441,6 +465,21 @@ const RaiseTicket = () => {
           )}
         </div>
       </div>
+      <MuiModal
+        open={openModal && viewTicketDetails}
+        onClose={() => setOpenModal(false)}
+        title={"View Ticket Details"}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+          <DetalisFormatted title="Raised By" detail={viewTicketDetails?.raisedBy} />
+          <DetalisFormatted title="Raised To" detail={viewTicketDetails?.raisedTo} />
+          <DetalisFormatted title="Ticket Title" detail={viewTicketDetails?.ticketTitle} />
+          <DetalisFormatted title="Description" detail={viewTicketDetails?.description} />
+          <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
+          <DetalisFormatted title="Priority" detail={viewTicketDetails?.priority} />
+        </div>
+      </MuiModal>
+
     </div>
   );
 };

@@ -28,10 +28,69 @@ const MeetingSettings = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const { auth } = useAuth();
   const inputRef = useRef();
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const {
+    control: editControl,
+    handleSubmit: handleEditSubmit,
+    reset: resetEditForm,
+  } = useForm();
+  const [editFile, setEditFile] = useState(null);
+  const editInputRef = useRef();
+
+  const handleOpenEditModal = (room) => {
+    setSelectedRoom(room);
+    resetEditForm({
+      roomName: room.name,
+      seats: room.seats,
+      description: room.description,
+      location: room.location,
+      roomImage: null,
+    });
+    setEditFile(null);
+    setOpenEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setOpenEditModal(false);
+    setSelectedRoom(null);
+    resetEditForm();
+    setEditFile(null);
+  };
+
+  const editRoomMutation = useMutation({
+    mutationFn: async ({ id, formData }) => {
+      return axios.put(`/api/meetings/update-room/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Room updated successfully!");
+      queryClient.invalidateQueries(["meetingRooms"]);
+      handleCloseEditModal();
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update room.");
+    },
+  });
+
+  const onEditSubmit = async (data) => {
+    const formData = new FormData();
+    formData.append("name", data.roomName);
+    formData.append("seats", data.seats);
+    formData.append("description", data.description);
+    formData.append("location", data.location);
+
+    if (editFile) {
+      formData.append("room", editFile);
+    }
+
+    editRoomMutation.mutate({ id: selectedRoom._id, formData });
+  };
 
 
   // Fetch Meeting Rooms from API
-  const { data: meetingRooms = [], isPending:isMeetingRoomsLoading } = useQuery({
+  const { data: meetingRooms = [], isPending: isMeetingRoomsLoading } = useQuery({
     queryKey: ["meetingRooms"],
     queryFn: async () => {
       try {
@@ -129,11 +188,10 @@ const MeetingSettings = () => {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-subtitle">{room.name}</span>
                   <span
-                    className={`px-4 py-1 text-content font-pregular rounded-full ${
-                      room.status === "Available"
-                        ? "bg-green-100 text-green-600"
-                        : "bg-red-100 text-red-600"
-                    }`}
+                    className={`px-4 py-1 text-content font-pregular rounded-full ${room.status === "Available"
+                      ? "bg-green-100 text-green-600"
+                      : "bg-red-100 text-red-600"
+                      }`}
                   >
                     {room.status}
                   </span>
@@ -150,11 +208,15 @@ const MeetingSettings = () => {
                   Fits {room.seats} people
                 </p>
                 <div className="mt-4">
-                  <PrimaryButton title={"Edit Room"} />
+                  <PrimaryButton
+                    title={"Edit Room"}
+                    handleSubmit={() => handleOpenEditModal(room)}
+                  />
+
                 </div>
               </CardContent>
             </Card>
-          )) : <CircularProgress color="#1E3D73"/>}
+          )) : <CircularProgress color="#1E3D73" />}
         </div>
       </div>
 
@@ -275,6 +337,107 @@ const MeetingSettings = () => {
           </form>
         </div>
       </MuiModal>
+      <MuiModal
+        open={openEditModal}
+        onClose={handleCloseEditModal}
+        title={"Edit Meeting Room"}
+      >
+        <div className="flex flex-col gap-4">
+          <form onSubmit={handleEditSubmit(onEditSubmit)}>
+            <div className="flex flex-col gap-4">
+              <Controller
+                name="roomName"
+                control={editControl}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField {...field} label="Room Name" variant="outlined" size="small" fullWidth />
+                )}
+              />
+              <Controller
+                name="seats"
+                control={editControl}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField {...field} label="Seats" variant="outlined" size="small" fullWidth />
+                )}
+              />
+              <Controller
+                name="description"
+                control={editControl}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField {...field} label="Description" multiline rows={5} variant="outlined" fullWidth />
+                )}
+              />
+              <Controller
+                name="location"
+                control={editControl}
+                defaultValue=""
+                render={({ field }) => (
+                  <FormControl size="small" fullWidth>
+                    <InputLabel>Location</InputLabel>
+                    <Select {...field} label="Work Location">
+                      <MenuItem value="">Select Location</MenuItem>
+                      {auth.user.company.workLocations.length > 0 ? (
+                        auth.user.company.workLocations.map((loc) => (
+                          <MenuItem key={loc._id} value={loc.buildingName}>
+                            {loc.buildingName}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem disabled>No Locations Available</MenuItem>
+                      )}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+              <Controller
+                name="roomImage"
+                control={editControl}
+                defaultValue={null}
+                render={({ field }) => (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-content">Update Room Image</span>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        id="edit-upload-file"
+                        onChange={(event) => {
+                          const file = event.target.files[0];
+                          setEditFile(file);
+                          field.onChange(file);
+                        }}
+                      />
+                      <label htmlFor="edit-upload-file">
+                        <Button
+                          sx={{
+                            backgroundColor: "#ebf5ff",
+                            color: "#4b5d87",
+                            fontFamily: "Poppins-Bold",
+                          }}
+                          variant="contained"
+                          component="span"
+                        >
+                          Choose File
+                        </Button>
+                      </label>
+                      <span className="text-content">
+                        {editFile ? editFile.name : "No file chosen"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              />
+              <div className="flex justify-center">
+                <PrimaryButton title={"Save Changes"} type={"submit"} />
+              </div>
+            </div>
+          </form>
+        </div>
+      </MuiModal>
+
     </div>
   );
 };

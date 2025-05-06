@@ -1,11 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
 import biznestLogo from "../../../../assets/biznest/biznest_logo.jpg";
 import HierarchyTree from "../../../../components/HierarchyTree";
 import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import { IoIosArrowDown, IoIosArrowForward } from "react-icons/io";
 import AccessTree from "../../../../components/AccessTree";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { toast } from "sonner";
 
 const CompanyHandbook = () => {
+  const [generalDoc, setGeneralDoc] = useState(null); // initially null
+  const axios = useAxiosPrivate();
+  const { data: companyDocuments = {}, isLoading: isDocumentsLoading } =
+    useQuery({
+      queryKey: ["companyDocuments", generalDoc],
+      queryFn: async () => {
+        if (!generalDoc) return {}; // don't run until type is selected
+        try {
+          const response = await axios.get(
+            `/api/company/get-company-documents/${generalDoc}`
+          );
+          return response.data;
+        } catch (error) {
+          toast.error(error.message);
+          return {};
+        }
+      },
+      enabled: !!generalDoc, // disables initial fetch until a type is selected
+    });
   const accordionData = [
     {
       id: 1,
@@ -350,26 +372,31 @@ const CompanyHandbook = () => {
       title: "SOPs",
       content: (
         <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <span className="text-content">Leave SOP</span>
-            </div>
-            <div>
-              <button className="p-2 border-default border-black rounded-md text-content">
-                <IoIosArrowForward />
-              </button>
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <div>
-              <span className="text-content">Attendance SOP</span>
-            </div>
-            <div>
-              <button className="p-2 border-default border-black rounded-md text-content">
-                <IoIosArrowForward />
-              </button>
-            </div>
-          </div>
+          {isDocumentsLoading ? (
+            <span className="text-sm text-gray-500">Loading...</span>
+          ) : companyDocuments?.[generalDoc]?.length > 0 ? (
+            companyDocuments[generalDoc].map((doc) => (
+              <div key={doc._id} className="flex justify-between items-center">
+                <div>
+                  <span className="text-content">{doc.name}</span>
+                </div>
+                <div>
+                  <a
+                    href={doc.documentLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 border-default border-black rounded-md text-content flex items-center"
+                  >
+                    <IoIosArrowForward />
+                  </a>
+                </div>
+              </div>
+            ))
+          ) : (
+            <span className="text-sm text-gray-500">
+              No documents available.
+            </span>
+          )}
         </div>
       ),
     },
@@ -500,7 +527,7 @@ const CompanyHandbook = () => {
       </div> */}
       <div className="flex">
         <div className="w-full h-full shadow-md p-4 rounded-md">
-          <AccessTree />
+          <AccessTree clickState={false} />
         </div>
       </div>
 
@@ -514,18 +541,22 @@ const CompanyHandbook = () => {
           {accordionDataGeneral.map((item) => (
             <Accordion
               sx={{ boxShadow: "none", border: "1px solid #d1d5db" }}
-              key={item.id}>
+              key={item.id}
+              onChange={() => {
+                if (item.title === "SOPs") setGeneralDoc("sop");
+                else if (item.title === "Policies") setGeneralDoc("policies");
+              }}
+            >
               <AccordionSummary
                 expandIcon={<IoIosArrowDown />}
                 aria-controls={`panel${item.id}-content`}
                 id={`panel${item.id}-header`}
-                // sx={{borderBottom:'1px solid #d1d5db'}}
               >
                 <span className="text-subtitle">{item.title}</span>
               </AccordionSummary>
               <div className="border-[1px] border-borderGray"></div>
               <AccordionDetails sx={{ padding: "1rem" }}>
-                <span className="text-content">{item.content}</span>
+                {item.content}
               </AccordionDetails>
             </Accordion>
           ))}
@@ -538,7 +569,8 @@ const CompanyHandbook = () => {
           {accordionData.map((item) => (
             <Accordion
               sx={{ boxShadow: "none", border: "1px solid #d1d5db" }}
-              key={item.id}>
+              key={item.id}
+            >
               <AccordionSummary
                 expandIcon={<IoIosArrowDown />}
                 aria-controls={`panel${item.id}-content`}

@@ -16,6 +16,8 @@ const CustomError = require("../../utils/customErrorlogs");
 const buildHierarchy = require("../../utils/generateHierarchy");
 const UserData = require("../../models/hr/UserData");
 const Unit = require("../../models/locations/Unit");
+const Attandance = require("../../models/hr/Attendance");
+const Events = require("../../models/events/Events");
 
 const addCompany = async (req, res, next) => {
   const logPath = "hr/HrLog";
@@ -256,10 +258,13 @@ const getCompanyData = async (req, res, next) => {
 
     // Define which fields need to be populated
     const fieldsToPopulate = {
-      selectedDepartments: { path: "selectedDepartments.department", select: "name" },
+      selectedDepartments: {
+        path: "selectedDepartments.department",
+        select: "name",
+      },
       employeeTypes: "", // No population
-      leaveTypes: "",    // No population
-      shifts: "",        // No population
+      leaveTypes: "", // No population
+      shifts: "", // No population
     };
 
     // Build the query
@@ -271,7 +276,9 @@ const getCompanyData = async (req, res, next) => {
     const company = await query.exec();
 
     if (!company || !company[field]) {
-      return res.status(404).json({ message: `Couldn't fetch the data for '${field}'` });
+      return res
+        .status(404)
+        .json({ message: `Couldn't fetch the data for '${field}'` });
     }
 
     // Special case: selectedDepartments needs extra processing
@@ -280,8 +287,9 @@ const getCompanyData = async (req, res, next) => {
         company.selectedDepartments.map(async (dep) => {
           if (!dep.admin) return { ...dep._doc, admin: null };
 
-          const manager = await UserData.findOne({ role: { $in: [dep.admin] } })
-            .select("firstName lastName role");
+          const manager = await UserData.findOne({
+            role: { $in: [dep.admin] },
+          }).select("firstName lastName role");
 
           return {
             ...dep._doc,
@@ -290,12 +298,13 @@ const getCompanyData = async (req, res, next) => {
         })
       );
 
-      return res.status(200).json({ selectedDepartments: departmentsWithManagers });
+      return res
+        .status(200)
+        .json({ selectedDepartments: departmentsWithManagers });
     }
 
     // Default return for other fields
     return res.status(200).json({ [field]: company[field] });
-
   } catch (error) {
     next(error);
   }
@@ -420,6 +429,36 @@ const getHierarchy = async (req, res, next) => {
   }
 };
 
+const getCompanyAttandances = async (req, res, next) => {
+  try {
+    const loggedInUser = req.user;
+    const { company } = req;
+    const companyAttandances = await Attandance.find({ company }).lean().exec();
+    let sundays = 0;
+    let year = new Date().getFullYear().toString();
+    for (let month = 0; month < 12; month++) {
+      for (let day = 1; day <= 31; day++) {
+        const date = new Date(year, month, day);
+        if (date.getMonth() !== month) break; // invalid date
+        if (date.getDay() === 0) sundays++; // 0 = Sunday
+      }
+    }
+    const holidays = await Events.find({ company, type: "Holiday" })
+      .lean()
+      .exec();
+    const workingDays = 365 - (holidays.length + sundays);
+    res.status(200).json({ companyAttandances, workingDays });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
+  }
+};
+
 module.exports = {
   addCompany,
   addCompanyLogo,
@@ -428,4 +467,5 @@ module.exports = {
   getCompanyData,
   getCompanyLogo,
   getHierarchy,
+  getCompanyAttandances,
 };

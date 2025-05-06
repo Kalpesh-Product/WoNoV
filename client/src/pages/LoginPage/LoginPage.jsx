@@ -14,9 +14,13 @@ import WonoLogo from "../../assets/WONO_images/img/WONO.png";
 import Footer from "../../components/Footer";
 import { CircularProgress, InputAdornment, IconButton } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { Drawer, List, ListItem, ListItemText } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import { IoCloseSharp } from "react-icons/io5";
 
 const LoginPage = () => {
   const { auth, setAuth } = useAuth();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,49 +62,130 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
+  const navItems = [
+    { label: "Modules", link: "https://wono.co/modules" },
+    { label: "Themes", link: "https://wono.co/themes" },
+    { label: "Leads", link: "https://wono.co/leads" },
+    { label: "Capital", link: "https://wono.co/capital" },
+    { label: "Career", link: "https://wono.co/career" },
+  ];
 
   return (
     <>
-      <div className="bg-black flex justify-around py-4">
-        <div>
-          <img src={WonoLogo} alt="wono" />
-        </div>
-        <div className="flex items-center uppercase">
-          <ul className="flex gap-5 text-white uppercase font-thin">
-            <li className="cursor-pointer">Modules</li>
-            <li className="cursor-pointer">Themes</li>
-            <li className="cursor-pointer">Leads</li>
-            <li className="cursor-pointer">Capital</li>
-            <li className="cursor-pointer">Career</li>
-          </ul>
-        </div>
-        <div className="flex gap-6">
-          <div className="flex gap-6">
-            <button className="bg-white text-black py-2 px-6 rounded-full uppercase">
-              Sign-In
+      {/* Header */}
+      <div className="bg-black flex justify-between items-center py-6 px-6 md:px-28">
+        {/* Logo */}
+        <a href="https://wono.co">
+          <img src={WonoLogo} alt="wono" className="w-28" />
+        </a>
+
+        {/* Desktop Nav */}
+        <ul className="hidden md:flex gap-6 text-white uppercase font-thin items-center">
+          {navItems.map((item, idx) => (
+            <li key={idx} className="cursor-pointer hover:underline">
+              <a href={item.link}>{item.label}</a>
+            </li>
+          ))}
+        </ul>
+
+        {/* Desktop Buttons */}
+        <div className="hidden md:flex gap-4">
+          <a href="https://wonofe.vercel.app">
+            <button className="bg-white text-black py-2 px-4 rounded-full uppercase">
+              Sign In
             </button>
-            <button className="bg-sky-400 text-white py-2 px-6 rounded-full uppercase">
-              Sign-Up
+          </a>
+          <a href="https://www.wono.co/register">
+            <button className="bg-sky-400 text-white py-2 px-4 rounded-full uppercase">
+              Sign Up
             </button>
+          </a>
+        </div>
+
+        {/* Mobile Menu Button */}
+        <div className="md:hidden">
+          <div onClick={() => setDrawerOpen(true)} className="text-white">
+            <MenuIcon />
           </div>
         </div>
       </div>
+      {/* Mobile Drawer */}
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}>
+        {/* Drawer Header */}
+        <div className="w-full bg-black text-white flex justify-end items-center border-b border-gray-700 p-4 text-2xl">
+          <button onClick={() => setDrawerOpen(false)}>
+            <IoCloseSharp />
+          </button>
+        </div>
+
+        {/* Drawer Body */}
+        <div className="w-96 h-screen p-6 flex flex-col gap-8 items-center uppercase bg-black text-white text-center">
+          <div
+            className="cursor-pointer hover:text-gray-400"
+            onClick={() => setDrawerOpen(false)}>
+            <a href="https://wono.co/" className="block w-full uppercase">
+              Home
+            </a>
+          </div>
+          <hr className="w-[80%] text-gray-300" />
+
+          {/* Dynamic nav items */}
+          {navItems.map((item, index) => (
+            <React.Fragment key={index}>
+              <div
+                className="cursor-pointer hover:text-gray-400"
+                onClick={() => setDrawerOpen(false)}>
+                <a href={item.link} className="block w-full uppercase">
+                  {item.label}
+                </a>
+              </div>
+              <hr className="w-[80%] text-gray-300" />
+            </React.Fragment>
+          ))}
+
+          {/* Sign In button */}
+          <div className="flex flex-col w-full items-center gap-6">
+            <div>
+              <a
+                href="https://wonofe.vercel.app"
+                className="block px-10 py-2 uppercase bg-white text-black mx-auto w-max rounded-full">
+                Sign In
+              </a>
+            </div>
+            <hr className="w-[75%]" />
+            <div>
+              <a
+                href="https://wono.co/register"
+                className="block px-10 py-2 uppercase bg-[#0aa9ef] text-white mx-auto w-max rounded-full">
+                Sign Up
+              </a>
+            </div>
+          </div>
+        </div>
+      </Drawer>
+      {/* Header */}
       <div className="login-section loginTopPadding loginBottomPadding poppinsRegular heightPadding">
-        <h1 className="text-center text-4xl font-bold">LOG IN</h1>
+        <h1 className="text-center text-4xl font-bold">SIGN IN</h1>
         <div className="loginDividingContainer shrink-container">
           <div className="loginLeftContainer">
-            <Container maxWidth="md" style={{ padding: "3rem 0 0" }}>
+            <Container
+              maxWidth="lg"
+              style={{ padding: "3rem 0 0" }}
+              direction={{ xs: "column", md: "row" }}>
               <Box
                 component="form"
                 sx={{ flexGrow: 1 }}
                 onSubmit={handleLogin}
                 noValidate
                 autoComplete="off">
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sx={{ width: "100%" }}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <Grid item xs={12}>
                     <TextField
                       label="Email"
-                      variant="outlined"
+                      variant="standard"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -108,10 +193,10 @@ const LoginPage = () => {
                     />
                   </Grid>
 
-                  <Grid item xs={12} sx={{ width: "100%" }}>
+                  <Grid item xs={12}>
                     <TextField
                       label="Password"
-                      variant="outlined"
+                      variant="standard"
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -135,99 +220,45 @@ const LoginPage = () => {
                       }}
                     />
                   </Grid>
-                </Grid>
-                <div className="flex flex-col justify-center w-full items-start gap-4">
-                  <Grid style={{ paddingTop: "0" }} p={0}>
-                    <Box p={0} mt={2}>
-                      <Link
-                        to="/forgot-password"
-                        style={{ textDecoration: "none" }}>
-                        Forgot Password?
-                      </Link>
-                    </Box>
-                  </Grid>
+                </div>
 
-                  <Grid item xs={12}>
-                    <div className="centerInPhone">
-                      <button
-                        disabled={loading}
-                        type="submit"
-                        className="loginButtonStyling text-decoration-none">
-                        {loading ? (
-                          <CircularProgress size={20} color="white" />
-                        ) : (
-                          "Login"
-                        )}
-                      </button>
-                    </div>
-                  </Grid>
+                <div className="mt-2 col-span-2 text-end">
+                  <Link
+                    to="https://wono.co/forgot-password"
+                    className="hover:underline text-black">
+                    Forgot Password?
+                  </Link>
+                </div>
+                <div className="flex">
+                  <div className="flex flex-col justify-center w-full items-center gap-4 mt-4">
+                    <Grid item xs={12}>
+                      <div className="centerInPhone">
+                        <button
+                          disabled={loading}
+                          type="submit"
+                          className="loginButtonStyling text-decoration-none text-subtitle w-40">
+                          {loading ? (
+                            <CircularProgress size={20} color="white" />
+                          ) : (
+                            "SIGN IN"
+                          )}
+                        </button>
+                      </div>
+                    </Grid>
+                    <p className="text-[0.9rem]">
+                      Don't have an account?{" "}
+                      <span
+                        onClick={() =>
+                          (window.location.href = "https://wono.co/register")
+                        }
+                        className="underline hover:text-primary cursor-pointer">
+                        Sign Up
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </Box>
             </Container>
-          </div>
-          <div className="fullHeight LoginMiddleContainer">
-            <div className="vertical-line lineSideMargin">
-              <hr className="hrHeight" />
-            </div>
-            <div className="lineSideMargin">or</div>
-            <div className="vertical-line lineSideMargin">
-              <hr className="hrHeight" />
-            </div>
-          </div>
-          <div className="phoneDividerContainer">
-            <div className="phoneDivider w-100">
-              <div className="w-100 bg-secondary border-secondary border-bottom line-height"></div>
-              <div className="w-100 text-center">or</div>
-              <div className="w-100 bg-secondary border-secondary border-bottom line-height"></div>
-            </div>
-          </div>
-          <div className="loginRightContainer">
-            <div className="loginWithSection d-flex flex-column justify-content-center align-items-center">
-              <div className="loginWithSection d-flex flex-column justify-content-center align-items-center">
-                <div className="LoginWithGoogleContainer loginWithBox loginWithGoogleBox d-flex justify-content-between align-items-center centerElement">
-                  <div className="loginWithIconBox loginWithGoogleIconBox centerElement">
-                    <img
-                      src={LoginWithGoogleImage}
-                      alt="Google Icon"
-                      className="imageDimensions"
-                    />
-                  </div>
-                  <div className="LoginWithGoogleText LoginWithText w-100 centerElement-social">
-                    <div>Continue with Google</div>
-                  </div>
-                </div>
-              </div>
-              <div className="LoginWithFacebookContainer loginWithBox loginWithFacebookBox d-flex justify-content-between align-items-center centerElement">
-                <div className="loginWithIconBox loginWithFacebookIconBox centerElement">
-                  <img
-                    src={LoginWithFacebookImage}
-                    alt="Facebook Icon"
-                    className="imageDimensions"
-                  />
-                </div>
-                <div className="LoginWithFacebookText LoginWithText w-100 centerElement-social">
-                  <div>Continue with Facebook</div>
-                </div>
-
-                <div className="login-empty-padding"></div>
-              </div>
-              {/*  */}
-              <Link to="/register" className="text-decoration-none">
-                <div className="LoginWithEmailContainer loginWithBox loginWithEmailBox d-flex justify-content-between align-items-center centerElement">
-                  <div className="loginWithIconBox loginWithEmailIconBox centerElement">
-                    <img
-                      src={LoginWithEmailImage}
-                      alt="Email Icon"
-                      className="imageDimensions"
-                    />
-                  </div>
-                  <div className="LoginWithEmailText LoginWithText w-100 centerElement-social">
-                    <div>Continue with Email</div>
-                  </div>
-                </div>
-              </Link>
-              {/*  */}
-            </div>
           </div>
         </div>
       </div>

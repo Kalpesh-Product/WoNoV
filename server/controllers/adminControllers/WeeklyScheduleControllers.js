@@ -294,37 +294,47 @@ const fetchWeeklyUnits = async (req, res, next) => {
     const { department } = req.params;
     const { user, company } = req;
 
-    const foundUser = await UserData.findOne({
-      _id: user,
-      departments: { $in: [department] },
-    }).populate("reportsTo role departments");
+    // const foundUser = await UserData.findOne({
+    //   _id: user,
+    //   departments: { $in: [department] },
+    // }).populate("reportsTo role departments");
 
-    if (!foundUser) {
+    // if (!foundUser) {
+    //   return res.status(400).json({
+    //     message: `User doesn't belong to the department`,
+    //   });
+    // }
+
+    // const userDepartment = foundUser.departments.find(
+    //   (dept) => dept._id.toString() === department.toString()
+    // );
+
+    //Check if logged-in user is an employee or an admin
+    // const managerRole = foundUser.role.some(
+    //   (role) =>
+    //     role.roleTitle.startsWith(`${userDepartment.name}`) &&
+    //     role.roleTitle.endsWith("Admin")
+    // );
+
+    const foundUsers = await UserData.find({
+      departments: { $in: [department] },
+    })
+      .populate("role")
+      .select("firstName middleName lastName");
+
+    if (foundUsers.length < 0) {
       return res.status(400).json({
-        message: `User doesn't belong to the department`,
+        message: "User not found",
       });
     }
 
-    const userDepartment = foundUser.departments.find(
-      (dept) => dept._id.toString() === department.toString()
-    );
+    const foundManager = foundUsers.find((user) => {
+      return user.role.some((role) =>
+        role.roleTitle.includes("Administration Admin")
+      );
+    });
 
-    const managerRole = foundUser.role.some(
-      (role) =>
-        role.roleTitle.startsWith(`${userDepartment.name}`) &&
-        role.roleTitle.endsWith("Admin")
-    );
-
-    let foundManager = foundUser;
-
-    //logged-in user is an employee and not an admin
-    if (!managerRole) {
-      foundManager = await UserData.findOne({
-        role: { $in: [foundUser.reportsTo] },
-      }).select("firstName lastName");
-    }
-
-    let manager = "N/A"; //If logged-in user doesn't belong to the department
+    let manager = "N/A";
     if (foundManager) {
       manager = `${foundManager.firstName} ${foundManager.lastName}`;
     }

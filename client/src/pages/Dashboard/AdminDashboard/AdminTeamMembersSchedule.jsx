@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
@@ -43,9 +43,9 @@ const AdminTeamMembersSchedule = () => {
     },
   });
 
-  const {handleSubmit:updateUser, reset: updateUserReset, control: updateUserControl} = useForm({
-    defaultValues:{
-      meetingId : "",
+  const { handleSubmit: updateUser, reset: updateUserReset, control: updateUserControl } = useForm({
+    defaultValues: {
+      meetingId: "",
     }
   })
 
@@ -84,8 +84,7 @@ const AdminTeamMembersSchedule = () => {
       try {
         const adminDepId = "6798bae6e469e809084e24a4";
         const response = await axios.get(
-          `/api/administration/fetch-weekly-unit/${adminDepId}`
-        );
+          `/api/administration/fetch-weekly-unit/${adminDepId}`);
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -116,10 +115,10 @@ const AdminTeamMembersSchedule = () => {
 
   //----------------------------------------API---------------------------------------//
   const memberColumns = [
-    { field: "id", headerName: "Sr. No.", width: 100 },
-    { field: "name", headerName: "Name", flex: 1 },
+    { field: "id", headerName: "Sr No", width: 100 },
+    { field: "name", headerName: "Name" },
     { field: "manager", headerName: "Manager" },
-    { field: "unitNo", headerName: "Unit" },
+    { field: "unitNo", headerName: "Unit",flex:"1" },
     {
       field: "actions",
       headerName: "Actions",
@@ -170,6 +169,7 @@ const AdminTeamMembersSchedule = () => {
   };
   //---------------------------------------Event Handlers------------------------------//
 
+
   return (
     <div className="p-4">
       {!isUnitAssignees ? (
@@ -190,7 +190,7 @@ const AdminTeamMembersSchedule = () => {
             endDate: item.endDate,
             locationId: item.location?._id,
             unitName: item.location?.unitName,
-            unitNo: item.location?.unitNo,
+            unitNo: `${item.location?.building?.buildingName} ${item.location?.unitNo}`,
             buildingId: item.location?.building?._id,
             buildingName: item.location?.building?.buildingName,
             createdAt: item.createdAt,
@@ -210,14 +210,14 @@ const AdminTeamMembersSchedule = () => {
         />
       ) : (
         <div className="flex justify-center items-center h-[60vh]">
-          <CircularProgress />
+          <CircularProgress color="#1E3D73"/>
         </div>
       )}
 
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={"Assign Member"}
+        title={"Assign Substitute"}
       >
         {modalMode === "add" && (
           <div>

@@ -1,7 +1,14 @@
 import React, { useState } from "react";
 import LayerBarGraph from "../../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
-import { TextField, Select, MenuItem, FormControl } from "@mui/material";
+import {
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  CircularProgress,
+  Skeleton,
+} from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -19,7 +26,7 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 const HrBudget = () => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
-  const { data: hrFinance = [] } = useQuery({
+  const { data: hrFinance = [], isLoading: isHrLoading } = useQuery({
     queryKey: ["hrFinance"],
     queryFn: async () => {
       try {
@@ -50,43 +57,45 @@ const HrBudget = () => {
   };
 
   // Transform data into the required format
-  const groupedData = hrFinance.reduce((acc, item) => {
-    const month = dayjs(item.dueDate).format("MMM-YYYY"); // Extracting month and year
+  const groupedData = !isHrLoading
+    ? []
+    : hrFinance?.reduce((acc, item) => {
+        const month = dayjs(item.dueDate).format("MMM-YYYY"); // Extracting month and year
 
-    if (!acc[month]) {
-      acc[month] = {
-        month,
-        latestDueDate: item.dueDate, // Store latest due date for sorting
-        projectedAmount: 0,
-        amount: 0,
-        tableData: {
-          rows: [],
-          columns: [
-            { field: "expanseName", headerName: "Expense Name", flex: 1 },
-            // { field: "department", headerName: "Department", flex: 200 },
-            { field: "expanseType", headerName: "Expense Type", flex: 1 },
-            { field: "projectedAmount", headerName: "Amount", flex: 1 },
-            { field: "dueDate", headerName: "Due Date", flex: 1 },
-            { field: "status", headerName: "Status", flex: 1 },
-          ],
-        },
-      };
-    }
+        if (!acc[month]) {
+          acc[month] = {
+            month,
+            latestDueDate: item.dueDate, // Store latest due date for sorting
+            projectedAmount: 0,
+            amount: 0,
+            tableData: {
+              rows: [],
+              columns: [
+                { field: "expanseName", headerName: "Expense Name", flex: 1 },
+                // { field: "department", headerName: "Department", flex: 200 },
+                { field: "expanseType", headerName: "Expense Type", flex: 1 },
+                { field: "projectedAmount", headerName: "Amount", flex: 1 },
+                { field: "dueDate", headerName: "Due Date", flex: 1 },
+                { field: "status", headerName: "Status", flex: 1 },
+              ],
+            },
+          };
+        }
 
-    acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
-    acc[month].amount += item.projectedAmount; // Summing the total amount per month
-    acc[month].tableData.rows.push({
-      id: item._id,
-      expanseName: item.expanseName,
-      department: item.department,
-      expanseType: item.expanseType,
-      projectedAmount: item.projectedAmount.toFixed(2), // Ensuring two decimal places
-      dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
-      status: item.status,
-    });
+        acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
+        acc[month].amount += item.projectedAmount; // Summing the total amount per month
+        acc[month].tableData.rows.push({
+          id: item._id,
+          expanseName: item.expanseName,
+          department: item.department,
+          expanseType: item.expanseType,
+          projectedAmount: item.projectedAmount.toFixed(2), // Ensuring two decimal places
+          dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
+          status: item.status,
+        });
 
-    return acc;
-  }, {});
+        return acc;
+      }, {});
 
   // Convert grouped data to array and sort by latest month (descending order)
   const financialData = Object.values(groupedData)
@@ -134,7 +143,8 @@ const HrBudget = () => {
           layout={1}
           title={"Budget v/s Achievements"}
           titleLabel={"FY 2024-25"}
-          border>
+          border
+        >
           <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
         </WidgetSection>
       </div>
@@ -187,13 +197,14 @@ const HrBudget = () => {
 
       <AllocatedBudget
         financialData={financialData}
-        groupedData={groupedData}
+        groupedData={isHrLoading ? groupedData : <CircularProgress />}
       />
 
       <MuiModal
         title="Request Budget"
         open={openModal}
-        onClose={() => setOpenModal(false)}>
+        onClose={() => setOpenModal(false)}
+      >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Expense Name */}
           <Controller

@@ -26,18 +26,15 @@ const ManageTickets = () => {
     setActiveTab(newValue);
   };
 
-  // Fetch Accepted Tickets
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
     queryFn: async () => {
       try {
-        // const response = await axios.get(
-        //   `/api/tickets/department-tickets/${auth.user?.departments?.map(
-        //     (dept) => dept._id
-        //   )}`
-        // );
-        const response = await axios.get(`/api/tickets/get-all-tickets`);
-
+        const response = await axios.get(
+          `/api/tickets/department-tickets/${auth.user?.departments?.map(
+            (dept) => dept._id
+          )}`
+        );
         return response.data;
       } catch (error) {
         console.error("Error fetching tickets:", error);
@@ -52,14 +49,9 @@ const ManageTickets = () => {
       .length,
     pendingTickets: ticketsData.filter((item) => item.status === "Pending")
       .length,
-    // acceptedTickets: ticketsData
-    // .filter((item) => item.acceptedBy === auth.user?._id).filter((item)=>item.status === "In Progress").length,
-    acceptedTickets: ticketsData.filter(
-      (item) => item.acceptedBy && item.status !== "Escalated"
-    ).length,
-    assignedTickets: ticketsData.filter(
-      (item) => item.assignees.length > 0 && item.status !== "Escalated"
-    ).length,
+     acceptedTickets: ticketsData
+    .filter((item) => item.acceptedBy?._id === auth.user?._id).filter((item)=>item.status === "In Progress").length,
+    assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0).length,
     escalatedTickets: ticketsData.filter((item) => item.status === "Escalated")
       .length,
   };
@@ -211,7 +203,7 @@ const ManageTickets = () => {
         <div className="py-4 bg-white">
           {activeTab === 0 && (
             <div className="">
-              <RecievedTickets title={"Department Ticket Recieved"} />
+              <RecievedTickets title={"Department Ticket Received"} />
             </div>
           )}
           {activeTab === 1 && (

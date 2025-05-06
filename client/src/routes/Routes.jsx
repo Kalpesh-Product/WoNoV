@@ -1513,10 +1513,6 @@ export const routes = createBrowserRouter([
                     path: "reviews",
                     element: <Reviews />,
                   },
-                  {
-                    path: "settings",
-                    element: <TicketReports />,
-                  },
                 ],
               },
               {

@@ -1,11 +1,40 @@
 import React from "react";
 import { useForm, Controller } from "react-hook-form";
-import { TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
+import { DesktopDatePicker } from "@mui/x-date-pickers";
 
 const EmployeeOnboard = () => {
-  const { control, handleSubmit, reset } = useForm();
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      firstName: "",
+      middleName: "",
+      lastName: "",
+      gender: "",
+      dob: null,
+      mobileNumber: "",
+      startDate: null,
+      workLocation: "",
+      employeeType: "",
+      department: "",
+      reportsTo: "",
+      jobTitle: "",
+      jobDescription: "",
+      shift: "",
+      workSchedulePolicy: "",
+      attendanceSource: "",
+      leavePolicy: "",
+      holidayPolicy: "",
+      aadharId: "",
+      pan: "",
+    },
+  });
 
   const onSubmit = (data) => {};
 
@@ -28,13 +57,15 @@ const EmployeeOnboard = () => {
               <Controller
                 name="firstName"
                 control={control}
-                defaultValue=""
+                rules={{ required: "First Name is Required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     size="small"
                     label="First Name"
                     fullWidth
+                    helperText={errors?.firstName?.message}
+                    error={!!errors.firstName}
                   />
                 )}
               />
@@ -42,26 +73,30 @@ const EmployeeOnboard = () => {
               <Controller
                 name="middleName"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Middle Name is Required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     size="small"
                     label="Middle Name"
                     fullWidth
+                    helperText={errors?.middleName?.message}
+                    error={!!errors.middleName}
                   />
                 )}
               />
               <Controller
                 name="lastName"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Last Name is required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     size="small"
                     label="Last Name"
                     fullWidth
+                    helperText={errors?.lastName?.message}
+                    error={!!errors.lastName}
                   />
                 )}
               />
@@ -69,43 +104,60 @@ const EmployeeOnboard = () => {
               <Controller
                 name="gender"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Gender is required" }}
                 render={({ field }) => (
-                  <TextField {...field} size="small" label="gender" fullWidth />
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Gender"
+                    select
+                    fullWidth
+                    helperText={errors?.gender?.message}
+                    error={!!errors.gender}
+                  >
+                    <MenuItem value="" disabled>
+                      Select a Gender
+                    </MenuItem>
+                    <MenuItem value="male">Male</MenuItem>
+                    <MenuItem value="female">Female</MenuItem>
+                  </TextField>
                 )}
               />
 
               <Controller
                 name="dob"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Date of Birth is required" }}
                 render={({ field }) => (
-                  <TextField {...field} size="small" label="DOB" fullWidth />
-                )}
-              />
-              <Controller
-                name="employeeID"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
+                  <DesktopDatePicker
+                    inputFormat=""
+                    slotProps={{ textField: { size: "small" } }}
+                    label="Date of Birth"
                     {...field}
-                    size="small"
-                    label="Employee ID"
-                    fullWidth
+                    renderInput={(params) => (
+                      <TextField fullWidth {...params} />
+                    )}
                   />
                 )}
               />
               <Controller
                 name="mobilePhone"
                 control={control}
-                defaultValue=""
+                rules={{
+                  required: "Mobile number is required",
+                  pattern: {
+                    value: /^[0-9]{10}$/,
+                    message: "Enter a valid 10-digit number",
+                  },
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     size="small"
                     label="Mobile Phone"
                     fullWidth
+                    helperText={errors?.mobilePhone?.message}
+                    error={!!errors.mobilePhone}
                   />
                 )}
               />
@@ -119,16 +171,24 @@ const EmployeeOnboard = () => {
               </span>
             </div>
             <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+              {/* Start Date - Date Picker */}
               <Controller
                 name="startDate"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Start Date is required" }}
                 render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
+                  <DesktopDatePicker
+                    inputFormat="DD/MM/YYYY"
                     label="Start Date"
-                    fullWidth
+                    {...field}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!errors.startDate,
+                        helperText: errors?.startDate?.message,
+                      },
+                    }}
                   />
                 )}
               />
@@ -136,13 +196,15 @@ const EmployeeOnboard = () => {
               <Controller
                 name="workLocation"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Work Location is required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     size="small"
                     label="Work Location"
                     fullWidth
+                    helperText={errors?.workLocation?.message}
+                    error={!!errors.workLocation}
                   />
                 )}
               />
@@ -150,13 +212,15 @@ const EmployeeOnboard = () => {
               <Controller
                 name="employeeType"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Employee Type is required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     size="small"
                     label="Employee Type"
                     fullWidth
+                    helperText={errors?.employeeType?.message}
+                    error={!!errors.employeeType}
                   />
                 )}
               />
@@ -164,52 +228,63 @@ const EmployeeOnboard = () => {
               <Controller
                 name="department"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Department is required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     size="small"
                     label="Department"
                     fullWidth
+                    helperText={errors?.department?.message}
+                    error={!!errors.department}
                   />
                 )}
               />
+
               <Controller
                 name="reportsTo"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Reporting Manager is required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     size="small"
                     label="Reports To"
                     fullWidth
+                    helperText={errors?.reportsTo?.message}
+                    error={!!errors.reportsTo}
                   />
                 )}
               />
+
               <Controller
                 name="jobTitle"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Job Title is required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     size="small"
                     label="Job Title"
                     fullWidth
+                    helperText={errors?.jobTitle?.message}
+                    error={!!errors.jobTitle}
                   />
                 )}
               />
+
               <Controller
                 name="jobDescription"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Job Description is required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     size="small"
                     label="Job Description"
                     fullWidth
+                    helperText={errors?.jobDescription?.message}
+                    error={!!errors.jobDescription}
                   />
                 )}
               />
