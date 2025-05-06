@@ -2,131 +2,217 @@ import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import AgTable from "../../../../components/AgTable";
-import { Button } from "@mui/material";
 import dayjs from "dayjs";
+import SecondaryButton from "../../../../components/SecondaryButton";
+import PrimaryButton from "../../../../components/PrimaryButton";
+import { MenuItem, Skeleton, TextField } from "@mui/material";
 
 const HrAttendance = () => {
   const axios = useAxiosPrivate();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  const { data: attendanceData = [], isLoading } = useQuery({
+  // Financial year options
+  const fyOptions = [
+    {
+      label: "FY 2024–25",
+      start: new Date(2024, 3, 1), // April 1, 2024
+      end: new Date(2025, 2, 31), // March 31, 2025
+    },
+    {
+      label: "FY 2025–26",
+      start: new Date(2025, 3, 1),
+      end: new Date(2026, 2, 31),
+    },
+  ];
+
+  const [selectedFY, setSelectedFY] = useState(fyOptions[0]);
+  const [currentMonth, setCurrentMonth] = useState(selectedFY.start);
+
+  const { data: attendanceData = {}, isLoading } = useQuery({
     queryKey: ["attendance"],
     queryFn: async () => {
       const response = await axios.get("/api/company/company-attandances");
-      return response.data.companyAttandances;
+      return response.data;
     },
   });
 
   const formattedMonth = dayjs(currentMonth).format("MMMM YYYY");
 
   const handlePrevMonth = () => {
-    setCurrentMonth((prev) => dayjs(prev).subtract(1, "month").toDate());
+    const newMonth = dayjs(currentMonth).subtract(1, "month").toDate();
+    if (newMonth >= selectedFY.start) setCurrentMonth(newMonth);
   };
 
   const handleNextMonth = () => {
-    setCurrentMonth((prev) => dayjs(prev).add(1, "month").toDate());
+    const newMonth = dayjs(currentMonth).add(1, "month").toDate();
+    if (newMonth <= selectedFY.end) setCurrentMonth(newMonth);
   };
 
-  // Get total days in selected month
   const daysInMonth = dayjs(currentMonth).daysInMonth();
   const currentMonthNum = dayjs(currentMonth).month();
   const currentYearNum = dayjs(currentMonth).year();
 
-  // Transform attendance data to employee-wise rows
   const tableData = useMemo(() => {
-    const grouped = {};
+    const groupedUsers = {};
 
-    attendanceData.forEach((entry) => {
+    // Attendance map
+    const attendanceMap = {};
+    attendanceData?.companyAttandances?.forEach((entry) => {
       const userId = entry.user?._id;
-      const empId = entry.user?.empId;
-      const empName = `${entry.user?.firstName || ""} ${entry.user?.lastName || ""}`.trim();
+      const dateKey = dayjs(entry.inTime).format("YYYY-MM-DD");
+      attendanceMap[`${userId}-${dateKey}`] = "✅";
 
-      const inDate = dayjs(entry.inTime);
-      const entryDay = inDate.date();
-      const entryMonth = inDate.month();
-      const entryYear = inDate.year();
-
-      if (entryMonth === currentMonthNum && entryYear === currentYearNum) {
-        if (!grouped[userId]) {
-          grouped[userId] = {
-            empId,
-            empName,
-          };
-        }
-
-        grouped[userId][`day${entryDay}`] = "✅";
+      if (!groupedUsers[userId]) {
+        groupedUsers[userId] = {
+          empId: entry.user?.empId,
+          empName: `${entry.user?.firstName || ""} ${
+            entry.user?.lastName || ""
+          }`.trim(),
+        };
       }
     });
 
-    return Object.values(grouped).map((row, idx) => ({
-      srno: idx + 1,
-      ...row,
-    }));
-  }, [attendanceData, currentMonthNum, currentYearNum]);
+    // Leave map
+    const leaveMap = {};
+    attendanceData?.allLeaves?.forEach((leave) => {
+      const userId = leave.takenBy?._id;
+      const leaveType = leave.leaveType?.toLowerCase().includes("sick")
+        ? "SL"
+        : "PL";
 
-  // Generate dynamic columns for days 1–31
+      const from = dayjs(leave.fromDate);
+      const to = dayjs(leave.toDate);
+
+      for (let d = from; d.isSameOrBefore(to, "day"); d = d.add(1, "day")) {
+        const dateKey = d.format("YYYY-MM-DD");
+        leaveMap[`${userId}-${dateKey}`] = leaveType;
+      }
+
+      if (!groupedUsers[userId]) {
+        groupedUsers[userId] = {
+          empId: leave.takenBy?.empId || "",
+          empName: `${leave.takenBy?.firstName || ""} ${
+            leave.takenBy?.lastName || ""
+          }`.trim(),
+        };
+      }
+    });
+
+    // Compile table rows
+    const finalRows = Object.entries(groupedUsers)
+    .map(([userId, userInfo], index) => {
+      const row = {
+        srno: index + 1,
+        ...userInfo,
+      };
+  
+      let hasData = false;
+  
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = dayjs(new Date(currentYearNum, currentMonthNum, day));
+        const key = `${userId}-${date.format("YYYY-MM-DD")}`;
+        const isWeekend = date.day() === 0 || date.day() === 6;
+  
+        if (attendanceMap[key]) {
+          row[`day${day}`] = "✅";
+          hasData = true;
+        } else if (leaveMap[key]) {
+          row[`day${day}`] = leaveMap[key];
+          hasData = true;
+        } else if (!isWeekend) {
+          row[`day${day}`] = "H";
+        } else {
+          row[`day${day}`] = "";
+        }
+      }
+  
+      return hasData ? row : null;
+    })
+    .filter(Boolean);
+  
+  
+
+    return finalRows;
+  }, [attendanceData, currentMonth]);
+
   const dayColumns = Array.from({ length: daysInMonth }, (_, i) => {
     const date = dayjs(new Date(currentYearNum, currentMonthNum, i + 1));
-    const dayOfWeek = date.format("ddd"); // e.g., Mon, Tue, Sat, Sun
+    const dayOfWeek = date.format("ddd");
     const isSaturday = dayOfWeek === "Sat";
     const isSunday = dayOfWeek === "Sun";
-  
+
     return {
       field: `day${i + 1}`,
-      headerName: isSaturday
-        ? "SAT"
-        : isSunday
-        ? "SUN"
-        : `${i + 1}`,
+      headerName: isSaturday ? "SAT" : isSunday ? "SUN" : `${i + 1}`,
       width: 60,
       cellStyle: { textAlign: "center" },
       headerTooltip: `${date.format("dddd, MMM D")}`,
     };
   });
-  
-  
 
   const columns = [
+    { field: "srno", headerName: "SR No", width: 80, pinned: "left" },
+    { field: "empId", headerName: "Employee ID", width: 130, pinned: "left" },
     {
-        field: "srno",
-        headerName: "SR No",
-        width: 80,
-        pinned: "left",
-      },
-      {
-        field: "empId",
-        headerName: "Employee ID",
-        width: 130,
-        pinned: "left",
-      },
-      {
-        field: "empName",
-        headerName: "Employee Name",
-        width: 200,
-        pinned: "left",
-      },
+      field: "empName",
+      headerName: "Employee Name",
+      width: 200,
+      pinned: "left",
+    },
     ...dayColumns,
   ];
 
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-4 px-2">
-        <Button variant="outlined" onClick={handlePrevMonth}>
-          Prev
-        </Button>
-        <h2 className="font-semibold text-lg">{formattedMonth}</h2>
-        <Button variant="outlined" onClick={handleNextMonth}>
-          Next
-        </Button>
-      </div>
+  const isMonthWithinFY =
+    dayjs(currentMonth).isSameOrAfter(dayjs(selectedFY.start), "month") &&
+    dayjs(currentMonth).isSameOrBefore(dayjs(selectedFY.end), "month");
 
-      <AgTable
-        data={isLoading ? [] : tableData}
-        columns={columns}
-        search={true}
-      />
-    </div>
-  );
-};
-
+    return (
+        <div>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+            <div className="flex gap-2 items-center">
+              <TextField
+                select
+                size="small"
+                value={selectedFY.label}
+                onChange={(e) => {
+                  const fy = fyOptions.find((fy) => fy.label === e.target.value);
+                  setSelectedFY(fy);
+                  setCurrentMonth(fy.start);
+                }}
+                className="min-w-[140px]"
+              >
+                {fyOptions.map((fy) => (
+                  <MenuItem key={fy.label} value={fy.label}>
+                    {fy.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </div>
+      
+            <div className="flex items-center gap-4">
+              <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" />
+              <span className="font-semibold text-subtitle">{formattedMonth}</span>
+              <PrimaryButton handleSubmit={handleNextMonth} title="Next" />
+            </div>
+          </div>
+      
+          {!isLoading ? (
+            isMonthWithinFY ? (
+              <AgTable
+                data={tableData}
+                columns={columns}
+                search={true}
+                searchColumn="empName"
+              />
+            ) : (
+              <div className="text-center text-gray-500 py-8 text-lg">
+                Data not available for selected financial year.
+              </div>
+            )
+          ) : (
+            <Skeleton width={"100%"} height={600} />
+          )}
+        </div>
+      );
+    }
+      
 export default HrAttendance;
