@@ -18,7 +18,7 @@ const TicketDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
-  console.log(auth.user)
+ 
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
     queryFn: async () => {
@@ -72,8 +72,7 @@ const TicketDashboard = () => {
   
   const lastMonthTickets = ticketsData.filter((ticket) => {
     const createdAt = new Date(ticket.createdAt);
-    console.log(createdAt.getMonth(),"===",lastMonth)
-    return (
+      return (
       createdAt.getMonth() - 1  === lastMonth - 1  &&
       createdAt.getFullYear() === currentYear
     );
@@ -85,7 +84,7 @@ const TicketDashboard = () => {
   const currentMonthTickets = ticketsData.filter((ticket) => {
     const createdAt = new Date(ticket.createdAt);
     return (
-      createdAt.getMonth() + 1 === currentMonth + 1 &&
+      createdAt.getMonth()  === currentMonth  &&
       createdAt.getFullYear() === currentYear
     );
   });
@@ -101,7 +100,6 @@ const TicketDashboard = () => {
   const donutSeries =   masterDepartments.map(dept => departmentCountMap[dept] || 0) ;
 
   //Task Priority data for widget
-  console.log(lastMonthTickets)
   const priorityCountMap = {};
 
   lastMonthTickets.forEach(item => {
@@ -111,8 +109,14 @@ const TicketDashboard = () => {
     }
   });
   
-  const series =   lastMonthTickets.map(priority => priorityCountMap[priority] || 0) ;
-  console.log(series)
+  const priorityOrder = ["high", "medium", "low"]; // order you want in the chart
+  const series = priorityOrder.map(priority => priorityCountMap[priority] || 0);
+  
+
+  const filterDepartmentTickts = (department)=>{
+    const tickets = currentMonthTickets.filter((ticket)=> ticket.raisedToDepartment.name === department)
+    return tickets
+  }
 
   const ticketWidgets = [
     {
@@ -167,11 +171,11 @@ const TicketDashboard = () => {
           titleLabel={`${new Date(new Date().getFullYear(), new Date().getMonth() - 1).toLocaleString("default", { month: "short" })}-${new Date(new Date().getFullYear(), new Date().getMonth() - 1).getFullYear().toString().slice(-2)}`}
           title={"Total Tickets"}>
           <DonutChart
-            series={[9, 5, 7]}
+            series={series}
             labels={["High", "Medium", "Low"]}
             colors={["#ff4d4d", "#ffc107", "#28a745"]}
             centerLabel={"Tickets"}
-            tooltipValue={[9, 5, 7]}
+            tooltipValue={series}
           />
         </WidgetSection>,
         <WidgetSection
@@ -194,7 +198,14 @@ const TicketDashboard = () => {
             ]}
             centerLabel={"Tickets"}
             tooltipValue={donutSeries}
-            handleClick={() => navigate("department-wise-tickets")}
+            onSliceClick={(index) => {
+              const clickedDepartment = masterDepartments[index];
+            
+              const departmentTickets = filterDepartmentTickts(clickedDepartment)
+             
+              navigate("department-wise-tickets", { state: { departmentTickets } });
+            }}
+           
           />
         </WidgetSection>,
       ],

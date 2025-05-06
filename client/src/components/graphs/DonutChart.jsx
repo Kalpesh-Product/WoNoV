@@ -8,6 +8,7 @@ const DonutChart = ({
   series,
   tooltipValue,
   handleClick,
+  onSliceClick,
   width,
   isMonetary = false
 }) => {
@@ -23,8 +24,13 @@ const DonutChart = ({
       type: "donut",
       fontFamily: "Poppins-Regular",
       events: {
-        dataPointSelection: () => {
+        dataPointSelection: (event, chartContext,config) => {
           handleClick?.(); // trigger the click handler
+         if( onSliceClick && config?.dataPointIndex !== undefined){ // to get index
+          console.log(config)
+          const index = config.dataPointIndex;
+          onSliceClick?.(index);
+         }
         }
       }
     },
