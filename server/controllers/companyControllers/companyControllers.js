@@ -433,7 +433,7 @@ const getCompanyAttandances = async (req, res, next) => {
   try {
     const { company } = req;
     const companyAttandances = await Attandance.find({ company })
-      .populate({ path: "user", select: "firstName lastName" })
+      .populate({ path: "user", select: "firstName lastName empId" })
       .lean()
       .exec();
     let sundays = 0;
