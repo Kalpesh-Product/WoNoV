@@ -431,9 +431,11 @@ const getHierarchy = async (req, res, next) => {
 
 const getCompanyAttandances = async (req, res, next) => {
   try {
-    const loggedInUser = req.user;
     const { company } = req;
-    const companyAttandances = await Attandance.find({ company }).lean().exec();
+    const companyAttandances = await Attandance.find({ company })
+      .populate({ path: "user", select: "firstName lastName" })
+      .lean()
+      .exec();
     let sundays = 0;
     let year = new Date().getFullYear().toString();
     for (let month = 0; month < 12; month++) {

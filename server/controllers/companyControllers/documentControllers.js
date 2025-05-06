@@ -4,6 +4,7 @@ const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
 const { PDFDocument } = require("pdf-lib");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
+const path = require("path");
 
 const uploadCompanyDocument = async (req, res, next) => {
   const logPath = "hr/HrLog";
@@ -29,6 +30,20 @@ const uploadCompanyDocument = async (req, res, next) => {
       );
     }
 
+    const allowedExtensions = [".pdf", ".doc", ".docx", ".xls", ".xlsx"];
+    const extension = path.extname(file.originalname).toLowerCase();
+
+    if (!allowedExtensions.includes(extension)) {
+      throw new CustomError(
+        `Unsupported file type. Allowed extensions: ${allowedExtensions.join(
+          ", "
+        )}`,
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const foundUser = await User.findById(user)
       .select("company")
       .populate("company", "companyName")
@@ -43,18 +58,24 @@ const uploadCompanyDocument = async (req, res, next) => {
       );
     }
 
-    // Process the PDF document
-    const pdfDoc = await PDFDocument.load(file.buffer);
-    pdfDoc.setTitle(
-      file.originalname ? file.originalname.split(".")[0] : "Untitled"
-    );
-    const processedBuffer = await pdfDoc.save();
+    let finalBuffer = file.buffer;
 
-    // Upload the processed PDF to storage
+    // Process PDF only if file is a PDF
+    if (extension === ".pdf") {
+      const pdfDoc = await PDFDocument.load(file.buffer);
+      pdfDoc.setTitle(
+        file.originalname ? file.originalname.split(".")[0] : "Untitled"
+      );
+      finalBuffer = await pdfDoc.save();
+    }
+
+    const folderName = `${foundUser.company.companyName}/${type}s`;
+    const sanitizedFileName = file.originalname.replace(/\s+/g, "_");
+
     const response = await handleDocumentUpload(
-      processedBuffer,
-      `${foundUser.company.companyName}/${type}s`,
-      originalFilename
+      finalBuffer,
+      folderName,
+      sanitizedFileName
     );
 
     if (!response?.public_id) {
@@ -85,7 +106,6 @@ const uploadCompanyDocument = async (req, res, next) => {
       },
     });
 
-    // Log the successful upload
     await createLog({
       path: logPath,
       action: logAction,
@@ -164,6 +184,21 @@ const uploadDepartmentDocument = async (req, res, next) => {
       );
     }
 
+    const allowedMimeTypes = [
+      "application/pdf",
+      "application/msword", // .doc
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+    ];
+
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new CustomError(
+        "Invalid file type. Allowed types: PDF, DOC, DOCX",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const foundUser = await User.findOne({ _id: user })
       .select("company")
       .populate([{ path: "company", select: "companyName" }])
@@ -207,13 +242,17 @@ const uploadDepartmentDocument = async (req, res, next) => {
       );
     }
 
-    const pdfDoc = await PDFDocument.load(file.buffer);
-    pdfDoc.setTitle(
-      file.originalname ? file.originalname.split(".")[0] : "Untitled"
-    );
-    const processedBuffer = await pdfDoc.save();
-
+    let processedBuffer = file.buffer;
     const originalFilename = file.originalname;
+
+    // Process PDF: set document title
+    if (file.mimetype === "application/pdf") {
+      const pdfDoc = await PDFDocument.load(file.buffer);
+      pdfDoc.setTitle(
+        file.originalname ? file.originalname.split(".")[0] : "Untitled"
+      );
+      processedBuffer = await pdfDoc.save();
+    }
 
     const response = await handleDocumentUpload(
       processedBuffer,
@@ -262,7 +301,6 @@ const uploadDepartmentDocument = async (req, res, next) => {
       );
     }
 
-    // Log the successful upload
     await createLog({
       path: logPath,
       action: logAction,
