@@ -90,31 +90,30 @@ const HrDashboard = () => {
   const expenseRawSeries = [
     {
       name: "Sales Assigned",
-      // data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 20, 15],
       data: hrFinance?.utilisedBudget,
       group: "total",
     },
-    {
-      name: "IT Assigned",
-      data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 25, 10],
-      group: "total",
-    },
-    {
-      name: "Tech Assigned",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 30, 30],
-      group: "total",
-    },
+    // {
+    //   name: "IT Assigned",
+    //   data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 25, 10],
+    //   group: "total",
+    // },
+    // {
+    //   name: "Tech Assigned",
+    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 30, 30],
+    //   group: "total",
+    // },
 
-    {
-      name: "Admin Assigned",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 10, 10],
-      group: "total",
-    },
-    {
-      name: "Maintainance Assigned",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 5, 3],
-      group: "total",
-    },
+    // {
+    //   name: "Admin Assigned",
+    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 10, 10],
+    //   group: "total",
+    // },
+    // {
+    //   name: "Maintainance Assigned",
+    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 5, 3],
+    //   group: "total",
+    // },
     // {
     //   name: "Space Completed",
     //   data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -175,7 +174,7 @@ const HrDashboard = () => {
     },
     dataLabels: {
       enabled: true,
-      formatter: (val) => inrFormat(val), // <-- format here
+      formatter: (val) => inrFormat(val),
       style: {
         fontSize: "12px",
         colors: ["#000"],
@@ -217,6 +216,7 @@ const HrDashboard = () => {
     },
 
     tooltip: {
+      enabled : false,
       y: {
         formatter: (val, { seriesIndex, dataPointIndex }) => {
           const rawData = rawSeries[seriesIndex]?.data[dataPointIndex];
@@ -646,7 +646,7 @@ const HrDashboard = () => {
             <BarGraph
               data={expenseRawSeries}
               options={expenseOptions}
-              departments={["Sales", "IT", "Tech", "Admin", "Maintainance"]}
+              // departments={["Sales", "IT", "Tech", "Admin", "Maintainance"]}
               // departments={["FY 2024-25", "FY 2025-26"]}
             />
           </WidgetSection>
