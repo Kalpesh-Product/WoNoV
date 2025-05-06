@@ -5,7 +5,7 @@ import AgTable from "../../../../components/AgTable";
 import dayjs from "dayjs";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../components/PrimaryButton";
-import { MenuItem, Skeleton, TextField } from "@mui/material";
+import { Box, MenuItem, Skeleton, TextField, Tooltip } from "@mui/material";
 
 const HrAttendance = () => {
   const axios = useAxiosPrivate();
@@ -99,37 +99,48 @@ const HrAttendance = () => {
 
     // Compile table rows
     const finalRows = Object.entries(groupedUsers)
-    .map(([userId, userInfo], index) => {
-      const row = {
-        srno: index + 1,
-        ...userInfo,
-      };
-  
-      let hasData = false;
-  
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = dayjs(new Date(currentYearNum, currentMonthNum, day));
-        const key = `${userId}-${date.format("YYYY-MM-DD")}`;
-        const isWeekend = date.day() === 0 || date.day() === 6;
-  
-        if (attendanceMap[key]) {
-          row[`day${day}`] = "✅";
-          hasData = true;
-        } else if (leaveMap[key]) {
-          row[`day${day}`] = leaveMap[key];
-          hasData = true;
-        } else if (!isWeekend) {
-          row[`day${day}`] = "H";
-        } else {
-          row[`day${day}`] = "";
+      .map(([userId, userInfo], index) => {
+        const row = {
+          srno: index + 1,
+          ...userInfo,
+        };
+
+        let hasData = false;
+
+        // Get user startDate from attendance entry (only companyAttandances has it)
+        const userAttendance = attendanceData.companyAttandances?.find(
+          (entry) => entry.user?._id === userId && entry.user?.startDate
+        );
+
+        const startDate = dayjs(userAttendance?.user?.startDate);
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = dayjs(new Date(currentYearNum, currentMonthNum, day));
+          const key = `${userId}-${date.format("YYYY-MM-DD")}`;
+          const isWeekend = date.day() === 0 || date.day() === 6;
+
+          const beforeJoining =
+            startDate.isValid() && date.isBefore(startDate, "day");
+
+          if (beforeJoining) {
+            row[`day${day}`] = "N/A";
+          } else if (attendanceMap[key]) {
+            row[`day${day}`] = "✅";
+            hasData = true;
+          } else if (leaveMap[key]) {
+            row[`day${day}`] = leaveMap[key];
+            hasData = true;
+          } else if (!isWeekend) {
+            row[`day${day}`] = "H";
+            hasData = true;
+          } else {
+            row[`day${day}`] = "";
+          }
         }
-      }
-  
-      return hasData ? row : null;
-    })
-    .filter(Boolean);
-  
-  
+
+        return hasData ? row : null;
+      })
+      .filter(Boolean);
 
     return finalRows;
   }, [attendanceData, currentMonth]);
@@ -146,6 +157,70 @@ const HrAttendance = () => {
       width: 60,
       cellStyle: { textAlign: "center" },
       headerTooltip: `${date.format("dddd, MMM D")}`,
+      cellRenderer: (params) => {
+        const value = params.value;
+
+        let bgColor = "";
+        let textColor = "";
+        let label = "";
+        let tooltip = "";
+
+        switch (value) {
+          case "✅":
+            bgColor = "#d1fae5"; // light green
+            textColor = "#065f46"; // dark green
+            label = "P";
+            tooltip = "Present";
+            break;
+          case "PL":
+            bgColor = "#fee2e2"; // light red
+            textColor = "#991b1b"; // dark red
+            label = "PL";
+            tooltip = "Privileged Leave";
+            break;
+          case "SL":
+            bgColor = "#fee2e2";
+            textColor = "#991b1b";
+            label = "SL";
+            tooltip = "Sick Leave";
+            break;
+          case "H":
+            bgColor = "#dbeafe"; // light blue
+            textColor = "#1e3a8a"; // dark blue
+            label = "H";
+            tooltip = "Public Holiday";
+            break;
+          case "N/A":
+            bgColor = "#f3f4f6"; // gray
+            textColor = "#6b7280"; // muted
+            label = "N/A";
+            tooltip = "Not Applicable";
+            break;
+          default:
+            return null;
+        }
+
+        return (
+          <div className="py-2">
+            <Tooltip title={tooltip}>
+              <Box
+                sx={{
+                  bgcolor: bgColor,
+                  color: textColor,
+                  fontSize: "0.75rem",
+                  px: 0.8,
+                  borderRadius: "6px",
+                  textAlign: "center",
+                  fontWeight: 500,
+                  width: "100%",
+                }}
+              >
+                {label}
+              </Box>
+            </Tooltip>
+          </div>
+        );
+      },
     };
   });
 
@@ -165,54 +240,54 @@ const HrAttendance = () => {
     dayjs(currentMonth).isSameOrAfter(dayjs(selectedFY.start), "month") &&
     dayjs(currentMonth).isSameOrBefore(dayjs(selectedFY.end), "month");
 
-    return (
-        <div>
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
-            <div className="flex gap-2 items-center">
-              <TextField
-                select
-                size="small"
-                value={selectedFY.label}
-                onChange={(e) => {
-                  const fy = fyOptions.find((fy) => fy.label === e.target.value);
-                  setSelectedFY(fy);
-                  setCurrentMonth(fy.start);
-                }}
-                className="min-w-[140px]"
-              >
-                {fyOptions.map((fy) => (
-                  <MenuItem key={fy.label} value={fy.label}>
-                    {fy.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </div>
-      
-            <div className="flex items-center gap-4">
-              <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" />
-              <span className="font-semibold text-subtitle">{formattedMonth}</span>
-              <PrimaryButton handleSubmit={handleNextMonth} title="Next" />
-            </div>
-          </div>
-      
-          {!isLoading ? (
-            isMonthWithinFY ? (
-              <AgTable
-                data={tableData}
-                columns={columns}
-                search={true}
-                searchColumn="empName"
-              />
-            ) : (
-              <div className="text-center text-gray-500 py-8 text-lg">
-                Data not available for selected financial year.
-              </div>
-            )
-          ) : (
-            <Skeleton width={"100%"} height={600} />
-          )}
+  return (
+    <div>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+        <div className="flex gap-2 items-center">
+          <TextField
+            select
+            size="small"
+            value={selectedFY.label}
+            onChange={(e) => {
+              const fy = fyOptions.find((fy) => fy.label === e.target.value);
+              setSelectedFY(fy);
+              setCurrentMonth(fy.start);
+            }}
+            className="min-w-[140px]"
+          >
+            {fyOptions.map((fy) => (
+              <MenuItem key={fy.label} value={fy.label}>
+                {fy.label}
+              </MenuItem>
+            ))}
+          </TextField>
         </div>
-      );
-    }
-      
+
+        <div className="flex items-center gap-4">
+          <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" />
+          <span className="font-semibold text-subtitle">{formattedMonth}</span>
+          <PrimaryButton handleSubmit={handleNextMonth} title="Next" />
+        </div>
+      </div>
+
+      {!isLoading ? (
+        isMonthWithinFY ? (
+          <AgTable
+            data={tableData}
+            columns={columns}
+            search={true}
+            searchColumn="empName"
+          />
+        ) : (
+          <div className="text-center text-gray-500 py-8 text-lg">
+            Data not available for selected financial year.
+          </div>
+        )
+      ) : (
+        <Skeleton width={"100%"} height={600} />
+      )}
+    </div>
+  );
+};
+
 export default HrAttendance;
