@@ -434,7 +434,7 @@ const getCompanyAttandances = async (req, res, next) => {
   try {
     const { company } = req;
     const companyAttandances = await Attandance.find({ company })
-      .populate({ path: "user", select: "firstName lastName empId" })
+      .populate({ path: "user", select: "firstName lastName empId startDate" })
       .lean()
       .exec();
     let sundays = 0;
@@ -453,7 +453,7 @@ const getCompanyAttandances = async (req, res, next) => {
     const allLeaves = await Leaves.find({ company })
       .populate({
         path: "takenBy",
-        select: "firstName lastName",
+        select: "firstName lastName startDate",
       })
       .lean()
       .exec();
