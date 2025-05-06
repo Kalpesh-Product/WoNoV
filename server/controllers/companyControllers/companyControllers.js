@@ -18,6 +18,7 @@ const UserData = require("../../models/hr/UserData");
 const Unit = require("../../models/locations/Unit");
 const Attandance = require("../../models/hr/Attendance");
 const Events = require("../../models/events/Events");
+const Leaves = require("../../models/hr/Leaves");
 
 const addCompany = async (req, res, next) => {
   const logPath = "hr/HrLog";
@@ -448,8 +449,18 @@ const getCompanyAttandances = async (req, res, next) => {
     const holidays = await Events.find({ company, type: "Holiday" })
       .lean()
       .exec();
+
+    const allLeaves = await Leaves.find({ company })
+      .populate({
+        path: "takenBy",
+        select: "firstName lastName",
+      })
+      .lean()
+      .exec();
     const workingDays = 365 - (holidays.length + sundays);
-    res.status(200).json({ companyAttandances, workingDays, holidays });
+    res
+      .status(200)
+      .json({ companyAttandances, workingDays, holidays, allLeaves });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);
