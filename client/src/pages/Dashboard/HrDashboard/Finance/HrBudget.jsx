@@ -35,17 +35,19 @@ const HrBudget = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
-          `
+          `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e`
         );
-        return response.data.allBudgets;
+        const budgets = response.data.allBudgets;
+        return Array.isArray(budgets) ? budgets : [];
       } catch (error) {
-        throw new Error("Error fetching data");
+        console.error("Error fetching budget:", error);
+        return [];
       }
     },
   });
+  
 
-   const budgetBar =  transformBudgetData(isHrLoading ? [] : hrFinance);
+   const budgetBar =  transformBudgetData(hrFinance);
   useEffect(() => {
     if (!isHrLoading) {
       const timer = setTimeout(() => setIsReady(true), 1000);
