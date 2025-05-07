@@ -20,8 +20,8 @@ const HrEvents = ({ title }) => {
   const columns = [
     { field: "id", headerName: "SR No", width: 100 },
     { field: "title", headerName: "Event", flex: 1 },
-    { field: "day", headerName: "Day", flex: 1 },
     { field: "start", headerName: "Date" },
+    { field: "day", headerName: "Day" },
   ];
 
   const { data: holidayEvents = [] } = useQuery({

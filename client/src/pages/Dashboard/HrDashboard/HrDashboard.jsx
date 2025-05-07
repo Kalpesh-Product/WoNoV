@@ -24,6 +24,7 @@ import { calculateAverageAttendance } from "../../../utils/calculateAverageAtten
 import { calculateAverageDailyWorkingHours } from "../../../utils/calculateAverageDailyWorkingHours ";
 import FinanceCard from "../../../components/FinanceCard";
 import HrExpenseGraph from "../../../components/graphs/HrExpenseGraph";
+import dayjs from "dayjs";
 
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -422,6 +423,7 @@ const HrDashboard = () => {
     { id: "id", label: "Sr No", align: "left" },
     { id: "title", label: "Name", align: "left" },
     { id: "start", label: "Date", align: "left" },
+    { id: "day", label: "Day", align: "left" },
   ];
 
   const { data: birthdays = [], isLoading } = useQuery({
@@ -451,6 +453,7 @@ const HrDashboard = () => {
     { id: "id", label: "Sr No", align: "left" },
     { id: "title", label: "Holiday/Event", align: "center" },
     { id: "start", label: "Date", align: "left" },
+    { id: "day", label: "Day", align: "left" },
   ];
 
   const { data: holidayEvents = [] } = useQuery({
@@ -572,6 +575,7 @@ const HrDashboard = () => {
       { title: "Per Sq. Ft.", value: "810" },
     ],
   };
+
   const HrAverageExpense = {
     cardTitle: "Averages",
     // timePeriod: "FY 2024-25",
@@ -857,12 +861,23 @@ const HrDashboard = () => {
             key={birthdays.length}
             Title="Current Months Birthday List"
             columns={columns}
+            // rows={[
+            //   ...[...dummyBirthdays, ...birthdays].map((bd, index) => ({
+            //     id: index + 1,
+            //     title: bd.title,
+            //     start: new Date(bd.start).toLocaleDateString(),
+            //   })),
+            // ]}
             rows={[
-              ...[...dummyBirthdays, ...birthdays].map((bd, index) => ({
-                id: index + 1,
-                title: bd.title,
-                start: new Date(bd.start).toLocaleDateString(),
-              })),
+              ...[...dummyBirthdays, ...birthdays].map((bd, index) => {
+                const date = dayjs(bd.start);
+                return {
+                  id: index + 1,
+                  title: bd.title,
+                  start: date.format("DD-MM-YYYY"),
+                  day: date.format("dddd"),
+                };
+              }),
             ]}
             rowsToDisplay={5}
             scroll
@@ -874,11 +889,20 @@ const HrDashboard = () => {
         <MuiTable
           Title="Current Months Holiday List"
           columns={columns2}
-          rows={holidayEvents.map((holiday, index) => ({
-            id: index + 1,
-            title: holiday.title,
-            start: new Date(holiday.start).toLocaleDateString(),
-          }))}
+          // rows={holidayEvents.map((holiday, index) => ({
+          //   id: index + 1,
+          //   title: holiday.title,
+          //   start: new Date(holiday.start).toLocaleDateString(),
+          // }))}
+          rows={holidayEvents.map((holiday, index) => {
+            const date = dayjs(holiday.start);
+            return {
+              id: index + 1,
+              title: holiday.title,
+              start: date.format("DD-MM-YYYY"),
+              day: date.format("dddd"),
+            };
+          })}
           rowsToDisplay={5}
           scroll
         />,

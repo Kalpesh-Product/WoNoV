@@ -20,7 +20,7 @@ const HoildaysEvents = ({ title }) => {
   const columns = [
     { field: "id", headerName: "SR No", width: 100 },
     { field: "title", headerName: "Holiday", flex: 1 },
-    { field: "day", headerName: "Day", flex: 1 },
+    { field: "day", headerName: "Day" },
     { field: "start", headerName: "Date" },
   ];
 
