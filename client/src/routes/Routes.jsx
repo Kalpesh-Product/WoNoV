@@ -314,6 +314,7 @@ import LandlordPaymentLocation from "../pages/Dashboard/FinanceDashboard/Finance
 import CollectionsLayout from "../pages/Dashboard/FinanceDashboard/Finance/CollectionsLayout";
 import HrAttendance from "../pages/Dashboard/HrDashboard/HrEmployee/HrAttendance";
 import HrLeaves from "../pages/Dashboard/HrDashboard/HrEmployee/HrLeaves";
+import HrEvents from "../pages/Dashboard/HrDashboard/Complaince/HrEvents";
 
 export const routes = createBrowserRouter([
   {
@@ -573,8 +574,8 @@ export const routes = createBrowserRouter([
                             element: <Collections />,
                           },
                           {
-                            path : "collections/paid",
-                            element:<CollectionsLayout />,
+                            path: "collections/paid",
+                            element: <CollectionsLayout />,
                           },
                           {
                             path: "statutory-payments",
@@ -1187,6 +1188,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "holidays",
                             element: <HolidaysEvents />,
+                          },
+                          {
+                            path: "events",
+                            element: <HrEvents />,
                           },
                           {
                             path: "company-handbook",

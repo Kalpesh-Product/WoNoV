@@ -40,7 +40,7 @@ const HrLeaves = () => {
   const generateMonthOptions = (startDate, endDate) => {
     const months = [];
     let date = dayjs(startDate);
-  
+
     while (date.isSameOrBefore(endDate, "month")) {
       months.push({
         label: date.format("MMMM YYYY"),
@@ -48,7 +48,7 @@ const HrLeaves = () => {
       });
       date = date.add(1, "month");
     }
-  
+
     return months;
   };
 
@@ -247,8 +247,7 @@ const HrLeaves = () => {
                   textAlign: "center",
                   fontWeight: 500,
                   width: "100%",
-                }}
-              >
+                }}>
                 {label}
               </Box>
             </Tooltip>
@@ -268,8 +267,8 @@ const HrLeaves = () => {
     },
     {
       field: "totalDays",
-      headerName: "Total Days",
-      width: 120,
+      headerName: "Working Days",
+      width: 130,
       headerClass: "ag-center-header",
       pinned: "left",
       cellStyle: { textAlign: "center" },
@@ -302,8 +301,7 @@ const HrLeaves = () => {
               setSelectedFY(fy);
               setCurrentMonth(fy.start);
             }}
-            className="min-w-[140px]"
-          >
+            className="min-w-[140px]">
             {fyOptions.map((fy) => (
               <MenuItem key={fy.label} value={fy.label}>
                 {fy.label}
@@ -325,12 +323,10 @@ const HrLeaves = () => {
               const newDate = dayjs(`${year}-${month}-01`).toDate();
               setCurrentMonth(newDate);
             }}
-            
             className="min-w-[160px]"
             SelectProps={{
               IconComponent: KeyboardArrowDownIcon,
-            }}
-          >
+            }}>
             {generateMonthOptions(selectedFY.start, selectedFY.end).map(
               (option) => (
                 <MenuItem key={option.value} value={option.value}>
