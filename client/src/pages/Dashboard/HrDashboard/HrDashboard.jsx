@@ -631,6 +631,8 @@ const HrDashboard = () => {
   const totalUtilised =
     hrFinance?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
 
+  const lastUtilisedValue = hrFinance?.utilisedBudget?.at(-1) || 0;
+
   //--------------------New Data card data -----------------------//
   const HrExpenses = {
     cardTitle: "Expenses",
@@ -642,7 +644,7 @@ const HrDashboard = () => {
       },
       {
         title: "March 2025",
-        value: "INR 27,00,000",
+        value: `INR ${Math.round(lastUtilisedValue).toLocaleString("en-IN")}`,
       },
       {
         title: "March 2025 Budget",
@@ -749,8 +751,7 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection
             normalCase
             layout={1}
@@ -761,8 +762,7 @@ const HrDashboard = () => {
             TitleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
               "en-IN"
             )}`}
-            title={"BIZ Nest HR DEPARTMENT EXPENSE"}
-          >
+            title={"BIZ Nest HR DEPARTMENT EXPENSE"}>
             <BarGraph
               data={expenseRawSeries}
               options={expenseOptions}
@@ -891,15 +891,13 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection
             layout={1}
             border
             padding
             titleLabel={"FY 2024-25"}
-            title={"Department Wise KPA Vs Achievements "}
-          >
+            title={"Department Wise KPA Vs Achievements "}>
             <BarGraph data={tasksData} options={tasksOptions} />
           </WidgetSection>
         </Suspense>,
