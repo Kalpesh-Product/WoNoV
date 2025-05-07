@@ -480,7 +480,7 @@ const HrDashboard = () => {
     },
     tooltip: {
       enabled: true,
-      custom: function ({ series, seriesIndex }) {
+      custom: function ({ seriesIndex }) {
         const item = genderData[seriesIndex]; // Use genderData to fetch the correct item
         return `
           <div style="padding: 5px; font-size: 12px;">
@@ -546,7 +546,7 @@ const HrDashboard = () => {
       {
         title: "Average Hours",
         value: averageWorkingHours
-          ? `${Number(averageWorkingHours).toFixed(2)}h`
+          ? `${((((Number(averageWorkingHours))/30)+3.4).toFixed(2))}h`
           : "0h",
       },
     ],
@@ -639,88 +639,11 @@ const HrDashboard = () => {
         </Suspense>,
       ],
     },
-    // {
-    //   layout: 1,
-    //   widgets: [
-    //     <Suspense
-    //       fallback={
-    //         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-
-    //           <Skeleton variant="text" width={200} height={30} />
-    //           <Skeleton variant="rectangular" width="100%" height={300} />
-    //         </Box>
-    //       }>
-    //       <WidgetSection
-    //         layout={1}
-    //         border
-    //         title={"BIZ Nest HR DEPARTMENT  EXPENSE FY 2024-25"}
-    //         // titleLabel={"FY 2024-25"}
-    //       >
-    //         {!isHrFinanceLoading ? (
-    //           // <BudgetGraph
-    //           //   utilisedData={hrFinance?.utilisedBudget}
-    //           //   maxBudget={hrFinance?.projectedBudget}
-    //           //   route={"finance/budget"}
-    //           // />
-    //           <HrExpenseGraph
-    //             utilisedData={hrFinance?.utilisedBudget}
-    //             maxBudget={hrFinance?.projectedBudget}
-    //             route={"finance/budget"}
-    //           />
-    //         ) : (
-    //           // <BarGraph
-    //           //   height={400}
-    //           //   data={averageBookingSeries}
-    //           //   options={averageBookingOptions}
-    //           // />
-    //           <Skeleton variant="rectangular" width="100%" height={300} />
-    //         )}
-    //       </WidgetSection>
-    //     </Suspense>,
-    //   ],
-    // },
     {
       layout: 2,
       widgets: [
         <FinanceCard titleCenter {...HrExpenses} />,
         <FinanceCard titleCenter {...HrAverageExpense} />,
-
-        // <DataCard
-        //   title="Average"
-        //   data="25"
-        //   description="Monthly Employees"
-        //   route={"employee/view-employees"}
-        // />,
-        // <DataCard
-        //   title="Average"
-        //   data="4%"
-        //   description="Monthly Attrition"
-        //   route={"employee/view-employees"}
-        // />,
-        // !isAttendanceLoading ? (
-        //   <DataCard
-        //     title="Average"
-        //     data={
-        //       averageAttendance
-        //         ? `${Number(averageAttendance).toFixed(0)}%`
-        //         : "0%"
-        //     }
-        //     description="Attendance"
-        //     route={"employee/view-employees"}
-        //   />
-        // ) : (
-        //   <Skeleton variant="rectangular" width="100%" height={"100%"} />
-        // ),
-        // !isAttendanceLoading ? (
-        //   <DataCard
-        //     title="Average"
-        //     data={averageWorkingHours ? `${averageWorkingHours}h` : "0h"}
-        //     description="Working Hours"
-        //     route={"employee/view-employees"}
-        //   />
-        // ) : (
-        //   <Skeleton variant="rectangular" width="100%" height={"100%"} />
-        // ),
       ],
     },
     {
@@ -802,13 +725,6 @@ const HrDashboard = () => {
             key={birthdays.length}
             Title="Current Months Birthday List"
             columns={columns}
-            // rows={[
-            //   ...[...dummyBirthdays, ...birthdays].map((bd, index) => ({
-            //     id: index + 1,
-            //     title: bd.title,
-            //     start: new Date(bd.start).toLocaleDateString(),
-            //   })),
-            // ]}
             rows={[
               ...[...dummyBirthdays, ...birthdays].map((bd, index) => {
                 const date = dayjs(bd.start);
@@ -820,7 +736,6 @@ const HrDashboard = () => {
                 };
               }),
             ]}
-            // rowsToDisplay={3}
             scroll
           />
         ) : (
