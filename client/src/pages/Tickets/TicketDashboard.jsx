@@ -67,8 +67,20 @@ const TicketDashboard = () => {
   
   const departmentCountMap = {};
 
+  const today = new Date(); 
+  const currentYear = new Date().getFullYear(); 
+  
+  const todayTickets = ticketsData.filter((ticket) => {
+    const createdAt = new Date(ticket.createdAt);
+     return (
+      createdAt.getDate()  === today.getDate()  &&
+      createdAt.getFullYear() === currentYear
+    );
+  });
+
+
   const lastMonth = new Date().getMonth();  
-  const currentYear = new Date().getFullYear();
+ 
   
   const lastMonthTickets = ticketsData.filter((ticket) => {
     const createdAt = new Date(ticket.createdAt);
@@ -83,6 +95,7 @@ const TicketDashboard = () => {
   
   const currentMonthTickets = ticketsData.filter((ticket) => {
     const createdAt = new Date(ticket.createdAt);
+
     return (
       createdAt.getMonth()  === currentMonth  &&
       createdAt.getFullYear() === currentYear
@@ -99,6 +112,9 @@ const TicketDashboard = () => {
   
   const donutSeries =   masterDepartments.map(dept => departmentCountMap[dept] || 0) ;
 
+
+ 
+
   //Task Priority data for widget
   const priorityCountMap = {};
 
@@ -111,8 +127,21 @@ const TicketDashboard = () => {
   
   const priorityOrder = ["high", "medium", "low"]; // order you want in the chart
   const series = priorityOrder.map(priority => priorityCountMap[priority] || 0);
-  
 
+
+  //Live tickets
+  const todayPriorityCountMap = {};
+
+  todayTickets.forEach(item => {
+    const priority = item.priority;
+    if (priority) {
+      todayPriorityCountMap[priority] = (todayPriorityCountMap[priority] || 0) + 1;
+    }
+  });
+  
+  const todayPriorityOrder = ["high", "medium", "low"]; // order you want in the chart
+  const todayTicketseries = todayPriorityOrder.map(priority => todayPriorityCountMap[priority] || 0);
+  
   const filterDepartmentTickts = (department)=>{
     const tickets = currentMonthTickets.filter((ticket)=> ticket.raisedToDepartment.name === department)
     return tickets
@@ -227,17 +256,17 @@ const TicketDashboard = () => {
               },
               {
                 title: "Immediate Attended",
-                value: "5",
+                value: todayTicketseries[0],
                 route: "/app/tickets/manage-tickets",
               },
               {
                 title: "Medium Attended",
-                value: "5",
+                value: todayTicketseries[1],
                 route: "/app/tickets/manage-tickets",
               },
               {
                 title: "Low Attended",
-                value: "3",
+                value: todayTicketseries[2],
                 route: "/app/tickets/manage-tickets",
               },
             ]}
