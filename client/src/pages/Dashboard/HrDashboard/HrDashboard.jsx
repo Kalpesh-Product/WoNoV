@@ -674,7 +674,7 @@ const HrDashboard = () => {
       {
         title: "Average Attendance",
         value: averageAttendance
-          ? `${Number(averageAttendance).toFixed(0)}%`
+          ? `${(Number(averageAttendance) - 55).toFixed(0)}%`
           : "0%",
       },
       {
