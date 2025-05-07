@@ -156,7 +156,7 @@ const HrDashboard = () => {
       fontFamily: "Poppins-Regular, Arial, sans-serif",
       events: {
         dataPointSelection: () => {
-          navigate("/app/tasks");
+          navigate("finance/budget");
         },
       },
     },
@@ -260,90 +260,103 @@ const HrDashboard = () => {
 
   //-------------------Tasks vs Achievements graph--------------------//
 
-  const rawSeries = [
-    {
-      name: "Sales Assigned",
-      data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 20, 15],
-      group: "total",
-    },
-    {
-      name: "IT Assigned",
-      data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 25, 10],
-      group: "total",
-    },
-    {
-      name: "Tech Assigned",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 30, 30],
-      group: "total",
-    },
+  // const rawSeries = [
+  //   {
+  //     name: "Sales Assigned",
+  //     data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 20, 15],
+  //     group: "total",
+  //   },
+  //   {
+  //     name: "IT Assigned",
+  //     data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 25, 10],
+  //     group: "total",
+  //   },
+  //   {
+  //     name: "Tech Assigned",
+  //     data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 30, 30],
+  //     group: "total",
+  //   },
 
-    {
-      name: "Admin Assigned",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 10, 10],
-      group: "total",
-    },
-    {
-      name: "Maintainance Assigned",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 5, 3],
-      group: "total",
-    },
-    {
-      name: "Space Completed",
-      data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      group: "space",
-    },
-    {
-      name: "Sales Completed",
-      data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 10, 10],
-      group: "completed",
-    },
-    {
-      name: "IT Completed",
-      data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 20, 10],
-      group: "completed",
-    },
+  //   {
+  //     name: "Admin Assigned",
+  //     data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 10, 10],
+  //     group: "total",
+  //   },
+  //   {
+  //     name: "Maintainance Assigned",
+  //     data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 5, 3],
+  //     group: "total",
+  //   },
+  //   {
+  //     name: "Space Completed",
+  //     data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  //     group: "space",
+  //   },
+  //   {
+  //     name: "Sales Completed",
+  //     data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 10, 10],
+  //     group: "completed",
+  //   },
+  //   {
+  //     name: "IT Completed",
+  //     data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 20, 10],
+  //     group: "completed",
+  //   },
 
+  //   {
+  //     name: "Tech Completed",
+  //     data: [45, 40, 30, 45, 50, 40, 55, 50, 60, 65, 30, 30],
+  //     group: "completed",
+  //   },
+  //   {
+  //     name: "Admin Completed",
+  //     data: [40, 30, 40, 52, 46, 40, 60, 59, 50, 70, 8, 10],
+  //     group: "completed",
+  //   },
+  //   {
+  //     name: "Maintainance Completed",
+  //     data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 4, 1],
+  //     group: "completed",
+  //   },
+  // ];
+
+  const tasksData = [
     {
-      name: "Tech Completed",
-      data: [45, 40, 30, 45, 50, 40, 55, 50, 60, 65, 30, 30],
-      group: "completed",
+      name: "Total Tasks",
+      data: [45, 60, 50, 70, 65, 80, 90, 85, 75, 60, 55, 70],
     },
     {
-      name: "Admin Completed",
-      data: [40, 30, 40, 52, 46, 40, 60, 59, 50, 70, 8, 10],
-      group: "completed",
-    },
-    {
-      name: "Maintainance Completed",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 4, 1],
-      group: "completed",
+      name: "Achieved Tasks",
+      data: [30, 50, 40, 60, 50, 70, 80, 75, 65, 50, 45, 60],
     },
   ];
 
-  const options = {
+  const tasksOptions = {
     chart: {
       type: "bar",
+      fontFamily: "Poppins-Regular",
+      stacked: false,
       toolbar: { show: false },
-
-      stacked: true,
-      fontFamily: "Poppins-Regular, Arial, sans-serif",
-      events: {
-        dataPointSelection: () => {
-          navigate("/app/tasks");
-        },
-      },
+      // events: {
+      //   dataPointSelection: () => {
+      //     navigate("/app/tasks");
+      //   },
+      // },
     },
-    colors: ["#54C4A7", "#EB5C45"],
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "65%",
-        borderRadius: 2,
-        borderRadiusApplication: "none",
+        columnWidth: "70%",
+        borderRadius: 5,
       },
     },
     dataLabels: {
-      enabled: true, // Enable data labels
+      enabled: false,
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["transparent"],
     },
     xaxis: {
       categories: [
@@ -360,34 +373,98 @@ const HrDashboard = () => {
         "Feb-25",
         "Mar-25",
       ],
-      title: {
-        text: "  ",
+      labels: {
+        rotate: -45,
       },
     },
     yaxis: {
-      max: 100,
-      title: { text: "Assigned vs Completed" },
-      labels: {
-        formatter: (val) => `${Math.round(val)}`,
+      title: {
+        text: "Task Count",
       },
+      max: 100,
+    },
+    legend: {
+      position: "top",
     },
     fill: {
       opacity: 1,
     },
-    legend: {
-      show: true,
-      position: "top",
-    },
-
+    colors: ["#54C4A7", "#EB5C45"], // Green for Total, Red for Achieved
     tooltip: {
       y: {
-        formatter: (val, { seriesIndex, dataPointIndex }) => {
-          const rawData = rawSeries[seriesIndex]?.data[dataPointIndex];
-          return `${rawData} Tasks`;
-        },
+        formatter: (val) => `${val} tasks`,
       },
     },
   };
+
+  // const options = {
+  //   chart: {
+  //     type: "bar",
+  //     toolbar: { show: false },
+
+  //     stacked: true,
+  //     fontFamily: "Poppins-Regular, Arial, sans-serif",
+  //     events: {
+  //       dataPointSelection: () => {
+  //         navigate("/app/tasks");
+  //       },
+  //     },
+  //   },
+  //   colors: ["#54C4A7", "#EB5C45"],
+  //   plotOptions: {
+  //     bar: {
+  //       horizontal: false,
+  //       columnWidth: "65%",
+  //       borderRadius: 2,
+  //       borderRadiusApplication: "none",
+  //     },
+  //   },
+  //   dataLabels: {
+  //     enabled: true, // Enable data labels
+  //   },
+  //   xaxis: {
+  //     categories: [
+  //       "Apr-24",
+  //       "May-24",
+  //       "Jun-24",
+  //       "Jul-24",
+  //       "Aug-24",
+  //       "Sep-24",
+  //       "Oct-24",
+  //       "Nov-24",
+  //       "Dec-24",
+  //       "Jan-25",
+  //       "Feb-25",
+  //       "Mar-25",
+  //     ],
+  //     title: {
+  //       text: "  ",
+  //     },
+  //   },
+  //   yaxis: {
+  //     max: 100,
+  //     title: { text: "Assigned vs Completed" },
+  //     labels: {
+  //       formatter: (val) => `${Math.round(val)}`,
+  //     },
+  //   },
+  //   fill: {
+  //     opacity: 1,
+  //   },
+  //   legend: {
+  //     show: true,
+  //     position: "top",
+  //   },
+
+  //   tooltip: {
+  //     y: {
+  //       formatter: (val, { seriesIndex, dataPointIndex }) => {
+  //         const rawData = rawSeries[seriesIndex]?.data[dataPointIndex];
+  //         return `${rawData} Tasks`;
+  //       },
+  //     },
+  //   },
+  // };
 
   //-------------------Tasks vs Achievements graph--------------------//
 
@@ -642,7 +719,7 @@ const HrDashboard = () => {
     },
     stroke: {
       show: true,
-      width: 4, // Increase for more "gap"
+      width: 1, // Increase for more "gap"
       colors: ["#ffffff"], // Or match background color
     },
     tooltip: {
@@ -668,7 +745,8 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection
             normalCase
             layout={1}
@@ -679,7 +757,8 @@ const HrDashboard = () => {
             TitleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
               "en-IN"
             )}`}
-            title={"BIZ Nest HR DEPARTMENT EXPENSE"}>
+            title={"BIZ Nest HR DEPARTMENT EXPENSE"}
+          >
             <BarGraph
               data={expenseRawSeries}
               options={expenseOptions}
@@ -808,18 +887,16 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection
             layout={1}
             border
             padding
             titleLabel={"FY 2024-25"}
-            title={"Department Wise KPA Vs Achievements "}>
-            <BarGraph
-              data={rawSeries}
-              options={options}
-              departments={["Sales", "IT", "Tech", "Admin", "Maintainance"]}
-            />
+            title={"Department Wise KPA Vs Achievements "}
+          >
+            <BarGraph data={tasksData} options={tasksOptions} />
           </WidgetSection>
         </Suspense>,
       ],
@@ -864,7 +941,7 @@ const HrDashboard = () => {
                 start: new Date(bd.start).toLocaleDateString(),
               })),
             ]}
-            rowsToDisplay={5}
+            // rowsToDisplay={3}
             scroll
           />
         ) : (
@@ -879,7 +956,7 @@ const HrDashboard = () => {
             title: holiday.title,
             start: new Date(holiday.start).toLocaleDateString(),
           }))}
-          rowsToDisplay={5}
+          rowsToDisplay={14}
           scroll
         />,
       ],
