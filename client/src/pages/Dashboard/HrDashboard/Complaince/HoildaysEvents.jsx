@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import { TextField, Button } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { DatePicker } from "@mui/x-date-pickers";
-import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 const HoildaysEvents = ({ title }) => {
   const axios = useAxiosPrivate();
@@ -19,7 +19,8 @@ const HoildaysEvents = ({ title }) => {
 
   const columns = [
     { field: "id", headerName: "SR No", width: 100 },
-    { field: "title", headerName: "Holiday / Event Name", flex: 1 },
+    { field: "title", headerName: "Holiday", flex: 1 },
+    { field: "day", headerName: "Day", flex: 1 },
     { field: "start", headerName: "Date" },
   ];
 
@@ -27,19 +28,22 @@ const HoildaysEvents = ({ title }) => {
     queryKey: ["holidayEvents"],
     queryFn: async () => {
       const response = await axios.get("/api/events/all-events");
-      console.log(response.data)
+      console.log(response.data);
       return response.data;
     },
   });
 
-  const combinedEvents = [
-    ...holidayEvents,
-    ...localEvents,
-  ].map((holiday, index) => ({
-    id: index + 1,
-    title: holiday.title,
-    start: dayjs(holiday.start).format("DD-MM-YYYY"),
-  }));
+  const combinedEvents = [...holidayEvents, ...localEvents].map(
+    (holiday, index) => {
+      const date = dayjs(holiday.start);
+      return {
+        id: index + 1,
+        title: holiday.title,
+        day: date.format("dddd"), // e.g., "Monday"
+        start: date.format("DD-MM-YYYY"),
+      };
+    }
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -63,9 +67,9 @@ const HoildaysEvents = ({ title }) => {
       <AgTable
         key={combinedEvents.length}
         search={true}
-        tableTitle={"Holidays / Events"}
+        tableTitle={"Holidays"}
         columns={columns}
-        buttonTitle="Add Holiday / Event"
+        buttonTitle="Add Holiday"
         handleClick={() => setModalOpen(true)}
         data={combinedEvents}
       />
@@ -73,8 +77,7 @@ const HoildaysEvents = ({ title }) => {
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Add Holiday / Event"
-      >
+        title="Add Holiday">
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <TextField
@@ -82,14 +85,20 @@ const HoildaysEvents = ({ title }) => {
               fullWidth
               size="small"
               value={newEvent.title}
-              onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+              onChange={(e) =>
+                setNewEvent({ ...newEvent, title: e.target.value })
+              }
             />
             <DatePicker
               label="Date"
-              slotProps={{textField:{size:'small'}}}
+              slotProps={{ textField: { size: "small" } }}
               value={newEvent.startDate ? dayjs(newEvent.startDate) : null}
-              onChange={(newDate) => setNewEvent({ ...newEvent, startDate: newDate })}
-              renderInput={(params) => <TextField size="small" {...params} fullWidth />}
+              onChange={(newDate) =>
+                setNewEvent({ ...newEvent, startDate: newDate })
+              }
+              renderInput={(params) => (
+                <TextField size="small" {...params} fullWidth />
+              )}
             />
 
             <PrimaryButton type="submit" title="Add Holiday / Event" />

@@ -89,15 +89,15 @@ const HrDashboard = () => {
 
   const expenseRawSeries = [
     {
-      name: "Sales Assigned",
+      name: "FY 2024-25",
       data: hrFinance?.utilisedBudget,
       group: "total",
     },
-    // {
-    //   name: "IT Assigned",
-    //   data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 25, 10],
-    //   group: "total",
-    // },
+    {
+      name: "FY 2025-26",
+      data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      group: "total",
+    },
     // {
     //   name: "Tech Assigned",
     //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 30, 30],
@@ -174,7 +174,16 @@ const HrDashboard = () => {
     },
     dataLabels: {
       enabled: true,
-      formatter: (val) => inrFormat(val),
+      // formatter: (val) => inrFormat(val),
+      // formatter: (val) => {
+      //   const scaled = val / 100000; // Scale from actual to "xx.xx" format
+      //   return scaled.toFixed(2); // Keep two digits after decimal
+      // },
+      formatter: (val) => {
+        const scaled = Math.round((val / 100000) * 100) / 100;
+        return Number.isInteger(scaled) ? scaled.toFixed(0) : scaled.toFixed(2);
+      },
+
       style: {
         fontSize: "12px",
         colors: ["#000"],
@@ -204,7 +213,7 @@ const HrDashboard = () => {
       // max: 3000000,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => `${Math.round(val)}`,
+        formatter: (val) => `${Math.round(val / 100000)}`,
       },
     },
     fill: {
@@ -216,12 +225,33 @@ const HrDashboard = () => {
     },
 
     tooltip: {
-      enabled : false,
-      y: {
-        formatter: (val, { seriesIndex, dataPointIndex }) => {
-          const rawData = rawSeries[seriesIndex]?.data[dataPointIndex];
-          return `${rawData} Tasks`;
-        },
+      enabled: true,
+      // y: {
+      //   formatter: (val, { seriesIndex, dataPointIndex }) => {
+      //     const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
+      //     // return `${rawData} Tasks`;
+      //     return `HR Expense: INR ${rawData.toLocaleString("en-IN")}`;
+      //   },
+      // },
+      custom: function ({ series, seriesIndex, dataPointIndex }) {
+        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
+        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
+        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
+        //     </div>`;
+        return `
+            <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
+        
+              <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
+                <div><strong>HR Expense:</strong></div>
+                <div style="width: 10px;"></div>
+             <div style="text-align: left;">INR ${Math.round(
+               rawData
+             ).toLocaleString("en-IN")}</div>
+
+              </div>
+     
+            </div>
+          `;
       },
     },
   };
@@ -624,6 +654,9 @@ const HrDashboard = () => {
     },
   };
 
+  const totalUtilised =
+    hrFinance?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+
   const hrWidgets = [
     {
       layout: 1,
@@ -637,17 +670,21 @@ const HrDashboard = () => {
             </Box>
           }>
           <WidgetSection
+            normalCase
             layout={1}
             border
             padding
             titleLabel={"FY 2024-25"}
-            TitleAmount={"INR 23,13,365"}
+            // TitleAmount={"INR 23,13,365"}
+            TitleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
+              "en-IN"
+            )}`}
             title={"BIZ Nest HR DEPARTMENT EXPENSE"}>
             <BarGraph
               data={expenseRawSeries}
               options={expenseOptions}
               // departments={["Sales", "IT", "Tech", "Admin", "Maintainance"]}
-              // departments={["FY 2024-25", "FY 2025-26"]}
+              departments={["FY 2024-25", "FY 2025-26"]}
             />
           </WidgetSection>
         </Suspense>,

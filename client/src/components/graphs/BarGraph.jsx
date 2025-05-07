@@ -25,6 +25,8 @@ const BarGraph = ({
   // Determine current department (if departments are provided)
   const currentDepartment = departments?.[departmentIndex] || null;
 
+  console.log("the departments in bar graph", departments);
+
   // Filter the data for the current department (if any)
   const filteredData = currentDepartment
     ? data.filter((item) =>
