@@ -387,7 +387,6 @@ const getAllAttendance = async (req, res, next) => {
   }
 };
 
-
 const getAttendance = async (req, res, next) => {
   const { id } = req.params;
   const { company } = req;
@@ -401,7 +400,9 @@ const getAttendance = async (req, res, next) => {
     const attendances = await Attendance.find({
       user: user._id,
       company,
-    }).lean().exec();
+    })
+      .lean()
+      .exec();
 
     if (!attendances || attendances.length === 0) {
       return res.status(400).json({ message: "No attendance exists" });
@@ -412,7 +413,6 @@ const getAttendance = async (req, res, next) => {
     next(error);
   }
 };
-
 
 const correctAttendance = async (req, res, next) => {
   const { user, ip, company } = req;
@@ -539,7 +539,6 @@ const bulkInsertAttendance = async (req, res, next) => {
     }
 
     const companyId = req.company;
-
     const employees = await UserData.find({ company: companyId })
       .select("_id empId")
       .lean();
@@ -547,43 +546,58 @@ const bulkInsertAttendance = async (req, res, next) => {
     const employeeMap = new Map(employees.map((emp) => [emp.empId, emp._id]));
 
     const newAttendanceRecords = [];
+    const invalidRows = [];
+
     const stream = Readable.from(req.file.buffer.toString("utf-8").trim());
 
     stream
       .pipe(csvParser())
-      .on("data", async (row) => {
-        try {
-          const empId = row["User (Emp ID)"].trim();
-          if (!employeeMap.has(empId)) {
-            throw new Error(`Employee not found: ${empId}`);
-          }
+      .on("data", (row) => {
+        const empId = row["User (Emp ID)"]?.trim();
+        const dateStr = row["Date"]?.trim();
+        const inTimeStr = row["In Time"]?.trim();
+        const outTimeStr = row["Out Time"]?.trim();
 
-          const attendanceRecord = {
-            company: new mongoose.Types.ObjectId(companyId),
-            user: employeeMap.get(empId),
-            date: new Date(row["Date"]),
-            inTime: new Date(`${row["Date"].trim()} ${row["In Time"].trim()}`),
-            outTime: new Date(
-              `${row["Date"].trim()} ${row["Out Time"].trim()}`
-            ),
-            entryType: row["Entry Type"] || "web",
-          };
-
-          newAttendanceRecords.push(attendanceRecord);
-        } catch (error) {
-          console.error("Error processing row:", row, error);
+        if (!employeeMap.has(empId)) {
+          invalidRows.push(`Employee not found: ${empId}`);
+          return;
         }
+
+        const inTime = new Date(`${dateStr} ${inTimeStr}`);
+        const outTime = new Date(`${dateStr} ${outTimeStr}`);
+
+        if (isNaN(inTime.getTime()) || isNaN(outTime.getTime())) {
+          invalidRows.push(
+            `Invalid time format for employee ${empId} on ${dateStr}`
+          );
+          return;
+        }
+
+        newAttendanceRecords.push({
+          company: new mongoose.Types.ObjectId(companyId),
+          user: employeeMap.get(empId),
+          date: new Date(dateStr),
+          inTime,
+          outTime,
+          entryType: row["Entry Type"] || "web",
+        });
       })
       .on("end", async () => {
+        if (invalidRows.length > 0) {
+          return res.status(400).json({
+            message: "Invalid data found in CSV",
+            errors: invalidRows,
+          });
+        }
+
+        if (newAttendanceRecords.length === 0) {
+          return res
+            .status(400)
+            .json({ message: "No valid attendance records found in CSV" });
+        }
+
         try {
-          if (newAttendanceRecords.length === 0) {
-            return res
-              .status(400)
-              .json({ message: "No valid attendance records found in CSV" });
-          }
-
           await Attendance.insertMany(newAttendanceRecords);
-
           res.status(201).json({
             message: "Bulk attendance data inserted successfully",
             insertedCount: newAttendanceRecords.length,
@@ -598,6 +612,7 @@ const bulkInsertAttendance = async (req, res, next) => {
     next(error);
   }
 };
+
 module.exports = {
   clockIn,
   clockOut,

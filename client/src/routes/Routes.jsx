@@ -312,6 +312,8 @@ import CafeDashboard from "../pages/Dashboard/CafeDashboard/CafeDashboard";
 import DeptWiseBudgetDetails from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudgetDetails";
 import LandlordPaymentLocation from "../pages/Dashboard/FinanceDashboard/Finance/LandlordPaymentLocation";
 import CollectionsLayout from "../pages/Dashboard/FinanceDashboard/Finance/CollectionsLayout";
+import HrAttendance from "../pages/Dashboard/HrDashboard/HrEmployee/HrAttendance";
+import HrLeaves from "../pages/Dashboard/HrDashboard/HrEmployee/HrLeaves";
 
 export const routes = createBrowserRouter([
   {
@@ -1225,6 +1227,14 @@ export const routes = createBrowserRouter([
                             path: "employee-onboarding",
                             index: true,
                             element: <EmployeeOnboard />,
+                          },
+                          {
+                            path: "attendance",
+                            element: <HrAttendance />,
+                          },
+                          {
+                            path: "leaves",
+                            element: <HrLeaves />,
                           },
                           {
                             path: "view-employees",

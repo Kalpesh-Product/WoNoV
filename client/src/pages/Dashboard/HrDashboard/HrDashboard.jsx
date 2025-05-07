@@ -22,6 +22,8 @@ import { useSidebar } from "../../../context/SideBarContext";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
 import { calculateAverageAttendance } from "../../../utils/calculateAverageAttendance ";
 import { calculateAverageDailyWorkingHours } from "../../../utils/calculateAverageDailyWorkingHours ";
+import FinanceCard from "../../../components/FinanceCard";
+import HrExpenseGraph from "../../../components/graphs/HrExpenseGraph";
 
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -58,6 +60,175 @@ const HrDashboard = () => {
       }
     },
   });
+
+  //--------------------HR BUDGET---------------------------//
+  const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
+    queryKey: ["hrFinance"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
+            `
+        );
+
+        console.log(transformBudgetData(response.data.allBudgets));
+        return transformBudgetData(response.data.allBudgets);
+      } catch (error) {
+        throw new Error("Error fetching data");
+      }
+    },
+  });
+  const totalExpense = hrFinance?.projectedBudget?.reduce(
+    (sum, val) => sum + (val || 0),
+    0
+  );
+
+  //--------------------HR BUDGET---------------------------//
+
+  //-------------------HR Expense graph start--------------------//
+
+  const expenseRawSeries = [
+    {
+      name: "Sales Assigned",
+      data: hrFinance?.utilisedBudget,
+      group: "total",
+    },
+    // {
+    //   name: "IT Assigned",
+    //   data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 25, 10],
+    //   group: "total",
+    // },
+    // {
+    //   name: "Tech Assigned",
+    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 30, 30],
+    //   group: "total",
+    // },
+
+    // {
+    //   name: "Admin Assigned",
+    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 10, 10],
+    //   group: "total",
+    // },
+    // {
+    //   name: "Maintainance Assigned",
+    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 5, 3],
+    //   group: "total",
+    // },
+    // {
+    //   name: "Space Completed",
+    //   data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    //   group: "space",
+    // },
+    // {
+    //   name: "Sales Completed",
+    //   data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 10, 10],
+    //   group: "completed",
+    // },
+    // {
+    //   name: "IT Completed",
+    //   data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 20, 10],
+    //   group: "completed",
+    // },
+
+    // {
+    //   name: "Tech Completed",
+    //   data: [45, 40, 30, 45, 50, 40, 55, 50, 60, 65, 30, 30],
+    //   group: "completed",
+    // },
+    // {
+    //   name: "Admin Completed",
+    //   data: [40, 30, 40, 52, 46, 40, 60, 59, 50, 70, 8, 10],
+    //   group: "completed",
+    // },
+    // {
+    //   name: "Maintainance Completed",
+    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 4, 1],
+    //   group: "completed",
+    // },
+  ];
+
+  const expenseOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+
+      stacked: true,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/tasks");
+        },
+      },
+    },
+    colors: ["#54C4A7", "#EB5C45"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+        borderRadiusApplication: "none",
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => inrFormat(val),
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+      offsetY: -22,
+    },
+    xaxis: {
+      categories: [
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
+      ],
+      title: {
+        text: "  ",
+      },
+    },
+    yaxis: {
+      // max: 3000000,
+      title: { text: "Amount In Lakhs (INR)" },
+      labels: {
+        formatter: (val) => `${Math.round(val)}`,
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
+
+    tooltip: {
+      enabled : false,
+      y: {
+        formatter: (val, { seriesIndex, dataPointIndex }) => {
+          const rawData = rawSeries[seriesIndex]?.data[dataPointIndex];
+          return `${rawData} Tasks`;
+        },
+      },
+    },
+  };
+
+  //-------------------HR Expense graph end--------------------//
+
+  //-------------------Tasks vs Achievements graph--------------------//
 
   const rawSeries = [
     {
@@ -188,23 +359,9 @@ const HrDashboard = () => {
     },
   };
 
-  //firstgraph
+  //-------------------Tasks vs Achievements graph--------------------//
 
-  const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
-    queryKey: ["hrFinance"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get(
-          `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
-            `
-        );
-        return transformBudgetData(response.data.allBudgets);
-      } catch (error) {
-        throw new Error("Error fetching data");
-      }
-    },
-  });
-
+  //--------------------Attendance Data---------------//
   const { data: attendanceData = [], isLoading: isAttendanceLoading } =
     useQuery({
       queryKey: ["attendance"],
@@ -217,7 +374,9 @@ const HrDashboard = () => {
         }
       },
     });
+  //--------------------Attendance Data---------------//
 
+  //-----------------------Working Hours-------------------//
   const { companyAttandances = [], workingDays } = attendanceData;
   const averageAttendance = calculateAverageAttendance(
     companyAttandances,
@@ -227,6 +386,8 @@ const HrDashboard = () => {
     companyAttandances,
     workingDays
   );
+  //-----------------------Working Hours-------------------//
+
   const columns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "title", label: "Name", align: "left" },
@@ -276,68 +437,6 @@ const HrDashboard = () => {
       }
     },
   });
-
-  const columns3 = [
-    { id: "srNo", label: "ID", align: "left" },
-    { id: "employeeName", label: "Employee name", align: "left" },
-    { id: "department", label: "Department", align: "center" },
-    { id: "Performance (%)", label: "Performance (%)", align: "center" },
-  ];
-
-  const columns4 = [
-    { id: "srNo", label: "ID", align: "left" },
-    { id: "employeeName", label: "Employee name", align: "left" },
-    { id: "department", label: "Department", align: "center" },
-    { id: "Performance (%)", label: "Performance (%)", align: "center" },
-  ];
-
-  const rows3 = [
-    {
-      srNo: 1,
-      ranks: "1",
-      employeeName: "Aiwin",
-      department: "Tech",
-      "Performance (%)": "97",
-    },
-    {
-      srNo: 2,
-      ranks: "2",
-      employeeName: "Allan Silvera",
-      department: "Tech",
-      "Performance (%)": "90",
-    },
-    {
-      srNo: 3,
-      ranks: 3,
-      employeeName: "Sankalp Kalangutkar",
-      department: "Tech",
-      "Performance (%)": "80",
-    },
-  ];
-
-  const rows4 = [
-    {
-      srNo: 1,
-      ranks: 30,
-      employeeName: "Alvera Maura",
-      department: "Tech",
-      "Performance (%)": "40",
-    },
-    {
-      srNo: 2,
-      ranks: 25,
-      employeeName: "Sumera Naik",
-      department: "Tech",
-      "Performance (%)": "43",
-    },
-    {
-      srNo: 3,
-      ranks: 28,
-      employeeName: "Sunaina Bharve",
-      department: "Tech",
-      "Performance (%)": "45",
-    },
-  ];
 
   // Calculate total and gender-specific counts
   const totalUsers = usersQuery.isLoading ? [] : usersQuery.data.length;
@@ -419,57 +518,109 @@ const HrDashboard = () => {
     },
   };
 
+  //--------------------New Data card data -----------------------//
+  const HrExpenses = {
+    cardTitle: "Expenses",
+    // timePeriod: "FY 2024-25",
+    descriptionData: [
+      {
+        title: "FY 2024-25",
+        value: `INR ${inrFormat(totalExpense)}`,
+      },
+      {
+        title: "March 2025",
+        value: "INR 27,00,000",
+      },
+      {
+        title: "March 2025 Budget",
+        value: "N/A",
+      },
+      { title: "Exit Head Count", value: "2" },
+      { title: "Per Sq. Ft.", value: "810" },
+    ],
+  };
+  const HrAverageExpense = {
+    cardTitle: "Averages",
+    // timePeriod: "FY 2024-25",
+    descriptionData: [
+      {
+        title: "Annual Average Expense",
+        value: `INR ${inrFormat(totalExpense / 12)}`,
+      },
+      {
+        title: "Average Salary",
+        value: "INR 60,000",
+      },
+      {
+        title: "Average Head Count",
+        value: "30",
+      },
+      {
+        title: "Average Attendance",
+        value: averageAttendance
+          ? `${Number(averageAttendance).toFixed(0)}%`
+          : "0%",
+      },
+      {
+        title: "Average Hours",
+        value: averageWorkingHours
+          ? `${Number(averageWorkingHours) + 3.7}h`
+          : "0h",
+      },
+    ],
+  };
+  //--------------------New Data card data -----------------------//
+
   //First pie-chart config data end
 
-  //Second pie-chart config data start
-  const techGoaVisitors = [
-    { id: 0, value: 5, label: "Panaji", color: "#4A90E2" }, // Light Blue
-    { id: 1, value: 2, label: "Margao", color: "#007AFF" }, // Medium Blue
-    { id: 2, value: 3, label: "Mapusa", color: "#0056B3" }, // Dark Blue
-    { id: 3, value: 3, label: "Ponda", color: "#1E90FF" }, // Dodger Blue
-    { id: 4, value: 6, label: "Verna", color: "#87CEFA" }, // Sky Blue
-  ];
+  //----------------------------------Second pie-chart config data start--------------------------------
+
+  const cityData = {};
+
+  usersQuery.data?.forEach((emp) => {
+    let rawCity = emp?.homeAddress?.city || "Panaji";
+    let normalizedCity = rawCity.trim().toLowerCase();
+    let displayCity =
+      normalizedCity.charAt(0).toUpperCase() + normalizedCity.slice(1);
+
+    cityData[displayCity] = (cityData[displayCity] || 0) + 1;
+  });
+
+  // Convert to array format suitable for PieChartMui
+  const pieChartData = Object.entries(cityData).map(([city, count]) => ({
+    label: city,
+    value: count,
+  }));
 
   const techGoaVisitorsOptions = {
     chart: {
       type: "pie",
       fontFamily: "Poppins-Regular",
-      events: {
-        dataPointSelection: () => {
-          navigate("employee/view-employees");
-        },
-      },
+    },
+    labels: pieChartData.map((item) => item.label),
+    colors: [
+      "#1E3D73", // original
+      "#34528A", // slightly lighter
+      "#4A68A1", // medium shade
+      "#608DB8", // lighter
+      "#76A2CF", // even lighter
+      "#8CB8E6", // lightest
+    ],
+
+    legend: {
+      position: "right",
     },
     stroke: {
       show: true,
-      width: 6, // Increase for more "gap"
+      width: 4, // Increase for more "gap"
       colors: ["#ffffff"], // Or match background color
     },
-    labels: techGoaVisitors.map((item) => item.label), // Labels for the pie slices
-    colors: techGoaVisitors.map((item) => item.color), // Assign colors to slices
-    dataLabels: {
-      enabled: true,
-      style: {
-        fontSize: "14px",
-        fontWeight: "bold",
-      },
-      formatter: function (val) {
-        return `${val.toFixed(0)}%`; // Show percentage value
-      },
-    },
     tooltip: {
-      enabled: true,
-      custom: function ({ series, seriesIndex }) {
-        const item = techGoaVisitors[seriesIndex]; // Access the correct item
-        return `
-        <div style="padding: 5px; font-size: 12px;">
-          ${item.label}: ${item.value} employees
-        </div>`;
+      y: {
+        formatter: function (value) {
+          return `${value} employee${value > 1 ? "s" : ""}`;
+        },
       },
-    },
-    legend: {
-      position: "right",
-      horizontalAlign: "center",
     },
   };
 
@@ -484,56 +635,106 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection
             layout={1}
             border
-            title={"Budget v/s Achievements"}
+            padding
             titleLabel={"FY 2024-25"}
-          >
-            {!isHrFinanceLoading ? (
-              <BudgetGraph
-                utilisedData={hrFinance?.utilisedBudget}
-                maxBudget={hrFinance?.projectedBudget}
-                route={"finance/budget"}
-              />
-            ) : (
-              <Skeleton variant="rectangular" width="100%" height={300} />
-            )}
-
-            <hr />
-            <WidgetSection layout={3} padding>
-              <DataCard
-                data={"INR " + inrFormat("2000000")}
-                title={"Projected"}
-                route={"/app/dashboard/hr-dashboard/finance/budget"}
-                description={`Current Month : ${new Date().toLocaleString(
-                  "default",
-                  { month: "short" }
-                )}-25`}
-              />
-              <DataCard
-                data={"INR " + inrFormat("150000")}
-                title={"Actual"}
-                route={"/app/dashboard/hr-dashboard/finance/budget"}
-                description={`Current Month : ${new Date().toLocaleString(
-                  "default",
-                  { month: "short" }
-                )}-25`}
-              />
-              <DataCard
-                data={"INR " + inrFormat(12000)}
-                title={"Requested"}
-                route={"/app/dashboard/hr-dashboard/finance/budget"}
-                description={`Current Month : ${new Date().toLocaleString(
-                  "default",
-                  { month: "short" }
-                )}-25`}
-              />
-            </WidgetSection>
+            TitleAmount={"INR 23,13,365"}
+            title={"BIZ Nest HR DEPARTMENT EXPENSE"}>
+            <BarGraph
+              data={expenseRawSeries}
+              options={expenseOptions}
+              // departments={["Sales", "IT", "Tech", "Admin", "Maintainance"]}
+              // departments={["FY 2024-25", "FY 2025-26"]}
+            />
           </WidgetSection>
         </Suspense>,
+      ],
+    },
+    // {
+    //   layout: 1,
+    //   widgets: [
+    //     <Suspense
+    //       fallback={
+    //         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+
+    //           <Skeleton variant="text" width={200} height={30} />
+    //           <Skeleton variant="rectangular" width="100%" height={300} />
+    //         </Box>
+    //       }>
+    //       <WidgetSection
+    //         layout={1}
+    //         border
+    //         title={"BIZ Nest HR DEPARTMENT  EXPENSE FY 2024-25"}
+    //         // titleLabel={"FY 2024-25"}
+    //       >
+    //         {!isHrFinanceLoading ? (
+    //           // <BudgetGraph
+    //           //   utilisedData={hrFinance?.utilisedBudget}
+    //           //   maxBudget={hrFinance?.projectedBudget}
+    //           //   route={"finance/budget"}
+    //           // />
+    //           <HrExpenseGraph
+    //             utilisedData={hrFinance?.utilisedBudget}
+    //             maxBudget={hrFinance?.projectedBudget}
+    //             route={"finance/budget"}
+    //           />
+    //         ) : (
+    //           // <BarGraph
+    //           //   height={400}
+    //           //   data={averageBookingSeries}
+    //           //   options={averageBookingOptions}
+    //           // />
+    //           <Skeleton variant="rectangular" width="100%" height={300} />
+    //         )}
+    //       </WidgetSection>
+    //     </Suspense>,
+    //   ],
+    // },
+    {
+      layout: 2,
+      widgets: [
+        <FinanceCard titleCenter {...HrExpenses} />,
+        <FinanceCard titleCenter {...HrAverageExpense} />,
+
+        // <DataCard
+        //   title="Average"
+        //   data="25"
+        //   description="Monthly Employees"
+        //   route={"employee/view-employees"}
+        // />,
+        // <DataCard
+        //   title="Average"
+        //   data="4%"
+        //   description="Monthly Attrition"
+        //   route={"employee/view-employees"}
+        // />,
+        // !isAttendanceLoading ? (
+        //   <DataCard
+        //     title="Average"
+        //     data={
+        //       averageAttendance
+        //         ? `${Number(averageAttendance).toFixed(0)}%`
+        //         : "0%"
+        //     }
+        //     description="Attendance"
+        //     route={"employee/view-employees"}
+        //   />
+        // ) : (
+        //   <Skeleton variant="rectangular" width="100%" height={"100%"} />
+        // ),
+        // !isAttendanceLoading ? (
+        //   <DataCard
+        //     title="Average"
+        //     data={averageWorkingHours ? `${averageWorkingHours}h` : "0h"}
+        //     description="Working Hours"
+        //     route={"employee/view-employees"}
+        //   />
+        // ) : (
+        //   <Skeleton variant="rectangular" width="100%" height={"100%"} />
+        // ),
       ],
     },
     {
@@ -561,59 +762,6 @@ const HrDashboard = () => {
         )), // ✅ Convert objects into JSX elements
     },
     {
-      layout: 3,
-      widgets: [
-        <DataCard
-          title="Active"
-          data={usersQuery.isLoading ? [] : usersQuery.data?.length || "29"}
-          description="Current Headcount"
-          route={"employee/view-employees"}
-        />,
-        <DataCard
-          title="Average"
-          data={`INR ${inrFormat("52000")}`}
-          description="salary"
-          route={"employee/view-employees"}
-        />,
-        <DataCard
-          title="Average"
-          data="25"
-          description="Monthly Employees"
-          route={"employee/view-employees"}
-        />,
-        <DataCard
-          title="Average"
-          data="4%"
-          description="Monthly Attrition"
-          route={"employee/view-employees"}
-        />,
-        !isAttendanceLoading ? (
-          <DataCard
-            title="Average"
-            data={
-              averageAttendance
-                ? `${Number(averageAttendance).toFixed(0)}%`
-                : "0%"
-            }
-            description="Attendance"
-            route={"employee/view-employees"}
-          />
-        ) : (
-          <Skeleton variant="rectangular" width="100%" height={"100%"} />
-        ),
-        !isAttendanceLoading ? (
-          <DataCard
-            title="Average"
-            data={averageWorkingHours ? `${averageWorkingHours}h` : "0h"}
-            description="Working Hours"
-            route={"employee/view-employees"}
-          />
-        ) : (
-          <Skeleton variant="rectangular" width="100%" height={"100%"} />
-        ),
-      ],
-    },
-    {
       layout: 1,
       widgets: [
         <Suspense
@@ -623,15 +771,13 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection
             layout={1}
             border
             padding
             titleLabel={"FY 2024-25"}
-            title={"Department Wise Tasks Vs Achievements "}
-          >
+            title={"Department Wise KPA Vs Achievements "}>
             <BarGraph
               data={rawSeries}
               options={options}
@@ -654,11 +800,15 @@ const HrDashboard = () => {
           />
         </WidgetSection>,
         <WidgetSection layout={1} border title={"City Wise Employees"}>
-          <PieChartMui
-            percent={true} // Enable percentage display
-            data={techGoaVisitors} // Pass processed data
-            options={techGoaVisitorsOptions}
-          />
+          {!usersQuery.isLoading ? (
+            <PieChartMui
+              percent={true} // Enable percentage display
+              data={pieChartData} // Pass processed data
+              options={techGoaVisitorsOptions}
+            />
+          ) : (
+            <Skeleton height={"100%"} width={"100%"} />
+          )}
         </WidgetSection>,
       ],
     },
@@ -685,7 +835,7 @@ const HrDashboard = () => {
         ),
 
         <MuiTable
-          Title="Current Months Holidays and Events"
+          Title="Current Months Holiday List"
           columns={columns2}
           rows={holidayEvents.map((holiday, index) => ({
             id: index + 1,
@@ -694,17 +844,6 @@ const HrDashboard = () => {
           }))}
           rowsToDisplay={5}
           scroll
-        />,
-
-        <MuiTable
-          Title="Top 3 Performers List"
-          columns={columns3}
-          rows={rows3}
-        />,
-        <MuiTable
-          Title="Under 3 Performed List"
-          columns={columns4}
-          rows={rows4}
         />,
       ],
     },

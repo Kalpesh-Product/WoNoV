@@ -15,7 +15,7 @@ const coworkingClientRevenue = new mongoose.Schema(
     },
     client: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "VirtualOfficeClient",
+      ref: "CoworkingClient",
     },
     service: {
       type: mongoose.Schema.Types.ObjectId,

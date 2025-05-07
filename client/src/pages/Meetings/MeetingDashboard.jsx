@@ -88,7 +88,7 @@ const MeetingDashboard = () => {
   });
 
   const meetingColumns = [
-    { id: "id", label: "ID", align: "left" },
+    { id: "id", label: "Sr No", align: "left" },
     { id: "roomName", label: "Meeting Rooms", align: "left" },
     { id: "unitName", label: "Location", align: "left" },
     { id: "endTime", label: "End Time", align: "left" },
@@ -722,7 +722,9 @@ const MeetingDashboard = () => {
           layout={1}
           border
           title={"External Guests Visited"}
-          titleLabel={`${new Date().toLocaleString("default", { month: "short" })}-${new Date().getFullYear().toString().slice(-2)}`}
+          titleLabel={`${new Date().toLocaleString("default", {
+            month: "short",
+          })}-${new Date().getFullYear().toString().slice(-2)}`}
           padding>
           <BarGraph data={externalGuestsData} options={externalGuestsOptions} />
         </WidgetSection>,
@@ -730,7 +732,9 @@ const MeetingDashboard = () => {
           layout={1}
           border
           title={"Average Occupancy Of Rooms in %"}
-          titleLabel={`${new Date().toLocaleString("default", { month: "short" })}-${new Date().getFullYear().toString().slice(-2)}`}
+          titleLabel={`${new Date().toLocaleString("default", {
+            month: "short",
+          })}-${new Date().getFullYear().toString().slice(-2)}`}
           padding>
           <BarGraph
             data={averageOccupancySeries}
