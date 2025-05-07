@@ -26,7 +26,7 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 const HrBudget = () => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
-  const { data: hrFinance = [], isLoading: isHrLoading } = useQuery({
+  const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     queryKey: ["hrFinance"],
     queryFn: async () => {
       try {
@@ -82,14 +82,14 @@ const HrBudget = () => {
           };
         }
 
-        acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
-        acc[month].amount += item.projectedAmount; // Summing the total amount per month
+        acc[month].projectedAmount += item?.projectedAmount; // Summing the total projected amount per month
+        acc[month].amount += item?.actualAmount; // Summing the total amount per month
         acc[month].tableData.rows.push({
           id: item._id,
-          expanseName: item.expanseName,
-          department: item.department,
-          expanseType: item.expanseType,
-          projectedAmount: item.projectedAmount.toFixed(2), // Ensuring two decimal places
+          expanseName: item?.expanseName,
+          department: item?.department,
+          expanseType: item?.expanseType,
+          projectedAmount: Number(item?.projectedAmount).toFixed(2), // Ensuring two decimal places
           dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
           status: item.status,
         });
@@ -115,7 +115,7 @@ const HrBudget = () => {
       return {
         ...data,
         projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-        amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        amount: data.actualAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
         tableData: {
           ...data.tableData,
           rows: transoformedRows,
@@ -196,10 +196,14 @@ const HrBudget = () => {
         />
       </div>
 
-      <AllocatedBudget
-        financialData={financialData}
-        isLoading={isHrLoading}
-      />
+      {!isHrLoading ? (
+        <AllocatedBudget
+          financialData={financialData}
+          isLoading={isHrLoading}
+        />
+      ) : (
+        <Skeleton height={600} width={"100%"} />
+      )}
 
       <MuiModal
         title="Request Budget"

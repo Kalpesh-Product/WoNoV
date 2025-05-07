@@ -437,6 +437,7 @@ const getCompanyAttandances = async (req, res, next) => {
       .populate({ path: "user", select: "firstName lastName empId startDate" })
       .lean()
       .exec();
+
     let sundays = 0;
     let year = new Date().getFullYear().toString();
     for (let month = 0; month < 12; month++) {

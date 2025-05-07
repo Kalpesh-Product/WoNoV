@@ -7,11 +7,10 @@ import AgTable from "../AgTable";
 import dayjs from "dayjs";
 import { MdTrendingUp } from "react-icons/md";
 import { BsCheckCircleFill } from "react-icons/bs";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, Skeleton } from "@mui/material";
 
-const AllocatedBudget = ({ financialData,isLoading }) => {
-  return !isLoading ? 
-  (
+const AllocatedBudget = ({ financialData, isLoading }) => {
+  return (
     <div>
       <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
         {/* Top Bar: Allocated Budget */}
@@ -42,61 +41,66 @@ const AllocatedBudget = ({ financialData,isLoading }) => {
         </div>
 
         {/* Accordion Section */}
-        {financialData?.map((data, index) => (
-          <Accordion key={index} className="py-4">
-            <AccordionSummary
-              expandIcon={<IoIosArrowDown />}
-              aria-controls={`panel${index}-content`}
-              id={`panel${index}-header`}
-              className="border-b-[1px] border-borderGray">
-              <div className="flex justify-between items-center w-full px-4">
-                <span className="w-1/3 text-content font-pmedium">
-                  {/* {`${new Date(data.month).toLocaleString("default", {
+        {!isLoading ? (
+          <>
+            {financialData?.map((data, index) => (
+              <Accordion key={index} className="py-4">
+                <AccordionSummary
+                  expandIcon={<IoIosArrowDown />}
+                  aria-controls={`panel${index}-content`}
+                  id={`panel${index}-header`}
+                  className="border-b-[1px] border-borderGray"
+                >
+                  <div className="flex justify-between items-center w-full px-4">
+                    <span className="w-1/3 text-content font-pmedium">
+                      {/* {`${new Date(data.month).toLocaleString("default", {
                     month: "short",
                   })}-${new Date(data.month).getFullYear()}`} */}
-                  {dayjs(data.month).format("MMM-YY")}
-                </span>
-                <span className="w-1/3 text-content font-pmedium flex items-center gap-1">
-                  <MdTrendingUp
-                    title="Projected"
-                    className="text-yellow-600 w-4 h-4"
-                  />
-                  {"INR " +
-                    Number(
-                      data.projectedAmount
-                        .toLocaleString("en-IN")
-                        .replace(/,/g, "")
-                    ).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                </span>
-                <span className="w-1/3 text-content font-pmedium flex items-center gap-1">
-                  <BsCheckCircleFill
-                    title="Actual"
-                    className="text-green-600 w-4 h-4"
-                  />
-                  {"INR " +
-                    Number(
-                      data.amount.toLocaleString("en-IN").replace(/,/g, "")
-                    ).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                </span>
-              </div>
-            </AccordionSummary>
-            <AccordionDetails>
-              <div className="border-t-[1px] border-borderGray py-4">
-                <AgTable
-                  search={data.tableData?.rows?.length >= 10}
-                  data={data.tableData.rows}
-                  columns={data.tableData.columns}
-                  tableHeight={400}
-                  hideFilter={data.tableData?.rows?.length <= 9}
-                />
-              </div>
-            </AccordionDetails>
-          </Accordion>
-        ))}
+                      {dayjs(data.month).format("MMM-YY")}
+                    </span>
+                    <span className="w-1/3 text-content font-pmedium flex items-center gap-1">
+                      <MdTrendingUp
+                        title="Projected"
+                        className="text-yellow-600 w-4 h-4"
+                      />
+                      {"INR " +
+                        Number(
+                          data.projectedAmount
+                            .toLocaleString("en-IN")
+                            .replace(/,/g, "")
+                        ).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                    </span>
+                    <span className="w-1/3 text-content font-pmedium flex items-center gap-1">
+                      <BsCheckCircleFill
+                        title="Actual"
+                        className="text-green-600 w-4 h-4"
+                      />
+                      {"INR " +
+                        Number(
+                          data.amount.toLocaleString("en-IN").replace(/,/g, "")
+                        ).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                    </span>
+                  </div>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <div className="border-t-[1px] border-borderGray py-4">
+                    <AgTable
+                      search={data.tableData?.rows?.length >= 10}
+                      data={data.tableData.rows}
+                      columns={data.tableData.columns}
+                      tableHeight={400}
+                      hideFilter={data.tableData?.rows?.length <= 9}
+                    />
+                  </div>
+                </AccordionDetails>
+              </Accordion>
+            ))}
+          </>
+        ) : (
+          <Skeleton height={600} width={"100%"} />
+        )}
       </div>
     </div>
-  ) : (
-     <CircularProgress/>
   );
 };
 
