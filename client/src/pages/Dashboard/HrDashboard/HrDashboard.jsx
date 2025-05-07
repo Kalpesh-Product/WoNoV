@@ -548,6 +548,9 @@ const HrDashboard = () => {
     },
   };
 
+  const totalUtilised =
+    hrFinance?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+
   //--------------------New Data card data -----------------------//
   const HrExpenses = {
     cardTitle: "Expenses",
@@ -555,7 +558,7 @@ const HrDashboard = () => {
     descriptionData: [
       {
         title: "FY 2024-25",
-        value: `INR ${inrFormat(totalExpense)}`,
+        value: `INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`,
       },
       {
         title: "March 2025",
@@ -653,9 +656,6 @@ const HrDashboard = () => {
       },
     },
   };
-
-  const totalUtilised =
-    hrFinance?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
 
   const hrWidgets = [
     {
