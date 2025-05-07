@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import {
   TextField,
@@ -45,9 +45,12 @@ const HrBudget = () => {
       }
     },
   });
-  
 
-   const budgetBar =  transformBudgetData(hrFinance);
+  const budgetBar = useMemo(() => {
+    if (isHrLoading || !Array.isArray(hrFinance)) return null;
+    return transformBudgetData(hrFinance);
+  }, [isHrLoading, hrFinance]);
+  
   useEffect(() => {
     if (!isHrLoading) {
       const timer = setTimeout(() => setIsReady(true), 1000);
@@ -55,18 +58,21 @@ const HrBudget = () => {
     }
   }, [isHrLoading]);
 
-  const expenseRawSeries = [
-    {
-      name: "FY 2024-25",
-      data: budgetBar?.utilisedBudget,
-      group: "total",
-    },
-    {
-      name: "FY 2025-26",
-      data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      group: "total",
-    },
-  ];
+  const expenseRawSeries = useMemo(() => {
+    return [
+      {
+        name: "FY 2024-25",
+        data: budgetBar?.utilisedBudget || [],
+        group: "total",
+      },
+      {
+        name: "FY 2025-26",
+        data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        group: "total",
+      },
+    ];
+  }, [budgetBar]);
+  
 
   const expenseOptions = {
     chart: {
@@ -166,7 +172,7 @@ const HrBudget = () => {
   };
 
   const totalUtilised =
-    hrFinance?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+    budgetBar?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
   const navigate = useNavigate();
 
   const { control, handleSubmit, reset } = useForm({
@@ -277,13 +283,11 @@ const HrBudget = () => {
               border
               padding
               titleLabel={"FY 2024-25"}
-              // TitleAmount={"INR 23,13,365"}
               TitleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
                 "en-IN"
               )}`}
               title={"BIZ Nest HR DEPARTMENT EXPENSE"}
             >
-
               <BarGraph
                 data={expenseRawSeries}
                 options={expenseOptions}
