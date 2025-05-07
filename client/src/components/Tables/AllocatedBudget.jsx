@@ -117,7 +117,7 @@ const AllocatedBudget = ({ financialData, isLoading }) => {
     <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
       {/* Header */}
       <div className="flex justify-between items-center py-2">
-        <span className="text-title font-pmedium text-primary">
+        <span className="text-title font-pmedium text-primary uppercase">
           Allocated Budget:
         </span>
         <span className="text-title font-pmedium">
