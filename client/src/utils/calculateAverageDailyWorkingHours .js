@@ -1,28 +1,41 @@
-import { parseISO } from "date-fns";
+import { differenceInMinutes, parseISO } from "date-fns";
 
-export function calculateAverageDailyWorkingHours(attendanceRecords) {
-  let totalHours = 0;
-  let validCount = 0;
+export const calculateAverageDailyWorkingHours = (attendances, workingDays) => {
+  const userTimeMap = {};
 
-  attendanceRecords.forEach((record) => {
-    if (!record?.inTime || !record?.outTime) return;
+  attendances.forEach((entry) => {
+    const userId = entry.user;
+    const { inTime, outTime } = entry;
+
+    // Skip invalid entries
+    if (!inTime || !outTime) return;
 
     try {
-      const inTime = parseISO(record.inTime);
-      const outTime = parseISO(record.outTime);
+      const inTimeParsed = parseISO(inTime);
+      const outTimeParsed = parseISO(outTime);
 
-      if (isNaN(inTime) || isNaN(outTime)) return; // skip if invalid date
+      const minutesWorked = differenceInMinutes(outTimeParsed, inTimeParsed);
 
-      const hoursWorked = (outTime - inTime) / (1000 * 60 * 60);
-      totalHours += hoursWorked;
-      validCount++;
+      if (!userTimeMap[userId]) {
+        userTimeMap[userId] = 0;
+      }
+
+      userTimeMap[userId] += minutesWorked;
     } catch (err) {
-      console.warn("Invalid date in record:", record, err);
+      console.warn("Skipping invalid date entry:", entry, err);
     }
   });
 
-  return validCount > 0 ? (totalHours / validCount).toFixed(2) : "0";
-}
+  const allAvgHours = Object.values(userTimeMap).map(
+    (totalMinutes) => totalMinutes / 60 / workingDays
+  );
+
+  const overallAverage = allAvgHours.length
+    ? allAvgHours.reduce((sum, hours) => sum + hours, 0) / allAvgHours.length
+    : 0;
+
+  return overallAverage.toFixed(2); // e.g., "7.89"
+};
 
 // import { differenceInMinutes, parseISO } from "date-fns";
 
