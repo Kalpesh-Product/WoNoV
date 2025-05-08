@@ -295,7 +295,6 @@ const HrBudget = () => {
               />
             </WidgetSection>
           </Suspense>
-          ,
         </div>
         <div>
           <WidgetSection layout={3} padding>
@@ -348,6 +347,7 @@ const HrBudget = () => {
           <AllocatedBudget
             financialData={financialData}
             isLoading={isHrLoading}
+            variant={"scrollable"}
           />
         ) : (
           <Skeleton height={600} width={"100%"} />

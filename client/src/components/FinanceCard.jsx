@@ -16,7 +16,6 @@ const FinanceCard = ({
           <span className="text-title font-pmedium text-center w-full uppercase">
             {cardTitle}
           </span>
-          {/* <span className="text-content">{timePeriod}</span> */}
         </div>
       ) : (
         <div className="flex justify-between items-center">

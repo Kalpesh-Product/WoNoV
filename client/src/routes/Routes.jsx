@@ -1059,12 +1059,24 @@ export const routes = createBrowserRouter([
                         element: <SalesMixBag />,
                       },
                       {
+                        path: "mix-bag/co-working-seats",
+                        element: <CoWorkingSeats />,
+                      },
+                      {
                         path: "co-working-seats",
                         element: <CoWorkingSeats />,
                       },
                       {
+                        path: "mix-bag/co-working-seats/check-availability",
+                        element: <CheckAvailability />,
+                      },
+                      {
                         path: "co-working-seats/check-availability",
                         element: <CheckAvailability />,
+                      },
+                      {
+                        path: "mix-bag/co-working-seats/view-availability",
+                        element: <ViewAvailability />,
                       },
                       {
                         path: "co-working-seats/view-availability",
