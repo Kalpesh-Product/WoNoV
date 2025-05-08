@@ -127,7 +127,7 @@ const ViewPayroll = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection titleFont layout={1} border title={"Payroll List"} button={true} buttonTitle={"Edit"}>
+      <WidgetSection  layout={1} border title={"Payroll List"} button={true} buttonTitle={"Edit"}>
         <AgTable
           key={rows.length}
           search={true}
@@ -136,7 +136,7 @@ const ViewPayroll = () => {
           columns={payrollColumns}
         />
       </WidgetSection>
-      <WidgetSection titleFont layout={1} border title={"Leaves List"} button={true} buttonTitle={"Edit"}>
+      <WidgetSection  layout={1} border title={"Leaves List"} button={true} buttonTitle={"Edit"}>
         <AgTable
           key={leavesData.length}
           search={true}

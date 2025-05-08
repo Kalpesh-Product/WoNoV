@@ -135,7 +135,7 @@ const TotalRevenue = () => {
   const formattedRevenue = `INR ${totalAnnualRevenue.toLocaleString("en-IN")}`;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 ">
       <WidgetSection
         layout={1}
         title={"Annual Monthly Mix Revenues"}

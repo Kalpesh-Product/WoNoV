@@ -180,9 +180,16 @@ const HrDashboard = () => {
       //   const scaled = val / 100000; // Scale from actual to "xx.xx" format
       //   return scaled.toFixed(2); // Keep two digits after decimal
       // },
+      // formatter: (val) => {
+      //   const scaled = Math.round((val / 100000) * 100) / 100;
+      //   return Number.isInteger(scaled) ? scaled.toFixed(0) : scaled.toFixed(2);
+      // },
+
+      // formatter: (val) => {
+      //   return val.toLocaleString("en-IN"); // Formats number with commas (Indian style)
+      // },
       formatter: (val) => {
-        const scaled = Math.round((val / 100000) * 100) / 100;
-        return Number.isInteger(scaled) ? scaled.toFixed(0) : scaled.toFixed(2);
+        return Math.round(val).toLocaleString("en-IN");
       },
 
       style: {
@@ -226,7 +233,7 @@ const HrDashboard = () => {
     },
 
     tooltip: {
-      enabled: true,
+      enabled: false,
       // y: {
       //   formatter: (val, { seriesIndex, dataPointIndex }) => {
       //     const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];

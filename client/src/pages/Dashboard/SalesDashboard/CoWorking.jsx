@@ -534,7 +534,7 @@ const CoWorking = () => {
     0
   );
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <WidgetSection
         title={"Annual Monthly Co Working Revenues"}
         titleLabel={"FY 2024-25"}
