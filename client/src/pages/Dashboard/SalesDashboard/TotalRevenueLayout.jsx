@@ -1,11 +1,10 @@
 import { Tab, Tabs } from "@mui/material";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const TotalRevenueLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const outletRef = useRef();
 
   // Map routes to tabs
   const tabs = [
@@ -25,11 +24,6 @@ const TotalRevenueLayout = () => {
       });
     }
   }, [location, navigate]);
-  useEffect(() => {
-    if (outletRef.current) {
-      outletRef.current.scrollIntoView({ behaviour: "smooth" });
-    }
-  }, [location.pathname]);
 
   // Determine whether to show the tabs
   const showTabs = !location.pathname.includes("budget/");
@@ -84,7 +78,7 @@ const TotalRevenueLayout = () => {
         </Tabs>
       )}
 
-      <div className="py-4" ref={outletRef}>
+      <div className="py-4">
         <Outlet />
       </div>
     </div>

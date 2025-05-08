@@ -159,6 +159,34 @@ const AgTableComponent = React.memo(
 
     return (
       <div className="border-b-[1px] border-borderGray">
+            {tableTitle && (
+          <div className="flex items-center justify-between py-4">
+            <span className="font-pmedium text-title text-primary uppercase">
+              {tableTitle}
+            </span>
+            <div className="flex items-center gap-4">
+              {exportData ? (
+                <PrimaryButton
+                  title={"Export"}
+                  handleSubmit={() => {
+                    if (gridRef.current) {
+                      gridRef.current.api.exportDataAsCsv({
+                        fileName: `${tableTitle || "table-data"}.csv`,
+                      });
+                    }
+                  }}
+                />
+              ) : (
+                ""
+              )}
+              {buttonTitle ? (
+                <PrimaryButton title={buttonTitle} handleSubmit={handleClick} />
+              ) : (
+                ""
+              )}
+            </div>
+          </div>
+        )}
         <div className="flex justify-between items-center py-2">
           {search && (
             <TextField
@@ -210,34 +238,7 @@ const AgTableComponent = React.memo(
             ) : null
           )}
         </div>
-        {tableTitle && (
-          <div className="flex items-center justify-between py-4">
-            <span className="font-pmedium text-title text-primary uppercase">
-              {tableTitle}
-            </span>
-            <div className="flex items-center gap-4">
-              {exportData ? (
-                <PrimaryButton
-                  title={"Export"}
-                  handleSubmit={() => {
-                    if (gridRef.current) {
-                      gridRef.current.api.exportDataAsCsv({
-                        fileName: `${tableTitle || "table-data"}.csv`,
-                      });
-                    }
-                  }}
-                />
-              ) : (
-                ""
-              )}
-              {buttonTitle ? (
-                <PrimaryButton title={buttonTitle} handleSubmit={handleClick} />
-              ) : (
-                ""
-              )}
-            </div>
-          </div>
-        )}
+    
 
         <MuiAside
           open={isFilterDrawerOpen}

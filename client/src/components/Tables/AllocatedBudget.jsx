@@ -10,6 +10,7 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
   const [selectedTab, setSelectedTab] = useState(0);
   const fiscalYears = ["FY 2024-25", "FY 2025-26"];
   const [selectedFYIndex, setSelectedFYIndex] = useState(0); // Default to FY 2024-25
+  console.log("From component :", financialData)
 
   const selectedFY = fiscalYears[selectedFYIndex];
 

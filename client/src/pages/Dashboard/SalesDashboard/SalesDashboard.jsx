@@ -47,7 +47,7 @@ const SalesDashboard = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [
     {
-      name: "Income",
+      name: "FY 2024-25",
       data: [
         1123500, // Nov
         1184200, // Oct
@@ -70,7 +70,7 @@ const SalesDashboard = () => {
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#4CAF50", "#F44336"], // Green for income, Red for expense
+    colors: ["#54C4A7", "#EB5C45"],
     plotOptions: {
       bar: {
         horizontal: false,
@@ -114,21 +114,19 @@ const SalesDashboard = () => {
     },
     yaxis: {
       min: 0,
-      max: 2000000, 
+      max: 2000000,
       tickAmount: 4,
-      title: {
-        text: "Amount (INR in Lakhs)",
-      },
+      title: { text: "Amount In Lakhs (INR)" },
       labels: {
         formatter: (val) => val / 100000, // Converts value to Lakhs
       },
     },
-    
+
     fill: {
       opacity: 1,
     },
     tooltip: {
-      enabled:false,
+      enabled: false,
       y: {
         formatter: (val) => `INR ${inrFormat(val)}`,
       },
@@ -225,17 +223,17 @@ const SalesDashboard = () => {
     descriptionData: [
       {
         title: "Active Desks",
-        value: 580,
+        value: 589,
       },
       {
         title: "Occupied Desks",
-        value: 566,
+        value: 582,
       },
       {
         title: "Occupancy %",
-        value: "96",
+        value: "98",
       },
-      { title: "Free Desks", value: "14" },
+      { title: "Free Desks", value: "7" },
       { title: "Unique Clients", value: "46" },
     ],
   };
@@ -608,11 +606,11 @@ const SalesDashboard = () => {
       widgets: [
         <WidgetSection
           border
-          title={"Annual Monthly Revenue"}
-          titleLabel={"FY 2024-25"}
+          normalCase
+          title={"BIZ Nest SALES DEPARTMENT REVENUES FY 2024-25"}
           TitleAmount={`INR ${inrFormat("20900000")}`}
         >
-          <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} />
+          <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} departments={["FY 2024-25", "FY 2025-26"]} />
         </WidgetSection>,
       ],
     },
