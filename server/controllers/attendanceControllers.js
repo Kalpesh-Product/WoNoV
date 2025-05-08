@@ -26,14 +26,14 @@ const clockIn = async (req, res, next) => {
     const clockInTime = new Date(inTime);
     const currDate = new Date();
 
-    // if (clockInTime.getDate() !== currDate.getDate()) {
-    //   throw new CustomError(
-    //     "Please select present date",
-    //     logPath,
-    //     logAction,
-    //     logSourceKey
-    //   );
-    // }
+    if (clockInTime.getDate() !== currDate.getDate()) {
+      throw new CustomError(
+        "Please select present date",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
 
     if (isNaN(clockInTime.getTime())) {
       throw new CustomError(
@@ -131,7 +131,6 @@ const clockOut = async (req, res, next) => {
       createdAt: -1,
     });
 
-    console.log("attendance", attendance);
     if (!attendance) {
       throw new CustomError(
         "No attendance record exists",
@@ -141,14 +140,14 @@ const clockOut = async (req, res, next) => {
       );
     }
     const isSameDay = clockOutTime.getDate() - currDate.getDate() === 0;
-    // if (!isSameDay) {
-    //   throw new CustomError(
-    //     "Please select present date",
-    //     logPath,
-    //     logAction,
-    //     logSourceKey
-    //   );
-    // }
+    if (!isSameDay) {
+      throw new CustomError(
+        "Please select present date",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
 
     if (attendance.outTime) {
       throw new CustomError(
@@ -475,6 +474,8 @@ const correctAttendance = async (req, res, next) => {
     const foundDate = await Attendance.findOne({
       user: foundUser._id,
       createdAt: { $gte: startOfDay, $lt: endOfDay },
+    }).sort({
+      createdAt: -1,
     });
 
     if (!foundDate) {
@@ -521,9 +522,11 @@ const correctAttendance = async (req, res, next) => {
       { user: foundUser._id, createdAt: { $gte: startOfDay, $lt: endOfDay } },
       { $set: { inTime: clockIn, outTime: clockOut } },
       { new: true }
-    );
+    ).sort({
+      createdAt: 1,
+    });
 
-    console.log(updatedAttendance);
+    console.log("update:", updatedAttendance);
     if (!updatedAttendance) {
       throw new CustomError(
         "Failed to correct the attendance",
