@@ -4,6 +4,8 @@ import WidgetSection from "../../../components/WidgetSection";
 import { monthlyLeadsData, monthlyLeadsOptions } from "./SalesData/SalesData";
 import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../components/AgTable";
+import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const TotalRevenue = () => {
   const rawData = [
@@ -65,7 +67,7 @@ const TotalRevenue = () => {
     chart: {
       toolbar: false,
       stacked: true,
-      fontFamily: "Poppins-Regular"
+      fontFamily: "Poppins-Regular",
     },
     xaxis: {
       categories: [
@@ -144,117 +146,90 @@ const TotalRevenue = () => {
       >
         <BarGraph height={400} data={normalizedData} options={options} />
       </WidgetSection>
+      <WidgetSection
+        border
+        title={"Annual Monthly Revenue Breakup"}
+        padding
+        TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}
+      >
+        <div className="flex flex-col gap-2 rounded-md p-4">
+          <CollapsibleTable
+            columns={[
+              { headerName: "Vertical", field: "vertical" },
+              { headerName: "Revenue (INR)", field: "revenue" },
+              { headerName: "Percentage Of Business (%)", field: "contribution" },
+            ]}
+            data={rawData.map((domain, index) => {
+              const totalRevenue = domain.data.reduce(
+                (sum, val) => sum + val,
+                0
+              );
+              const contribution =
+                totalAnnualRevenue > 0
+                  ? ((totalRevenue / totalAnnualRevenue) * 100).toFixed(2)
+                  : "0.00";
 
-      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
-          <div className="flex justify-between items-center w-full px-4 py-2">
-            <span className="text-sm text-muted font-pmedium text-title">
-              VERTICALS
-            </span>
-            <span className="w-1/5 text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              REVENUE
-            </span>
+              return {
+                id: index,
+                vertical: domain.name,
+                revenue: totalRevenue.toLocaleString("en-IN"),
+                contribution: `${contribution}%`,
+                monthly: domain.data.map((val, idx) => {
+                  const [shortMonth, yearSuffix] = [
+                    "Apr-24",
+                    "May-24",
+                    "Jun-24",
+                    "Jul-24",
+                    "Aug-24",
+                    "Sep-24",
+                    "Oct-24",
+                    "Nov-24",
+                    "Dec-24",
+                    "Jan-25",
+                    "Feb-25",
+                    "Mar-25",
+                  ][idx].split("-");
 
-          </div>
+                  const fullMonthMap = {
+                    Jan: "January",
+                    Feb: "February",
+                    Mar: "March",
+                    Apr: "April",
+                    May: "May",
+                    Jun: "June",
+                    Jul: "July",
+                    Aug: "August",
+                    Sep: "September",
+                    Oct: "October",
+                    Nov: "November",
+                    Dec: "December",
+                  };
+
+                  return {
+                    srNo: idx + 1,
+                    month: fullMonthMap[shortMonth],
+                    year: `20${yearSuffix}`,
+                    revenue: val.toLocaleString("en-IN"),
+                  };
+                }),
+              };
+            })}
+            renderExpandedRow={(row) => (
+              <AgTable
+                data={row.monthly}
+                columns={[
+                  { headerName: "Sr No", field: "srNo", flex: 1 },
+                  { headerName: "Month", field: "month", flex: 1 },
+                  { headerName: "Year", field: "year", flex: 1 },
+                  { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
+                ]}
+                tableHeight={300}
+                hideFilter
+              />
+            )}
+          />
         </div>
-
-
-        {rawData.map((domain, index) => {
-          const totalRevenue = domain.data.reduce((sum, val) => sum + val, 0);
-
-          const monthLabels = [
-            "Apr-24",
-            "May-24",
-            "Jun-24",
-            "Jul-24",
-            "Aug-24",
-            "Sep-24",
-            "Oct-24",
-            "Nov-24",
-            "Dec-24",
-            "Jan-25",
-            "Feb-25",
-            "Mar-25",
-          ];
-
-          const rows = domain.data.map((val, idx) => {
-            const [shortMonth, yearSuffix] = monthLabels[idx].split("-");
-            const year = yearSuffix.startsWith("2")
-              ? `20${yearSuffix}`
-              : `20${yearSuffix}`;
-            const fullMonthMap = {
-              Jan: "January",
-              Feb: "February",
-              Mar: "March",
-              Apr: "April",
-              May: "May",
-              Jun: "June",
-              Jul: "July",
-              Aug: "August",
-              Sep: "September",
-              Oct: "October",
-              Nov: "November",
-              Dec: "December",
-            };
-            return {
-              month: fullMonthMap[shortMonth],
-              year,
-              revenue: `${val.toLocaleString()}`,
-
-            };
-          }).reverse();
-
-          const transformRows = rows.map((row, index) => ({ ...row, srNo: index + 1 }))
-          const columns = [
-            { headerName: "Sr No", field: "srNo", flex: 1 },
-            { headerName: "Month", field: "month", flex: 1 },
-            { headerName: "Year", field: "year", flex: 1 },
-            { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
-          ];
-
-          return (
-            <div>
-
-              <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}
-                className="border-b-[1px] border-borderGray"
-              >
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium">
-                    {domain.name}
-                  </span>
-                  <span className="w-1/5 text-subtitle font-pmedium px-4">
-                  INR {totalRevenue.toLocaleString()} 
-                  </span>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                <AgTable
-                  search={transformRows.length > 5}
-                  data={transformRows}
-                  columns={columns}
-                  tableHeight={300}
-                />
-                {/* <span className="text-primary font-pregular">
-                  Total revenue of {domain.name}: INR {totalRevenue.toLocaleString()}
-                </span> */}
-                <span className="text-primary font-pregular">
-                      Total Revenue for {domain.name}:{" "}
-                    </span>
-                    <span className="text-black font-pmedium">
-                      INR {totalRevenue.toLocaleString()}
-                    </span>
-              </AccordionDetails>
-            </Accordion>
-          </div>
-          );
-        })}
-
-      </div>
-
+      </WidgetSection>
     </div>
   );
 };

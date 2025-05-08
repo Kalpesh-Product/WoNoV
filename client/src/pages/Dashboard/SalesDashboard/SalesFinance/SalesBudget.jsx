@@ -35,7 +35,7 @@ const SalesBudget = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e`
+          `/api/budget/company-budget?departmentId=6798bacce469e809084e24a1`
         );
         const budgets = response.data.allBudgets;
         return Array.isArray(budgets) ? budgets : [];
@@ -45,151 +45,6 @@ const SalesBudget = () => {
       }
     },
   });
-
-  const budgetBar = useMemo(() => {
-    if (isHrLoading || !Array.isArray(hrFinance)) return null;
-    return transformBudgetData(hrFinance);
-  }, [isHrLoading, hrFinance]);
-  
-  useEffect(() => {
-    if (!isHrLoading) {
-      const timer = setTimeout(() => setIsReady(true), 1000);
-      return () => clearTimeout(timer); // Cleanup on unmount
-    }
-  }, [isHrLoading]);
-
-  const expenseRawSeries = useMemo(() => {
-    return [
-      {
-        name: "FY 2024-25",
-        data: budgetBar?.utilisedBudget || [],
-        group: "total",
-      },
-      {
-        name: "FY 2025-26",
-        data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        group: "total",
-      },
-    ];
-  }, [budgetBar]);
-  
-
-  const expenseOptions = {
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
-
-      stacked: true,
-      fontFamily: "Poppins-Regular, Arial, sans-serif",
-      events: {
-        dataPointSelection: () => {
-          navigate("finance/budget");
-        },
-      },
-    },
-    colors: ["#54C4A7", "#EB5C45"],
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "40%",
-        borderRadius: 5,
-        borderRadiusApplication: "none",
-        dataLabels: {
-          position: "top",
-        },
-      },
-    },
-    dataLabels: {
-      enabled: true,
-      formatter: (val) => {
-        const scaled = Math.round((val / 100000) * 100) / 100;
-        return Number.isInteger(scaled) ? scaled.toFixed(0) : scaled.toFixed(2);
-      },
-
-      style: {
-        fontSize: "12px",
-        colors: ["#000"],
-      },
-      offsetY: -22,
-    },
-    xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
-      title: {
-        text: "  ",
-      },
-    },
-    yaxis: {
-      // max: 3000000,
-      title: { text: "Amount In Lakhs (INR)" },
-      labels: {
-        formatter: (val) => `${Math.round(val / 100000)}`,
-      },
-    },
-    fill: {
-      opacity: 1,
-    },
-    legend: {
-      show: true,
-      position: "top",
-    },
-
-    tooltip: {
-      enabled: true,
-      custom: function ({ series, seriesIndex, dataPointIndex }) {
-        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
-        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
-        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
-        //     </div>`;
-        return `
-            <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
-        
-              <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
-                <div><strong>HR Expense:</strong></div>
-                <div style="width: 10px;"></div>
-             <div style="text-align: left;">INR ${Math.round(
-               rawData
-             ).toLocaleString("en-IN")}</div>
-
-              </div>
-     
-            </div>
-          `;
-      },
-    },
-  };
-
-  const totalUtilised =
-    budgetBar?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
-  const navigate = useNavigate();
-
-  const { control, handleSubmit, reset } = useForm({
-    defaultValues: {
-      expanseName: "",
-      expanseType: "",
-      amount: "",
-      dueDate: null,
-    },
-  });
-
-  const onSubmit = (data) => {
-    setOpenModal(false);
-    toast.success("Budget Requested succesfully");
-    reset();
-  };
-
   const dummyData = [
     {
       "_id": "67c12be4a9f97d94bd2b1902",
@@ -1130,8 +985,153 @@ const SalesBudget = () => {
     }
   ];
 
+
+  const budgetBar = useMemo(() => {
+    if (isHrLoading || !Array.isArray(hrFinance)) return null;
+    return transformBudgetData(hrFinance);
+  }, [isHrLoading, hrFinance]);
+  
+  useEffect(() => {
+    if (!isHrLoading) {
+      const timer = setTimeout(() => setIsReady(true), 1000);
+      return () => clearTimeout(timer); // Cleanup on unmount
+    }
+  }, [isHrLoading]);
+
+  const expenseRawSeries = useMemo(() => {
+    return [
+      {
+        name: "FY 2024-25",
+        data: budgetBar?.utilisedBudget || [],
+        group: "total",
+      },
+      {
+        name: "FY 2025-26",
+        data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        group: "total",
+      },
+    ];
+  }, [budgetBar]);
+  
+
+  const expenseOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+
+      stacked: true,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+      events: {
+        dataPointSelection: () => {
+          navigate("finance/budget");
+        },
+      },
+    },
+    colors: ["#54C4A7", "#EB5C45"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+        borderRadiusApplication: "none",
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => {
+
+        return inrFormat(val);
+      },
+
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+      offsetY: -22,
+    },
+    xaxis: {
+      categories: [
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
+      ],
+      title: {
+        text: "  ",
+      },
+    },
+    yaxis: {
+      // max: 3000000,
+      title: { text: "Amount In Lakhs (INR)" },
+      labels: {
+        formatter: (val) => `${Math.round(val / 100000)}`,
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
+
+    tooltip: {
+      enabled: true,
+      custom: function ({ series, seriesIndex, dataPointIndex }) {
+        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
+        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
+        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
+        //     </div>`;
+        return `
+            <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
+        
+              <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
+                <div><strong>Sales Expense:</strong></div>
+                <div style="width: 10px;"></div>
+             <div style="text-align: left;">INR ${Math.round(
+               rawData
+             ).toLocaleString("en-IN")}</div>
+
+              </div>
+     
+            </div>
+          `;
+      },
+    },
+  };
+
+  const totalUtilised =
+    budgetBar?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+  const navigate = useNavigate();
+
+  const { control, handleSubmit, reset } = useForm({
+    defaultValues: {
+      expanseName: "",
+      expanseType: "",
+      amount: "",
+      dueDate: null,
+    },
+  });
+
+  const onSubmit = (data) => {
+    setOpenModal(false);
+    toast.success("Budget Requested succesfully");
+    reset();
+  };
+
   // Transform data into the required format
-  const groupedData = Array.isArray(hrFinance)
+  const groupedData = Array.isArray(dummyData)
     ? dummyData?.reduce((acc, item) => {
         const month = dayjs(item.dueDate).format("MMM-YYYY"); // Extracting month and year
 
@@ -1172,8 +1172,6 @@ const SalesBudget = () => {
       }, {})
     : [];
 
-  
-
   // Convert grouped data to array and sort by latest month (descending order)
   const financialData = Object.values(groupedData)
     .map((data, index) => {
@@ -1202,6 +1200,7 @@ const SalesBudget = () => {
       };
     })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
+    console.log("financeial Data", financialData);
 
   // ---------------------------------------------------------------------//
   if (!isReady) {
