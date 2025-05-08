@@ -17,6 +17,7 @@ const WidgetSection = ({
   TitleAmount,
   titleLabel,
   fun,
+  normalCase,
 }) => {
   // Tailwind grid classes for different layouts
   const gridClasses = {
@@ -31,7 +32,10 @@ const WidgetSection = ({
   return (
     <div className="py-0 motion-preset-slide-up-sm">
       {title && (
-        <div className=" border-default  border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl uppercase">
+        <div
+          className={`border-default border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl ${
+            normalCase ? "" : "uppercase"
+          }`}>
           <div className="flex w-full gap-8 items-center justify-between">
             <div className="flex items-center gap-2">
               <span
@@ -39,13 +43,14 @@ const WidgetSection = ({
                   titleFont
                     ? "text-subtitle text-primary"
                     : "text-widgetTitle text-primary font-pmedium"
-                }`}
-              >
+                }`}>
                 {title}
               </span>
 
               {titleLabel ? (
-                <span className="text-widgetTitle text-primary font-pmedium">{titleLabel}</span>
+                <span className="text-widgetTitle text-primary font-pmedium">
+                  {titleLabel}
+                </span>
               ) : (
                 ""
               )}

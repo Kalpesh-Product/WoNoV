@@ -6,16 +6,16 @@ import dayjs from "dayjs";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Box, MenuItem, Skeleton, TextField, Tooltip } from "@mui/material";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
 const HrAttendance = () => {
   const axios = useAxiosPrivate();
 
-  // Financial year options
   const fyOptions = [
     {
       label: "FY 2024–25",
-      start: new Date(2024, 3, 1), // April 1, 2024
-      end: new Date(2025, 2, 31), // March 31, 2025
+      start: new Date(2024, 3, 1),
+      end: new Date(2025, 2, 31),
     },
     {
       label: "FY 2025–26",
@@ -36,6 +36,20 @@ const HrAttendance = () => {
   });
 
   const formattedMonth = dayjs(currentMonth).format("MMMM YYYY");
+  const generateMonthOptions = (startDate, endDate) => {
+    const months = [];
+    let date = dayjs(startDate);
+
+    while (date.isSameOrBefore(endDate, "month")) {
+      months.push({
+        label: date.format("MMMM YYYY"),
+        value: date.format("YYYY-MM"),
+      });
+      date = date.add(1, "month");
+    }
+
+    return months;
+  };
 
   const handlePrevMonth = () => {
     const newMonth = dayjs(currentMonth).subtract(1, "month").toDate();
@@ -51,15 +65,26 @@ const HrAttendance = () => {
   const currentMonthNum = dayjs(currentMonth).month();
   const currentYearNum = dayjs(currentMonth).year();
 
+  const workingDaysInMonth = Array.from({ length: daysInMonth }, (_, i) => {
+    const date = dayjs(new Date(currentYearNum, currentMonthNum, i + 1));
+    const day = date.day();
+    return day !== 0 && day !== 6;
+  }).filter(Boolean).length;
+
+  const DAILY_WORK_HOURS = 9;
+
   const tableData = useMemo(() => {
     const groupedUsers = {};
-
-    // Attendance map
     const attendanceMap = {};
+
     attendanceData?.companyAttandances?.forEach((entry) => {
       const userId = entry.user?._id;
       const dateKey = dayjs(entry.inTime).format("YYYY-MM-DD");
-      attendanceMap[`${userId}-${dateKey}`] = "✅";
+      const inTime = dayjs(entry.inTime);
+      const outTime = dayjs(entry.outTime);
+      const workedHours = outTime.diff(inTime, "minute") / 60;
+
+      attendanceMap[`${userId}-${dateKey}`] = Number(workedHours.toFixed(2));
 
       if (!groupedUsers[userId]) {
         groupedUsers[userId] = {
@@ -71,7 +96,6 @@ const HrAttendance = () => {
       }
     });
 
-    // Leave map
     const leaveMap = {};
     attendanceData?.allLeaves?.forEach((leave) => {
       const userId = leave.takenBy?._id;
@@ -97,7 +121,6 @@ const HrAttendance = () => {
       }
     });
 
-    // Compile table rows
     const finalRows = Object.entries(groupedUsers)
       .map(([userId, userInfo], index) => {
         const row = {
@@ -105,27 +128,27 @@ const HrAttendance = () => {
           ...userInfo,
         };
 
+        let totalWorkedHours = 0;
         let hasData = false;
 
-        // Get user startDate from attendance entry (only companyAttandances has it)
         const userAttendance = attendanceData.companyAttandances?.find(
           (entry) => entry.user?._id === userId && entry.user?.startDate
         );
-
         const startDate = dayjs(userAttendance?.user?.startDate);
 
         for (let day = 1; day <= daysInMonth; day++) {
           const date = dayjs(new Date(currentYearNum, currentMonthNum, day));
           const key = `${userId}-${date.format("YYYY-MM-DD")}`;
           const isWeekend = date.day() === 0 || date.day() === 6;
-
           const beforeJoining =
             startDate.isValid() && date.isBefore(startDate, "day");
 
           if (beforeJoining) {
             row[`day${day}`] = "N/A";
           } else if (attendanceMap[key]) {
-            row[`day${day}`] = "✅";
+            const worked = attendanceMap[key];
+            row[`day${day}`] = worked;
+            totalWorkedHours += worked;
             hasData = true;
           } else if (leaveMap[key]) {
             row[`day${day}`] = leaveMap[key];
@@ -137,6 +160,9 @@ const HrAttendance = () => {
             row[`day${day}`] = "";
           }
         }
+
+        row["totalHours"] = DAILY_WORK_HOURS * workingDaysInMonth;
+        row["workedHours"] = Number(totalWorkedHours.toFixed(2));
 
         return hasData ? row : null;
       })
@@ -154,11 +180,40 @@ const HrAttendance = () => {
     return {
       field: `day${i + 1}`,
       headerName: isSaturday ? "SAT" : isSunday ? "SUN" : `${i + 1}`,
-      width: 60,
+      width: 80,
       cellStyle: { textAlign: "center" },
+      headerClass: "ag-center-header",
       headerTooltip: `${date.format("dddd, MMM D")}`,
       cellRenderer: (params) => {
         const value = params.value;
+
+        if (typeof value === "number") {
+          const bgColor = "#d1fae5";
+          const textColor = "#065f46";
+          const label = value.toFixed(2);
+          const tooltip = `Worked ${label} hours`;
+
+          return (
+            <div className="py-2">
+              <Tooltip title={tooltip}>
+                <Box
+                  sx={{
+                    bgcolor: bgColor,
+                    color: textColor,
+                    fontSize: "0.75rem",
+                    px: 1,
+                    borderRadius: "6px",
+                    textAlign: "center",
+                    fontWeight: 500,
+                    width: "100%",
+                  }}
+                >
+                  {label}
+                </Box>
+              </Tooltip>
+            </div>
+          );
+        }
 
         let bgColor = "";
         let textColor = "";
@@ -166,15 +221,9 @@ const HrAttendance = () => {
         let tooltip = "";
 
         switch (value) {
-          case "✅":
-            bgColor = "#d1fae5"; // light green
-            textColor = "#065f46"; // dark green
-            label = "P";
-            tooltip = "Present";
-            break;
           case "PL":
-            bgColor = "#fee2e2"; // light red
-            textColor = "#991b1b"; // dark red
+            bgColor = "#fee2e2";
+            textColor = "#991b1b";
             label = "PL";
             tooltip = "Privileged Leave";
             break;
@@ -185,14 +234,14 @@ const HrAttendance = () => {
             tooltip = "Sick Leave";
             break;
           case "H":
-            bgColor = "#dbeafe"; // light blue
-            textColor = "#1e3a8a"; // dark blue
+            bgColor = "#dbeafe";
+            textColor = "#1e3a8a";
             label = "H";
             tooltip = "Public Holiday";
             break;
           case "N/A":
-            bgColor = "#f3f4f6"; // gray
-            textColor = "#6b7280"; // muted
+            bgColor = "#f3f4f6";
+            textColor = "#6b7280";
             label = "N/A";
             tooltip = "Not Applicable";
             break;
@@ -233,6 +282,24 @@ const HrAttendance = () => {
       width: 200,
       pinned: "left",
     },
+    {
+      field: "totalHours",
+      headerName: "Total Hours",
+      width: 100,
+      headerTooltip: "Total Hours",
+      headerClass: "ag-center-header",
+      cellStyle: { textAlign: "center" },
+      pinned: "left",
+    },
+    {
+      field: "workedHours",
+      headerName: "Worked Hours",
+      headerTooltip: "Worked Hours",
+      width: 100,
+      headerClass: "ag-center-header",
+      cellStyle: { textAlign: "center" },
+      pinned: "left",
+    },
     ...dayColumns,
   ];
 
@@ -265,7 +332,31 @@ const HrAttendance = () => {
 
         <div className="flex items-center gap-4">
           <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" />
-          <span className="font-semibold text-subtitle">{formattedMonth}</span>
+
+          <TextField
+            select
+            size="small"
+            variant="standard"
+            value={dayjs(currentMonth).format("YYYY-MM")}
+            onChange={(e) => {
+              const [year, month] = e.target.value.split("-");
+              const newDate = dayjs(`${year}-${month}-01`).toDate();
+              setCurrentMonth(newDate);
+            }}
+            className="min-w-[160px]"
+            SelectProps={{
+              IconComponent: KeyboardArrowDownIcon,
+            }}
+          >
+            {generateMonthOptions(selectedFY.start, selectedFY.end).map(
+              (option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              )
+            )}
+          </TextField>
+
           <PrimaryButton handleSubmit={handleNextMonth} title="Next" />
         </div>
       </div>

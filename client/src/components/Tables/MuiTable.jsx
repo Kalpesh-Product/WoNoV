@@ -52,7 +52,7 @@ const MuiTable = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {(scroll && rowsToDisplay ? rows : displayedRows).map((row) => (
+            {displayedRows.map((row) => (
                 <TableRow key={row[rowKey]}>
                   {columns.map((column) => {
                     const value = column.renderCell

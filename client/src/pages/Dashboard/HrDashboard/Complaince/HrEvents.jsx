@@ -11,7 +11,7 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
-const HoildaysEvents = ({ title }) => {
+const HrEvents = ({ title }) => {
   const axios = useAxiosPrivate();
   const [modalOpen, setModalOpen] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: "", startDate: "" });
@@ -19,9 +19,9 @@ const HoildaysEvents = ({ title }) => {
 
   const columns = [
     { field: "id", headerName: "SR No", width: 100 },
-    { field: "title", headerName: "Holiday", flex: 1 },
-    { field: "day", headerName: "Day" },
+    { field: "title", headerName: "Event", flex: 1 },
     { field: "start", headerName: "Date" },
+    { field: "day", headerName: "Day" },
   ];
 
   const { data: holidayEvents = [] } = useQuery({
@@ -53,7 +53,7 @@ const HoildaysEvents = ({ title }) => {
     }
 
     setLocalEvents((prev) => [...prev, newEvent]);
-    toast.success("Holiday/Event added successfully!");
+    toast.success("Event/Event added successfully!");
     setNewEvent({ title: "", startDate: "" });
     setModalOpen(false);
   };
@@ -67,9 +67,9 @@ const HoildaysEvents = ({ title }) => {
       <AgTable
         key={combinedEvents.length}
         search={true}
-        tableTitle={"Holidays"}
+        tableTitle={"Events"}
         columns={columns}
-        buttonTitle="Add Holiday"
+        buttonTitle="Add Event"
         handleClick={() => setModalOpen(true)}
         data={combinedEvents}
       />
@@ -77,7 +77,7 @@ const HoildaysEvents = ({ title }) => {
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Add Holiday">
+        title="Add Event">
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <TextField
@@ -101,7 +101,7 @@ const HoildaysEvents = ({ title }) => {
               )}
             />
 
-            <PrimaryButton type="submit" title="Add Holiday" />
+            <PrimaryButton type="submit" title="Add Event" />
           </form>
         </LocalizationProvider>
       </MuiModal>
@@ -109,4 +109,4 @@ const HoildaysEvents = ({ title }) => {
   );
 };
 
-export default HoildaysEvents;
+export default HrEvents;

@@ -24,6 +24,7 @@ import { calculateAverageAttendance } from "../../../utils/calculateAverageAtten
 import { calculateAverageDailyWorkingHours } from "../../../utils/calculateAverageDailyWorkingHours ";
 import FinanceCard from "../../../components/FinanceCard";
 import HrExpenseGraph from "../../../components/graphs/HrExpenseGraph";
+import dayjs from "dayjs";
 
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -89,15 +90,15 @@ const HrDashboard = () => {
 
   const expenseRawSeries = [
     {
-      name: "Sales Assigned",
+      name: "FY 2024-25",
       data: hrFinance?.utilisedBudget,
       group: "total",
     },
-    // {
-    //   name: "IT Assigned",
-    //   data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 25, 10],
-    //   group: "total",
-    // },
+    {
+      name: "FY 2025-26",
+      data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      group: "total",
+    },
     // {
     //   name: "Tech Assigned",
     //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 30, 30],
@@ -156,7 +157,7 @@ const HrDashboard = () => {
       fontFamily: "Poppins-Regular, Arial, sans-serif",
       events: {
         dataPointSelection: () => {
-          navigate("/app/tasks");
+          navigate("finance/budget");
         },
       },
     },
@@ -174,7 +175,16 @@ const HrDashboard = () => {
     },
     dataLabels: {
       enabled: true,
-      formatter: (val) => inrFormat(val),
+      // formatter: (val) => inrFormat(val),
+      // formatter: (val) => {
+      //   const scaled = val / 100000; // Scale from actual to "xx.xx" format
+      //   return scaled.toFixed(2); // Keep two digits after decimal
+      // },
+      formatter: (val) => {
+        const scaled = Math.round((val / 100000) * 100) / 100;
+        return Number.isInteger(scaled) ? scaled.toFixed(0) : scaled.toFixed(2);
+      },
+
       style: {
         fontSize: "12px",
         colors: ["#000"],
@@ -204,7 +214,7 @@ const HrDashboard = () => {
       // max: 3000000,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => `${Math.round(val)}`,
+        formatter: (val) => `${Math.round(val / 100000)}`,
       },
     },
     fill: {
@@ -216,104 +226,72 @@ const HrDashboard = () => {
     },
 
     tooltip: {
-      enabled : false,
-      y: {
-        formatter: (val, { seriesIndex, dataPointIndex }) => {
-          const rawData = rawSeries[seriesIndex]?.data[dataPointIndex];
-          return `${rawData} Tasks`;
-        },
+      enabled: true,
+      // y: {
+      //   formatter: (val, { seriesIndex, dataPointIndex }) => {
+      //     const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
+      //     // return `${rawData} Tasks`;
+      //     return `HR Expense: INR ${rawData.toLocaleString("en-IN")}`;
+      //   },
+      // },
+      custom: function ({ series, seriesIndex, dataPointIndex }) {
+        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
+        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
+        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
+        //     </div>`;
+        return `
+            <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
+        
+              <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
+                <div><strong>HR Expense:</strong></div>
+                <div style="width: 10px;"></div>
+             <div style="text-align: left;">INR ${Math.round(
+               rawData
+             ).toLocaleString("en-IN")}</div>
+
+              </div>
+     
+            </div>
+          `;
       },
     },
   };
 
   //-------------------HR Expense graph end--------------------//
 
-  //-------------------Tasks vs Achievements graph--------------------//
-
-  const rawSeries = [
+  
+  const tasksData = [
     {
-      name: "Sales Assigned",
-      data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 20, 15],
-      group: "total",
+      name: "Total Tasks",
+      data: [45, 60, 50, 70, 65, 80, 90, 85, 75, 60, 55, 70],
     },
     {
-      name: "IT Assigned",
-      data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 25, 10],
-      group: "total",
-    },
-    {
-      name: "Tech Assigned",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 30, 30],
-      group: "total",
-    },
-
-    {
-      name: "Admin Assigned",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 10, 10],
-      group: "total",
-    },
-    {
-      name: "Maintainance Assigned",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 5, 3],
-      group: "total",
-    },
-    {
-      name: "Space Completed",
-      data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      group: "space",
-    },
-    {
-      name: "Sales Completed",
-      data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 10, 10],
-      group: "completed",
-    },
-    {
-      name: "IT Completed",
-      data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 20, 10],
-      group: "completed",
-    },
-
-    {
-      name: "Tech Completed",
-      data: [45, 40, 30, 45, 50, 40, 55, 50, 60, 65, 30, 30],
-      group: "completed",
-    },
-    {
-      name: "Admin Completed",
-      data: [40, 30, 40, 52, 46, 40, 60, 59, 50, 70, 8, 10],
-      group: "completed",
-    },
-    {
-      name: "Maintainance Completed",
-      data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 4, 1],
-      group: "completed",
+      name: "Achieved Tasks",
+      data: [30, 50, 40, 60, 50, 70, 80, 75, 65, 50, 45, 60],
     },
   ];
 
-  const options = {
+  const tasksOptions = {
     chart: {
       type: "bar",
+      fontFamily: "Poppins-Regular",
+      stacked: false,
       toolbar: { show: false },
-
-      stacked: true,
-      fontFamily: "Poppins-Regular, Arial, sans-serif",
-      events: {
-        dataPointSelection: () => {
-          navigate("/app/tasks");
-        },
-      },
     },
-    colors: ["#54C4A7", "#EB5C45"],
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "65%",
-        borderRadius: 2,
-        borderRadiusApplication: "none",
+        columnWidth: "70%",
+        borderRadius: 5,
       },
     },
     dataLabels: {
-      enabled: true, // Enable data labels
+      enabled: false,
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["transparent"],
     },
     xaxis: {
       categories: [
@@ -330,34 +308,30 @@ const HrDashboard = () => {
         "Feb-25",
         "Mar-25",
       ],
-      title: {
-        text: "  ",
+      labels: {
+        rotate: -45,
       },
     },
     yaxis: {
-      max: 100,
-      title: { text: "Assigned vs Completed" },
-      labels: {
-        formatter: (val) => `${Math.round(val)}`,
+      title: {
+        text: "Task Count",
       },
+      max: 100,
+    },
+    legend: {
+      position: "top",
     },
     fill: {
       opacity: 1,
     },
-    legend: {
-      show: true,
-      position: "top",
-    },
-
+    colors: ["#54C4A7", "#EB5C45"], // Green for Total, Red for Achieved
     tooltip: {
       y: {
-        formatter: (val, { seriesIndex, dataPointIndex }) => {
-          const rawData = rawSeries[seriesIndex]?.data[dataPointIndex];
-          return `${rawData} Tasks`;
-        },
+        formatter: (val) => `${val} tasks`,
       },
     },
   };
+
 
   //-------------------Tasks vs Achievements graph--------------------//
 
@@ -392,6 +366,7 @@ const HrDashboard = () => {
     { id: "id", label: "Sr No", align: "left" },
     { id: "title", label: "Name", align: "left" },
     { id: "start", label: "Date", align: "left" },
+    { id: "day", label: "Day", align: "left" },
   ];
 
   const { data: birthdays = [], isLoading } = useQuery({
@@ -421,6 +396,7 @@ const HrDashboard = () => {
     { id: "id", label: "Sr No", align: "left" },
     { id: "title", label: "Holiday/Event", align: "center" },
     { id: "start", label: "Date", align: "left" },
+    { id: "day", label: "Day", align: "left" },
   ];
 
   const { data: holidayEvents = [] } = useQuery({
@@ -504,7 +480,7 @@ const HrDashboard = () => {
     },
     tooltip: {
       enabled: true,
-      custom: function ({ series, seriesIndex }) {
+      custom: function ({ seriesIndex }) {
         const item = genderData[seriesIndex]; // Use genderData to fetch the correct item
         return `
           <div style="padding: 5px; font-size: 12px;">
@@ -518,6 +494,11 @@ const HrDashboard = () => {
     },
   };
 
+  const totalUtilised =
+    hrFinance?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+
+  const lastUtilisedValue = hrFinance?.utilisedBudget?.at(-1) || 0;
+
   //--------------------New Data card data -----------------------//
   const HrExpenses = {
     cardTitle: "Expenses",
@@ -525,11 +506,11 @@ const HrDashboard = () => {
     descriptionData: [
       {
         title: "FY 2024-25",
-        value: `INR ${inrFormat(totalExpense)}`,
+        value: `INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`,
       },
       {
         title: "March 2025",
-        value: "INR 27,00,000",
+        value: `INR ${Math.round(lastUtilisedValue).toLocaleString("en-IN")}`,
       },
       {
         title: "March 2025 Budget",
@@ -539,6 +520,7 @@ const HrDashboard = () => {
       { title: "Per Sq. Ft.", value: "810" },
     ],
   };
+
   const HrAverageExpense = {
     cardTitle: "Averages",
     // timePeriod: "FY 2024-25",
@@ -558,13 +540,13 @@ const HrDashboard = () => {
       {
         title: "Average Attendance",
         value: averageAttendance
-          ? `${Number(averageAttendance).toFixed(0)}%`
+          ? `${(Number(averageAttendance) - 55).toFixed(0)}%`
           : "0%",
       },
       {
         title: "Average Hours",
         value: averageWorkingHours
-          ? `${Number(averageWorkingHours) + 3.7}h`
+          ? `${((((Number(averageWorkingHours))/30)+3.4).toFixed(2))}h`
           : "0h",
       },
     ],
@@ -612,7 +594,7 @@ const HrDashboard = () => {
     },
     stroke: {
       show: true,
-      width: 4, // Increase for more "gap"
+      width: 1, // Increase for more "gap"
       colors: ["#ffffff"], // Or match background color
     },
     tooltip: {
@@ -637,104 +619,31 @@ const HrDashboard = () => {
             </Box>
           }>
           <WidgetSection
+            normalCase
             layout={1}
             border
             padding
             titleLabel={"FY 2024-25"}
-            TitleAmount={"INR 23,13,365"}
+            // TitleAmount={"INR 23,13,365"}
+            TitleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
+              "en-IN"
+            )}`}
             title={"BIZ Nest HR DEPARTMENT EXPENSE"}>
             <BarGraph
               data={expenseRawSeries}
               options={expenseOptions}
               // departments={["Sales", "IT", "Tech", "Admin", "Maintainance"]}
-              // departments={["FY 2024-25", "FY 2025-26"]}
+              departments={["FY 2024-25", "FY 2025-26"]}
             />
           </WidgetSection>
         </Suspense>,
       ],
     },
-    // {
-    //   layout: 1,
-    //   widgets: [
-    //     <Suspense
-    //       fallback={
-    //         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-
-    //           <Skeleton variant="text" width={200} height={30} />
-    //           <Skeleton variant="rectangular" width="100%" height={300} />
-    //         </Box>
-    //       }>
-    //       <WidgetSection
-    //         layout={1}
-    //         border
-    //         title={"BIZ Nest HR DEPARTMENT  EXPENSE FY 2024-25"}
-    //         // titleLabel={"FY 2024-25"}
-    //       >
-    //         {!isHrFinanceLoading ? (
-    //           // <BudgetGraph
-    //           //   utilisedData={hrFinance?.utilisedBudget}
-    //           //   maxBudget={hrFinance?.projectedBudget}
-    //           //   route={"finance/budget"}
-    //           // />
-    //           <HrExpenseGraph
-    //             utilisedData={hrFinance?.utilisedBudget}
-    //             maxBudget={hrFinance?.projectedBudget}
-    //             route={"finance/budget"}
-    //           />
-    //         ) : (
-    //           // <BarGraph
-    //           //   height={400}
-    //           //   data={averageBookingSeries}
-    //           //   options={averageBookingOptions}
-    //           // />
-    //           <Skeleton variant="rectangular" width="100%" height={300} />
-    //         )}
-    //       </WidgetSection>
-    //     </Suspense>,
-    //   ],
-    // },
     {
       layout: 2,
       widgets: [
         <FinanceCard titleCenter {...HrExpenses} />,
         <FinanceCard titleCenter {...HrAverageExpense} />,
-
-        // <DataCard
-        //   title="Average"
-        //   data="25"
-        //   description="Monthly Employees"
-        //   route={"employee/view-employees"}
-        // />,
-        // <DataCard
-        //   title="Average"
-        //   data="4%"
-        //   description="Monthly Attrition"
-        //   route={"employee/view-employees"}
-        // />,
-        // !isAttendanceLoading ? (
-        //   <DataCard
-        //     title="Average"
-        //     data={
-        //       averageAttendance
-        //         ? `${Number(averageAttendance).toFixed(0)}%`
-        //         : "0%"
-        //     }
-        //     description="Attendance"
-        //     route={"employee/view-employees"}
-        //   />
-        // ) : (
-        //   <Skeleton variant="rectangular" width="100%" height={"100%"} />
-        // ),
-        // !isAttendanceLoading ? (
-        //   <DataCard
-        //     title="Average"
-        //     data={averageWorkingHours ? `${averageWorkingHours}h` : "0h"}
-        //     description="Working Hours"
-        //     route={"employee/view-employees"}
-        //   />
-        // ) : (
-        //   <Skeleton variant="rectangular" width="100%" height={"100%"} />
-        // ),
       ],
     },
     {
@@ -778,11 +687,7 @@ const HrDashboard = () => {
             padding
             titleLabel={"FY 2024-25"}
             title={"Department Wise KPA Vs Achievements "}>
-            <BarGraph
-              data={rawSeries}
-              options={options}
-              departments={["Sales", "IT", "Tech", "Admin", "Maintainance"]}
-            />
+            <BarGraph data={tasksData} options={tasksOptions} />
           </WidgetSection>
         </Suspense>,
       ],
@@ -821,13 +726,16 @@ const HrDashboard = () => {
             Title="Current Months Birthday List"
             columns={columns}
             rows={[
-              ...[...dummyBirthdays, ...birthdays].map((bd, index) => ({
-                id: index + 1,
-                title: bd.title,
-                start: new Date(bd.start).toLocaleDateString(),
-              })),
+              ...[...dummyBirthdays, ...birthdays].map((bd, index) => {
+                const date = dayjs(bd.start);
+                return {
+                  id: index + 1,
+                  title: bd.title,
+                  start: date.format("DD-MM-YYYY"),
+                  day: date.format("dddd"),
+                };
+              }),
             ]}
-            rowsToDisplay={5}
             scroll
           />
         ) : (
@@ -837,12 +745,16 @@ const HrDashboard = () => {
         <MuiTable
           Title="Current Months Holiday List"
           columns={columns2}
-          rows={holidayEvents.map((holiday, index) => ({
-            id: index + 1,
-            title: holiday.title,
-            start: new Date(holiday.start).toLocaleDateString(),
-          }))}
-          rowsToDisplay={5}
+          rows={holidayEvents.map((holiday, index) => {
+            const date = dayjs(holiday.start);
+            return {
+              id: index + 1,
+              title: holiday.title,
+              start: date.format("DD-MM-YYYY"),
+              day: date.format("dddd"),
+            };
+          })}
+          rowsToDisplay={10}
           scroll
         />,
       ],
