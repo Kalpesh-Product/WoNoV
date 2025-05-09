@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   FormControl,
   InputLabel,
@@ -16,6 +16,7 @@ const CheckAvailability = () => {
   const navigate = useNavigate();
   const address = useLocation();
   const axios = useAxiosPrivate();
+  // const [selectedUnit, setSelectedUnit] = useState("")
 
   const { control, handleSubmit, watch } = useForm({
     defaultValues: {
@@ -25,6 +26,10 @@ const CheckAvailability = () => {
   });
 
   const selectedLocation = watch("location");
+  const selectedUnit = watch("floor")
+  
+
+  
 
   const {
     data: workLocations = [],
@@ -38,6 +43,8 @@ const CheckAvailability = () => {
       return response.data;
     },
   });
+
+  const selectedUnitId = locationsLoading ? [] : workLocations.filter((item)=>item.unitNo === selectedUnit).map((item)=>item._id)
 
   const uniqueBuildings = Array.from(
     new Map(
@@ -60,10 +67,12 @@ const CheckAvailability = () => {
     const { location, floor } = data;
     address.pathname?.includes("mix-bag")
       ? navigate(
-          `/app/dashboard/sales-dashboard/mix-bag/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`
+          `/app/dashboard/sales-dashboard/mix-bag/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`,
+          { state: { unitId: selectedUnitId[0] } }
         )
       : navigate(
-          `/app/dashboard/sales-dashboard/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`
+          `/app/dashboard/sales-dashboard/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`,
+          { state: { unitId: selectedUnitId[0] } }
         );
   };
 

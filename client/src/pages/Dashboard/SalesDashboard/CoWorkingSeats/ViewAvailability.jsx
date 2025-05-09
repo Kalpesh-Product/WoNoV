@@ -1,28 +1,18 @@
 import React, { useState } from "react";
-import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Tabs,
-  Tab,
-  IconButton,
-} from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
+import { Tabs, Tab, Skeleton } from "@mui/material";
 import AgTable from "../../../../components/AgTable";
 import occupied from "../../../../assets/biznest/occupancy/occupied-701.jpeg";
 import cleared from "../../../../assets/biznest/occupancy/clear-701.png";
-import PrimaryButton from "../../../../components/PrimaryButton";
 import MuiModal from "../../../../components/MuiModal";
 import { MdOutlineRemoveRedEye, MdUploadFile } from "react-icons/md";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import dayjs from "dayjs";
 import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable";
-import { KeyboardArrowDown } from "@mui/icons-material";
-import Card from "../../../../components/Card";
-import { useNavigate } from "react-router-dom";
 import DataCard from "../../../../components/DataCard";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 
 const mockSalesData = {
   totalDesks: 146,
@@ -88,9 +78,7 @@ const mockSalesData = {
     },
   ],
 };
-const totalOccupied = mockSalesData.clientDetails.reduce((sum, item) => {
-  return item.occupiedDesks + sum;
-}, 0);
+
 
 const ViewAvailability = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -110,14 +98,36 @@ const ViewAvailability = () => {
     setTabIndex(newValue);
   };
   const location = useLocation();
+  const unit = location.state?.unitId;
+  console.log(unit);
   const params = new URLSearchParams(location.search);
   const locationParam = params.get("location");
   const floorParam = params.get("floor");
+  const axios = useAxiosPrivate();
 
   const handleViewDetails = (data) => {
     setOpenModal(true);
     setMemberDetails(data);
   };
+
+  const {
+    data: unitDetails = [],
+    isLoading: isUnitsLoading,
+    error,
+  } = useQuery({
+    queryKey: ["unitDetails"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/co-working-members", {
+          params: { unitId: unit },
+        });
+        return response.data;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+  });
+  const totalOccupied = isUnitsLoading ? 0 : unitDetails?.totalOccupiedDesks
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -144,6 +154,19 @@ const ViewAvailability = () => {
     setViewModalOpen(true);
   };
 
+  if (isUnitsLoading) {
+    // While the data is loading, display the skeleton loader
+    return (
+      <div className="h-screen">
+        <Skeleton height={"100%"} width={"100%"} />
+      </div>
+    );
+  }
+
+  if (error) {
+    // Display error message if data fetching fails
+    return <div className="h-screen flex justify-center items-center">No Data Available</div>;
+  }
 
   return (
     <div className="p-4 flex flex-col gap-8">
@@ -183,7 +206,7 @@ const ViewAvailability = () => {
                 className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg"
               >
                 <img
-                  src={imagePreview}
+                  src={unitDetails?.occupiedImage?.url || occupiedImage}
                   alt="Occupied"
                   className="w-full h-full object-contain"
                 />
@@ -198,7 +221,7 @@ const ViewAvailability = () => {
                 className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg"
               >
                 <img
-                  src={clearedImagePreview}
+                  src={unitDetails?.clearImage?.url || cleared}
                   alt="Clear"
                   className="w-full h-full object-contain"
                 />
@@ -212,22 +235,22 @@ const ViewAvailability = () => {
       <div className=" flex flex-col gap-4">
         <WidgetSection layout={4} padding>
           <DataCard
-            data={mockSalesData.totalDesks}
+            data={unitDetails?.totalDesks}
             title={"Total Desks"}
             description={`Last Month : Apr-25`}
           />
           <DataCard
-            data={"64"}
+            data={unitDetails?.totalOccupiedDesks}
             title={"Occupied Desks"}
             description={`Last Month : Apr-25`}
           />
           <DataCard
-            data={"44"}
+            data={((unitDetails?.totalOccupiedDesks/unitDetails?.totalDesks)*100).toFixed(0)}
             title={"Occupancy %"}
             description={`Last Month : Apr-25`}
           />
           <DataCard
-            data={"82"}
+            data={(unitDetails?.totalDesks - unitDetails?.totalOccupiedDesks)}
             title={"Free Desks"}
             // description={`Last Month : ${new Date().toLocaleString("default", {
             //   month: "short",
@@ -249,12 +272,12 @@ const ViewAvailability = () => {
             { field: "occupiedDesks", headerName: "Occupied Desks" },
             { field: "occupancyPercent", headerName: "Occupied %" },
           ]}
-          data={mockSalesData?.clientDetails?.map((data, index) => ({
+          data={unitDetails?.clientDetails?.map((data, index) => ({
             id: index, // Using index as a unique identifier
             client: data.client || "",
             occupiedDesks: data.occupiedDesks || "",
             occupancyPercent:
-              ((data.occupiedDesks / mockSalesData.totalDesks) * 100).toFixed(
+              ((data.occupiedDesks / unitDetails?.totalOccupiedDesks) * 100).toFixed(
                 0
               ) || "",
             memberDetails: data.memberDetails, // Pass memberDetails to the data for each row
