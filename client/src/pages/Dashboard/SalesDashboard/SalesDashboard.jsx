@@ -205,17 +205,28 @@ const SalesDashboard = () => {
       {
         title: "FY 2024-25",
         value: "INR 2,09,00,000",
+        route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
         title: "March 2025",
         value: "INR 18,23,400",
+        route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
         title: "Total Desks",
         value: "589",
+        route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
-      { title: "Active Sq Ft", value: "60,000" },
-      { title: "Per Sq. Ft.", value: "348" },
+      {
+        title: "Active Sq Ft",
+        value: "60,000",
+        route: "/app/dashboard/sales-dashboard/co-working-seats",
+      },
+      {
+        title: "Per Sq. Ft.",
+        value: "348",
+        route: "/app/dashboard/sales-dashboard/co-working-seats",
+      },
     ],
   };
   const keyStatsData = {
@@ -224,17 +235,29 @@ const SalesDashboard = () => {
       {
         title: "Active Desks",
         value: 589,
+        route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
       {
         title: "Occupied Desks",
         value: 582,
+        route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
       {
         title: "Occupancy %",
         value: "98",
+        route:
+          "/app/dashboard/sales-dashboard/co-working-seats/check-availability",
       },
-      { title: "Free Desks", value: "7" },
-      { title: "Unique Clients", value: "46" },
+      {
+        title: "Free Desks",
+        value: "7",
+        route: "/app/dashboard/sales-dashboard/co-working-seats",
+      },
+      {
+        title: "Unique Clients",
+        value: "46",
+        route: "/app/dashboard/sales-dashboard/clients",
+      },
     ],
   };
   const salesAverageData = {
@@ -243,17 +266,29 @@ const SalesDashboard = () => {
       {
         title: "Revenue",
         value: "INR 17,41,666",
+        route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
         title: "Occupied Desks",
         value: 553,
+        route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
       {
         title: "Occupancy %",
         value: "93",
+        route:
+          "/app/dashboard/sales-dashboard/co-working-seats/check-availability",
       },
-      { title: "Clients", value: "45" },
-      { title: "Provisioned Desks", value: "140" },
+      {
+        title: "Clients",
+        value: "45",
+        route: "/app/dashboard/sales-dashboard/clients",
+      },
+      {
+        title: "Provisioned Desks",
+        value: "140",
+        route: "/app/dashboard/sales-dashboard/co-working-seats",
+      },
     ],
   };
 
@@ -608,9 +643,12 @@ const SalesDashboard = () => {
           border
           normalCase
           title={"BIZ Nest SALES DEPARTMENT REVENUES FY 2024-25"}
-          TitleAmount={`INR ${inrFormat("20900000")}`}
-        >
-          <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} departments={["FY 2024-25", "FY 2025-26"]} />
+          TitleAmount={`INR ${inrFormat("20900000")}`}>
+          <BarGraph
+            data={incomeExpenseData}
+            options={incomeExpenseOptions}
+            departments={["FY 2024-25", "FY 2025-26"]}
+          />
         </WidgetSection>,
       ],
     },
@@ -699,8 +737,7 @@ const SalesDashboard = () => {
           layout={1}
           title={"Monthly Unique Leads"}
           titleLabel={"FY 2024-25"}
-          border
-        >
+          border>
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
@@ -723,8 +760,7 @@ const SalesDashboard = () => {
           layout={1}
           title={"Sourcing Channels"}
           titleLabel={"FY 2024-25"}
-          border
-        >
+          border>
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
