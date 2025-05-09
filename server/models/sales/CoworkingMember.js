@@ -61,5 +61,8 @@ const coworkingClientMember = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Revenue = mongoose.model("CoworkingClientMember", coworkingClientMember);
-module.exports = Revenue;
+const CoworkingClientMember = mongoose.model(
+  "CoworkingClientMember",
+  coworkingClientMember
+);
+module.exports = CoworkingClientMember;

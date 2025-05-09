@@ -33,11 +33,15 @@ const {
   getAvailableDesks,
   getBookedDesks,
 } = require("../controllers/salesControllers/deskController");
+const {
+  getMembersByUnit,
+} = require("../controllers/salesControllers/coworkingMemberControllers");
 
 //Coworking routes
 router.post("/onboard-co-working-client", createCoworkingClient);
 router.get("/co-working-clients", getCoworkingClients);
 router.patch("/update-co-working-clients", updateCoworkingClient);
+router.get("/co-working-members", getMembersByUnit);
 router.post(
   "/upload-client-unit-image",
   upload.single("unitImage"),

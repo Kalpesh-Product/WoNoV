@@ -1,6 +1,7 @@
+const CoworkingClient = require("../../models/sales/CoworkingClient");
+const CoworkingClientMember = require("../../models/sales/CoworkingMember");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
-const CoworkingClientMember = require("../models/coworkingClientMember");
 const mongoose = require("mongoose");
 
 const createMember = async (req, res, next) => {
@@ -130,6 +131,64 @@ const getAllMembers = async (req, res, next) => {
   }
 };
 
+const getMembersByUnit = async (req, res, next) => {
+  try {
+    const { company } = req;
+    const { unitId } = req.query;
+
+    const memberDetails = [
+      { member: "Kalpesh Naik", date: "20-02-2024" },
+      { member: "Aiwinraj KS", date: "20-02-2024" },
+      { member: "Allan Silveira", date: "21-02-2024" },
+      { member: "Sankalp Kalangutkar", date: "22-02-2024" },
+      { member: "Muskan Dodmani", date: "22-02-2024" },
+    ];
+
+    if (!unitId) {
+      return res.status(400).json({ message: "Unit is missing" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(unitId)) {
+      return res.status(400).json({ message: "Invalid unit ID provided" });
+    }
+
+    const members = await CoworkingClient.find({
+      unit: unitId,
+      company,
+    }).populate({
+      path: "unit",
+      select: "unitName unitNo openDesks cabinDesks clearImage",
+    });
+
+    if (!members) {
+      return res.status(400).json({ message: "No Member found" });
+    }
+
+    const clientDetails = members.map((member) => {
+      const desks = member.openDesks + member.cabinDesks;
+      return {
+        client: member.clientName,
+        occupiedDesks: desks,
+        memberDetails: member.clientName === "WoNo" ? memberDetails : [],
+      };
+    });
+
+    const totalDesks = members[0].unit?.openDesks + members[0].unit?.cabinDesks;
+    const clearImage = members[0].unit.clearImage;
+
+    const transformMembersData = {
+      clearImage,
+      occupiedImage: clearImage,
+      totalDesks,
+      clientDetails,
+    };
+
+    return res.status(200).json(transformMembersData);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getMemberById = async (req, res) => {
   try {
     const { memberId } = req.params.id;
@@ -190,4 +249,5 @@ module.exports = {
   getAllMembers,
   getMemberById,
   updateMember,
+  getMembersByUnit,
 };

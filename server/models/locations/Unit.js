@@ -22,7 +22,7 @@ const unitSchema = new mongoose.Schema(
     },
     sqft: {
       type: Number,
-      required: true,
+      // required: true,
     },
     clearImage: {
       imageId: String,
