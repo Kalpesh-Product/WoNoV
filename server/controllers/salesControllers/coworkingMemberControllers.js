@@ -157,15 +157,18 @@ const getMembersByUnit = async (req, res, next) => {
       company,
     }).populate({
       path: "unit",
-      select: "unitName unitNo openDesks cabinDesks clearImage",
+      select: "unitName unitNo openDesks cabinDesks clearImage occupiedImage",
     });
 
     if (!members) {
       return res.status(400).json({ message: "No Member found" });
     }
 
+    let totalOccupiedDesks = 0;
+
     const clientDetails = members.map((member) => {
       const desks = member.openDesks + member.cabinDesks;
+      totalOccupiedDesks += desks;
       return {
         client: member.clientName,
         occupiedDesks: desks,
@@ -175,11 +178,13 @@ const getMembersByUnit = async (req, res, next) => {
 
     const totalDesks = members[0].unit?.openDesks + members[0].unit?.cabinDesks;
     const clearImage = members[0].unit.clearImage;
+    const occupiedImage = members[0].unit.occupiedImage;
 
     const transformMembersData = {
       clearImage,
-      occupiedImage: clearImage,
+      occupiedImage,
       totalDesks,
+      totalOccupiedDesks,
       clientDetails,
     };
 
