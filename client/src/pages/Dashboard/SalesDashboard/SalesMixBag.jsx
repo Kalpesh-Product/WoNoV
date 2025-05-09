@@ -17,15 +17,15 @@ const SalesMixBag = () => {
     },
     {
       title: "Revenue",
-      route: "/app/dashboard/sales-dashboard/revenue",
+      route: "/app/dashboard/sales-dashboard/mix-bag/revenue",
     },
     {
       title: "Clients",
-      route: "/app/dashboard/sales-dashboard/clients",
+      route: "/app/dashboard/sales-dashboard/mix-bag/clients",
     },
     {
       title: "Desks",
-      route: "/app/dashboard/sales-dashboard/co-working-seats",
+      route: "/app/dashboard/sales-dashboard/mix-bag/co-working-seats",
     },
   ];
 
