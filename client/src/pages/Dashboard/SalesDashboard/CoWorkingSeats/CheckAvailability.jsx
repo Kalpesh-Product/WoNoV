@@ -49,6 +49,12 @@ const CheckAvailability = () => {
         : []
     ).entries()
   );
+  const formatUnitDisplay = (unitNo, buildingName) => {
+    const match = unitNo.match(/^(\d+)\(?([A-Za-z]*)\)?$/);
+    if (!match) return `${unitNo} ${buildingName}`;
+    const [_, number, letter] = match;
+    return `${number}${letter ? ` - ${letter}` : ""} ${buildingName}`;
+  };
 
   const onSubmit = (data) => {
     const { location, floor } = data;
@@ -119,7 +125,10 @@ const CheckAvailability = () => {
                   {workLocations.map((unit) =>
                     unit.building.buildingName === selectedLocation ? (
                       <MenuItem key={unit._id} value={unit.unitNo}>
-                        {unit.unitNo}
+                        {formatUnitDisplay(
+                          unit.unitNo,
+                          unit.building.buildingName
+                        )}
                       </MenuItem>
                     ) : (
                       <></>

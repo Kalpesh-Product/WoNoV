@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
+import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Tabs,
+  Tab,
+  IconButton,
+} from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
 import occupied from "../../../../assets/biznest/occupancy/occupied-701.jpeg";
@@ -9,6 +16,8 @@ import MuiModal from "../../../../components/MuiModal";
 import { MdOutlineRemoveRedEye, MdUploadFile } from "react-icons/md";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import dayjs from "dayjs";
+import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable";
+import { KeyboardArrowDown } from "@mui/icons-material";
 
 const mockSalesData = [
   {
@@ -80,6 +89,11 @@ const ViewAvailability = () => {
   const [clearedImagePreview, setClearedImagePreview] = useState(cleared);
   const [clearedImageOpen, setClearedImageOpen] = useState(false);
   const [clearedFile, setClearedFile] = useState(null);
+  const [tabIndex, setTabIndex] = useState(0);
+
+  const handleTabChange = (event, newValue) => {
+    setTabIndex(newValue);
+  };
 
   const handleViewDetails = (data) => {
     setOpenModal(true);
@@ -114,100 +128,116 @@ const ViewAvailability = () => {
   return (
     <div className="p-4 flex flex-col gap-8">
       <div>
-        <div className="grid grid-cols-2  gap-4">
-          <div className="flex w-full flex-col gap-4 text-center">
-            <span className="text-primary text-title">Occupied</span>
-            <div
-              onClick={() => setImageOpen(true)}
-              className="h-80 w-full  cursor-pointer  p-4 border-[1px] border-borderGray rounded-lg">
-              <img
-                className="w-full h-full object-contain"
-                src={imagePreview}
-                alt=""
-              />
-            </div>
+        <div className="w-full ">
+          <div className="border-[1px] border-borderGray rounded-xl">
+            <Tabs
+              value={tabIndex}
+              onChange={handleTabChange}
+              variant="fullWidth"
+              TabIndicatorProps={{ style: { display: "none" } }}
+              sx={{
+                width: "100%",
+                backgroundColor: "white",
+                borderRadius: 3,
+                "& .MuiTab-root": {
+                  textTransform: "none",
+                  fontWeight: "medium",
+                  padding: "12px 15px",
+                  minWidth: "20%",
+                  borderRight: "0.1px solid #d1d5db",
+                },
+                "& .MuiTabs-scrollButtons": {
+                  "&.Mui-disabled": { opacity: 0.3 },
+                },
+              }}
+            >
+              <Tab label="Occupied" />
+              <Tab label="Clear" />
+            </Tabs>
           </div>
-          <div className="flex w-full flex-col gap-4 text-center">
-            <span className="text-primary text-title">Clear</span>
-            <div
-              onClick={() => setClearedImageOpen(true)}
-              className="h-80 w-full  cursor-pointer p-4 border-[1px] border-borderGray rounded-lg">
-              <img
-                className="w-full h-full object-contain"
-                src={clearedImagePreview}
-                alt=""
-              />
+
+          {tabIndex === 0 && (
+            <div className="py-4 text-center">
+              <div
+                onClick={() => setImageOpen(true)}
+                className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg"
+              >
+                <img
+                  src={imagePreview}
+                  alt="Occupied"
+                  className="w-full h-full object-contain"
+                />
+              </div>
             </div>
-          </div>
+          )}
+
+          {tabIndex === 1 && (
+            <div className="py-4 text-center">
+              <div
+                onClick={() => setClearedImageOpen(true)}
+                className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg"
+              >
+                <img
+                  src={clearedImagePreview}
+                  alt="Clear"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {/* aCCordion section */}
       <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
-          <div className="flex justify-between items-center w-full px-4 py-2">
-            <span className=" text-sm text-muted font-pmedium text-title">
-              CLIENT
-            </span>
-            <span className="px-8 text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              MEMEBER
-            </span>
-          </div>
-        </div>
-        {mockSalesData.map((data, index) => (
-          <Accordion key={index} className="py-4">
-            <AccordionSummary
-              expandIcon={<IoIosArrowDown />}
-              aria-controls={`panel-${index}-content`}
-              id={`panel-${index}-header`}
-              className="border-b-[1px] border-borderGray">
-              <div className="flex justify-between items-center w-full px-4">
-                <span className="text-content font-pmedium">{data.client}</span>
-                <span className=" px-8 text-content font-pmedium">
-                  {data.memberDetails.length} members
-                </span>
-              </div>
-            </AccordionSummary>
-            <AccordionDetails sx={{ borderTop: "1px solid #d1d5db" }}>
-              <AgTable
-                data={data.memberDetails.map((member, idx) => ({
-                  ...member,
-                  id: idx + 1,
-                  date: dayjs(
-                    new Date(member.date.split("-").reverse().join("-"))
-                  ).format("DD-MM-YYYY"),
-                }))}
-                hideFilter
-                columns={[
-                  { field: "id", headerName: "Sr No", width: 100 },
-                  { field: "member", headerName: "Member Name", flex: 1 },
-                  { field: "date", headerName: "Date", flex: 1 },
-                  {
-                    headerName: "Action",
-                    field: "action",
-                    cellRenderer: (params) => (
-                      <div className="p-2 mb-2 flex gap-2">
-                        <span
-                          className="text-subtitle cursor-pointer"
-                          onClick={() => handleViewDetails(params.data)}>
-                          <MdOutlineRemoveRedEye />
-                        </span>
-                      </div>
-                    ),
-                  },
-                ]}
-                tableHeight={300}
-              />
-            </AccordionDetails>
-          </Accordion>
-        ))}
+        <CollapsibleTable
+          columns={[
+            { field: "client", headerName: "Client" },
+            { field: "members", headerName: "Members" },
+          ]}
+          data={mockSalesData} // Pass the entire mockSalesData to the CollapsibleTable
+          renderExpandedRow={(row) => (
+            <AgTable
+              data={row.memberDetails.map((member, idx) => ({
+                ...member,
+                id: idx + 1,
+                date: dayjs(
+                  new Date(member.date.split("-").reverse().join("-"))
+                ).format("DD-MM-YYYY"),
+              }))}
+              hideFilter
+              columns={[
+                { field: "id", headerName: "Sr No", width: 100 },
+                { field: "member", headerName: "Member Name", flex: 1 },
+                { field: "date", headerName: "Date", flex: 1 },
+                {
+                  headerName: "Action",
+                  field: "action",
+                  cellRenderer: (params) => (
+                    <div className="p-2 mb-2 flex gap-2">
+                      <span
+                        className="text-subtitle cursor-pointer"
+                        onClick={() => handleViewDetails(params.data)}
+                      >
+                        <MdOutlineRemoveRedEye />
+                      </span>
+                    </div>
+                  ),
+                },
+              ]}
+              tableHeight={300}
+            />
+          )}
+        />
       </div>
+
       <MuiModal
         open={openModal}
         title={"Member Details"}
         onClose={() => {
           setOpenModal(false);
           setMemberDetails({});
-        }}>
+        }}
+      >
         <div className="grid grid-cols-2 gap-8 px-2 pb-8 border-b-default border-borderGray">
           <div className="flex items-center justify-between">
             <span className="text-content">Member Name</span>
@@ -245,7 +275,8 @@ const ViewAvailability = () => {
       <MuiModal
         open={imageOpen}
         onClose={() => setImageOpen(false)}
-        title={"Upload occupied space"}>
+        title={"Upload occupied space"}
+      >
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
@@ -263,7 +294,8 @@ const ViewAvailability = () => {
       <MuiModal
         open={clearedImageOpen}
         onClose={() => setClearedImageOpen(false)}
-        title={"Upload clear space"}>
+        title={"Upload clear space"}
+      >
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
