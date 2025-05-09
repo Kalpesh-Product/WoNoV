@@ -119,7 +119,7 @@ const userDataSchema = new mongoose.Schema({
   refreshToken: { type: String },
   dateOfExit: { type: Date },
   policies: {
-    shift: { type: String, required: true },
+    // shift: { type: String, required: true },
     workSchedulePolicy: { type: String, required: true },
     attendanceSource: { type: String },
     leavePolicy: { type: String },

@@ -10,12 +10,15 @@ import { queryClient } from "../../main";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../hooks/useAuth";
+import { useLocation } from "react-router-dom";
 
 const DepartmentWiseTickets = ({ title }) => {
   const [open, setOpen] = useState(false);
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const [selectedTicketId, setSelectedTicketId] = useState(null);
+  const location = useLocation();
+  const departmentTickets = location.state?.departmentTickets;
 
   // Add this dummy data variable above your component
   const dummyTicketsData = [
@@ -189,7 +192,7 @@ const DepartmentWiseTickets = ({ title }) => {
   // Example usage
   // const rows = isLoading ? [] : transformTicketsData(tickets);
   // Then modify your rows assignment to use either API data or dummy data
-  const rows = transformTicketsData(dummyTicketsData); // Always use dummy data
+  const rows = transformTicketsData(departmentTickets); // Always use dummy data
 
   const handleOpenAssignModal = (ticketId) => {
     setSelectedTicketId(ticketId);

@@ -39,6 +39,9 @@ const virtualOfficeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Rental = mongoose.model("VirtualOfficeClient", virtualOfficeSchema);
+const VirtualOfficeClient = mongoose.model(
+  "VirtualOfficeClient",
+  virtualOfficeSchema
+);
 
-module.exports = Rental;
+module.exports = VirtualOfficeClient;

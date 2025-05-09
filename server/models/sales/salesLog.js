@@ -18,9 +18,9 @@ const salesLogSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Revenue",
     },
-    member: {
+    clientMember: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Member",
+      ref: "CoworkingClientMember",
     },
     deskData: {
       type: mongoose.Schema.Types.ObjectId,
