@@ -41,6 +41,11 @@ const {
   getAlternateRevenues,
 } = require("../controllers/salesControllers/alternateRevenuesControllers");
 
+const {
+  createWorkationRevenue,
+  getWorkationRevenues,
+} = require("../controllers/salesControllers/workationRevenueController");
+
 router.post("/onboard-co-working-client", createCoworkingClient);
 router.get("/co-working-clients", getCoworkingClients);
 router.post(
@@ -74,5 +79,8 @@ router.patch("/update-meeting-revenue", updateMeetingRevenue);
 
 router.get("/get-alternate-revenue", getAlternateRevenues);
 router.post("/create-alternate-revenue", createAlternateRevenue);
+
+router.get("/get-workation-revenue", getWorkationRevenues);
+router.post("/create-workation-revenue", createWorkationRevenue);
 
 module.exports = router;
