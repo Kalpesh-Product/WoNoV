@@ -1,13 +1,25 @@
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 const Service = require("../../models/sales/ClientService");
+const CustomError = require("../../utils/customErrorlogs");
+const { createLog } = require("../../utils/moduleLogs");
+
 const addRevenue = async (req, res, next) => {
+  const logPath = "sales/SalesLog";
+  const logAction = "Add CoworkingRevenue";
+  const logSourceKey = "revenue";
+  const { company, user, ip } = req;
+
   try {
     const { serviceId, clientId, projectedRevenue, month } = req.body;
-    const { company } = req;
 
     if (!serviceId || !clientId || !projectedRevenue || !month) {
-      return res.status(400).json({ message: "All fields are required." });
+      throw new CustomError(
+        "All fields are required.",
+        logPath,
+        logAction,
+        logSourceKey
+      );
     }
 
     // Validate client and service existence
@@ -15,10 +27,21 @@ const addRevenue = async (req, res, next) => {
     const serviceExists = await Service.findById(serviceId);
 
     if (!clientExists) {
-      return res.status(404).json({ message: "CoworkingClient not found." });
+      throw new CustomError(
+        "CoworkingClient not found.",
+        logPath,
+        logAction,
+        logSourceKey
+      );
     }
+
     if (!serviceExists) {
-      return res.status(404).json({ message: "Service not found." });
+      throw new CustomError(
+        "Service not found.",
+        logPath,
+        logAction,
+        logSourceKey
+      );
     }
 
     // Create new revenue entry
@@ -30,11 +53,35 @@ const addRevenue = async (req, res, next) => {
       company: company._id,
     });
 
-    await revenue.save();
+    const savedRevenue = await revenue.save();
 
-    res.status(201).json({ message: "CoworkingRevenue added successfully", revenue });
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "CoworkingRevenue added successfully",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: savedRevenue._id,
+      changes: {
+        revenue: savedRevenue,
+      },
+    });
+
+    res.status(201).json({
+      message: "CoworkingRevenue added successfully",
+      revenue: savedRevenue,
+    });
   } catch (error) {
-    next(error);
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
   }
 };
 
