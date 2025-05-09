@@ -26,10 +26,7 @@ const CheckAvailability = () => {
   });
 
   const selectedLocation = watch("location");
-  const selectedUnit = watch("floor")
-  
-
-  
+  const selectedUnit = watch("floor");
 
   const {
     data: workLocations = [],
@@ -44,7 +41,11 @@ const CheckAvailability = () => {
     },
   });
 
-  const selectedUnitId = locationsLoading ? [] : workLocations.filter((item)=>item.unitNo === selectedUnit).map((item)=>item._id)
+  const selectedUnitId = locationsLoading
+    ? []
+    : workLocations
+        .filter((item) => item.unitNo === selectedUnit)
+        .map((item) => item._id);
 
   const uniqueBuildings = Array.from(
     new Map(
@@ -61,6 +62,22 @@ const CheckAvailability = () => {
     if (!match) return `${unitNo} ${buildingName}`;
     const [_, number, letter] = match;
     return `${number}${letter ? ` - ${letter}` : ""} ${buildingName}`;
+  };
+
+  // Sorting function
+  const sortByUnitNo = (a, b) => {
+    const matchA = a.unitNo.match(/^(\d+)\(?([A-Za-z]*)\)?$/);
+    const matchB = b.unitNo.match(/^(\d+)\(?([A-Za-z]*)\)?$/);
+
+    const numberA = parseInt(matchA[1], 10);
+    const numberB = parseInt(matchB[1], 10);
+    const letterA = matchA[2] || "";
+    const letterB = matchB[2] || "";
+
+    if (numberA !== numberB) {
+      return numberA - numberB; // Compare numbers first
+    }
+    return letterA.localeCompare(letterB); // Compare letters if numbers are equal
   };
 
   const onSubmit = (data) => {
@@ -131,18 +148,19 @@ const CheckAvailability = () => {
                 >
                   <MenuItem value="">Select Floor</MenuItem>
 
-                  {workLocations.map((unit) =>
-                    unit.building.buildingName === selectedLocation ? (
+                  {workLocations
+                    .filter(
+                      (unit) => unit.building.buildingName === selectedLocation
+                    )
+                    .sort(sortByUnitNo) // Sort using the custom sort function
+                    .map((unit) => (
                       <MenuItem key={unit._id} value={unit.unitNo}>
                         {formatUnitDisplay(
                           unit.unitNo,
                           unit.building.buildingName
                         )}
                       </MenuItem>
-                    ) : (
-                      <></>
-                    )
-                  )}
+                    ))}
                 </Select>
               )}
             />

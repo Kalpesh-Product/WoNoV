@@ -11,6 +11,7 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable";
+import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 
 const ActualBusinessRevenue = () => {
   const axios = useAxiosPrivate();
@@ -516,7 +517,7 @@ const ActualBusinessRevenue = () => {
         )}`}
         border
       >
-        <BarGraph data={graphData} options={options} height={400} />
+        <NormalBarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
 
       <div className="flex justify-start">
