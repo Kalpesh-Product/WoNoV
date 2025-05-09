@@ -144,6 +144,14 @@ const getMembersByUnit = async (req, res, next) => {
       { member: "Muskan Dodmani", date: "22-02-2024" },
     ];
 
+    const fallbackMembers = [
+      { member: "Rohan Mehta", date: "23-02-2024" },
+      { member: "Sneha Iyer", date: "23-02-2024" },
+      { member: "Arjun Sharma", date: "24-02-2024" },
+      { member: "Priya Nair", date: "25-02-2024" },
+      { member: "Vikram Patil", date: "25-02-2024" },
+    ];
+
     if (!unitId) {
       return res.status(400).json({ message: "Unit is missing" });
     }
@@ -172,7 +180,7 @@ const getMembersByUnit = async (req, res, next) => {
       return {
         client: member.clientName,
         occupiedDesks: desks,
-        memberDetails: member.clientName === "WoNo" ? memberDetails : [],
+        memberDetails: member.clientName === "WoNo" ? memberDetails : fallbackMembers,
       };
     });
 

@@ -1,4 +1,4 @@
-const Revenue = require("../../models/sales/CoworkingRevenue");
+const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 const Service = require("../../models/sales/ClientService");
 const addRevenue = async (req, res, next) => {
@@ -22,7 +22,7 @@ const addRevenue = async (req, res, next) => {
     }
 
     // Create new revenue entry
-    const revenue = new Revenue({
+    const revenue = new CoworkingRevenue({
       projectedRevenue,
       month: new Date(month),
       client: clientId,
@@ -32,7 +32,7 @@ const addRevenue = async (req, res, next) => {
 
     await revenue.save();
 
-    res.status(201).json({ message: "Revenue added successfully", revenue });
+    res.status(201).json({ message: "CoworkingRevenue added successfully", revenue });
   } catch (error) {
     next(error);
   }
@@ -45,7 +45,7 @@ const getRevenues = async (req, res, next) => {
 
     let revenues;
     if (serviceId) {
-      revenues = await Revenue.find({ company, service: serviceId })
+      revenues = await CoworkingRevenue.find({ company, service: serviceId })
         .select([
           { path: "client", select: "clientName" },
           { path: "service", select: "serviceName" },
@@ -56,7 +56,7 @@ const getRevenues = async (req, res, next) => {
       return res.status(200).json(revenues);
     }
 
-    revenues = await Revenue.find({ company })
+    revenues = await CoworkingRevenue.find({ company })
       .select([
         { path: "client", select: "clientName" },
         { path: "service", select: "serviceName" },

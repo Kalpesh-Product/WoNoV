@@ -27,12 +27,28 @@ const upload = require("../config/multerConfig");
 const {
   addRevenue,
   getRevenues,
-} = require("../controllers/salesControllers/revenueController");
+} = require("../controllers/salesControllers/coworkingClientRevenue");
 
 const {
   getAvailableDesks,
   getBookedDesks,
 } = require("../controllers/salesControllers/deskController");
+
+const {
+  createMeetingRevenue,
+  getMeetingRevenue,
+  updateMeetingRevenue,
+} = require("../controllers/salesControllers/MeetingRevenueController");
+
+const {
+  createAlternateRevenue,
+  getAlternateRevenues,
+} = require("../controllers/salesControllers/alternateRevenuesControllers");
+
+const {
+  createWorkationRevenue,
+  getWorkationRevenues,
+} = require("../controllers/salesControllers/workationRevenueController");
 const {
   getMembersByUnit,
 } = require("../controllers/salesControllers/coworkingMemberControllers");
@@ -63,6 +79,18 @@ router.post(
   bulkInsertVirtualOfficeClients
 );
 
+//Revenues
+router.post("/add-revenue", addRevenue);
+router.get("/fetch-revenues", getRevenues);
+router.get("/get-meeting-revenue", getMeetingRevenue);
+router.post("/create-meeting-revenue", createMeetingRevenue);
+router.patch("/update-meeting-revenue", updateMeetingRevenue);
+router.get("/get-alternate-revenue", getAlternateRevenues);
+router.post("/create-alternate-revenue", createAlternateRevenue);
+
+router.get("/get-workation-revenue", getWorkationRevenues);
+router.post("/create-workation-revenue", createWorkationRevenue);
+
 //Service routes
 router.post("/create-service", createClientService);
 router.get("/services", getClientServices);
@@ -75,9 +103,5 @@ router.post("/bulk-insert-leads", upload.single("leads"), bulkInsertLeads);
 //Desk routes
 router.get("/available-desks/:unitId", getAvailableDesks);
 router.get("/booked-desks/:serviceId", getBookedDesks);
-
-//Revenue routes
-router.post("/add-revenue", addRevenue);
-router.get("/fetch-revenues", getRevenues);
 
 module.exports = router;

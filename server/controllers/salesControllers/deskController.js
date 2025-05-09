@@ -1,6 +1,3 @@
-const { mongoose } = require("mongoose");
-const Desk = require("../../models/sales/Desk");
-
 const getBookedDesks = async (req, res, next) => {
   const { company } = req;
   const { serviceId } = req.params;
