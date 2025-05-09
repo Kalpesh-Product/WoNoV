@@ -17,6 +17,7 @@ const ViewClients = () => {
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
   const clientsData = useSelector((state) => state.sales.clientsData);
+  console.log("Clients data : ", clientsData)
 
   useEffect(() => {
     const fetchSourceIfEmpty = async () => {
@@ -45,6 +46,7 @@ const ViewClients = () => {
     {
       field: "clientName",
       headerName: "Client Name",
+      flex:1,
       cellRenderer: (params) => (
         <span
           style={{
@@ -58,8 +60,8 @@ const ViewClients = () => {
         </span>
       ),
     },
-    { field: "hoPocEmail", headerName: "Email", flex: 1 },
-    { field: "totalMeetingCredits", headerName: "Credits" },
+    { field: "desks", headerName: "Desks" },
+    { field: "occupancy", headerName: "Occupancy (%)" },
   ];
 
   const transformClientsGroupedByMonth = (clientsArray) => {
@@ -141,6 +143,8 @@ const ViewClients = () => {
                 cabinDesks: item.cabinDesks,
                 openDesks: item.openDesks,
                 totalDesks: item.totalDesks,
+                desks : (Number(item.openDesks) + Number(item.cabinDesks)),
+                occupancy : ((((Number(item.openDesks) + Number(item.cabinDesks))/589)*100).toFixed(1)),
                 ratePerOpenDesk: item.ratePerOpenDesk,
                 ratePerCabinDesk: item.ratePerCabinDesk,
                 annualIncrement: item.annualIncrement,
@@ -155,7 +159,6 @@ const ViewClients = () => {
                 localPocEmail: item.localPoc?.email,
                 localPocPhone: item.localPoc?.phone,
                 hoPocName: item.hOPoc?.name,
-                // hoPocEmail: item.hOPoc?.email,
                 hoPocEmail: item.hOPoc?.email || "client@gmail.com",
                 hoPocPhone: item.hOPoc?.phone,
                 isActive: item.isActive,

@@ -437,17 +437,17 @@ const CoWorkingSeats = () => {
       <WidgetSection
         title={`co-working occupancy details`}
         border
-        TitleAmount={`TOTAL SEATS : 589 `}
+        TitleAmount={`TOTAL ACTIVE SEATS : 589 `}
       >
         <CollapsibleTable
           columns={[
             { field: "month", headerName: "Month" },
-            { field: "booked", headerName: "Booked" },
+            { field: "booked", headerName: "Booked Seats" },
           ]}
           data={jsonData.months.map((domain, index) => ({
             id: index, // Use the index as a unique identifier
             month: domain.month,
-            booked: `${domain.booked} seats`,
+            booked: `${domain.booked}`,
             clients: domain.clients, // Keep the client details for expansion
           }))} // Mapping through jsonData.months directly inside the data prop
           renderExpandedRow={(row) => {
@@ -467,22 +467,23 @@ const CoWorkingSeats = () => {
                   { headerName: "Location", field: "location" },
                   { headerName: "Floor", field: "floor" },
                   { headerName: "Total Seats", field: "totalSeats" },
-                  { headerName: "Booked", field: "booked" },
-                  { headerName: "Available", field: "available" },
-                  {
-                    headerName: "Action",
-                    field: "action",
-                    cellRenderer: (params) => (
-                      <div className="p-2 mb-2 flex gap-2">
-                        <span
-                          className="text-subtitle cursor-pointer"
-                          onClick={() => handleViewModal(params.data)}
-                        >
-                          <MdOutlineRemoveRedEye />
-                        </span>
-                      </div>
-                    ),
-                  },
+                  { headerName: "Booked Seats", field: "booked" },
+                  { headerName: "Available Seats", field: "available" },
+                  // {
+                  //   headerName: "Action",
+                  //   field: "action",
+                  //   pinned : 'right',
+                  //   cellRenderer: (params) => (
+                  //     <div className="p-2 mb-2 flex gap-2">
+                  //       <span
+                  //         className="text-subtitle cursor-pointer"
+                  //         onClick={() => handleViewModal(params.data)}
+                  //       >
+                  //         <MdOutlineRemoveRedEye />
+                  //       </span>
+                  //     </div>
+                  //   ),
+                  // },
                 ]}
                 tableHeight={300}
               />
