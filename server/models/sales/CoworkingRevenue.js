@@ -9,7 +9,11 @@ const coworkingClientRevenue = new mongoose.Schema(
       type: String,
       required: true,
     },
-    month: {
+    channel: {
+      type: String,
+      enum: ["Direct", "SPV"],
+    },
+    rentDate: {
       type: Date,
       required: true,
     },
@@ -29,5 +33,8 @@ const coworkingClientRevenue = new mongoose.Schema(
   { timestamps: true }
 );
 
-const CoworkingRevenue = mongoose.model("CoworkingClientRevenue", coworkingClientRevenue);
+const CoworkingRevenue = mongoose.model(
+  "CoworkingClientRevenue",
+  coworkingClientRevenue
+);
 module.exports = CoworkingRevenue;

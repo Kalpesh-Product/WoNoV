@@ -20,6 +20,10 @@ const unitSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    sqft: {
+      type: Number,
+      // required: true,
+    },
     clearImage: {
       imageId: String,
       url: String,

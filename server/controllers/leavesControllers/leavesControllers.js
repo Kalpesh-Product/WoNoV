@@ -65,6 +65,19 @@ const requestLeave = async (req, res, next) => {
       );
     }
 
+    //Check the leave period and no. of leaves taken are correct
+    const days = endDate.getDate() - startDate.getDate();
+    const period = days < 1 ? "Partial" : days === 1 ? "Single" : "Multiple";
+
+    if (leavePeriod !== period) {
+      throw new CustomError(
+        "Leave period and number of leaves doesn't match",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const foundUser = await UserData.findOne({ empId }).populate({
       path: "company",
       select: "employeeTypes",
@@ -130,7 +143,7 @@ const requestLeave = async (req, res, next) => {
     // Success log with details of the leave request
 
     await createLog({
-      path: path,
+      path: logPath,
       action: logAction,
       remarks: "Leave request sent successfully",
       status: "Success",
@@ -147,8 +160,8 @@ const requestLeave = async (req, res, next) => {
         hours,
         description,
         requester: foundUser._id,
-      }
-  })
+      },
+    });
 
     return res.status(201).json({ message: "Leave request sent" });
   } catch (error) {

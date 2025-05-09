@@ -51,14 +51,14 @@ const clockIn = async (req, res, next) => {
       return attendanceTime.getDate() === clockInTime.getDate();
     });
 
-    // if (todayClockInExists) {
-    //   throw new CustomError(
-    //     "Cannot clock in for the day again",
-    //     logPath,
-    //     logAction,
-    //     logSourceKey
-    //   );
-    // }
+    if (todayClockInExists) {
+      throw new CustomError(
+        "Cannot clock in for the day again",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
 
     const newAttendance = new Attendance({
       inTime: clockInTime,
@@ -116,6 +116,7 @@ const clockOut = async (req, res, next) => {
     }
 
     const clockOutTime = new Date(outTime);
+    const currDate = new Date();
     if (isNaN(clockOutTime.getTime())) {
       throw new CustomError(
         "Invalid date format",
@@ -129,9 +130,19 @@ const clockOut = async (req, res, next) => {
     const attendance = await Attendance.findOne({ user }).sort({
       createdAt: -1,
     });
+
     if (!attendance) {
       throw new CustomError(
         "No attendance record exists",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+    const isSameDay = clockOutTime.getDate() - currDate.getDate() === 0;
+    if (!isSameDay) {
+      throw new CustomError(
+        "Please select present date",
         logPath,
         logAction,
         logSourceKey
@@ -433,6 +444,7 @@ const correctAttendance = async (req, res, next) => {
 
     // ✅ Convert `targetedDay` to UTC midnight to match MongoDB stored date
     const targetedDate = new Date(targetedDay);
+    const currentDate = new Date();
     const startOfDay = new Date(
       targetedDate.getFullYear(),
       targetedDate.getMonth(),
@@ -462,11 +474,23 @@ const correctAttendance = async (req, res, next) => {
     const foundDate = await Attendance.findOne({
       user: foundUser._id,
       createdAt: { $gte: startOfDay, $lt: endOfDay },
+    }).sort({
+      createdAt: -1,
     });
 
     if (!foundDate) {
       throw new CustomError(
         "No timeclock found for that day",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const isNextDay = currentDate.getDate() - targetedDate.getDate() === 1;
+    if (!isNextDay) {
+      throw new CustomError(
+        "Correction request only for previous day is allowed",
         logPath,
         logAction,
         logSourceKey
@@ -494,10 +518,23 @@ const correctAttendance = async (req, res, next) => {
     }
 
     // ✅ Update attendance record
-    await Attendance.findOneAndUpdate(
+    const updatedAttendance = await Attendance.findOneAndUpdate(
       { user: foundUser._id, createdAt: { $gte: startOfDay, $lt: endOfDay } },
-      { $set: { inTime: clockIn, outTime: clockOut } }
-    );
+      { $set: { inTime: clockIn, outTime: clockOut } },
+      { new: true }
+    ).sort({
+      createdAt: 1,
+    });
+
+    console.log("update:", updatedAttendance);
+    if (!updatedAttendance) {
+      throw new CustomError(
+        "Failed to correct the attendance",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
 
     await createLog({
       path: logPath,

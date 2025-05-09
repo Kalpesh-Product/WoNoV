@@ -7,7 +7,6 @@ dayjs.extend(utc);
 
 const AreaGraph = ({ responseData }) => {
   const [timeFilter, setTimeFilter] = useState("Yearly"); // State for the filter
-  console.log("Response length : ", responseData.length);
 
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [data, setData] = useState({

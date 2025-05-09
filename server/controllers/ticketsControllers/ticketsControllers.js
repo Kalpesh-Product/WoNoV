@@ -1248,6 +1248,7 @@ const getOtherTickets = async (req, res, next) => {
     const tickets = await Ticket.find({
       company,
       raisedToDepartment: { $in: [department] },
+      status: "Closed",
     })
       .select("raisedBy raisedToDepartment status ticket description")
       .populate([

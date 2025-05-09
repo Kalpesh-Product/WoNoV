@@ -11,7 +11,7 @@ const {
 const sharp = require("sharp");
 const Unit = require("../../models/locations/Unit");
 const Building = require("../../models/locations/Building");
-const CoworkingClient = require("../../models/sales/CoworkingClient")
+const CoworkingClient = require("../../models/sales/CoworkingClient");
 
 const addBuilding = async (req, res, next) => {
   const logPath = "hr/HrLog";
@@ -105,6 +105,7 @@ const addUnit = async (req, res, next) => {
     buildingId,
     unitName,
     unitNo,
+    sqft,
     cabinDesks,
     openDesks,
     clearImage,
@@ -118,6 +119,7 @@ const addUnit = async (req, res, next) => {
       !unitNo ||
       !buildingId ||
       !cabinDesks ||
+      !sqft ||
       !openDesks
     ) {
       throw new CustomError(
@@ -174,6 +176,7 @@ const addUnit = async (req, res, next) => {
       unitNo,
       cabinDesks,
       openDesks,
+      sqft,
       building: buildingId,
       clearImage: clearImage ? clearImage : "",
       occupiedImage: occupiedImage ? occupiedImage : "",
@@ -235,16 +238,31 @@ const fetchUnits = async (req, res, next) => {
         return res.status(200).json(locations);
       }
 
-      const coworkingClients = await CoworkingClient.find({ company, unit: unitId })
+      const coworkingClients = await CoworkingClient.find({
+        company,
+        unit: unitId,
+      })
         .select("cabinDesks openDesks")
         .lean()
         .exec();
 
-      const occupiedCabinDesks = coworkingClients.reduce((sum, client) => sum + (client.cabinDesks || 0), 0);
-      const occupiedOpenDesks = coworkingClients.reduce((sum, client) => sum + (client.openDesks || 0), 0);
+      const occupiedCabinDesks = coworkingClients.reduce(
+        (sum, client) => sum + (client.cabinDesks || 0),
+        0
+      );
+      const occupiedOpenDesks = coworkingClients.reduce(
+        (sum, client) => sum + (client.openDesks || 0),
+        0
+      );
 
-      locations.remainingCabinDesks = Math.max(0, locations.cabinDesks - occupiedCabinDesks);
-      locations.remainingOpenDesks = Math.max(0, locations.openDesks - occupiedOpenDesks);
+      locations.remainingCabinDesks = Math.max(
+        0,
+        locations.cabinDesks - occupiedCabinDesks
+      );
+      locations.remainingOpenDesks = Math.max(
+        0,
+        locations.openDesks - occupiedOpenDesks
+      );
 
       return res.status(200).json(locations);
     }
@@ -299,8 +317,6 @@ const fetchUnits = async (req, res, next) => {
     next(error);
   }
 };
-
-
 
 const uploadUnitImage = async (req, res, next) => {
   try {
