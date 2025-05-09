@@ -1079,11 +1079,11 @@ export const routes = createBrowserRouter([
                         element: <CheckAvailability />,
                       },
                       {
-                        path: "mix-bag/co-working-seats/view-availability",
+                        path: "mix-bag/co-working-seats/check-availability/view-availability",
                         element: <ViewAvailability />,
                       },
                       {
-                        path: "co-working-seats/view-availability",
+                        path: "co-working-seats/check-availability/view-availability",
                         element: <ViewAvailability />,
                       },
                       {

@@ -60,10 +60,10 @@ const CheckAvailability = () => {
     const { location, floor } = data;
     address.pathname?.includes("mix-bag")
       ? navigate(
-          `/app/dashboard/sales-dashboard/mix-bag/co-working-seats/view-availability?location=${location}&floor=${floor}`
+          `/app/dashboard/sales-dashboard/mix-bag/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`
         )
       : navigate(
-          `/app/dashboard/sales-dashboard/co-working-seats/view-availability?location=${location}&floor=${floor}`
+          `/app/dashboard/sales-dashboard/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`
         );
   };
 

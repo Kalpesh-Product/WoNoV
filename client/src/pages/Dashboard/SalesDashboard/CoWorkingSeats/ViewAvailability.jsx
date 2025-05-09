@@ -18,64 +18,74 @@ import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import dayjs from "dayjs";
 import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable";
 import { KeyboardArrowDown } from "@mui/icons-material";
+import WidgetSection from "../../../../components/WidgetSection";
+import { useLocation } from "react-router-dom";
 
-const mockSalesData = [
-  {
-    client: "WoNo",
-    memberDetails: [
-      { member: "Kalpesh Naik", date: "20-02-2024" },
-      { member: "Aiwinraj KS", date: "20-02-2024" },
-      { member: "Allan Silveira", date: "21-02-2024" },
-      { member: "Sankalp Kalangutkar", date: "22-02-2024" },
-      { member: "Muskan Dodmani", date: "22-02-2024" },
-    ],
-  },
-  {
-    client: "Axis Bank",
-    memberDetails: [
-      { member: "Amit Sharma", date: "25-02-2024" },
-      { member: "Priya Verma", date: "26-02-2024" },
-      { member: "Rahul Patel", date: "26-02-2024" },
-      { member: "Anjali Gupta", date: "26-02-2024" },
-      { member: "Vikram Singh", date: "26-02-2024" },
-    ],
-  },
-  {
-    client: "SquadStack",
-    memberDetails: [
-      { member: "Arjun Mehra", date: "01-03-2024" },
-      { member: "Sneha Kapoor", date: "01-03-2024" },
-      { member: "Rohan Malhotra", date: "02-03-2024" },
-      { member: "Kavita Joshi", date: "02-03-2024" },
-      { member: "Nikhil Rana", date: "02-03-2024" },
-      { member: "Divya Nair", date: "03-03-2024" },
-      { member: "Siddharth Iyer", date: "03-03-2024" },
-      { member: "Pooja Desai", date: "03-03-2024" },
-      { member: "Aditya Kulkarni", date: "04-03-2024" },
-      { member: "Meera Saxena", date: "04-03-2024" },
-      { member: "Karan Thakur", date: "04-03-2024" },
-      { member: "Shruti Bhatt", date: "05-03-2024" },
-      { member: "Vivek Chawla", date: "05-03-2024" },
-      { member: "Neha Aggarwal", date: "05-03-2024" },
-      { member: "Pranav Dubey", date: "06-03-2024" },
-      { member: "Aarti Saini", date: "06-03-2024" },
-      { member: "Manish Vyas", date: "06-03-2024" },
-      { member: "Riya Sengupta", date: "07-03-2024" },
-      { member: "Saurabh Mishra", date: "07-03-2024" },
-      { member: "Tanya Grover", date: "07-03-2024" },
-    ],
-  },
-  {
-    client: "BDO",
-    memberDetails: [
-      { member: "Suresh Yadav", date: "25-02-2024" },
-      { member: "Lakshmi Menon", date: "26-02-2024" },
-      { member: "Deepak Rawat", date: "26-02-2024" },
-      { member: "Sunita Pillai", date: "26-02-2024" },
-      { member: "Rakesh Jha", date: "26-02-2024" },
-    ],
-  },
-];
+const mockSalesData = {
+  totalDesks: 30,
+  clientDetails: [
+    {
+      client: "WoNo",
+      occupiedDesks: 6,
+      memberDetails: [
+        { member: "Kalpesh Naik", date: "20-02-2024" },
+        { member: "Aiwinraj KS", date: "20-02-2024" },
+        { member: "Allan Silveira", date: "21-02-2024" },
+        { member: "Sankalp Kalangutkar", date: "22-02-2024" },
+        { member: "Muskan Dodmani", date: "22-02-2024" },
+      ],
+    },
+    {
+      client: "Axis Bank",
+      occupiedDesks: 5,
+      memberDetails: [
+        { member: "Amit Sharma", date: "25-02-2024" },
+        { member: "Priya Verma", date: "26-02-2024" },
+        { member: "Rahul Patel", date: "26-02-2024" },
+        { member: "Anjali Gupta", date: "26-02-2024" },
+        { member: "Vikram Singh", date: "26-02-2024" },
+      ],
+    },
+    {
+      client: "SquadStack",
+      occupiedDesks: 12,
+      memberDetails: [
+        { member: "Arjun Mehra", date: "01-03-2024" },
+        { member: "Sneha Kapoor", date: "01-03-2024" },
+        { member: "Rohan Malhotra", date: "02-03-2024" },
+        { member: "Kavita Joshi", date: "02-03-2024" },
+        { member: "Nikhil Rana", date: "02-03-2024" },
+        { member: "Divya Nair", date: "03-03-2024" },
+        { member: "Siddharth Iyer", date: "03-03-2024" },
+        { member: "Pooja Desai", date: "03-03-2024" },
+        { member: "Aditya Kulkarni", date: "04-03-2024" },
+        { member: "Meera Saxena", date: "04-03-2024" },
+        { member: "Karan Thakur", date: "04-03-2024" },
+        { member: "Shruti Bhatt", date: "05-03-2024" },
+        { member: "Vivek Chawla", date: "05-03-2024" },
+        { member: "Neha Aggarwal", date: "05-03-2024" },
+        { member: "Pranav Dubey", date: "06-03-2024" },
+        { member: "Aarti Saini", date: "06-03-2024" },
+        { member: "Manish Vyas", date: "06-03-2024" },
+        { member: "Riya Sengupta", date: "07-03-2024" },
+        { member: "Saurabh Mishra", date: "07-03-2024" },
+        { member: "Tanya Grover", date: "07-03-2024" },
+      ],
+    },
+    {
+      client: "BDO",
+      occupiedDesks: 4,
+      memberDetails: [
+        { member: "Suresh Yadav", date: "25-02-2024" },
+        { member: "Lakshmi Menon", date: "26-02-2024" },
+        { member: "Deepak Rawat", date: "26-02-2024" },
+        { member: "Sunita Pillai", date: "26-02-2024" },
+        { member: "Rakesh Jha", date: "26-02-2024" },
+      ],
+    },
+  ],
+};
+const totalOccupied = mockSalesData.clientDetails.reduce((sum,item)=>{return item.occupiedDesks + sum},0)
 
 const ViewAvailability = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -94,6 +104,10 @@ const ViewAvailability = () => {
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
   };
+  const location = useLocation()
+  const params = new URLSearchParams(location.search);
+  const locationParam = params.get('location');
+  const floorParam = params.get('floor');
 
   const handleViewDetails = (data) => {
     setOpenModal(true);
@@ -187,48 +201,65 @@ const ViewAvailability = () => {
           )}
         </div>
       </div>
-      {/* aCCordion section */}
-      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-        <CollapsibleTable
-          columns={[
-            { field: "client", headerName: "Client" },
-            { field: "members", headerName: "Members" },
-          ]}
-          data={mockSalesData} // Pass the entire mockSalesData to the CollapsibleTable
-          renderExpandedRow={(row) => (
-            <AgTable
-              data={row.memberDetails.map((member, idx) => ({
-                ...member,
-                id: idx + 1,
-                date: dayjs(
-                  new Date(member.date.split("-").reverse().join("-"))
-                ).format("DD-MM-YYYY"),
-              }))}
-              hideFilter
-              columns={[
-                { field: "id", headerName: "Sr No", width: 100 },
-                { field: "member", headerName: "Member Name", flex: 1 },
-                { field: "date", headerName: "Date", flex: 1 },
-                {
-                  headerName: "Action",
-                  field: "action",
-                  cellRenderer: (params) => (
-                    <div className="p-2 mb-2 flex gap-2">
-                      <span
-                        className="text-subtitle cursor-pointer"
-                        onClick={() => handleViewDetails(params.data)}
-                      >
-                        <MdOutlineRemoveRedEye />
-                      </span>
-                    </div>
-                  ),
-                },
-              ]}
-              tableHeight={300}
-            />
-          )}
-        />
-      </div>
+
+        <WidgetSection title={`occupancy details of ${locationParam} - ${floorParam}`} border TitleAmount={`TOTAL OCCUPIED : ${totalOccupied} `}>
+          <CollapsibleTable
+            columns={[
+              { field: "client", headerName: "Client Name" },
+              { field: "occupiedDesks", headerName: "Occupied Desks" },
+              { field: "occupancyPercent", headerName: "Occupied %" },
+            ]}
+            data={mockSalesData?.clientDetails?.map((data, index) => ({
+              id: index, // Using index as a unique identifier
+              client: data.client || "",
+              occupiedDesks: data.occupiedDesks || "",
+              occupancyPercent:
+                ((data.occupiedDesks / mockSalesData.totalDesks) * 100).toFixed(
+                  0
+                ) || "",
+              memberDetails: data.memberDetails, // Pass memberDetails to the data for each row
+            }))} // Mapping through clientDetails
+            renderExpandedRow={(row) => {
+              if (!row?.memberDetails || !Array.isArray(row.memberDetails)) {
+                return <div>No member details available</div>; // Fallback message if no data
+              }
+
+              return (
+                <AgTable
+                  data={row.memberDetails.map((member, idx) => ({
+                    ...member,
+                    id: idx + 1,
+                    date: dayjs(
+                      new Date(member.date.split("-").reverse().join("-"))
+                    ).format("DD-MM-YYYY"),
+                  }))}
+                  hideFilter
+                  columns={[
+                    { field: "id", headerName: "Sr No", width: 100 },
+                    { field: "member", headerName: "Member Name", flex: 1 },
+                    { field: "date", headerName: "Date", flex: 1 },
+                    {
+                      headerName: "Action",
+                      field: "action",
+                      cellRenderer: (params) => (
+                        <div className="p-2 mb-2 flex gap-2">
+                          <span
+                            className="text-subtitle cursor-pointer"
+                            onClick={() => handleViewDetails(params.data)}
+                          >
+                            <MdOutlineRemoveRedEye />
+                          </span>
+                        </div>
+                      ),
+                    },
+                  ]}
+                  tableHeight={300}
+                />
+              );
+            }}
+          />
+        </WidgetSection>
+ 
 
       <MuiModal
         open={openModal}
