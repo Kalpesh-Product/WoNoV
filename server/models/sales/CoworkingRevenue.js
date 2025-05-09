@@ -29,5 +29,5 @@ const coworkingClientRevenue = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Revenue = mongoose.model("CoworkingClientRevenue", coworkingClientRevenue);
-module.exports = Revenue;
+const CoworkingRevenue = mongoose.model("CoworkingClientRevenue", coworkingClientRevenue);
+module.exports = CoworkingRevenue;

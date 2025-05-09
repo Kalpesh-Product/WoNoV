@@ -23,12 +23,23 @@ const upload = require("../config/multerConfig");
 const {
   addRevenue,
   getRevenues,
-} = require("../controllers/salesControllers/revenueController");
+} = require("../controllers/salesControllers/coworkingClientRevenue");
 
 const {
   getAvailableDesks,
   getBookedDesks,
 } = require("../controllers/salesControllers/deskController");
+
+const {
+  createMeetingRevenue,
+  getMeetingRevenue,
+  updateMeetingRevenue,
+} = require("../controllers/salesControllers/MeetingRevenueController");
+
+const {
+  createAlternateRevenue,
+  getAlternateRevenues,
+} = require("../controllers/salesControllers/alternateRevenuesControllers");
 
 router.post("/onboard-co-working-client", createCoworkingClient);
 router.get("/co-working-clients", getCoworkingClients);
@@ -56,5 +67,12 @@ router.post(
   upload.single("virtualoffice"),
   bulkInsertVirtualOfficeClients
 );
+
+router.get("/get-meeting-revenue", getMeetingRevenue);
+router.post("/create-meeting-revenue", createMeetingRevenue);
+router.patch("/update-meeting-revenue", updateMeetingRevenue);
+
+router.get("/get-alternate-revenue", getAlternateRevenues);
+router.post("/create-alternate-revenue", createAlternateRevenue);
 
 module.exports = router;
