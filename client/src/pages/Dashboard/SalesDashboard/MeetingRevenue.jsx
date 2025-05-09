@@ -414,28 +414,43 @@ const MeetingRevenue = () => {
       position: "top",
     },
     dataLabels: {
-      enabled: false,
+      enabled: true,
+      formatter: function (val) {
+        return `${inrFormat(val)}`;
+      },
+      style: {
+        fontSize: "10px",
+        fontWeight: "bold",
+        colors: ["#000"],
+      },
+      offsetY: -22,
     },
     xaxis: {
       categories: monthlyMeetingeData.map((item) => item.month),
     },
-    yaxis: {
+   yaxis: {
+      title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => `INR ${val.toLocaleString()}`,
+        formatter: (val) => `${((val/100000).toLocaleString())}`,
       },
     },
     tooltip: {
+      enabled:false,
       y: {
         formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
     plotOptions: {
       bar: {
-        columnWidth: "50%",
+        columnWidth: "40%",
         borderRadius: 5,
+        dataLabels: {
+          position: "top",
+        },
       },
+      
     },
-    colors: ["#80bf01"],
+     colors: ["#54C4A7", "#EB5C45"],
   };
 
   const totalActual = monthlyMeetingeData.reduce(

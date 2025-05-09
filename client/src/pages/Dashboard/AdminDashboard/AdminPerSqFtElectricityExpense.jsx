@@ -627,7 +627,7 @@ const AdminPerSqFtElectricityExpense = () => {
       },
     },
     legend: { position: "top" },
-    colors: ["#80bf01"],
+     colors: ["#54C4A7", "#EB5C45"],
   };
 
   return (

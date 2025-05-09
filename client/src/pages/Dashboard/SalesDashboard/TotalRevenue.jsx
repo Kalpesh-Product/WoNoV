@@ -140,7 +140,7 @@ const TotalRevenue = () => {
     <div className="flex flex-col gap-4 ">
       <WidgetSection
         layout={1}
-        title={"Annual Monthly Mix Revenues"}
+        title={"Annual Monthly Mix Revenues FY 2024-25"}
         border
         TitleAmount={formattedRevenue}
       >

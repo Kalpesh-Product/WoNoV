@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable";
 
 // JSON data structure for coworking seats and client details
 const jsonData = {
@@ -22,7 +23,7 @@ const jsonData = {
   months: [
     {
       month: "Apr-24",
-      booked: 300,
+      booked: 582,
       remaining: 700,
       clients: [
         {
@@ -61,7 +62,7 @@ const jsonData = {
     },
     {
       month: "May-24",
-      booked: 300,
+      booked: 574,
       remaining: 700,
       clients: [
         {
@@ -100,7 +101,7 @@ const jsonData = {
     },
     {
       month: "Jun-24",
-      booked: 300,
+      booked: 576,
       remaining: 700,
       clients: [
         {
@@ -139,7 +140,7 @@ const jsonData = {
     },
     {
       month: "Jul-24",
-      booked: 400,
+      booked: 576,
       remaining: 800,
       clients: [
         {
@@ -154,7 +155,7 @@ const jsonData = {
     },
     {
       month: "Aug-24",
-      booked: 450,
+      booked: 574,
       remaining: 550,
       clients: [
         {
@@ -169,7 +170,7 @@ const jsonData = {
     },
     {
       month: "Sep-24",
-      booked: 600,
+      booked: 573,
       remaining: 400,
       clients: [
         {
@@ -184,7 +185,7 @@ const jsonData = {
     },
     {
       month: "Oct-24",
-      booked: 800,
+      booked: 573,
       remaining: 200,
       clients: [
         {
@@ -199,7 +200,7 @@ const jsonData = {
     },
     {
       month: "Nov-24",
-      booked: 900,
+      booked: 578,
       remaining: 100,
       clients: [
         {
@@ -214,7 +215,7 @@ const jsonData = {
     },
     {
       month: "Dec-24",
-      booked: 650,
+      booked: 579,
       remaining: 350,
       clients: [
         {
@@ -229,7 +230,7 @@ const jsonData = {
     },
     {
       month: "Jan-25",
-      booked: 500,
+      booked: 576,
       remaining: 500,
       clients: [
         {
@@ -244,7 +245,7 @@ const jsonData = {
     },
     {
       month: "Feb-25",
-      booked: 300,
+      booked: 575,
       remaining: 700,
       clients: [
         {
@@ -259,7 +260,7 @@ const jsonData = {
     },
     {
       month: "Mar-25",
-      booked: 400,
+      booked: 582,
       remaining: 600,
       clients: [
         {
@@ -332,7 +333,8 @@ const CoWorkingSeats = () => {
     },
     yaxis: {
       min: 0,
-      max: 100,
+      max: 150,
+      tickAmount : 5,
       labels: {
         formatter: (val) => `${val}%`,
       },
@@ -356,7 +358,7 @@ const CoWorkingSeats = () => {
     plotOptions: {
       bar: {
         horizontal: false,
-        borderRadius: 3,
+        borderRadius: 5,
         columnWidth: "40%",
       },
     },
@@ -370,7 +372,7 @@ const CoWorkingSeats = () => {
           border
           padding
           title={"Co-Working Seats"}
-          titleLabel={"FY 24-25"}
+          titleLabel={"FY 2024-2025"}
         >
           <BarGraph
             data={series}
@@ -394,7 +396,7 @@ const CoWorkingSeats = () => {
           <DataCard
             title={"Total Seats"}
             route={"check-availability"}
-            data={"1000"}
+            data={"589"}
             description={`Current Month : ${new Date().toLocaleString(
               "default",
               { month: "short" }
@@ -403,7 +405,7 @@ const CoWorkingSeats = () => {
           <DataCard
             title={"Booked Seats"}
             route={"check-availability"}
-            data={"800"}
+            data={"582"}
             description={`Current Month : ${new Date().toLocaleString(
               "default",
               { month: "short" }
@@ -412,7 +414,7 @@ const CoWorkingSeats = () => {
           <DataCard
             title={"Available Seats"}
             route={"check-availability"}
-            data={"200"}
+            data={"7"}
             description={`Current Month : ${new Date().toLocaleString(
               "default",
               { month: "short" }
@@ -432,39 +434,32 @@ const CoWorkingSeats = () => {
         </div>
       </div>
       {/* Accordion Section */}
-      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
-          <div className="flex justify-between items-center w-full px-4 py-2">
-            <span className="w-full text-sm text-muted font-pmedium text-title">
-              MONTH
-            </span>
-            <span className="w-full text-sm text-muted font-pmedium text-title text-right flex items-center justify-end gap-1">
-              BOOKED
-            </span>
-          </div>
-        </div>
-        {jsonData.months.map((domain, index) => (
-          <Accordion key={index} className="py-4">
-            <AccordionSummary
-              expandIcon={<IoIosArrowDown />}
-              aria-controls={`panel-${index}-content`}
-              id={`panel-${index}-header`}
-              className="border-b-[1px] border-borderGray"
-            >
-              <div className="flex justify-between items-center w-full px-4">
-                <span className="text-subtitle font-pmedium">
-                  {domain.month}
-                </span>
-                <span className="text-subtitle font-pmedium">
-                  {domain.booked} seats
-                </span>
-              </div>
-            </AccordionSummary>
-            <AccordionDetails sx={{ borderTop: "1px solid #d1d5db" }}>
+      <WidgetSection
+        title={`co-working occupancy details`}
+        border
+        TitleAmount={`TOTAL ACTIVE SEATS : 589 `}
+      >
+        <CollapsibleTable
+          columns={[
+            { field: "month", headerName: "Month" },
+            { field: "booked", headerName: "Booked Seats" },
+          ]}
+          data={jsonData.months.map((domain, index) => ({
+            id: index, // Use the index as a unique identifier
+            month: domain.month,
+            booked: `${domain.booked}`,
+            clients: domain.clients, // Keep the client details for expansion
+          }))} // Mapping through jsonData.months directly inside the data prop
+          renderExpandedRow={(row) => {
+            if (!row?.clients || !Array.isArray(row.clients)) {
+              return <div>No client details available</div>;
+            }
+
+            return (
               <AgTable
-                data={domain.clients.map((client, index) => ({
+                data={row.clients.map((client, idx) => ({
                   ...client,
-                  id: index + 1,
+                  id: idx + 1,
                 }))}
                 hideFilter
                 columns={[
@@ -472,38 +467,49 @@ const CoWorkingSeats = () => {
                   { headerName: "Location", field: "location" },
                   { headerName: "Floor", field: "floor" },
                   { headerName: "Total Seats", field: "totalSeats" },
-                  { headerName: "Booked", field: "booked" },
-                  { headerName: "Available", field: "available" },
-                  {
-                    headerName: "Action",
-                    field: "action",
-                    cellRenderer: (params) => (
-                      <div className="p-2 mb-2  flex gap-2">
-                        <span
-                          className="text-subtitle cursor-pointer"
-                          onClick={() => handleViewModal(params.data)}
-                        >
-                          <MdOutlineRemoveRedEye />
-                        </span>
-                      </div>
-                    ),
-                  },
+                  { headerName: "Booked Seats", field: "booked" },
+                  { headerName: "Available Seats", field: "available" },
+                  // {
+                  //   headerName: "Action",
+                  //   field: "action",
+                  //   pinned : 'right',
+                  //   cellRenderer: (params) => (
+                  //     <div className="p-2 mb-2 flex gap-2">
+                  //       <span
+                  //         className="text-subtitle cursor-pointer"
+                  //         onClick={() => handleViewModal(params.data)}
+                  //       >
+                  //         <MdOutlineRemoveRedEye />
+                  //       </span>
+                  //     </div>
+                  //   ),
+                  // },
                 ]}
                 tableHeight={300}
               />
-            </AccordionDetails>
-          </Accordion>
-        ))}
-      </div>
+            );
+          }}
+        />
+      </WidgetSection>
 
-        <MuiModal open={viewModalOpen} onClose={()=>setViewModalOpen(false)} title={"view details"}>
-          <div className="grid grid-cols-2 gap-4">
-            <DetalisFormatted title={"Floor"} detail={viewDetails?.floor} />
-            <DetalisFormatted title={"Total Seats"} detail={viewDetails?.totalSeats} />
-            <DetalisFormatted title={"Booked"} detail={viewDetails?.booked} />
-            <DetalisFormatted title={"Available"} detail={viewDetails?.available} />
-          </div>
-        </MuiModal>
+      <MuiModal
+        open={viewModalOpen}
+        onClose={() => setViewModalOpen(false)}
+        title={"view details"}
+      >
+        <div className="grid grid-cols-2 gap-4">
+          <DetalisFormatted title={"Floor"} detail={viewDetails?.floor} />
+          <DetalisFormatted
+            title={"Total Seats"}
+            detail={viewDetails?.totalSeats}
+          />
+          <DetalisFormatted title={"Booked"} detail={viewDetails?.booked} />
+          <DetalisFormatted
+            title={"Available"}
+            detail={viewDetails?.available}
+          />
+        </div>
+      </MuiModal>
     </div>
   );
 };

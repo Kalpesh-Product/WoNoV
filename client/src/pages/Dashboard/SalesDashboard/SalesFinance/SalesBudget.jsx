@@ -1131,8 +1131,8 @@ const SalesBudget = () => {
   };
 
   // Transform data into the required format
-  const groupedData = Array.isArray(dummyData)
-    ? dummyData?.reduce((acc, item) => {
+  const groupedData = Array.isArray(hrFinance)
+    ? hrFinance?.reduce((acc, item) => {
         const month = dayjs(item.dueDate).format("MMM-YYYY"); // Extracting month and year
 
         if (!acc[month]) {
@@ -1227,7 +1227,7 @@ const SalesBudget = () => {
               TitleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
                 "en-IN"
               )}`}
-              title={"BIZ Nest HR DEPARTMENT EXPENSE"}
+              title={"BIZ Nest SALES DEPARTMENT EXPENSE"}
             >
               <BarGraph
                 data={expenseRawSeries}

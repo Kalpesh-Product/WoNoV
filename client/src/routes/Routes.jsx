@@ -1079,12 +1079,42 @@ export const routes = createBrowserRouter([
                         element: <CheckAvailability />,
                       },
                       {
-                        path: "mix-bag/co-working-seats/view-availability",
+                        path: "mix-bag/co-working-seats/check-availability/view-availability",
                         element: <ViewAvailability />,
                       },
                       {
-                        path: "co-working-seats/view-availability",
+                        path: "co-working-seats/check-availability/view-availability",
                         element: <ViewAvailability />,
+                      },
+                      {
+                        path: "mix-bag/revenue",
+                        element: <TotalRevenueLayout />,
+                        children: [
+                          {
+                            path: "total-revenue",
+                            element: <TotalRevenue />,
+                          },
+                          {
+                            path: "co-working",
+                            element: <CoWorking />,
+                          },
+                          {
+                            path: "meetings",
+                            element: <MeetingRevenue />,
+                          },
+                          {
+                            path: "virtual-office",
+                            element: <VirtualOffice />,
+                          },
+                          {
+                            path: "workation",
+                            element: <Workations />,
+                          },
+                          {
+                            path: "alt-revenue",
+                            element: <AltRevenues />,
+                          },
+                        ],
                       },
                       {
                         path: "revenue",
@@ -1117,10 +1147,40 @@ export const routes = createBrowserRouter([
                         ],
                       },
                       {
+                        path: "mix-bag/clients",
+                        element: <ViewClients />,
+                      },
+                      {
                         path: "clients",
                         element: <ViewClients />,
                       },
 
+                      {
+                        path: "mix-bag/clients/:clientName",
+                        element: <ViewClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <ClientDetails />,
+                          },
+                          {
+                            path: "desks",
+                            element: <Desks />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <ClientRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <ClientMembers />,
+                          },
+                          {
+                            path: "members/view-member/:id",
+                            element: <MemberDetails />,
+                          },
+                        ],
+                      },
                       {
                         path: "clients/:clientName",
                         element: <ViewClientLayout />,
@@ -1146,6 +1206,10 @@ export const routes = createBrowserRouter([
                             element: <MemberDetails />,
                           },
                         ],
+                      },
+                      {
+                        path: "mix-bag/clients/client-onboarding",
+                        element: <ClientOnboarding />,
                       },
                       {
                         path: "clients/client-onboarding",

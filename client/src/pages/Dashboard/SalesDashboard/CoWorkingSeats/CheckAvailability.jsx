@@ -49,15 +49,21 @@ const CheckAvailability = () => {
         : []
     ).entries()
   );
+  const formatUnitDisplay = (unitNo, buildingName) => {
+    const match = unitNo.match(/^(\d+)\(?([A-Za-z]*)\)?$/);
+    if (!match) return `${unitNo} ${buildingName}`;
+    const [_, number, letter] = match;
+    return `${number}${letter ? ` - ${letter}` : ""} ${buildingName}`;
+  };
 
   const onSubmit = (data) => {
     const { location, floor } = data;
     address.pathname?.includes("mix-bag")
       ? navigate(
-          `/app/dashboard/sales-dashboard/mix-bag/co-working-seats/view-availability?location=${location}&floor=${floor}`
+          `/app/dashboard/sales-dashboard/mix-bag/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`
         )
       : navigate(
-          `/app/dashboard/sales-dashboard/co-working-seats/view-availability?location=${location}&floor=${floor}`
+          `/app/dashboard/sales-dashboard/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`
         );
   };
 
@@ -119,7 +125,10 @@ const CheckAvailability = () => {
                   {workLocations.map((unit) =>
                     unit.building.buildingName === selectedLocation ? (
                       <MenuItem key={unit._id} value={unit.unitNo}>
-                        {unit.unitNo}
+                        {formatUnitDisplay(
+                          unit.unitNo,
+                          unit.building.buildingName
+                        )}
                       </MenuItem>
                     ) : (
                       <></>
@@ -132,7 +141,7 @@ const CheckAvailability = () => {
         </div>
 
         <PrimaryButton
-          title="Next"
+          title="Check Availability"
           type="submit"
           fontSize="text-content"
           externalStyles="w-48 mb-20"

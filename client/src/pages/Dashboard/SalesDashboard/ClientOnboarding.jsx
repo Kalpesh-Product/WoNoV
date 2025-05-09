@@ -410,7 +410,7 @@ const ClientOnboarding = () => {
                     )}
                   />
                 </div>
-                <div className="w-full">
+                <div className="w-1/2">
                   <TextField
                     value={totalCabinCost}
                     size="small"
@@ -453,7 +453,7 @@ const ClientOnboarding = () => {
                     )}
                   />
                 </div>
-                <div className="w-full">
+                <div className="w-1/2">
                   <TextField
                     value={totalOpenDeskCost}
                     size="small"
