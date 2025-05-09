@@ -99,53 +99,6 @@ const HrDashboard = () => {
       data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       group: "total",
     },
-    // {
-    //   name: "Tech Assigned",
-    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 30, 30],
-    //   group: "total",
-    // },
-
-    // {
-    //   name: "Admin Assigned",
-    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 10, 10],
-    //   group: "total",
-    // },
-    // {
-    //   name: "Maintainance Assigned",
-    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 5, 3],
-    //   group: "total",
-    // },
-    // {
-    //   name: "Space Completed",
-    //   data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    //   group: "space",
-    // },
-    // {
-    //   name: "Sales Completed",
-    //   data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 10, 10],
-    //   group: "completed",
-    // },
-    // {
-    //   name: "IT Completed",
-    //   data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 20, 10],
-    //   group: "completed",
-    // },
-
-    // {
-    //   name: "Tech Completed",
-    //   data: [45, 40, 30, 45, 50, 40, 55, 50, 60, 65, 30, 30],
-    //   group: "completed",
-    // },
-    // {
-    //   name: "Admin Completed",
-    //   data: [40, 30, 40, 52, 46, 40, 60, 59, 50, 70, 8, 10],
-    //   group: "completed",
-    // },
-    // {
-    //   name: "Maintainance Completed",
-    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 4, 1],
-    //   group: "completed",
-    // },
   ];
 
   const expenseOptions = {
@@ -180,9 +133,16 @@ const HrDashboard = () => {
       //   const scaled = val / 100000; // Scale from actual to "xx.xx" format
       //   return scaled.toFixed(2); // Keep two digits after decimal
       // },
+      // formatter: (val) => {
+      //   const scaled = Math.round((val / 100000) * 100) / 100;
+      //   return Number.isInteger(scaled) ? scaled.toFixed(0) : scaled.toFixed(2);
+      // },
+
+      // formatter: (val) => {
+      //   return val.toLocaleString("en-IN"); // Formats number with commas (Indian style)
+      // },
       formatter: (val) => {
-        const scaled = Math.round((val / 100000) * 100) / 100;
-        return Number.isInteger(scaled) ? scaled.toFixed(0) : scaled.toFixed(2);
+        return Math.round(val).toLocaleString("en-IN");
       },
 
       style: {
@@ -226,7 +186,7 @@ const HrDashboard = () => {
     },
 
     tooltip: {
-      enabled: true,
+      enabled: false,
       // y: {
       //   formatter: (val, { seriesIndex, dataPointIndex }) => {
       //     const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];

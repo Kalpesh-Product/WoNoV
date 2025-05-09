@@ -1,21 +1,16 @@
 import React, { useState } from "react";
 import BarGraph from "../../../../components/graphs/BarGraph";
-import {
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
+import { MenuItem, TextField } from "@mui/material";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import dayjs from "dayjs";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import PrimaryButton from "../../../../components/PrimaryButton";
+import SecondaryButton from "../../../../components/SecondaryButton";
+import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable";
 
 const ActualBusinessRevenue = () => {
   const axios = useAxiosPrivate();
@@ -24,7 +19,6 @@ const ActualBusinessRevenue = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/sales/fetch-revenues");
-        console.log("Revenue Data", response.data);
         return response.data;
       } catch (error) {
         console.error("Error fetching clients data:", error);
@@ -88,7 +82,6 @@ const ActualBusinessRevenue = () => {
               registerDate: "2024-02-25",
               actualRevenue: inrFormat(345600),
             },
-
           ],
         },
         {
@@ -116,7 +109,6 @@ const ActualBusinessRevenue = () => {
               registerDate: "2024-04-10",
               actualRevenue: inrFormat(615000),
             },
-
           ],
         },
         {
@@ -144,7 +136,6 @@ const ActualBusinessRevenue = () => {
               registerDate: "2024-04-13",
               actualRevenue: inrFormat(830000),
             },
-
           ],
         },
         {
@@ -417,19 +408,33 @@ const ActualBusinessRevenue = () => {
 
   const [selectedMonth, setSelectedMonth] = useState(
     mockBusinessRevenueData[0].month
-  ); // Default to first month
+  );
 
-  // Function to update selected month
   const handleMonthChange = (event) => {
     setSelectedMonth(event.target.value);
   };
 
-  // Filter data based on selected month
+  const getMonthIndex = () =>
+    mockBusinessRevenueData.findIndex((data) => data.month === selectedMonth);
+
+  const handlePrevMonth = () => {
+    const index = getMonthIndex();
+    if (index > 0) {
+      setSelectedMonth(mockBusinessRevenueData[index - 1].month);
+    }
+  };
+
+  const handleNextMonth = () => {
+    const index = getMonthIndex();
+    if (index < mockBusinessRevenueData.length - 1) {
+      setSelectedMonth(mockBusinessRevenueData[index + 1].month);
+    }
+  };
+
   const selectedMonthData = mockBusinessRevenueData.find(
     (data) => data.month === selectedMonth
   );
 
-  // Prepare Bar Graph Data
   const graphData = [
     {
       name: "Revenue",
@@ -437,141 +442,151 @@ const ActualBusinessRevenue = () => {
     },
   ];
 
-  // Graph Options
   const options = {
     chart: {
       type: "bar",
       toolbar: false,
       stacked: false,
-      fontFamily: "Poppins-Regular"
+      fontFamily: "Poppins-Regular",
     },
     xaxis: {
       categories: selectedMonthData.domains.map((domain) => domain.name),
-      title: { text: "Verticals" }
+      title: { text: "Verticals" },
     },
     yaxis: {
-      title: { text: "Revenue (INR)" },
+      title: { text: "Revenue in Lakhs (INR)" },
       labels: {
-        formatter: (value) => `INR ${value.toLocaleString("en-IN")}`
-      }
+        formatter: (value) => `${(value / 100000).toLocaleString("en-IN")}`,
+      },
     },
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "30%",
-        borderRadius: 5
-      }
+        columnWidth: "20%",
+        borderRadius: 5,
+        dataLabels:{
+          position : "top"
+        }
+      },
+    },
+    dataLabels: {
+      enabled: true, // Make sure datalabels are enabled
+      formatter : (val)=> {return inrFormat(val)},
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+      offsetY: -22, // Apply the offset here directly
     },
     tooltip: {
+      enabled : false,
       y: {
-        formatter: (value) => `INR ${value.toLocaleString("en-IN")}`
-      }
+        formatter: (value) => `INR ${(value).toLocaleString("en-IN")}`,
+      },
     },
     legend: { position: "top" },
-    colors: ["#80bf01"]
+    colors: ["#54C4A7", "#EB5C45"],
   };
+  
 
+  const tableData = selectedMonthData.domains.map((domain, index) => ({
+    id: index,
+    vertical: domain.name,
+    revenue: `INR ${domain.revenue.toLocaleString("en-IN")}`,
+    clients: domain.clients.map((client, i) => ({
+      srNo: i + 1,
+      client: client.client,
+      representative: client.representative,
+      registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
+      actualRevenue: client.actualRevenue,
+    })),
+  }));
 
   return (
-    <div className="py-4 flex flex-col gap-4">
+    <div className="p-4 flex flex-col gap-4">
       {/* Month Selection Dropdown */}
-      <div className="mb-4 flex">
-        <FormControl size="small">
-          <InputLabel>Select Month</InputLabel>
-          <Select
-            label="Select Month"
-            value={selectedMonth}
-            onChange={handleMonthChange}
-            sx={{ width: "200px" }}>
-            {mockBusinessRevenueData.map((data) => (
-              <MenuItem key={data.month} value={data.month}>
-                {data.month}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </div>
 
       {/* Bar Graph Component */}
       <WidgetSection
         layout={1}
         title={"Vertical-wise Revenue"}
         titleLabel={`${selectedMonth} 2025`}
-        TitleAmount={`INR ${inrFormat("6800000")}`}
-        border>
+        TitleAmount={`INR ${inrFormat(
+          selectedMonthData.domains.reduce((sum, d) => sum + d.revenue, 0)
+        )}`}
+        border
+      >
         <BarGraph data={graphData} options={options} height={400} />
       </WidgetSection>
 
-      {/* Accordion Section for Domain-wise Revenue Breakdown */}
-      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
-          <div className="flex justify-between items-center w-full px-4 py-2">
-            <span className=" text-sm text-muted font-pmedium text-title">
-              VERTICAL
-            </span>
-            <span className="px-8 text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              REVENUE
-            </span>
-            
-          </div>
+      <div className="flex justify-start">
+        <div className="flex items-center gap-4">
+          <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" />
+          <TextField
+            select
+            size="small"
+            variant="standard"
+            label="Month"
+            value={selectedMonth}
+            onChange={handleMonthChange}
+            className="w-[60px]"
+            SelectProps={{
+              IconComponent: KeyboardArrowDownIcon,
+            }}
+          >
+            {mockBusinessRevenueData.map((data) => (
+              <MenuItem key={data.month} value={data.month}>
+                {data.month}
+              </MenuItem>
+            ))}
+          </TextField>
+          <PrimaryButton handleSubmit={handleNextMonth} title="Next" />
         </div>
-        {selectedMonthData.domains.map((domain, index) => {
-          return (
-            <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}>
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium">
-                    {domain.name}
-                  </span>
-                  <span className="text-subtitle font-pmedium">
-                  INR {domain.revenue.toLocaleString()}
-                  </span>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
-                <AgTable
-                 data={domain.clients.map((client,index) => ({
-                  ...client,
-                  registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
-                  srNo:index+1
-                }))}
-                
-                  hideFilter
-                  columns={[
-                    { headerName: "Sr No", field: "srNo", flex: 1 },
-                    { headerName: "Client", field: "client", flex: 1 },
-                    {
-                      headerName: "Representative",
-                      field: "representative",
-                      flex: 1,
-                    },
-                    { headerName: "Register Date", field: "registerDate", flex: 1 },
-                    {
-                      headerName: "Actual Revenue (INR)",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
-                  ]}
-                  tableHeight={300}
-                />
-                <div className="flex items-center gap-4 mt-4">
-                  <div className="flex items-center gap-4">
-                    <span className="text-primary font-pregular">
-                      Total Revenue for {domain.name}:{" "}
-                    </span>
-                    <span className="text-black font-pmedium">
-                      INR&nbsp;{domain.revenue.toLocaleString("en-IN")}
-                    </span>{" "}
-                  </div>
-                </div>
-              </AccordionDetails>
-            </Accordion>
-          );
-        })}
       </div>
+
+      {/* Collapsible Table */}
+      <WidgetSection
+        border
+        title={"Vertical-wise Revenue Breakdown"}
+        padding
+        TitleAmount={`INR ${inrFormat(
+          selectedMonthData.domains.reduce((sum, d) => sum + d.revenue, 0)
+        )}`}
+      >
+        <CollapsibleTable
+          columns={[
+            { headerName: "Vertical", field: "vertical" },
+            { headerName: "Revenue (INR)", field: "revenue" },
+          ]}
+          data={tableData}
+          renderExpandedRow={(row) => (
+            <AgTable
+              data={row.clients}
+              columns={[
+                { headerName: "Sr No", field: "srNo", flex: 1 },
+                { headerName: "Client", field: "client", flex: 1 },
+                {
+                  headerName: "Representative",
+                  field: "representative",
+                  flex: 1,
+                },
+                {
+                  headerName: "Register Date",
+                  field: "registerDate",
+                  flex: 1,
+                },
+                {
+                  headerName: "Actual Revenue (INR)",
+                  field: "actualRevenue",
+                  flex: 1,
+                },
+              ]}
+              tableHeight={300}
+              hideFilter
+            />
+          )}
+        />
+      </WidgetSection>
     </div>
   );
 };

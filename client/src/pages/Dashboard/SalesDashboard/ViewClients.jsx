@@ -10,12 +10,14 @@ import { toast } from "sonner";
 import { setSelectedClient } from "../../../redux/slices/clientSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { setClientData } from "../../../redux/slices/salesSlice";
+import WidgetSection from "../../../components/WidgetSection";
 
 const ViewClients = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
   const clientsData = useSelector((state) => state.sales.clientsData);
+  console.log("Clients data : ", clientsData)
 
   useEffect(() => {
     const fetchSourceIfEmpty = async () => {
@@ -35,7 +37,7 @@ const ViewClients = () => {
   const handleClickRow = (clientData) => {
     dispatch(setSelectedClient(clientData));
     navigate(
-      `/app/dashboard/sales-dashboard/clients/view-clients/${clientData.clientName}`
+      `/app/dashboard/sales-dashboard/clients/${clientData.clientName}`
     );
   };
 
@@ -44,6 +46,7 @@ const ViewClients = () => {
     {
       field: "clientName",
       headerName: "Client Name",
+      flex:1,
       cellRenderer: (params) => (
         <span
           style={{
@@ -51,37 +54,14 @@ const ViewClients = () => {
             textDecoration: "underline",
             cursor: "pointer",
           }}
-          onClick={() => handleClickRow(params.data)}>
+          onClick={() => handleClickRow(params.data)}
+        >
           {params.value}
         </span>
       ),
     },
-    { field: "hoPocEmail", headerName: "Email", flex: 1 },
-    { field: "totalMeetingCredits", headerName: "Credits" },
-    // {
-    //   field: "status",
-    //   headerName: "Status",
-    //   cellRenderer: (params) => {
-    //     const statusColorMap = {
-    //       Active: { backgroundColor: "#90EE90", color: "#006400" },
-    //       Inactive: { backgroundColor: "#D3D3D3", color: "#696969" },
-    //     };
-
-    //     const { backgroundColor, color } = statusColorMap[params.value] || {
-    //       backgroundColor: "gray",
-    //       color: "white",
-    //     };
-    //     return (
-    //       <Chip
-    //         label={params.value}
-    //         style={{
-    //           backgroundColor,
-    //           color,
-    //         }}
-    //       />
-    //     );
-    //   },
-    // },
+    { field: "desks", headerName: "Desks" },
+    { field: "occupancy", headerName: "Occupancy (%)" },
   ];
 
   const transformClientsGroupedByMonth = (clientsArray) => {
@@ -130,57 +110,65 @@ const ViewClients = () => {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <UniqueClients data={transformedData} hideAccordion />
+        <UniqueClients
+          data={transformedData}
+          hideAccordion
+          additionalData={`CLIENTS : ${clientsData.length}`}
+        />
       </div>
 
-      <div className="w-full">
-        <AgTable
-          search={true}
-          key={clientsData.length}
-          data={[
-            ...clientsData.map((item, index) => ({
-              id: index + 1,
-              _id: item._id,
-              company: item.company,
-              clientName: item.clientName,
-              serviceName: item.service?.serviceName,
-              serviceDescription: item.service?.description,
-              sector: item.sector,
-              hoCity: item.hoCity,
-              hoState: item.hoState,
-              unitName: item.unit?.unitName,
-              unitNo: item.unit?.unitNo,
-              buildingName: item.unit?.building?.buildingName,
-              buildingAddress: item.unit?.building?.fullAddress,
-              cabinDesks: item.cabinDesks,
-              openDesks: item.openDesks,
-              totalDesks: item.totalDesks,
-              ratePerOpenDesk: item.ratePerOpenDesk,
-              ratePerCabinDesk: item.ratePerCabinDesk,
-              annualIncrement: item.annualIncrement,
-              perDeskMeetingCredits: item.perDeskMeetingCredits,
-              totalMeetingCredits: item.totalMeetingCredits,
-              startDate: item.startDate,
-              endDate: item.endDate,
-              lockinPeriod: item.lockinPeriod,
-              rentDate: item.rentDate,
-              nextIncrement: item.nextIncrement,
-              localPocName: item.localPoc?.name,
-              localPocEmail: item.localPoc?.email,
-              localPocPhone: item.localPoc?.phone,
-              hoPocName: item.hOPoc?.name,
-              // hoPocEmail: item.hOPoc?.email,
-              hoPocEmail: item.hOPoc?.email || "client@gmail.com",
-              hoPocPhone: item.hOPoc?.phone,
-              isActive: item.isActive,
-              createdAt: item.createdAt,
-              updatedAt: item.updatedAt,
-              occupiedImage: item.occupiedImage?.imageUrl,
-            })),
-          ]}
-          exportData
-          columns={viewEmployeeColumns}
-        />
+      <div className="w-full px-4">
+
+          <AgTable
+            search={true}
+            tableTitle={"CLIENT DETAILS"}
+            key={clientsData.length}
+            buttonTitle={"Add Client"}
+            handleClick={()=>navigate('client-onboarding')}
+            data={[
+              ...clientsData.map((item, index) => ({
+                id: index + 1,
+                _id: item._id,
+                company: item.company,
+                clientName: item.clientName,
+                serviceName: item.service?.serviceName,
+                serviceDescription: item.service?.description,
+                sector: item.sector,
+                hoCity: item.hoCity,
+                hoState: item.hoState,
+                unitName: item.unit?.unitName,
+                unitNo: item.unit?.unitNo,
+                buildingName: item.unit?.building?.buildingName,
+                buildingAddress: item.unit?.building?.fullAddress,
+                cabinDesks: item.cabinDesks,
+                openDesks: item.openDesks,
+                totalDesks: item.totalDesks,
+                desks : (Number(item.openDesks) + Number(item.cabinDesks)),
+                occupancy : ((((Number(item.openDesks) + Number(item.cabinDesks))/589)*100).toFixed(1)),
+                ratePerOpenDesk: item.ratePerOpenDesk,
+                ratePerCabinDesk: item.ratePerCabinDesk,
+                annualIncrement: item.annualIncrement,
+                perDeskMeetingCredits: item.perDeskMeetingCredits,
+                totalMeetingCredits: item.totalMeetingCredits,
+                startDate: item.startDate,
+                endDate: item.endDate,
+                lockinPeriod: item.lockinPeriod,
+                rentDate: item.rentDate,
+                nextIncrement: item.nextIncrement,
+                localPocName: item.localPoc?.name,
+                localPocEmail: item.localPoc?.email,
+                localPocPhone: item.localPoc?.phone,
+                hoPocName: item.hOPoc?.name,
+                hoPocEmail: item.hOPoc?.email || "client@gmail.com",
+                hoPocPhone: item.hOPoc?.phone,
+                isActive: item.isActive,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt,
+                occupiedImage: item.occupiedImage?.imageUrl,
+              })),
+            ]}
+            columns={viewEmployeeColumns}
+          />
       </div>
     </div>
   );

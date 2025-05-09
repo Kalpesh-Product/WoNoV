@@ -1,8 +1,8 @@
 import BarGraph from "../../../components/graphs/BarGraph";
-import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
-import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
+import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
+import AgTable from "../../../components/AgTable";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const MeetingRevenue = () => {
   const monthlyMeetingeData = [
@@ -396,10 +396,6 @@ const MeetingRevenue = () => {
   ];
   const series = [
     {
-      name: "Projected Revenue",
-      data: monthlyMeetingeData.map((item) => item.projected),
-    },
-    {
       name: "Actual Revenue",
       data: monthlyMeetingeData.map((item) =>
         item.clients.reduce((sum, c) => sum + c.revenue, 0)
@@ -418,144 +414,119 @@ const MeetingRevenue = () => {
       position: "top",
     },
     dataLabels: {
-      enabled: false,
+      enabled: true,
       formatter: function (val) {
-        return `${val}%`;
+        return `${inrFormat(val)}`;
       },
       style: {
         fontSize: "10px",
         fontWeight: "bold",
-        colors: ["#fff"],
+        colors: ["#000"],
       },
+      offsetY: -22,
     },
     xaxis: {
       categories: monthlyMeetingeData.map((item) => item.month),
     },
-    yaxis: {
+   yaxis: {
+      title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => `INR ${val.toLocaleString()}`,
+        formatter: (val) => `${((val/100000).toLocaleString())}`,
       },
     },
     tooltip: {
+      enabled:false,
       y: {
         formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
     plotOptions: {
       bar: {
-        columnWidth: "75%",
+        columnWidth: "40%",
         borderRadius: 5,
+        dataLabels: {
+          position: "top",
+        },
       },
+      
     },
-    colors: ["#1E3D73", "#80bf01"],
+     colors: ["#54C4A7", "#EB5C45"],
   };
-  const totalActual = monthlyMeetingeData.reduce((sum, month) => {
-    return (
+
+  const totalActual = monthlyMeetingeData.reduce(
+    (sum, month) =>
       sum +
-      month.clients.reduce((monthSum, client) => monthSum + client.revenue, 0)
-    );
-  }, 0);
+      month.clients.reduce((monthSum, client) => monthSum + client.revenue, 0),
+    0
+  );
 
   const totalProjected = monthlyMeetingeData.reduce(
     (sum, month) => sum + (month.projected ?? 0),
     0
   );
+
+  // Prepare collapsible table data
+  const tableData = monthlyMeetingeData.map((monthData, index) => {
+    const actual = monthData.clients.reduce((sum, c) => sum + c.revenue, 0);
+    return {
+      id: index,
+      month: monthData.month,
+      revenue: `INR ${actual.toLocaleString()}`,
+      clients: monthData.clients.map((client, i) => ({
+        id: i + 1,
+        clientName: client.clientName,
+        revenue: `${client.revenue.toLocaleString()}`,
+        status: client.status,
+        totalCredits: client.totalCredits,
+        usedCredits: client.usedCredits,
+        extraCredits: client.extraCredits,
+        bookingHours: client.bookingHours,
+      })),
+    };
+  });
+
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <WidgetSection
         title={"Annual Monthly Meetings Revenues"}
         titleLabel={"FY 2024-25"}
+        TitleAmount={`INR ${inrFormat(totalActual)}`}
         border
       >
-        <BarGraph
-          data={series}
-          options={options}
-          height={400}
-          customLegend
-          firstParam={{
-            title: "Actual",
-            data: `INR ${totalActual.toLocaleString()}`,
-          }}
-          secondParam={{
-            title: "Projected",
-            data: `INR ${totalProjected.toLocaleString()}`,
-          }}
-        />
+        <BarGraph data={series} options={options} height={400} />
       </WidgetSection>
 
-      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
-          <div className="flex justify-between items-center w-full px-4 py-2">
-            <span className=" text-sm text-muted font-pmedium text-title">
-              MONTH
-            </span>
-            <span className="px-8 text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              REVENUE
-            </span>
-            
-          </div>
-        </div>
-        {monthlyMeetingeData.map((monthData, index) => {
-          const totalActual = monthData.clients.reduce(
-            (sum, c) => sum + c.revenue,
-            0
-          );
-
-          const rows = monthData.clients.map((client, index) => ({
-            id: index + 1,
-            clientName: client.clientName,
-            revenue: `${client.revenue.toLocaleString()}`,
-            status: client.status,
-            totalCredits: client.totalCredits,
-            usedCredits: client.usedCredits,
-            extraCredits: client.extraCredits,
-            bookingHours: client.bookingHours,
-          }));
-
-          const columns = [
-            { headerName: "Sr No", field: "id", width: 80 },
-            { headerName: "Client Name", field: "clientName", flex: 1 },
-            { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
-            { headerName: "Total Credits", field: "totalCredits", flex: 1 },
-            { headerName: "Used Credits", field: "usedCredits", flex: 1 },
-            { headerName: "Extra Credits", field: "extraCredits", flex: 1 },
-            { headerName: "Booking Hours", field: "bookingHours", flex: 1 },
-            { headerName: "Status", field: "status", flex: 1 },
-          ];
-
-          return (
-            <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}
-                className="border-b-[1px] border-borderGray"
-              >
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium">
-                    {monthData.month}
-                  </span>
-                  <span className="text-subtitle font-pmedium ">
-                    INR {totalActual.toLocaleString()}
-                  </span>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                <AgTable
-                  search={rows.length > 5}
-                  data={rows}
-                  columns={columns}
-                  tableHeight={300}
-                />
-                <span className="text-sm font-medium mt-2 block">
-                  Total Actual Revenue for {monthData.month}:
-                  INR {totalActual.toLocaleString()} 
-                </span>
-              </AccordionDetails>
-            </Accordion>
-          );
-        })}
-      </div>
+      <WidgetSection
+        border
+        title={"Monthly Revenue with Client Details"}
+        padding
+        TitleAmount={`INR ${inrFormat(totalActual)}`}
+      >
+        <CollapsibleTable
+          columns={[
+            { headerName: "Month", field: "month" },
+            { headerName: "Revenue (INR)", field: "revenue" },
+          ]}
+          data={tableData}
+          renderExpandedRow={(row) => (
+            <AgTable
+              data={row.clients}
+              columns={[
+                { headerName: "Sr No", field: "id", flex: 1 },
+                { headerName: "Client Name", field: "clientName", flex: 1 },
+                { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
+                { headerName: "Total Credits", field: "totalCredits", flex: 1 },
+                { headerName: "Used Credits", field: "usedCredits", flex: 1 },
+                { headerName: "Extra Credits", field: "extraCredits", flex: 1 },
+                { headerName: "Booking Hours", field: "bookingHours", flex: 1 },
+                { headerName: "Status", field: "status", flex: 1 },
+              ]}
+              tableHeight={300}
+              hideFilter
+            />
+          )}
+        />
+      </WidgetSection>
     </div>
   );
 };

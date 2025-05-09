@@ -18,13 +18,16 @@ const TotalRevenueLayout = () => {
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
   useEffect(() => {
-    if (location.pathname === "/app/dashboard/sales-dashboard/revenue") {
-      navigate("/app/dashboard/sales-dashboard/revenue/total-revenue", {
-        replace: true,
-      });
+    const isMixBag = location.pathname.includes("mix-bag");
+    const isRevenueBasePath = location.pathname.endsWith("/revenue") || location.pathname.endsWith("/revenue/");
+  
+    if (isMixBag && isRevenueBasePath) {
+      navigate("/app/dashboard/sales-dashboard/mix-bag/revenue/total-revenue", { replace: true });
+    } else if (!isMixBag && isRevenueBasePath) {
+      navigate("/app/dashboard/sales-dashboard/revenue/total-revenue", { replace: true });
     }
   }, [location, navigate]);
-
+  
   // Determine whether to show the tabs
   const showTabs = !location.pathname.includes("budget/");
 

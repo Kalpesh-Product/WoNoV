@@ -8,12 +8,13 @@ import {
 } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 
 const CheckAvailability = () => {
   const navigate = useNavigate();
+  const address = useLocation();
   const axios = useAxiosPrivate();
 
   const { control, handleSubmit, watch } = useForm({
@@ -24,22 +25,6 @@ const CheckAvailability = () => {
   });
 
   const selectedLocation = watch("location");
-
-  // Fetch Work Locations
-  // const {
-  //   data: workLocations = [],
-  //   isLoading: locationsLoading,
-  //   error: locationsError,
-  // } = useQuery({
-  //   queryKey: ["workLocations"],
-  //   queryFn: async () => {
-  //     const response = await axios.get(
-  //       "/api/company/get-company-data?field=workLocations"
-  //     );
-  //     console.log(response.data);
-  //     return response.data;
-  //   },
-  // });
 
   const {
     data: workLocations = [],
@@ -64,20 +49,28 @@ const CheckAvailability = () => {
         : []
     ).entries()
   );
-
-  const floors = ["501(A)", "501(B)", "601(A)", "601(B)", "701(A)", "701(B)"];
+  const formatUnitDisplay = (unitNo, buildingName) => {
+    const match = unitNo.match(/^(\d+)\(?([A-Za-z]*)\)?$/);
+    if (!match) return `${unitNo} ${buildingName}`;
+    const [_, number, letter] = match;
+    return `${number}${letter ? ` - ${letter}` : ""} ${buildingName}`;
+  };
 
   const onSubmit = (data) => {
     const { location, floor } = data;
-    navigate(
-      `/app/dashboard/sales-dashboard/co-working-seats/view-availability?location=${location}&floor=${floor}`
-    );
+    address.pathname?.includes("mix-bag")
+      ? navigate(
+          `/app/dashboard/sales-dashboard/mix-bag/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`
+        )
+      : navigate(
+          `/app/dashboard/sales-dashboard/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`
+        );
   };
 
   return (
     <div className="border-default border-borderGray m-4 p-4 rounded-md text-center">
-      <h2 className="font-pregular text-title text-primary mt-20 mb-10">
-        Check Availability
+      <h2 className="font-pregular text-title text-primary mt-20 mb-10 uppercase">
+        Check Occupancy
       </h2>
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -132,7 +125,10 @@ const CheckAvailability = () => {
                   {workLocations.map((unit) =>
                     unit.building.buildingName === selectedLocation ? (
                       <MenuItem key={unit._id} value={unit.unitNo}>
-                        {unit.unitNo}
+                        {formatUnitDisplay(
+                          unit.unitNo,
+                          unit.building.buildingName
+                        )}
                       </MenuItem>
                     ) : (
                       <></>
@@ -145,7 +141,7 @@ const CheckAvailability = () => {
         </div>
 
         <PrimaryButton
-          title="Next"
+          title="Check Availability"
           type="submit"
           fontSize="text-content"
           externalStyles="w-48 mb-20"

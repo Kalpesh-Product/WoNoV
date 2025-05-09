@@ -1,9 +1,9 @@
 import BarGraph from "../../../components/graphs/BarGraph";
-import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
-import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
+import AgTable from "../../../components/AgTable";
+import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 import dayjs from "dayjs";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const Workations = () => {
   const monthlyRevenueData = [
@@ -15,7 +15,7 @@ const Workations = () => {
           clientName: "Zomato",
           revenue: 1000000,
           status: "Paid",
-          noOfDays: 5,
+          desks: 5,
           occupancy: 1.6,
           term: 12,
           expiry: 2,
@@ -26,7 +26,7 @@ const Workations = () => {
           clientName: "UrbanClap",
           revenue: 800000,
           status: "Paid",
-          noOfDays: 5,
+          desks: 5,
           occupancy: 1.6,
           term: 12,
           expiry: 2,
@@ -37,7 +37,7 @@ const Workations = () => {
           clientName: "Cred",
           revenue: 1000000,
           status: "Paid",
-          noOfDays: 5,
+          desks: 5,
           occupancy: 1.6,
           term: 12,
           expiry: 2,
@@ -54,7 +54,7 @@ const Workations = () => {
           clientName: "Swiggy",
           revenue: 1500000,
           status: "Paid",
-          noOfDays: 8,
+          desks: 8,
           occupancy: 2.1,
           term: 12,
           expiry: 4,
@@ -65,7 +65,7 @@ const Workations = () => {
           clientName: "Freshworks",
           revenue: 1250000,
           status: "Paid",
-          noOfDays: 6,
+          desks: 6,
           occupancy: 1.8,
           term: 9,
           expiry: 3,
@@ -82,7 +82,7 @@ const Workations = () => {
           clientName: "Zoho",
           revenue: 1200000,
           status: "Paid",
-          noOfDays: 10,
+          desks: 10,
           occupancy: 2.5,
           term: 12,
           expiry: 6,
@@ -93,7 +93,7 @@ const Workations = () => {
           clientName: "Paytm",
           revenue: 900000,
           status: "Paid",
-          noOfDays: 7,
+          desks: 7,
           occupancy: 1.9,
           term: 6,
           expiry: 2,
@@ -104,7 +104,7 @@ const Workations = () => {
           clientName: "Myntra",
           revenue: 750000,
           status: "Paid",
-          noOfDays: 5,
+          desks: 5,
           occupancy: 1.6,
           term: 9,
           expiry: 3,
@@ -121,7 +121,7 @@ const Workations = () => {
           clientName: "Tata 1mg",
           revenue: 1600000,
           status: "Paid",
-          noOfDays: 9,
+          desks: 9,
           occupancy: 2.3,
           term: 12,
           expiry: 7,
@@ -132,7 +132,7 @@ const Workations = () => {
           clientName: "Meesho",
           revenue: 800000,
           status: "Paid",
-          noOfDays: 6,
+          desks: 6,
           occupancy: 1.8,
           term: 6,
           expiry: 2,
@@ -143,7 +143,7 @@ const Workations = () => {
           clientName: "Delhivery",
           revenue: 600000,
           status: "Paid",
-          noOfDays: 5,
+          desks: 5,
           occupancy: 1.7,
           term: 9,
           expiry: 3,
@@ -161,7 +161,7 @@ const Workations = () => {
           clientName: "CureFit",
           revenue: 1000000,
           status: "Paid",
-          noOfDays: 7,
+          desks: 7,
           occupancy: 2.0,
           term: 12,
           expiry: 8,
@@ -172,7 +172,7 @@ const Workations = () => {
           clientName: "Bounce",
           revenue: 900000,
           status: "Paid",
-          noOfDays: 6,
+          desks: 6,
           occupancy: 1.9,
           term: 6,
           expiry: 3,
@@ -183,7 +183,7 @@ const Workations = () => {
           clientName: "Flipkart",
           revenue: 1250000,
           status: "Paid",
-          noOfDays: 10,
+          desks: 10,
           occupancy: 2.7,
           term: 12,
           expiry: 9,
@@ -200,7 +200,7 @@ const Workations = () => {
           clientName: "BigBasket",
           revenue: 1300000,
           status: "Paid",
-          noOfDays: 8,
+          desks: 8,
           occupancy: 2.2,
           term: 12,
           expiry: 10,
@@ -211,7 +211,7 @@ const Workations = () => {
           clientName: "Lenskart",
           revenue: 900000,
           status: "Paid",
-          noOfDays: 5,
+          desks: 5,
           occupancy: 1.5,
           term: 6,
           expiry: 3,
@@ -222,7 +222,7 @@ const Workations = () => {
           clientName: "Byju's",
           revenue: 750000,
           status: "Paid",
-          noOfDays: 7,
+          desks: 7,
           occupancy: 2.0,
           term: 9,
           expiry: 4,
@@ -239,7 +239,7 @@ const Workations = () => {
           clientName: "Nykaa",
           revenue: 1500000,
           status: "Paid",
-          noOfDays: 9,
+          desks: 9,
           occupancy: 2.4,
           term: 12,
           expiry: 11,
@@ -250,7 +250,7 @@ const Workations = () => {
           clientName: "Razorpay",
           revenue: 900000,
           status: "Paid",
-          noOfDays: 6,
+          desks: 6,
           occupancy: 1.9,
           term: 6,
           expiry: 3,
@@ -261,7 +261,7 @@ const Workations = () => {
           clientName: "Udaan",
           revenue: 850000,
           status: "Paid",
-          noOfDays: 7,
+          desks: 7,
           occupancy: 2.0,
           term: 9,
           expiry: 5,
@@ -279,7 +279,7 @@ const Workations = () => {
           clientName: "InMobi",
           revenue: 1200000,
           status: "Paid",
-          noOfDays: 8,
+          desks: 8,
           occupancy: 2.1,
           term: 12,
           expiry: 12,
@@ -290,7 +290,7 @@ const Workations = () => {
           clientName: "CoinDCX",
           revenue: 1000000,
           status: "Paid",
-          noOfDays: 6,
+          desks: 6,
           occupancy: 1.8,
           term: 6,
           expiry: 3,
@@ -301,7 +301,7 @@ const Workations = () => {
           clientName: "Dream11",
           revenue: 1200000,
           status: "Paid",
-          noOfDays: 7,
+          desks: 7,
           occupancy: 2.3,
           term: 9,
           expiry: 5,
@@ -318,7 +318,7 @@ const Workations = () => {
           clientName: "Unacademy",
           revenue: 1100000,
           status: "Paid",
-          noOfDays: 7,
+          desks: 7,
           occupancy: 2.0,
           term: 12,
           expiry: 12,
@@ -329,7 +329,7 @@ const Workations = () => {
           clientName: "Groww",
           revenue: 1300000,
           status: "Paid",
-          noOfDays: 6,
+          desks: 6,
           occupancy: 1.9,
           term: 6,
           expiry: 3,
@@ -340,7 +340,7 @@ const Workations = () => {
           clientName: "CRED",
           revenue: 1100000,
           status: "Paid",
-          noOfDays: 8,
+          desks: 8,
           occupancy: 2.2,
           term: 9,
           expiry: 5,
@@ -357,7 +357,7 @@ const Workations = () => {
           clientName: "Zepto",
           revenue: 1800000,
           status: "Paid",
-          noOfDays: 9,
+          desks: 9,
           occupancy: 2.4,
           term: 12,
           expiry: 12,
@@ -368,7 +368,7 @@ const Workations = () => {
           clientName: "Oyo",
           revenue: 900000,
           status: "Paid",
-          noOfDays: 7,
+          desks: 7,
           occupancy: 2.0,
           term: 6,
           expiry: 3,
@@ -379,7 +379,7 @@ const Workations = () => {
           clientName: "Pharmeasy",
           revenue: 850000,
           status: "Paid",
-          noOfDays: 6,
+          desks: 6,
           occupancy: 1.7,
           term: 9,
           expiry: 4,
@@ -396,7 +396,7 @@ const Workations = () => {
           clientName: "Cars24",
           revenue: 1300000,
           status: "Paid",
-          noOfDays: 8,
+          desks: 8,
           occupancy: 2.1,
           term: 12,
           expiry: 12,
@@ -407,7 +407,7 @@ const Workations = () => {
           clientName: "Boat",
           revenue: 1100000,
           status: "Paid",
-          noOfDays: 7,
+          desks: 7,
           occupancy: 2.0,
           term: 6,
           expiry: 3,
@@ -418,7 +418,7 @@ const Workations = () => {
           clientName: "Zerodha",
           revenue: 1250000,
           status: "Paid",
-          noOfDays: 6,
+          desks: 6,
           occupancy: 1.9,
           term: 9,
           expiry: 4,
@@ -435,7 +435,7 @@ const Workations = () => {
           clientName: "RedBus",
           revenue: 1300000,
           status: "Paid",
-          noOfDays: 8,
+          desks: 8,
           occupancy: 2.2,
           term: 12,
           expiry: 12,
@@ -446,7 +446,7 @@ const Workations = () => {
           clientName: "PolicyBazaar",
           revenue: 1200000,
           status: "Paid",
-          noOfDays: 6,
+          desks: 6,
           occupancy: 1.8,
           term: 6,
           expiry: 3,
@@ -457,7 +457,7 @@ const Workations = () => {
           clientName: "Swiggy",
           revenue: 1250000,
           status: "Paid",
-          noOfDays: 9,
+          desks: 9,
           occupancy: 2.5,
           term: 9,
           expiry: 5,
@@ -468,10 +468,6 @@ const Workations = () => {
     },
   ];
   const series = [
-    {
-      name: "Projected Revenue",
-      data: monthlyRevenueData.map((item) => item.projected),
-    },
     {
       name: "Actual Revenue",
       data: monthlyRevenueData.map((item) =>
@@ -491,148 +487,120 @@ const Workations = () => {
       position: "top",
     },
     dataLabels: {
-      enabled: false,
+      enabled: true,
       formatter: function (val) {
-        return `${val}%`;
+        return `${inrFormat(val)}`;
       },
       style: {
         fontSize: "10px",
         fontWeight: "bold",
-        colors: ["#fff"],
+        colors: ["#000"],
       },
+      offsetY: -22,
     },
     xaxis: {
       categories: monthlyRevenueData.map((item) => item.month),
     },
-    yaxis: {
+   yaxis: {
+      title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => `INR ${val.toLocaleString()}`,
+        formatter: (val) => `${((val/100000).toLocaleString())}`,
       },
     },
     tooltip: {
+      enabled:false,
       y: {
         formatter: (val) => `INR ${val.toLocaleString()}`,
       },
     },
     plotOptions: {
       bar: {
-        columnWidth: "75%",
+        columnWidth: "40%",
         borderRadius: 5,
+        dataLabels: {
+          position: "top",
+        },
       },
     },
-    colors: ["#1E3D73", "#80bf01"],
+     colors: ["#54C4A7", "#EB5C45"],
   };
-  const totalActual = monthlyRevenueData.reduce((sum, month) => {
-    return (
+
+  const totalActual = monthlyRevenueData.reduce(
+    (sum, month) =>
       sum +
-      month.clients.reduce((monthSum, client) => monthSum + client.revenue, 0)
-    );
-  }, 0);
+      month.clients.reduce((monthSum, client) => monthSum + client.revenue, 0),
+    0
+  );
 
   const totalProjected = monthlyRevenueData.reduce(
     (sum, month) => sum + (month.projected ?? 0),
     0
   );
+
+  const tableData = monthlyRevenueData.map((monthData, index) => {
+    const totalRevenue = monthData.clients.reduce(
+      (sum, c) => sum + c.revenue,
+      0
+    );
+    return {
+      id: index,
+      month: monthData.month,
+      revenue: `INR ${totalRevenue.toLocaleString()}`,
+      clients: monthData.clients.map((client, i) => ({
+        id: i + 1,
+        clientName: client.clientName,
+        revenue: `${client.revenue.toLocaleString()}`,
+        status: client.status,
+        term: client.term,
+        expiry: client.expiry,
+        recievedDate: dayjs(client.recievedDate).format("DD-MM-YYYY"),
+        dueDate: dayjs(client.dueDate).format("DD-MM-YYYY"),
+      })),
+    };
+  });
+
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <WidgetSection
-        title={"Annual Monthly Workations Revenues"}
+        title={"Annual Monthly Virtual Office Revenues"}
         titleLabel={"FY 2024-25"}
         border
+        TitleAmount={`INR ${inrFormat(totalActual)}`}
       >
-        <BarGraph
-          data={series}
-          options={options}
-          height={400}
-          customLegend
-          firstParam={{
-            title: "Actual",
-            data: `INR ${totalActual.toLocaleString()} `,
-          }}
-          secondParam={{
-            title: "Projected",
-            data: `INR ${totalProjected.toLocaleString()}`,
-          }}
+        <BarGraph data={series} options={options} height={400} />
+      </WidgetSection>
+
+      <WidgetSection
+        border
+        title={"Monthly Revenue with Client Details"}
+        padding
+        TitleAmount={`INR ${inrFormat(totalActual)}`}
+      >
+        <CollapsibleTable
+          columns={[
+            { headerName: "Month", field: "month" },
+            { headerName: "Revenue (INR)", field: "revenue" },
+          ]}
+          data={tableData}
+          renderExpandedRow={(row) => (
+            <AgTable
+              data={row.clients}
+              columns={[
+                { headerName: "Sr No", field: "id", flex: 1 },
+                { headerName: "Client Name", field: "clientName", flex: 1 },
+                { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
+                { headerName: "Status", field: "status", flex: 1 },
+                { headerName: "Term (months)", field: "term", flex: 1 },
+                { headerName: "Expiry (months)", field: "expiry", flex: 1 },
+                { headerName: "Received Date", field: "recievedDate", flex: 1 },
+                { headerName: "Due Date", field: "dueDate", flex: 1 },
+              ]}
+              tableHeight={300}
+              hideFilter
+            />
+          )}
         />
       </WidgetSection>
-      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
-          <div className="flex justify-between items-center w-full px-4 py-2">
-            <span className=" text-sm text-muted font-pmedium text-title">
-              MONTH
-            </span>
-            <span className="px-8 text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              REVENUE
-            </span>
-            
-          </div>
-        </div>
-        {monthlyRevenueData.map((monthData, index) => {
-          const totalActual = monthData.clients.reduce(
-            (sum, c) => sum + c.revenue,
-            0
-          );
-
-          const rows = monthData.clients.map((client, index) => ({
-            id: index + 1,
-            clientName: client.clientName,
-            revenue: `${client.revenue.toLocaleString()}`,
-            status: client.status,
-            noOfDays: client.noOfDays,
-            occupancy: client.occupancy,
-            term: client.term,
-            expiry: client.expiry,
-               recievedDate: dayjs( client.recievedDate).format("DD-MM-YYYY"),
-                        dueDate:dayjs( client.dueDate).format("DD-MM-YYYY"),
-          }));
-
-          const columns = [
-            { headerName: "Sr No", field: "id", width: 80 },
-            { headerName: "Client Name", field: "clientName" },
-            { headerName: "Revenue (INR)", field: "revenue" },
-            { headerName: "No. Of Days", field: "noOfDays" },
-            // { headerName: "Occupancy", field: "occupancy" },
-            // { headerName: "Term (months)", field: "term" },
-            // { headerName: "Expiry (months)", field: "expiry" },
-            { headerName: "Payment Date", field: "recievedDate" },
-            { headerName: "Due Date", field: "dueDate" },
-            { headerName: "Status", field: "status" },
-          ];
-
-          return (
-            <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}
-                className="border-b-[1px] border-borderGray"
-              >
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium">
-                    {monthData.month}
-                  </span>
-                  <span className="text-subtitle font-pmedium">
-                  INR {totalActual.toLocaleString()} 
-                  </span>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                <AgTable
-                  search={rows.length > 5}
-                  hideFilter={rows.length < 5}
-                  data={rows}
-                  columns={columns}
-                  tableHeight={300}
-                />
-                <span className="text-sm font-medium mt-2 block">
-                  Total Actual Revenue for {monthData.month}:
-                  INR {totalActual.toLocaleString()}
-                </span>
-              </AccordionDetails>
-            </Accordion>
-          );
-        })}
-      </div>
     </div>
   );
 };
