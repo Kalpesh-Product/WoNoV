@@ -451,7 +451,7 @@ const SalesDashboard = () => {
   }));
   const clientsDesksPieOptions = {
     labels: simplifiedClientsPie.map((item) => {
-      const label = item?.companyName || "Unknown";
+      const label = item?.companyName ? `${item.companyName}` : "Unknown";
       return label.length > 10 ? label.slice(0, 15) + "..." : label;
     }),
     chart: {
@@ -473,7 +473,9 @@ const SalesDashboard = () => {
 
     tooltip: {
       y: {
-        formatter: (val) => val,
+        formatter: (val) => {
+          return `${val} Desks`; // Explicitly return the formatted value
+        },
       },
     },
     legend: {
@@ -643,7 +645,8 @@ const SalesDashboard = () => {
           border
           normalCase
           title={"BIZ Nest SALES DEPARTMENT REVENUES FY 2024-25"}
-          TitleAmount={`INR ${inrFormat("20900000")}`}>
+          TitleAmount={`INR ${inrFormat("20900000")}`}
+        >
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
@@ -737,7 +740,8 @@ const SalesDashboard = () => {
           layout={1}
           title={"Monthly Unique Leads"}
           titleLabel={"FY 2024-25"}
-          border>
+          border
+        >
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
@@ -760,7 +764,8 @@ const SalesDashboard = () => {
           layout={1}
           title={"Sourcing Channels"}
           titleLabel={"FY 2024-25"}
-          border>
+          border
+        >
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
