@@ -344,7 +344,7 @@ const MaintenanceExpenses = () => {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
     legend: { position: "top" },
-    colors: ["#80bf01"],
+     colors: ["#54C4A7", "#EB5C45"],
   };
 
   return (

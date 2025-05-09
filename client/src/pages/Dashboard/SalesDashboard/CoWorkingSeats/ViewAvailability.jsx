@@ -18,11 +18,14 @@ import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import dayjs from "dayjs";
 import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable";
 import { KeyboardArrowDown } from "@mui/icons-material";
+import Card from "../../../../components/Card";
+import { useNavigate } from "react-router-dom";
+import DataCard from "../../../../components/DataCard";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useLocation } from "react-router-dom";
 
 const mockSalesData = {
-  totalDesks: 30,
+  totalDesks: 146,
   clientDetails: [
     {
       client: "WoNo",
@@ -85,7 +88,9 @@ const mockSalesData = {
     },
   ],
 };
-const totalOccupied = mockSalesData.clientDetails.reduce((sum,item)=>{return item.occupiedDesks + sum},0)
+const totalOccupied = mockSalesData.clientDetails.reduce((sum, item) => {
+  return item.occupiedDesks + sum;
+}, 0);
 
 const ViewAvailability = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -104,10 +109,10 @@ const ViewAvailability = () => {
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
   };
-  const location = useLocation()
+  const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const locationParam = params.get('location');
-  const floorParam = params.get('floor');
+  const locationParam = params.get("location");
+  const floorParam = params.get("floor");
 
   const handleViewDetails = (data) => {
     setOpenModal(true);
@@ -138,6 +143,7 @@ const ViewAvailability = () => {
     setViewDetails(rowData);
     setViewModalOpen(true);
   };
+
 
   return (
     <div className="p-4 flex flex-col gap-8">
@@ -202,64 +208,97 @@ const ViewAvailability = () => {
         </div>
       </div>
 
-        <WidgetSection title={`occupancy details of ${locationParam} - ${floorParam}`} border TitleAmount={`TOTAL OCCUPIED : ${totalOccupied} `}>
-          <CollapsibleTable
-            columns={[
-              { field: "client", headerName: "Client Name" },
-              { field: "occupiedDesks", headerName: "Occupied Desks" },
-              { field: "occupancyPercent", headerName: "Occupied %" },
-            ]}
-            data={mockSalesData?.clientDetails?.map((data, index) => ({
-              id: index, // Using index as a unique identifier
-              client: data.client || "",
-              occupiedDesks: data.occupiedDesks || "",
-              occupancyPercent:
-                ((data.occupiedDesks / mockSalesData.totalDesks) * 100).toFixed(
-                  0
-                ) || "",
-              memberDetails: data.memberDetails, // Pass memberDetails to the data for each row
-            }))} // Mapping through clientDetails
-            renderExpandedRow={(row) => {
-              if (!row?.memberDetails || !Array.isArray(row.memberDetails)) {
-                return <div>No member details available</div>; // Fallback message if no data
-              }
-
-              return (
-                <AgTable
-                  data={row.memberDetails.map((member, idx) => ({
-                    ...member,
-                    id: idx + 1,
-                    date: dayjs(
-                      new Date(member.date.split("-").reverse().join("-"))
-                    ).format("DD-MM-YYYY"),
-                  }))}
-                  hideFilter
-                  columns={[
-                    { field: "id", headerName: "Sr No", width: 100 },
-                    { field: "member", headerName: "Member Name", flex: 1 },
-                    { field: "date", headerName: "Date", flex: 1 },
-                    {
-                      headerName: "Action",
-                      field: "action",
-                      cellRenderer: (params) => (
-                        <div className="p-2 mb-2 flex gap-2">
-                          <span
-                            className="text-subtitle cursor-pointer"
-                            onClick={() => handleViewDetails(params.data)}
-                          >
-                            <MdOutlineRemoveRedEye />
-                          </span>
-                        </div>
-                      ),
-                    },
-                  ]}
-                  tableHeight={300}
-                />
-              );
-            }}
+      {/* 4 cards section start */}
+      <div className=" flex flex-col gap-4">
+        <WidgetSection layout={4} padding>
+          <DataCard
+            data={mockSalesData.totalDesks}
+            title={"Total Desks"}
+            description={`Last Month : Apr-25`}
+          />
+          <DataCard
+            data={"64"}
+            title={"Occupied Desks"}
+            description={`Last Month : Apr-25`}
+          />
+          <DataCard
+            data={"44"}
+            title={"Occupancy %"}
+            description={`Last Month : Apr-25`}
+          />
+          <DataCard
+            data={"82"}
+            title={"Free Desks"}
+            // description={`Last Month : ${new Date().toLocaleString("default", {
+            //   month: "short",
+            // })}-25`}
+            description={`Last Month : Apr-25`}
           />
         </WidgetSection>
- 
+      </div>
+      {/* 4 cards section end */}
+
+      <WidgetSection
+        title={`occupancy details of ${locationParam} - ${floorParam}`}
+        border
+        TitleAmount={`TOTAL OCCUPIED : ${totalOccupied} `}
+      >
+        <CollapsibleTable
+          columns={[
+            { field: "client", headerName: "Client Name" },
+            { field: "occupiedDesks", headerName: "Occupied Desks" },
+            { field: "occupancyPercent", headerName: "Occupied %" },
+          ]}
+          data={mockSalesData?.clientDetails?.map((data, index) => ({
+            id: index, // Using index as a unique identifier
+            client: data.client || "",
+            occupiedDesks: data.occupiedDesks || "",
+            occupancyPercent:
+              ((data.occupiedDesks / mockSalesData.totalDesks) * 100).toFixed(
+                0
+              ) || "",
+            memberDetails: data.memberDetails, // Pass memberDetails to the data for each row
+          }))} // Mapping through clientDetails
+          renderExpandedRow={(row) => {
+            if (!row?.memberDetails || !Array.isArray(row.memberDetails)) {
+              return <div>No member details available</div>; // Fallback message if no data
+            }
+
+            return (
+              <AgTable
+                data={row.memberDetails.map((member, idx) => ({
+                  ...member,
+                  id: idx + 1,
+                  date: dayjs(
+                    new Date(member.date.split("-").reverse().join("-"))
+                  ).format("DD-MM-YYYY"),
+                }))}
+                hideFilter
+                columns={[
+                  { field: "id", headerName: "Sr No", width: 100 },
+                  { field: "member", headerName: "Member Name", flex: 1 },
+                  { field: "date", headerName: "Date", flex: 1 },
+                  {
+                    headerName: "Action",
+                    field: "action",
+                    cellRenderer: (params) => (
+                      <div className="p-2 mb-2 flex gap-2">
+                        <span
+                          className="text-subtitle cursor-pointer"
+                          onClick={() => handleViewDetails(params.data)}
+                        >
+                          <MdOutlineRemoveRedEye />
+                        </span>
+                      </div>
+                    ),
+                  },
+                ]}
+                tableHeight={300}
+              />
+            );
+          }}
+        />
+      </WidgetSection>
 
       <MuiModal
         open={openModal}
