@@ -44,6 +44,9 @@ const {
   createAlternateRevenue,
   getAlternateRevenues,
 } = require("../controllers/salesControllers/alternateRevenuesControllers");
+const {
+  getMembersByUnit,
+} = require("../controllers/salesControllers/coworkingMemberControllers");
 
 //Coworking routes
 router.post("/onboard-co-working-client", createCoworkingClient);
@@ -71,11 +74,26 @@ router.post(
   bulkInsertVirtualOfficeClients
 );
 
+//Revenues
+router.post("/add-revenue", addRevenue);
+router.get("/fetch-revenues", getRevenues);
 router.get("/get-meeting-revenue", getMeetingRevenue);
 router.post("/create-meeting-revenue", createMeetingRevenue);
 router.patch("/update-meeting-revenue", updateMeetingRevenue);
-
 router.get("/get-alternate-revenue", getAlternateRevenues);
 router.post("/create-alternate-revenue", createAlternateRevenue);
+
+//Service routes
+router.post("/create-service", createClientService);
+router.get("/services", getClientServices);
+
+//Lead routes
+router.post("/create-lead", createLead);
+router.get("/leads", getLeads);
+router.post("/bulk-insert-leads", upload.single("leads"), bulkInsertLeads);
+
+//Desk routes
+router.get("/available-desks/:unitId", getAvailableDesks);
+router.get("/booked-desks/:serviceId", getBookedDesks);
 
 module.exports = router;
