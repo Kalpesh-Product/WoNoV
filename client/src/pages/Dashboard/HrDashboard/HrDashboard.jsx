@@ -99,53 +99,6 @@ const HrDashboard = () => {
       data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       group: "total",
     },
-    // {
-    //   name: "Tech Assigned",
-    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 30, 30],
-    //   group: "total",
-    // },
-
-    // {
-    //   name: "Admin Assigned",
-    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 10, 10],
-    //   group: "total",
-    // },
-    // {
-    //   name: "Maintainance Assigned",
-    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 5, 3],
-    //   group: "total",
-    // },
-    // {
-    //   name: "Space Completed",
-    //   data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    //   group: "space",
-    // },
-    // {
-    //   name: "Sales Completed",
-    //   data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 10, 10],
-    //   group: "completed",
-    // },
-    // {
-    //   name: "IT Completed",
-    //   data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 20, 10],
-    //   group: "completed",
-    // },
-
-    // {
-    //   name: "Tech Completed",
-    //   data: [45, 40, 30, 45, 50, 40, 55, 50, 60, 65, 30, 30],
-    //   group: "completed",
-    // },
-    // {
-    //   name: "Admin Completed",
-    //   data: [40, 30, 40, 52, 46, 40, 60, 59, 50, 70, 8, 10],
-    //   group: "completed",
-    // },
-    // {
-    //   name: "Maintainance Completed",
-    //   data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 4, 1],
-    //   group: "completed",
-    // },
   ];
 
   const expenseOptions = {
@@ -266,68 +219,7 @@ const HrDashboard = () => {
 
   //-------------------HR Expense graph end--------------------//
 
-  //-------------------Tasks vs Achievements graph--------------------//
-
-  // const rawSeries = [
-  //   {
-  //     name: "Sales Assigned",
-  //     data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 20, 15],
-  //     group: "total",
-  //   },
-  //   {
-  //     name: "IT Assigned",
-  //     data: [40, 45, 35, 50, 55, 45, 60, 55, 65, 70, 25, 10],
-  //     group: "total",
-  //   },
-  //   {
-  //     name: "Tech Assigned",
-  //     data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 30, 30],
-  //     group: "total",
-  //   },
-
-  //   {
-  //     name: "Admin Assigned",
-  //     data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 10, 10],
-  //     group: "total",
-  //   },
-  //   {
-  //     name: "Maintainance Assigned",
-  //     data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 5, 3],
-  //     group: "total",
-  //   },
-  //   {
-  //     name: "Space Completed",
-  //     data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  //     group: "space",
-  //   },
-  //   {
-  //     name: "Sales Completed",
-  //     data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 10, 10],
-  //     group: "completed",
-  //   },
-  //   {
-  //     name: "IT Completed",
-  //     data: [40, 45, 25, 40, 45, 35, 50, 45, 55, 60, 20, 10],
-  //     group: "completed",
-  //   },
-
-  //   {
-  //     name: "Tech Completed",
-  //     data: [45, 40, 30, 45, 50, 40, 55, 50, 60, 65, 30, 30],
-  //     group: "completed",
-  //   },
-  //   {
-  //     name: "Admin Completed",
-  //     data: [40, 30, 40, 52, 46, 40, 60, 59, 50, 70, 8, 10],
-  //     group: "completed",
-  //   },
-  //   {
-  //     name: "Maintainance Completed",
-  //     data: [45, 50, 40, 55, 60, 50, 65, 60, 70, 75, 4, 1],
-  //     group: "completed",
-  //   },
-  // ];
-
+  
   const tasksData = [
     {
       name: "Total Tasks",
@@ -345,11 +237,6 @@ const HrDashboard = () => {
       fontFamily: "Poppins-Regular",
       stacked: false,
       toolbar: { show: false },
-      // events: {
-      //   dataPointSelection: () => {
-      //     navigate("/app/tasks");
-      //   },
-      // },
     },
     plotOptions: {
       bar: {
@@ -405,74 +292,6 @@ const HrDashboard = () => {
     },
   };
 
-  // const options = {
-  //   chart: {
-  //     type: "bar",
-  //     toolbar: { show: false },
-
-  //     stacked: true,
-  //     fontFamily: "Poppins-Regular, Arial, sans-serif",
-  //     events: {
-  //       dataPointSelection: () => {
-  //         navigate("/app/tasks");
-  //       },
-  //     },
-  //   },
-  //   colors: ["#54C4A7", "#EB5C45"],
-  //   plotOptions: {
-  //     bar: {
-  //       horizontal: false,
-  //       columnWidth: "65%",
-  //       borderRadius: 2,
-  //       borderRadiusApplication: "none",
-  //     },
-  //   },
-  //   dataLabels: {
-  //     enabled: true, // Enable data labels
-  //   },
-  //   xaxis: {
-  //     categories: [
-  //       "Apr-24",
-  //       "May-24",
-  //       "Jun-24",
-  //       "Jul-24",
-  //       "Aug-24",
-  //       "Sep-24",
-  //       "Oct-24",
-  //       "Nov-24",
-  //       "Dec-24",
-  //       "Jan-25",
-  //       "Feb-25",
-  //       "Mar-25",
-  //     ],
-  //     title: {
-  //       text: "  ",
-  //     },
-  //   },
-  //   yaxis: {
-  //     max: 100,
-  //     title: { text: "Assigned vs Completed" },
-  //     labels: {
-  //       formatter: (val) => `${Math.round(val)}`,
-  //     },
-  //   },
-  //   fill: {
-  //     opacity: 1,
-  //   },
-  //   legend: {
-  //     show: true,
-  //     position: "top",
-  //   },
-
-  //   tooltip: {
-  //     y: {
-  //       formatter: (val, { seriesIndex, dataPointIndex }) => {
-  //         const rawData = rawSeries[seriesIndex]?.data[dataPointIndex];
-  //         return `${rawData} Tasks`;
-  //       },
-  //     },
-  //   },
-  // };
 
   //-------------------Tasks vs Achievements graph--------------------//
 
@@ -621,7 +440,7 @@ const HrDashboard = () => {
     },
     tooltip: {
       enabled: true,
-      custom: function ({ series, seriesIndex }) {
+      custom: function ({ seriesIndex }) {
         const item = genderData[seriesIndex]; // Use genderData to fetch the correct item
         return `
           <div style="padding: 5px; font-size: 12px;">
@@ -687,7 +506,7 @@ const HrDashboard = () => {
       {
         title: "Average Hours",
         value: averageWorkingHours
-          ? `${Number(averageWorkingHours) + 3.7}h`
+          ? `${((((Number(averageWorkingHours))/30)+3.4).toFixed(2))}h`
           : "0h",
       },
     ],
@@ -780,88 +599,11 @@ const HrDashboard = () => {
         </Suspense>,
       ],
     },
-    // {
-    //   layout: 1,
-    //   widgets: [
-    //     <Suspense
-    //       fallback={
-    //         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-
-    //           <Skeleton variant="text" width={200} height={30} />
-    //           <Skeleton variant="rectangular" width="100%" height={300} />
-    //         </Box>
-    //       }>
-    //       <WidgetSection
-    //         layout={1}
-    //         border
-    //         title={"BIZ Nest HR DEPARTMENT  EXPENSE FY 2024-25"}
-    //         // titleLabel={"FY 2024-25"}
-    //       >
-    //         {!isHrFinanceLoading ? (
-    //           // <BudgetGraph
-    //           //   utilisedData={hrFinance?.utilisedBudget}
-    //           //   maxBudget={hrFinance?.projectedBudget}
-    //           //   route={"finance/budget"}
-    //           // />
-    //           <HrExpenseGraph
-    //             utilisedData={hrFinance?.utilisedBudget}
-    //             maxBudget={hrFinance?.projectedBudget}
-    //             route={"finance/budget"}
-    //           />
-    //         ) : (
-    //           // <BarGraph
-    //           //   height={400}
-    //           //   data={averageBookingSeries}
-    //           //   options={averageBookingOptions}
-    //           // />
-    //           <Skeleton variant="rectangular" width="100%" height={300} />
-    //         )}
-    //       </WidgetSection>
-    //     </Suspense>,
-    //   ],
-    // },
     {
       layout: 2,
       widgets: [
         <FinanceCard titleCenter {...HrExpenses} />,
         <FinanceCard titleCenter {...HrAverageExpense} />,
-
-        // <DataCard
-        //   title="Average"
-        //   data="25"
-        //   description="Monthly Employees"
-        //   route={"employee/view-employees"}
-        // />,
-        // <DataCard
-        //   title="Average"
-        //   data="4%"
-        //   description="Monthly Attrition"
-        //   route={"employee/view-employees"}
-        // />,
-        // !isAttendanceLoading ? (
-        //   <DataCard
-        //     title="Average"
-        //     data={
-        //       averageAttendance
-        //         ? `${Number(averageAttendance).toFixed(0)}%`
-        //         : "0%"
-        //     }
-        //     description="Attendance"
-        //     route={"employee/view-employees"}
-        //   />
-        // ) : (
-        //   <Skeleton variant="rectangular" width="100%" height={"100%"} />
-        // ),
-        // !isAttendanceLoading ? (
-        //   <DataCard
-        //     title="Average"
-        //     data={averageWorkingHours ? `${averageWorkingHours}h` : "0h"}
-        //     description="Working Hours"
-        //     route={"employee/view-employees"}
-        //   />
-        // ) : (
-        //   <Skeleton variant="rectangular" width="100%" height={"100%"} />
-        // ),
       ],
     },
     {
@@ -943,13 +685,6 @@ const HrDashboard = () => {
             key={birthdays.length}
             Title="Current Months Birthday List"
             columns={columns}
-            // rows={[
-            //   ...[...dummyBirthdays, ...birthdays].map((bd, index) => ({
-            //     id: index + 1,
-            //     title: bd.title,
-            //     start: new Date(bd.start).toLocaleDateString(),
-            //   })),
-            // ]}
             rows={[
               ...[...dummyBirthdays, ...birthdays].map((bd, index) => {
                 const date = dayjs(bd.start);
@@ -961,7 +696,6 @@ const HrDashboard = () => {
                 };
               }),
             ]}
-            // rowsToDisplay={3}
             scroll
           />
         ) : (
@@ -971,11 +705,6 @@ const HrDashboard = () => {
         <MuiTable
           Title="Current Months Holiday List"
           columns={columns2}
-          // rows={holidayEvents.map((holiday, index) => ({
-          //   id: index + 1,
-          //   title: holiday.title,
-          //   start: new Date(holiday.start).toLocaleDateString(),
-          // }))}
           rows={holidayEvents.map((holiday, index) => {
             const date = dayjs(holiday.start);
             return {
@@ -985,7 +714,7 @@ const HrDashboard = () => {
               day: date.format("dddd"),
             };
           })}
-          rowsToDisplay={5}
+          rowsToDisplay={10}
           scroll
         />,
       ],

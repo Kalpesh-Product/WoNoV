@@ -31,6 +31,7 @@ import { setClientData, setLeadsData } from "../../../redux/slices/salesSlice";
 import { CircularProgress, Skeleton } from "@mui/material";
 import { SiCashapp } from "react-icons/si";
 import { useSidebar } from "../../../context/SideBarContext";
+import FinanceCard from "../../../components/FinanceCard";
 
 const SalesDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -46,7 +47,7 @@ const SalesDashboard = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [
     {
-      name: "Income",
+      name: "FY 2024-25",
       data: [
         1123500, // Nov
         1184200, // Oct
@@ -62,14 +63,6 @@ const SalesDashboard = () => {
         1823400, // Apr
       ],
     },
-
-    // {
-    //   name: "Expense",
-    //   data: [
-    //     8000, 10000, 7000, 12000, 13000, 11000, 12000, 12500, 25000, 15000,
-    //     16000, 17000,
-    //   ],
-    // },
   ];
   const incomeExpenseOptions = {
     chart: {
@@ -77,7 +70,7 @@ const SalesDashboard = () => {
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#4CAF50", "#F44336"], // Green for income, Red for expense
+    colors: ["#54C4A7", "#EB5C45"],
     plotOptions: {
       bar: {
         horizontal: false,
@@ -120,15 +113,20 @@ const SalesDashboard = () => {
       ],
     },
     yaxis: {
-      title: {
-        text: "Amount (INR)",
+      min: 0,
+      max: 2000000,
+      tickAmount: 4,
+      title: { text: "Amount In Lakhs (INR)" },
+      labels: {
+        formatter: (val) => val / 100000, // Converts value to Lakhs
       },
-      tickAmount: 7,
     },
+
     fill: {
       opacity: 1,
     },
     tooltip: {
+      enabled: false,
       y: {
         formatter: (val) => `INR ${inrFormat(val)}`,
       },
@@ -200,6 +198,64 @@ const SalesDashboard = () => {
         (item.cabinDesks ? item.cabinDesks : 0),
       0
     );
+
+  const RevenueData = {
+    cardTitle: "REVENUE",
+    descriptionData: [
+      {
+        title: "FY 2024-25",
+        value: "INR 2,09,00,000",
+      },
+      {
+        title: "March 2025",
+        value: "INR 18,23,400",
+      },
+      {
+        title: "Total Desks",
+        value: "589",
+      },
+      { title: "Active Sq Ft", value: "60,000" },
+      { title: "Per Sq. Ft.", value: "348" },
+    ],
+  };
+  const keyStatsData = {
+    cardTitle: "KEY STATS",
+    descriptionData: [
+      {
+        title: "Active Desks",
+        value: 589,
+      },
+      {
+        title: "Occupied Desks",
+        value: 582,
+      },
+      {
+        title: "Occupancy %",
+        value: "98",
+      },
+      { title: "Free Desks", value: "7" },
+      { title: "Unique Clients", value: "46" },
+    ],
+  };
+  const salesAverageData = {
+    cardTitle: "AVERAGE",
+    descriptionData: [
+      {
+        title: "Revenue",
+        value: "INR 17,41,666",
+      },
+      {
+        title: "Occupied Desks",
+        value: 553,
+      },
+      {
+        title: "Occupancy %",
+        value: "93",
+      },
+      { title: "Clients", value: "45" },
+      { title: "Provisioned Desks", value: "140" },
+    ],
+  };
 
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
   //-----------------------------------------------Conversion of leads into graph-----------------------------------------------------------//
@@ -367,6 +423,19 @@ const SalesDashboard = () => {
       fontFamily: "Poppins-Regular",
       toolbar: false,
     },
+    colors: [
+      "#0F172A", // deep navy blue
+      "#1E293B", // dark slate blue
+      "#1D4ED8", // vibrant blue (slightly electric)
+      "#2563EB", // crisp blue
+      "#3B82F6", // standard vivid blue
+      "#0284C7", // cyan-leaning blue
+      "#0369A1", // oceanic deep blue
+      "#0EA5E9", // bright cool blue
+      "#3A60B5", // bold steel blue
+      "#4C51BF", // indigo-tinged blue
+    ],
+
     tooltip: {
       y: {
         formatter: (val) => val,
@@ -436,7 +505,7 @@ const SalesDashboard = () => {
     },
     stroke: {
       show: true,
-      width: 4, // Increase for more "gap"
+      width: 2, // Increase for more "gap"
       colors: ["#ffffff"], // Or match background color
     },
     labels: filteredData.map((item) => {
@@ -448,6 +517,19 @@ const SalesDashboard = () => {
         formatter: (val) => `${((val / totalClients) * 100).toFixed(1)}%`, // Show as percentage
       },
     },
+    colors: [
+      "#1E3D73", // original
+      "#34528A", // slightly lighter
+      "#4A68A1", // medium shade
+      "#608DB8", // lighter
+      "#76A2CF", // even lighter
+      "#8CB8E6", // lightest acceptable for white bg
+      "#A0BFE6", // mid-light with good contrast
+      "#87A9D9", // moderate light blue
+      "#6D94CC", // slightly deeper pastel blue
+      "#537FBF", // transition shade before original
+    ],
+
     legend: {
       position: "right",
     },
@@ -524,12 +606,20 @@ const SalesDashboard = () => {
       widgets: [
         <WidgetSection
           border
-          title={"Annual Monthly Revenue"}
-          titleLabel={"FY 2024-25"}
+          normalCase
+          title={"BIZ Nest SALES DEPARTMENT REVENUES FY 2024-25"}
           TitleAmount={`INR ${inrFormat("20900000")}`}
         >
-          <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} />
+          <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} departments={["FY 2024-25", "FY 2025-26"]} />
         </WidgetSection>,
+      ],
+    },
+    {
+      layout: 3,
+      widgets: [
+        <FinanceCard titleCenter {...RevenueData} />,
+        <FinanceCard titleCenter {...keyStatsData} />,
+        <FinanceCard titleCenter {...salesAverageData} />,
       ],
     },
     {
@@ -554,52 +644,53 @@ const SalesDashboard = () => {
         />,
       ],
     },
-    {
-      layout: 3,
-      widgets: [
-        <DataCard
-          route={"co-working-seats"}
-          title={"Actual"}
-          data={`${((totalClientsDesks / totalCoWorkingSeats) * 100).toFixed(
-            0
-          )}%`}
-          // data={"96.32%"}
-          description={"Occupancy"}
-        />,
-        <DataCard
-          route={"revenue"}
-          title={"Total"}
-          data={"INR " + inrFormat("43050000")}
-          description={"Revenues"}
-        />,
-        <DataCard
-          route={"clients"}
-          title={"Unique"}
-          data={clientsData.length || "0"}
-          description={"Clients"}
-        />,
-        <DataCard
-          route={"co-working-seats"}
-          title={"Total"}
-          data={totalCoWorkingSeats}
-          // data={totalClientsDesks}
-          description={"Co-working Seats"}
-        />,
-        <DataCard
-          route={"co-working-seats"}
-          title={"Booked"}
-          data={totalClientsDesks}
-          // data={totalCoWorkingSeats}
-          description={"Co-working Seats"}
-        />,
-        <DataCard
-          route={"co-working-seats"}
-          title={"Free"}
-          data={totalCoWorkingSeats - totalClientsDesks}
-          description={"Co-working Seats"}
-        />,
-      ],
-    },
+
+    // {
+    //   layout: 3,
+    //   widgets: [
+    //     <DataCard
+    //       route={"co-working-seats"}
+    //       title={"Actual"}
+    //       data={`${((totalClientsDesks / totalCoWorkingSeats) * 100).toFixed(
+    //         0
+    //       )}%`}
+    //       // data={"96.32%"}
+    //       description={"Occupancy"}
+    //     />,
+    //     <DataCard
+    //       route={"revenue"}
+    //       title={"Total"}
+    //       data={"INR " + inrFormat("43050000")}
+    //       description={"Revenues"}
+    //     />,
+    //     <DataCard
+    //       route={"clients"}
+    //       title={"Unique"}
+    //       data={clientsData.length || "0"}
+    //       description={"Clients"}
+    //     />,
+    //     <DataCard
+    //       route={"co-working-seats"}
+    //       title={"Total"}
+    //       data={totalCoWorkingSeats}
+    //       // data={totalClientsDesks}
+    //       description={"Co-working Seats"}
+    //     />,
+    //     <DataCard
+    //       route={"co-working-seats"}
+    //       title={"Booked"}
+    //       data={totalClientsDesks}
+    //       // data={totalCoWorkingSeats}
+    //       description={"Co-working Seats"}
+    //     />,
+    //     <DataCard
+    //       route={"co-working-seats"}
+    //       title={"Free"}
+    //       data={totalCoWorkingSeats - totalClientsDesks}
+    //       description={"Co-working Seats"}
+    //     />,
+    //   ],
+    // },
 
     {
       layout: 1,

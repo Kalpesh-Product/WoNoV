@@ -27,7 +27,7 @@ const ViewClientLayout = () => {
   );
 
   return (
-    <div>
+    <div className="p-4">
       <Tabs
         value={activeTab}
         variant="fullWidth"

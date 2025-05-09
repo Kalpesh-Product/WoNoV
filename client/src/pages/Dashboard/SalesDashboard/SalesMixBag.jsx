@@ -11,31 +11,21 @@ const SalesMixBag = () => {
   const [search, setSearch] = useState("");
   const routes = [
     {
-      title: "Actual Occupancy",
+      title: "Occupancy",
       route:
-        "/app/dashboard/sales-dashboard/co-working-seats/check-availability",
+        "/app/dashboard/sales-dashboard/mix-bag/co-working-seats/check-availability",
     },
     {
-      title: "Total revenue",
+      title: "Revenue",
       route: "/app/dashboard/sales-dashboard/revenue",
     },
     {
-      title: "Unique Clients",
+      title: "Clients",
       route: "/app/dashboard/sales-dashboard/clients",
     },
     {
-      title: "Co-Working Seats",
+      title: "Desks",
       route: "/app/dashboard/sales-dashboard/co-working-seats",
-    },
-    {
-      title: "Booked",
-      route:
-        "/app/dashboard/sales-dashboard/co-working-seats/check-availability",
-    },
-    {
-      title: "Free",
-      route:
-        "/app/dashboard/sales-dashboard/co-working-seats/check-availability",
     },
   ];
 
@@ -65,7 +55,7 @@ const SalesMixBag = () => {
           }}
         />
       </div>
-      <WidgetSection key={filteredRoutes.length} layout={3} padding>
+      <WidgetSection key={filteredRoutes.length} layout={2} padding>
         {filteredRoutes.map((route, index) => {
           return <Card key={index} title={route.title} route={route.route} />;
         })}

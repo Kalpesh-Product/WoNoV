@@ -31,9 +31,9 @@ const ClientOnboarding = () => {
       hoState: "",
       unit: "",
       cabinDesks: "",
-      ratePerCabinDesk: "20",
+      ratePerCabinDesk: "10000",
       openDesks: "",
-      ratePerOpenDesk: "20",
+      ratePerOpenDesk: "8000",
       annualIncrement: "",
       perDeskMeetingCredits: "",
       totalMeetingCredits: "",
@@ -156,7 +156,12 @@ const ClientOnboarding = () => {
   };
 
   return (
-    <div className="h-[65vh] overflow-y-auto">
+    <div className="flex flex-col gap-4 overflow-y-auto p-4">
+      <div>
+        <span className="text-title uppercase text-primary font-pmedium">
+          client onboarding
+        </span>
+      </div>
       <form onSubmit={handleSubmit(onSubmit)} className="">
         <div className="flex gap-4">
           <Select
@@ -178,7 +183,7 @@ const ClientOnboarding = () => {
             <MenuItem value="Virtual Office">Virtual Office</MenuItem>
           </Select>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
             {/* Section: Basic Information */}
             <div className="py-4 border-b-default border-borderGray">
@@ -257,7 +262,7 @@ const ClientOnboarding = () => {
                         </MenuItem>
                       ))
                     ) : (
-                      <CircularProgress color="#1E3D73"/>
+                      <CircularProgress color="#1E3D73" />
                     )}
                   </TextField>
                 )}
@@ -282,54 +287,55 @@ const ClientOnboarding = () => {
                   </TextField>
                 )}
               />
-
-              <Controller
-                name="hoState"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    select
-                    label="State"
-                    onChange={(e) => {
-                      field.onChange(e);
-                      handleStateSelect(e.target.value);
-                    }}
-                    fullWidth
-                  >
-                    <MenuItem value="">Select a State</MenuItem>
-                    {states.map((item) => (
-                      <MenuItem value={item.isoCode} key={item.isoCode}>
-                        {item.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-              <Controller
-                name="hoCity"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    select
-                    label="City"
-                    fullWidth
-                  >
-                    <MenuItem value="">Select a State</MenuItem>
-                    {cities.map((item) => (
-                      <MenuItem
-                        value={item.name}
-                        key={`${item.name}-${item.stateCode}-${item.latitude}`}
-                      >
-                        {item.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                <Controller
+                  name="hoState"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      select
+                      label="State"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleStateSelect(e.target.value);
+                      }}
+                      fullWidth
+                    >
+                      <MenuItem value="">Select a State</MenuItem>
+                      {states.map((item) => (
+                        <MenuItem value={item.isoCode} key={item.isoCode}>
+                          {item.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+                <Controller
+                  name="hoCity"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      select
+                      label="City"
+                      fullWidth
+                    >
+                      <MenuItem value="">Select a State</MenuItem>
+                      {cities.map((item) => (
+                        <MenuItem
+                          value={item.name}
+                          key={`${item.name}-${item.stateCode}-${item.latitude}`}
+                        >
+                          {item.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              </div>
             </div>
           </div>
           <div>
@@ -366,22 +372,13 @@ const ClientOnboarding = () => {
                       ))
                     ) : (
                       <>
-                        <CircularProgress color="#1E3D73"/>
+                        <CircularProgress color="#1E3D73" />
                       </>
                     )}
                   </TextField>
                 )}
               />
-              <div>
-                <DetalisFormatted
-                  title={"Available Cabin Desks"}
-                  detail={
-                    availableCabinDesks.map(
-                      (item) => item.remainingCabinDesks
-                    ) || 2
-                  }
-                />
-              </div>
+
               <div className="flex gap-2">
                 <div className="w-1/2">
                   <Controller
@@ -424,16 +421,7 @@ const ClientOnboarding = () => {
                   />
                 </div>
               </div>
-              <div>
-                <DetalisFormatted
-                  title={"Available Open Desks"}
-                  detail={
-                    availableCabinDesks.map(
-                      (item) => item.remainingOpenDesks
-                    ) || 2
-                  }
-                />
-              </div>
+
               <div className="flex gap-2">
                 <div className="w-1/2">
                   <Controller
@@ -476,15 +464,6 @@ const ClientOnboarding = () => {
                   />
                 </div>
               </div>
-            </div>
-          </div>
-          <div>
-            <div className="py-4 border-b-default border-borderGray">
-              <span className="text-subtitle font-pmedium">
-                Commercial Terms
-              </span>
-            </div>
-            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
               <Controller
                 name="annualIncrement"
                 control={control}
@@ -518,23 +497,24 @@ const ClientOnboarding = () => {
                     />
                   )}
                 />
-                <Controller
-                  name="totalMeetingCredits"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      type="number"
-                      disabled
-                      label="Total Meeting Credits"
-                      fullWidth
-                    />
-                  )}
-                />
               </div>
+              <Controller
+                name="totalMeetingCredits"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    type="number"
+                    disabled
+                    label="Total Meeting Credits"
+                    fullWidth
+                  />
+                )}
+              />
             </div>
           </div>
+
           <div>
             <div className="py-4 border-b-default border-borderGray">
               <span className="text-subtitle font-pmedium">KYC</span>
@@ -726,43 +706,45 @@ const ClientOnboarding = () => {
                   />
                 )}
               />
-              <Controller
-                name="hOPocEmail"
-                control={control}
-                rules={{ required: "HO POC Email is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="HO POC Email"
-                    error={!!errors.hOPocEmail}
-                    helperText={errors.hOPocEmail?.message}
-                    fullWidth
-                  />
-                )}
-              />
-              <Controller
-                name="hOPocPhone"
-                control={control}
-                rules={{ required: "HO POC Phone is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="HO POC Phone"
-                    type="number"
-                    error={!!errors.hOPocPhone}
-                    helperText={errors.hOPocPhone?.message}
-                    fullWidth
-                  />
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                <Controller
+                  name="hOPocEmail"
+                  control={control}
+                  rules={{ required: "HO POC Email is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="HO POC Email"
+                      error={!!errors.hOPocEmail}
+                      helperText={errors.hOPocEmail?.message}
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="hOPocPhone"
+                  control={control}
+                  rules={{ required: "HO POC Phone is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="HO POC Phone"
+                      type="number"
+                      error={!!errors.hOPocPhone}
+                      helperText={errors.hOPocPhone?.message}
+                      fullWidth
+                    />
+                  )}
+                />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Submit Button */}
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-4 mt-4">
           <PrimaryButton
             type="submit"
             title={"Submit"}

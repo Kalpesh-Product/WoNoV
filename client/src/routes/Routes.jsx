@@ -1018,19 +1018,23 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "turnover",
-                        element: <EarningsLayout />,
-                        children: [
-                          {
-                            path: "actual-business",
-                            element: <ActualBusinessRevenue />,
-                          },
-
-                          {
-                            path: "revenue-target",
-                            element: <RevenueTarget />,
-                          },
-                        ],
+                        element: <ActualBusinessRevenue />,
                       },
+                      // {
+                      //   path: "turnover",
+                      //   element: <EarningsLayout />,
+                      //   children: [
+                      //     {
+                      //       path: "actual-business",
+                      //       element: <ActualBusinessRevenue />,
+                      //     },
+
+                      //     {
+                      //       path: "revenue-target",
+                      //       element: <RevenueTarget />,
+                      //     },
+                      //   ],
+                      // },
 
                       {
                         path: "unique-leads",
@@ -1059,12 +1063,24 @@ export const routes = createBrowserRouter([
                         element: <SalesMixBag />,
                       },
                       {
+                        path: "mix-bag/co-working-seats",
+                        element: <CoWorkingSeats />,
+                      },
+                      {
                         path: "co-working-seats",
                         element: <CoWorkingSeats />,
                       },
                       {
+                        path: "mix-bag/co-working-seats/check-availability",
+                        element: <CheckAvailability />,
+                      },
+                      {
                         path: "co-working-seats/check-availability",
                         element: <CheckAvailability />,
+                      },
+                      {
+                        path: "mix-bag/co-working-seats/view-availability",
+                        element: <ViewAvailability />,
                       },
                       {
                         path: "co-working-seats/view-availability",
@@ -1102,45 +1118,40 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "clients",
-                        element: <ClientsLayout />,
+                        element: <ViewClients />,
+                      },
+
+                      {
+                        path: "clients/:clientName",
+                        element: <ViewClientLayout />,
                         children: [
                           {
-                            path: "view-clients",
-                            index: true,
-                            element: <ViewClients />,
+                            path: "client-details",
+                            element: <ClientDetails />,
                           },
                           {
-                            path: "view-clients/:clientName",
-                            element: <ViewClientLayout />,
-                            children: [
-                              {
-                                path: "client-details",
-                                element: <ClientDetails />,
-                              },
-                              {
-                                path: "desks",
-                                element: <Desks />,
-                              },
-                              {
-                                path: "revenue",
-                                element: <ClientRevenue />,
-                              },
-                              {
-                                path: "members",
-                                element: <ClientMembers />,
-                              },
-                              {
-                                path: "members/view-member/:id",
-                                element: <MemberDetails />,
-                              },
-                            ],
+                            path: "desks",
+                            element: <Desks />,
                           },
                           {
-                            path: "client-onboarding",
-                            element: <ClientOnboarding />,
+                            path: "revenue",
+                            element: <ClientRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <ClientMembers />,
+                          },
+                          {
+                            path: "members/view-member/:id",
+                            element: <MemberDetails />,
                           },
                         ],
                       },
+                      {
+                        path: "clients/client-onboarding",
+                        element: <ClientOnboarding />,
+                      },
+
                       {
                         path: "settings",
                         element: <SalesSettings />,

@@ -54,7 +54,11 @@ export const calculateAverageDailyWorkingHours = (attendances, workingDays) => {
     if (!userTimeMap[userId]) {
       userTimeMap[userId] = 0;
     }
+    if (!userTimeMap[userId]) {
+      userTimeMap[userId] = 0;
+    }
 
+    userTimeMap[userId] += minutesWorked;
     userTimeMap[userId] += minutesWorked;
   });
 
