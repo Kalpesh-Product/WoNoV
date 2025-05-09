@@ -456,24 +456,38 @@ const ActualBusinessRevenue = () => {
     yaxis: {
       title: { text: "Revenue (INR)" },
       labels: {
-        formatter: (value) => `INR ${value.toLocaleString("en-IN")}`,
+        formatter: (value) => `${(value / 100000).toLocaleString("en-IN")}`,
       },
     },
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "30%",
+        columnWidth: "20%",
         borderRadius: 5,
+        dataLabels:{
+          position : "top"
+        }
       },
     },
+    dataLabels: {
+      enabled: true, // Make sure datalabels are enabled
+      formatter : (val)=> {return inrFormat(val)},
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+      offsetY: -22, // Apply the offset here directly
+    },
     tooltip: {
+      enabled : false,
       y: {
-        formatter: (value) => `INR ${value.toLocaleString("en-IN")}`,
+        formatter: (value) => `INR ${(value).toLocaleString("en-IN")}`,
       },
     },
     legend: { position: "top" },
-     colors: ["#54C4A7", "#EB5C45"],
+    colors: ["#54C4A7", "#EB5C45"],
   };
+  
 
   const tableData = selectedMonthData.domains.map((domain, index) => ({
     id: index,

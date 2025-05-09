@@ -141,7 +141,7 @@ const CheckAvailability = () => {
         </div>
 
         <PrimaryButton
-          title="Next"
+          title="Check Availability"
           type="submit"
           fontSize="text-content"
           externalStyles="w-48 mb-20"
