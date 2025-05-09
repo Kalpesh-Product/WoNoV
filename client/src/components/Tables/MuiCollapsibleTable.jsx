@@ -33,11 +33,11 @@ import {
           <TableHead>
             <TableRow className="font-pmedium">
               {enhancedColumns.map((col) => (
-                <TableCell align="center" key={col.field} sx={{ fontWeight: "bold", padding:'8px' }}>
+                <TableCell align="center" key={col.field} sx={{ fontWeight: "bold" }}>
                   {col.headerName}
                 </TableCell>
               ))}
-              <TableCell colSpan={1} sx={{ fontWeight: "bold", padding:'8px' }} />
+              <TableCell align="center" colSpan={1} sx={{ fontWeight: "bold", padding:'8px' }} >Actions</TableCell>
             </TableRow>
           </TableHead>
   
@@ -52,7 +52,7 @@ import {
                         {col.field === "_srNo" ? index + 1 : row[col.field]}
                       </TableCell>
                     ))}
-                    <TableCell colSpan={2}>
+                    <TableCell colSpan={1} align="center">
                       <IconButton size="small" onClick={() => toggleRow(rowId)}>
                         {openRows[rowId] ? (
                           <KeyboardArrowUp />

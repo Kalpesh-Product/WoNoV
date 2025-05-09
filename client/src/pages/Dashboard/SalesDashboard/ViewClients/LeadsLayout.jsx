@@ -8,9 +8,10 @@ import WidgetSection from "../../../../components/WidgetSection";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 
-const LeadsLayout = ({ hideAccordion, data }) => {
-  const navigate = useNavigate()
-  console.log(data)
+const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
+  const navigate = useNavigate();
+  console.log("From leads : ", data.length);
+
   // ✅ Dynamically Count Clients Per Domain
   const transformedData = data.map((monthData) => {
     const domainCounts = {
@@ -60,9 +61,9 @@ const LeadsLayout = ({ hideAccordion, data }) => {
       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: () => {
-          navigate("/app/dashboard/sales-dashboard/unique-clients")
-        }
-      }
+          navigate("/app/dashboard/sales-dashboard/unique-clients");
+        },
+      },
     },
     xaxis: {
       categories: financialYearMonths,
@@ -94,14 +95,20 @@ const LeadsLayout = ({ hideAccordion, data }) => {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <WidgetSection layout={1} border padding title={"Unique Clients"} titleLabel="FY 2024-25">
+      <WidgetSection
+        layout={1}
+        border
+        padding
+        title={"Unique Clients"}
+        titleLabel="FY 2024-25"
+        TitleAmount={additionalData || ""}
+      >
         <div className="p-1"></div>
         <BarGraph
           data={uniqueClientsData}
           title=""
           options={barChartOptions}
           height={400}
-          
         />
       </WidgetSection>
 
@@ -110,15 +117,14 @@ const LeadsLayout = ({ hideAccordion, data }) => {
         ""
       ) : (
         <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
+          <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
             <div className="flex justify-between items-center w-full px-4 py-2">
               <span className="text-sm text-muted font-pmedium text-title">
                 MONTH
               </span>
               <span className="px-8 text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              Total Unique Clients
+                Total Unique Clients
               </span>
-              
             </div>
           </div>
           {transformedData.map((data, index) => (
@@ -129,18 +135,20 @@ const LeadsLayout = ({ hideAccordion, data }) => {
               >
                 <div className="flex justify-between items-center w-full px-4">
                   <span className="text-subtitle font-medium">
-                  {dayjs(data.month, "MMMM-YY").format("MMM-YY")}
+                    {dayjs(data.month, "MMMM-YY").format("MMM-YY")}
                   </span>
                   <span className="px-8 text-subtitle font-medium">
-                   {data.clients.length}
+                    {data.clients.length}
                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 <AgTable
                   search={true}
-                  data={data.clients.map((client)=>({...client,date:dayjs(client.date).format("DD-MM-YYYY"),
-                    paymentStatus:"Paid"
+                  data={data.clients.map((client) => ({
+                    ...client,
+                    date: dayjs(client.date).format("DD-MM-YYYY"),
+                    paymentStatus: "Paid",
                   }))}
                   columns={tableColumns}
                   tableHeight={250}
