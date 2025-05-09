@@ -18,6 +18,10 @@ import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import dayjs from "dayjs";
 import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable";
 import { KeyboardArrowDown } from "@mui/icons-material";
+import WidgetSection from "../../../../components/WidgetSection";
+import Card from "../../../../components/Card";
+import { useNavigate } from "react-router-dom";
+import DataCard from "../../../../components/DataCard";
 
 const mockSalesData = [
   {
@@ -125,6 +129,34 @@ const ViewAvailability = () => {
     setViewModalOpen(true);
   };
 
+  // 4 cards start
+  const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+  const routes = [
+    {
+      title: "Total Desks: 120",
+    },
+    {
+      title: "Occupied Desks: 108",
+    },
+    {
+      title: "Occupancy %: 90%",
+    },
+    {
+      title: "Free Desks: 12",
+    },
+  ];
+
+  const handleSearch = (event) => {
+    setSearch(event.target.value);
+  };
+
+  const filteredRoutes = routes.filter((route) =>
+    route.title.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // 4 cards end
+
   return (
     <div className="p-4 flex flex-col gap-8">
       <div>
@@ -149,8 +181,7 @@ const ViewAvailability = () => {
                 "& .MuiTabs-scrollButtons": {
                   "&.Mui-disabled": { opacity: 0.3 },
                 },
-              }}
-            >
+              }}>
               <Tab label="Occupied" />
               <Tab label="Clear" />
             </Tabs>
@@ -160,8 +191,7 @@ const ViewAvailability = () => {
             <div className="py-4 text-center">
               <div
                 onClick={() => setImageOpen(true)}
-                className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg"
-              >
+                className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg">
                 <img
                   src={imagePreview}
                   alt="Occupied"
@@ -175,8 +205,7 @@ const ViewAvailability = () => {
             <div className="py-4 text-center">
               <div
                 onClick={() => setClearedImageOpen(true)}
-                className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg"
-              >
+                className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg">
                 <img
                   src={clearedImagePreview}
                   alt="Clear"
@@ -187,6 +216,53 @@ const ViewAvailability = () => {
           )}
         </div>
       </div>
+
+      {/* 4 cards section start */}
+      <div className=" flex flex-col gap-4">
+        {/* <div>
+          <TextField
+            label="Search"
+            name="search"
+            variant="outlined"
+            size="small"
+            value={search}
+            onChange={handleSearch}
+            placeholder="Search"
+            InputProps={{
+              startAdornment: (
+                <IoIosSearch size={20} style={{ marginRight: 8 }} />
+              ),
+            }}
+          />
+        </div> */}
+        <WidgetSection layout={4} padding>
+          <DataCard
+            data={"126"}
+            title={"Total Desks"}
+            description={`Last Month : Apr-25`}
+          />
+          <DataCard
+            data={"64"}
+            title={"Occupied Desks"}
+            description={`Last Month : Apr-25`}
+          />
+          <DataCard
+            data={"51"}
+            title={"Occupancy %"}
+            description={`Last Month : Apr-25`}
+          />
+          <DataCard
+            data={"62"}
+            title={"Free Desks"}
+            // description={`Last Month : ${new Date().toLocaleString("default", {
+            //   month: "short",
+            // })}-25`}
+            description={`Last Month : Apr-25`}
+          />
+        </WidgetSection>
+      </div>
+      {/* 4 cards section end */}
+
       {/* aCCordion section */}
       <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
         <CollapsibleTable
@@ -216,8 +292,7 @@ const ViewAvailability = () => {
                     <div className="p-2 mb-2 flex gap-2">
                       <span
                         className="text-subtitle cursor-pointer"
-                        onClick={() => handleViewDetails(params.data)}
-                      >
+                        onClick={() => handleViewDetails(params.data)}>
                         <MdOutlineRemoveRedEye />
                       </span>
                     </div>
@@ -236,8 +311,7 @@ const ViewAvailability = () => {
         onClose={() => {
           setOpenModal(false);
           setMemberDetails({});
-        }}
-      >
+        }}>
         <div className="grid grid-cols-2 gap-8 px-2 pb-8 border-b-default border-borderGray">
           <div className="flex items-center justify-between">
             <span className="text-content">Member Name</span>
@@ -275,8 +349,7 @@ const ViewAvailability = () => {
       <MuiModal
         open={imageOpen}
         onClose={() => setImageOpen(false)}
-        title={"Upload occupied space"}
-      >
+        title={"Upload occupied space"}>
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
@@ -294,8 +367,7 @@ const ViewAvailability = () => {
       <MuiModal
         open={clearedImageOpen}
         onClose={() => setClearedImageOpen(false)}
-        title={"Upload clear space"}
-      >
+        title={"Upload clear space"}>
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
