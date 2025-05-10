@@ -27,7 +27,9 @@ const FinanceDashboard = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [
     {
+      // name: "FY 2024-25",
       name: "Income",
+      group: "FY 2024-25",
       data: [
         1550000, // Jan - stable start
         1620000, // Feb
@@ -44,7 +46,9 @@ const FinanceDashboard = () => {
       ],
     },
     {
+      // name: "FY 2024-25",
       name: "Expense",
+      group: "FY 2024-25",
       data: [
         950000, // Jan
         1000000, // Feb
@@ -109,7 +113,10 @@ const FinanceDashboard = () => {
     },
     yaxis: {
       title: {
-        text: "Amount (INR)",
+        text: "Amount In Lakhs (INR)",
+      },
+      labels: {
+        formatter: (val) => `${Math.round(val / 100000)}`,
       },
       tickAmount: 4,
     },
@@ -457,10 +464,15 @@ const FinanceDashboard = () => {
       layout: 1,
       widgets: [
         <WidgetSection
+          normalCase
           border
-          title={"Income v/s Expenses"}
+          title={"BIZ Nest INCOME V/S EXPENSES"}
           titleLabel={"FY 2024-25"}>
-          <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} />
+          <BarGraph
+            data={incomeExpenseData}
+            options={incomeExpenseOptions}
+            // departments={["FY 2024-25", "FY 2025-26"]}
+          />
         </WidgetSection>,
       ],
     },

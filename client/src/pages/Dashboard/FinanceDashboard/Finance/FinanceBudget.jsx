@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import LayerBarGraph from "../../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
@@ -21,11 +21,15 @@ import { FormControl, MenuItem, Select, TextField } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { inrFormat } from "../../../../utils/currencyFormat";
+import BarGraph from "../../../../components/graphs/BarGraph";
+import { transformBudgetData } from "../../../../utils/transformBudgetData";
 
 const FinanceBudget = () => {
   const axios = useAxiosPrivate();
-    const [openModal, setOpenModal] = useState(false);
- const { control, handleSubmit, reset } = useForm({
+  const [openModal, setOpenModal] = useState(false);
+  const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       expanseName: "",
       expanseType: "",
@@ -48,7 +52,7 @@ const FinanceBudget = () => {
   //   },
   // });
 
-  const hrFinance = [
+  const hrFinancex = [
     // April 2024
     {
       _id: 1,
@@ -724,7 +728,7 @@ const FinanceBudget = () => {
   };
 
   // Transform data into the required format
-  const groupedData = hrFinance.reduce((acc, item) => {
+  const groupedData = hrFinancex.reduce((acc, item) => {
     const month = dayjs(item.dueDate).format("MMMM YYYY"); // Extracting month and year
 
     if (!acc[month]) {
@@ -790,15 +794,164 @@ const FinanceBudget = () => {
     })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
-      const onSubmit = (data) => {
-        setOpenModal(false);
-        toast.success("Budget Requested succesfully");
-        reset();
-      };
+  const onSubmit = (data) => {
+    setOpenModal(false);
+    toast.success("Budget Requested succesfully");
+    reset();
+  };
+
+  // BUDGET NEW START
+
+  const [isReady, setIsReady] = useState(false);
+
+  // const [openModal, setOpenModal] = useState(false);
+  const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+    queryKey: ["hrFinance"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798bacce469e809084e24a1`
+        );
+        const budgets = response.data.allBudgets;
+        return Array.isArray(budgets) ? budgets : [];
+      } catch (error) {
+        console.error("Error fetching budget:", error);
+        return [];
+      }
+    },
+  });
+
+  const budgetBar = useMemo(() => {
+    if (isHrLoading || !Array.isArray(hrFinance)) return null;
+    return transformBudgetData(hrFinance);
+  }, [isHrLoading, hrFinance]);
+
+  useEffect(() => {
+    if (!isHrLoading) {
+      const timer = setTimeout(() => setIsReady(true), 1000);
+      return () => clearTimeout(timer); // Cleanup on unmount
+    }
+  }, [isHrLoading]);
+
+  const expenseRawSeries = useMemo(() => {
+    return [
+      {
+        name: "FY 2024-25",
+        data: budgetBar?.utilisedBudget || [],
+        group: "total",
+      },
+      {
+        name: "FY 2025-26",
+        data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        group: "total",
+      },
+    ];
+  }, [budgetBar]);
+
+  const expenseOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+
+      stacked: true,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+      events: {
+        dataPointSelection: () => {
+          navigate("finance/budget");
+        },
+      },
+    },
+    colors: ["#54C4A7", "#EB5C45"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+        borderRadiusApplication: "none",
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => {
+        return inrFormat(val);
+      },
+
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+      offsetY: -22,
+    },
+    xaxis: {
+      categories: [
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
+      ],
+      title: {
+        text: "  ",
+      },
+    },
+    yaxis: {
+      // max: 3000000,
+      title: { text: "Amount In Lakhs (INR)" },
+      labels: {
+        formatter: (val) => `${Math.round(val / 1000)}`,
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
+
+    tooltip: {
+      enabled: true,
+      custom: function ({ series, seriesIndex, dataPointIndex }) {
+        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
+        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
+        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
+        //     </div>`;
+        return `
+              <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
+          
+                <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
+                  <div><strong>Finance Expense:</strong></div>
+                  <div style="width: 10px;"></div>
+               <div style="text-align: left;">INR ${Math.round(
+                 rawData
+               ).toLocaleString("en-IN")}</div>
+  
+                </div>
+       
+              </div>
+            `;
+      },
+    },
+  };
+
+  const totalUtilised =
+    budgetBar?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+  const navigate = useNavigate();
+  // BUDGET NEW END
 
   return (
     <div className="flex flex-col gap-8">
-      <WidgetSection
+      {/* <WidgetSection
         layout={1}
         titleLabel={"FY 2024-25"}
         title={"BUDGET"}
@@ -807,6 +960,20 @@ const FinanceBudget = () => {
           utilisedData={utilisedData}
           maxBudget={maxBudget}
           route={"finance/budget"}
+        />
+      </WidgetSection> */}
+      <WidgetSection
+        normalCase
+        layout={1}
+        border
+        padding
+        titleLabel={"FY 2024-25"}
+        TitleAmount={`INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`}
+        title={"BIZ Nest FINANCE DEPARTMENT EXPENSE"}>
+        <BarGraph
+          data={expenseRawSeries}
+          options={expenseOptions}
+          departments={["FY 2024-25", "FY 2025-26"]}
         />
       </WidgetSection>
 
@@ -854,130 +1021,130 @@ const FinanceBudget = () => {
       </div>
 
       <AllocatedBudget financialData={financialData} />
-       <MuiModal
-              title="Request Budget"
-              open={openModal}
-              onClose={() => setOpenModal(false)}>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                {/* Expense Name */}
-                <Controller
-                  name="expanseName"
-                  control={control}
-                  rules={{ required: "Expense name is required" }}
-                  render={({ field, fieldState }) => (
-                    <TextField
-                      {...field}
-                      label="Expense Name"
-                      fullWidth
-                      size="small"
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
-                    />
-                  )}
-                />
-      
-                {/* Expense Type */}
-                <Controller
-                  name="expanseType"
-                  control={control}
-                  rules={{ required: "Expense type is required" }}
-                  render={({ field, fieldState }) => (
-                    <FormControl fullWidth error={!!fieldState.error}>
-                      <Select {...field} size="small" displayEmpty>
-                        <MenuItem value="" disabled>
-                          Select Expense Type
-                        </MenuItem>
-                        <MenuItem value="Internal">Internal</MenuItem>
-                        <MenuItem value="External">External</MenuItem>
-                      </Select>
-                    </FormControl>
-                  )}
-                />
-      
-                {/* Amount */}
-                <Controller
-                  name="projectedAmount"
-                  control={control}
-                  rules={{
-                    required: "Amount is required",
-                    pattern: {
-                      value: /^[0-9]+(\.[0-9]{1,2})?$/,
-                      message: "Enter a valid amount",
+      <MuiModal
+        title="Request Budget"
+        open={openModal}
+        onClose={() => setOpenModal(false)}>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Expense Name */}
+          <Controller
+            name="expanseName"
+            control={control}
+            rules={{ required: "Expense name is required" }}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Expense Name"
+                fullWidth
+                size="small"
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+              />
+            )}
+          />
+
+          {/* Expense Type */}
+          <Controller
+            name="expanseType"
+            control={control}
+            rules={{ required: "Expense type is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Expense Type
+                  </MenuItem>
+                  <MenuItem value="Internal">Internal</MenuItem>
+                  <MenuItem value="External">External</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          {/* Amount */}
+          <Controller
+            name="projectedAmount"
+            control={control}
+            rules={{
+              required: "Amount is required",
+              pattern: {
+                value: /^[0-9]+(\.[0-9]{1,2})?$/,
+                message: "Enter a valid amount",
+              },
+            }}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Projected Amount"
+                fullWidth
+                size="small"
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+              />
+            )}
+          />
+
+          {/* Due Date */}
+          <Controller
+            name="dueDate"
+            control={control}
+            rules={{ required: "Due date is required" }}
+            render={({ field, fieldState }) => (
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  {...field}
+                  label="Due Date"
+                  format="DD-MM-YYYY"
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) =>
+                    field.onChange(date ? date.toISOString() : null)
+                  }
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      size: "small",
+                      error: !!fieldState.error,
+                      helperText: fieldState.error?.message,
                     },
                   }}
-                  render={({ field, fieldState }) => (
-                    <TextField
-                      {...field}
-                      label="Projected Amount"
-                      fullWidth
-                      size="small"
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
-                    />
-                  )}
                 />
-      
-                {/* Due Date */}
-                <Controller
-                  name="dueDate"
-                  control={control}
-                  rules={{ required: "Due date is required" }}
-                  render={({ field, fieldState }) => (
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <DatePicker
-                        {...field}
-                        label="Due Date"
-                        format="DD-MM-YYYY"
-                        value={field.value ? dayjs(field.value) : null}
-                        onChange={(date) =>
-                          field.onChange(date ? date.toISOString() : null)
-                        }
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            size: "small",
-                            error: !!fieldState.error,
-                            helperText: fieldState.error?.message,
-                          },
-                        }}
-                      />
-                    </LocalizationProvider>
-                  )}
-                />
+              </LocalizationProvider>
+            )}
+          />
 
-                {/* Due Date */}
-                <Controller
-                  name="dueDate"
-                  control={control}
-                  rules={{ required: "Due date is required" }}
-                  render={({ field, fieldState }) => (
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <DatePicker
-                        {...field}
-                        label="Due Date"
-                        format="DD-MM-YYYY"
-                        value={field.value ? dayjs(field.value) : null}
-                        onChange={(date) =>
-                          field.onChange(date ? date.toISOString() : null)
-                        }
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            size: "small",
-                            error: !!fieldState.error,
-                            helperText: fieldState.error?.message,
-                          },
-                        }}
-                      />
-                    </LocalizationProvider>
-                  )}
+          {/* Due Date */}
+          <Controller
+            name="dueDate"
+            control={control}
+            rules={{ required: "Due date is required" }}
+            render={({ field, fieldState }) => (
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  {...field}
+                  label="Due Date"
+                  format="DD-MM-YYYY"
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) =>
+                    field.onChange(date ? date.toISOString() : null)
+                  }
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      size: "small",
+                      error: !!fieldState.error,
+                      helperText: fieldState.error?.message,
+                    },
+                  }}
                 />
-                <div className="flex justify-center items-center">
-                  {/* Submit Button */}
-                  <PrimaryButton type={"submit"} title={"Submit"} />
-                </div>
-              </form>
-            </MuiModal>
+              </LocalizationProvider>
+            )}
+          />
+          <div className="flex justify-center items-center">
+            {/* Submit Button */}
+            <PrimaryButton type={"submit"} title={"Submit"} />
+          </div>
+        </form>
+      </MuiModal>
     </div>
   );
 };
