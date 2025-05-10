@@ -522,7 +522,7 @@ const VirtualOffice = () => {
         },
       },
     },
-     colors: ["#54C4A7", "#EB5C45"],
+     colors: ["#11daf5"],
   };
 
   const totalActual = monthlyRevenueData.reduce(

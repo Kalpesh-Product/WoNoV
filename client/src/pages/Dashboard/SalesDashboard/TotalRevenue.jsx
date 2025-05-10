@@ -114,7 +114,7 @@ const TotalRevenue = () => {
     colors: [
       "#1E3D73", // Dark Blue (Co-Working)
       "#2196F3", // Bright Blue (Meetings)
-      "#98F5E1", // Light Mint Green (Virtual Office)
+      "#11daf5", // Light Mint Green (Virtual Office)
       "#00BCD4", // Cyan Blue (Workation)
       "#1976D2", // Medium Blue (Alt Revenues)
     ],

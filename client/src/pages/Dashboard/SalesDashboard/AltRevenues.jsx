@@ -297,11 +297,10 @@ const AltRevenues = () => {
     yaxis: {
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => `${((val/100000).toLocaleString())}`,
+        formatter: (val) => `${(val / 100000).toLocaleString()}`,
       },
     },
     tooltip: {
-      
       y: {
         formatter: (val) => `${val.toLocaleString()} INR`,
       },
@@ -315,7 +314,7 @@ const AltRevenues = () => {
         },
       },
     },
-     colors: ["#54C4A7", "#EB5C45"],
+    colors: ["#1976D2"],
   };
 
   const totalActual = monthlyRevenueData.reduce(

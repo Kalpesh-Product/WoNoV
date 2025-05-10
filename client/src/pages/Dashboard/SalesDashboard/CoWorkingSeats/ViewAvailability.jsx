@@ -104,6 +104,13 @@ const ViewAvailability = () => {
   const locationParam = params.get("location");
   const floorParam = params.get("floor");
   const axios = useAxiosPrivate();
+  
+  const formatUnitDisplay = (unitNo, buildingName) => {
+    const match = unitNo.match(/^(\d+)\(?([A-Za-z]*)\)?$/);
+    if (!match) return `${unitNo} ${buildingName}`;
+    const [_, number, letter] = match;
+    return `${number}${letter ? ` - ${letter}` : ""} `;
+  };
 
   const handleViewDetails = (data) => {
     setOpenModal(true);
@@ -167,6 +174,7 @@ const ViewAvailability = () => {
     // Display error message if data fetching fails
     return <div className="h-screen flex justify-center items-center">No Data Available</div>;
   }
+  console.log(formatUnitDisplay(floorParam))
 
   return (
     <div className="p-4 flex flex-col gap-8">
@@ -262,7 +270,7 @@ const ViewAvailability = () => {
       {/* 4 cards section end */}
 
       <WidgetSection
-        title={`occupancy details of ${locationParam} - ${floorParam}`}
+        title={`occupancy details of ${formatUnitDisplay(floorParam)} ${locationParam}`}
         border
         TitleAmount={`TOTAL OCCUPIED : ${totalOccupied} `}
       >

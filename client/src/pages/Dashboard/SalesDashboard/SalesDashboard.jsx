@@ -213,7 +213,7 @@ const SalesDashboard = () => {
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
-        title: "Total Desks",
+        title: "Closing Desks",
         value: "589",
         route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
@@ -233,7 +233,7 @@ const SalesDashboard = () => {
     cardTitle: "KEY STATS",
     descriptionData: [
       {
-        title: "Active Desks",
+        title: "Opening Desks",
         value: 589,
         route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
@@ -249,7 +249,7 @@ const SalesDashboard = () => {
           "/app/dashboard/sales-dashboard/co-working-seats/check-availability",
       },
       {
-        title: "Free Desks",
+        title: "Current Free Desks",
         value: "7",
         route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
