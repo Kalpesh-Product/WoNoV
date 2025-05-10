@@ -524,7 +524,7 @@ const CoWorking = () => {
         },
       },
     },
-     colors: ["#54C4A7", "#EB5C45"],
+     colors: ["#1E3D73"],
   };
   const totalActual = monthlyRevenueData.reduce((sum, month) => {
     return (

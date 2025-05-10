@@ -450,7 +450,7 @@ const MeetingRevenue = () => {
       },
       
     },
-     colors: ["#54C4A7", "#EB5C45"],
+     colors: ["#2196F3"],
   };
 
   const totalActual = monthlyMeetingeData.reduce(

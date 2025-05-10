@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import { Chip, CircularProgress } from "@mui/material";
 import BarGraph from "../../../components/graphs/BarGraph";
@@ -17,7 +17,7 @@ const ViewClients = () => {
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
   const clientsData = useSelector((state) => state.sales.clientsData);
-  console.log("Clients data : ", clientsData)
+  const location = useLocation()
 
   useEffect(() => {
     const fetchSourceIfEmpty = async () => {
@@ -36,9 +36,17 @@ const ViewClients = () => {
 
   const handleClickRow = (clientData) => {
     dispatch(setSelectedClient(clientData));
-    navigate(
-      `/app/dashboard/sales-dashboard/clients/${clientData.clientName}`
-    );
+    const isMixBag = location.pathname.includes("mix-bag");
+    const isRevenueBasePath = location.pathname.endsWith("/clients") || location.pathname.endsWith("/clients/");
+  
+    if (isMixBag && isRevenueBasePath) {
+      navigate(`/app/dashboard/sales-dashboard/mix-bag/clients/${clientData.clientName}`, { replace: true });
+    } else if (!isMixBag && isRevenueBasePath) {
+      navigate(
+        `/app/dashboard/sales-dashboard/clients/${clientData.clientName}`
+      );
+    }
+    
   };
 
   const viewEmployeeColumns = [
