@@ -16,7 +16,6 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import BudgetGraph from "../../../../components/graphs/BudgetGraph";
 import { Button } from "@mui/material";
-import { Upload, UploadFileOutlined, UploadTwoTone } from "@mui/icons-material";
 
 const DeptWiseBudgetDetails = () => {
   const axios = useAxiosPrivate();
