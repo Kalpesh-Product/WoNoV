@@ -4,8 +4,75 @@ import AgTable from "../../../components/AgTable";
 import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
 
 const VirtualOffice = () => {
+
+   const axios = useAxiosPrivate();
+    const { data: virtualOfficeRevenue, isLoading: isLoadingVirtualOfficeRevenue = [] } = useQuery({
+      queryKey: ["virtualOfficeRevenue"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(`/api/sales/get-virtual-office-revenue`);
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response.data.message);
+        }
+      },
+    });
+
+const transformRevenues = (revenues) => {
+  const monthlyMap = new Map();
+  
+  revenues.forEach((item) => {
+    const rentDate = new Date(item.rentDate);
+    const monthKey = rentDate.toLocaleString("default", {
+      month: "short",
+      year: "2-digit",
+    });
+
+    const projected =  item.projectedRevenue || 0
+    const actual =  item.actualRevenue || 0;
+
+    if (!monthlyMap.has(monthKey)) {
+      monthlyMap.set(monthKey, {
+        month: monthKey,
+        projected: 0,
+        clients: [],
+      });
+    }
+ 
+    const monthData = monthlyMap.get(monthKey);
+    monthData.actual += actual;
+
+    console.log("monthData",monthData)
+    monthData.clients.push({
+      clientName: item.clientName,
+      revenue: projected,
+      channel: item.channel,
+      actualRevenue: actual,
+      status: item.status || "Paid",
+      // recievedDate: "",
+      // dueDate: "",
+    });
+  });
+
+  return Array.from(monthlyMap.values()).map((monthData) => ({
+    ...monthData,
+    actual: Math.round(monthData.projected * 100) / 100,
+  }));
+};
+
+// Memoize or recompute transformed data only when API data is loaded
+const transformRevenuesData = useMemo(() => {
+  if (isLoadingVirtualOfficeRevenue || !virtualOfficeRevenue) return [];
+  return transformRevenues(virtualOfficeRevenue);
+}, [virtualOfficeRevenue, isLoadingVirtualOfficeRevenue]);
+
+
+
   const monthlyRevenueData = [
     {
       month: "Apr-24",
@@ -559,6 +626,33 @@ const VirtualOffice = () => {
     };
   });
 
+  //  const revenueData = virtualOfficeRevenue.map((monthData, index) => {
+  //   const totalRevenue = monthData.clients.reduce(
+  //     (sum, c) => sum + c.actualRevenue,
+  //     0
+  //   );
+  //   return {
+  //     id: index,
+  //     month: monthData.month,
+  //     revenue: `INR ${totalRevenue.toLocaleString()}`,
+  //     clients: monthData.clients.map((client, i) => ({
+  //       id: i + 1,
+  //       clientName: client.clientName,
+  //       revenue: `${client.revenue.toLocaleString()}`,
+  //       status: client.status,
+  //       term: client.term,
+  //       expiry: client.expiry,
+  //       recievedDate: dayjs(client.recievedDate).format("DD-MM-YYYY"),
+  //       dueDate: dayjs(client.dueDate).format("DD-MM-YYYY"),
+  //     })),
+  //   };
+  // });
+
+useEffect(() => {
+  console.log("transformRevenuesData", transformRevenuesData);
+}, [transformRevenuesData]);
+
+
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
@@ -581,7 +675,7 @@ const VirtualOffice = () => {
             { headerName: "Month", field: "month" },
             { headerName: "Revenue (INR)", field: "revenue" },
           ]}
-          data={tableData}
+          data={transformRevenuesData}
           renderExpandedRow={(row) => (
             <AgTable
               data={row.clients}
@@ -590,10 +684,10 @@ const VirtualOffice = () => {
                 { headerName: "Client Name", field: "clientName", flex: 1 },
                 { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
                 { headerName: "Status", field: "status", flex: 1 },
-                { headerName: "Term (months)", field: "term", flex: 1 },
-                { headerName: "Expiry (months)", field: "expiry", flex: 1 },
-                { headerName: "Received Date", field: "recievedDate", flex: 1 },
-                { headerName: "Due Date", field: "dueDate", flex: 1 },
+                // { headerName: "Term (months)", field: "term", flex: 1 },
+                // { headerName: "Expiry (months)", field: "expiry", flex: 1 },
+                // { headerName: "Received Date", field: "recievedDate", flex: 1 },
+                // { headerName: "Due Date", field: "dueDate", flex: 1 },
               ]}
               tableHeight={300}
               hideFilter
