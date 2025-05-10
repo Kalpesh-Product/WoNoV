@@ -52,6 +52,10 @@ const {
 const {
   getMembersByUnit,
 } = require("../controllers/salesControllers/coworkingMemberControllers");
+const {
+  getVirtualOfficeRevenue,
+  createVirtualOfficeRevenue,
+} = require("../controllers/salesControllers/virtualOfficeRevenueControllers");
 
 //Coworking routes
 router.post("/onboard-co-working-client", createCoworkingClient);
@@ -87,7 +91,8 @@ router.post("/create-meeting-revenue", createMeetingRevenue);
 router.patch("/update-meeting-revenue", updateMeetingRevenue);
 router.get("/get-alternate-revenue", getAlternateRevenues);
 router.post("/create-alternate-revenue", createAlternateRevenue);
-
+router.get("/get-virtual-office-revenue", getVirtualOfficeRevenue);
+router.post("/create-virtual-office-revenue", createVirtualOfficeRevenue);
 router.get("/get-workation-revenue", getWorkationRevenues);
 router.post("/create-workation-revenue", createWorkationRevenue);
 
