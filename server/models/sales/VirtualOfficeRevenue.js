@@ -17,7 +17,7 @@ const virtualOfficeRevenue = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    client: {
+    clientName: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "VirtualOfficeClient",
     },

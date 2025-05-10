@@ -26,20 +26,23 @@ const VirtualOffice = () => {
 const transformRevenues = (revenues) => {
   const monthlyMap = new Map();
   
-  revenues.forEach((item) => {
+  revenues.forEach((item,index) => {
     const rentDate = new Date(item.rentDate);
-    const monthKey = rentDate.toLocaleString("default", {
-      month: "short",
-      year: "2-digit",
-    });
+  const monthKey = `${rentDate.toLocaleString("default", { month: "short" })}-${rentDate
+  .getFullYear()
+  .toString()
+  .slice(-2)}`;
 
-    const projected =  item.projectedRevenue || 0
-    const actual =  item.actualRevenue || 0;
+
+    // const projected = parseFloat(item.projectedRevenue.replace(/,/g, ""))|| 0
+     const actual = parseFloat(String(item.actualRevenue).replace(/,/g, "")) || 0;
+
+  
 
     if (!monthlyMap.has(monthKey)) {
       monthlyMap.set(monthKey, {
         month: monthKey,
-        projected: 0,
+        actual: 0,
         clients: [],
       });
     }
@@ -47,12 +50,10 @@ const transformRevenues = (revenues) => {
     const monthData = monthlyMap.get(monthKey);
     monthData.actual += actual;
 
-    console.log("monthData",monthData)
     monthData.clients.push({
-      clientName: item.clientName,
-      revenue: projected,
+      clientName: item.clientName.clientName,
+      revenue: inrFormat(actual),
       channel: item.channel,
-      actualRevenue: actual,
       status: item.status || "Paid",
       // recievedDate: "",
       // dueDate: "",
@@ -61,7 +62,7 @@ const transformRevenues = (revenues) => {
 
   return Array.from(monthlyMap.values()).map((monthData) => ({
     ...monthData,
-    actual: Math.round(monthData.projected * 100) / 100,
+    actual: inrFormat(monthData.actual),
   }));
 };
 
@@ -592,6 +593,18 @@ const transformRevenuesData = useMemo(() => {
      colors: ["#11daf5"],
   };
 
+ const totalActualRevenue = isLoadingVirtualOfficeRevenue
+  ? 0
+  : virtualOfficeRevenue.reduce((sum, month) => {
+      const clientRevenues = Array.isArray(month.clients) ? month.clients : [];
+      const monthTotal = clientRevenues.reduce(
+        (monthSum, client) => monthSum + (client.actualRevenue || 0),
+        0
+      );
+      return sum + monthTotal;
+    }, 0);
+
+
   const totalActual = monthlyRevenueData.reduce(
     (sum, month) =>
       sum +
@@ -599,32 +612,32 @@ const transformRevenuesData = useMemo(() => {
     0
   );
 
-  const totalProjected = monthlyRevenueData.reduce(
-    (sum, month) => sum + (month.projected ?? 0),
-    0
-  );
+  // const totalProjected = monthlyRevenueData.reduce(
+  //   (sum, month) => sum + (month.projected ?? 0),
+  //   0
+  // );
 
-  const tableData = monthlyRevenueData.map((monthData, index) => {
-    const totalRevenue = monthData.clients.reduce(
-      (sum, c) => sum + c.revenue,
-      0
-    );
-    return {
-      id: index,
-      month: monthData.month,
-      revenue: `INR ${totalRevenue.toLocaleString()}`,
-      clients: monthData.clients.map((client, i) => ({
-        id: i + 1,
-        clientName: client.clientName,
-        revenue: `${client.revenue.toLocaleString()}`,
-        status: client.status,
-        term: client.term,
-        expiry: client.expiry,
-        recievedDate: dayjs(client.recievedDate).format("DD-MM-YYYY"),
-        dueDate: dayjs(client.dueDate).format("DD-MM-YYYY"),
-      })),
-    };
-  });
+  // const tableData = monthlyRevenueData.map((monthData, index) => {
+  //   const totalRevenue = monthData.clients.reduce(
+  //     (sum, c) => sum + c.revenue,
+  //     0
+  //   );
+  //   return {
+  //     id: index,
+  //     month: monthData.month,
+  //     revenue: `INR ${totalRevenue.toLocaleString()}`,
+  //     clients: monthData.clients.map((client, i) => ({
+  //       id: i + 1,
+  //       clientName: client.clientName,
+  //       revenue: `${client.revenue.toLocaleString()}`,
+  //       status: client.status,
+  //       term: client.term,
+  //       expiry: client.expiry,
+  //       recievedDate: dayjs(client.recievedDate).format("DD-MM-YYYY"),
+  //       dueDate: dayjs(client.dueDate).format("DD-MM-YYYY"),
+  //     })),
+  //   };
+  // });
 
   //  const revenueData = virtualOfficeRevenue.map((monthData, index) => {
   //   const totalRevenue = monthData.clients.reduce(
@@ -652,7 +665,6 @@ useEffect(() => {
   console.log("transformRevenuesData", transformRevenuesData);
 }, [transformRevenuesData]);
 
-
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
@@ -668,19 +680,24 @@ useEffect(() => {
         border
         title={"Monthly Revenue with Client Details"}
         padding
-        TitleAmount={`INR ${inrFormat(totalActual)}`}
+        TitleAmount={`INR ${inrFormat(totalActualRevenue)}`}
       >
         <CollapsibleTable
           columns={[
             { headerName: "Month", field: "month" },
-            { headerName: "Revenue (INR)", field: "revenue" },
+            { headerName: "Revenue (INR)", field: "actual" },
           ]}
           data={transformRevenuesData}
           renderExpandedRow={(row) => (
             <AgTable
-              data={row.clients}
+              data={row.clients.map((client,index)=>{
+                return {
+                  srNo:index+1,
+                  ...client
+                }
+              })}
               columns={[
-                { headerName: "Sr No", field: "id", flex: 1 },
+                { headerName: "Sr No", field: "srNo", flex: 1 },
                 { headerName: "Client Name", field: "clientName", flex: 1 },
                 { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
                 { headerName: "Status", field: "status", flex: 1 },
