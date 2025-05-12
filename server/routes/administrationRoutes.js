@@ -5,7 +5,7 @@ const {
   updateWeeklyUnit,
   fetchWeeklyUnits,
   addSubstitute,
-} = require("../controllers/adminControllers/WeeklyScheduleControllers");
+} = require("../controllers/weeklyScheduleControllers/WeeklyScheduleController");
 const {
   createAdminEvent,
   getAdminEvents,

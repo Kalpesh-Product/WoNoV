@@ -7,6 +7,11 @@ const WeeklyScheduleSchema = new mongoose.Schema(
       ref: "Company",
       required: true,
     },
+    department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      required: true,
+    },
     startDate: {
       type: Date,
       required: true,
