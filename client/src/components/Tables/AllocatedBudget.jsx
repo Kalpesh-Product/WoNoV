@@ -1,6 +1,15 @@
 import React, { useState, useMemo } from "react";
 import dayjs from "dayjs";
-import { Tabs, Tab, CircularProgress, Chip } from "@mui/material";
+import {
+  Tabs,
+  Tab,
+  CircularProgress,
+  Chip,
+  TextField,
+  MenuItem,
+  FormControl,
+  Autocomplete,
+} from "@mui/material";
 import { inrFormat } from "../../utils/currencyFormat";
 import PrimaryButton from "../PrimaryButton";
 import AgTable from "../AgTable";
@@ -10,7 +19,7 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
   const [selectedTab, setSelectedTab] = useState(0);
   const fiscalYears = ["FY 2024-25", "FY 2025-26"];
   const [selectedFYIndex, setSelectedFYIndex] = useState(0); // Default to FY 2024-25
-  console.log("From component :", financialData)
+  console.log("From component :", financialData);
 
   const selectedFY = fiscalYears[selectedFYIndex];
 
@@ -47,16 +56,19 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
       result[type] = {};
       allMonths.forEach((month) => {
         const monthData = financialData.find((fd) => fd.month === month);
-        const rows = monthData?.tableData?.rows?.filter(
-          (r) => (r.expanseType || "Unknown") === type
-        ) || [];
+        const rows =
+          monthData?.tableData?.rows?.filter(
+            (r) => (r.expanseType || "Unknown") === type
+          ) || [];
 
         const projectedAmount = rows.reduce(
-          (sum, r) => sum + Number((r.projectedAmount || "0").replace(/,/g, "")),
+          (sum, r) =>
+            sum + Number((r.projectedAmount || "0").replace(/,/g, "")),
           0
         );
         const actualAmount = rows.reduce(
-          (sum, r) => sum + Number((r.actualAmount ?? "0").toString().replace(/,/g, "")),
+          (sum, r) =>
+            sum + Number((r.actualAmount ?? "0").toString().replace(/,/g, "")),
           0
         );
 
@@ -91,10 +103,13 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
 
   const totalProjectedAmountForFY = useMemo(() => {
     return filteredMonths.reduce((sum, month) => {
-      return sum + allTypes.reduce((typeSum, type) => {
-        const data = groupedData[type]?.[month];
-        return typeSum + (data?.projectedAmount || 0);
-      }, 0);
+      return (
+        sum +
+        allTypes.reduce((typeSum, type) => {
+          const data = groupedData[type]?.[month];
+          return typeSum + (data?.projectedAmount || 0);
+        }, 0)
+      );
     }, 0);
   }, [filteredMonths, groupedData, allTypes]);
 
@@ -116,74 +131,121 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
       <div className="flex justify-between items-center">
         <PrimaryButton
           title={"Prev"}
-          handleSubmit={() => setSelectedFYIndex((prev) => Math.max(prev - 1, 0))}
+          handleSubmit={() =>
+            setSelectedFYIndex((prev) => Math.max(prev - 1, 0))
+          }
           disabled={selectedFYIndex === 0}
         />
         <span className="text-title font-pmedium">{selectedFY}</span>
         <PrimaryButton
           title={"Next"}
-          handleSubmit={() => setSelectedFYIndex((prev) =>
-            Math.min(prev + 1, fiscalYears.length - 1)
-          )}
+          handleSubmit={() =>
+            setSelectedFYIndex((prev) =>
+              Math.min(prev + 1, fiscalYears.length - 1)
+            )
+          }
           disabled={selectedFYIndex === fiscalYears.length - 1}
         />
       </div>
 
       {/* Tabs */}
-      <div className="flex w-full border-[1px] border-borderGray rounded-xl">
-        <Tabs
-          value={selectedTab}
-          onChange={(e, newValue) => setSelectedTab(newValue)}
-          variant={variant || "fullWidth"}
-          scrollButtons="auto"
-          sx={{
-            width: "100%",
-            backgroundColor: "white",
-            borderRadius: 2,
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontWeight: "medium",
-              padding: "12px 15px",
-              minWidth: "10%",
-              borderRight: "0.1px solid #d1d5db",
-            },
-            "& .MuiTabs-scrollButtons": {
-              "&.Mui-disabled": { opacity: 0.3 },
-            },
-          }}
-          TabIndicatorProps={{ style: { display: "none" } }}
-        >
-          {allTypes.map((type) => (
-            <Tab key={type} label={type === "External" ? "Vendor" : type} />
-          ))}
-        </Tabs>
-      </div>
-
-    
-      {/* Collapsible Table */}
-      <CollapsibleTable
-        columns={[
-          { field: "monthFormatted", headerName: "MONTH" },
-          { field: "projected", headerName: "PROJECTED (INR)" },
-          { field: "actual", headerName: "ACTUAL (INR)" },
-        ]}
-        data={collapsibleRows}
-        renderExpandedRow={(row) =>
-          row.rows.length > 0 ? (
-            <AgTable
-              search={row.rows.length >= 10}
-              data={row.rows}
-              columns={row.columns}
-              tableHeight={400}
-              hideFilter={row.rows.length <= 9}
-            />
-          ) : (
-            <div className="bg-borderGray rounded-xl text-body text-muted text-center py-4">
-              No data available for this category in {row.monthFormatted}
+      {collapsibleRows.length === 0 ? (
+        <></>
+      ) : (
+        <div>
+          {allTypes.length <= 5 ? (
+            <div className="flex w-full border-[1px] border-borderGray rounded-xl">
+              <Tabs
+                value={selectedTab}
+                onChange={(e, newValue) => setSelectedTab(newValue)}
+                variant={variant || "fullWidth"}
+                scrollButtons="auto"
+                sx={{
+                  width: "100%",
+                  backgroundColor: "white",
+                  borderRadius: 3,
+                  "& .MuiTab-root": {
+                    textTransform: "none",
+                    fontWeight: "medium",
+                    padding: "12px 15px",
+                    minWidth: "10%",
+                    borderRight: "0.1px solid #d1d5db",
+                  },
+                  "& .MuiTabs-scrollButtons": {
+                    "&.Mui-disabled": { opacity: 0.3 },
+                  },
+                }}
+                TabIndicatorProps={{ style: { display: "none" } }}
+              >
+                {allTypes.map((type) => (
+                  <Tab
+                    key={type}
+                    label={type === "External" ? "Vendor" : type}
+                  />
+                ))}
+              </Tabs>
             </div>
-          )
-        }
-      />
+          ) : (
+            <FormControl fullWidth>
+              <Autocomplete
+                value={allTypes[selectedTab]} // Use the selectedTab index to set the value
+                onChange={(e, newValue) => {
+                  // Find the index of the selected value
+                  const selectedIndex = allTypes.findIndex(
+                    (type) => type === newValue
+                  );
+                  setSelectedTab(selectedIndex);
+                }}
+                options={allTypes} // Use allTypes as the options
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Select Category"
+                    size="small"
+                    fullWidth
+                  />
+                )}
+                getOptionLabel={(option) =>
+                  option === "External" ? "Vendor" : option
+                } // Customize display for "External"
+                isOptionEqualToValue={(option, value) => option === value} // Ensure proper comparison between options
+              />
+            </FormControl>
+          )}
+        </div>
+      )}
+
+      {/* Collapsible Table */}
+
+      {collapsibleRows.length === 0 ? (
+        <div className="h-40 flex justify-center items-center">
+          No Data available
+        </div>
+      ) : (
+        <CollapsibleTable
+          columns={[
+            { field: "monthFormatted", headerName: "MONTH" },
+            { field: "projected", headerName: "PROJECTED (INR)" },
+            { field: "actual", headerName: "ACTUAL (INR)" },
+          ]}
+          data={collapsibleRows}
+          renderExpandedRow={(row) =>
+            row.rows.length > 0 ? (
+              <AgTable
+                search={row.rows.length >= 10}
+                data={row.rows}
+                columns={row.columns}
+                tableHeight={400}
+                hideFilter={row.rows.length <= 9}
+              />
+            ) : (
+              <div className="bg-borderGray rounded-xl text-body text-muted text-center py-4">
+                No data available for this category in {row.monthFormatted}
+              </div>
+            )
+          }
+        />
+      )}
     </div>
   );
 };

@@ -29,7 +29,8 @@ const UniqueLeads = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
 
-  const leadsData = useSelector((state) => state.sales.leadsData);
+  const leadsData = useSelector((state) => state?.sales?.leadsData);
+  console.log(leadsData);
 
   const [searchParams] = useSearchParams();
   const queryMonth = searchParams.get("month");
@@ -72,10 +73,10 @@ const UniqueLeads = () => {
     const domainsMap = {};
 
     leadsData.forEach((lead) => {
-      const leadMonth = dayjs(lead.startDate).format("MMMM");
+      const leadMonth = dayjs(lead?.startDate).format("MMMM");
       if (leadMonth !== selectedMonth) return;
 
-      const domainName = lead.serviceCategory?.serviceName || "Unknown";
+      const domainName = lead?.serviceCategory?.serviceName || "Unknown";
 
       if (!domainsMap[domainName]) {
         domainsMap[domainName] = {
@@ -84,12 +85,12 @@ const UniqueLeads = () => {
         };
       }
 
-      domainsMap[domainName].revenue += lead.estimatedRevenue || 0;
+      domainsMap[domainName].revenue += lead?.estimatedRevenue || 0;
       domainsMap[domainName].clients.push({
-        client: lead.companyName,
-        representative: lead.pocName,
-        callDate: humanDate(lead.startDate),
-        status: lead.remarksComments,
+        client: lead?.companyName,
+        representative: lead?.pocName,
+        callDate: humanDate(lead?.startDate),
+        status: lead?.remarksComments,
       });
     });
 
@@ -106,7 +107,7 @@ const UniqueLeads = () => {
   const yearlyRevenueData = useMemo(() => {
     const revenueMap = {};
 
-    leadsData.forEach((lead) => {
+    leadsData?.forEach((lead) => {
       const domainName = lead.serviceCategory?.serviceName || "Unknown";
 
       if (!revenueMap[domainName]) {
@@ -132,7 +133,7 @@ const UniqueLeads = () => {
     const selectedLeadData = leadsData.find(
       (item) => item.client === lead.companyname
     );
-    console.log("Selected lead Data : ", selectedLeadData);
+
     setSelectedLead(selectedLeadData);
     setModalOpen(true);
   };

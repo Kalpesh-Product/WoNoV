@@ -1956,7 +1956,7 @@ const DeptWiseBudget = () => {
   ];
 
   // Your groupedData logic
-  const groupedData = dummyData.reduce((acc, item) => {
+  const groupedData = hrFinancex.reduce((acc, item) => {
     const month = dayjs(item.dueDate).format("MMMM YYYY");
 
     if (!acc[month]) {

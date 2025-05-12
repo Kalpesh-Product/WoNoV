@@ -102,8 +102,8 @@ const HrBudget = () => {
     dataLabels: {
       enabled: true,
       formatter: (val) => {
-        const scaled = Math.round((val / 100000) * 100) / 100;
-        return Number.isInteger(scaled) ? scaled.toFixed(0) : scaled.toFixed(2);
+        const formatted = inrFormat(val.toFixed(0))
+        return formatted;
       },
 
       style: {
@@ -147,7 +147,7 @@ const HrBudget = () => {
     },
 
     tooltip: {
-      enabled: true,
+      enabled: false,
       custom: function ({ series, seriesIndex, dataPointIndex }) {
         const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
         // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
@@ -206,8 +206,8 @@ const HrBudget = () => {
               columns: [
                 { field: "expanseName", headerName: "Expense Name", flex: 1 },
                 { field: "expanseType", headerName: "Expense Type", flex: 1 },
-                { field: "projectedAmount", headerName: "Projected", flex: 1 },
-                { field: "actualAmount", headerName: "Actual", flex: 1 }, // ✅ add this
+                { field: "projectedAmount", headerName: "Projected (INR)", flex: 1 },
+                { field: "actualAmount", headerName: "Actual (INR)", flex: 1 }, // ✅ add this
                 { field: "dueDate", headerName: "Due Date", flex: 1 },
                 { field: "status", headerName: "Status", flex: 1 },
               ],
@@ -223,7 +223,7 @@ const HrBudget = () => {
           department: item?.department,
           expanseType: item?.expanseType,
           projectedAmount: Number(item?.projectedAmount).toFixed(2),
-          actualAmount: Number(item?.actualAmount || 0).toFixed(2), // ✅ Add this
+          actualAmount: inrFormat(item?.actualAmount || 0), // ✅ Add this
           dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
           status: item.status,
         });
@@ -347,7 +347,7 @@ const HrBudget = () => {
           <AllocatedBudget
             financialData={financialData}
             isLoading={isHrLoading}
-            variant={"scrollable"}
+            variant={"fullWidth"}
           />
         ) : (
           <Skeleton height={600} width={"100%"} />

@@ -150,7 +150,7 @@ const SalesDashboard = () => {
   };
 
   //-----------------------------------------------API-----------------------------------------------------------//
-  const { data: leadsData, isPending: isLeadsPending } = useQuery({
+  const { data: leadsData = [], isPending: isLeadsPending } = useQuery({
     queryKey: ["leads"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/leads");
