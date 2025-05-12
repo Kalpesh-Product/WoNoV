@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import LayerBarGraph from "../../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
@@ -16,6 +16,9 @@ import { useQuery } from "@tanstack/react-query";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 import BudgetGraph from "../../../../components/graphs/BudgetGraph";
 import { useNavigate } from "react-router-dom"; // For programmatic navigation
+import { transformBudgetData } from "../../../../utils/transformBudgetData";
+import { inrFormat } from "../../../../utils/currencyFormat";
+import BarGraph from "../../../../components/graphs/BarGraph";
 // import dayjs from "dayjs";
 
 const DeptWiseBudget = () => {
@@ -37,7 +40,7 @@ const DeptWiseBudget = () => {
   //   },
   // });
 
-  const hrFinance = [
+  const hrFinancex = [
     // April 2024
     {
       _id: 1,
@@ -2036,9 +2039,158 @@ const DeptWiseBudget = () => {
     })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate)));
 
+  // BUDGET NEW START
+
+  const [isReady, setIsReady] = useState(false);
+
+  // const [openModal, setOpenModal] = useState(false);
+  const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+    queryKey: ["hrFinance"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798bacce469e809084e24a1`
+        );
+        const budgets = response.data.allBudgets;
+        return Array.isArray(budgets) ? budgets : [];
+      } catch (error) {
+        console.error("Error fetching budget:", error);
+        return [];
+      }
+    },
+  });
+
+  const budgetBar = useMemo(() => {
+    if (isHrLoading || !Array.isArray(hrFinance)) return null;
+    return transformBudgetData(hrFinance);
+  }, [isHrLoading, hrFinance]);
+
+  useEffect(() => {
+    if (!isHrLoading) {
+      const timer = setTimeout(() => setIsReady(true), 1000);
+      return () => clearTimeout(timer); // Cleanup on unmount
+    }
+  }, [isHrLoading]);
+
+  const expenseRawSeries = useMemo(() => {
+    return [
+      {
+        name: "FY 2024-25",
+        data: budgetBar?.utilisedBudget || [],
+        group: "total",
+      },
+      {
+        name: "FY 2025-26",
+        data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        group: "total",
+      },
+    ];
+  }, [budgetBar]);
+
+  const expenseOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+
+      stacked: true,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+      events: {
+        dataPointSelection: () => {
+          navigate("finance/budget");
+        },
+      },
+    },
+    colors: ["#54C4A7", "#EB5C45"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+        borderRadiusApplication: "none",
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => {
+        return inrFormat(val);
+      },
+
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+      offsetY: -22,
+    },
+    xaxis: {
+      categories: [
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
+      ],
+      title: {
+        text: "  ",
+      },
+    },
+    yaxis: {
+      // max: 3000000,
+      title: { text: "Amount In Lakhs (INR)" },
+      labels: {
+        formatter: (val) => `${Math.round(val / 1000)}`,
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
+
+    tooltip: {
+      enabled: true,
+      custom: function ({ series, seriesIndex, dataPointIndex }) {
+        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
+        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
+        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
+        //     </div>`;
+        return `
+                  <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
+              
+                    <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
+                      <div><strong>Total Expense:</strong></div>
+                      <div style="width: 10px;"></div>
+                   <div style="text-align: left;">INR ${Math.round(
+                     rawData
+                   ).toLocaleString("en-IN")}</div>
+      
+                    </div>
+           
+                  </div>
+                `;
+      },
+    },
+  };
+
+  const totalUtilised =
+    budgetBar?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+  // const navigate = useNavigate();
+  // BUDGET NEW END
+
   return (
     <div className="flex flex-col gap-8">
-      <WidgetSection
+      {/* <WidgetSection
         layout={1}
         titleLabel={"FY 2024-25"}
         title={"DEPARTMENT BUDGET"}
@@ -2046,6 +2198,20 @@ const DeptWiseBudget = () => {
         <BudgetGraph
           utilisedData={utilisedData}
           maxBudget={maxBudget}
+        />
+      </WidgetSection> */}
+      <WidgetSection
+        normalCase
+        layout={1}
+        border
+        padding
+        titleLabel={"FY 2024-25"}
+        TitleAmount={`INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`}
+        title={"BIZ Nest DEPARTMENT WISE EXPENSE"}>
+        <BarGraph
+          data={expenseRawSeries}
+          options={expenseOptions}
+          departments={["FY 2024-25", "FY 2025-26"]}
         />
       </WidgetSection>
       
