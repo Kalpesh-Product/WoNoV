@@ -28,10 +28,9 @@ const createWorkationRevenue = async (req, res, next) => {
 // Read all Workation Revenue entries (optionally filtered by company)
 const getWorkationRevenues = async (req, res, next) => {
   try {
-    const { company } = req;
+    const company = req.company;
 
     const revenues = await WorkationRevenue.find({ company })
-      .populate("company", "companyName")
       .lean()
       .exec();
 

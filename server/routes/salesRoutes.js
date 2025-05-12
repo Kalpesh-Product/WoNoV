@@ -57,6 +57,10 @@ const {
   createVirtualOfficeRevenue,
 } = require("../controllers/salesControllers/virtualOfficeRevenueControllers");
 
+const {
+  getConsolidatedRevenue,
+} = require("../controllers/salesControllers/consolidatedRevenueControllers");
+
 //Coworking routes
 router.post("/onboard-co-working-client", createCoworkingClient);
 router.get("/co-working-clients", getCoworkingClients);
