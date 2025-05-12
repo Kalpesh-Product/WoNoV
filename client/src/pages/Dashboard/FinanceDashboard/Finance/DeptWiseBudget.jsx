@@ -1990,6 +1990,7 @@ const DeptWiseBudget = () => {
               },
             },
             { field: "amount", headerName: "Amount (INR)", flex: 1 },
+           
           ],
         },
       };

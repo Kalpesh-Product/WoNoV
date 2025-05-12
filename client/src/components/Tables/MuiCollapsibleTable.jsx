@@ -23,7 +23,7 @@ import {
   
     // Add SR NO column dynamically
     const enhancedColumns = [
-      { field: "_srNo", headerName: "SR NO" },
+      { field: "_srNo", headerName: "Sr No" },
       ...columns,
     ];
   

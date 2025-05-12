@@ -9,12 +9,13 @@ import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import DataCard from "../../../../components/DataCard";
-import { MdTrendingUp } from "react-icons/md";
-import { BsCheckCircleFill } from "react-icons/bs";
+import { MdTrendingUp, MdUpload } from "react-icons/md";
+import { BsCheckCircleFill, BsUpload } from "react-icons/bs";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import BudgetGraph from "../../../../components/graphs/BudgetGraph";
+import { Button } from "@mui/material";
 
 const DeptWiseBudgetDetails = () => {
   const axios = useAxiosPrivate();
@@ -728,6 +729,29 @@ const DeptWiseBudgetDetails = () => {
             { field: "projectedAmount", headerName: "Amount", flex: 1 },
             { field: "dueDate", headerName: "Due Date", flex: 1 },
             { field: "status", headerName: "Status", flex: 1 },
+             { field: "invoice", headerName: "Invoice",
+                      cellRenderer: () => (
+                         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+                              <Button
+                                variant="contained"
+                                startIcon={<MdUpload/>}
+                                sx={{
+                                  backgroundColor: "#1E3D73",
+                                  color: "white",
+                                  textTransform: "none",
+                                  borderRadius: "10px",  
+                                  minHeight: "30px",        
+                                  padding: "2px 8px", 
+                                  '&:hover': {
+                                    backgroundColor: "#17406A",
+                                  },
+                                }}
+                              >
+                                Upload
+                              </Button>
+                            </div>
+                    ),
+                    },
           ],
         },
       };

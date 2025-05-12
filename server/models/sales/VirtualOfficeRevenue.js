@@ -17,9 +17,9 @@ const virtualOfficeRevenue = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    client: {
+    clientName: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "CoworkingClient",
+      ref: "VirtualOfficeClient",
     },
     service: {
       type: mongoose.Schema.Types.ObjectId,
@@ -33,5 +33,8 @@ const virtualOfficeRevenue = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Revenue = mongoose.model("VirtualOfficeRevenue", virtualOfficeRevenue);
-module.exports = Revenue;
+const VirtualOfficeRevenue = mongoose.model(
+  "VirtualOfficeRevenue",
+  virtualOfficeRevenue
+);
+module.exports = VirtualOfficeRevenue;
