@@ -20,6 +20,9 @@ import dayjs from "dayjs";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
+import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
+import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
+import { MdOutlineRemove, MdOutlineRemoveRedEye } from "react-icons/md";
 
 const UniqueLeads = () => {
   const dispatch = useDispatch();
@@ -147,7 +150,14 @@ const UniqueLeads = () => {
   ];
 
   const graphOptions = {
-    chart: { type: "bar", stacked: false, fontFamily: "Poppins-Regular" },
+    chart: {
+      type: "bar",
+      stacked: false,
+      fontFamily: "Poppins-Regular",
+      toolbar: {
+        show: false,
+      },
+    },
     xaxis: {
       categories:
         viewType === "month"
@@ -170,7 +180,7 @@ const UniqueLeads = () => {
     return Array.from(uniqueMonths);
   }, [leadsData]);
 
-  useEffect(()=>console.log(selectedMonthData), [selectedMonthData])
+  useEffect(() => console.log(selectedMonthData), [selectedMonthData]);
 
   return (
     <div className="p-4 flex flex-col gap-4">
@@ -209,94 +219,106 @@ const UniqueLeads = () => {
       </div>
 
       <WidgetSection layout={1} border padding title={"Unique Leads"}>
-        <BarGraph data={graphData} options={graphOptions} height={400} />
+        <NormalBarGraph data={graphData} options={graphOptions} height={400} />
       </WidgetSection>
 
       <div>
-        {viewType === "month"
-          ? selectedMonthData?.domains.map((domain, index) => (
-              <Accordion key={index} className="py-4">
-                <AccordionSummary expandIcon={<IoIosArrowDown />}>
-                  <div className="flex justify-between items-center w-full px-4">
-                    <span className="text-subtitle font-medium">
-                      {domain.name}
-                    </span>
-                    <span className="text-subtitle font-medium">
-                      {domain.clients?.length} Leads
-                    </span>
-                  </div>
-                </AccordionSummary>
-                <AccordionDetails sx={{ borderTop: "0.5px solid gray" }}>
-                  <AgTable
-                    data={domain.clients.map((client, index) => ({
-                      id: index + 1,
-                      ...client,
-                    }))}
-                    exportData
-                    columns={[
-                      { field: "id", headerName: "ID", flex: 1 },
-                      { field: "client", headerName: "Client Name", flex: 1 },
-                      {
-                        field: "representative",
-                        headerName: "Representative",
-                        flex: 1,
-                      },
-                      { field: "callDate", headerName: "Call Date", flex: 1 },
-                      {
-                        field: "status",
-                        headerName: "Status",
-                        flex: 1,
-                        tooltipField: "status",
-                      },
-                      {
-                        field: "actions",
-                        headerName: "Actions",
-                        cellRenderer: (params) => {
-                          return (
-                            <div className="p-2">
-                              <PrimaryButton title={"View More"} />
-                            </div>
-                          );
-                        },
-                      },
-                    ]}
-                    tableHeight={500}
-                    hideFilter
-                  />
-                </AccordionDetails>
-              </Accordion>
-            ))
-          : Object.entries(yearlyRevenueData).map(
-              ([domainName, data], index) => (
-                <Accordion key={index} className="py-4">
-                  <AccordionSummary expandIcon={<IoIosArrowDown />}>
-                    <div className="flex justify-between items-center w-full px-4">
-                      <span className="text-subtitle font-medium">
-                        {domainName}
-                      </span>
-                    </div>
-                  </AccordionSummary>
-                  <AccordionDetails sx={{ borderTop: "0.5px solid gray" }}>
-                    <AgTable
-                      data={data.clients}
-                      exportData
-                      columns={[
-                        { field: "client", headerName: "Client Name", flex: 1 },
-                        {
-                          field: "representative",
-                          headerName: "Representative",
-                          flex: 1,
-                        },
-                        { field: "callDate", headerName: "Call Date", flex: 1 },
-                        { field: "status", headerName: "Status", flex: 1 },
-                      ]}
-                      tableHeight={300}
-                    />
-                  </AccordionDetails>
-                </Accordion>
-              )
-            )}
+        {viewType === "month" ? (
+          <CollapsibleTable
+            columns={[
+              { field: "name", headerName: "Domain Name" },
+              { field: "leads", headerName: "Leads" },
+            ]}
+            data={selectedMonthData?.domains.map((domain, index) => ({
+              id: index,
+              name: domain.name,
+              leads: domain.clients?.length || 0,
+              clients: domain.clients.map((client, clientIndex) => ({
+                ...client,
+                id: clientIndex + 1,
+              })),
+            }))} // Mapping data directly here in the data prop
+            renderExpandedRow={(row) => {
+              if (!row?.clients || !Array.isArray(row.clients)) {
+                return <div>No client details available</div>; // Fallback message if no data
+              }
+
+              return (
+                <AgTable
+                  data={row.clients}
+                  exportData
+                  columns={[
+                    { field: "id", headerName: "ID", flex: 1 },
+                    { field: "client", headerName: "Client Name", flex: 1 },
+                    {
+                      field: "representative",
+                      headerName: "Representative",
+                      flex: 1,
+                    },
+                    { field: "callDate", headerName: "Call Date", flex: 1 },
+                    { field: "status", headerName: "Status", flex: 1 },
+                    {
+                      field: "actions",
+                      headerName: "Actions",
+                      cellRenderer: (params) => (
+                        <div className="flex items-center gap-4 py-2">
+                          <span className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
+                            <MdOutlineRemoveRedEye />
+                          </span>
+                        </div>
+                      ),
+                    },
+                  ]}
+                  tableHeight={500}
+                  hideFilter
+                />
+              );
+            }}
+          />
+        ) : (
+          <CollapsibleTable
+            columns={[
+              { field: "name", headerName: "Domain Name" },
+              { field: "leads", headerName: "Leads" },
+            ]}
+            data={Object.entries(yearlyRevenueData).map(
+              ([domainName, data], index) => ({
+                id: index,
+                name: domainName,
+                leads: data.clients?.length || 0,
+                clients: data.clients.map((client, clientIndex) => ({
+                  ...client,
+                  id: clientIndex + 1,
+                })),
+              })
+            )} // Mapping data directly here in the data prop for yearly data
+            renderExpandedRow={(row) => {
+              if (!row?.clients || !Array.isArray(row.clients)) {
+                return <div>No client details available</div>; // Fallback message if no data
+              }
+
+              return (
+                <AgTable
+                  data={row.clients}
+                  exportData
+                  columns={[
+                    { field: "client", headerName: "Client Name", flex: 1 },
+                    {
+                      field: "representative",
+                      headerName: "Representative",
+                      flex: 1,
+                    },
+                    { field: "callDate", headerName: "Call Date", flex: 1 },
+                    { field: "status", headerName: "Status", flex: 1 },
+                  ]}
+                  tableHeight={300}
+                />
+              );
+            }}
+          />
+        )}
       </div>
+
       <MuiModal open={modalOpen} onClose={() => setModalOpen(false)}>
         <span>{selectedLead}</span>
       </MuiModal>

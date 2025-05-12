@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import AgTable from "../../../../components/AgTable";
-import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
+import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
@@ -162,7 +161,7 @@ const Collections = () => {
   );
 
   return (
-    <div className="p-4 flex flex-col gap-8">
+    <div className=" flex flex-col gap-8">
       <WidgetSection
         layout={1}
         title={"COLLECTIONS"}
@@ -172,8 +171,16 @@ const Collections = () => {
         <BarGraph data={barGraphData} options={barGraphOptions} />
         <hr />
         <WidgetSection layout={2}>
-          <DataCard title={"Paid"} description={"Current Month :Apr-24"} route={"paid"}/>
-          <DataCard title={"Unpaid"} description={"Current Month :Apr-24"} data={40} />
+          <DataCard
+            title={"Paid"}
+            description={"Current Month :Apr-24"}
+            route={"paid"}
+          />
+          <DataCard
+            title={"Unpaid"}
+            description={"Current Month :Apr-24"}
+            data={40}
+          />
         </WidgetSection>
       </WidgetSection>
       <WidgetSection
@@ -183,40 +190,32 @@ const Collections = () => {
         TitleAmount={`INR ${grandTotal.toLocaleString("en-IN")}`}
         className="bg-white rounded-md shadow-sm"
       >
-        <div className="px-4 py-2 border-b border-borderGray bg-gray-50">
-          <div className="flex flex-wrap justify-between items-center py-2 text-sm text-muted font-pmedium text-title">
-            <span className="w-1/2 sm:w-1/5">FINANCIAL YEAR</span>
-            <span className="w-1/2 sm:w-1/5 flex items-center gap-1">
-              AMOUNT
-            </span>
-          </div>
-        </div>
+        <CollapsibleTable
+          columns={[
+            { field: "month", headerName: "Month" },
+            { field: "totalAmount", headerName: "Total Amount (INR)" },
+          ]}
+          data={financialData.map((data, index) => ({
+            id: index,
+            month: data.month,
+            totalAmount: `INR ${data.totalAmount.toLocaleString("en-IN")}`,
+            tableData: data.tableData, // Passing tableData (rows and columns) directly here
+          }))} // Mapping through financialData directly in the data prop
+          renderExpandedRow={(row) => {
+            if (!row?.tableData?.rows || !Array.isArray(row.tableData.rows)) {
+              return <div>No table data available</div>; // Fallback message if no data
+            }
 
-        {financialData.map((data, index) => (
-          <Accordion key={index} className="py-2">
-            <AccordionSummary
-              expandIcon={<IoIosArrowDown />}
-              aria-controls={`panel${index}-content`}
-              id={`panel${index}-header`}
-              className="border-b border-borderGray"
-            >
-              <div className="flex flex-wrap justify-between items-center w-full px-2 text-subtitle font-pmedium">
-                <span className="w-1/2 sm:w-1/5">{data.month}</span>
-                <span className="w-1/2 sm:w-1/5 px-4">
-                  INR {data.totalAmount.toLocaleString("en-IN")}
-                </span>
-              </div>
-            </AccordionSummary>
-            <AccordionDetails sx={{ borderTop: "1px solid #d1d5db" }}>
+            return (
               <AgTable
                 search={true}
-                data={data.tableData.rows}
-                columns={data.tableData.columns}
+                data={row.tableData.rows} // Directly using the rows data here
+                columns={row.tableData.columns} // Using the columns data here
                 tableHeight={250}
               />
-            </AccordionDetails>
-          </Accordion>
-        ))}
+            );
+          }}
+        />
       </WidgetSection>
 
       {viewDetails && (

@@ -74,7 +74,7 @@ const BillingsLayout = () => {
           </Tabs>
         )}
       </div>
-      <div className="p-4 h-[68vh] overflow-y-auto">
+      <div className="p-4 pt-0">
         <Outlet />
       </div>
     </>

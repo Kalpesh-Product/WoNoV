@@ -43,7 +43,7 @@ const FinanceBulkUpload = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <span className="text-title font-pmedium text-primary pb-4">
+      <span className="text-title font-pmedium text-primary pb-4 uppercase">
         Bulk Upload Data
       </span>
 

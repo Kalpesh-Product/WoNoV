@@ -12,7 +12,7 @@ const NormalBarGraph = ({
   firstParam,
   secondParam,
   year,
-  departments, // ✅ new optional prop
+  departments, 
 }) => {
   const [selectedYear, setSelectedYear] = useState("2024-2025");
   const [departmentIndex, setDepartmentIndex] = useState(0);
@@ -33,6 +33,9 @@ const NormalBarGraph = ({
 
   const updatedOptions = {
     ...options,
+    toolbar : {
+      show : false
+    },
     xaxis: {
       ...options?.xaxis,
     },

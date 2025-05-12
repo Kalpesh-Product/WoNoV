@@ -144,7 +144,7 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
               textTransform: "none",
               fontWeight: "medium",
               padding: "12px 15px",
-              minWidth: "20%",
+              minWidth: "10%",
               borderRight: "0.1px solid #d1d5db",
             },
             "& .MuiTabs-scrollButtons": {

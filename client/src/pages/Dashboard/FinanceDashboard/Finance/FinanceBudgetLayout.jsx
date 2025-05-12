@@ -77,7 +77,7 @@ const FinanceBudgetLayout = () => {
           </Tabs>
         )}
       </div>
-      <div className="p-4">
+      <div className="p-4 pt-0">
         <Outlet />
       </div>
     </>

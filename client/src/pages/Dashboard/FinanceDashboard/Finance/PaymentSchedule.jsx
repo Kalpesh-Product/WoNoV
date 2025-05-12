@@ -86,7 +86,7 @@ const PaymentSchedule = () => {
   };
 
   return (
-    <div className="flex flex-col p-4 bg-white">
+    <div className="flex flex-col  bg-white">
       <div className="flex gap-4">
         {/* Filters Section */}
         <div className="flex flex-col gap-4 w-[25%]">
