@@ -302,35 +302,7 @@ const addSubstitute = async (req, res, next) => {
 const fetchWeeklyUnits = async (req, res, next) => {
   try {
     const { department } = req.params;
-    const { user, company } = req;
-
-    // const foundUser = await UserData.findOne({
-    //   _id: user,
-    //   departments: { $in: [department] },
-    // }).populate("reportsTo role departments");
-
-    // if (!foundUser) {
-    //   return res.status(400).json({
-    //     message: `User doesn't belong to the department`,
-    //   });
-    // }
-
-    // const userDepartment = foundUser.departments.find(
-    //   (dept) => dept._id.toString() === department.toString()
-    // );
-
-    //Check if logged-in user is an employee or an admin
-    // const managerRole = foundUser.role.some(
-    //   (role) =>
-    //     role.roleTitle.startsWith(`${userDepartment.name}`) &&
-    //     role.roleTitle.endsWith("Admin")
-    // );
-
-    // const foundUsers = await UserData.find({
-    //   departments: { $in: [department] },
-    // })
-    //   .populate("role")
-    //   .select("firstName middleName lastName");
+    const { company } = req;
 
     const foundUsers = await UserData.find({
       departments: { $in: [department] },
@@ -355,21 +327,15 @@ const fetchWeeklyUnits = async (req, res, next) => {
         return dept._id.toString() === department.toString();
       });
 
-      const userRole = user.role.some((role) => {
-        console.log(
-          role.roleTitle,
-          "||",
-          role.roleTitle.startsWith(foundDepartment ? foundDepartment.name : "")
-        );
-        return role.roleTitle.startsWith(
-          foundDepartment ? foundDepartment.name : ""
+      const userRole = user.role.find((role) => {
+        return (
+          role.roleTitle.startsWith(
+            foundDepartment ? foundDepartment.name : ""
+          ) && role.roleTitle.endsWith("Admin")
         );
       });
-      console.log("userRole", userRole);
       return userRole;
     });
-
-    console.log("manager", foundManager);
 
     let manager = "N/A";
     if (foundManager) {
