@@ -28,14 +28,14 @@ const createWorkationRevenue = async (req, res, next) => {
 // Read all Workation Revenue entries (optionally filtered by company)
 const getWorkationRevenues = async (req, res, next) => {
   try {
-    const { company } = req.company;
+    const { company } = req;
 
     const revenues = await WorkationRevenue.find({ company })
-      .populate("company", "name")
+      .populate("company", "companyName")
       .lean()
       .exec();
 
-    res.status(200).json({ revenues });
+    res.status(200).json(revenues);
   } catch (error) {
     next(error);
   }
