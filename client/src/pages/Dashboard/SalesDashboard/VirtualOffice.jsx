@@ -7,72 +7,70 @@ import { inrFormat } from "../../../utils/currencyFormat";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
+import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
+import { parseRevenue } from "../../../utils/removeCommaInNum";
+import { Skeleton } from "@mui/material";
 
 const VirtualOffice = () => {
-
-   const axios = useAxiosPrivate();
-    const { data: virtualOfficeRevenue, isLoading: isLoadingVirtualOfficeRevenue = [] } = useQuery({
-      queryKey: ["virtualOfficeRevenue"],
-      queryFn: async () => {
-        try {
-          const response = await axios.get(`/api/sales/get-virtual-office-revenue`);
-          return response.data;
-        } catch (error) {
-          throw new Error(error.response.data.message);
-        }
-      },
-    });
-
-const transformRevenues = (revenues) => {
-  const monthlyMap = new Map();
-  
-  revenues.forEach((item,index) => {
-    const rentDate = new Date(item.rentDate);
-  const monthKey = `${rentDate.toLocaleString("default", { month: "short" })}-${rentDate
-  .getFullYear()
-  .toString()
-  .slice(-2)}`;
-
-
-    // const projected = parseFloat(item.projectedRevenue.replace(/,/g, ""))|| 0
-     const actual = parseFloat(String(item.actualRevenue).replace(/,/g, "")) || 0;
-
-  
-
-    if (!monthlyMap.has(monthKey)) {
-      monthlyMap.set(monthKey, {
-        month: monthKey,
-        actual: 0,
-        clients: [],
-      });
-    }
- 
-    const monthData = monthlyMap.get(monthKey);
-    monthData.actual += actual;
-
-    monthData.clients.push({
-      clientName: item.clientName.clientName,
-      revenue: inrFormat(actual),
-      channel: item.channel,
-      status: item.status || "Paid",
-      // recievedDate: "",
-      // dueDate: "",
-    });
+  const axios = useAxiosPrivate();
+  const {
+    data: virtualOfficeRevenue,
+    isLoading: isLoadingVirtualOfficeRevenue = [],
+  } = useQuery({
+    queryKey: ["virtualOfficeRevenue"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/sales/get-virtual-office-revenue`
+        );
+        return response.data;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
   });
 
-  return Array.from(monthlyMap.values()).map((monthData) => ({
-    ...monthData,
-    actual: inrFormat(monthData.actual),
-  }));
-};
+  const transformRevenues = (revenues) => {
+    const monthlyMap = new Map();
 
-// Memoize or recompute transformed data only when API data is loaded
-const transformRevenuesData = useMemo(() => {
-  if (isLoadingVirtualOfficeRevenue || !virtualOfficeRevenue) return [];
-  return transformRevenues(virtualOfficeRevenue);
-}, [virtualOfficeRevenue, isLoadingVirtualOfficeRevenue]);
+    revenues.forEach((item, index) => {
+      const rentDate = new Date(item.rentDate);
+      const monthKey = `${rentDate.toLocaleString("default", {
+        month: "short",
+      })}-${rentDate.getFullYear().toString().slice(-2)}`;
 
+      const actual = item.actualRevenue;
 
+      if (!monthlyMap.has(monthKey)) {
+        monthlyMap.set(monthKey, {
+          month: monthKey,
+          actual: 0,
+          clients: [],
+        });
+      }
+
+      const monthData = monthlyMap.get(monthKey);
+      monthData.actual += actual;
+
+      monthData.clients.push({
+        clientName: item.clientName.clientName,
+        revenue: inrFormat(actual),
+        channel: item.channel,
+        status: item.status || "Paid",
+      });
+    });
+
+    return Array.from(monthlyMap.values()).map((monthData) => ({
+      ...monthData,
+      actual: inrFormat(monthData.actual),
+    }));
+  };
+
+  // Memoize or recompute transformed data only when API data is loaded
+  const transformRevenuesData = useMemo(() => {
+    if (isLoadingVirtualOfficeRevenue || !virtualOfficeRevenue) return [];
+    return transformRevenues(virtualOfficeRevenue);
+  }, [virtualOfficeRevenue, isLoadingVirtualOfficeRevenue]);
 
   const monthlyRevenueData = [
     {
@@ -535,15 +533,17 @@ const transformRevenuesData = useMemo(() => {
       ],
     },
   ];
+  const graphNumbers = transformRevenuesData?.map((item) => {
+    // Remove commas and convert the value to a number
+    return parseFloat(item?.actual.replace(/,/g, ""));
+  });
+
   const series = [
     {
-      name: "Actual Revenue",
-      data: monthlyRevenueData.map((item) =>
-        item.clients.reduce((sum, c) => sum + c.revenue, 0)
-      ),
+      name: "Revenue",
+      data: graphNumbers,
     },
   ];
-
   const options = {
     chart: {
       stacked: false,
@@ -557,7 +557,8 @@ const transformRevenuesData = useMemo(() => {
     dataLabels: {
       enabled: true,
       formatter: function (val) {
-        return `${inrFormat(val)}`;
+        // Format the value here for display in the chart
+        return `${inrFormat(val)}`; // Use inrFormat only for display
       },
       style: {
         fontSize: "10px",
@@ -567,18 +568,18 @@ const transformRevenuesData = useMemo(() => {
       offsetY: -22,
     },
     xaxis: {
-      categories: monthlyRevenueData.map((item) => item.month),
+      categories: transformRevenuesData.map((item) => item.month),
     },
-   yaxis: {
+    yaxis: {
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => `${((val/100000).toLocaleString())}`,
+        formatter: (val) => val / 100000, // Display in Lakhs
       },
     },
     tooltip: {
-      enabled:false,
+      enabled: true,
       y: {
-        formatter: (val) => `INR ${val.toLocaleString()}`,
+        formatter: (val) => `INR ${val.toLocaleString()}`, // Format tooltip
       },
     },
     plotOptions: {
@@ -590,128 +591,83 @@ const transformRevenuesData = useMemo(() => {
         },
       },
     },
-     colors: ["#11daf5"],
+    colors: ["#11daf5"],
   };
 
- const totalActualRevenue = isLoadingVirtualOfficeRevenue
-  ? 0
-  : virtualOfficeRevenue.reduce((sum, month) => {
-      const clientRevenues = Array.isArray(month.clients) ? month.clients : [];
-      const monthTotal = clientRevenues.reduce(
-        (monthSum, client) => monthSum + (client.actualRevenue || 0),
-        0
-      );
-      return sum + monthTotal;
-    }, 0);
+  const totalActualRevenue = isLoadingVirtualOfficeRevenue
+    ? 0
+    : virtualOfficeRevenue.reduce((sum, month) => {
+        const clientRevenues = Array.isArray(month.clients)
+          ? month.clients
+          : [];
+        const monthTotal = clientRevenues.reduce(
+          (monthSum, client) => monthSum + (client.actualRevenue || 0),
+          0
+        );
+        return sum + monthTotal;
+      }, 0);
 
-
-  const totalActual = monthlyRevenueData.reduce(
+  const totalActual = transformRevenuesData?.reduce(
     (sum, month) =>
       sum +
-      month.clients.reduce((monthSum, client) => monthSum + client.revenue, 0),
+      month.clients.reduce(
+        (monthSum, client) => monthSum + parseRevenue(client.revenue),
+        0
+      ),
     0
   );
 
-  // const totalProjected = monthlyRevenueData.reduce(
-  //   (sum, month) => sum + (month.projected ?? 0),
-  //   0
-  // );
-
-  // const tableData = monthlyRevenueData.map((monthData, index) => {
-  //   const totalRevenue = monthData.clients.reduce(
-  //     (sum, c) => sum + c.revenue,
-  //     0
-  //   );
-  //   return {
-  //     id: index,
-  //     month: monthData.month,
-  //     revenue: `INR ${totalRevenue.toLocaleString()}`,
-  //     clients: monthData.clients.map((client, i) => ({
-  //       id: i + 1,
-  //       clientName: client.clientName,
-  //       revenue: `${client.revenue.toLocaleString()}`,
-  //       status: client.status,
-  //       term: client.term,
-  //       expiry: client.expiry,
-  //       recievedDate: dayjs(client.recievedDate).format("DD-MM-YYYY"),
-  //       dueDate: dayjs(client.dueDate).format("DD-MM-YYYY"),
-  //     })),
-  //   };
-  // });
-
-  //  const revenueData = virtualOfficeRevenue.map((monthData, index) => {
-  //   const totalRevenue = monthData.clients.reduce(
-  //     (sum, c) => sum + c.actualRevenue,
-  //     0
-  //   );
-  //   return {
-  //     id: index,
-  //     month: monthData.month,
-  //     revenue: `INR ${totalRevenue.toLocaleString()}`,
-  //     clients: monthData.clients.map((client, i) => ({
-  //       id: i + 1,
-  //       clientName: client.clientName,
-  //       revenue: `${client.revenue.toLocaleString()}`,
-  //       status: client.status,
-  //       term: client.term,
-  //       expiry: client.expiry,
-  //       recievedDate: dayjs(client.recievedDate).format("DD-MM-YYYY"),
-  //       dueDate: dayjs(client.dueDate).format("DD-MM-YYYY"),
-  //     })),
-  //   };
-  // });
-
-useEffect(() => {
-  console.log("transformRevenuesData", transformRevenuesData);
-}, [transformRevenuesData]);
-
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection
-        title={"Annual Monthly Virtual Office Revenues"}
-        titleLabel={"FY 2024-25"}
-        border
-        TitleAmount={`INR ${inrFormat(totalActual)}`}
-      >
-        <BarGraph data={series} options={options} height={400} />
-      </WidgetSection>
+      {!isLoadingVirtualOfficeRevenue ? (
+        <WidgetSection
+          title={"Annual Monthly Virtual Office Revenues"}
+          titleLabel={"FY 2024-25"}
+          border
+          TitleAmount={`INR ${inrFormat(totalActual)}`}
+        >
+          <NormalBarGraph data={series} options={options} height={400} />
+        </WidgetSection>
+      ) : (
+        <Skeleton height={"500px"} width={"100%"} />
+      )}
 
-      <WidgetSection
-        border
-        title={"Monthly Revenue with Client Details"}
-        padding
-        TitleAmount={`INR ${inrFormat(totalActualRevenue)}`}
-      >
-        <CollapsibleTable
-          columns={[
-            { headerName: "Month", field: "month" },
-            { headerName: "Revenue (INR)", field: "actual" },
-          ]}
-          data={transformRevenuesData}
-          renderExpandedRow={(row) => (
-            <AgTable
-              data={row.clients.map((client,index)=>{
-                return {
-                  srNo:index+1,
-                  ...client
-                }
-              })}
-              columns={[
-                { headerName: "Sr No", field: "srNo", flex: 1 },
-                { headerName: "Client Name", field: "clientName", flex: 1 },
-                { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
-                { headerName: "Status", field: "status", flex: 1 },
-                // { headerName: "Term (months)", field: "term", flex: 1 },
-                // { headerName: "Expiry (months)", field: "expiry", flex: 1 },
-                // { headerName: "Received Date", field: "recievedDate", flex: 1 },
-                // { headerName: "Due Date", field: "dueDate", flex: 1 },
-              ]}
-              tableHeight={300}
-              hideFilter
-            />
-          )}
-        />
-      </WidgetSection>
+      {!isLoadingVirtualOfficeRevenue ? (
+        <WidgetSection
+          border
+          title={"Monthly Revenue with Client Details"}
+          padding
+          TitleAmount={`INR ${inrFormat(totalActual)}`}
+        >
+          <CollapsibleTable
+            columns={[
+              { headerName: "Month", field: "month" },
+              { headerName: "Revenue (INR)", field: "actual" },
+            ]}
+            data={transformRevenuesData}
+            renderExpandedRow={(row) => (
+              <AgTable
+                data={row.clients.map((client, index) => {
+                  return {
+                    srNo: index + 1,
+                    ...client,
+                  };
+                })}
+                columns={[
+                  { headerName: "Sr No", field: "srNo", flex: 1 },
+                  { headerName: "Client Name", field: "clientName", flex: 1 },
+                  { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
+                  { headerName: "Status", field: "status", flex: 1 },
+                ]}
+                tableHeight={300}
+                hideFilter
+              />
+            )}
+          />
+        </WidgetSection>
+      ) : (
+        <Skeleton height={"500px"} width={"100%"} />
+      )}
     </div>
   );
 };

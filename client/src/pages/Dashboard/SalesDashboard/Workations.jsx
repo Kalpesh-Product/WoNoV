@@ -4,8 +4,27 @@ import AgTable from "../../../components/AgTable";
 import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
 
 const Workations = () => {
+    const axios = useAxiosPrivate();
+    const {
+      data: workationData,
+      isLoading: isWorkationLoading = [],
+    } = useQuery({
+      queryKey: ["workationData"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            `/api/sales/get-workation-revenue`
+          );
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response.data.message);
+        }
+      },
+    });
   const monthlyRevenueData = [
     {
       month: "Apr-24",
@@ -562,7 +581,7 @@ const Workations = () => {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-        title={"Annual Monthly Virtual Office Revenues"}
+        title={"Annual Monthly Workation Revenues"}
         titleLabel={"FY 2024-25"}
         border
         TitleAmount={`INR ${inrFormat(totalActual)}`}

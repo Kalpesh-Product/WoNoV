@@ -102,6 +102,9 @@ const UniqueLeads = () => {
       })),
     };
   }, [selectedMonth, leadsData]);
+  const totalLeads = selectedMonthData?.domains?.reduce((sum, item) => {
+    return (item.clients?.length || 0) + sum;
+  }, 0);
 
   // 🧠 Yearly Revenue Data
   const yearlyRevenueData = useMemo(() => {
@@ -181,8 +184,6 @@ const UniqueLeads = () => {
     return Array.from(uniqueMonths);
   }, [leadsData]);
 
-  useEffect(() => console.log(selectedMonthData), [selectedMonthData]);
-
   return (
     <div className="p-4 flex flex-col gap-4">
       {/* View Type Selection */}
@@ -219,106 +220,114 @@ const UniqueLeads = () => {
         )}
       </div>
 
-      <WidgetSection layout={1} border padding title={"Unique Leads"}>
+      <WidgetSection
+        layout={1}
+        border
+        padding
+        title={"Unique Leads"}
+        TitleAmount={`Total Leads : ${totalLeads}`}
+      >
         <NormalBarGraph data={graphData} options={graphOptions} height={400} />
       </WidgetSection>
 
-      <div>
-        {viewType === "month" ? (
-          <CollapsibleTable
-            columns={[
-              { field: "name", headerName: "Domain Name" },
-              { field: "leads", headerName: "Leads" },
-            ]}
-            data={selectedMonthData?.domains.map((domain, index) => ({
-              id: index,
-              name: domain.name,
-              leads: domain.clients?.length || 0,
-              clients: domain.clients.map((client, clientIndex) => ({
-                ...client,
-                id: clientIndex + 1,
-              })),
-            }))} // Mapping data directly here in the data prop
-            renderExpandedRow={(row) => {
-              if (!row?.clients || !Array.isArray(row.clients)) {
-                return <div>No client details available</div>; // Fallback message if no data
-              }
-
-              return (
-                <AgTable
-                  data={row.clients}
-                  exportData
-                  columns={[
-                    { field: "id", headerName: "ID", flex: 1 },
-                    { field: "client", headerName: "Client Name", flex: 1 },
-                    {
-                      field: "representative",
-                      headerName: "Representative",
-                      flex: 1,
-                    },
-                    { field: "callDate", headerName: "Call Date", flex: 1 },
-                    { field: "status", headerName: "Status", flex: 1 },
-                    {
-                      field: "actions",
-                      headerName: "Actions",
-                      cellRenderer: (params) => (
-                        <div className="flex items-center gap-4 py-2">
-                          <span className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
-                            <MdOutlineRemoveRedEye />
-                          </span>
-                        </div>
-                      ),
-                    },
-                  ]}
-                  tableHeight={500}
-                  hideFilter
-                />
-              );
-            }}
-          />
-        ) : (
-          <CollapsibleTable
-            columns={[
-              { field: "name", headerName: "Domain Name" },
-              { field: "leads", headerName: "Leads" },
-            ]}
-            data={Object.entries(yearlyRevenueData).map(
-              ([domainName, data], index) => ({
+      <WidgetSection border title={"Unique Leads details"} TitleAmount={`Total Leads : ${totalLeads}`}>
+        <div>
+          {viewType === "month" ? (
+            <CollapsibleTable
+              columns={[
+                { field: "name", headerName: "Domain Name" },
+                { field: "leads", headerName: "Leads" },
+              ]}
+              data={selectedMonthData?.domains.map((domain, index) => ({
                 id: index,
-                name: domainName,
-                leads: data.clients?.length || 0,
-                clients: data.clients.map((client, clientIndex) => ({
+                name: domain.name,
+                leads: domain.clients?.length || 0,
+                clients: domain.clients.map((client, clientIndex) => ({
                   ...client,
                   id: clientIndex + 1,
                 })),
-              })
-            )} // Mapping data directly here in the data prop for yearly data
-            renderExpandedRow={(row) => {
-              if (!row?.clients || !Array.isArray(row.clients)) {
-                return <div>No client details available</div>; // Fallback message if no data
-              }
+              }))} // Mapping data directly here in the data prop
+              renderExpandedRow={(row) => {
+                if (!row?.clients || !Array.isArray(row.clients)) {
+                  return <div>No client details available</div>; // Fallback message if no data
+                }
 
-              return (
-                <AgTable
-                  data={row.clients}
-                  exportData
-                  columns={[
-                    { field: "client", headerName: "Client Name", flex: 1 },
-                    {
-                      field: "representative",
-                      headerName: "Representative",
-                      flex: 1,
-                    },
-                    { field: "callDate", headerName: "Call Date", flex: 1 },
-                    { field: "status", headerName: "Status", flex: 1 },
-                  ]}
-                  tableHeight={300}
-                />
-              );
-            }}
-          />
-        )}
-      </div>
+                return (
+                  <AgTable
+                    data={row.clients}
+                    exportData
+                    columns={[
+                      { field: "id", headerName: "ID", flex: 1 },
+                      { field: "client", headerName: "Client Name", flex: 1 },
+                      {
+                        field: "representative",
+                        headerName: "Representative",
+                        flex: 1,
+                      },
+                      { field: "callDate", headerName: "Call Date", flex: 1 },
+                      { field: "status", headerName: "Status", flex: 1 },
+                      {
+                        field: "actions",
+                        headerName: "Actions",
+                        cellRenderer: (params) => (
+                          <div className="flex items-center gap-4 py-2">
+                            <span className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
+                              <MdOutlineRemoveRedEye />
+                            </span>
+                          </div>
+                        ),
+                      },
+                    ]}
+                    tableHeight={500}
+                    hideFilter
+                  />
+                );
+              }}
+            />
+          ) : (
+            <CollapsibleTable
+              columns={[
+                { field: "name", headerName: "Domain Name" },
+                { field: "leads", headerName: "Leads" },
+              ]}
+              data={Object.entries(yearlyRevenueData).map(
+                ([domainName, data], index) => ({
+                  id: index,
+                  name: domainName,
+                  leads: data.clients?.length || 0,
+                  clients: data.clients.map((client, clientIndex) => ({
+                    ...client,
+                    id: clientIndex + 1,
+                  })),
+                })
+              )} // Mapping data directly here in the data prop for yearly data
+              renderExpandedRow={(row) => {
+                if (!row?.clients || !Array.isArray(row.clients)) {
+                  return <div>No client details available</div>; // Fallback message if no data
+                }
+
+                return (
+                  <AgTable
+                    data={row.clients}
+                    exportData
+                    columns={[
+                      { field: "client", headerName: "Client Name", flex: 1 },
+                      {
+                        field: "representative",
+                        headerName: "Representative",
+                        flex: 1,
+                      },
+                      { field: "callDate", headerName: "Call Date", flex: 1 },
+                      { field: "status", headerName: "Status", flex: 1 },
+                    ]}
+                    tableHeight={300}
+                  />
+                );
+              }}
+            />
+          )}
+        </div>
+      </WidgetSection>
 
       <MuiModal open={modalOpen} onClose={() => setModalOpen(false)}>
         <span>{selectedLead}</span>

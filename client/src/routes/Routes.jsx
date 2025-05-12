@@ -1020,21 +1020,7 @@ export const routes = createBrowserRouter([
                         path: "turnover",
                         element: <ActualBusinessRevenue />,
                       },
-                      // {
-                      //   path: "turnover",
-                      //   element: <EarningsLayout />,
-                      //   children: [
-                      //     {
-                      //       path: "actual-business",
-                      //       element: <ActualBusinessRevenue />,
-                      //     },
 
-                      //     {
-                      //       path: "revenue-target",
-                      //       element: <RevenueTarget />,
-                      //     },
-                      //   ],
-                      // },
 
                       {
                         path: "unique-leads",
