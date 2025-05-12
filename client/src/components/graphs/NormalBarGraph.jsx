@@ -33,9 +33,7 @@ const NormalBarGraph = ({
 
   const updatedOptions = {
     ...options,
-    toolbar : {
-      show : false
-    },
+
     xaxis: {
       ...options?.xaxis,
     },
