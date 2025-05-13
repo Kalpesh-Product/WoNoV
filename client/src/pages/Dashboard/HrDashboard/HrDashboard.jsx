@@ -25,6 +25,7 @@ import { calculateAverageDailyWorkingHours } from "../../../utils/calculateAvera
 import FinanceCard from "../../../components/FinanceCard";
 import HrExpenseGraph from "../../../components/graphs/HrExpenseGraph";
 import dayjs from "dayjs";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -90,14 +91,14 @@ const HrDashboard = () => {
 
   const expenseRawSeries = [
     {
-      name: "FY 2024-25",
+      name: "Expense",
+      group: "FY 2024-25",
       data: hrFinance?.utilisedBudget,
-      group: "total",
     },
     {
-      name: "FY 2025-26",
+      name: "Expense",
+      group: "FY 2025-26",
       data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      group: "total",
     },
   ];
 
@@ -152,20 +153,6 @@ const HrDashboard = () => {
       offsetY: -22,
     },
     xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
       title: {
         text: "  ",
       },
@@ -219,7 +206,6 @@ const HrDashboard = () => {
 
   //-------------------HR Expense graph end--------------------//
 
-  
   const tasksData = [
     {
       name: "Total Tasks",
@@ -291,7 +277,6 @@ const HrDashboard = () => {
       },
     },
   };
-
 
   //-------------------Tasks vs Achievements graph--------------------//
 
@@ -506,7 +491,7 @@ const HrDashboard = () => {
       {
         title: "Average Hours",
         value: averageWorkingHours
-          ? `${((((Number(averageWorkingHours))/30)+3.4).toFixed(2))}h`
+          ? `${(Number(averageWorkingHours) / 30 + 3.4).toFixed(2)}h`
           : "0h",
       },
     ],
@@ -577,23 +562,16 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
-          <WidgetSection
-            normalCase
-            layout={1}
-            border
-            padding
-            titleLabel={"FY 2024-25"}
-            // TitleAmount={"INR 23,13,365"}
-            TitleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
-              "en-IN"
-            )}`}
-            title={"BIZ Nest HR DEPARTMENT EXPENSE"}>
-            <BarGraph
+          }
+        >
+          <WidgetSection normalCase layout={1} padding>
+            <YearlyGraph
               data={expenseRawSeries}
               options={expenseOptions}
-              // departments={["Sales", "IT", "Tech", "Admin", "Maintainance"]}
-              departments={["FY 2024-25", "FY 2025-26"]}
+              title={"BIZ Nest HR DEPARTMENT EXPENSE"}
+              titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
+                "en-IN"
+              )}`}
             />
           </WidgetSection>
         </Suspense>,
@@ -640,13 +618,15 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection
             layout={1}
             border
             padding
             titleLabel={"FY 2024-25"}
-            title={"Department Wise KPA Vs Achievements "}>
+            title={"Department Wise KPA Vs Achievements "}
+          >
             <BarGraph data={tasksData} options={tasksOptions} />
           </WidgetSection>
         </Suspense>,

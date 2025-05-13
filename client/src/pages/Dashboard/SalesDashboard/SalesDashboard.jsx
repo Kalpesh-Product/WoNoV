@@ -67,6 +67,9 @@ const SalesDashboard = () => {
   const incomeExpenseOptions = {
     chart: {
       id: "income-vs-expense-bar",
+      animations: {
+        enabled: false, // ✅ disables all animations
+      },
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
@@ -337,6 +340,7 @@ const SalesDashboard = () => {
   const monthlyLeadsOptions = {
     chart: {
       type: "bar",
+      animation : false,
       toolbar: false,
       stacked: true,
       fontFamily: "Poppins-Regular",
@@ -651,6 +655,7 @@ const SalesDashboard = () => {
             data={incomeExpenseData}
             options={incomeExpenseOptions}
             departments={["FY 2024-25", "FY 2025-26"]}
+            chartId="bargraph-sales-dashboard"
           />
         </WidgetSection>,
       ],
@@ -685,54 +690,6 @@ const SalesDashboard = () => {
         />,
       ],
     },
-
-    // {
-    //   layout: 3,
-    //   widgets: [
-    //     <DataCard
-    //       route={"co-working-seats"}
-    //       title={"Actual"}
-    //       data={`${((totalClientsDesks / totalCoWorkingSeats) * 100).toFixed(
-    //         0
-    //       )}%`}
-    //       // data={"96.32%"}
-    //       description={"Occupancy"}
-    //     />,
-    //     <DataCard
-    //       route={"revenue"}
-    //       title={"Total"}
-    //       data={"INR " + inrFormat("43050000")}
-    //       description={"Revenues"}
-    //     />,
-    //     <DataCard
-    //       route={"clients"}
-    //       title={"Unique"}
-    //       data={clientsData.length || "0"}
-    //       description={"Clients"}
-    //     />,
-    //     <DataCard
-    //       route={"co-working-seats"}
-    //       title={"Total"}
-    //       data={totalCoWorkingSeats}
-    //       // data={totalClientsDesks}
-    //       description={"Co-working Seats"}
-    //     />,
-    //     <DataCard
-    //       route={"co-working-seats"}
-    //       title={"Booked"}
-    //       data={totalClientsDesks}
-    //       // data={totalCoWorkingSeats}
-    //       description={"Co-working Seats"}
-    //     />,
-    //     <DataCard
-    //       route={"co-working-seats"}
-    //       title={"Free"}
-    //       data={totalCoWorkingSeats - totalClientsDesks}
-    //       description={"Co-working Seats"}
-    //     />,
-    //   ],
-    // },
-
     {
       layout: 1,
       widgets: [
@@ -752,6 +709,7 @@ const SalesDashboard = () => {
               height={400}
               data={monthlyLeadsData}
               options={monthlyLeadsOptions}
+              chartId="bargraph-sales-leads"
             />
           )}
         </WidgetSection>,
@@ -776,6 +734,7 @@ const SalesDashboard = () => {
               height={400}
               data={monthlySourceData}
               options={sourcingChannelsOptions}
+    
             />
           )}
         </WidgetSection>,
@@ -814,7 +773,7 @@ const SalesDashboard = () => {
         <WidgetSection layout={1} title={"Gender-wise data"} border>
           <PieChartMui
             data={clientGenderData}
-            width={"100%"}
+      
             options={clientGenderPieChartOptions}
           />
         </WidgetSection>,

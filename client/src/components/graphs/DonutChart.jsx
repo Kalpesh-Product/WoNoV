@@ -1,5 +1,6 @@
 import React from "react";
 import ReactApexChart from "react-apexcharts";
+import useResponsiveChart from "../../hooks/useResponsiveChart";
 
 const DonutChart = ({
   centerLabel,
@@ -10,29 +11,33 @@ const DonutChart = ({
   handleClick,
   onSliceClick,
   width,
-  isMonetary = false
+  isMonetary = false,
 }) => {
-
   const chartData = {
     series: series,
     labels: labels,
     colors: colors,
   };
+  const { chartKey, containerRef } = useResponsiveChart();
 
   const chartOptions = {
     chart: {
       type: "donut",
+      animations : {
+        enabled : false
+      },
       fontFamily: "Poppins-Regular",
       events: {
-        dataPointSelection: (event, chartContext,config) => {
+        dataPointSelection: (event, chartContext, config) => {
           handleClick?.(); // trigger the click handler
-         if( onSliceClick && config?.dataPointIndex !== undefined){ // to get index
-          console.log(config)
-          const index = config.dataPointIndex;
-          onSliceClick?.(index);
-         }
-        }
-      }
+          if (onSliceClick && config?.dataPointIndex !== undefined) {
+            // to get index
+            console.log(config);
+            const index = config.dataPointIndex;
+            onSliceClick?.(index);
+          }
+        },
+      },
     },
     colors: chartData.colors,
     labels: chartData.labels,
@@ -46,8 +51,7 @@ const DonutChart = ({
     tooltip: {
       enabled: true,
       y: {
-        formatter: (val, { seriesIndex }) =>
-          `${tooltipValue[seriesIndex]}`,
+        formatter: (val, { seriesIndex }) => `${tooltipValue[seriesIndex]}`,
       },
     },
     plotOptions: {
@@ -61,22 +65,23 @@ const DonutChart = ({
               label: `Total ${centerLabel}`,
               fontSize: "16px",
               fontWeight: "bold",
-             formatter: function (w) {
-  const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-  return isMonetary
-    ? `INR ${total.toLocaleString("en-IN")}`
-    : `${total.toLocaleString("en-IN")}`;
-}
+              formatter: function (w) {
+                const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                return isMonetary
+                  ? `INR ${total.toLocaleString("en-IN")}`
+                  : `${total.toLocaleString("en-IN")}`;
+              },
             },
           },
         },
       },
     },
   };
-  
+
   return (
-    <div className="rounded-md">
+    <div className="rounded-md" ref={containerRef}>
       <ReactApexChart
+        key={chartKey}
         options={chartOptions}
         series={chartData.series}
         type="donut"
