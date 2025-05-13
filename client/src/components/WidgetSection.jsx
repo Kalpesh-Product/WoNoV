@@ -1,6 +1,8 @@
 import React from "react";
 import PrimaryButton from "./PrimaryButton";
 import { Chip } from "@mui/material";
+import { FaArrowTrendUp } from "react-icons/fa6";
+import { FaArrowTrendDown } from "react-icons/fa6";
 
 const WidgetSection = ({
   layout = 1,
@@ -15,6 +17,8 @@ const WidgetSection = ({
   handleClick,
   titleFont,
   TitleAmount,
+  TitleAmountGreen,
+  TitleAmountRed,
   titleLabel,
   fun,
   normalCase,
@@ -76,6 +80,30 @@ const WidgetSection = ({
                 }`}>
                 {TitleAmount}{" "}
               </span>
+              <div className="flex">
+                <span
+                  className={`${
+                    titleFont
+                      ? "text-subtitle text-[#54C4A7]"
+                      : "text-widgetTitle text-[#54C4A7] font-pmedium"
+                  }`}>
+                  <div className="flex gap-2 justify-center items-center">
+                    {/* <FaArrowTrendUp /> */}
+                    <div>{TitleAmountGreen}&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                  </div>
+                </span>
+                <span
+                  className={`${
+                    titleFont
+                      ? "text-subtitle text-[#EB5C45]"
+                      : "text-widgetTitle text-[#EB5C45] font-pmedium"
+                  }`}>
+                  <div className="flex gap-2 justify-center items-center">
+                    {/* <FaArrowTrendDown /> */}
+                    <div>{TitleAmountRed} </div>
+                  </div>
+                </span>
+              </div>
             </div>
           </div>
           {button && (

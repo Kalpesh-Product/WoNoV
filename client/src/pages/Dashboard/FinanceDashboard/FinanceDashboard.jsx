@@ -467,7 +467,9 @@ const FinanceDashboard = () => {
           normalCase
           border
           title={"BIZ Nest INCOME V/S EXPENSES"}
-          titleLabel={"FY 2024-25"}>
+          titleLabel={"FY 2024-25"}
+          TitleAmountGreen={`INR 53,29,345`}
+          TitleAmountRed={`INR 42,36,894`}>
           <BarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}

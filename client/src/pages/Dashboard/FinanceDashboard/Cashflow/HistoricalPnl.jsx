@@ -603,7 +603,11 @@ const HistoricalPnl = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Historical P&L"}>
+        <WidgetSection
+          border
+          title={"Historical P&L"}
+          TitleAmountGreen={`INR 53,29,345`}
+          TitleAmountRed={`INR 42,36,894`}>
           <NormalBarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}
@@ -621,7 +625,7 @@ const HistoricalPnl = () => {
         </WidgetSection>
       ))}
 
-      <WidgetSection title={"Historical P&L Details"} border >
+      <WidgetSection title={"Historical P&L Details"} border>
         <CollapsibleTable
           columns={[
             { field: "name", headerName: "Financial Year" },
