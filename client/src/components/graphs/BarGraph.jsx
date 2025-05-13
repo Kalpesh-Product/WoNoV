@@ -1,11 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Chart from "react-apexcharts";
-import {
-  Select,
-  MenuItem,
-  FormControl,
-  CircularProgress,
-} from "@mui/material";
+import { Select, MenuItem, FormControl, CircularProgress } from "@mui/material";
 import SecondaryButton from "../SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import useResponsiveChart from "../../hooks/useResponsiveChart";
@@ -67,14 +62,12 @@ const BarGraph = ({
   const updatedOptions = {
     ...options,
     chart: {
-
+      id: chartId, // Required for ApexCharts.exec("resize")
       ...options.chart,
       zoom: { enabled: false },
     },
     xaxis: {
       ...options?.xaxis,
-  
-
     },
   };
 
@@ -91,7 +84,7 @@ const BarGraph = ({
   };
 
   return (
-    <div ref={containerRef} className="bg-white rounded-md pt-2">
+    <div className="bg-white rounded-md pt-2">
       <div className="flex justify-end items-center w-full">
         <div className="flex gap-4 items-center mx-8">
           {year && (
@@ -125,13 +118,15 @@ const BarGraph = ({
           <CircularProgress size={32} />
         </div>
       ) : (
-        <Chart
-          key={chartKey}
-          options={updatedOptions}
-          series={filteredData}
-          type="bar"
-          height={height || 350}
-        />
+        <div  className="w-full">
+          <Chart
+            key={chartKey}
+            options={updatedOptions}
+            series={filteredData}
+            type="bar"
+            height={height || 370}
+          />
+        </div>
       )}
 
       {departments && (

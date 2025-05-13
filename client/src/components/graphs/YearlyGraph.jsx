@@ -4,11 +4,21 @@ import BarGraph from "./BarGraph";
 import SecondaryButton from "../SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
-const YearlyGraph = ({ options, data, dataPoint, title, titleAmount, chartId }) => {
+const YearlyGraph = ({
+  options,
+  data,
+  dataPoint,
+  title,
+  titleAmount,
+  chartId,
+  TitleAmountGreen,
+  TitleAmountRed,
+  responsiveResize = false,
+  secondParam = false
+}) => {
   const fiscalYears = ["FY 2024-25", "FY 2025-26"];
   const [selectedYearIndex, setSelectedYearIndex] = useState(0);
   const selectedYear = fiscalYears[selectedYearIndex];
-  console.log("YEar",selectedYear)
 
   const yearCategories = {
     "FY 2024-25": [
@@ -71,8 +81,16 @@ const YearlyGraph = ({ options, data, dataPoint, title, titleAmount, chartId }) 
         title={title || "Title not given"}
         titleLabel={selectedYear}
         TitleAmount={titleAmount || ""}
+        TitleAmountGreen={TitleAmountGreen}
+        TitleAmountRed={TitleAmountRed}
       >
-        <BarGraph data={filteredData} options={updatedOptions} chartId={chartId || ""}  />
+        <BarGraph
+          data={filteredData}
+          options={updatedOptions}
+          chartId={chartId || ""}
+          responsiveResize={responsiveResize}
+          secondParam={secondParam}
+        />
 
         <div className="flex justify-center items-center">
           <div className="flex items-center pb-4">

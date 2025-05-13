@@ -105,6 +105,7 @@ const HrDashboard = () => {
   const expenseOptions = {
     chart: {
       type: "bar",
+      animations: { enabled: false },
       toolbar: { show: false },
 
       stacked: true,
@@ -209,10 +210,12 @@ const HrDashboard = () => {
   const tasksData = [
     {
       name: "Total Tasks",
+      group: "FY 2024-25",
       data: [45, 60, 50, 70, 65, 80, 90, 85, 75, 60, 55, 70],
     },
     {
       name: "Achieved Tasks",
+      group: "FY 2024-25",
       data: [30, 50, 40, 60, 50, 70, 80, 75, 65, 50, 45, 60],
     },
   ];
@@ -220,6 +223,9 @@ const HrDashboard = () => {
   const tasksOptions = {
     chart: {
       type: "bar",
+      animations : {
+        enabled : false
+      },
       fontFamily: "Poppins-Regular",
       stacked: false,
       toolbar: { show: false },
@@ -239,25 +245,7 @@ const HrDashboard = () => {
       width: 2,
       colors: ["transparent"],
     },
-    xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
-      labels: {
-        rotate: -45,
-      },
-    },
+
     yaxis: {
       title: {
         text: "Task Count",
@@ -567,6 +555,8 @@ const HrDashboard = () => {
           <WidgetSection normalCase layout={1} padding>
             <YearlyGraph
               data={expenseRawSeries}
+              responsiveResize
+              chartId={"bargraph-hr-expense"}
               options={expenseOptions}
               title={"BIZ Nest HR DEPARTMENT EXPENSE"}
               titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
@@ -620,15 +610,12 @@ const HrDashboard = () => {
             </Box>
           }
         >
-          <WidgetSection
-            layout={1}
-            border
-            padding
-            titleLabel={"FY 2024-25"}
-            title={"Department Wise KPA Vs Achievements "}
-          >
-            <BarGraph data={tasksData} options={tasksOptions} />
-          </WidgetSection>
+          <YearlyGraph
+            data={tasksData}
+            options={tasksOptions}
+            title={"DEPARTMENT WISE KPA VS ACHIEVEMENTS"}
+            secondParam
+          />
         </Suspense>,
       ],
     },

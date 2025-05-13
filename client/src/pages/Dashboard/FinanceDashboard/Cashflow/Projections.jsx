@@ -170,7 +170,7 @@ const Projections = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection>
+        <WidgetSection padding>
           <YearlyGraph
             options={incomeExpenseOptions}
             data={incomeExpenseData}

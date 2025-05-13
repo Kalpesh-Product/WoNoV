@@ -53,18 +53,8 @@ const FinanceDashboard = () => {
       name: "Expense",
       group: "FY 2024-25",
       data: [
-        950000, 
-        1000000, 
-        1080000, 
-        1200000, 
-        1350000, 
-        1450000, 
-        1550000, 
-        1500000, 
-        1480000, 
-        1600000, 
-        1750000, 
-        1850000, 
+        950000, 1000000, 1080000, 1200000, 1350000, 1450000, 1550000, 1500000,
+        1480000, 1600000, 1750000, 1850000,
       ],
     },
     {
@@ -490,10 +480,14 @@ const FinanceDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection padding
-        >
-          <YearlyGraph data={incomeExpenseData} options={incomeExpenseOptions} chartId={"bargraph-finance-income"} title={"BIZNest FINANCE INCOME V/S EXPENSE"} />
-        </WidgetSection>
+        <YearlyGraph
+          data={incomeExpenseData}
+          options={incomeExpenseOptions}
+          chartId={"bargraph-finance-income"}
+          title={"BIZNest FINANCE INCOME V/S EXPENSE"}
+          TitleAmountGreen={`INR 53,29,345`}
+          TitleAmountRed={`INR 42,36,894`}
+        />,
       ],
     },
     {
