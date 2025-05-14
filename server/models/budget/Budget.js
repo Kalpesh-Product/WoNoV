@@ -41,6 +41,11 @@ const budgetSchema = new mongoose.Schema({
     default: "Pending",
     enum: ["Pending", "Approved", "Rejected"],
   },
+  isPaid: {
+    type: String,
+    default: "Unpaid",
+    enum: ["Paid", "Unpaid"],
+  },
   isExtraBudget: {
     type: Boolean,
     default: false,
