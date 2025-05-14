@@ -40,9 +40,9 @@ const AdminDashboard = () => {
 
   const { setIsSidebarOpen } = useSidebar();
 
-  useEffect(() => {
-    setIsSidebarOpen(true);
-  }, []); // Empty dependency array ensures this runs once on mount
+  // useEffect(() => {
+  //   setIsSidebarOpen(true);
+  // }, []); 
 
   const options = {
     chart: {
