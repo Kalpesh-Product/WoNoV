@@ -144,6 +144,121 @@ const fetchBudget = async (req, res, next) => {
   }
 };
 
+const approveBudget = async (req, res, next) => {
+  const logPath = "budget/BudgetLog";
+  const logAction = "Approve Budget";
+  const logSourceKey = "budget";
+
+  try {
+    const { budgetId } = req.params;
+    console.log("budget id:", budgetId);
+    const { user, ip, company } = req;
+
+    const foundUser = await User.findOne({ _id: user })
+      .select("company")
+      .populate([{ path: "company", select: "companyName" }])
+      .lean()
+      .exec();
+
+    if (!foundUser) {
+      throw new CustomError("No user found", logPath, logAction, logSourceKey);
+    }
+
+    const approvedBudget = await Budget.findByIdAndUpdate(
+      { _id: budgetId },
+      { status: "Approved" },
+      { new: true }
+    );
+
+    if (!approvedBudget) {
+      throw new CustomError(
+        "Failed to approve the budget,please try again",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Budget Approved",
+      status: "Success",
+      user: user,
+      ip: ip,
+      company: company,
+      sourceKey: logSourceKey,
+      sourceId: approvedBudget._id,
+      changes: { status: "Approved" },
+    });
+
+    res.status(200).json({ message: "Budget Approved" });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+    );
+  }
+};
+
+const rejectBudget = async (req, res, next) => {
+  const logPath = "budget/BudgetLog";
+  const logAction = "Reject Budget";
+  const logSourceKey = "budget";
+
+  try {
+    const { budgetId } = req.params;
+    const { user, ip, company } = req;
+
+    const foundUser = await User.findOne({ _id: user })
+      .select("company")
+      .populate([{ path: "company", select: "companyName" }])
+      .lean()
+      .exec();
+
+    if (!foundUser) {
+      throw new CustomError("No user found", logPath, logAction, logSourceKey);
+    }
+
+    const rejectedBudget = await Budget.findByIdAndUpdate(
+      { _id: budgetId },
+      { status: "Rejected" },
+      { new: true }
+    );
+
+    if (!rejectedBudget) {
+      throw new CustomError(
+        "Failed to reject the budget,please try again",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Budget Rejected",
+      status: "Success",
+      user: user,
+      ip: ip,
+      company: company,
+      sourceKey: logSourceKey,
+      sourceId: rejectedBudget._id,
+      changes: { status: "Rejected" },
+    });
+
+    res.status(200).json({ message: "Budget Rejected" });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+    );
+  }
+};
+
 const bulkInsertBudgets = async (req, res, next) => {
   try {
     const logPath = "BulkInsertLogs";
@@ -153,20 +268,28 @@ const bulkInsertBudgets = async (req, res, next) => {
     const { departmentId } = req.params;
 
     if (!req.file) {
-      throw new CustomError("CSV file was not provided", logPath, logAction, logSourceKey);
+      throw new CustomError(
+        "CSV file was not provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
     }
 
     const csvData = req.file.buffer.toString("utf-8").trim();
     if (!csvData) {
-      throw new CustomError("CSV file is empty", logPath, logAction, logSourceKey);
+      throw new CustomError(
+        "CSV file is empty",
+        logPath,
+        logAction,
+        logSourceKey
+      );
     }
 
     const budgets = [];
     const stream = Readable.from(csvData);
-    
-    const units = await Unit.find({ company })
-      .lean()
-      .exec();
+
+    const units = await Unit.find({ company }).lean().exec();
 
     const unitsMap = new Map(units.map((unit) => [unit._id, unit.unitNo]));
 
@@ -174,10 +297,16 @@ const bulkInsertBudgets = async (req, res, next) => {
       .pipe(csvParser())
       .on("data", (row) => {
         const projectedAmt = parseFloat(row["Projected Amount"]);
-        const actualAmt = row["Actual Amount"] ? parseFloat(row["Actual Amount"]) : 0;
+        const actualAmt = row["Actual Amount"]
+          ? parseFloat(row["Actual Amount"])
+          : 0;
         const parsedMonth = new Date(row["Month"]);
 
-        if (isNaN(projectedAmt) || isNaN(actualAmt) || isNaN(parsedMonth.getTime())) {
+        if (
+          isNaN(projectedAmt) ||
+          isNaN(actualAmt) ||
+          isNaN(parsedMonth.getTime())
+        ) {
           console.warn(`Skipping invalid row: ${JSON.stringify(row)}`);
           return; // Skip invalid rows
         }
@@ -196,13 +325,28 @@ const bulkInsertBudgets = async (req, res, next) => {
       })
       .on("end", async () => {
         if (budgets.length === 0) {
-          return next(new CustomError("No valid budgets found in CSV file", logPath, logAction, logSourceKey));
+          return next(
+            new CustomError(
+              "No valid budgets found in CSV file",
+              logPath,
+              logAction,
+              logSourceKey
+            )
+          );
         }
 
         try {
           await Budget.insertMany(budgets);
         } catch (dbError) {
-          return next(new CustomError(dbError.message, logPath, logAction, logSourceKey, 500));
+          return next(
+            new CustomError(
+              dbError.message,
+              logPath,
+              logAction,
+              logSourceKey,
+              500
+            )
+          );
         }
 
         await createLog({
@@ -222,12 +366,24 @@ const bulkInsertBudgets = async (req, res, next) => {
         });
       });
   } catch (error) {
-    next(error instanceof CustomError ? error : new CustomError(error.message, "BudgetLogs", "Request Budget", "budget", 500));
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(
+            error.message,
+            "BudgetLogs",
+            "Request Budget",
+            "budget",
+            500
+          )
+    );
   }
 };
 
 module.exports = {
   requestBudget,
+  approveBudget,
+  rejectBudget,
   fetchBudget,
   bulkInsertBudgets,
 };
