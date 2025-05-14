@@ -18,9 +18,7 @@ const DeptWiseBudget = () => {
     queryKey: ["hrFinance"],
     queryFn: async () => {
       try {
-        const response = await axios.get(
-          `/api/budget/company-budget`
-        );
+        const response = await axios.get(`/api/budget/company-budget`);
         const budgets = response.data.allBudgets;
         return Array.isArray(budgets) ? budgets : [];
       } catch (error) {
@@ -77,7 +75,7 @@ const DeptWiseBudget = () => {
       expanseName: item.expanseName,
       department: item.department?.name,
       expanseType: item.expanseType,
-      amount: (item.actualAmount),
+      amount: item.actualAmount,
       projectedAmount: item.projectedAmount.toFixed(2),
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       status: item.status,
@@ -86,62 +84,59 @@ const DeptWiseBudget = () => {
     return acc;
   }, {});
 
-  console.log("GROUPED DATA OUT : ", groupedData)
-
-
   // Data array for rendering the Accordion
   const financialData = Object.values(groupedData)
-  .map((data, index) => {
-    const departmentMap = {};
+    .map((data, index) => {
+      const departmentMap = {};
 
-    data.tableData.rows.forEach((row) => {
-      const dept = row.department || "Unknown";
-      const actual = (row.amount);
-      const projected = parseFloat(row.projectedAmount?.toString().replace(/,/g, "") || "0");
+      data.tableData.rows.forEach((row) => {
+        const dept = row.department || "Unknown";
+        const actual = row.amount || 0;
+        const projected = parseFloat(
+          row.projectedAmount?.toString().replace(/,/g, "") || "0"
+        );
 
-      if (!departmentMap[dept]) {
-        departmentMap[dept] = {
-          id: dept,
-          department: dept,
-          actualAmount: actual,
-          projectedAmount: projected,
-        };
-      } else {
-        departmentMap[dept].actualAmount += actual;
-        departmentMap[dept].projectedAmount += projected;
-      }
-    });
+        if (!departmentMap[dept]) {
+          departmentMap[dept] = {
+            id: dept,
+            department: dept,
+            actualAmount: actual,
+            projectedAmount: projected,
+          };
+        } else {
+          departmentMap[dept].actualAmount += actual;
+          departmentMap[dept].projectedAmount += projected;
+        }
+      });
 
-    const transoformedRows = Object.values(departmentMap).map((deptRow, index) => ({
-      ...deptRow,
-      srNo: index + 1,
-      actualAmount: inrFormat(deptRow.actualAmount),
-      projectedAmount: inrFormat(deptRow.projectedAmount),
-    }));
+      const transoformedRows = Object.values(departmentMap).map(
+        (deptRow, index) => ({
+          ...deptRow,
+          srNo: index + 1,
+          actualAmount: inrFormat(deptRow.actualAmount),
+          projectedAmount: inrFormat(deptRow.projectedAmount),
+        })
+      );
 
-    const transformedCols = [
-      { field: "srNo", headerName: "SR NO", flex: 1 },
-      { field: "department", headerName: "Department", flex: 1 },
-      { field: "projectedAmount", headerName: "Projected (INR)", flex: 1 },
-      { field: "actualAmount", headerName: "Actual (INR)", flex: 1 },
-    ];
+      const transformedCols = [
+        { field: "srNo", headerName: "SR NO", flex: 1 },
+        { field: "department", headerName: "Department", flex: 1 },
+        { field: "projectedAmount", headerName: "Projected (INR)", flex: 1 },
+        { field: "actualAmount", headerName: "Actual (INR)", flex: 1 },
+      ];
 
-    return {
-      ...data,
-      projectedAmount: data.projectedAmount.toLocaleString("en-IN"),
-      amount: data.amount, // keep as is if already numeric
-      tableData: {
-        ...data.tableData,
-        rows: transoformedRows,
-        columns: transformedCols,
-      },
-    };
-  })
-  .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate)));
-
-
-    console.log("FINANCIAL DATA : ", financialData)
-
+      return {
+        ...data,
+        projectedAmount: inrFormat(data.projectedAmount),
+        amount: inrFormat(data.amount), // keep as is if already numeric
+        tableData: {
+          ...data.tableData,
+          rows: transoformedRows,
+          columns: transformedCols,
+        },
+      };
+    })
+    .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate)));
 
   // BUDGET NEW START
 
