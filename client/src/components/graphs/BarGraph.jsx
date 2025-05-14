@@ -28,6 +28,29 @@ const BarGraph = ({
   const fallbackRef = useRef(null);
   const containerRef = responsiveResize ? responsive.containerRef : fallbackRef;
   const chartKey = responsiveResize ? responsive.chartKey : 0;
+  const [updatedOptions, setUpdatedOptions] = useState({
+    ...options,
+    chart: {
+      id: chartId, // Required for ApexCharts.exec("resize")
+      ...options.chart,
+      zoom: { enabled: false },
+    },
+    xaxis: {
+      ...options?.xaxis,
+    },
+  })
+  useEffect(() => {
+    // Safe to update options now
+    setUpdatedOptions((prev) => ({
+      ...prev,
+      chart: {
+        ...prev.chart,
+        zoom: {
+          enabled: false,
+        },
+      },
+    }));
+  }, []);
 
   useEffect(() => {
     if (!responsiveResize) return;
@@ -59,17 +82,7 @@ const BarGraph = ({
     );
   }
 
-  const updatedOptions = {
-    ...options,
-    chart: {
-      id: chartId, // Required for ApexCharts.exec("resize")
-      ...options.chart,
-      zoom: { enabled: false },
-    },
-    xaxis: {
-      ...options?.xaxis,
-    },
-  };
+
 
   const handleNext = () => {
     if (departmentIndex < departments.length - 1) {

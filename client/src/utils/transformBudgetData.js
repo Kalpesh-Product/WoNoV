@@ -14,7 +14,7 @@ export const transformBudgetData = (allBudgets) => {
   }, {});
 
   allBudgets.forEach((entry) => {
-    const monthKey = format(startOfMonth(new Date(entry.dueDate)), "yyyy-MM");
+    const monthKey = format((new Date(entry.dueDate)), "yyyy-MM");
     if (monthMap[monthKey]) {
       monthMap[monthKey].projected += entry.projectedAmount || 0;
       monthMap[monthKey].actual += entry.actualAmount || 0;

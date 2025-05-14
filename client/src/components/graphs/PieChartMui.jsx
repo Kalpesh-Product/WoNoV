@@ -14,6 +14,7 @@ const PieChartMui = ({ data, options, customLegend, width, height }) => {
     ...options,
     chart: {
       ...options.chart,
+      zoom: { enabled: false },
       animations: {
         enabled: false,
       },

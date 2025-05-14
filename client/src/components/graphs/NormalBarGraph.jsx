@@ -14,7 +14,7 @@ const NormalBarGraph = ({
   year,
   departments,
   singleParam,
-  doubleParam
+  doubleParam,
 }) => {
   const [selectedYear, setSelectedYear] = useState("2024-2025");
   const [departmentIndex, setDepartmentIndex] = useState(0);
@@ -42,7 +42,10 @@ const NormalBarGraph = ({
 
   const updatedOptions = {
     ...options,
-
+    chart: {
+      ...options.chart,
+      zoom: { enabled: false },
+    },
     xaxis: {
       ...options?.xaxis,
     },

@@ -19,7 +19,7 @@ import { Controller, useForm } from "react-hook-form";
 import DataCard from "../../../../components/DataCard";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 import { toast } from "sonner";
-import BudgetGraph from "../../../../components/graphs/BudgetGraph";
+import Yearlygraph from "../../../../components/graphs/YearlyGraph";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import { useNavigate } from "react-router-dom";
 import BarGraph from "../../../../components/graphs/BarGraph";
@@ -50,7 +50,7 @@ const HrBudget = () => {
     if (isHrLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(hrFinance);
   }, [isHrLoading, hrFinance]);
-  
+
   useEffect(() => {
     if (!isHrLoading) {
       const timer = setTimeout(() => setIsReady(true), 1000);
@@ -61,18 +61,17 @@ const HrBudget = () => {
   const expenseRawSeries = useMemo(() => {
     return [
       {
-        name: "FY 2024-25",
+        name: "total",
+        group: "FY 2024-25",
         data: budgetBar?.utilisedBudget || [],
-        group: "total",
       },
       {
-        name: "FY 2025-26",
+        name: "total",
+        group: "FY 2025-26",
         data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        group: "total",
       },
     ];
   }, [budgetBar]);
-  
 
   const expenseOptions = {
     chart: {
@@ -102,7 +101,7 @@ const HrBudget = () => {
     dataLabels: {
       enabled: true,
       formatter: (val) => {
-        const formatted = inrFormat(val.toFixed(0))
+        const formatted = inrFormat(val.toFixed(0));
         return formatted;
       },
 
@@ -112,25 +111,7 @@ const HrBudget = () => {
       },
       offsetY: -22,
     },
-    xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
-      title: {
-        text: "  ",
-      },
-    },
+
     yaxis: {
       // max: 3000000,
       title: { text: "Amount In Lakhs (INR)" },
@@ -206,7 +187,11 @@ const HrBudget = () => {
               columns: [
                 { field: "expanseName", headerName: "Expense Name", flex: 1 },
                 { field: "expanseType", headerName: "Expense Type", flex: 1 },
-                { field: "projectedAmount", headerName: "Projected (INR)", flex: 1 },
+                {
+                  field: "projectedAmount",
+                  headerName: "Projected (INR)",
+                  flex: 1,
+                },
                 { field: "actualAmount", headerName: "Actual (INR)", flex: 1 }, // ✅ add this
                 { field: "dueDate", headerName: "Due Date", flex: 1 },
                 { field: "status", headerName: "Status", flex: 1 },
@@ -277,23 +262,14 @@ const HrBudget = () => {
               </Box>
             }
           >
-            <WidgetSection
-              normalCase
-              layout={1}
-              border
-              padding
-              titleLabel={"FY 2024-25"}
-              TitleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
+            <Yearlygraph
+              data={expenseRawSeries}
+              options={expenseOptions}
+              title={"BIZ Nest HR DEPARTMENT EXPENSE"}
+              titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
                 "en-IN"
               )}`}
-              title={"BIZ Nest HR DEPARTMENT EXPENSE"}
-            >
-              <BarGraph
-                data={expenseRawSeries}
-                options={expenseOptions}
-                departments={["FY 2024-25", "FY 2025-26"]}
-              />
-            </WidgetSection>
+            />
           </Suspense>
         </div>
         <div>

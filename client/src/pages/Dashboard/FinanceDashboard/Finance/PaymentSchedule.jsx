@@ -13,6 +13,8 @@ import {
 import dayjs from "dayjs";
 
 import MuiModal from "../../../../components/MuiModal";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 
 const PaymentSchedule = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -22,6 +24,8 @@ const PaymentSchedule = () => {
     setIsDrawerOpen(false);
     setSelectedEvent(null);
   };
+  const axios = useAxiosPrivate();
+ 
 
   // Updated dummy data for April 2025
   const dummyData = [
@@ -238,7 +242,8 @@ const PaymentSchedule = () => {
                   {Number(selectedEvent.extendedProps.amount).toLocaleString(
                     "en-IN"
                   )}
-                &nbsp;INR</span>
+                  &nbsp;INR
+                </span>
               </span>
             </div>
           </div>
