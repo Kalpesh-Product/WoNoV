@@ -14,6 +14,7 @@ import { inrFormat } from "../../utils/currencyFormat";
 import PrimaryButton from "../PrimaryButton";
 import AgTable from "../AgTable";
 import CollapsibleTable from "../Tables/MuiCollapsibleTable";
+import { parseAmount } from "../../utils/parseAmount";
 
 const AllocatedBudget = ({
   financialData,
@@ -24,7 +25,6 @@ const AllocatedBudget = ({
   const [selectedTab, setSelectedTab] = useState(0);
   const fiscalYears = ["FY 2024-25", "FY 2025-26"];
   const [selectedFYIndex, setSelectedFYIndex] = useState(0); // Default to FY 2024-25
-  console.log("INSIDE FINFANCIAL DATA : ", financialData);
 
   const selectedFY = fiscalYears[selectedFYIndex];
 
@@ -38,11 +38,11 @@ const AllocatedBudget = ({
     return Array.from(types);
   }, [financialData]);
 
+
   const allMonths = useMemo(() => {
     const set = new Set(financialData?.map((item) => item.month));
     return Array.from(set).sort((a, b) => new Date(a) - new Date(b));
   }, [financialData]);
-
   const filteredMonths = useMemo(() => {
     const yearRanges = {
       "FY 2024-25": [new Date("2024-04-01"), new Date("2025-03-31")],
@@ -55,6 +55,8 @@ const AllocatedBudget = ({
     });
   }, [allMonths, selectedFY]);
 
+
+
   const groupedData = useMemo(() => {
     const result = {};
 
@@ -62,8 +64,6 @@ const AllocatedBudget = ({
       result[type] = {};
       allMonths.forEach((month) => {
         const monthData = financialData.find((fd) => fd.month === month);
-
-        console.log("DEEP INSIIDE DATA  : ", monthData);
         const rows = noFilter
           ? monthData?.tableData?.rows || []
           : monthData?.tableData?.rows?.filter(
@@ -76,14 +76,14 @@ const AllocatedBudget = ({
           0
         );
         const actualAmount = rows.reduce(
-          (sum, r) => sum + ((noFilter ? (r.amount) : r.actualAmount) || 0),
+          (sum, r) => sum + (parseAmount(r.actualAmount)|| 0),
           0
         );
 
         result[type][month] = {
           month,
           projectedAmount,
-          amount: (actualAmount),
+          amount: inrFormat(actualAmount),
           tableData: {
             columns: monthData?.tableData?.columns || [],
             rows,
@@ -94,8 +94,6 @@ const AllocatedBudget = ({
 
     return result;
   }, [financialData, allTypes, allMonths, noFilter]);
-
-  console.log("INSIDE GROUPED DATA : ", groupedData);
 
   const collapsibleRows = useMemo(() => {
     const currentType = noFilter ? "All" : allTypes[selectedTab];
@@ -112,8 +110,6 @@ const AllocatedBudget = ({
       };
     });
   }, [filteredMonths, groupedData, allTypes, selectedTab]);
-
-  console.log("COLLAPSE INSIDE : ", collapsibleRows);
 
   const totalProjectedAmountForFY = useMemo(() => {
     return filteredMonths.reduce((sum, month) => {
