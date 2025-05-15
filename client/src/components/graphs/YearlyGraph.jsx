@@ -14,7 +14,7 @@ const YearlyGraph = ({
   TitleAmountGreen,
   TitleAmountRed,
   responsiveResize = false,
-  secondParam = false
+  secondParam = false,
 }) => {
   const fiscalYears = ["FY 2024-25", "FY 2025-26"];
   const [selectedYearIndex, setSelectedYearIndex] = useState(0);
@@ -60,6 +60,12 @@ const YearlyGraph = ({
 
   const updatedOptions = {
     ...options,
+    chart: {
+      ...options.chart,
+      zoom: {
+        enabled: false,
+      },
+    },
     xaxis: {
       ...options.xaxis,
       categories: yearCategories[selectedYear],

@@ -4,51 +4,51 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import dayjs from "dayjs";
-import { FormGroup, FormControlLabel, Checkbox } from "@mui/material";
+import {
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  CircularProgress,
+} from "@mui/material";
 import MuiModal from "../../../../components/MuiModal";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
+import LoadingContainer from "../../../../components/LoadingContainer";
 
 const HrPayment = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const axios = useAxiosPrivate();
+
+  const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+    queryKey: ["hrFinance"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e`
+        );
+        const budgets = response.data.allBudgets;
+
+        return Array.isArray(budgets)
+          ? budgets.map((item) => ({
+              title: item.expanseName || "Untitled",
+              date: item.dueDate, // Format: YYYY-MM-DD
+              actualAmount: item.actualAmount,
+              projectedAmount: item.projectedAmount,
+              status: item.status === "Approved" ? "paid" : "unpaid",
+            }))
+          : [];
+      } catch (error) {
+        console.error("Error fetching budget:", error);
+        return [];
+      }
+    },
+  });
 
   const closeDrawer = () => {
     setIsDrawerOpen(false);
     setSelectedEvent(null);
   };
-
-  // Updated dummy data for April 2025
-  const dummyData = [
-    {
-      title: "Salary Disbursement",
-      date: "2025-04-03",
-      amount: "4000",
-      status: "paid",
-    },
-    {
-      title: "Freelancer Payment",
-      date: "2025-04-05",
-      amount: "1200",
-      status: "unpaid",
-    },
-    {
-      title: "Team Bonus",
-      date: "2025-04-10",
-      amount: "900",
-      status: "paid",
-    },
-    {
-      title: "Medical Reimbursement",
-      date: "2025-04-15",
-      amount: "300",
-      status: "paid",
-    },
-    {
-      title: "Travel Allowance",
-      date: "2025-04-20",
-      amount: "600",
-      status: "unpaid",
-    },
-  ];
 
   // Payment status colors
   const statusColorMap = {
@@ -58,13 +58,14 @@ const HrPayment = () => {
 
   const [statusFilters, setStatusFilters] = useState(["paid", "unpaid"]);
 
-  const events = dummyData.map((payment) => ({
+  const events = hrFinance.map((payment) => ({
     title: payment.title,
     start: payment.date,
     backgroundColor: statusColorMap[payment.status],
     borderColor: statusColorMap[payment.status],
     extendedProps: {
-      amount: payment.amount,
+      actualAmount: payment.actualAmount,
+      projectedAmount: payment.projectedAmount,
       status: payment.status,
     },
   }));
@@ -170,23 +171,31 @@ const HrPayment = () => {
           </div>
         </div>
 
-        {/* Calendar Section */}
-        <div className="w-full h-full overflow-y-auto">
-          <FullCalendar
-            headerToolbar={{
-              left: "today",
-              center: "prev title next",
-              right: "dayGridMonth,timeGridWeek,timeGridDay",
-            }}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            events={filteredEvents}
-            contentHeight={425}
-            eventClick={handleEventClick}
-            dayMaxEvents={2}
-            eventDisplay="block"
-          />
-        </div>
+        {!isHrLoading ? (
+          <div className="w-full h-full overflow-y-auto">
+            <FullCalendar
+              headerToolbar={{
+                left: "today",
+                center: "prev title next",
+                right: "dayGridMonth,timeGridWeek,timeGridDay",
+              }}
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              events={filteredEvents}
+              contentHeight={425}
+              eventClick={handleEventClick}
+              dayMaxEvents={2}
+              eventDisplay="block"
+              eventContent={(meeting) => (
+                <span className="text-[0.65rem] rounded-xl cursor-pointer">
+                  {meeting.event.title}
+                </span>
+              )}
+            />
+          </div>
+        ) : (
+          <LoadingContainer />
+        )}
       </div>
 
       {/* Modal Section */}
@@ -204,34 +213,41 @@ const HrPayment = () => {
           <div>
             <div className="flex flex-col gap-2">
               <span className="text-content flex items-center">
-                <span className="w-[30%]">Title</span>
+                <span className="w-[50%]">Title</span>
                 <span>:</span>
                 <span className="text-content font-pmedium w-full justify-start pl-4">
                   {selectedEvent.title}
                 </span>
               </span>
               <span className="text-content flex items-center">
-                <span className="w-[30%]">Date</span>
+                <span className="w-[50%]">Date</span>
                 <span>:</span>
                 <span className="text-content font-pmedium w-full justify-start pl-4">
                   {dayjs(selectedEvent.start).format("YYYY-MM-DD")}
                 </span>
               </span>
               <span className="text-content flex items-center">
-                <span className="w-[30%]">Status</span>
+                <span className="w-[50%]">Status</span>
                 <span>:</span>
                 <span className="text-content font-pmedium w-full justify-start pl-4 capitalize">
                   {selectedEvent.extendedProps.status}
                 </span>
               </span>
               <span className="text-content flex items-center">
-                <span className="w-[30%]">Amount</span>
+                <span className="w-[50%]">Projected Amount</span>
                 <span>:</span>
                 <span className="text-content font-pmedium w-full justify-start pl-4">
-                  {Number(selectedEvent.extendedProps.amount).toLocaleString(
-                    "en-IN"
-                  )}
-                &nbsp;INR</span>
+                  {selectedEvent.extendedProps?.projectedAmount}
+                  &nbsp;INR
+                </span>
+              </span>
+              <span className="text-content flex items-center">
+                <span className="w-[50%]">Actual Amount</span>
+                <span>:</span>
+                <span className="text-content font-pmedium w-full justify-start pl-4">
+                  {selectedEvent.extendedProps?.actualAmount || 0}
+                  &nbsp;INR
+                </span>
               </span>
             </div>
           </div>

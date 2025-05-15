@@ -14,12 +14,17 @@ import { inrFormat } from "../../utils/currencyFormat";
 import PrimaryButton from "../PrimaryButton";
 import AgTable from "../AgTable";
 import CollapsibleTable from "../Tables/MuiCollapsibleTable";
+import { parseAmount } from "../../utils/parseAmount";
 
-const AllocatedBudget = ({ financialData, isLoading, variant }) => {
+const AllocatedBudget = ({
+  financialData,
+  isLoading,
+  variant,
+  noFilter = false,
+}) => {
   const [selectedTab, setSelectedTab] = useState(0);
   const fiscalYears = ["FY 2024-25", "FY 2025-26"];
   const [selectedFYIndex, setSelectedFYIndex] = useState(0); // Default to FY 2024-25
-  console.log("From component :", financialData);
 
   const selectedFY = fiscalYears[selectedFYIndex];
 
@@ -33,11 +38,11 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
     return Array.from(types);
   }, [financialData]);
 
+
   const allMonths = useMemo(() => {
     const set = new Set(financialData?.map((item) => item.month));
     return Array.from(set).sort((a, b) => new Date(a) - new Date(b));
   }, [financialData]);
-
   const filteredMonths = useMemo(() => {
     const yearRanges = {
       "FY 2024-25": [new Date("2024-04-01"), new Date("2025-03-31")],
@@ -50,16 +55,20 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
     });
   }, [allMonths, selectedFY]);
 
+
+
   const groupedData = useMemo(() => {
     const result = {};
-    allTypes.forEach((type) => {
+
+    (noFilter ? ["All"] : allTypes).forEach((type) => {
       result[type] = {};
       allMonths.forEach((month) => {
         const monthData = financialData.find((fd) => fd.month === month);
-        const rows =
-          monthData?.tableData?.rows?.filter(
-            (r) => (r.expanseType || "Unknown") === type
-          ) || [];
+        const rows = noFilter
+          ? monthData?.tableData?.rows || []
+          : monthData?.tableData?.rows?.filter(
+              (r) => (r.expanseType || "Unknown") === type
+            ) || [];
 
         const projectedAmount = rows.reduce(
           (sum, r) =>
@@ -67,8 +76,7 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
           0
         );
         const actualAmount = rows.reduce(
-          (sum, r) =>
-            sum + Number((r.actualAmount ?? "0").toString().replace(/,/g, "")),
+          (sum, r) => sum + (parseAmount(r.actualAmount)|| 0),
           0
         );
 
@@ -83,18 +91,20 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
         };
       });
     });
+
     return result;
-  }, [financialData, allTypes, allMonths]);
+  }, [financialData, allTypes, allMonths, noFilter]);
 
   const collapsibleRows = useMemo(() => {
-    const currentType = allTypes[selectedTab];
+    const currentType = noFilter ? "All" : allTypes[selectedTab];
+
     return filteredMonths.map((month) => {
       const data = groupedData[currentType]?.[month];
       return {
         id: month,
         monthFormatted: dayjs(month).format("MMM-YY"),
         projected: `${data?.projectedAmount?.toLocaleString("en-IN") || "0"}`,
-        actual: `${data?.amount || "0"}`,
+        actual: `${data?.amount || "Yes Here"}`,
         rows: data?.tableData?.rows || [],
         columns: data?.tableData?.columns || [],
       };
@@ -147,11 +157,10 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
           disabled={selectedFYIndex === fiscalYears.length - 1}
         />
       </div>
+      <hr />
 
       {/* Tabs */}
-      {collapsibleRows.length === 0 ? (
-        <></>
-      ) : (
+      {collapsibleRows.length === 0 ? null : !noFilter ? (
         <div>
           {allTypes.length <= 5 ? (
             <div className="flex w-full border-[1px] border-borderGray rounded-xl">
@@ -188,15 +197,14 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
           ) : (
             <FormControl fullWidth>
               <Autocomplete
-                value={allTypes[selectedTab]} // Use the selectedTab index to set the value
+                value={allTypes[selectedTab]}
                 onChange={(e, newValue) => {
-                  // Find the index of the selected value
                   const selectedIndex = allTypes.findIndex(
                     (type) => type === newValue
                   );
                   setSelectedTab(selectedIndex);
                 }}
-                options={allTypes} // Use allTypes as the options
+                options={allTypes}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -207,13 +215,13 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
                 )}
                 getOptionLabel={(option) =>
                   option === "External" ? "Vendor" : option
-                } // Customize display for "External"
-                isOptionEqualToValue={(option, value) => option === value} // Ensure proper comparison between options
+                }
+                isOptionEqualToValue={(option, value) => option === value}
               />
             </FormControl>
           )}
         </div>
-      )}
+      ) : null}
 
       {/* Collapsible Table */}
 

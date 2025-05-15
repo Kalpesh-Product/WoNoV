@@ -32,6 +32,8 @@ import { CircularProgress, Skeleton } from "@mui/material";
 import { SiCashapp } from "react-icons/si";
 import { useSidebar } from "../../../context/SideBarContext";
 import FinanceCard from "../../../components/FinanceCard";
+import { YearCalendar } from "@mui/x-date-pickers";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 
 const SalesDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -47,7 +49,8 @@ const SalesDashboard = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [
     {
-      name: "FY 2024-25",
+      name: "Expense",
+      group: "FY 2024-25",
       data: [
         1123500, // Nov
         1184200, // Oct
@@ -340,7 +343,7 @@ const SalesDashboard = () => {
   const monthlyLeadsOptions = {
     chart: {
       type: "bar",
-      animation : false,
+      animation: false,
       toolbar: false,
       stacked: true,
       fontFamily: "Poppins-Regular",
@@ -645,19 +648,13 @@ const SalesDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection
-          border
-          normalCase
-          title={"BIZ Nest SALES DEPARTMENT REVENUES FY 2024-25"}
-          TitleAmount={`INR ${inrFormat("20900000")}`}
-        >
-          <BarGraph
-            data={incomeExpenseData}
-            options={incomeExpenseOptions}
-            departments={["FY 2024-25", "FY 2025-26"]}
-            chartId="bargraph-sales-dashboard"
-          />
-        </WidgetSection>,
+        <YearlyGraph
+          chartId={"bargraph-sales-dashboard"}
+          data={incomeExpenseData}
+          options={incomeExpenseOptions}
+          title={"BIZ Nest SALES DEPARTMENT REVENUES"}
+          titleAmount={`INR ${inrFormat("20900000")}`}
+        />,
       ],
     },
     {
@@ -734,7 +731,6 @@ const SalesDashboard = () => {
               height={400}
               data={monthlySourceData}
               options={sourcingChannelsOptions}
-    
             />
           )}
         </WidgetSection>,
@@ -773,7 +769,6 @@ const SalesDashboard = () => {
         <WidgetSection layout={1} title={"Gender-wise data"} border>
           <PieChartMui
             data={clientGenderData}
-      
             options={clientGenderPieChartOptions}
           />
         </WidgetSection>,
