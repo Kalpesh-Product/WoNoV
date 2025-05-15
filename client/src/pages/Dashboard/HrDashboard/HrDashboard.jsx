@@ -7,28 +7,27 @@ import { CgWebsite } from "react-icons/cg";
 import { SiCashapp } from "react-icons/si";
 import { SiGoogleadsense } from "react-icons/si";
 import { MdMiscellaneousServices } from "react-icons/md";
-import DataCard from "../../../components/DataCard";
 import PayRollExpenseGraph from "../../../components/HrDashboardGraph/PayRollExpenseGraph";
 import MuiTable from "../../../components/Tables/MuiTable";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../../hooks/useAuth";
-import BarGraph from "../../../components/graphs/BarGraph";
 import { useNavigate } from "react-router-dom";
-import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
 import { calculateAverageAttendance } from "../../../utils/calculateAverageAttendance ";
 import { calculateAverageDailyWorkingHours } from "../../../utils/calculateAverageDailyWorkingHours ";
 import FinanceCard from "../../../components/FinanceCard";
-import HrExpenseGraph from "../../../components/graphs/HrExpenseGraph";
 import dayjs from "dayjs";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import { useDispatch } from "react-redux";
+import { setSelectedMonth } from "../../../redux/slices/hrSlice";
 
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -206,25 +205,239 @@ const HrDashboard = () => {
   };
 
   //-------------------HR Expense graph end--------------------//
+  //-------------------Tasks vs Achievements graph--------------------//
 
+  const tasksRawData = [
+    {
+      department: "Tech",
+      total: 40,
+      achieved: 35,
+      tasks: [
+        {
+          taskName: "Complete sales module",
+          assignedBy: "Kalpesh Naik",
+          assignedTo: "Aiwinraj",
+          assignedDate: "13-05-2025",
+          dueDate: "14-05-2025",
+          status: "Pending",
+        },
+        {
+          taskName: "Deploy chat feature",
+          assignedBy: "Kalpesh Naik",
+          assignedTo: "Priya Shah",
+          assignedDate: "12-05-2025",
+          dueDate: "15-05-2025",
+          status: "Completed",
+        },
+        {
+          taskName: "Fix API bugs",
+          assignedBy: "Kalpesh Naik",
+          assignedTo: "Ravi Mehta",
+          assignedDate: "11-05-2025",
+          dueDate: "13-05-2025",
+          status: "Pending",
+        },
+      ],
+    },
+    {
+      department: "HR",
+      total: 30,
+      achieved: 28,
+      tasks: [
+        {
+          taskName: "Finalize payroll structure",
+          assignedBy: "Nisha Patel",
+          assignedTo: "Ritika Sharma",
+          assignedDate: "10-05-2025",
+          dueDate: "13-05-2025",
+          status: "Completed",
+        },
+        {
+          taskName: "Schedule employee training",
+          assignedBy: "Nisha Patel",
+          assignedTo: "Amit Desai",
+          assignedDate: "12-05-2025",
+          dueDate: "16-05-2025",
+          status: "Pending",
+        },
+        {
+          taskName: "Update leave policy",
+          assignedBy: "Nisha Patel",
+          assignedTo: "Meera Rao",
+          assignedDate: "13-05-2025",
+          dueDate: "18-05-2025",
+          status: "Pending",
+        },
+      ],
+    },
+    {
+      department: "Sales",
+      total: 50,
+      achieved: 47,
+      tasks: [
+        {
+          taskName: "Follow up with client leads",
+          assignedBy: "Suresh Menon",
+          assignedTo: "Deepak Verma",
+          assignedDate: "11-05-2025",
+          dueDate: "14-05-2025",
+          status: "Completed",
+        },
+        {
+          taskName: "Update CRM with new data",
+          assignedBy: "Suresh Menon",
+          assignedTo: "Neha Joshi",
+          assignedDate: "12-05-2025",
+          dueDate: "13-05-2025",
+          status: "Pending",
+        },
+        {
+          taskName: "Prepare Q2 sales report",
+          assignedBy: "Suresh Menon",
+          assignedTo: "Vikram Chauhan",
+          assignedDate: "13-05-2025",
+          dueDate: "15-05-2025",
+          status: "Pending",
+        },
+      ],
+    },
+    {
+      department: "Finance",
+      total: 35,
+      achieved: 33,
+      tasks: [
+        {
+          taskName: "Reconcile April transactions",
+          assignedBy: "Anita Rao",
+          assignedTo: "Rahul Sengupta",
+          assignedDate: "10-05-2025",
+          dueDate: "12-05-2025",
+          status: "Completed",
+        },
+        {
+          taskName: "Review expense claims",
+          assignedBy: "Anita Rao",
+          assignedTo: "Sneha Kulkarni",
+          assignedDate: "13-05-2025",
+          dueDate: "14-05-2025",
+          status: "Pending",
+        },
+        {
+          taskName: "Prepare audit documents",
+          assignedBy: "Anita Rao",
+          assignedTo: "Manoj Iyer",
+          assignedDate: "11-05-2025",
+          dueDate: "16-05-2025",
+          status: "Pending",
+        },
+      ],
+    },
+  ];
+
+  // Month names in financial year order (Apr to Mar)
+  const fyMonths = [
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+    "January",
+    "February",
+    "March",
+  ];
+
+  // Init counters
+  const monthlyTotals = {};
+  const monthlyAchieved = {};
+  fyMonths.forEach((month) => {
+    monthlyTotals[month] = 0;
+    monthlyAchieved[month] = 0;
+  });
+
+  tasksRawData.forEach((dept) => {
+    dept.tasks.forEach((task) => {
+      const [day, month, year] = task.assignedDate.split("-").map(Number);
+      const dateObj = new Date(year, month - 1, day); // JS months are 0-indexed
+
+      // Determine FY month name
+      const monthIndex = dateObj.getMonth(); // 0 to 11
+      const fyMonth = fyMonths[(monthIndex + 12 - 3) % 12]; // shift Jan=9, Feb=10, Mar=11
+
+      monthlyTotals[fyMonth]++;
+      if (task.status === "Completed") {
+        monthlyAchieved[fyMonth]++;
+      }
+    });
+  });
+
+  // Final structure
   const tasksData = [
     {
       name: "Total Tasks",
       group: "FY 2024-25",
-      data: [45, 60, 50, 70, 65, 80, 90, 85, 75, 60, 55, 70],
+      data: fyMonths.map((month) => {
+        const total = monthlyTotals[month];
+        return { x: month, y: 100, raw: total }; // 100% baseline
+      }),
     },
     {
       name: "Achieved Tasks",
       group: "FY 2024-25",
-      data: [30, 50, 40, 60, 50, 70, 80, 75, 65, 50, 45, 60],
+      data: fyMonths.map((month) => {
+        const total = monthlyTotals[month];
+        const achieved = monthlyAchieved[month];
+        const percent = total > 0 ? (achieved / total) * 100 : 0;
+        return { x: month, y: +percent.toFixed(1), raw: achieved };
+      }),
     },
   ];
 
   const tasksOptions = {
     chart: {
       type: "bar",
-      animations : {
-        enabled : false
+      events: {
+        dataPointSelection: (event, chartContext, config) => {
+          const clickedMonth =
+            config.w.config.series[config.seriesIndex].data[
+              config.dataPointIndex
+            ].x;
+
+            dispatch(setSelectedMonth(clickedMonth));
+
+          // Gather all tasks from that month
+          const selectedMonthTasks = [];
+          tasksRawData.forEach((dept) => {
+            dept.tasks.forEach((task) => {
+              const [day, month, year] = task.assignedDate
+                .split("-")
+                .map(Number);
+              const taskDate = new Date(year, month - 1, day);
+              const taskMonth = fyMonths[(taskDate.getMonth() + 12 - 3) % 12];
+
+              if (taskMonth === clickedMonth) {
+                selectedMonthTasks.push({
+                  department: dept.department,
+                  ...task,
+                });
+              }
+            });
+          });
+
+          navigate(`overall-tasks`, {
+            state: {
+              month: clickedMonth,
+              tasks: selectedMonthTasks,
+            },
+            
+          });
+        },
+      },
+      animations: {
+        enabled: false,
       },
       fontFamily: "Poppins-Regular",
       stacked: false,
@@ -245,10 +458,9 @@ const HrDashboard = () => {
       width: 2,
       colors: ["transparent"],
     },
-
     yaxis: {
       title: {
-        text: "Task Count",
+        text: "Completion (%)",
       },
       max: 100,
     },
@@ -258,10 +470,20 @@ const HrDashboard = () => {
     fill: {
       opacity: 1,
     },
-    colors: ["#54C4A7", "#EB5C45"], // Green for Total, Red for Achieved
+    colors: ["#54C4A7", "#EB5C45"], // Green (Total - baseline), Red (Achieved)
     tooltip: {
-      y: {
-        formatter: (val) => `${val} tasks`,
+      custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+        const rawValue = w.config.series[seriesIndex].data[dataPointIndex].raw;
+        const month = w.config.series[seriesIndex].data[dataPointIndex].x;
+        const label = seriesIndex === 0 ? "Total Tasks" : "Achieved Tasks";
+        return `
+          <div style="padding:8px; padding-bottom:"0px">
+          <strong>${month}</strong><br/>
+          <hr />
+          <div style="padding:4px">
+          ${label}: ${rawValue} task${rawValue !== 1 ? "s" : ""}
+          </div>
+          </div>`;
       },
     },
   };

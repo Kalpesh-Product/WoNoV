@@ -243,7 +243,7 @@ const AllocatedBudget = ({
                 search={row.rows.length >= 10}
                 data={row.rows}
                 columns={row.columns}
-                tableHeight={400}
+                tableHeight={250}
                 hideFilter={row.rows.length <= 9}
               />
             ) : (
