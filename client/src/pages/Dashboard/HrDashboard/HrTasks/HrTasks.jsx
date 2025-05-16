@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedMonth } from "../../../../redux/slices/hrSlice";
@@ -26,6 +26,7 @@ const calendarMonths = [
 const HrTasks = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [selectedDepartment, setSelectedDepartment] = useState();
 
   const selectedMonth = useSelector((state) => state.hr.selectedMonth);
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
@@ -46,24 +47,12 @@ const HrTasks = () => {
     }
   };
 
-  const hasMonthData = (monthName) => {
-    return tasksRawData.some((dept) =>
-      dept.tasks.some((task) => {
-        const [day, m, y] = task.assignedDate.split("-").map(Number);
-        const taskMonth =
-          calendarMonths[(new Date(y, m - 1, day).getMonth() + 9) % 12];
-
-        return taskMonth.toLowerCase() === monthName.toLowerCase();
-      })
-    );
-  };
-
-  const isPrevAvailable =
-    currentMonthIndex > 0 &&
-    hasMonthData(calendarMonths[currentMonthIndex - 1]);
-  const isNextAvailable =
-    currentMonthIndex < calendarMonths.length - 1 &&
-    hasMonthData(calendarMonths[currentMonthIndex + 1]);
+  // const isPrevAvailable =
+  //   currentMonthIndex > 0 &&
+  //   hasMonthData(calendarMonths[currentMonthIndex - 1]);
+  // const isNextAvailable =
+  //   currentMonthIndex < calendarMonths.length - 1 &&
+  //   hasMonthData(calendarMonths[currentMonthIndex + 1]);
 
   const filteredTasks = useMemo(() => {
     if (!selectedMonth || tasksRawData.length === 0) return [];
@@ -81,74 +70,133 @@ const HrTasks = () => {
     );
   }, [tasksRawData, selectedMonth]);
 
+  const totalCompleted = filteredTasks.filter(
+    (t) => t.status === "Completed"
+  ).length;
+  const totalRemaining = filteredTasks.filter(
+    (t) => t.status !== "Completed"
+  ).length;
 
-
-  
+  const allDepartments = useMemo(() => {
+    const deptSet = new Set();
+    tasksRawData.forEach((dept) => {
+      if (dept?.department) deptSet.add(dept.department);
+    });
+    return Array.from(deptSet);
+  }, [tasksRawData]);
 
   const departmentMap = useMemo(() => {
     const map = {};
+
+    allDepartments.forEach((dept) => {
+      map[dept] = { total: 0, achieved: 0 };
+    });
+
     filteredTasks.forEach((task) => {
       const dept = task.department;
-      if (!map[dept]) map[dept] = { total: 0, achieved: 0 };
       map[dept].total += 1;
       if (task.status === "Completed") map[dept].achieved += 1;
     });
+
     return map;
-  }, [filteredTasks]);
+  }, [filteredTasks, allDepartments]);
 
   const graphData = [
     {
-      name: "Total Tasks",
+      name: "Completed Tasks",
       group: `Tasks - ${selectedMonth}`,
-      data: Object.entries(departmentMap).map(([dept, stats]) => ({
-        x: dept,
-        y: 100,
-        raw: stats.total,
-      })),
+      data: allDepartments.map((dept) => {
+        const { total, achieved } = departmentMap[dept] || {
+          total: 0,
+          achieved: 0,
+        };
+        const percent = total ? +((achieved / total) * 100).toFixed(1) : 0;
+        return { x: dept, y: percent, raw: achieved };
+      }),
     },
     {
-      name: "Achieved Tasks",
+      name: "Remaining Tasks",
       group: `Tasks - ${selectedMonth}`,
-      data: Object.entries(departmentMap).map(([dept, stats]) => ({
-        x: dept,
-        y: stats.total ? +((stats.achieved / stats.total) * 100).toFixed(1) : 0,
-        raw: stats.achieved,
-      })),
+      data: allDepartments.map((dept) => {
+        const { total, achieved } = departmentMap[dept] || {
+          total: 0,
+          achieved: 0,
+        };
+        const remaining = total - achieved;
+        const percent = total ? +((remaining / total) * 100).toFixed(1) : 0;
+        return { x: dept, y: percent, raw: remaining };
+      }),
     },
   ];
 
   const graphOptions = {
     chart: {
       type: "bar",
+      events: {
+        dataPointSelection: (event, chartContext, config) => {
+          const clickedDept =
+            config.w.config.series[config.seriesIndex].data[
+              config.dataPointIndex
+            ].x;
+
+          // Fetch all tasks for the clicked department for the selected month
+          const departmentTasks = groupedTasks[clickedDept] || [];
+
+          navigate("department-tasks", {
+            state: {
+              month: selectedMonth,
+              department: clickedDept,
+              tasks: departmentTasks,
+            },
+          });
+        },
+      },
+      stacked: true, // ✅ Enable stacking
       animations: { enabled: false },
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
     plotOptions: {
-      bar: { horizontal: false, columnWidth: "40%", borderRadius: 5 },
+      bar: { horizontal: false, columnWidth: "20%", borderRadius: 3 },
     },
     dataLabels: { enabled: false },
-    stroke: { show: true, width: 2, colors: ["transparent"] },
+    stroke: { show: true, width: 1, colors: ["#fff"] },
     xaxis: {
       title: { text: "Departments" },
-      categories: Object.keys(departmentMap),
+      categories: allDepartments,
     },
     yaxis: {
       title: { text: "Completion (%)" },
-      labels: { formatter: (val) => `${val.toFixed(0)}` },
       max: 100,
+      labels: { formatter: (val) => `${val.toFixed(0)}%` },
     },
     colors: ["#54C4A7", "#EB5C45"],
     fill: { opacity: 1 },
     legend: { position: "top" },
     tooltip: {
       custom: ({ series, seriesIndex, dataPointIndex, w }) => {
-        const item = w.config.series[seriesIndex].data[dataPointIndex];
-        const label = seriesIndex === 0 ? "Achieved" : "Total";
+        const dept = w.config.series[seriesIndex].data[dataPointIndex].x;
+
+        const completed = w.config.series[0].data[dataPointIndex].raw;
+        const remaining = w.config.series[1].data[dataPointIndex].raw;
+        const total = completed + remaining;
+
         return `
-          <div style="padding:8px">
-            <strong>${item.x}</strong><br/>
-            ${label} Tasks: ${item.raw}
+          <div style="padding:8px; font-family: Poppins, sans-serif; font-size: 13px ; width : 150px ">
+            <strong>${dept}</strong><br/>
+            <div style="display:flex ; justify-content:space-between ; width:"100%" ">
+              <div>Total tasks</div> 
+              <div>${total}</div>
+            </div>
+            <div style="display:flex ; justify-content:space-between ; width:"100%" ">
+              <div>Completed tasks</div> 
+              <div>${completed}</div>
+            </div>
+            <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
+             <div style="display:flex ; justify-content:space-between ; width:"100%" ">
+              <div>Remaining tasks</div> 
+              <div>${remaining}</div>
+            </div>
           </div>
         `;
       },
@@ -163,16 +211,21 @@ const HrTasks = () => {
     }, {});
   }, [filteredTasks]);
 
-  const tableData = Object.entries(groupedTasks).map(([dept, deptTasks]) => {
+  const tableData = allDepartments.map((dept) => {
+    const deptTasks = groupedTasks[dept] || [];
     const total = deptTasks.length;
     const achieved = deptTasks.filter((t) => t.status === "Completed").length;
+    const shortfall =
+      total > 0 ? (((total - achieved) / total) * 100).toFixed(0) : "0";
     return {
       department: dept,
       totalTasks: total,
       achievedTasks: achieved,
       totalPercent: "100%",
-      achievedPercent: `${((achieved / total) * 100).toFixed(0)}%`,
-      shortFall: `${(((total - achieved) / total) * 100).toFixed(0)}%`,
+      achievedPercent: `${
+        total > 0 ? ((achieved / total) * 100).toFixed(0) : "0"
+      }%`,
+      shortFall: `${shortfall}%`,
     };
   });
 
@@ -213,14 +266,27 @@ const HrTasks = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection title={`Task overview - ${selectedMonth}`} border padding>
-        <NormalBarGraph data={graphData} options={graphOptions} year={false} />
+      <WidgetSection
+        title={`Task overview - ${selectedMonth}`}
+        border
+        padding
+        greenTitle={"completed"}
+        TitleAmountGreen={totalCompleted || 0}
+        redTitle={"remaining"}
+        TitleAmountRed={totalRemaining || 0}
+      >
+        <NormalBarGraph
+          data={graphData}
+          options={graphOptions}
+          year={false}
+          height={400}
+        />
         <div className="flex justify-center items-center">
           <div className="flex items-center pb-4">
             <SecondaryButton
               title={<MdNavigateBefore />}
               handleSubmit={handlePrevMonth}
-              disabled={!isPrevAvailable}
+              // disabled={!isPrevAvailable}
             />
             <div className="text-sm min-w-[120px] text-center">
               {selectedMonth}
@@ -228,14 +294,19 @@ const HrTasks = () => {
             <SecondaryButton
               title={<MdNavigateNext />}
               handleSubmit={handleNextMonth}
-              disabled={!isNextAvailable}
+              // disabled={!isNextAvailable}
             />
           </div>
         </div>
       </WidgetSection>
 
       <WidgetSection title="Department-wise task overview" border>
-        <AgTable columns={tasksColumns} data={tableData} tableHeight={300} />
+        <AgTable
+          columns={tasksColumns}
+          data={tableData}
+          tableHeight={300}
+          hideFilter
+        />
       </WidgetSection>
     </div>
   );

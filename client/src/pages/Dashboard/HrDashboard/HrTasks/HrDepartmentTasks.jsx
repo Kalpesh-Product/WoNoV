@@ -1,18 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
 import WidgetSection from "../../../../components/WidgetSection";
+import { useSelector } from "react-redux";
+import SecondaryButton from "../../../../components/SecondaryButton";
+import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+import PrimaryButton from "../../../../components/PrimaryButton";
 
 const HrDepartmentTasks = () => {
   const location = useLocation();
   const { month, department, tasks } = location.state || {};
-
-  if (!department || !tasks?.length) {
-    return <div className="">No tasks found for this department.</div>;
-  }
-
+  const tasksRawData = useSelector((state) => state.hr.tasksRawData);
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(0); // starts from April
   const fyMonths = [
     "Apr-25",
     "May-25",
@@ -27,13 +28,38 @@ const HrDepartmentTasks = () => {
     "Feb-26",
     "Mar-26",
   ];
+  const selectedMonth = fyMonths[selectedMonthIndex];
+
+  if (!department || !tasks?.length) {
+    return <div className="">No tasks found for this department.</div>;
+  }
+  console.log(tasksRawData);
+
+  const filteredData = tasksRawData.filter(
+    (item) => item.department === department
+  );
+  const departmentName = filteredData[0]?.department;
+  const tasksData = filteredData[0]?.tasks;
+  console.log(tasksData);
+
+  const handlePrevMonth = () => {
+    if (selectedMonthIndex > 0) {
+      setSelectedMonthIndex((prev) => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (selectedMonthIndex < fyMonths.length - 1) {
+      setSelectedMonthIndex((prev) => prev + 1);
+    }
+  };
 
   const monthlyMap = {};
   fyMonths.forEach((label) => {
     monthlyMap[label] = { total: 0, achieved: 0 };
   });
 
-  tasks.forEach((task) => {
+  tasksData.forEach((task) => {
     const [day, month, year] = task.assignedDate.split("-").map(Number);
     const jsDate = new Date(year, month - 1, day);
     const label = `${jsDate.toLocaleString("default", {
@@ -50,19 +76,13 @@ const HrDepartmentTasks = () => {
 
   const graphData = [
     {
-      name: "Total Tasks",
-      group: `${department} - ${month}`,
-      data: fyMonths.map((label) => ({
-        x: label,
-        y: 100,
-        raw: monthlyMap[label].total,
-      })),
-    },
-    {
-      name: "Achieved Tasks",
-      group: `${department} - ${month}`,
+      name: "Completed Tasks",
+      group: `${departmentName} - ${month}`,
       data: fyMonths.map((label) => {
-        const { total, achieved } = monthlyMap[label];
+        const { total, achieved } = monthlyMap[label] || {
+          total: 0,
+          achieved: 0,
+        };
         const percent = total > 0 ? (achieved / total) * 100 : 0;
         return {
           x: label,
@@ -71,11 +91,29 @@ const HrDepartmentTasks = () => {
         };
       }),
     },
+    {
+      name: "Remaining Tasks",
+      group: `${departmentName} - ${month}`,
+      data: fyMonths.map((label) => {
+        const { total, achieved } = monthlyMap[label] || {
+          total: 0,
+          achieved: 0,
+        };
+        const remaining = total - achieved;
+        const percent = total > 0 ? (remaining / total) * 100 : 0;
+        return {
+          x: label,
+          y: +percent.toFixed(1),
+          raw: remaining,
+        };
+      }),
+    },
   ];
 
   const graphOptions = {
     chart: {
       type: "bar",
+      stacked: true, // ✅ stacked
       animations: { enabled: false },
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
@@ -83,15 +121,15 @@ const HrDepartmentTasks = () => {
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "70%",
+        columnWidth: "40%",
         borderRadius: 5,
       },
     },
     dataLabels: { enabled: false },
     stroke: {
       show: true,
-      width: 2,
-      colors: ["transparent"],
+      width: 1,
+      colors: ["#fff"],
     },
     xaxis: {
       title: { text: "Months" },
@@ -100,9 +138,7 @@ const HrDepartmentTasks = () => {
     yaxis: {
       title: { text: "Completion (%)" },
       labels: {
-        formatter: (val) => {
-          return `${val.toFixed(0)}`;
-        },
+        formatter: (val) => `${val.toFixed(0)}%`,
       },
       max: 100,
     },
@@ -110,13 +146,34 @@ const HrDepartmentTasks = () => {
     fill: { opacity: 1 },
     legend: { position: "top" },
     tooltip: {
-      custom: ({ series, seriesIndex, dataPointIndex, w }) => {
-        const item = w.config.series[seriesIndex].data[dataPointIndex];
-        const label = seriesIndex === 0 ? "Total" : "Achieved";
+      custom: ({ seriesIndex, dataPointIndex, w }) => {
+        const month = w.config.series[seriesIndex].data[dataPointIndex].x;
+
+        const completed = w.config.series[0].data[dataPointIndex].raw;
+        const remaining = w.config.series[1].data[dataPointIndex].raw;
+        const total = completed + remaining;
+
         return `
-          <div style="padding:8px">
-            <strong>${item.x}</strong><br/>
-            ${label} Tasks: ${item.raw}
+          <div style="padding:8px; font-family: Poppins, sans-serif; font-size: 13px; width: 220px;">
+            <strong>${month}</strong>
+            <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
+    
+            <div style="display: flex; justify-content: space-between;">
+              <span>Total tasks</span>
+              <span>${total}</span>
+            </div>
+    
+            <div style="display: flex; justify-content: space-between;">
+              <span>Completed tasks</span>
+              <span>${completed}</span>
+            </div>
+    
+            <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
+    
+            <div style="display: flex; justify-content: space-between;">
+              <span>Remaining tasks</span>
+              <span>${remaining}</span>
+            </div>
           </div>
         `;
       },
@@ -173,32 +230,71 @@ const HrDepartmentTasks = () => {
       },
     },
   ];
+
+  const filteredTasks = tasksData.filter((task) => {
+    const [day, month, year] = task.assignedDate.split("-").map(Number);
+    const taskMonth =
+      fyMonths[(new Date(year, month - 1, day).getMonth() + 9) % 12];
+    return taskMonth === selectedMonth;
+  });
+
   return (
     <div className="flex flex-col gap-4">
+      <span className="uppercase text-title text-primary font-pmedium">
+        {departmentName} department tasks
+      </span>
+      <hr className="p-0 mb-2" />
+
       <WidgetSection
-        title={`${department} department task overview - ${month}`}
+        title={`${departmentName} department task overview`}
         border
       >
-        <NormalBarGraph data={graphData} options={graphOptions} year={false} />
+        <NormalBarGraph
+          data={graphData}
+          options={graphOptions}
+          year={false}
+          height={350}
+        />
       </WidgetSection>
 
+      <div className="flex justify-center items-center w-full">
+        <SecondaryButton
+          title={"Prev"}
+          handleSubmit={handlePrevMonth}
+          disabled={selectedMonthIndex === 0}
+        />
+        <div className="text-subtitle w-full text-center font-pmedium">
+          {selectedMonth}
+        </div>
+        <PrimaryButton
+          title={"Next"}
+          handleSubmit={handleNextMonth}
+          disabled={selectedMonthIndex === fyMonths.length - 1}
+        />
+      </div>
+
       <WidgetSection title={`Task details`} border>
-        <AgTable
-        tableHeight={300}
-        hideFilter
-          columns={tasksColumns}
-          data={[
-            ...tasks.map((item) => ({
-              id: item.id,
+
+        {filteredTasks.length === 0 ? (
+          <div className="text-center flex justify-center items-center py-8 text-gray-500 h-80">
+            No data available
+          </div>
+        ) : (
+          <AgTable
+            tableHeight={300}
+            hideFilter
+            columns={tasksColumns}
+            data={filteredTasks.map((item, index) => ({
+              id: index + 1,
               taskName: item.taskName,
               assignedTo: item.assignedTo,
               assignedBy: item.assignedBy,
               assignedDate: item.assignedDate,
               dueDate: item.dueDate,
               status: item.status,
-            })),
-          ]}
-        />
+            }))}
+          />
+        )}
       </WidgetSection>
     </div>
   );
