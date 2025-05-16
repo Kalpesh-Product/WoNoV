@@ -95,7 +95,7 @@ const WidgetSection = ({
                         : "text-body text-green-800 font-pmedium"
                     }`}
                   >
-                    <div className="flex gap-2 justify-center items-center uppercase bg-[#54c4a696] p-2 rounded-lg">
+                    <div className="flex gap-2 justify-center items-center uppercase bg-[#54c4a657] p-2 rounded-lg">
                       {/* <FaArrowTrendUp /> */}
                       {greenTitle && <div>{greenTitle} : </div>}
                       <div>{TitleAmountGreen}</div>
@@ -110,7 +110,7 @@ const WidgetSection = ({
                         : "text-body text-red-800 font-pmedium"
                     }`}
                   >
-                    <div className="flex gap-2 justify-center items-center uppercase bg-[#eb5b45a3] p-2 rounded-lg">
+                    <div className="flex gap-2 justify-center items-center uppercase bg-[#fc5e4640] p-2 rounded-lg">
                       {/* <FaArrowTrendDown /> */}
                       {redTitle && <div>{redTitle} : </div>}
 
