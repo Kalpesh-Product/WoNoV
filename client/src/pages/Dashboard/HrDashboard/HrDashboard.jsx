@@ -990,6 +990,7 @@ const HrDashboard = () => {
             title={"Gender Distribution"}
             data={genderData} // Pass processed data
             options={genderPieChart}
+            height={360}
           />
         </WidgetSection>,
         <WidgetSection layout={1} border title={"City Wise Employees"}>

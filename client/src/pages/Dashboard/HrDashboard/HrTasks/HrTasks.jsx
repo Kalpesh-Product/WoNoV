@@ -30,6 +30,8 @@ const HrTasks = () => {
 
   const selectedMonth = useSelector((state) => state.hr.selectedMonth);
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
+  const yearArray = tasksRawData.map((item)=>((item.tasks?.map((task)=>task.assignedDate)[0])))
+  console.log("YEAR ARRAY", )
 
   const currentMonthIndex = calendarMonths.findIndex(
     (m) => m.toLowerCase() === selectedMonth?.toLowerCase()
@@ -147,6 +149,7 @@ const HrTasks = () => {
               month: selectedMonth,
               department: clickedDept,
               tasks: departmentTasks,
+              year : yearArray[0].split("-")[2]
             },
           });
         },
@@ -249,6 +252,7 @@ const HrTasks = () => {
                 month: selectedMonth,
                 department: params.value,
                 tasks: groupedTasks[params.value],
+                year : yearArray[0].split("-")[2]
               },
             })
           }
@@ -267,7 +271,7 @@ const HrTasks = () => {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-        title={`Task overview - ${selectedMonth}`}
+        title={`Task overview - ${selectedMonth} ${yearArray[0].split("-")[2]}`}
         border
         padding
         greenTitle={"completed"}

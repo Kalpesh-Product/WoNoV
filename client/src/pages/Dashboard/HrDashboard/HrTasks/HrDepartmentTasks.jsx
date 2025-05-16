@@ -10,7 +10,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 
 const HrDepartmentTasks = () => {
   const location = useLocation();
-  const { month, department, tasks } = location.state || {};
+  const { month, department, tasks, year } = location.state || {};
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(0); // starts from April
   const fyMonths = [
@@ -256,7 +256,7 @@ const HrDepartmentTasks = () => {
   return (
     <div className="flex flex-col gap-4">
       <span className="uppercase text-title text-primary font-pmedium">
-        {departmentName} department tasks
+        {departmentName} department tasks {fullMonthNames[shortMonth]} - {year}
       </span>
       <hr className="p-0 mb-2" />
 

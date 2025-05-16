@@ -140,8 +140,35 @@ const FinanceDashboard = () => {
       opacity: 1,
     },
     tooltip: {
-      y: {
-        formatter: (val) => `INR ${val.toLocaleString()}`,
+      custom: ({ dataPointIndex, w }) => {
+        const monthIndex = dataPointIndex;
+        const income = w.globals.initialSeries.find((s) => s.name === "Income")
+          ?.data[monthIndex];
+        const expense = w.globals.initialSeries.find(
+          (s) => s.name === "Expense"
+        )?.data[monthIndex];
+
+        const monthLabel =
+          w.globals.labels && w.globals.labels[monthIndex]
+            ? w.globals.labels[monthIndex]
+            : `Month ${monthIndex + 1}`;
+
+        return `
+          <div style="padding: 10px; font-family: Poppins, sans-serif; font-size: 13px; width : 180px">
+            <strong>${monthLabel}</strong><br/>
+            <hr />
+            <div style="margin-top: 6px;">
+              <div style="display: flex; justify-content: space-between;">
+                <strong>Income</strong>
+                <span>INR ${income?.toLocaleString() || "0"}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <strong>Expense</strong>
+                <span>INR ${expense?.toLocaleString() || "0"}</span>
+              </div>
+            </div>
+          </div>
+        `;
       },
     },
   };
