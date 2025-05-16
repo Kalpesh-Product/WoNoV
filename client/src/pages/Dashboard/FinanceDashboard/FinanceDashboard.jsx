@@ -501,6 +501,13 @@ const FinanceDashboard = () => {
     { id: "department", label: "Department", align: "left" },
     { id: "amount", label: "Amount (INR)", align: "left" },
   ];
+
+  const now = new Date();
+  const monthYear = now.toLocaleString("default", {
+    month: "long",
+    year: "numeric",
+  });
+
   //-----------------------------------------------------Table Rental Payments------------------------------------------------------//
 
   const techWidgets = [
@@ -555,7 +562,7 @@ const FinanceDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection title={"Current Month Payouts"} border>
+        <WidgetSection title={`Payouts - ${monthYear} `} border>
           <PieChartMui
             data={pieMonthlyPayoutData}
             options={pieMonthlyPayoutOptions}
@@ -563,7 +570,7 @@ const FinanceDashboard = () => {
             height={350}
           />
         </WidgetSection>,
-        <WidgetSection title={"Current Months Customer Collections"} border>
+        <WidgetSection title={`Customer Collections - ${monthYear} `} border>
           <PieChartMui
             data={pieMonthlyCollectionData}
             options={pieMonthlyCollectionOptions}
@@ -576,7 +583,7 @@ const FinanceDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection title={"Statutory Payments Due"} border>
+        <WidgetSection title={`Statutory Payments Due - ${monthYear}`} border>
           <DonutChart
             centerLabel="Payments Due"
             labels={donutStatutorylabels}
@@ -586,7 +593,7 @@ const FinanceDashboard = () => {
             isMonetary={true}
           />
         </WidgetSection>,
-        <WidgetSection title={"Rental Payments Due"} border>
+        <WidgetSection title={`Rental Payments Due - ${monthYear}`} border>
           <DonutChart
             centerLabel="Rental Status"
             labels={donutRentalLabels}

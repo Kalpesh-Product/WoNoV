@@ -26,7 +26,7 @@ const CollapsibleTable = ({ columns, data, renderExpandedRow }) => {
 
   return (
     <TableContainer component={Paper}>
-      <Table>
+      <Table stickyHeader>
         <TableHead>
           <TableRow className="font-pmedium">
             {enhancedColumns.map((col) => (

@@ -15,6 +15,7 @@ const YearlyGraph = ({
   TitleAmountRed,
   responsiveResize = false,
   secondParam = false,
+  chartHeight
 }) => {
   const fiscalYears = ["FY 2024-25", "FY 2025-26"];
   const [selectedYearIndex, setSelectedYearIndex] = useState(1);
@@ -97,6 +98,7 @@ const YearlyGraph = ({
           chartId={chartId || ""}
           responsiveResize={responsiveResize}
           secondParam={secondParam}
+          height={chartHeight}
         />
 
         <div className="flex justify-center items-center">
