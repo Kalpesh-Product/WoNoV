@@ -9,9 +9,18 @@ const budgetSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Department",
   },
+  requestor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
   expanseName: {
     type: String,
     required: true,
+  },
+  expanseType: {
+    type: String,
+    required: true,
+    enum: ["Internal", "External"],
   },
   projectedAmount: {
     type: Number,
@@ -22,14 +31,20 @@ const budgetSchema = new mongoose.Schema({
   },
   unit: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Department",
+    ref: "Unit",
   },
   category: {
     type: String,
   },
   status: {
     type: String,
+    default: "Pending",
     enum: ["Pending", "Approved", "Rejected"],
+  },
+  isPaid: {
+    type: String,
+    default: "Unpaid",
+    enum: ["Paid", "Unpaid"],
   },
   isExtraBudget: {
     type: Boolean,

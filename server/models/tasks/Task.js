@@ -54,7 +54,7 @@ const taskSchema = new mongoose.Schema({
     enum: ["Daily", "Monthly", "Additional"],
     required: true,
   },
-  //workCategory, location are maintenance related fileds
+  //workCategory and location are maintenance related fileds
   workCategory: {
     type: String,
     enum: ["Internal", "External"],

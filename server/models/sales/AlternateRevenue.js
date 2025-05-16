@@ -26,6 +26,14 @@ const alternateRevenueSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    invoiceCreationDate: {
+      type: Date,
+      required: true,
+    },
+    invoicePaidDate: {
+      type: Date,
+      required: true,
+    },
   },
   {
     timestamps: true, // Optional: Adds createdAt and updatedAt fields

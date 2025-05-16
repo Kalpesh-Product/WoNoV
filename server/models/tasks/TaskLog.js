@@ -10,6 +10,14 @@ const taskLogSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Task",
     },
+    kraKpaRoles: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "kraKpaRole",
+    },
+    kraKpaTasks: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "kraKpaTask",
+    },
     action: {
       type: String,
       required: true,

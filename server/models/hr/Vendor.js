@@ -15,9 +15,26 @@ const vendorSchema = new mongoose.Schema(
     category: {
       type: String,
     },
+    subCategory: {
+      type: String,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
+    },
+    phone: {
+      type: String,
+      minlength: 7,
+      maxlength: 20,
+      match: [/^\+?[0-9]+$/, "Invalid phone number format"],
+    },
     status: {
       type: String,
-      enum: [ "Active", "Inactive"],
+      enum: ["Active", "Inactive"],
       default: "Active",
     },
     companyName: {
