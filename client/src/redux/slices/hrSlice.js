@@ -151,7 +151,7 @@ const hrSlice = createSlice({
   name: "hr",
   initialState: {
     selectedMonth: null,
-    tasksRawData: initialTasksRawData, // ✅ Inject here
+    tasksRawData: [], // ✅ Inject here
   },
   reducers: {
     setSelectedMonth: (state, action) => {
