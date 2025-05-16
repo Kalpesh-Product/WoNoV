@@ -6,7 +6,6 @@ import { Chip } from "@mui/material";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useSelector } from "react-redux";
 import SecondaryButton from "../../../../components/SecondaryButton";
-import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import PrimaryButton from "../../../../components/PrimaryButton";
 
 const HrDepartmentTasks = () => {
@@ -28,19 +27,33 @@ const HrDepartmentTasks = () => {
     "Feb-26",
     "Mar-26",
   ];
+
+  const fullMonthNames = {
+    Jan: "January",
+    Feb: "February",
+    Mar: "March",
+    Apr: "April",
+    May: "May",
+    Jun: "June",
+    Jul: "July",
+    Aug: "August",
+    Sep: "September",
+    Oct: "October",
+    Nov: "November",
+    Dec: "December",
+  };
+
   const selectedMonth = fyMonths[selectedMonthIndex];
+  const shortMonth = selectedMonth.split("-")[0];
 
   if (!department || !tasks?.length) {
     return <div className="">No tasks found for this department.</div>;
   }
-  console.log(tasksRawData);
-
   const filteredData = tasksRawData.filter(
     (item) => item.department === department
   );
   const departmentName = filteredData[0]?.department;
   const tasksData = filteredData[0]?.tasks;
-  console.log(tasksData);
 
   const handlePrevMonth = () => {
     if (selectedMonthIndex > 0) {
@@ -238,6 +251,8 @@ const HrDepartmentTasks = () => {
     return taskMonth === selectedMonth;
   });
 
+  console.log("FILTERED DATATASA : ", tasksData);
+
   return (
     <div className="flex flex-col gap-4">
       <span className="uppercase text-title text-primary font-pmedium">
@@ -248,6 +263,7 @@ const HrDepartmentTasks = () => {
       <WidgetSection
         title={`${departmentName} department task overview`}
         border
+        TitleAmount={`TOTAL TASKS :  ${tasksData.length || 0}`}
       >
         <NormalBarGraph
           data={graphData}
@@ -273,8 +289,15 @@ const HrDepartmentTasks = () => {
         />
       </div>
 
-      <WidgetSection title={`Task details`} border>
-
+      <WidgetSection
+        title={`Task details`}
+        border
+        TitleAmount={`${fullMonthNames[shortMonth]} : ${
+          filteredTasks.length > 1
+            ? `${filteredTasks.length} tasks`
+            : `${filteredTasks.length} task`
+        } `}
+      >
         {filteredTasks.length === 0 ? (
           <div className="text-center flex justify-center items-center py-8 text-gray-500 h-80">
             No data available

@@ -300,7 +300,11 @@ const HrTasks = () => {
         </div>
       </WidgetSection>
 
-      <WidgetSection title="Department-wise task overview" border>
+      <WidgetSection
+        title="Department-wise task overview"
+        border
+        TitleAmount={`TOTAL TASKS : ${tableData.reduce((sum, item) => item.totalTasks + sum, 0)}`}
+      >
         <AgTable
           columns={tasksColumns}
           data={tableData}
