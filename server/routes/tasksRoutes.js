@@ -1,6 +1,9 @@
 const router = require("express").Router();
 
 const {
+  getAllKpaTasks,
+} = require("../controllers/tasksControllers/kraKpaControllers");
+const {
   createProject,
   getProjects,
   updateProject,
@@ -33,5 +36,6 @@ router.get("/get-assigned-tasks", getAssignedTasks);
 router.patch("/update-task/:id", updateTask);
 router.patch("/complete-tasks/", completeTasks);
 router.patch("/delete-task/:id", deleteTask);
+router.get("/get-kpa-tasks", getAllKpaTasks);
 
 module.exports = router;

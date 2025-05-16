@@ -21,7 +21,7 @@ const assignAssetSchema = new mongoose.Schema({
   },
   location: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "WorkLocation",
+    ref: "Unit",
   },
   status: {
     type: String,
