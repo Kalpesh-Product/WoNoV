@@ -46,7 +46,7 @@ const DeptWiseBudget = () => {
               headerName: "Department",
               flex: 1,
               cellRenderer: (params) => {
-                // const navigate = useNavigate(); // Hook for navigation
+                console.log("PARAMS DATA : ", params);
                 const handleClick = () => {
                   navigate(
                     `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`
@@ -54,7 +54,7 @@ const DeptWiseBudget = () => {
                 };
                 return (
                   <span
-                    style={{ cursor: "pointer", color: "blue" }}
+                    style={{ cursor: "pointer", color: "#1E3D73" }}
                     onClick={handleClick}
                   >
                     {params.value}
@@ -74,6 +74,7 @@ const DeptWiseBudget = () => {
       id: item._id,
       expanseName: item.expanseName,
       department: item.department?.name,
+      departmentId: item.department?._id,
       expanseType: item.expanseType,
       amount: item.actualAmount,
       projectedAmount: item.projectedAmount.toFixed(2),
@@ -91,6 +92,7 @@ const DeptWiseBudget = () => {
 
       data.tableData.rows.forEach((row) => {
         const dept = row.department || "Unknown";
+        const deptId = row.departmentId || "Unknown";
         const actual = row.amount || 0;
         const projected = parseFloat(
           row.projectedAmount?.toString().replace(/,/g, "") || "0"
@@ -100,6 +102,7 @@ const DeptWiseBudget = () => {
           departmentMap[dept] = {
             id: dept,
             department: dept,
+            deptId: deptId,
             actualAmount: actual,
             projectedAmount: projected,
           };
@@ -120,7 +123,29 @@ const DeptWiseBudget = () => {
 
       const transformedCols = [
         { field: "srNo", headerName: "SR NO", flex: 1 },
-        { field: "department", headerName: "Department", flex: 1 },
+        {
+          field: "department",
+          headerName: "Department",
+          flex: 1,
+          cellRenderer: (params) => {
+            console.log(params)
+            const handleClick = () => {
+              navigate(
+                `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`,
+                { state: { deptId: params.data?.deptId, deptName : params.value } }
+              );
+            };
+            return (
+              <span
+                className="hover:underline"
+                style={{ cursor: "pointer", color: "#1E3D73" }}
+                onClick={handleClick}
+              >
+                {params.value}
+              </span>
+            );
+          },
+        },
         { field: "projectedAmount", headerName: "Projected (INR)", flex: 1 },
         { field: "actualAmount", headerName: "Actual (INR)", flex: 1 },
       ];
@@ -137,6 +162,8 @@ const DeptWiseBudget = () => {
       };
     })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate)));
+
+  console.log("FINANCIAL OUT : ", financialData);
 
   // BUDGET NEW START
 
@@ -208,30 +235,12 @@ const DeptWiseBudget = () => {
       },
       offsetY: -22,
     },
-    xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
-      title: {
-        text: "  ",
-      },
-    },
+
     yaxis: {
       // max: 3000000,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => `${Math.round(val / 1000)}`,
+        formatter: (val) => `${Math.round(val / 100000)}`,
       },
     },
     fill: {
@@ -243,12 +252,9 @@ const DeptWiseBudget = () => {
     },
 
     tooltip: {
-      enabled: true,
+      enabled: false,
       custom: function ({ series, seriesIndex, dataPointIndex }) {
         const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
-        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
-        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
-        //     </div>`;
         return `
                   <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
               

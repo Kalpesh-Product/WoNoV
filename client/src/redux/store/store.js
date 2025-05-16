@@ -6,11 +6,12 @@ import clientReducer from "../slices/clientSlice";
 import ticketsReducer from "../slices/ticketSlice";
 import meetingsReducer from "../slices/meetingSlice";
 import salesReducer from "../slices/salesSlice";
+import hrReducer from "../slices/hrSlice"
 
 const persistConfig = {
   key: "root",
   storage: sessionStorage,
-  whitelist: ["client","tickets"],
+  whitelist: ["client","tickets","hr"],
   transforms: [
     encryptTransform({
       secretKey: import.meta.env.VITE_REDUX_PERSIST,
@@ -24,6 +25,7 @@ const rootreducer = combineReducers({
   tickets: ticketsReducer,
   client: clientReducer,
   sales: salesReducer,
+  hr: hrReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootreducer);
