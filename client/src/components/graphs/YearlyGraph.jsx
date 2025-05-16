@@ -17,7 +17,7 @@ const YearlyGraph = ({
   secondParam = false,
 }) => {
   const fiscalYears = ["FY 2024-25", "FY 2025-26"];
-  const [selectedYearIndex, setSelectedYearIndex] = useState(0);
+  const [selectedYearIndex, setSelectedYearIndex] = useState(1);
   const selectedYear = fiscalYears[selectedYearIndex];
 
   const yearCategories = {
@@ -91,6 +91,7 @@ const YearlyGraph = ({
         TitleAmountRed={TitleAmountRed}
       >
         <BarGraph
+          key={selectedYear}
           data={filteredData}
           options={updatedOptions}
           chartId={chartId || ""}

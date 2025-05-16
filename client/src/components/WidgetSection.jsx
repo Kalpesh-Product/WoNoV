@@ -19,6 +19,8 @@ const WidgetSection = ({
   TitleAmount,
   TitleAmountGreen,
   TitleAmountRed,
+  greenTitle,
+  redTitle,
   titleLabel,
   fun,
   normalCase,
@@ -84,32 +86,35 @@ const WidgetSection = ({
               >
                 {TitleAmount}{" "}
               </span>
-              <div className="flex">
-                {TitleAmountGreen && (
+              <div className="flex gap-2">
+                {TitleAmountGreen  !== undefined && TitleAmountGreen !== null && (
                   <span
                     className={`${
                       titleFont
-                        ? "text-subtitle text-[#54C4A7]"
-                        : "text-widgetTitle text-[#54C4A7] font-pmedium"
+                        ? "text-subtitle text-green-800"
+                        : "text-body text-green-800 font-pmedium"
                     }`}
                   >
-                    <div className="flex gap-2 justify-center items-center">
+                    <div className="flex gap-2 justify-center items-center uppercase bg-[#54c4a657] p-2 rounded-lg">
                       {/* <FaArrowTrendUp /> */}
-                      <div>{TitleAmountGreen}&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                      {greenTitle && <div>{greenTitle} : </div>}
+                      <div>{TitleAmountGreen}</div>
                     </div>
                   </span>
                 )}
-                {TitleAmountRed && (
+                {TitleAmountRed  !== undefined && TitleAmountGreen !== null && (
                   <span
                     className={`${
                       titleFont
-                        ? "text-subtitle text-[#EB5C45]"
-                        : "text-widgetTitle text-[#EB5C45] font-pmedium"
+                        ? "text-subtitle text-red-800"
+                        : "text-body text-red-800 font-pmedium"
                     }`}
                   >
-                    <div className="flex gap-2 justify-center items-center">
+                    <div className="flex gap-2 justify-center items-center uppercase bg-[#fc5e4640] p-2 rounded-lg">
                       {/* <FaArrowTrendDown /> */}
-                      <div>{TitleAmountRed} </div>
+                      {redTitle && <div>{redTitle} : </div>}
+
+                      <div>{TitleAmountRed}</div>
                     </div>
                   </span>
                 )}

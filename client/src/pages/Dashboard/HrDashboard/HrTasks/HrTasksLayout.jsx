@@ -71,7 +71,7 @@ const HrTasksLayout = () => {
         </Tabs>
       )}
 
-      <div className="py-4 bg-white">
+      <div className="py-0 bg-white">
         {/* Render the nested routes */}
         <Outlet />
       </div>
