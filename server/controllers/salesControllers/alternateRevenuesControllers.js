@@ -1,4 +1,3 @@
-const { inrFormat } = require("../../../client/src/utils/currencyFormat");
 const AlternateRevenue = require("../../models/sales/AlternateRevenue");
 const transformRevenues = require("../../utils/revenueFormatter");
 
@@ -70,8 +69,8 @@ const getAlternateRevenues = async (req, res, next) => {
 
         monthData.revenue.push({
           particulars: item.particulars,
-          taxableAmount: inrFormat(item.taxableAmount),
-          invoiceAmount: inrFormat(item.invoiceAmount),
+          taxableAmount: item.taxableAmount,
+          invoiceAmount: item.invoiceAmount,
           invoiceCreationDate: item.invoiceCreationDate,
           invoicePaidDate: item.invoicePaidDate,
           gst: item.gst,
@@ -81,7 +80,7 @@ const getAlternateRevenues = async (req, res, next) => {
 
       return Array.from(monthlyMap.values()).map((monthData) => ({
         ...monthData,
-        actual: inrFormat(monthData.actual),
+        actual: monthData.actual,
       }));
     };
 
