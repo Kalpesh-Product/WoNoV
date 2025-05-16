@@ -220,42 +220,7 @@ const createIndividualTask = async (req, res, next) => {
   }
 };
 
-const getAllKraKpaRole = async (req, res, next) => {
-  try {
-    const { company } = req;
-
-    const tasks = await kraKpaRole
-      .find({
-        company,
-      })
-      .populate([
-        { path: "assignedBy", select: "firstName middleName lastName" },
-        { path: "role", select: "roleTitle" },
-        { path: "department", select: "name" },
-      ])
-      .select("-company")
-      .lean();
-
-    const transformedTasks = tasks.map((task) => {
-      const dueDate = new Date(task.dueDate);
-
-      return {
-        ...task,
-        dueDate,
-        dueTime: dueDate.getTime(),
-        assignedDate: task.creationDate,
-        priority,
-        department: task.department.name,
-      };
-    });
-
-    return res.status(200).json(transformedTasks);
-  } catch (error) {
-    next(error);
-  }
-};
-
-const getAllKpaTasks = async (req, res, next) => {
+const getAllKraKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
 
@@ -320,9 +285,76 @@ const getAllKpaTasks = async (req, res, next) => {
   }
 };
 
+const getAllKpaTasks = async (req, res, next) => {
+  try {
+    const { company } = req;
+
+    const tasks = await kraKpaTask
+      .find({
+        company,
+      })
+      .populate({
+        path: "task",
+        populate: [
+          { path: "department", select: "name" },
+          { path: "assignedBy", select: "firstName middleName lastName" },
+        ],
+      })
+      .populate({ path: "assignedTo", select: "firstName middleName lastName" })
+      .select("-company")
+      .lean();
+
+    const transformedByDepartment = {};
+
+    tasks.forEach((task) => {
+      if (task.task.taskType !== "KPA") return;
+
+      const departmentName = task.task.department.name;
+      const assignedBy = `${task.task.assignedBy.firstName} ${
+        task.task.assignedBy.middleName || ""
+      } ${task.task.assignedBy.lastName}`;
+      const assignee = `${task.assignedTo.firstName}  ${
+        task.assignedTo.middleName || ""
+      } ${task.assignedTo.lastName}`;
+
+      const transformedTask = {
+        taskName: task.task.task,
+        description: task.task.description,
+        assignedBy: assignedBy.trim(),
+        assignedTo: assignee.trim(),
+        assignedDate: task.task.assignedDate,
+        dueDate: task.task.dueDate,
+        status: task.status,
+      };
+
+      if (!transformedByDepartment[departmentName]) {
+        transformedByDepartment[departmentName] = {
+          department: departmentName,
+          total: 0,
+          achieved: 0,
+          tasks: [],
+        };
+      }
+
+      transformedByDepartment[departmentName].tasks.push(transformedTask);
+      transformedByDepartment[departmentName].total += 1;
+
+      if (task.status === "Completed") {
+        transformedByDepartment[departmentName].achieved += 1;
+      }
+    });
+
+    const transformedDeptTasks = Object.values(transformedByDepartment);
+
+    return res.status(200).json(transformedDeptTasks);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createRoleBasedTask,
   createIndividualTask,
-  getAllKraKpaRole,
+  getAllKraKpaTasks,
   getAllKpaTasks,
 };
