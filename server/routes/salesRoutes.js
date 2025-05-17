@@ -86,8 +86,8 @@ router.post(
 );
 
 //Revenues
-router.post("/add-revenue", addRevenue);
-router.get("/fetch-revenues", getRevenues);
+router.post("/add-coworking-revenue", addRevenue);
+router.get("/fetch-coworking-revenues", getRevenues);
 router.get("/get-meeting-revenue", getMeetingRevenue);
 router.post("/create-meeting-revenue", createMeetingRevenue);
 router.patch("/update-meeting-revenue", updateMeetingRevenue);

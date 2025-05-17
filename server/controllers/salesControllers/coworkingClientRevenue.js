@@ -131,8 +131,6 @@ const getRevenues = async (req, res, next) => {
     }
 
     const revenues = await CoworkingRevenue.find(filter)
-      .populate({ path: "client", select: "clientName" })
-      .populate({ path: "service", select: "serviceName" })
       .lean()
       .exec();
 
