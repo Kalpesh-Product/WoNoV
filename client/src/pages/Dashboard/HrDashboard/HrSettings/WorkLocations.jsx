@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import AgTable from "../../../../components/AgTable";
-import { Chip, MenuItem, TextField } from "@mui/material";
+import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
 import MuiModal from "../../../../components/MuiModal";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import PrimaryButton from "../../../../components/PrimaryButton";
-import SecondaryButton from "../../../../components/SecondaryButton";
+import { State, City } from "country-state-city";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { queryClient } from "../../../../main";
@@ -13,6 +13,15 @@ import Loader from "../../../Loading";
 
 const WorkLocations = () => {
   const axios = useAxiosPrivate();
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  useEffect(() => {
+    setStates(State.getStatesOfCountry("IN"));
+  }, []);
+  const handleStateSelect = (stateCode) => {
+    const city = City.getCitiesOfState("IN", stateCode);
+    setCities(city);
+  };
 
   const {
     handleSubmit,
@@ -22,6 +31,8 @@ const WorkLocations = () => {
     defaultValues: {
       building: "",
       workLocation: "",
+      city : "",
+      state : "",
     },
   });
 
@@ -29,7 +40,7 @@ const WorkLocations = () => {
     useMutation({
       mutationKey: ["mutateWorkLocation"],
       mutationFn: async (data) => {
-        console.log(data)
+        console.log(data);
         const response = await axios.post("/api/company/add-building", {
           buildingName: data.workLocation,
         });
@@ -53,10 +64,8 @@ const WorkLocations = () => {
     queryKey: ["workLocation"],
     queryFn: async () => {
       try {
-        const response = await axios.get(
-          "/api/company/get-company-data?field=workLocations"
-        );
-        return response.data?.workLocations;
+        const response = await axios.get("/api/company/buildings");
+        return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
       }
@@ -148,23 +157,11 @@ const WorkLocations = () => {
             handleClick={handleAddLocation}
             columns={departmentsColumn}
             data={[
-              ...workLocations
-                .filter((location, index, self) => {
-                  const name = location.building?.buildingName;
-                  // Keep the first occurrence of each unique buildingName
-                  return (
-                    name &&
-                    index ===
-                      self.findIndex(
-                        (loc) => loc.building?.buildingName === name
-                      )
-                  );
-                })
-                .map((location, index) => ({
-                  id: index + 1, // Auto-increment Sr No
-                  name: location.building?.buildingName,
-                  status: location.isActive,
-                })),
+              ...workLocations.map((location, index) => ({
+                id: index + 1, // Auto-increment Sr No
+                name: location.buildingName,
+                status: location.isActive,
+              })),
             ]}
           />
         </div>
@@ -180,25 +177,6 @@ const WorkLocations = () => {
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-4"
           >
-            {/* <Controller
-              name="building"
-              rules={{required: 'Building is required'}}
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  size="small"
-                  label="Building"
-                  error={!!errors.building}
-                  helperText={errors.building?.message}
-                  fullWidth
-                >
-                  <MenuItem value="Building A">Sunteck Kaneka</MenuItem>
-                  <MenuItem value="Building B">Dempo Trade Center</MenuItem>
-                </TextField>
-              )}
-            /> */}
             <Controller
               name="workLocation"
               rules={{ required: "Work location is required" }}
@@ -214,7 +192,61 @@ const WorkLocations = () => {
                 />
               )}
             />
-            <PrimaryButton type={"submit"} title={"Submit"} disabled={isAddWorkLocation} isLoading={isAddWorkLocation} />
+
+            <Controller
+              name="state"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  select
+                  label="State"
+                  onChange={(e) => {
+                    field.onChange(e);
+                    handleStateSelect(e.target.value);
+                  }}
+                  fullWidth
+                >
+                  <MenuItem value="">Select a State</MenuItem>
+                  {states.map((item) => (
+                    <MenuItem value={item.isoCode} key={item.isoCode}>
+                      {item.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="city"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  select
+                  label="City"
+                  fullWidth
+                >
+                  <MenuItem value="">Select a State</MenuItem>
+                  {cities.map((item) => (
+                    <MenuItem
+                      value={item.name}
+                      key={`${item.name}-${item.stateCode}-${item.latitude}`}
+                    >
+                      {item.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+
+            <PrimaryButton
+              type={"submit"}
+              title={"Submit"}
+              disabled={isAddWorkLocation}
+              isLoading={isAddWorkLocation}
+            />
           </form>
         </div>
       </MuiModal>
