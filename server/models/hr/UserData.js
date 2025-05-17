@@ -115,6 +115,11 @@ const userDataSchema = new mongoose.Schema({
         enum: ["KPA", "KRA"],
         required: true,
       },
+      status: {
+        type: String,
+        enum: ["Pending", "InProgress", "Completed"],
+        default: "Pending",
+      },
       assignedDate: {
         type: Date,
         required: true,

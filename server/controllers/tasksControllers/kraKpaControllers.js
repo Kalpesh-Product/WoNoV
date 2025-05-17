@@ -9,7 +9,7 @@ const createRoleBasedTask = async (req, res, next) => {
   const { user, ip, company } = req;
   const logPath = "tasks/TaskLog";
   const logAction = "Create Task";
-  const logSourceKey = "kraKpaRole";
+  const logSourceKey = "kraKpaRoles";
 
   try {
     const { type } = req.query;
@@ -278,87 +278,81 @@ const createIndividualTask = async (req, res, next) => {
   }
 };
 
-// const updateTaskStatus = async (req, res, next) => {
-//   const { user, ip, company } = req;
-//   const logPath = "task/TaskLog";
-//   const logAction = "Update KRA/KPA status";
-//   const logSourceKey = "kraKpa";
+const updateTaskStatus = async (req, res, next) => {
+  const { user, ip, company } = req;
+  const logPath = "tasks/TaskLog";
+  const logAction = "Update KRA/KPA status";
+  const logSourceKey = "kraKpaTasks";
 
-//   try {
-//     const { taskId, status } = req.body;
+  try {
+    const { taskId } = req.params;
 
-//     if (!taskId || !status) {
-//       throw new CustomError(
-//         "Missing required fields",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
+    if (!taskId) {
+      throw new CustomError(
+        "Missing required fields",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
 
-//     if (!mongoose.Types.ObjectId.isValid(taskId)) {
-//       throw new CustomError(
-//         "Invalid task ID provided",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
+    if (!mongoose.Types.ObjectId.isValid(taskId)) {
+      throw new CustomError(
+        "Invalid task ID provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
 
-//     const completionDate = new Date();
+    const completionDate = new Date();
 
-//     const taskDetails = {
-//       task,
-//       assignedBy: user,
-//       description,
-//       department,
-//       priority,
-//       taskType: type,
-//       assignedDate: parsedAssignedDate,
-//       dueDate: parsedDueDate,
-//     };
-//     const updateUserData = await UserData.findOneAndUpdate(
-//       { empId },
-//       {
-//         $push: { kraKpa: taskDetails },
-//       },
-//       { new: true }
-//     );
+    const updateTaskStatus = await kraKpaTask.findOneAndUpdate(
+      { _id: taskId },
+      {
+        status: "Completed",
+        completionDate,
+      },
+      { new: true }
+    );
 
-//     if (!updateUserData) {
-//       throw new CustomError(
-//         `Failed to add the ${type}`,
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
+    if (!updateTaskStatus) {
+      throw new CustomError(
+        `Failed to update the task`,
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
 
-//     // Log success with createLog
-//     await createLog({
-//       path: logPath,
-//       action: logAction,
-//       remarks: `${type} added successfully`,
-//       status: "Success",
-//       user: user,
-//       ip: ip,
-//       company: company,
-//       sourceKey: logSourceKey,
-//       sourceId: updateUserData._id,
-//       changes: taskDetails,
-//     });
+    // Log success with createLog
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Task status updated successfully",
+      status: "Success",
+      user: user,
+      ip: ip,
+      company: company,
+      sourceKey: logSourceKey,
+      sourceId: updateTaskStatus._id,
+      changes: {
+        status: "Completed",
+        completionDate,
+      },
+    });
 
-//     return res.status(201).json({ message: `${type} added successfully` });
-//   } catch (error) {
-//     if (error instanceof CustomError) {
-//       next(error);
-//     } else {
-//       next(
-//         new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-//       );
-//     }
-//   }
-// };
+    return res.status(201).json({ message: `Task completed` });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
+  }
+};
 
 const getMyKraTasks = async (req, res, next) => {
   try {
@@ -493,4 +487,5 @@ module.exports = {
   createIndividualTask,
   getAllKpaTasks,
   getMyKraTasks,
+  updateTaskStatus,
 };
