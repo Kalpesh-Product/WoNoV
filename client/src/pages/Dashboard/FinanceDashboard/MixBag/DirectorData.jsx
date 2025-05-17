@@ -7,7 +7,7 @@ const DirectorData = () => {
   const files = location.state.files;
   return (
     <div className="flex flex-col gap-4 p-4">
-      <span className="text-title font-pmedium text-primary">{title}</span>
+      <span className="text-title font-pmedium text-primary uppercase">{title}</span>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {files ? (
           files.map((item) => (

@@ -1,6 +1,10 @@
+import { useLocation } from "react-router-dom";
 import GoogleFolderCard from "../../../../components/GoogleFolderCard";
 
 const DirectorsCompany = () => {
+  const location = useLocation();
+  const mixBag = "";
+
   const folderData = [
     {
       id: 1,
@@ -40,7 +44,13 @@ const DirectorsCompany = () => {
     <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {folderData.map((item) => (
         <div key={item.id}>
-          <GoogleFolderCard title={item.title} routeId={item.id} files={item.files} />
+          <GoogleFolderCard
+            title={item.title}
+            routeId={
+              location.pathname.includes("mix-bag") ? `/app/dashboard/finance-dashboard/mix-bag/directors-company-KYC/${item.id}` : `${item.id}`
+            }
+            files={item.files}
+          />
         </div>
       ))}
     </div>

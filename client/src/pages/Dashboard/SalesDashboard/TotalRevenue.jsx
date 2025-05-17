@@ -1,8 +1,5 @@
-import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import BarGraph from "../../../components/graphs/BarGraph";
 import WidgetSection from "../../../components/WidgetSection";
-import { monthlyLeadsData, monthlyLeadsOptions } from "./SalesData/SalesData";
-import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../components/AgTable";
 import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 import { inrFormat } from "../../../utils/currencyFormat";
