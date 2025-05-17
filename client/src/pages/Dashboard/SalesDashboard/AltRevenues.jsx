@@ -6,19 +6,17 @@ import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
+import { CircularProgress } from "@mui/material";
 
 const AltRevenues = () => {
-    const axios = useAxiosPrivate();
-    const {
-      data: alternateRevenue,
-      isLoading: isLoadingAlternateRevenue = [],
-    } = useQuery({
+  const axios = useAxiosPrivate();
+  const { data: alternateRevenue = [], isLoading: isLoadingAlternateRevenue } =
+    useQuery({
       queryKey: ["alternateRevenue"],
       queryFn: async () => {
         try {
-          const response = await axios.get(
-            `/api/sales/get-alternate-revenue`
-          );
+          const response = await axios.get(`/api/sales/get-alternate-revenue`);
           return response.data;
         } catch (error) {
           throw new Error(error.response.data.message);
@@ -282,8 +280,8 @@ const AltRevenues = () => {
   const series = [
     {
       name: "Actual Revenue",
-      data: monthlyRevenueData.map((item) =>
-        item.clients.reduce((sum, c) => sum + c.revenue, 0)
+      data: alternateRevenue.map((item) =>
+        item.revenue?.reduce((sum, c) => sum + c.invoiceAmount, 0)
       ),
     },
   ];
@@ -336,83 +334,74 @@ const AltRevenues = () => {
     colors: ["#1976D2"],
   };
 
-  const totalActual = monthlyRevenueData.reduce(
+  const totalActual = alternateRevenue.reduce(
     (sum, month) =>
       sum +
-      month.clients.reduce((monthSum, client) => monthSum + client.revenue, 0),
+      month.revenue.reduce((monthSum, client) => monthSum + client.invoiceAmount, 0),
     0
   );
 
-  const totalProjected = monthlyRevenueData.reduce(
+  console.log("TOTAL ACTUAL : ", totalActual)
+
+  const totalProjected = alternateRevenue.reduce(
     (sum, month) => sum + (month.projected ?? 0),
     0
   );
 
-  const tableData = monthlyRevenueData.map((monthData, index) => {
-    const totalRevenue = monthData.clients.reduce(
-      (sum, c) => sum + c.revenue,
+  const tableData = alternateRevenue.map((monthData, index) => {
+    const totalRevenue = monthData.revenue?.reduce(
+      (sum, c) => sum + c.invoiceAmount,
       0
     );
     return {
       id: index,
       month: monthData.month,
       revenue: `INR ${totalRevenue.toLocaleString()}`,
-      clients: monthData.clients.map((client, i) => ({
+      clients: monthData.revenue.map((client, i) => ({
         id: i + 1,
-        revenueSource: client.revenueSource,
-        revenue: `${client.revenue.toLocaleString()}`,
-        recievedDate: dayjs(client.recievedDate).format("DD-MM-YYYY"),
+        revenueSource: client.particulars,
+        revenue: `${inrFormat(client.invoiceAmount)}`,
+        recievedDate: dayjs(client.invoicePaidDate).format("DD-MM-YYYY"),
       })),
     };
   });
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection
-        title={"Annual Monthly Alternate Revenues"}
-        titleLabel={"FY 2024-25"}
-        TitleAmount={`INR ${inrFormat(totalActual)}`}
-        border
-      >
-        <BarGraph
-          data={series}
-          options={options}
-          height={400}
-          TitleAmount={`INR ${inrFormat(totalActual)}`}
-        />
-      </WidgetSection>
+      {isLoadingAlternateRevenue ? (
+        <div className="flex h-72 justify-center items-center">
+          <CircularProgress />
+        </div>
+      ) : (
+        <WidgetSection
+          title={"Annual Monthly Alternate Revenues"}
+          titleLabel={"FY 2024-25"}
+          // TitleAmount={`INR ${inrFormat(totalActual)}`}
+          border
+        >
+          <BarGraph
+            data={series}
+            options={options}
+            height={400}
+            // TitleAmount={`INR ${inrFormat(totalActual)}`}
+          />
+        </WidgetSection>
+      )}
 
-      <WidgetSection
-        border
-        title={"Monthly Revenue with Source Details"}
-        padding
-        TitleAmount={`INR ${inrFormat(totalActual)}`}
-      >
-        <CollapsibleTable
-          columns={[
-            { headerName: "Month", field: "month" },
-            { headerName: "Revenue (INR)", field: "revenue" },
-          ]}
-          data={tableData}
-          renderExpandedRow={(row) => (
-            <AgTable
-              data={row.clients}
-              columns={[
-                { headerName: "Sr No", field: "id", flex: 1 },
-                {
-                  headerName: "Revenue Source",
-                  field: "revenueSource",
-                  flex: 2,
-                },
-                { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
-                { headerName: "Received Date", field: "recievedDate", flex: 1 },
-              ]}
-              tableHeight={300}
-              hideFilter
-            />
-          )}
-        />
-      </WidgetSection>
+      {!isLoadingAlternateRevenue ? (
+        <WidgetSection
+          border
+          title={"Monthly Revenue with Source Details"}
+          padding
+          TitleAmount={`INR ${inrFormat(totalActual)}`}
+        >
+          <MonthWiseAgTable financialData={alternateRevenue} noFilter />
+        </WidgetSection>
+      ) : (
+        <div className="flex h-72 justify-center items-center">
+          <CircularProgress />
+        </div>
+      )}
     </div>
   );
 };

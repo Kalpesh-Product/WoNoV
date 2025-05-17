@@ -10,6 +10,7 @@ import { useEffect, useMemo } from "react";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import { parseRevenue } from "../../../utils/removeCommaInNum";
 import { Skeleton } from "@mui/material";
+import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 
 const VirtualOffice = () => {
   const axios = useAxiosPrivate();
@@ -43,16 +44,18 @@ const VirtualOffice = () => {
 
       if (!monthlyMap.has(monthKey)) {
         monthlyMap.set(monthKey, {
+          id : index + 1,
           month: monthKey,
           actual: 0,
-          clients: [],
+          revenue: [],
         });
       }
 
       const monthData = monthlyMap.get(monthKey);
       monthData.actual += actual;
 
-      monthData.clients.push({
+      monthData.revenue.push({
+        id: index + 1,
         clientName: item.clientName.clientName,
         revenue: inrFormat(actual),
         channel: item.channel,
@@ -71,6 +74,8 @@ const VirtualOffice = () => {
     if (isLoadingVirtualOfficeRevenue || !virtualOfficeRevenue) return [];
     return transformRevenues(virtualOfficeRevenue);
   }, [virtualOfficeRevenue, isLoadingVirtualOfficeRevenue]);
+
+  console.log("Transformded revene : ", transformRevenuesData)
 
   const graphNumbers = transformRevenuesData?.map((item) => {
     // Remove commas and convert the value to a number
@@ -136,7 +141,7 @@ const VirtualOffice = () => {
   const totalActual = transformRevenuesData?.reduce(
     (sum, month) =>
       sum +
-      month.clients.reduce(
+      month.revenue.reduce(
         (monthSum, client) => monthSum + parseRevenue(client.revenue),
         0
       ),
@@ -165,7 +170,13 @@ const VirtualOffice = () => {
           padding
           TitleAmount={`INR ${inrFormat(totalActual)}`}
         >
-          <CollapsibleTable
+          <MonthWiseAgTable financialData={transformRevenuesData} passedColumns={[
+                  { headerName: "Sr No", field: "id", flex: 1 },
+                  { headerName: "Client Name", field: "clientName", flex: 1 },
+                  { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
+                  { headerName: "Status", field: "status", flex: 1 },
+                ]}/>
+          {/* <CollapsibleTable
             columns={[
               { headerName: "Month", field: "month" },
               { headerName: "Revenue (INR)", field: "actual" },
@@ -189,7 +200,7 @@ const VirtualOffice = () => {
                 hideFilter
               />
             )}
-          />
+          /> */}
         </WidgetSection>
       ) : (
         <Skeleton height={"500px"} width={"100%"} />

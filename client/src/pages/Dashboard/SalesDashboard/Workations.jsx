@@ -8,6 +8,7 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
+import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 
 const Workations = () => {
   const axios = useAxiosPrivate();
@@ -192,8 +193,8 @@ const Workations = () => {
     return {
       id: index,
       month: monthData.month,
-      revenue: `INR ${totalRevenue.toLocaleString()}`,
-      clients: monthData.clients.map((client, i) => ({
+      actual: `INR ${totalRevenue.toLocaleString()}`,
+      revenue: monthData.clients.map((client, i) => ({
         id: i + 1,
         clientName: client.clientName,
         revenue: `${client.revenue.toLocaleString()}`,
@@ -221,33 +222,43 @@ const Workations = () => {
         padding
         TitleAmount={`INR ${inrFormat(totalActual)}`}
       >
-        <CollapsibleTable
-          columns={[
-            { headerName: "Month", field: "month" },
-            { headerName: "Revenue (INR)", field: "revenue" },
-          ]}
-          data={tableData}
-          renderExpandedRow={(row) => (
-            <AgTable
-              data={row.clients}
-              columns={[
-                { headerName: "Sr No", field: "id", flex: 1 },
-                { headerName: "Client Name", field: "clientName", flex: 1 },
+        <MonthWiseAgTable
+          financialData={tableData}
+          passedColumns={[
+            { headerName: "Sr No", field: "id", flex: 1 },
+            { headerName: "Client Name", field: "clientName", flex: 1 },
 
-                {
-                  headerName: "Taxable (INR)",
-                  field: "taxableAmount",
-                  flex: 1,
-                },
-                { headerName: "GST (INR)", field: "gst", flex: 1 },
-                { headerName: "Total (INR)", field: "revenue", flex: 1 },
-                { headerName: "Status", field: "status", flex: 1 },
-              ]}
-              tableHeight={300}
-              hideFilter
-            />
-          )}
+            {
+              headerName: "Taxable (INR)",
+              field: "taxableAmount",
+              flex: 1,
+              valueFormatter: ({ value }) =>
+                typeof value === "number"
+                  ? value.toLocaleString()
+                  : `${value ?? ""}`,
+            },
+            {
+              headerName: "GST (INR)",
+              field: "gst",
+              flex: 1,
+              valueFormatter: ({ value }) =>
+                typeof value === "number"
+                  ? value.toLocaleString()
+                  : `${value ?? ""}`,
+            },
+            {
+              headerName: "Total (INR)",
+              field: "revenue",
+              flex: 1,
+              valueFormatter: ({ value }) =>
+                typeof value === "number"
+                  ? value.toLocaleString()
+                  : `${value ?? ""}`,
+            },
+            { headerName: "Status", field: "status", flex: 1, pinned : "right" },
+          ]}
         />
+   
       </WidgetSection>
     </div>
   );
