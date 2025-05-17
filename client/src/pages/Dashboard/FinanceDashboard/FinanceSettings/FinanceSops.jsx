@@ -43,7 +43,7 @@ const FinanceSops = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <span className="text-title font-pmedium text-primary pb-4">Upload Sops</span>
+      <span className="text-title font-pmedium text-primary pb-4 uppercase">Upload Sops</span>
 
       <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
         {uploadItems.map((index, item) => {

@@ -10,7 +10,6 @@ import dayjs from "dayjs";
 
 const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
   const navigate = useNavigate();
-  console.log("From leads : ", data.length);
 
   // ✅ Dynamically Count Clients Per Domain
   const transformedData = data.map((monthData) => {
@@ -72,7 +71,6 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
     yaxis: {
       title: { text: "Unique Clients" },
       min: 0,
-      max: 10,
     },
     plotOptions: {
       bar: { columnWidth: "40%", borderRadius: 3 },

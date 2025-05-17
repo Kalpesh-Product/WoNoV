@@ -1,17 +1,32 @@
 import React, { useState, useMemo } from "react";
 import dayjs from "dayjs";
-import { Tabs, Tab, CircularProgress, Chip } from "@mui/material";
+import {
+  Tabs,
+  Tab,
+  CircularProgress,
+  TextField,
+  FormControl,
+  Autocomplete,
+} from "@mui/material";
 import { inrFormat } from "../../utils/currencyFormat";
 import PrimaryButton from "../PrimaryButton";
 import AgTable from "../AgTable";
-import CollapsibleTable from "../Tables/MuiCollapsibleTable";
+import { parseAmount } from "../../utils/parseAmount";
+import {
+  MdNavigateBefore,
+  MdNavigateNext,
+  MdOutlineSkipNext,
+} from "react-icons/md";
 
-const AllocatedBudget = ({ financialData, isLoading, variant }) => {
+const AllocatedBudget = ({
+  financialData,
+  isLoading,
+  variant,
+  noFilter = false,
+}) => {
   const [selectedTab, setSelectedTab] = useState(0);
   const fiscalYears = ["FY 2024-25", "FY 2025-26"];
-  const [selectedFYIndex, setSelectedFYIndex] = useState(0); // Default to FY 2024-25
-  console.log("From component :", financialData)
-
+  const [selectedFYIndex, setSelectedFYIndex] = useState(0);
   const selectedFY = fiscalYears[selectedFYIndex];
 
   const allTypes = useMemo(() => {
@@ -41,22 +56,27 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
     });
   }, [allMonths, selectedFY]);
 
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
+
   const groupedData = useMemo(() => {
     const result = {};
-    allTypes.forEach((type) => {
+    (noFilter ? ["All"] : allTypes).forEach((type) => {
       result[type] = {};
       allMonths.forEach((month) => {
         const monthData = financialData.find((fd) => fd.month === month);
-        const rows = monthData?.tableData?.rows?.filter(
-          (r) => (r.expanseType || "Unknown") === type
-        ) || [];
+        const rows = noFilter
+          ? monthData?.tableData?.rows || []
+          : monthData?.tableData?.rows?.filter(
+              (r) => (r.expanseType || "Unknown") === type
+            ) || [];
 
         const projectedAmount = rows.reduce(
-          (sum, r) => sum + Number((r.projectedAmount || "0").replace(/,/g, "")),
+          (sum, r) =>
+            sum + Number((r.projectedAmount || "0").replace(/,/g, "")),
           0
         );
         const actualAmount = rows.reduce(
-          (sum, r) => sum + Number((r.actualAmount ?? "0").toString().replace(/,/g, "")),
+          (sum, r) => sum + (parseAmount(r.actualAmount) || 0),
           0
         );
 
@@ -72,29 +92,37 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
       });
     });
     return result;
-  }, [financialData, allTypes, allMonths]);
+  }, [financialData, allTypes, allMonths, noFilter]);
 
-  const collapsibleRows = useMemo(() => {
-    const currentType = allTypes[selectedTab];
-    return filteredMonths.map((month) => {
-      const data = groupedData[currentType]?.[month];
-      return {
-        id: month,
-        monthFormatted: dayjs(month).format("MMM-YY"),
-        projected: `${data?.projectedAmount?.toLocaleString("en-IN") || "0"}`,
-        actual: `${data?.amount || "0"}`,
-        rows: data?.tableData?.rows || [],
-        columns: data?.tableData?.columns || [],
-      };
-    });
-  }, [filteredMonths, groupedData, allTypes, selectedTab]);
+  const monthDataForSelectedType = useMemo(() => {
+    const currentType = noFilter ? "All" : allTypes[selectedTab];
+    const currentMonth = filteredMonths[selectedMonthIndex];
+    const data = groupedData[currentType]?.[currentMonth];
+
+    return {
+      month: currentMonth,
+      monthFormatted: dayjs(currentMonth).format("MMMM YYYY"),
+      rows: data?.tableData?.rows || [],
+      columns: data?.tableData?.columns || [],
+    };
+  }, [
+    filteredMonths,
+    selectedMonthIndex,
+    groupedData,
+    allTypes,
+    selectedTab,
+    noFilter,
+  ]);
 
   const totalProjectedAmountForFY = useMemo(() => {
     return filteredMonths.reduce((sum, month) => {
-      return sum + allTypes.reduce((typeSum, type) => {
-        const data = groupedData[type]?.[month];
-        return typeSum + (data?.projectedAmount || 0);
-      }, 0);
+      return (
+        sum +
+        allTypes.reduce((typeSum, type) => {
+          const data = groupedData[type]?.[month];
+          return typeSum + (data?.projectedAmount || 0);
+        }, 0)
+      );
     }, 0);
   }, [filteredMonths, groupedData, allTypes]);
 
@@ -102,7 +130,6 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
 
   return (
     <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
-      {/* Header */}
       <div className="flex justify-between items-center py-2">
         <span className="text-title font-pmedium text-primary uppercase">
           Allocated Budget:
@@ -112,78 +139,107 @@ const AllocatedBudget = ({ financialData, isLoading, variant }) => {
         </span>
       </div>
 
-      {/* Fiscal Year Switch */}
-      <div className="flex justify-between items-center">
-        <PrimaryButton
-          title={"Prev"}
-          handleSubmit={() => setSelectedFYIndex((prev) => Math.max(prev - 1, 0))}
-          disabled={selectedFYIndex === 0}
-        />
-        <span className="text-title font-pmedium">{selectedFY}</span>
-        <PrimaryButton
-          title={"Next"}
-          handleSubmit={() => setSelectedFYIndex((prev) =>
-            Math.min(prev + 1, fiscalYears.length - 1)
-          )}
-          disabled={selectedFYIndex === fiscalYears.length - 1}
-        />
-      </div>
-
-      {/* Tabs */}
-      <div className="flex w-full border-[1px] border-borderGray rounded-xl">
-        <Tabs
-          value={selectedTab}
-          onChange={(e, newValue) => setSelectedTab(newValue)}
-          variant={variant || "fullWidth"}
-          scrollButtons="auto"
-          sx={{
-            width: "100%",
-            backgroundColor: "white",
-            borderRadius: 2,
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontWeight: "medium",
-              padding: "12px 15px",
-              minWidth: "20%",
-              borderRight: "0.1px solid #d1d5db",
-            },
-            "& .MuiTabs-scrollButtons": {
-              "&.Mui-disabled": { opacity: 0.3 },
-            },
-          }}
-          TabIndicatorProps={{ style: { display: "none" } }}
-        >
-          {allTypes.map((type) => (
-            <Tab key={type} label={type === "External" ? "Vendor" : type} />
-          ))}
-        </Tabs>
-      </div>
-
-    
-      {/* Collapsible Table */}
-      <CollapsibleTable
-        columns={[
-          { field: "monthFormatted", headerName: "MONTH" },
-          { field: "projected", headerName: "PROJECTED (INR)" },
-          { field: "actual", headerName: "ACTUAL (INR)" },
-        ]}
-        data={collapsibleRows}
-        renderExpandedRow={(row) =>
-          row.rows.length > 0 ? (
-            <AgTable
-              search={row.rows.length >= 10}
-              data={row.rows}
-              columns={row.columns}
-              tableHeight={400}
-              hideFilter={row.rows.length <= 9}
-            />
-          ) : (
-            <div className="bg-borderGray rounded-xl text-body text-muted text-center py-4">
-              No data available for this category in {row.monthFormatted}
+      <div className="flex items-center justify-between gap-4">
+        <div className="w-1/3">
+          {filteredMonths.length > 0 && !noFilter && (
+            <div>
+              <FormControl fullWidth>
+                <Autocomplete
+                  value={allTypes[selectedTab]}
+                  onChange={(e, newValue) => {
+                    const selectedIndex = allTypes.findIndex(
+                      (type) => type === newValue
+                    );
+                    setSelectedTab(selectedIndex);
+                  }}
+                  options={allTypes}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Category"
+                      size="small"
+                      fullWidth
+                    />
+                  )}
+                  getOptionLabel={(option) =>
+                    option === "External" ? "Vendor" : option
+                  }
+                  isOptionEqualToValue={(option, value) => option === value}
+                />
+              </FormControl>
             </div>
-          )
-        }
-      />
+          )}
+        </div>
+        <div className="flex gap-4 justify-end items-center w-3/4 ">
+          <div className="flex gap-4 items-center">
+            <PrimaryButton
+              title={<MdNavigateBefore />}
+              handleSubmit={() =>
+                setSelectedFYIndex((prev) => Math.max(prev - 1, 0))
+              }
+
+              disabled={selectedFYIndex === 0}
+            />
+            <span className="text-body font-pmedium">{selectedFY}</span>
+            <PrimaryButton
+              title={<MdNavigateNext />}
+              handleSubmit={() =>
+                setSelectedFYIndex((prev) =>
+                  Math.min(prev + 1, fiscalYears.length - 1)
+                )
+              }
+              disabled={selectedFYIndex === fiscalYears.length - 1}
+            />
+          </div>
+
+          <div className="">
+            {/* Month Switcher */}
+            {filteredMonths.length > 0 && (
+              <div className="flex gap-4 items-center">
+                <PrimaryButton
+                  title={<MdNavigateBefore />}
+                  handleSubmit={() =>
+                    setSelectedMonthIndex((prev) => Math.max(prev - 1, 0))
+                  }
+                  disabled={selectedMonthIndex === 0}
+                />
+                <span className="text-body font-pmedium uppercase">
+                  {monthDataForSelectedType.monthFormatted}
+                </span>
+                <PrimaryButton
+                  title={<MdNavigateNext />}
+                  handleSubmit={() =>
+                    setSelectedMonthIndex((prev) =>
+                      Math.min(prev + 1, filteredMonths.length - 1)
+                    )
+                  }
+                  disabled={selectedMonthIndex === filteredMonths.length - 1}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      <hr />
+
+      {/* AgTable */}
+      {monthDataForSelectedType.rows.length > 0 ? (
+        <div className="h-72 overflow-y-auto mt-4">
+          <AgTable
+
+            search={monthDataForSelectedType.rows.length >= 10}
+            data={monthDataForSelectedType.rows}
+            columns={monthDataForSelectedType.columns}
+            tableHeight={250}
+            hideFilter={monthDataForSelectedType.rows.length <= 9}
+          />
+        </div>
+      ) : (
+        <div className="h-96 flex justify-center items-center text-muted">
+          No data available for this category in{" "}
+          {monthDataForSelectedType.monthFormatted}
+        </div>
+      )}
     </div>
   );
 };

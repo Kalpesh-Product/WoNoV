@@ -1,4 +1,8 @@
-import { MdOutlineRemoveRedEye } from "react-icons/md";
+import {
+  MdNavigateBefore,
+  MdNavigateNext,
+  MdOutlineRemoveRedEye,
+} from "react-icons/md";
 import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import WidgetSection from "../../../../components/WidgetSection";
@@ -6,17 +10,22 @@ import { useState } from "react";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import SecondaryButton from "../../../../components/SecondaryButton";
+import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 
 const Projections = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
 
-
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
+  const fiscalYears = ["FY 2024-25", "FY 2025-26"];
+  const [selectedYearIndex, setSelectedYearIndex] = useState(0);
+  const selectedYear = fiscalYears[selectedYearIndex];
 
   const incomeExpenseData = [
     {
       name: "Income",
+      group: "FY 2024-25",
       data: [
         1250000, // Jan
         1350000, // Feb
@@ -34,11 +43,12 @@ const Projections = () => {
     },
     {
       name: "Expense",
+      group: "FY 2024-25",
       data: [
-        750000,  // Jan
-        820000,  // Feb
-        900000,  // Mar
-        970000,  // Apr
+        750000, // Jan
+        820000, // Feb
+        900000, // Mar
+        970000, // Apr
         1050000, // May
         1120000, // Jun
         1250000, // Jul
@@ -50,7 +60,6 @@ const Projections = () => {
       ],
     },
   ];
-
 
   const incomeExpenseOptions = {
     chart: {
@@ -81,27 +90,14 @@ const Projections = () => {
       width: 2,
       colors: ["transparent"],
     },
-    xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
-    },
     yaxis: {
       title: {
-        text: "Amount (INR)",
+        text: "Amount in Lakhs (INR)",
       },
-      tickAmount: 4
+      labels: {
+        formatter: (val) => val / 100000,
+      },
+      tickAmount: 4,
     },
     fill: {
       opacity: 1,
@@ -112,6 +108,7 @@ const Projections = () => {
       },
     },
   };
+
   //-----------------------------------------------------Graph------------------------------------------------------//
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const monthlyProfitLossColumns = [
@@ -135,7 +132,7 @@ const Projections = () => {
       ),
     },
   ];
-  
+
   const rawMonthlyData = [
     { id: 1, month: "Apr-24", income: 1250000, expense: 750000 },
     { id: 2, month: "May-24", income: 1400000, expense: 800000 },
@@ -147,8 +144,7 @@ const Projections = () => {
     { id: 8, month: "Nov-24", income: 2100000, expense: 1600000 },
     { id: 9, month: "Dec-24", income: 2200000, expense: 500000 },
   ];
-  
-  
+
   const monthlyProfitLossData = rawMonthlyData.map((item) => {
     const pnl = item.income - item.expense;
     return {
@@ -158,9 +154,6 @@ const Projections = () => {
       pnl: inrFormat(pnl),
     };
   });
-  
-
-
 
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
@@ -177,11 +170,11 @@ const Projections = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border titleLabel={"FY 2024-25"} title={"Projections"}>
-          <BarGraph
-            data={incomeExpenseData}
+        <WidgetSection padding>
+          <YearlyGraph
             options={incomeExpenseOptions}
-
+            data={incomeExpenseData}
+            title={"PROJECTIONS"}
           />
         </WidgetSection>,
       ],
@@ -201,7 +194,8 @@ const Projections = () => {
           border
           title={`Total Monthly P&L`}
           titleLabel={"FY 2024-25"}
-          TitleAmount={`INR ${totalPnL.toLocaleString()}`}>
+          TitleAmount={`INR ${totalPnL.toLocaleString()}`}
+        >
           <AgTable
             data={monthlyProfitLossData}
             columns={monthlyProfitLossColumns}
@@ -211,29 +205,34 @@ const Projections = () => {
       </div>
 
       {viewDetails && (
-  <MuiModal
-    open={viewModalOpen}
-    onClose={() => setViewModalOpen(false)}
-    title="Monthly P&L Detail"
-  >
-    <div className="space-y-3">
-      <DetalisFormatted title="Month" detail={viewDetails.month} />
-      <DetalisFormatted
-        title="Income"
-        detail={`INR ${Number(viewDetails.income.replace(/,/g, "")).toLocaleString("en-IN")}`}
-      />
-      <DetalisFormatted
-        title="Expense"
-        detail={`INR ${Number(viewDetails.expense.replace(/,/g, "")).toLocaleString("en-IN")}`}
-      />
-      <DetalisFormatted
-        title="P&L"
-        detail={`INR ${Number(viewDetails.pnl.replace(/,/g, "")).toLocaleString("en-IN")}`}
-      />
-    </div>
-  </MuiModal>
-)}
-
+        <MuiModal
+          open={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          title="Monthly P&L Detail"
+        >
+          <div className="space-y-3">
+            <DetalisFormatted title="Month" detail={viewDetails.month} />
+            <DetalisFormatted
+              title="Income"
+              detail={`INR ${Number(
+                viewDetails.income.replace(/,/g, "")
+              ).toLocaleString("en-IN")}`}
+            />
+            <DetalisFormatted
+              title="Expense"
+              detail={`INR ${Number(
+                viewDetails.expense.replace(/,/g, "")
+              ).toLocaleString("en-IN")}`}
+            />
+            <DetalisFormatted
+              title="P&L"
+              detail={`INR ${Number(
+                viewDetails.pnl.replace(/,/g, "")
+              ).toLocaleString("en-IN")}`}
+            />
+          </div>
+        </MuiModal>
+      )}
     </div>
   );
 };

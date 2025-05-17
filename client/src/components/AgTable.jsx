@@ -160,7 +160,7 @@ const AgTableComponent = React.memo(
     return (
       <div className="border-b-[1px] border-borderGray">
             {tableTitle && (
-          <div className="flex items-center justify-between py-4">
+          <div className="flex items-center justify-between pb-4">
             <span className="font-pmedium text-title text-primary uppercase">
               {tableTitle}
             </span>

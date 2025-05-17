@@ -31,7 +31,7 @@ const getVirtualOfficeRevenue = async (req, res, next) => {
 
     const revenues = await VirtualOfficeRevenue.find({ company })
       .populate([
-        { path: "client", select: "" },
+        { path: "clientName", select: "clientName" },
         { path: "company", select: "companyName" },
       ])
       .lean()

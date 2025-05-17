@@ -315,6 +315,9 @@ import CollectionsLayout from "../pages/Dashboard/FinanceDashboard/Finance/Colle
 import HrAttendance from "../pages/Dashboard/HrDashboard/HrEmployee/HrAttendance";
 import HrLeaves from "../pages/Dashboard/HrDashboard/HrEmployee/HrLeaves";
 import HrEvents from "../pages/Dashboard/HrDashboard/Complaince/HrEvents";
+import HrTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrTasks";
+import HrDepartmentTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentTasks";
+import HrTasksLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrTasksLayout";
 
 export const routes = createBrowserRouter([
   {
@@ -1020,21 +1023,6 @@ export const routes = createBrowserRouter([
                         path: "turnover",
                         element: <ActualBusinessRevenue />,
                       },
-                      // {
-                      //   path: "turnover",
-                      //   element: <EarningsLayout />,
-                      //   children: [
-                      //     {
-                      //       path: "actual-business",
-                      //       element: <ActualBusinessRevenue />,
-                      //     },
-
-                      //     {
-                      //       path: "revenue-target",
-                      //       element: <RevenueTarget />,
-                      //     },
-                      //   ],
-                      // },
 
                       {
                         path: "unique-leads",
@@ -1244,6 +1232,22 @@ export const routes = createBrowserRouter([
                         path: "",
                         element: <HrDashboard />,
                       },
+                      {
+                        path: "overall-tasks",
+                        element: <HrTasksLayout />,
+                        children: [
+                          {
+                            path: "",
+                            element: <HrTasks />,
+                            index: true
+                          },
+                          {
+                            path: "department-tasks",
+                            element: <HrDepartmentTasks />,
+                          },
+                        ],
+                      },
+
                       {
                         path: "company",
                         element: <Compliances />,

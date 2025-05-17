@@ -1,6 +1,7 @@
 import { useMediaQuery } from "@mui/material";
 import React, { useRef, useState } from "react";
 import ReactApexChart from "react-apexcharts";
+import useResponsiveChart from "../../hooks/useResponsiveChart";
 
 const PieChartMui = ({ data, options, customLegend, width, height }) => {
   // Extract series data for ApexCharts
@@ -8,13 +9,25 @@ const PieChartMui = ({ data, options, customLegend, width, height }) => {
 
   // Detect mobile view
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const { containerRef, chartKey } = useResponsiveChart();
+  const updatedOptions = {
+    ...options,
+    chart: {
+      ...options.chart,
+      zoom: { enabled: false },
+      animations: {
+        enabled: false,
+      },
+    },
+  };
 
   return (
     <div className="">
       <div className="w-full m-0 flex  gap-4">
-        <div className="flex-1">
+        <div ref={containerRef} className="flex-1">
           <ReactApexChart
-            options={options} // Use options passed directly from parent
+            key={chartKey}
+            options={updatedOptions} // Use options passed directly from parent
             series={chartData} // Data values for the pie slices
             type="pie"
             width={isMobile ? "100%" : width ? width : 500}
@@ -27,7 +40,8 @@ const PieChartMui = ({ data, options, customLegend, width, height }) => {
           <div
             className={`${
               customLegend ? "flex-1" : ""
-            } p-4 justify-center items-center`}>
+            } p-4 justify-center items-center`}
+          >
             {customLegend}
           </div>
         ) : (

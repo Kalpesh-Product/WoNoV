@@ -1,6 +1,8 @@
 import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
+  MdNavigateBefore,
+  MdNavigateNext,
   MdOutlineMiscellaneousServices,
 } from "react-icons/md";
 import { SiCashapp, SiGoogleadsense } from "react-icons/si";
@@ -14,7 +16,10 @@ import { Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import DataCard from "../../../components/DataCard";
 import { useSidebar } from "../../../context/SideBarContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
+import SecondaryButton from "../../../components/SecondaryButton";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 
 const FinanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -28,36 +33,64 @@ const FinanceDashboard = () => {
   const incomeExpenseData = [
     {
       name: "Income",
+      group: "FY 2024-25",
       data: [
-        1550000, // Jan - stable start
+        1550000, // Jan
         1620000, // Feb
         1750000, // Mar
         1900000, // Apr
         2100000, // May
         2250000, // Jun
-        2450000, // Jul - mid year peak
+        2450000, // Jul
         2400000, // Aug
         2300000, // Sep
-        2650000, // Oct - festive boost
-        2850000, // Nov - big sales
-        3100000, // Dec - year end peak
+        2650000, // Oct
+        2850000, // Nov
+        3100000, // Dec
       ],
     },
     {
       name: "Expense",
+      group: "FY 2024-25",
       data: [
-        950000, // Jan
-        1000000, // Feb
-        1080000, // Mar
-        1200000, // Apr
-        1350000, // May
-        1450000, // Jun
-        1550000, // Jul
-        1500000, // Aug
-        1480000, // Sep
-        1600000, // Oct
-        1750000, // Nov
-        1850000, // Dec
+        950000, 1000000, 1080000, 1200000, 1350000, 1450000, 1550000, 1500000,
+        1480000, 1600000, 1750000, 1850000,
+      ],
+    },
+    {
+      name: "Income",
+      group: "FY 2025-26",
+      data: [
+        1650000, // Jan - slight growth
+        1720000, // Feb
+        1850000, // Mar
+        2000000, // Apr
+        2200000, // May
+        2400000, // Jun
+        2600000, // Jul
+        2550000, // Aug
+        2450000, // Sep
+        2800000, // Oct
+        3000000, // Nov
+        3300000, // Dec
+      ],
+    },
+    {
+      name: "Expense",
+      group: "FY 2025-26",
+      data: [
+        1020000, // Jan
+        1080000, // Feb
+        1150000, // Mar
+        1250000, // Apr
+        1400000, // May
+        1520000, // Jun
+        1620000, // Jul
+        1580000, // Aug
+        1550000, // Sep
+        1700000, // Oct
+        1850000, // Nov
+        1950000, // Dec
       ],
     },
   ];
@@ -65,6 +98,9 @@ const FinanceDashboard = () => {
   const incomeExpenseOptions = {
     chart: {
       id: "income-vs-expense-bar",
+      animations: {
+        enabled: false, // ✅ disables all animations
+      },
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
@@ -91,25 +127,12 @@ const FinanceDashboard = () => {
       width: 2,
       colors: ["transparent"],
     },
-    xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
-    },
     yaxis: {
       title: {
-        text: "Amount (INR)",
+        text: "Amount In Lakhs (INR)",
+      },
+      labels: {
+        formatter: (val) => `${Math.round(val / 100000)}`,
       },
       tickAmount: 4,
     },
@@ -117,11 +140,39 @@ const FinanceDashboard = () => {
       opacity: 1,
     },
     tooltip: {
-      y: {
-        formatter: (val) => `INR ${val.toLocaleString()}`,
+      custom: ({ dataPointIndex, w }) => {
+        const monthIndex = dataPointIndex;
+        const income = w.globals.initialSeries.find((s) => s.name === "Income")
+          ?.data[monthIndex];
+        const expense = w.globals.initialSeries.find(
+          (s) => s.name === "Expense"
+        )?.data[monthIndex];
+
+        const monthLabel =
+          w.globals.labels && w.globals.labels[monthIndex]
+            ? w.globals.labels[monthIndex]
+            : `Month ${monthIndex + 1}`;
+
+        return `
+          <div style="padding: 10px; font-family: Poppins, sans-serif; font-size: 13px; width : 180px">
+            <strong>${monthLabel}</strong><br/>
+            <hr />
+            <div style="margin-top: 6px;">
+              <div style="display: flex; justify-content: space-between;">
+                <strong>Income</strong>
+                <span>INR ${income?.toLocaleString() || "0"}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <strong>Expense</strong>
+                <span>INR ${expense?.toLocaleString() || "0"}</span>
+              </div>
+            </div>
+          </div>
+        `;
       },
     },
   };
+
   //-----------------------------------------------------Graph------------------------------------------------------//
   //-----------------------------------------------------DataCards------------------------------------------------------//
   const incomeCardData = {
@@ -450,18 +501,27 @@ const FinanceDashboard = () => {
     { id: "department", label: "Department", align: "left" },
     { id: "amount", label: "Amount (INR)", align: "left" },
   ];
+
+  const now = new Date();
+  const monthYear = now.toLocaleString("default", {
+    month: "long",
+    year: "numeric",
+  });
+
   //-----------------------------------------------------Table Rental Payments------------------------------------------------------//
 
   const techWidgets = [
     {
       layout: 1,
       widgets: [
-        <WidgetSection
-          border
-          title={"Income v/s Expenses"}
-          titleLabel={"FY 2024-25"}>
-          <BarGraph data={incomeExpenseData} options={incomeExpenseOptions} />
-        </WidgetSection>,
+        <YearlyGraph
+          data={incomeExpenseData}
+          options={incomeExpenseOptions}
+          chartId={"bargraph-finance-income"}
+          title={"BIZNest FINANCE INCOME V/S EXPENSE"}
+          TitleAmountGreen={`INR 53,29,345`}
+          TitleAmountRed={`INR 42,36,894`}
+        />,
       ],
     },
     {
@@ -502,7 +562,7 @@ const FinanceDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection title={"Current Month Payouts"} border>
+        <WidgetSection title={`Payouts - ${monthYear} `} border>
           <PieChartMui
             data={pieMonthlyPayoutData}
             options={pieMonthlyPayoutOptions}
@@ -510,7 +570,7 @@ const FinanceDashboard = () => {
             height={350}
           />
         </WidgetSection>,
-        <WidgetSection title={"Current Months Customer Collections"} border>
+        <WidgetSection title={`Customer Collections - ${monthYear} `} border>
           <PieChartMui
             data={pieMonthlyCollectionData}
             options={pieMonthlyCollectionOptions}
@@ -523,7 +583,7 @@ const FinanceDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection title={"Statutory Payments Due"} border>
+        <WidgetSection title={`Statutory Payments Due - ${monthYear}`} border>
           <DonutChart
             centerLabel="Payments Due"
             labels={donutStatutorylabels}
@@ -533,7 +593,7 @@ const FinanceDashboard = () => {
             isMonetary={true}
           />
         </WidgetSection>,
-        <WidgetSection title={"Rental Payments Due"} border>
+        <WidgetSection title={`Rental Payments Due - ${monthYear}`} border>
           <DonutChart
             centerLabel="Rental Status"
             labels={donutRentalLabels}

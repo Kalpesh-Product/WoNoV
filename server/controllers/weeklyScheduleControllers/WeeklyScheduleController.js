@@ -1,7 +1,7 @@
 const UserData = require("../../models/hr/UserData");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
-const WeeklySchedule = require("../../models/administration/WeeklySchedule");
+const WeeklySchedule = require("../../models/WeeklySchedule");
 const { default: mongoose } = require("mongoose");
 const Unit = require("../../models/locations/Unit");
 const Role = require("../../models/roles/Roles");
@@ -11,7 +11,7 @@ const assignWeeklyUnit = async (req, res, next) => {
   const logAction = "Assign Weekly Unit";
   const logSourceKey = "weeklySchedule";
   try {
-    const { startDate, endDate, location, employee } = req.body;
+    const { startDate, endDate, location, employee, department } = req.body;
 
     const { company, user, ip } = req;
 
@@ -31,6 +31,14 @@ const assignWeeklyUnit = async (req, res, next) => {
       );
     }
 
+    if (!mongoose.Types.ObjectId.isValid(department)) {
+      throw new CustomError(
+        "Invalid department ID provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
     if (!mongoose.Types.ObjectId.isValid(location)) {
       throw new CustomError(
         "Invalid location ID provided",
@@ -51,6 +59,7 @@ const assignWeeklyUnit = async (req, res, next) => {
     if (!foundUnit) {
       throw new CustomError("Unit not found", logPath, logAction, logSourceKey);
     }
+
     // Create a new WeeklyUnit document
     const newAssignedUnit = new WeeklySchedule({
       startDate: startDateObj,
@@ -59,6 +68,7 @@ const assignWeeklyUnit = async (req, res, next) => {
       employee: {
         id: foundUser._id,
       },
+      department,
       company,
     });
 
@@ -292,34 +302,18 @@ const addSubstitute = async (req, res, next) => {
 const fetchWeeklyUnits = async (req, res, next) => {
   try {
     const { department } = req.params;
-    const { user, company } = req;
-
-    // const foundUser = await UserData.findOne({
-    //   _id: user,
-    //   departments: { $in: [department] },
-    // }).populate("reportsTo role departments");
-
-    // if (!foundUser) {
-    //   return res.status(400).json({
-    //     message: `User doesn't belong to the department`,
-    //   });
-    // }
-
-    // const userDepartment = foundUser.departments.find(
-    //   (dept) => dept._id.toString() === department.toString()
-    // );
-
-    //Check if logged-in user is an employee or an admin
-    // const managerRole = foundUser.role.some(
-    //   (role) =>
-    //     role.roleTitle.startsWith(`${userDepartment.name}`) &&
-    //     role.roleTitle.endsWith("Admin")
-    // );
+    const { company } = req;
 
     const foundUsers = await UserData.find({
       departments: { $in: [department] },
     })
-      .populate("role")
+      .populate([
+        {
+          path: "role",
+          select: "roleTitle",
+        },
+        { path: "departments", select: "name" },
+      ])
       .select("firstName middleName lastName");
 
     if (foundUsers.length < 0) {
@@ -329,9 +323,18 @@ const fetchWeeklyUnits = async (req, res, next) => {
     }
 
     const foundManager = foundUsers.find((user) => {
-      return user.role.some((role) =>
-        role.roleTitle.includes("Administration Admin")
-      );
+      const foundDepartment = user.departments.find((dept) => {
+        return dept._id.toString() === department.toString();
+      });
+
+      const userRole = user.role.find((role) => {
+        return (
+          role.roleTitle.startsWith(
+            foundDepartment ? foundDepartment.name : ""
+          ) && role.roleTitle.endsWith("Admin")
+        );
+      });
+      return userRole;
     });
 
     let manager = "N/A";
@@ -339,7 +342,7 @@ const fetchWeeklyUnits = async (req, res, next) => {
       manager = `${foundManager.firstName} ${foundManager.lastName}`;
     }
 
-    const weeklySchedules = await WeeklySchedule.find({ company })
+    const weeklySchedules = await WeeklySchedule.find({ company, department })
       .populate("employee.id", "firstName lastName")
       .populate("substitutions.substitute", "firstName lastName")
       .populate({

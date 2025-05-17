@@ -12,7 +12,9 @@ const NormalBarGraph = ({
   firstParam,
   secondParam,
   year,
-  departments, // ✅ new optional prop
+  departments,
+  singleParam,
+  doubleParam,
 }) => {
   const [selectedYear, setSelectedYear] = useState("2024-2025");
   const [departmentIndex, setDepartmentIndex] = useState(0);
@@ -25,14 +27,25 @@ const NormalBarGraph = ({
   const currentDepartment = departments?.[departmentIndex] || null;
 
   // Filter the data for the current department (if any)
-  const filteredData = currentDepartment
-    ? data.filter((item) =>
-        item.name.toLowerCase().includes(currentDepartment.toLowerCase())
-      )
-    : data;
+  let filteredData = data;
+
+  if (singleParam && currentDepartment) {
+    filteredData = data.filter((item) =>
+      item.name.toLowerCase().includes(currentDepartment.toLowerCase())
+    );
+  }
+  if (doubleParam && currentDepartment) {
+    filteredData = data.filter((item) =>
+      item.group.toLowerCase().includes(currentDepartment.toLowerCase())
+    );
+  }
 
   const updatedOptions = {
     ...options,
+    chart: {
+      ...options.chart,
+      zoom: { enabled: false },
+    },
     xaxis: {
       ...options?.xaxis,
     },

@@ -4,8 +4,27 @@ import AgTable from "../../../components/AgTable";
 import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
 
 const AltRevenues = () => {
+    const axios = useAxiosPrivate();
+    const {
+      data: alternateRevenue,
+      isLoading: isLoadingAlternateRevenue = [],
+    } = useQuery({
+      queryKey: ["alternateRevenue"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            `/api/sales/get-alternate-revenue`
+          );
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response.data.message);
+        }
+      },
+    });
   const monthlyRevenueData = [
     {
       month: "Apr-24",

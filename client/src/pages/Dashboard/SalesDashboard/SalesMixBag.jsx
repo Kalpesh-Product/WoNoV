@@ -55,7 +55,7 @@ const SalesMixBag = () => {
           }}
         />
       </div>
-      <div className="h-[50vh]">
+      <div className="h-[50vh] uppercase">
         <WidgetSection key={filteredRoutes.length} layout={2} padding>
           {filteredRoutes.map((route, index) => {
             return <Card fullHeight key={index} title={route.title} route={route.route} />;

@@ -1,4 +1,5 @@
 const AlternateRevenue = require("../../models/sales/AlternateRevenue");
+const transformRevenues = require("../../utils/revenueFormatter");
 
 const createAlternateRevenue = async (req, res, next) => {
   try {
@@ -44,7 +45,48 @@ const getAlternateRevenues = async (req, res, next) => {
       .lean()
       .exec();
 
-    res.status(200).json({ success: true, data: records });
+    const transformRevenues = (revenues) => {
+      const monthlyMap = new Map();
+
+      revenues.forEach((item) => {
+        const invoiceCreationDate = new Date(item.invoiceCreationDate);
+        const monthKey = `${invoiceCreationDate.toLocaleString("default", {
+          month: "short",
+        })}-${invoiceCreationDate.getFullYear().toString().slice(-2)}`;
+
+        const amount = item.taxableAmount;
+
+        if (!monthlyMap.has(monthKey)) {
+          monthlyMap.set(monthKey, {
+            month: monthKey,
+            actual: 0,
+            revenue: [],
+          });
+        }
+
+        const monthData = monthlyMap.get(monthKey);
+        monthData.actual += amount;
+
+        monthData.revenue.push({
+          particulars: item.particulars,
+          taxableAmount: item.taxableAmount,
+          invoiceAmount: item.invoiceAmount,
+          invoiceCreationDate: item.invoiceCreationDate,
+          invoicePaidDate: item.invoicePaidDate,
+          gst: item.gst,
+          status: item.status || "Paid",
+        });
+      });
+
+      return Array.from(monthlyMap.values()).map((monthData) => ({
+        ...monthData,
+        actual: monthData.actual,
+      }));
+    };
+
+    const transformedRecords = transformRevenues(records);
+
+    res.status(200).json(transformedRecords);
   } catch (error) {
     next(error);
   }

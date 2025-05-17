@@ -15,11 +15,9 @@ const MixBag = () => {
     },
     {
       title: "Compliance Documents",
-      route: "/app/dashboard/sales-dashboard/revenue",
     },
     {
       title: "Landlord Agreements",
-      route: "/app/dashboard/sales-dashboard/clients",
     },
   ];
 

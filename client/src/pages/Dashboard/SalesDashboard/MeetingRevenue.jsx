@@ -3,8 +3,22 @@ import WidgetSection from "../../../components/WidgetSection";
 import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 import AgTable from "../../../components/AgTable";
 import { inrFormat } from "../../../utils/currencyFormat";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 
 const MeetingRevenue = () => {
+  const axios = useAxiosPrivate();
+  const { data: meetingsData = [], isLoading: isMeetingsLoading } = useQuery({
+    queryKey: ["meetings"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/get-meeting-revenue");
+        return response.data;
+      } catch (error) {
+        console.log(error);
+      }
+    },
+  });
   const monthlyMeetingeData = [
     {
       month: "Apr-24",
@@ -428,14 +442,14 @@ const MeetingRevenue = () => {
     xaxis: {
       categories: monthlyMeetingeData.map((item) => item.month),
     },
-   yaxis: {
+    yaxis: {
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => `${((val/100000).toLocaleString())}`,
+        formatter: (val) => `${(val / 100000).toLocaleString()}`,
       },
     },
     tooltip: {
-      enabled:false,
+      enabled: false,
       y: {
         formatter: (val) => `INR ${val.toLocaleString()}`,
       },
@@ -448,9 +462,8 @@ const MeetingRevenue = () => {
           position: "top",
         },
       },
-      
     },
-     colors: ["#2196F3"],
+    colors: ["#2196F3"],
   };
 
   const totalActual = monthlyMeetingeData.reduce(

@@ -7,27 +7,31 @@ import { CgWebsite } from "react-icons/cg";
 import { SiCashapp } from "react-icons/si";
 import { SiGoogleadsense } from "react-icons/si";
 import { MdMiscellaneousServices } from "react-icons/md";
-import DataCard from "../../../components/DataCard";
 import PayRollExpenseGraph from "../../../components/HrDashboardGraph/PayRollExpenseGraph";
 import MuiTable from "../../../components/Tables/MuiTable";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../../hooks/useAuth";
-import BarGraph from "../../../components/graphs/BarGraph";
 import { useNavigate } from "react-router-dom";
-import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
 import { calculateAverageAttendance } from "../../../utils/calculateAverageAttendance ";
 import { calculateAverageDailyWorkingHours } from "../../../utils/calculateAverageDailyWorkingHours ";
 import FinanceCard from "../../../components/FinanceCard";
-import HrExpenseGraph from "../../../components/graphs/HrExpenseGraph";
 import dayjs from "dayjs";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import { useDispatch, useSelector } from "react-redux";
+import { setSelectedMonth, setTasksData } from "../../../redux/slices/hrSlice";
+import dateToHyphen from "../../../utils/dateToHyphen";
 
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
+  const dispatch = useDispatch();
+  const tasksRawData = useSelector((state) => state.hr.tasksRawData);
+
+  useEffect(()=>{console.log("TASKS FROM REDUX : ", tasksRawData)}, [tasksRawData])
 
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -85,25 +89,27 @@ const HrDashboard = () => {
   );
 
   //--------------------HR BUDGET---------------------------//
+  //--------------------HR BUDGET---------------------------//
 
   //-------------------HR Expense graph start--------------------//
 
   const expenseRawSeries = [
     {
-      name: "FY 2024-25",
+      name: "Expense",
+      group: "FY 2024-25",
       data: hrFinance?.utilisedBudget,
-      group: "total",
     },
     {
-      name: "FY 2025-26",
+      name: "Expense",
+      group: "FY 2025-26",
       data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      group: "total",
     },
   ];
 
   const expenseOptions = {
     chart: {
       type: "bar",
+      animations: { enabled: false },
       toolbar: { show: false },
 
       stacked: true,
@@ -152,20 +158,6 @@ const HrDashboard = () => {
       offsetY: -22,
     },
     xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
       title: {
         text: "  ",
       },
@@ -218,65 +210,156 @@ const HrDashboard = () => {
   };
 
   //-------------------HR Expense graph end--------------------//
+  //-------------------Tasks vs Achievements graph--------------------//
 
-  
+  const { data: departmentTasks = [], isLoading: isDepartmentLoading } =
+    useQuery({
+      queryKey: ["departmentTasks"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/tasks/get-kpa-tasks");
+          const formattedData = response.data.map((dept) => ({
+            ...dept,
+            tasks: dept.tasks.map((task) => ({
+              ...task,
+              assignedDate: dateToHyphen(task.assignedDate),
+              dueDate: dateToHyphen(task.dueDate),
+            })),
+          }));
+          dispatch(setTasksData(formattedData));
+          return formattedData;
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    });
+
+  // Month names in financial year order (Apr to Mar)
+  const fyMonths = [
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+    "January",
+    "February",
+    "March",
+  ];
+
+
+  // Init counters
+  const monthlyTotals = {};
+  const monthlyAchieved = {};
+  fyMonths.forEach((month) => {
+    monthlyTotals[month] = 0;
+    monthlyAchieved[month] = 0;
+  });
+
+  tasksRawData.forEach((dept) => {
+    dept.tasks.forEach((task) => {
+      const [day, month, year] = task.assignedDate.split("-").map(Number);
+      const dateObj = new Date(year, month - 1, day); // JS months are 0-indexed
+
+      // Determine FY month name
+      const monthIndex = dateObj.getMonth(); // 0 to 11
+      const fyMonth = fyMonths[(dateObj.getMonth() + 9) % 12]; // shift Jan=9, Feb=10, Mar=11
+
+      monthlyTotals[fyMonth]++;
+      if (task.status === "Completed") {
+        monthlyAchieved[fyMonth]++;
+      }
+    });
+  });
+
+  // Final structure
   const tasksData = [
     {
-      name: "Total Tasks",
-      data: [45, 60, 50, 70, 65, 80, 90, 85, 75, 60, 55, 70],
+      name: "Completed Tasks",
+      group: "FY 2025-26",
+      data: fyMonths.map((month) => {
+        const total = monthlyTotals[month];
+        const achieved = monthlyAchieved[month];
+        const percent = total > 0 ? (achieved / total) * 100 : 0;
+        return { x: month, y: +percent.toFixed(1), raw: achieved };
+      }),
     },
     {
-      name: "Achieved Tasks",
-      data: [30, 50, 40, 60, 50, 70, 80, 75, 65, 50, 45, 60],
+      name: "Remaining Tasks",
+      group: "FY 2025-26",
+      data: fyMonths.map((month) => {
+        const total = monthlyTotals[month];
+        const achieved = monthlyAchieved[month];
+        const remaining = total - achieved;
+        const percent = total > 0 ? (remaining / total) * 100 : 0;
+        return { x: month, y: +percent.toFixed(1), raw: remaining };
+      }),
     },
   ];
 
   const tasksOptions = {
     chart: {
       type: "bar",
+      stacked: true, // ✅ Enable stacking
+      events: {
+        dataPointSelection: (event, chartContext, config) => {
+          const clickedMonth =
+            config.w.config.series[config.seriesIndex].data[
+              config.dataPointIndex
+            ].x;
+
+          dispatch(setSelectedMonth(clickedMonth));
+
+          const selectedMonthTasks = [];
+          tasksRawData.forEach((dept) => {
+            dept.tasks.forEach((task) => {
+              const [day, month, year] = task.assignedDate
+                .split("-")
+                .map(Number);
+              const taskDate = new Date(year, month - 1, day);
+              const taskMonth = fyMonths[(taskDate.getMonth() + 9) % 12];
+
+              if (taskMonth === clickedMonth) {
+                selectedMonthTasks.push({
+                  department: dept.department,
+                  ...task,
+                });
+              }
+            });
+          });
+
+          navigate(`overall-tasks`, {
+            state: {
+              month: clickedMonth,
+              tasks: selectedMonthTasks,
+            },
+          });
+        },
+      },
+      animations: { enabled: false },
       fontFamily: "Poppins-Regular",
-      stacked: false,
       toolbar: { show: false },
     },
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "70%",
+        columnWidth: "40%",
         borderRadius: 5,
       },
     },
-    dataLabels: {
-      enabled: false,
-    },
+    dataLabels: { enabled: false },
     stroke: {
       show: true,
-      width: 2,
-      colors: ["transparent"],
-    },
-    xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
-      labels: {
-        rotate: -45,
-      },
+      width: 1,
+      colors: ["#fff"],
     },
     yaxis: {
-      title: {
-        text: "Task Count",
-      },
+      title: { text: "Completion (%)" },
       max: 100,
+      labels: { formatter: (val) => `${val.toFixed(0)}%` },
     },
     legend: {
       position: "top",
@@ -284,14 +367,45 @@ const HrDashboard = () => {
     fill: {
       opacity: 1,
     },
-    colors: ["#54C4A7", "#EB5C45"], // Green for Total, Red for Achieved
+    colors: ["#54C4A7", "#EB5C45"],
     tooltip: {
-      y: {
-        formatter: (val) => `${val} tasks`,
+      custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+        const month = w.config.series[seriesIndex].data[dataPointIndex].x;
+
+        const completed = w.config.series[0].data[dataPointIndex].raw;
+        const remaining = w.config.series[1].data[dataPointIndex].raw;
+        const total = completed + remaining;
+
+        return `
+          <div style="padding:8px; font-family: Poppins, sans-serif; font-size: 13px; width : 200px ">
+            <strong>${month}</strong><br/>
+            <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
+            <div style="display:flex ; justify-content:space-between ; width:"100%" ">
+              <div style="width:100px ">Total tasks </div>
+              <div style="width:"100%" ">:</div>
+              <div style="width:"100%" ">${total}</div>
+            </div>
+            <div style="display:flex ; justify-content:space-between ; width:"100%" ">
+              <div style="width:100px ">Completed tasks</div>
+              <div style="width:"100%" ">:</div>
+              <div style="width:"100%" ">${completed}</div>
+            </div>
+            <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
+            <div style="display:flex ; justify-content:space-between ; width:"100%" ">
+              <div style="width:100px ">Remaining tasks</div>
+              <div style="width:"100%" ">:</div>
+              <div style="width:"100%" ">${remaining}</div>
+            </div>
+           
+          </div>
+        `;
       },
     },
   };
 
+  const totalTasksCount = tasksRawData.reduce((sum, dept) => {
+    return sum + dept.tasks.length;
+  }, 0);
 
   //-------------------Tasks vs Achievements graph--------------------//
 
@@ -506,7 +620,7 @@ const HrDashboard = () => {
       {
         title: "Average Hours",
         value: averageWorkingHours
-          ? `${((((Number(averageWorkingHours))/30)+3.4).toFixed(2))}h`
+          ? `${(Number(averageWorkingHours) / 30 + 3.4).toFixed(2)}h`
           : "0h",
       },
     ],
@@ -577,23 +691,18 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
-          <WidgetSection
-            normalCase
-            layout={1}
-            border
-            padding
-            titleLabel={"FY 2024-25"}
-            // TitleAmount={"INR 23,13,365"}
-            TitleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
-              "en-IN"
-            )}`}
-            title={"BIZ Nest HR DEPARTMENT EXPENSE"}>
-            <BarGraph
+          }
+        >
+          <WidgetSection normalCase layout={1} padding>
+            <YearlyGraph
               data={expenseRawSeries}
+              responsiveResize
+              chartId={"bargraph-hr-expense"}
               options={expenseOptions}
-              // departments={["Sales", "IT", "Tech", "Admin", "Maintainance"]}
-              departments={["FY 2024-25", "FY 2025-26"]}
+              title={"BIZ Nest HR DEPARTMENT EXPENSE"}
+              titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
+                "en-IN"
+              )}`}
             />
           </WidgetSection>
         </Suspense>,
@@ -640,15 +749,15 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
-          <WidgetSection
-            layout={1}
-            border
-            padding
-            titleLabel={"FY 2024-25"}
-            title={"Department Wise KPA Vs Achievements "}>
-            <BarGraph data={tasksData} options={tasksOptions} />
-          </WidgetSection>
+          }
+        >
+          <YearlyGraph
+            data={tasksData}
+            options={tasksOptions}
+            title={"ANNUAL KPA VS ACHIEVEMENTS"}
+            titleAmount={`TOTAL TASKS : ${totalTasksCount || 0}`}
+            secondParam
+          />
         </Suspense>,
       ],
     },
@@ -662,6 +771,7 @@ const HrDashboard = () => {
             title={"Gender Distribution"}
             data={genderData} // Pass processed data
             options={genderPieChart}
+            height={360}
           />
         </WidgetSection>,
         <WidgetSection layout={1} border title={"City Wise Employees"}>

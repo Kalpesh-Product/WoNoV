@@ -34,7 +34,7 @@ const getWorkationRevenues = async (req, res, next) => {
       .lean()
       .exec();
 
-    res.status(200).json({ revenues });
+    res.status(200).json(revenues);
   } catch (error) {
     next(error);
   }

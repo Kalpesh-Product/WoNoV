@@ -1,6 +1,8 @@
 import React from "react";
 import PrimaryButton from "./PrimaryButton";
 import { Chip } from "@mui/material";
+import { FaArrowTrendUp } from "react-icons/fa6";
+import { FaArrowTrendDown } from "react-icons/fa6";
 
 const WidgetSection = ({
   layout = 1,
@@ -15,6 +17,10 @@ const WidgetSection = ({
   handleClick,
   titleFont,
   TitleAmount,
+  TitleAmountGreen,
+  TitleAmountRed,
+  greenTitle,
+  redTitle,
   titleLabel,
   fun,
   normalCase,
@@ -35,7 +41,8 @@ const WidgetSection = ({
         <div
           className={`border-default border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl ${
             normalCase ? "" : "uppercase"
-          }`}>
+          }`}
+        >
           <div className="flex w-full gap-8 items-center justify-between">
             <div className="flex items-center gap-2">
               <span
@@ -43,7 +50,8 @@ const WidgetSection = ({
                   titleFont
                     ? "text-subtitle text-primary"
                     : "text-widgetTitle text-primary font-pmedium"
-                }`}>
+                }`}
+              >
                 {title}
               </span>
 
@@ -62,7 +70,8 @@ const WidgetSection = ({
                 :{" "}
                 <span
                   style={{ color: titleDataColor }}
-                  className="font-pbold text-title">
+                  className="font-pbold text-title"
+                >
                   {titleData}
                 </span>
               </span>
@@ -73,9 +82,43 @@ const WidgetSection = ({
                   titleFont
                     ? "text-subtitle text-primary"
                     : "text-widgetTitle text-primary font-pmedium"
-                }`}>
+                }`}
+              >
                 {TitleAmount}{" "}
               </span>
+              <div className="flex gap-2">
+                {TitleAmountGreen  !== undefined && TitleAmountGreen !== null && (
+                  <span
+                    className={`${
+                      titleFont
+                        ? "text-subtitle text-green-800"
+                        : "text-body text-green-800 font-pmedium"
+                    }`}
+                  >
+                    <div className="flex gap-2 justify-center items-center uppercase bg-[#54c4a657] p-2 rounded-lg">
+                      {/* <FaArrowTrendUp /> */}
+                      {greenTitle && <div>{greenTitle} : </div>}
+                      <div>{TitleAmountGreen}</div>
+                    </div>
+                  </span>
+                )}
+                {TitleAmountRed  !== undefined && TitleAmountGreen !== null && (
+                  <span
+                    className={`${
+                      titleFont
+                        ? "text-subtitle text-red-800"
+                        : "text-body text-red-800 font-pmedium"
+                    }`}
+                  >
+                    <div className="flex gap-2 justify-center items-center uppercase bg-[#fc5e4640] p-2 rounded-lg">
+                      {/* <FaArrowTrendDown /> */}
+                      {redTitle && <div>{redTitle} : </div>}
+
+                      <div>{TitleAmountRed}</div>
+                    </div>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           {button && (
@@ -85,10 +128,12 @@ const WidgetSection = ({
       )}
       <div
         style={border ? { border: "2px solid #d1d5db", borderTop: "0" } : {}}
-        className="h-full rounded-b-xl">
+        className="h-full rounded-b-xl"
+      >
         <div
           style={{ padding: padding ? "0" : "1rem" }}
-          className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>
+          className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}
+        >
           {React.Children.map(children, (child) => (
             <div>{child}</div>
           ))}

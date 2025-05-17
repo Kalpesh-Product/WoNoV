@@ -1,6 +1,6 @@
 import { Tab, Tabs } from "@mui/material";
 import React, { useEffect } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate, matchPath } from "react-router-dom";
 
 const FinanceBudgetLayout = () => {
   const location = useLocation();
@@ -25,8 +25,11 @@ const FinanceBudgetLayout = () => {
     }
   }, [location, navigate]);
 
-  // Determine whether to show the tabs
-  const showTabs = !location.pathname.includes("view-clients/");
+  // Hide tabs if route matches a department detail view (like /dept-wise-budget/:id)
+  const hideTabs = matchPath(
+    "/app/dashboard/finance-dashboard/finance/dept-wise-budget/:id",
+    location.pathname
+  );
 
   // Determine active tab based on location
   const activeTab = tabs.findIndex((tab) =>
@@ -37,7 +40,7 @@ const FinanceBudgetLayout = () => {
     <>
       <div className="p-4">
         {/* Render tabs only if the current route is not EmployeeDetails */}
-        {showTabs && (
+        {!hideTabs && (
           <Tabs
             value={activeTab}
             variant="fullWidth"
@@ -56,7 +59,8 @@ const FinanceBudgetLayout = () => {
                 backgroundColor: "#1E3D73",
                 color: "white",
               },
-            }}>
+            }}
+          >
             {tabs.map((tab, index) => (
               <NavLink
                 key={index}
@@ -70,14 +74,15 @@ const FinanceBudgetLayout = () => {
                   padding: "12px 16px",
                   display: "block",
                   backgroundColor: isActive ? "#1E3D73" : "white",
-                })}>
+                })}
+              >
                 {tab.label}
               </NavLink>
             ))}
           </Tabs>
         )}
       </div>
-      <div className="p-4">
+      <div className="p-4 pt-0">
         <Outlet />
       </div>
     </>

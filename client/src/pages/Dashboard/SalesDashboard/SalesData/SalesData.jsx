@@ -126,6 +126,9 @@ const monthlyLeadsData = leadsData.map((domain) => ({
 const monthlyLeadsOptions = {
   chart: {
     type: "bar",
+    animations: {
+      enabled: false, // ✅ disables all animations
+    },
     stacked: true, // Enable stacking for domains
     fontFamily: "Poppins-Regular",
   },
@@ -189,6 +192,9 @@ const sourcingChannelsData = sourcingChannels.map((channel) => ({
 const sourcingChannelsOptions = {
   chart: {
     type: "bar",
+    animations: {
+      enabled: false, // ✅ disables all animations
+    },
     toolbar: false,
     stacked: true, // Enable stacking for domains
     fontFamily: "Poppins-Regular",

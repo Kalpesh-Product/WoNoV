@@ -142,7 +142,7 @@ const VoucherCreation = () => {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center mb-6">
-        <span className=" text-primary text-title font-pmedium">Templates</span>
+        <span className=" text-primary text-title font-pmedium uppercase">Templates</span>
         <PrimaryButton title={"Add Voucher"} handleSubmit={() => { setViewVoucherModal(true) }} />
       </div>
 
