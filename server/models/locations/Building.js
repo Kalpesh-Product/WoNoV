@@ -11,7 +11,22 @@ const buildingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    fullAddress: String,
+    country: {
+      type: String,
+      required: true,
+    },
+    state: {
+      type: String,
+      required: true,
+    },
+    city: {
+      type: String,
+      required: true,
+    },
+    pincode: {
+      type: Number,
+      // required: true,
+    },
     isActive: {
       type: Boolean,
       default: true,
