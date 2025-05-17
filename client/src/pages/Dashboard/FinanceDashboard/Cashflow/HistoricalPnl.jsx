@@ -606,8 +606,7 @@ const HistoricalPnl = () => {
         <WidgetSection
           border
           title={"Historical P&L 2019-25"}
-          TitleAmountGreen={`INR 53,29,345`}
-          TitleAmountRed={`INR 42,36,894`}>
+          >
           <NormalBarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}

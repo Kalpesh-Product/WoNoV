@@ -1,5 +1,10 @@
 import BarGraph from "../../../components/graphs/BarGraph";
-import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  CircularProgress,
+} from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
@@ -33,7 +38,7 @@ const CoWorking = () => {
   const series = [
     {
       name: "Actual Revenue",
-      group : "FY 2024-25",
+      group: "FY 2024-25",
       data: coWorkingData.map((item) =>
         item.clients.reduce((sum, c) => sum + c.revenue, 0)
       ),
@@ -117,64 +122,55 @@ const CoWorking = () => {
   });
   return (
     <div className="flex flex-col gap-4">
-
-      <YearlyGraph
-      title={"ANNUAL MONTHLY CO WORKING REVENUES"}
-       titleAmount={`INR ${inrFormat(totalActual)}`}
-       data={series}
-       options={options}
-      />
-      <WidgetSection
-        border
-        title={"Monthly Revenue with Client Details"}
-        padding
-        TitleAmount={`INR ${inrFormat(totalActual)}`}
-      >
-        <MonthWiseAgTable
-          financialData={tableData}
-          passedColumns={[
-            { headerName: "Sr No", field: "id" , width : 100},
-            { headerName: "Client Name", field: "clientName", width: 350 },
-            { headerName: "Channel", field: "channel" },
-            { headerName: "Revenue (INR)", field: "revenue" },
-            { headerName: "No. of Desks", field: "noOfDesks" },
-            { headerName: "Desk Rate", field: "deskRate" },
-            { headerName: "Total Term", field: "totalTerm" },
-            { headerName: "Rent Date", field: "rentDate" },
-            { headerName: "Rent Status", field: "rentStatus" },
-            { headerName: "Past Due Date", field: "pastDueDate" },
-            {
-              headerName: "Annual Increment (%)",
-              field: "annualIncrement",
-            },
-            {
-              headerName: "Next Increment Date",
-              field: "nextIncrementDate",
-            },
-          ]}
+      {!isCoWorkingLoading ? (
+        <YearlyGraph
+          title={"ANNUAL MONTHLY CO WORKING REVENUES"}
+          titleAmount={`INR ${inrFormat(totalActual)}`}
+          data={series}
+          options={options}
         />
-        {/* <CollapsibleTable
-          columns={[
-            { headerName: "Month", field: "month" },
-            { headerName: "Revenue (INR)", field: "revenue" },
-          ]}
-          data={tableData}
-          renderExpandedRow={(row) => (
-            <AgTable
-              data={row.monthlyClients}
-              columns={[
-                { headerName: "Sr No", field: "id" },
-                { headerName: "Client Name", field: "clientName", flex: 1 },
-                { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
-                { headerName: "Desks", field: "desks", flex: 1 },
-                { headerName: "Occupancy (%)", field: "occupancy", flex: 1 },
-              ]}
-              tableHeight={300}
-              hideFilter
-            />
-          )}
-        /> */}
-      </WidgetSection>
+      ) : (
+        <div className="h-72 flex justify-center items-center">
+          <CircularProgress />
+        </div>
+      )}
+
+      {!isCoWorkingLoading ? (
+        <WidgetSection
+          border
+          title={"MONTHLY REVENUE WITH CLIENT DETAILS"}
+          padding
+          TitleAmount={`INR ${inrFormat(totalActual)}`}
+        >
+          <MonthWiseAgTable
+            financialData={tableData}
+            passedColumns={[
+              { headerName: "Sr No", field: "id", width: 100 },
+              { headerName: "Client Name", field: "clientName", width: 350 },
+              { headerName: "Channel", field: "channel" },
+              { headerName: "Revenue (INR)", field: "revenue" },
+              { headerName: "No. of Desks", field: "noOfDesks" },
+              { headerName: "Desk Rate", field: "deskRate" },
+              { headerName: "Total Term", field: "totalTerm" },
+              { headerName: "Rent Date", field: "rentDate" },
+              { headerName: "Rent Status", field: "rentStatus" },
+              { headerName: "Past Due Date", field: "pastDueDate" },
+              {
+                headerName: "Annual Increment (%)",
+                field: "annualIncrement",
+              },
+              {
+                headerName: "Next Increment Date",
+                field: "nextIncrementDate",
+              },
+            ]}
+          />
+        </WidgetSection>
+      ) : (
+        <div className="h-72 flex justify-center items-center">
+          <CircularProgress />
+        </div>
+      )}
     </div>
   );
 };

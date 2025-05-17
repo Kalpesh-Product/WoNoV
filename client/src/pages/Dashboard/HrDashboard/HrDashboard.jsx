@@ -765,6 +765,7 @@ const HrDashboard = () => {
             title={"ANNUAL KPA VS ACHIEVEMENTS"}
             titleAmount={`TOTAL TASKS : ${totalTasksCount || 0}`}
             secondParam
+            currentYear={true}
           />
         </Suspense>,
       ],
