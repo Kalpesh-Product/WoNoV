@@ -70,8 +70,65 @@ const getMeetingRevenue = async (req, res, next) => {
       return res.status(200).json(revenue);
     }
 
-    const revenues = await MeetingRevenue.find({ company }).sort({ date: -1 }).lean().exec();
-    res.status(200).json(revenues);
+    const revenues = await MeetingRevenue.find({ company })
+      .sort({ date: -1 })
+      .lean()
+      .exec();
+
+    const MONTHS_SHORT = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    const transformRevenues = (revenues) => {
+      const monthlyMap = new Map();
+
+      revenues.forEach((item) => {
+        const referenceDate = item.paymentDate || item.date;
+        const month = MONTHS_SHORT[new Date(referenceDate).getMonth()];
+        const year = new Date(referenceDate).getFullYear().toString().slice(-2);
+        const monthKey = `${month}-${year}`;
+
+        if (!monthlyMap.has(monthKey)) {
+          monthlyMap.set(monthKey, {
+            month: monthKey,
+            actual: 0,
+            revenue: [],
+          });
+        }
+
+        const monthData = monthlyMap.get(monthKey);
+        monthData.actual += item.taxable;
+
+        monthData.revenue.push({
+          clientName: item.clientName,
+          particulars: item.particulars,
+          unitsOrHours: item.unitsOrHours,
+          costPerPass: item.costPerPass,
+          taxable: item.taxable,
+          gst: item.gst,
+          totalAmount: item.totalAmount,
+          date: item.date,
+          paymentDate: item.paymentDate,
+          remarks: item.remarks || "",
+        });
+      });
+
+      return Array.from(monthlyMap.values());
+    };
+
+    const transformed = transformRevenues(revenues);
+    res.status(200).json(transformed);
   } catch (error) {
     next(error);
   }

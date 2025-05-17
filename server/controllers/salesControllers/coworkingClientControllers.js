@@ -6,6 +6,7 @@ const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 const {
   handleFileDelete,
   handleFileUpload,
@@ -305,8 +306,23 @@ const getCoworkingClients = async (req, res, next) => {
     if (!clients?.length) {
       return res.status(404).json({ message: "No clients found" });
     }
+    const members = await CoworkingMembers.find({ company })
+      .populate([
+        { path: "client", select: "clientName email" },
+        { path: "unit", select: "unitName unitNo" },
+      ])
+      .lean()
+      .exec();
 
-    res.status(200).json(clients);
+    const clientsWithMembers = clients.map((client) => {
+      return {
+        ...client,
+        members: members.filter(
+          (member) => member?.client._id.toString() === client?._id.toString()
+        ),
+      };
+    });
+    res.status(200).json(clientsWithMembers);
   } catch (error) {
     next(error);
   }

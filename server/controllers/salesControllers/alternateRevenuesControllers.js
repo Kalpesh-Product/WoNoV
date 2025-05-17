@@ -49,10 +49,26 @@ const getAlternateRevenues = async (req, res, next) => {
       const monthlyMap = new Map();
 
       revenues.forEach((item) => {
+        const MONTHS_SHORT = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+
         const invoiceCreationDate = new Date(item.invoiceCreationDate);
-        const monthKey = `${invoiceCreationDate.toLocaleString("default", {
-          month: "short",
-        })}-${invoiceCreationDate.getFullYear().toString().slice(-2)}`;
+        const month = MONTHS_SHORT[invoiceCreationDate.getMonth()];
+        const year = invoiceCreationDate.getFullYear().toString().slice(-2);
+
+        const monthKey = `${month}-${year}`;
 
         const amount = item.taxableAmount;
 
