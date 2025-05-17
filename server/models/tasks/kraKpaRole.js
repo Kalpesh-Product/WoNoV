@@ -38,11 +38,11 @@ const kraKpaRolesSchema = new mongoose.Schema(
     },
     assignedDate: {
       type: Date,
-      default: false,
+      required: true,
     },
     dueDate: {
       type: Date,
-      default: false,
+      required: true,
     },
     isDeleted: {
       type: Boolean,
