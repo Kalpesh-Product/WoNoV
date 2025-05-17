@@ -3,11 +3,12 @@ import AgTable from "../../../../components/AgTable";
 import { Chip, MenuItem, TextField } from "@mui/material";
 import MuiModal from "../../../../components/MuiModal";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { queryClient } from "../../../../main";
 import Loader from "../../../Loading";
 
 const WorkLocations = () => {
@@ -24,9 +25,28 @@ const WorkLocations = () => {
     },
   });
 
+  const { mutate: mutateWorkLocation, isPending: isAddWorkLocation } =
+    useMutation({
+      mutationKey: ["mutateWorkLocation"],
+      mutationFn: async (data) => {
+        console.log(data)
+        const response = await axios.post("/api/company/add-building", {
+          buildingName: data.workLocation,
+        });
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data.message || "Work Location Added");
+        queryClient.invalidateQueries(["workLocation"]);
+        setOpenModal(false);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to Add Work Location");
+      },
+    });
+
   const onSubmit = (data) => {
-    console.log("Form Data:", data);
-    setOpenModal(false);
+    mutateWorkLocation(data);
   };
 
   const { data: workLocations = [], isLoading } = useQuery({
@@ -41,8 +61,9 @@ const WorkLocations = () => {
         throw new Error(error.response.data.message);
       }
     },
-
   });
+
+  console.log("WORK LOCATIONS : ", workLocations);
 
   const departmentsColumn = [
     { field: "id", headerName: "Sr No" },
@@ -112,27 +133,42 @@ const WorkLocations = () => {
     setOpenModal(true);
   };
 
-
   return (
     <>
-      {isLoading ? <Loader /> : <div>
-        <AgTable
-          key={workLocations.length}
-          search={true}
-          searchColumn={"Work Location"}
-          tableTitle={"Work Location List"}
-          buttonTitle={"Add Work Location"}
-          handleClick={handleAddLocation}
-          columns={departmentsColumn}
-          data={[
-            ...workLocations.map((location, index) => ({
-              id: index + 1, // Auto-increment Sr No
-              name: location.building?.buildingName, // Birthday Name
-              status: location.isActive,
-            })),
-          ]}
-        />
-      </div>}
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <div>
+          <AgTable
+            key={workLocations.length}
+            search={true}
+            searchColumn={"Work Location"}
+            tableTitle={"Work Location List"}
+            buttonTitle={"Add Work Location"}
+            handleClick={handleAddLocation}
+            columns={departmentsColumn}
+            data={[
+              ...workLocations
+                .filter((location, index, self) => {
+                  const name = location.building?.buildingName;
+                  // Keep the first occurrence of each unique buildingName
+                  return (
+                    name &&
+                    index ===
+                      self.findIndex(
+                        (loc) => loc.building?.buildingName === name
+                      )
+                  );
+                })
+                .map((location, index) => ({
+                  id: index + 1, // Auto-increment Sr No
+                  name: location.building?.buildingName,
+                  status: location.isActive,
+                })),
+            ]}
+          />
+        </div>
+      )}
 
       <MuiModal
         open={openModal}
@@ -178,13 +214,7 @@ const WorkLocations = () => {
                 />
               )}
             />
-            <PrimaryButton
-              type={"submit"}
-              title={"Submit"}
-              handleSubmit={() => {
-                toast.success("Location added successfully");
-              }}
-            />
+            <PrimaryButton type={"submit"} title={"Submit"} disabled={isAddWorkLocation} isLoading={isAddWorkLocation} />
           </form>
         </div>
       </MuiModal>

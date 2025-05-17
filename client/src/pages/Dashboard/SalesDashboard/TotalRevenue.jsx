@@ -3,57 +3,37 @@ import WidgetSection from "../../../components/WidgetSection";
 import AgTable from "../../../components/AgTable";
 import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 import { inrFormat } from "../../../utils/currencyFormat";
+import { parseRevenue } from "../../../utils/removeCommaInNum";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { CircularProgress } from "@mui/material";
 
 const TotalRevenue = () => {
-  const rawData = [
-    {
-      name: "Co-Working",
-      data: [
-        800000, 750000, 900000, 850000, 780000, 920000, 940000, 960000, 880000,
-        970000, 910000, 950000,
-      ],
-    },
-    {
-      name: "Co-Living",
-      data: [
-        600000, 850000, 750000, 720000, 700000, 770000, 810000, 850000, 870000,
-        880000, 890000, 920000,
-      ],
-    },
-    {
-      name: "Workations",
-      data: [
-        700000, 600000, 800000, 790000, 760000, 780000, 800000, 830000, 820000,
-        840000, 860000, 870000,
-      ],
-    },
-    {
-      name: "Virtual Offices",
-      data: [
-        300000, 320000, 310000, 330000, 340000, 350000, 360000, 370000, 380000,
-        390000, 400000, 410000,
-      ],
-    },
-    {
-      name: "Meetings",
-      data: [
-        450000, 470000, 460000, 480000, 490000, 500000, 510000, 520000, 530000,
-        540000, 550000, 560000,
-      ],
-    },
-    {
-      name: "Alt. Revenues",
-      data: [
-        200000, 210000, 220000, 230000, 240000, 250000, 260000, 270000, 280000,
-        290000, 300000, 310000,
-      ],
-    },
-  ];
+  const axios = useAxiosPrivate();
+  const [selectedYear, setSelectedYear] = useState("2024-25");
 
-  const normalizedData = rawData.map((domain) => ({
+  const { data: totalRevenue = [], isLoading: isTotalLoading } = useQuery({
+    queryKey: ["totalRevenue"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/consolidated-revenue");
+        return response.data;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+  });
+
+  const filteredByYear = totalRevenue.map((item) => ({
+    name: item.name,
+    data: item.data[selectedYear] || [],
+  }));
+
+  const normalizedData = filteredByYear.map((domain) => ({
     name: domain.name,
     data: domain.data.map((val, idx) => {
-      const totalThisMonth = rawData.reduce(
+      const totalThisMonth = filteredByYear.reduce(
         (sum, item) => sum + item.data[idx],
         0
       );
@@ -92,7 +72,7 @@ const TotalRevenue = () => {
     tooltip: {
       y: {
         formatter: function (val, { seriesIndex, dataPointIndex }) {
-          const actualVal = rawData[seriesIndex]?.data?.[dataPointIndex];
+          const actualVal = filteredByYear[seriesIndex]?.data?.[dataPointIndex];
           return actualVal ? `INR ${actualVal.toLocaleString()}` : "No data";
         },
       },
@@ -128,21 +108,27 @@ const TotalRevenue = () => {
     },
   };
 
-  const totalAnnualRevenue = rawData.reduce((sum, domain) => {
+  const totalAnnualRevenue = filteredByYear.reduce((sum, domain) => {
     return sum + domain.data.reduce((acc, monthVal) => acc + monthVal, 0);
   }, 0);
-  const formattedRevenue = `INR ${totalAnnualRevenue.toLocaleString("en-IN")}`;
 
   return (
     <div className="flex flex-col gap-4 ">
-      <WidgetSection
-        layout={1}
-        title={"Annual Monthly Mix Revenues FY 2024-25"}
-        border
-        TitleAmount={formattedRevenue}
-      >
-        <BarGraph height={400} data={normalizedData} options={options} />
-      </WidgetSection>
+      {isTotalLoading ? (
+        <div className="flex h-72 justify-center items-center">
+          <CircularProgress />
+        </div>
+      ) : (
+        <WidgetSection
+          layout={1}
+          title={"Annual Monthly Mix Revenues FY 2024-25"}
+          border
+          TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}
+        >
+          <BarGraph height={400} data={normalizedData} options={options} />
+        </WidgetSection>
+      )}
+
       <WidgetSection
         border
         title={"Annual Monthly Revenue Breakup"}
@@ -154,9 +140,12 @@ const TotalRevenue = () => {
             columns={[
               { headerName: "Vertical", field: "vertical" },
               { headerName: "Revenue (INR)", field: "revenue" },
-              { headerName: "Percentage Of Business (%)", field: "contribution" },
+              {
+                headerName: "Percentage Of Business (%)",
+                field: "contribution",
+              },
             ]}
-            data={rawData.map((domain, index) => {
+            data={filteredByYear.map((domain, index) => {
               const totalRevenue = domain.data.reduce(
                 (sum, val) => sum + val,
                 0

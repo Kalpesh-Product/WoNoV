@@ -17,11 +17,13 @@ import {
   MdNavigateNext,
   MdOutlineSkipNext,
 } from "react-icons/md";
+import WidgetSection from "../WidgetSection";
 
 const AllocatedBudget = ({
   financialData,
   isLoading,
   variant,
+  hideTitle,
   noFilter = false,
 }) => {
   const [selectedTab, setSelectedTab] = useState(0);
@@ -46,8 +48,8 @@ const AllocatedBudget = ({
 
   const filteredMonths = useMemo(() => {
     const yearRanges = {
-      "FY 2024-25": [new Date("2024-04-01"), new Date("2025-03-31")],
-      "FY 2025-26": [new Date("2025-04-01"), new Date("2026-03-31")],
+      "FY 2024-25": [new Date("2024-03-01"), new Date("2025-03-31")],
+      "FY 2025-26": [new Date("2025-03-01"), new Date("2026-03-31")],
     };
     const [start, end] = yearRanges[selectedFY];
     return allMonths.filter((month) => {
@@ -129,118 +131,130 @@ const AllocatedBudget = ({
   if (isLoading) return <CircularProgress />;
 
   return (
-    <div className="flex flex-col gap-4 border-default border-borderGray rounded-md p-4">
-      <div className="flex justify-between items-center py-2">
-        <span className="text-title font-pmedium text-primary uppercase">
-          Allocated Budget:
-        </span>
-        <span className="text-title font-pmedium">
-          INR {inrFormat(totalProjectedAmountForFY)}
-        </span>
-      </div>
-
-      <div className="flex items-center justify-between gap-4">
-        <div className="w-1/3">
-          {filteredMonths.length > 0 && !noFilter && (
-            <div>
-              <FormControl fullWidth>
-                <Autocomplete
-                  value={allTypes[selectedTab]}
-                  onChange={(e, newValue) => {
-                    const selectedIndex = allTypes.findIndex(
-                      (type) => type === newValue
-                    );
-                    setSelectedTab(selectedIndex);
-                  }}
-                  options={allTypes}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Select Category"
-                      size="small"
-                      fullWidth
-                    />
-                  )}
-                  getOptionLabel={(option) =>
-                    option === "External" ? "Vendor" : option
-                  }
-                  isOptionEqualToValue={(option, value) => option === value}
-                />
-              </FormControl>
+    <>
+      <WidgetSection
+        title={"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS FY 2025-26"}
+        border
+      >
+        <div className="flex flex-col gap-4 rounded-md ">
+          {!hideTitle ? (
+            <div className="flex justify-between items-center py-2">
+              <span className="text-title font-pmedium text-primary uppercase">
+                Allocated Budget:
+              </span>
+              <span className="text-title font-pmedium">
+                INR {inrFormat(totalProjectedAmountForFY)}
+              </span>
             </div>
+          ) : (
+            ""
           )}
-        </div>
-        <div className="flex gap-4 justify-end items-center w-3/4 ">
-          <div className="flex gap-4 items-center">
-            <PrimaryButton
-              title={<MdNavigateBefore />}
-              handleSubmit={() =>
-                setSelectedFYIndex((prev) => Math.max(prev - 1, 0))
-              }
 
-              disabled={selectedFYIndex === 0}
-            />
-            <span className="text-body font-pmedium">{selectedFY}</span>
-            <PrimaryButton
-              title={<MdNavigateNext />}
-              handleSubmit={() =>
-                setSelectedFYIndex((prev) =>
-                  Math.min(prev + 1, fiscalYears.length - 1)
-                )
-              }
-              disabled={selectedFYIndex === fiscalYears.length - 1}
-            />
-          </div>
-
-          <div className="">
-            {/* Month Switcher */}
-            {filteredMonths.length > 0 && (
+          <div className="flex items-center justify-between gap-4">
+            <div className="w-1/3">
+              {filteredMonths.length > 0 && !noFilter && (
+                <div>
+                  <FormControl fullWidth>
+                    <Autocomplete
+                      value={allTypes[selectedTab]}
+                      onChange={(e, newValue) => {
+                        const selectedIndex = allTypes.findIndex(
+                          (type) => type === newValue
+                        );
+                        setSelectedTab(selectedIndex);
+                      }}
+                      options={allTypes}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Select Category"
+                          size="small"
+                          fullWidth
+                        />
+                      )}
+                      getOptionLabel={(option) =>
+                        option === "External" ? "Vendor" : option
+                      }
+                      isOptionEqualToValue={(option, value) => option === value}
+                    />
+                  </FormControl>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-4 justify-end items-center w-3/4 ">
+            <div className="">
+                {/* Month Switcher */}
+                {filteredMonths.length > 0 && (
+                  <div className="flex gap-4 items-center">
+                    <PrimaryButton
+                      title={<MdNavigateBefore />}
+                      handleSubmit={() =>
+                        setSelectedMonthIndex((prev) => Math.max(prev - 1, 0))
+                      }
+                      disabled={selectedMonthIndex === 0}
+                    />
+                    <span className="text-body font-pmedium uppercase">
+                      {monthDataForSelectedType.monthFormatted}
+                    </span>
+                    <PrimaryButton
+                      title={<MdNavigateNext />}
+                      handleSubmit={() =>
+                        setSelectedMonthIndex((prev) =>
+                          Math.min(prev + 1, filteredMonths.length - 1)
+                        )
+                      }
+                      disabled={
+                        selectedMonthIndex === filteredMonths.length - 1
+                      }
+                    />
+                  </div>
+                )}
+              </div>
               <div className="flex gap-4 items-center">
                 <PrimaryButton
                   title={<MdNavigateBefore />}
                   handleSubmit={() =>
-                    setSelectedMonthIndex((prev) => Math.max(prev - 1, 0))
+                    setSelectedFYIndex((prev) => Math.max(prev - 1, 0))
                   }
-                  disabled={selectedMonthIndex === 0}
+                  disabled={selectedFYIndex === 0}
                 />
-                <span className="text-body font-pmedium uppercase">
-                  {monthDataForSelectedType.monthFormatted}
-                </span>
+                <span className="text-body font-pmedium">{selectedFY}</span>
                 <PrimaryButton
                   title={<MdNavigateNext />}
                   handleSubmit={() =>
-                    setSelectedMonthIndex((prev) =>
-                      Math.min(prev + 1, filteredMonths.length - 1)
+                    setSelectedFYIndex((prev) =>
+                      Math.min(prev + 1, fiscalYears.length - 1)
                     )
                   }
-                  disabled={selectedMonthIndex === filteredMonths.length - 1}
+                  disabled={selectedFYIndex === fiscalYears.length - 1}
                 />
               </div>
-            )}
+
+           
+            </div>
           </div>
-        </div>
-      </div>
-      <hr />
+          <hr />
 
-      {/* AgTable */}
-      {monthDataForSelectedType.rows.length > 0 ? (
-        <div className="h-72 overflow-y-auto mt-4">
-          <AgTable
-
-            search={monthDataForSelectedType.rows.length >= 10}
-            data={monthDataForSelectedType.rows}
-            columns={monthDataForSelectedType.columns}
-            tableHeight={250}
-            hideFilter={monthDataForSelectedType.rows.length <= 9}
-          />
+          {/* AgTable */}
+          {monthDataForSelectedType.rows.length > 0 ? (
+            <div className="h-72 overflow-y-auto mt-4">
+              <AgTable
+                search={monthDataForSelectedType.rows.length >= 10}
+                data={monthDataForSelectedType.rows}
+                columns={monthDataForSelectedType.columns}
+                tableHeight={250}
+                hideFilter={monthDataForSelectedType.rows.length <= 9}
+              />
+            </div>
+          ) : (
+            <div className="h-96 flex justify-center items-center text-muted">
+              No data available for this category in{" "}
+              {monthDataForSelectedType.monthFormatted}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="h-96 flex justify-center items-center text-muted">
-          No data available for this category in{" "}
-          {monthDataForSelectedType.monthFormatted}
-        </div>
-      )}
-    </div>
+      </WidgetSection>
+    </>
   );
 };
 

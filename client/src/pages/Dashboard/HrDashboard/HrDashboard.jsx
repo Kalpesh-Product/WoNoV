@@ -528,7 +528,7 @@ const HrDashboard = () => {
     },
     stroke: {
       show: true,
-      width: 6, // Increase for more "gap"
+      width: 1, // Increase for more "gap"
       colors: ["#ffffff"], // Or match background color
     },
     labels: ["Male", "Female"], // Labels for the pie slices
@@ -581,14 +581,17 @@ const HrDashboard = () => {
       {
         title: "FY 2024-25",
         value: `INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`,
+        route : "finance"
       },
       {
         title: "March 2025",
         value: `INR ${Math.round(lastUtilisedValue).toLocaleString("en-IN")}`,
+        route : "finance"
       },
       {
         title: "March 2025 Budget",
         value: "N/A",
+        route : "finance"
       },
       { title: "Exit Head Count", value: "2" },
       { title: "Per Sq. Ft.", value: "810" },
@@ -602,23 +605,28 @@ const HrDashboard = () => {
       {
         title: "Annual Average Expense",
         value: `INR ${inrFormat(totalExpense / 12)}`,
+        route : "finance"
       },
       {
         title: "Average Salary",
         value: "INR 60,000",
+        route : "employee/view-employees"
       },
       {
         title: "Average Head Count",
         value: "30",
+        route : "employee/view-employees"
       },
       {
         title: "Average Attendance",
+        route : "employee/attendance",
         value: averageAttendance
           ? `${(Number(averageAttendance) - 55).toFixed(0)}%`
           : "0%",
       },
       {
         title: "Average Hours",
+        route : "employee/attendance",
         value: averageWorkingHours
           ? `${(Number(averageWorkingHours) / 30 + 3.4).toFixed(2)}h`
           : "0h",
