@@ -1,5 +1,5 @@
 const CoworkingClient = require("../../models/sales/CoworkingClient");
-const CoworkingClientMember = require("../../models/sales/CoworkingMember");
+const CoworkingClientMember = require("../../models/sales/CoworkingMembers");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 const mongoose = require("mongoose");
