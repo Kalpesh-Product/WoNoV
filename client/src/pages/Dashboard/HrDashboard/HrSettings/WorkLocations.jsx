@@ -5,7 +5,7 @@ import MuiModal from "../../../../components/MuiModal";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import PrimaryButton from "../../../../components/PrimaryButton";
-import { State, City } from "country-state-city";
+import { Country, State, City } from "country-state-city";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { queryClient } from "../../../../main";
@@ -13,14 +13,21 @@ import Loader from "../../../Loading";
 
 const WorkLocations = () => {
   const axios = useAxiosPrivate();
+  const [countries] = useState(Country.getAllCountries());
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
   useEffect(() => {
     setStates(State.getStatesOfCountry("IN"));
   }, []);
-  const handleStateSelect = (stateCode) => {
-    const city = City.getCitiesOfState("IN", stateCode);
-    setCities(city);
+  const handleCountrySelect = (countryCode) => {
+    const foundStates = State.getStatesOfCountry(countryCode);
+    setStates(foundStates);
+    setCities([]); // Reset cities when country changes
+  };
+
+  const handleStateSelect = (countryCode, stateCode) => {
+    const foundCities = City.getCitiesOfState(countryCode, stateCode);
+    setCities(foundCities);
   };
 
   const {
@@ -31,8 +38,11 @@ const WorkLocations = () => {
     defaultValues: {
       building: "",
       workLocation: "",
-      city : "",
-      state : "",
+      country: "",
+      city: "",
+      state: "",
+      address: "",
+      pincode: "",
     },
   });
 
@@ -43,6 +53,11 @@ const WorkLocations = () => {
         console.log(data);
         const response = await axios.post("/api/company/add-building", {
           buildingName: data.workLocation,
+          address: data.address,
+          city: data.city,
+          state: data.state,
+          country: data.country,
+          pincode: data.pincode,
         });
         return response.data;
       },
@@ -192,7 +207,55 @@ const WorkLocations = () => {
                 />
               )}
             />
+            <Controller
+              name="address"
+              rules={{ required: "Address is required" }}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  label="Address"
+                  multiline
+                  rows={2}
+                  fullWidth
+                  error={!!errors.address}
+                  helperText={errors.address?.message}
+                />
+              )}
+            />
 
+            {/* Country Dropdown */}
+            <Controller
+              name="country"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  size="small"
+                  label="Country"
+                  fullWidth
+                  onChange={(e) => {
+                    field.onChange(e);
+                    const selectedCode = e.target.value;
+                    handleCountrySelect(selectedCode);
+                    // Reset dependent fields
+                    control.setValue("state", "");
+                    control.setValue("city", "");
+                  }}
+                >
+                  <MenuItem value="">Select a Country</MenuItem>
+                  {countries.map((item) => (
+                    <MenuItem key={item.isoCode} value={item.isoCode}>
+                      {item.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+
+            {/* State Dropdown */}
             <Controller
               name="state"
               control={control}
@@ -202,11 +265,16 @@ const WorkLocations = () => {
                   size="small"
                   select
                   label="State"
+                  fullWidth
+                  disabled={!control._formValues.country}
                   onChange={(e) => {
                     field.onChange(e);
-                    handleStateSelect(e.target.value);
+                    handleStateSelect(
+                      control._formValues.country,
+                      e.target.value
+                    );
+                    control.setValue("city", "");
                   }}
-                  fullWidth
                 >
                   <MenuItem value="">Select a State</MenuItem>
                   {states.map((item) => (
@@ -217,6 +285,8 @@ const WorkLocations = () => {
                 </TextField>
               )}
             />
+
+            {/* City Dropdown */}
             <Controller
               name="city"
               control={control}
@@ -227,8 +297,9 @@ const WorkLocations = () => {
                   select
                   label="City"
                   fullWidth
+                  disabled={!control._formValues.state}
                 >
-                  <MenuItem value="">Select a State</MenuItem>
+                  <MenuItem value="">Select a City</MenuItem>
                   {cities.map((item) => (
                     <MenuItem
                       value={item.name}
@@ -238,6 +309,28 @@ const WorkLocations = () => {
                     </MenuItem>
                   ))}
                 </TextField>
+              )}
+            />
+
+            <Controller
+              name="pincode"
+              rules={{
+                required: "Pincode is required",
+                pattern: {
+                  value: /^[1-9][0-9]{5}$/, // Indian 6-digit pincode starting with non-zero
+                  message: "Enter a valid 6-digit pincode",
+                },
+              }}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  label="Pincode"
+                  fullWidth
+                  error={!!errors.pincode}
+                  helperText={errors.pincode?.message}
+                />
               )}
             />
 
