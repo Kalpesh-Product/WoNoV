@@ -15,6 +15,10 @@ const buildingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    address: {
+      type: String,
+      required: true,
+    },
     state: {
       type: String,
       required: true,

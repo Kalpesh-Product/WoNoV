@@ -18,10 +18,18 @@ const addBuilding = async (req, res, next) => {
   const logAction = "Add Building";
   const logSourceKey = "building";
   const { user, ip, company } = req;
-  const { buildingName, city, state, country, pincode } = req.body;
+  const { buildingName, address, city, state, country, pincode } = req.body;
 
   try {
-    if (!company || !buildingName || !city || !state || !country || !pincode) {
+    if (
+      !company ||
+      !buildingName ||
+      !address ||
+      !city ||
+      !state ||
+      !country ||
+      !pincode
+    ) {
       throw new CustomError(
         "Company and Building Name are required",
         logPath,
@@ -54,6 +62,7 @@ const addBuilding = async (req, res, next) => {
     const newBuilding = new Building({
       company,
       buildingName,
+      address,
       country,
       state,
       city,
