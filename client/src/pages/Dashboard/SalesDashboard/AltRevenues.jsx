@@ -376,7 +376,7 @@ const AltRevenues = () => {
         <WidgetSection
           title={"Annual Monthly Alternate Revenues"}
           titleLabel={"FY 2024-25"}
-          // TitleAmount={`INR ${inrFormat(totalActual)}`}
+          TitleAmount={`INR ${inrFormat(totalActual)}`}
           border
         >
           <BarGraph
