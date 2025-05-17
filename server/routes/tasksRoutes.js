@@ -2,6 +2,10 @@ const router = require("express").Router();
 
 const {
   getAllKpaTasks,
+  getMyKraTasks,
+  createRoleBasedTask,
+  createIndividualTask,
+  updateTaskStatus,
 } = require("../controllers/tasksControllers/kraKpaControllers");
 const {
   createProject,
@@ -36,6 +40,10 @@ router.get("/get-assigned-tasks", getAssignedTasks);
 router.patch("/update-task/:id", updateTask);
 router.patch("/complete-tasks/", completeTasks);
 router.patch("/delete-task/:id", deleteTask);
+router.post("/create-task", createRoleBasedTask);
+router.post("/create-individual-task", createIndividualTask);
+router.patch("/update-task-status/:taskId", updateTaskStatus);
 router.get("/get-kpa-tasks", getAllKpaTasks);
+router.get("/get-my-kra-tasks/:empId", getMyKraTasks);
 
 module.exports = router;
