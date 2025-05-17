@@ -2,28 +2,48 @@ const mongoose = require("mongoose");
 
 const coworkingClientRevenue = new mongoose.Schema(
   {
-    actualRevenue: {
-      type: String,
-    },
-    projectedRevenue: {
+    clientName: {
       type: String,
       required: true,
     },
     channel: {
       type: String,
-      enum: ["Direct", "SPV"],
+    },
+    noOfDesks: {
+      type: Number,
+      required: true,
+    },
+    deskRate: {
+      type: Number,
+      required: true,
+    },
+    occupation: {
+      type: String, // You can change to Boolean if it's just occupied/vacant
+    },
+    revenue: {
+      type: Number,
+      required: true,
+    },
+    totalTerm: {
+      type: Number, // In months or as required
+    },
+    dueTerm: {
+      type: Number, // In months or as required
     },
     rentDate: {
       type: Date,
-      required: true,
     },
-    client: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "CoworkingClient",
+    rentStatus: {
+      type: String, // Consider enum: ['paid', 'unpaid', 'partial'] if applicable
     },
-    service: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "ClientService",
+    pastDueDate: {
+      type: Date,
+    },
+    annualIncrement: {
+      type: Number, // e.g. 10 for 10% increment
+    },
+    nextIncrementDate: {
+      type: Date,
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,
@@ -37,4 +57,5 @@ const CoworkingRevenue = mongoose.model(
   "CoworkingClientRevenue",
   coworkingClientRevenue
 );
+
 module.exports = CoworkingRevenue;

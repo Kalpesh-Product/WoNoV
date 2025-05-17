@@ -11,7 +11,27 @@ const addRevenue = async (req, res, next) => {
   const { company, user, ip } = req;
 
   try {
-    const { serviceId, clientId, projectedRevenue, month } = req.body;
+    const {
+      serviceId,
+      clientId,
+      projectedRevenue,
+      month,
+
+      // New fields
+      clientName,
+      channel,
+      noOfDesks,
+      deskRate,
+      occupation,
+      revenue,
+      totalTerm,
+      dueTerm,
+      rentDate,
+      rentStatus,
+      pastDueDate,
+      annualIncrement,
+      nextIncrementDate,
+    } = req.body;
 
     if (!serviceId || !clientId || !projectedRevenue || !month) {
       throw new CustomError(
@@ -45,15 +65,30 @@ const addRevenue = async (req, res, next) => {
     }
 
     // Create new revenue entry
-    const revenue = new CoworkingRevenue({
+    const revenueDoc = new CoworkingRevenue({
       projectedRevenue,
       month: new Date(month),
       client: clientId,
       service: serviceId,
       company: company._id,
+
+      // Save new fields
+      clientName,
+      channel,
+      noOfDesks,
+      deskRate,
+      occupation,
+      revenue,
+      totalTerm,
+      dueTerm,
+      rentDate,
+      rentStatus,
+      pastDueDate,
+      annualIncrement,
+      nextIncrementDate,
     });
 
-    const savedRevenue = await revenue.save();
+    const savedRevenue = await revenueDoc.save();
 
     await createLog({
       path: logPath,
@@ -90,28 +125,73 @@ const getRevenues = async (req, res, next) => {
     const company = req.company;
     const { serviceId } = req.query;
 
-    let revenues;
+    const filter = { company };
     if (serviceId) {
-      revenues = await CoworkingRevenue.find({ company, service: serviceId })
-        .select([
-          { path: "client", select: "clientName" },
-          { path: "service", select: "serviceName" },
-        ])
-        .lean()
-        .exec();
-
-      return res.status(200).json(revenues);
+      filter.service = serviceId;
     }
 
-    revenues = await CoworkingRevenue.find({ company })
-      .select([
-        { path: "client", select: "clientName" },
-        { path: "service", select: "serviceName" },
-      ])
+    const revenues = await CoworkingRevenue.find(filter)
+      .populate({ path: "client", select: "clientName" })
+      .populate({ path: "service", select: "serviceName" })
       .lean()
       .exec();
 
-    res.status(200).json(revenues);
+    const MONTHS_SHORT = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    const monthlyMap = new Map();
+
+    revenues.forEach((item) => {
+      const referenceDate = item.rentDate || item.createdAt;
+      const dateObj = new Date(referenceDate);
+      const month = MONTHS_SHORT[dateObj.getMonth()];
+      const year = dateObj.getFullYear().toString().slice(-2);
+      const monthKey = `${month}-${year}`;
+
+      if (!monthlyMap.has(monthKey)) {
+        monthlyMap.set(monthKey, {
+          month: monthKey,
+          totalRevenue: 0,
+          clients: [],
+        });
+      }
+
+      const monthData = monthlyMap.get(monthKey);
+      monthData.totalRevenue += item.revenue || 0;
+
+      monthData.clients.push({
+        clientName: item.clientName || item.client?.clientName,
+        channel: item.channel,
+        noOfDesks: item.noOfDesks,
+        deskRate: item.deskRate,
+        occupation: item.occupation,
+        revenue: item.revenue,
+        totalTerm: item.totalTerm,
+        dueTerm: item.dueTerm,
+        rentDate: item.rentDate,
+        rentStatus: item.rentStatus,
+        pastDueDate: item.pastDueDate,
+        annualIncrement: item.annualIncrement,
+        nextIncrementDate: item.nextIncrementDate,
+        serviceName: item.service?.serviceName,
+      });
+    });
+
+    const transformedData = Array.from(monthlyMap.values());
+
+    res.status(200).json(transformedData);
   } catch (error) {
     next(error);
   }
