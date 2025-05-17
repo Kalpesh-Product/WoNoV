@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const UserData = require("../../models/hr/UserData");
 const kraKpaRole = require("../../models/tasks/kraKpaRole");
 const kraKpaTask = require("../../models/tasks/kraKpaTask");
@@ -11,17 +12,35 @@ const createRoleBasedTask = async (req, res, next) => {
   const logSourceKey = "kraKpaRole";
 
   try {
-    const { task, description, role, department, priority, taskType } =
-      req.body;
+    const { type } = req.query;
+
+    const {
+      task,
+      description,
+      role,
+      department,
+      priority,
+      assignedDate,
+      dueDate,
+    } = req.body;
+
+    if (!type) {
+      throw new CustomError(
+        "Missing Task type",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
 
     if (
       !task ||
-      !taskType ||
-      !assignedBy ||
       !description ||
       !department ||
       !role ||
-      !priority
+      !priority ||
+      !assignedDate ||
+      !dueDate
     ) {
       throw new CustomError(
         "Missing required fields",
@@ -31,7 +50,7 @@ const createRoleBasedTask = async (req, res, next) => {
       );
     }
 
-    if (mongoose.Types.ObjectId.isValid(role)) {
+    if (!mongoose.Types.ObjectId.isValid(role)) {
       throw new CustomError(
         "Invalid role ID provided",
         logPath,
@@ -40,7 +59,7 @@ const createRoleBasedTask = async (req, res, next) => {
       );
     }
 
-    if (mongoose.Types.ObjectId.isValid(department)) {
+    if (!mongoose.Types.ObjectId.isValid(department)) {
       throw new CustomError(
         "Invalid department ID provided",
         logPath,
@@ -48,8 +67,6 @@ const createRoleBasedTask = async (req, res, next) => {
         logSourceKey
       );
     }
-
-    const currDate = new Date();
 
     if (
       typeof description !== "string" ||
@@ -64,6 +81,21 @@ const createRoleBasedTask = async (req, res, next) => {
       );
     }
 
+    if (
+      isNaN(new Date(assignedDate).getTime()) ||
+      isNaN(new Date(dueDate).getTime())
+    ) {
+      throw new CustomError(
+        "Invalid date format provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const parsedAssignedDate = new Date(assignedDate);
+    const parsedDueDate = new Date(dueDate);
+
     const newRoleKraKpa = new kraKpaRole({
       task,
       description,
@@ -71,8 +103,9 @@ const createRoleBasedTask = async (req, res, next) => {
       role,
       department,
       priority,
-      creationDate: currDate,
-      taskType,
+      assignedDate: parsedAssignedDate,
+      dueDate: parsedDueDate,
+      taskType: type,
       company,
     });
 
@@ -82,7 +115,7 @@ const createRoleBasedTask = async (req, res, next) => {
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: `${taskType} added successfully`,
+      remarks: `${type} added successfully`,
       status: "Success",
       user: user,
       ip: ip,
@@ -92,7 +125,7 @@ const createRoleBasedTask = async (req, res, next) => {
       changes: newRoleKraKpa,
     });
 
-    return res.status(201).json({ message: `${taskType} added successfully` });
+    return res.status(201).json({ message: `${type} added successfully` });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);
@@ -107,21 +140,30 @@ const createRoleBasedTask = async (req, res, next) => {
 const createIndividualTask = async (req, res, next) => {
   const { user, ip, company } = req;
   const logPath = "hr/HrLog";
-  const logAction = "Create Task";
+  const logAction = "Create Individual KRA/KPA";
   const logSourceKey = "user";
 
   try {
-    const { task, description, empId, department, priority, taskType } =
-      req.body;
+    const { type } = req.query;
+
+    const {
+      task,
+      description,
+      empId,
+      department,
+      priority,
+      assignedDate,
+      dueDate,
+    } = req.body;
 
     if (
       !task ||
-      !taskType ||
-      !assignedBy ||
       !description ||
       !department ||
       !empId ||
-      !priority
+      !priority ||
+      !assignedDate ||
+      !dueDate
     ) {
       throw new CustomError(
         "Missing required fields",
@@ -131,16 +173,16 @@ const createIndividualTask = async (req, res, next) => {
       );
     }
 
-    if (mongoose.Types.ObjectId.isValid(empId)) {
+    if (!type) {
       throw new CustomError(
-        "Invalid employee ID provided",
+        "Missing task type",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
-    if (mongoose.Types.ObjectId.isValid(department)) {
+    if (!mongoose.Types.ObjectId.isValid(department)) {
       throw new CustomError(
         "Invalid department ID provided",
         logPath,
@@ -162,32 +204,48 @@ const createIndividualTask = async (req, res, next) => {
       );
     }
 
+    if (
+      isNaN(new Date(assignedDate).getTime()) ||
+      isNaN(new Date(dueDate).getTime())
+    ) {
+      throw new CustomError(
+        "Invalid date format provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const parsedAssignedDate = new Date(assignedDate);
+    const parsedDueDate = new Date(dueDate);
+
     const founudUser = await UserData.findOne({ empId });
 
     if (!founudUser) {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);
     }
 
-    const currDate = new Date();
     const taskDetails = {
       task,
+      assignedBy: user,
       description,
-      empId,
       department,
       priority,
-      taskType,
-      creationDate: currDate,
+      taskType: type,
+      assignedDate: parsedAssignedDate,
+      dueDate: parsedDueDate,
     };
     const updateUserData = await UserData.findOneAndUpdate(
       { empId },
       {
         $push: { kraKpa: taskDetails },
-      }
+      },
+      { new: true }
     );
 
     if (!updateUserData) {
       throw new CustomError(
-        `Failed to add the ${taskType}`,
+        `Failed to add the ${type}`,
         logPath,
         logAction,
         logSourceKey
@@ -198,7 +256,7 @@ const createIndividualTask = async (req, res, next) => {
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: `${taskType} added successfully`,
+      remarks: `${type} added successfully`,
       status: "Success",
       user: user,
       ip: ip,
@@ -208,7 +266,7 @@ const createIndividualTask = async (req, res, next) => {
       changes: taskDetails,
     });
 
-    return res.status(201).json({ message: `${taskType} added successfully` });
+    return res.status(201).json({ message: `${type} added successfully` });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);
@@ -220,9 +278,101 @@ const createIndividualTask = async (req, res, next) => {
   }
 };
 
-const getAllKraKpaTasks = async (req, res, next) => {
+// const updateTaskStatus = async (req, res, next) => {
+//   const { user, ip, company } = req;
+//   const logPath = "task/TaskLog";
+//   const logAction = "Update KRA/KPA status";
+//   const logSourceKey = "kraKpa";
+
+//   try {
+//     const { taskId, status } = req.body;
+
+//     if (!taskId || !status) {
+//       throw new CustomError(
+//         "Missing required fields",
+//         logPath,
+//         logAction,
+//         logSourceKey
+//       );
+//     }
+
+//     if (!mongoose.Types.ObjectId.isValid(taskId)) {
+//       throw new CustomError(
+//         "Invalid task ID provided",
+//         logPath,
+//         logAction,
+//         logSourceKey
+//       );
+//     }
+
+//     const completionDate = new Date();
+
+//     const taskDetails = {
+//       task,
+//       assignedBy: user,
+//       description,
+//       department,
+//       priority,
+//       taskType: type,
+//       assignedDate: parsedAssignedDate,
+//       dueDate: parsedDueDate,
+//     };
+//     const updateUserData = await UserData.findOneAndUpdate(
+//       { empId },
+//       {
+//         $push: { kraKpa: taskDetails },
+//       },
+//       { new: true }
+//     );
+
+//     if (!updateUserData) {
+//       throw new CustomError(
+//         `Failed to add the ${type}`,
+//         logPath,
+//         logAction,
+//         logSourceKey
+//       );
+//     }
+
+//     // Log success with createLog
+//     await createLog({
+//       path: logPath,
+//       action: logAction,
+//       remarks: `${type} added successfully`,
+//       status: "Success",
+//       user: user,
+//       ip: ip,
+//       company: company,
+//       sourceKey: logSourceKey,
+//       sourceId: updateUserData._id,
+//       changes: taskDetails,
+//     });
+
+//     return res.status(201).json({ message: `${type} added successfully` });
+//   } catch (error) {
+//     if (error instanceof CustomError) {
+//       next(error);
+//     } else {
+//       next(
+//         new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+//       );
+//     }
+//   }
+// };
+
+const getMyKraTasks = async (req, res, next) => {
   try {
     const { company } = req;
+    const { empId } = req.params;
+
+    const foundUser = await UserData.findOne({ empId }).populate({
+      path: "role",
+      select: "roleTitle",
+    });
+
+    if (!foundUser) {
+      return res.status(400).json({ message: "User not found" });
+    }
 
     const tasks = await kraKpaTask
       .find({
@@ -239,10 +389,10 @@ const getAllKraKpaTasks = async (req, res, next) => {
       .select("-company")
       .lean();
 
-    const transformedByDepartment = {};
+    const transformedTasks = tasks.map((task) => {
+      console.log(task.assignedTo);
+      if (task.assignedTo._id.toString() !== foundUser._id.toString()) return;
 
-    tasks.forEach((task) => {
-      const departmentName = task.task.department.name;
       const assignedBy = `${task.task.assignedBy.firstName} ${
         task.task.assignedBy.middleName || ""
       } ${task.task.assignedBy.lastName}`;
@@ -250,7 +400,7 @@ const getAllKraKpaTasks = async (req, res, next) => {
         task.assignedTo.middleName || ""
       } ${task.assignedTo.lastName}`;
 
-      const transformedTask = {
+      return {
         taskName: task.task.task,
         description: task.task.description,
         assignedBy: assignedBy.trim(),
@@ -259,27 +409,13 @@ const getAllKraKpaTasks = async (req, res, next) => {
         dueDate: task.task.dueDate,
         status: task.status,
       };
-
-      if (!transformedByDepartment[departmentName]) {
-        transformedByDepartment[departmentName] = {
-          department: departmentName,
-          total: 0,
-          achieved: 0,
-          tasks: [],
-        };
-      }
-
-      transformedByDepartment[departmentName].tasks.push(transformedTask);
-      transformedByDepartment[departmentName].total += 1;
-
-      if (task.status === "Completed") {
-        transformedByDepartment[departmentName].achieved += 1;
-      }
     });
 
-    const transformedDeptTasks = Object.values(transformedByDepartment);
+    const individualTasks = foundUser?.kraKpa || [];
+    const allTasks = [...transformedTasks, ...individualTasks];
 
-    return res.status(200).json(transformedDeptTasks);
+    console.log(allTasks.length);
+    return res.status(200).json(allTasks);
   } catch (error) {
     next(error);
   }
@@ -355,6 +491,6 @@ const getAllKpaTasks = async (req, res, next) => {
 module.exports = {
   createRoleBasedTask,
   createIndividualTask,
-  getAllKraKpaTasks,
   getAllKpaTasks,
+  getMyKraTasks,
 };

@@ -97,6 +97,10 @@ const userDataSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "UserData",
       },
+      department: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Department",
+      },
       description: {
         type: String,
         // required: true,
@@ -111,9 +115,13 @@ const userDataSchema = new mongoose.Schema({
         enum: ["KPA", "KRA"],
         required: true,
       },
-      creationDate: {
+      assignedDate: {
         type: Date,
-        default: false,
+        required: true,
+      },
+      dueDate: {
+        type: Date,
+        required: true,
       },
       isDeleted: {
         type: Boolean,
