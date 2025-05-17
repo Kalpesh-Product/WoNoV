@@ -69,7 +69,6 @@ const getAlternateRevenues = async (req, res, next) => {
         const year = invoiceCreationDate.getFullYear().toString().slice(-2);
 
         const monthKey = `${month}-${year}`;
-        console.log(monthKey); // e.g., "Sep-25"
 
         const amount = item.taxableAmount;
 
