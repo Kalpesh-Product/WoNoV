@@ -2,7 +2,8 @@ const MeetingRevenue = require("../../models/sales/MeetingRevenue");
 const AlternateRevenues = require("../../models/sales/AlternateRevenue");
 const VirtualOfficeRevenues = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationRevenues = require("../../models/sales/WorkationRevenue");
-const transformRevenues = require("../../utils/revenueFormatter");
+const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
+
 const getConsolidatedRevenue = async (req, res, next) => {
   try {
     const company = req.company;
@@ -12,18 +13,20 @@ const getConsolidatedRevenue = async (req, res, next) => {
       alternateRevenues,
       virtualOfficeRevenues,
       workationRevenues,
+      coworkingRevenues,
     ] = await Promise.all([
       MeetingRevenue.find({ company }).lean().exec(),
       AlternateRevenues.find({ company }).lean().exec(),
       VirtualOfficeRevenues.find({ company }).lean().exec(),
       WorkationRevenues.find({ company }).lean().exec(),
+      CoworkingRevenue.find({ company }).lean().exec(),
     ]);
 
     // Helpers
     const getFinancialYear = (date) => {
       const d = new Date(date);
       const year = d.getFullYear();
-      const month = d.getMonth(); // 0 = Jan, 3 = Apr
+      const month = d.getMonth(); // 0 = Jan
       return month >= 3
         ? `${year}-${(year + 1).toString().slice(-2)}`
         : `${year - 1}-${year.toString().slice(-2)}`;
@@ -41,6 +44,7 @@ const getConsolidatedRevenue = async (req, res, next) => {
       "Alt. Revenues": { data: {} },
       "Virtual Offices": { data: {} },
       Workations: { data: {} },
+      Coworking: { data: {} },
     };
 
     // Meetings (use paymentDate)
@@ -77,13 +81,23 @@ const getConsolidatedRevenue = async (req, res, next) => {
       }
     });
 
-    // Workations (assumes paymentDate field exists)
+    // Workations (use date)
     workationRevenues.forEach((item) => {
       if (item.date) {
         const fy = getFinancialYear(item.date);
         const idx = getFinancialMonthIndex(item.date);
         categoryMap.Workations.data[fy] ??= initFYData();
         categoryMap.Workations.data[fy][idx] += item.totalAmount || 0;
+      }
+    });
+
+    // Coworking (use rentDate)
+    coworkingRevenues.forEach((item) => {
+      if (item.rentDate) {
+        const fy = getFinancialYear(item.rentDate);
+        const idx = getFinancialMonthIndex(item.rentDate);
+        categoryMap.Coworking.data[fy] ??= initFYData();
+        categoryMap.Coworking.data[fy][idx] += item.revenue || 0;
       }
     });
 
