@@ -44,6 +44,6 @@ router.post("/create-task", createRoleBasedTask);
 router.post("/create-individual-task", createIndividualTask);
 router.patch("/update-task-status/:taskId", updateTaskStatus);
 router.get("/get-kpa-tasks", getAllKpaTasks);
-router.get("/get-my-tasks/", getMyKraKpaTasks);
+router.get("/get-tasks/", getMyKraKpaTasks);
 
 module.exports = router;

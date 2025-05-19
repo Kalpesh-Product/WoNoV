@@ -379,6 +379,7 @@ const getMyKraKpaTasks = async (req, res, next) => {
     const tasks = await kraKpaTask
       .find({
         company,
+        department: { $in: foundUser.departments },
       })
       .populate({
         path: "task",
