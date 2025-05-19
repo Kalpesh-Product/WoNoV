@@ -612,7 +612,7 @@ const FinanceDashboard = () => {
           key={priorityTasks.length}
           scroll
           rowsToDisplay={4}
-          Title={"Top 10 High Priority Due Tasks"}
+          Title={`KPA - ${monthYear} `}
           rows={[
             ...priorityTasks.map((task, index) => ({
               id: index + 1,
@@ -625,7 +625,7 @@ const FinanceDashboard = () => {
         />,
         <MuiTable
           key={executiveTimings.length}
-          Title={"This Weeks Payouts"}
+          Title={`This Weeks Payouts - ${monthYear} `}
           rows={[
             ...executiveTimings.map((timing, index) => ({
               id: index + 1,

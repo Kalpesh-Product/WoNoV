@@ -3,8 +3,11 @@ import WidgetSection from "../../../components/WidgetSection";
 import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 import AgTable from "../../../components/AgTable";
 import { inrFormat } from "../../../utils/currencyFormat";
+import humanDate from "../../../utils/humanDateForamt";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
+import { CircularProgress } from "@mui/material";
 
 const MeetingRevenue = () => {
   const axios = useAxiosPrivate();
@@ -411,8 +414,8 @@ const MeetingRevenue = () => {
   const series = [
     {
       name: "Actual Revenue",
-      data: monthlyMeetingeData.map((item) =>
-        item.clients.reduce((sum, c) => sum + c.revenue, 0)
+      data: meetingsData.map((item) =>
+        item.revenue.reduce((sum, c) => sum + c.totalAmount, 0)
       ),
     },
   ];
@@ -440,7 +443,7 @@ const MeetingRevenue = () => {
       offsetY: -22,
     },
     xaxis: {
-      categories: monthlyMeetingeData.map((item) => item.month),
+      categories: meetingsData.map((item) => item.month),
     },
     yaxis: {
       title: { text: "Amount In Lakhs (INR)" },
@@ -466,80 +469,112 @@ const MeetingRevenue = () => {
     colors: ["#2196F3"],
   };
 
-  const totalActual = monthlyMeetingeData.reduce(
+  const totalActual = meetingsData.reduce(
     (sum, month) =>
       sum +
-      month.clients.reduce((monthSum, client) => monthSum + client.revenue, 0),
+      month.revenue.reduce(
+        (monthSum, client) => monthSum + client.totalAmount,
+        0
+      ),
     0
   );
 
-  const totalProjected = monthlyMeetingeData.reduce(
-    (sum, month) => sum + (month.projected ?? 0),
+  const totalProjected = meetingsData.reduce(
+    (sum, month) => sum + (month.actual ?? 0),
     0
   );
 
   // Prepare collapsible table data
-  const tableData = monthlyMeetingeData.map((monthData, index) => {
-    const actual = monthData.clients.reduce((sum, c) => sum + c.revenue, 0);
+  const tableData = meetingsData.map((monthData, index) => {
+    const actual = monthData.revenue.reduce((sum, c) => sum + c.totalAmount, 0);
     return {
       id: index,
       month: monthData.month,
-      revenue: `INR ${actual.toLocaleString()}`,
-      clients: monthData.clients.map((client, i) => ({
+      actual: `INR ${actual.toLocaleString()}`,
+      revenue: monthData.revenue.map((client, i) => ({
         id: i + 1,
-        clientName: client.clientName,
-        revenue: `${client.revenue.toLocaleString()}`,
-        status: client.status,
-        totalCredits: client.totalCredits,
-        usedCredits: client.usedCredits,
-        extraCredits: client.extraCredits,
-        bookingHours: client.bookingHours,
+        particulars: client.particulars,
+        unitsOrHours: `${client.unitsOrHours}`,
+        taxable: client.taxable,
+        gst: client.gst,
+        totalAmount: client.totalAmount,
+        date: humanDate(client.date),
+        paymentDate: humanDate(client.paymentDate),
+        remarks: client.remarks,
       })),
     };
   });
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection
-        title={"Annual Monthly Meetings Revenues"}
-        titleLabel={"FY 2024-25"}
-        TitleAmount={`INR ${inrFormat(totalActual)}`}
-        border
-      >
-        <BarGraph data={series} options={options} height={400} />
-      </WidgetSection>
-
-      <WidgetSection
-        border
-        title={"Monthly Revenue with Client Details"}
-        padding
-        TitleAmount={`INR ${inrFormat(totalActual)}`}
-      >
-        <CollapsibleTable
-          columns={[
-            { headerName: "Month", field: "month" },
-            { headerName: "Revenue (INR)", field: "revenue" },
-          ]}
-          data={tableData}
-          renderExpandedRow={(row) => (
-            <AgTable
-              data={row.clients}
-              columns={[
-                { headerName: "Sr No", field: "id", flex: 1 },
-                { headerName: "Client Name", field: "clientName", flex: 1 },
-                { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
-                { headerName: "Total Credits", field: "totalCredits", flex: 1 },
-                { headerName: "Used Credits", field: "usedCredits", flex: 1 },
-                { headerName: "Extra Credits", field: "extraCredits", flex: 1 },
-                { headerName: "Booking Hours", field: "bookingHours", flex: 1 },
-                { headerName: "Status", field: "status", flex: 1 },
-              ]}
-              tableHeight={300}
-              hideFilter
-            />
-          )}
-        />
-      </WidgetSection>
+      {!isMeetingsLoading ? (
+        <WidgetSection
+          title={"Annual Monthly Meetings Revenues"}
+          titleLabel={"FY 2024-25"}
+          TitleAmount={`INR ${inrFormat(totalActual)}`}
+          border
+        >
+          <BarGraph data={series} options={options} height={400} />
+        </WidgetSection>
+      ) : (
+        <div className="flex h-72 justify-center items-center">
+          <CircularProgress />
+        </div>
+      )}
+      {!isMeetingsLoading ? (
+        <WidgetSection
+          border
+          title={"Monthly Revenue with Client Details"}
+          padding
+          TitleAmount={`INR ${inrFormat(totalActual)}`}
+        >
+          <MonthWiseAgTable
+            financialData={tableData}
+            passedColumns={[
+              { headerName: "Sr No", field: "id" , width : 100 },
+              { headerName: "Particulars", field: "particulars", width : 200 },
+              { headerName: "Units / Hours", field: "unitsOrHours" },
+              {
+                headerName: "Taxable (INR)",
+                field: "taxable",
+                valueFormatter: ({ value }) =>
+                  typeof value === "number"
+                    ? value.toLocaleString("en-IN")
+                    : `${value ?? ""}`,
+              },
+              {
+                headerName: "GST (INR)",
+                field: "gst",
+                valueFormatter: ({ value }) =>
+                  typeof value === "number"
+                    ? value.toLocaleString("en-IN")
+                    : `${value ?? ""}`,
+              },
+              {
+                headerName: "Total Amount (INR)",
+                field: "totalAmount",
+                valueFormatter: ({ value }) =>
+                  typeof value === "number"
+                    ? value.toLocaleString("en-IN")
+                    : `${value ?? ""}`,
+              },
+              {
+                headerName: "Date",
+                field: "date",
+              },
+              {
+                headerName: "Payment Date",
+                field: "paymentDate",
+              },
+              { headerName: "Remarks", field: "remarks" },
+            ]}
+          />
+        </WidgetSection>
+      ) : (
+        <div className="flex h-72 justify-center items-center">
+          <CircularProgress />
+        </div>
+      )}
     </div>
   );
 };

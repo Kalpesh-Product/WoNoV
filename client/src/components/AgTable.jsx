@@ -188,7 +188,7 @@ const AgTableComponent = React.memo(
           </div>
         )}
         <div className="flex justify-between items-center py-2">
-          {search && (
+          {search ? (
             <TextField
               label="Search"
               variant="outlined"
@@ -202,7 +202,7 @@ const AgTableComponent = React.memo(
                 ),
               }}
             />
-          )}
+          ) : <></>}
           {hideFilter ? (
             ""
           ) : (

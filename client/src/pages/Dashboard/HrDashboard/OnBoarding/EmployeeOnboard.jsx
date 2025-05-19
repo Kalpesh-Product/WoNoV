@@ -225,37 +225,39 @@ const EmployeeOnboard = () => {
                 )}
               />
 
-              <Controller
-                name="department"
-                control={control}
-                rules={{ required: "Department is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Department"
-                    fullWidth
-                    helperText={errors?.department?.message}
-                    error={!!errors.department}
-                  />
-                )}
-              />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Controller
+                  name="department"
+                  control={control}
+                  rules={{ required: "Department is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Department"
+                      fullWidth
+                      helperText={errors?.department?.message}
+                      error={!!errors.department}
+                    />
+                  )}
+                />
 
-              <Controller
-                name="reportsTo"
-                control={control}
-                rules={{ required: "Reporting Manager is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Reports To"
-                    fullWidth
-                    helperText={errors?.reportsTo?.message}
-                    error={!!errors.reportsTo}
-                  />
-                )}
-              />
+                <Controller
+                  name="reportsTo"
+                  control={control}
+                  rules={{ required: "Reporting Manager is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Reports To"
+                      fullWidth
+                      helperText={errors?.reportsTo?.message}
+                      error={!!errors.reportsTo}
+                    />
+                  )}
+                />
+              </div>
 
               <Controller
                 name="jobTitle"
@@ -305,6 +307,9 @@ const EmployeeOnboard = () => {
                 )}
               />
 
+           
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <Controller
                 name="workSchedulePolicy"
                 control={control}
@@ -332,33 +337,33 @@ const EmployeeOnboard = () => {
                   />
                 )}
               />
-
-              <Controller
-                name="leavePolicy"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Leave Policy"
-                    fullWidth
-                  />
-                )}
-              />
-              <Controller
-                name="holidayPolicy"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Holiday Policy"
-                    fullWidth
-                  />
-                )}
-              />
+                <Controller
+                  name="leavePolicy"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Leave Policy"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="holidayPolicy"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Holiday Policy"
+                      fullWidth
+                    />
+                  )}
+                />
+              </div>
             </div>
           </div>
           <div>
@@ -523,32 +528,34 @@ const EmployeeOnboard = () => {
                 )}
               />
 
-              <Controller
-                name="includePF"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Include PF"
-                    fullWidth
-                  />
-                )}
-              />
-              <Controller
-                name="pfContributionRate"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="PF Contribution Rate"
-                    fullWidth
-                  />
-                )}
-              />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Controller
+                  name="includePF"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Include PF"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="pfContributionRate"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="PF Contribution Rate"
+                      fullWidth
+                    />
+                  )}
+                />
+              </div>
               <Controller
                 name="employeePF"
                 control={control}

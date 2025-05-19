@@ -319,7 +319,7 @@ const DeptWiseBudget = () => {
           />
         </WidgetSection>
       </div>
-      <AllocatedBudget financialData={financialData} noFilter />
+      <AllocatedBudget financialData={financialData} noFilter hideTitle />
     </div>
   );
 };

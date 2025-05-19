@@ -57,9 +57,7 @@ const {
   createVirtualOfficeRevenue,
 } = require("../controllers/salesControllers/virtualOfficeRevenueControllers");
 
-const {
-  getConsolidatedRevenue,
-} = require("../controllers/salesControllers/consolidatedRevenueControllers");
+const getConsolidatedRevenue = require("../controllers/salesControllers/consolidatedRevenueControllers");
 
 //Coworking routes
 router.post("/onboard-co-working-client", createCoworkingClient);
@@ -88,8 +86,8 @@ router.post(
 );
 
 //Revenues
-router.post("/add-revenue", addRevenue);
-router.get("/fetch-revenues", getRevenues);
+router.post("/add-coworking-revenue", addRevenue);
+router.get("/fetch-coworking-revenues", getRevenues);
 router.get("/get-meeting-revenue", getMeetingRevenue);
 router.post("/create-meeting-revenue", createMeetingRevenue);
 router.patch("/update-meeting-revenue", updateMeetingRevenue);
@@ -99,6 +97,7 @@ router.get("/get-virtual-office-revenue", getVirtualOfficeRevenue);
 router.post("/create-virtual-office-revenue", createVirtualOfficeRevenue);
 router.get("/get-workation-revenue", getWorkationRevenues);
 router.post("/create-workation-revenue", createWorkationRevenue);
+router.get("/consolidated-revenue", getConsolidatedRevenue);
 
 //Service routes
 router.post("/create-service", createClientService);

@@ -15,10 +15,11 @@ const YearlyGraph = ({
   TitleAmountRed,
   responsiveResize = false,
   secondParam = false,
-  chartHeight
+  chartHeight,
+  currentYear,
 }) => {
   const fiscalYears = ["FY 2024-25", "FY 2025-26"];
-  const [selectedYearIndex, setSelectedYearIndex] = useState(1);
+  const [selectedYearIndex, setSelectedYearIndex] = useState(currentYear ? 1 : 0);
   const selectedYear = fiscalYears[selectedYearIndex];
 
   const yearCategories = {

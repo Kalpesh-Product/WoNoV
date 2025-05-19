@@ -175,6 +175,7 @@ const Projections = () => {
             options={incomeExpenseOptions}
             data={incomeExpenseData}
             title={"PROJECTIONS"}
+            currentYear
           />
         </WidgetSection>,
       ],

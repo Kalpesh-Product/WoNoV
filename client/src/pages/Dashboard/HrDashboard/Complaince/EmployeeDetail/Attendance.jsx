@@ -39,14 +39,15 @@ const Attendance = () => {
   const fetchAttendance = async () => {
     try {
       const response = await axios.get(`/api/attendance/get-attendance/${id}`);
-      console.log(response.data);
-      return response.data;
+      const data = response.data;
+      return Array.isArray(data) ? data : data.attendance ?? [];
     } catch (error) {
       throw new Error(error.response.data.message);
     }
   };
+  
 
-  const { data: attendance = [], isLoading } = useQuery({
+  const { data: attendance = [], isPending: isLoading } = useQuery({
     queryKey: ["attendance"],
     queryFn: fetchAttendance,
   });
@@ -413,20 +414,9 @@ const Attendance = () => {
             search={true}
             searchColumn={"Date"}
             data={
-              isLoading
-                ? [
-                    {
-                      id: "loading",
-                      date: "Loading...",
-                      inTime: "-",
-                      outTime: "-",
-                      workHours: "-",
-                      breakHours: "-",
-                      totalHours: "-",
-                      entryType: "-",
-                    },
-                  ]
-                : attendance.map((record, index) => ({
+              isLoading || !Array.isArray(attendance)
+                ? []
+                : attendance?.map((record, index) => ({
                     id: index + 1,
                     // date: humanDate(record.date),
                     date: humanDate(record.inTime),

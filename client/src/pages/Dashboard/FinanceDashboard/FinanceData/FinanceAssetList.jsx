@@ -104,8 +104,7 @@ const FinanceAssetList = () => {
 
   const assetColumns = [
     { field: "id", headerName: "Sr No" },
-    // { field: "department", headerName: "Department" },
-    // { field: "assetNumber", headerName: "Asset Number" },
+    { field: "classification", headerName: "Classification" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
     { field: "price", headerName: "Price" },
@@ -132,34 +131,12 @@ const FinanceAssetList = () => {
     },
   ];
 
-  // const { data: assetsList = [] } = useQuery({
-  //   queryKey: ["assetsList"],
-  //   queryFn: async () => {
-  //     try {
-  //       const response = await axios.get("/api/assets/get-assets");
-  //       return response.data;
-  //     } catch (error) {
-  //       throw new Error(error.response.data.message);
-  //     }
-  //   },
-  // });
-
   const assetsList = [
-    {
-      id: 1,
-      department: { name: "Finance" },
-      name: "Dell Latitude 7420",
-      brand: "Dell",
-      price: 85000,
-      quantity: 5,
-      purchaseDate: "2023-04-10",
-      warranty: 24,
-      vendor: { name: "Dell Technologies" },
-    },
     {
       id: 2,
       department: { name: "Finance" },
       name: "Tally ERP 9 License",
+      classification: "Intangible",
       brand: "Tally Solutions",
       price: 18000,
       quantity: 2,
@@ -171,6 +148,7 @@ const FinanceAssetList = () => {
       id: 3,
       department: { name: "Finance" },
       name: "QuickBooks License",
+      classification: "Intangible",
       brand: "Intuit",
       price: 24000,
       quantity: 1,
@@ -179,20 +157,10 @@ const FinanceAssetList = () => {
       vendor: { name: "QuickBooks India" },
     },
     {
-      id: 4,
-      department: { name: "Finance" },
-      name: "Canon D1620 Printer",
-      brand: "Canon",
-      price: 32000,
-      quantity: 1,
-      purchaseDate: "2023-03-30",
-      warranty: 18,
-      vendor: { name: "Canon India" },
-    },
-    {
       id: 5,
       department: { name: "Finance" },
       name: "NAS Storage Server",
+      classification: "Tangible",
       brand: "Synology",
       price: 65000,
       quantity: 1,
@@ -201,31 +169,10 @@ const FinanceAssetList = () => {
       vendor: { name: "TechServe Solutions" },
     },
     {
-      id: 6,
-      department: { name: "Finance" },
-      name: "UPS Backup Unit",
-      brand: "APC",
-      price: 18000,
-      quantity: 2,
-      purchaseDate: "2023-08-01",
-      warranty: 24,
-      vendor: { name: "APC Power Solutions" },
-    },
-    {
-      id: 7,
-      department: { name: "Finance" },
-      name: "HP EliteDesk Desktop",
-      brand: "HP",
-      price: 72000,
-      quantity: 4,
-      purchaseDate: "2023-09-10",
-      warranty: 36,
-      vendor: { name: "HP World" },
-    },
-    {
       id: 8,
       department: { name: "Finance" },
       name: "MS Excel Pro Plus License",
+      classification: "Intangible",
       brand: "Microsoft",
       price: 12000,
       quantity: 5,
@@ -234,6 +181,7 @@ const FinanceAssetList = () => {
       vendor: { name: "Microsoft India" },
     },
   ];
+  
 
 
 
@@ -273,6 +221,7 @@ const FinanceAssetList = () => {
             id: index + 1,
             // department: asset.department.name,
             category: asset.name,
+            classification : asset.classification,
             brand: asset.brand,
             price: Number(asset.price.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
             quantity: asset.quantity,

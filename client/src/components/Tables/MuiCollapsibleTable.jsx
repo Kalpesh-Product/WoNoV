@@ -49,52 +49,60 @@ const CollapsibleTable = ({ columns, data, renderExpandedRow }) => {
         </TableHead>
 
         <TableBody>
-          {!data
-            ? []
-            : data.map((row, index) => {
-                const rowId = row.id ?? index;
-                return (
-                  <React.Fragment key={rowId}>
-                    <TableRow>
-                      {enhancedColumns.map((col) => (
-                        <TableCell
-                          align="center"
-                          key={col.field}
-                          sx={{ padding: "8px" }}
-                        >
-                          {col.field === "_srNo" ? index + 1 : row[col.field]}
-                        </TableCell>
-                      ))}
-                      <TableCell colSpan={1} align="center">
-                        <IconButton
-                          size="small"
-                          onClick={() => toggleRow(rowId)}
-                        >
-                          {openRows[rowId] ? (
-                            <KeyboardArrowUp />
-                          ) : (
-                            <KeyboardArrowDown />
-                          )}
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
+          {!data || data.length === 0 ? (
+            <TableRow>
+            <TableCell
+              align="center"
+              colSpan={enhancedColumns.length + 1}
+              sx={{ height: "72px" }}
+            >
+              No rows to show
+            </TableCell>
+          </TableRow>
+          
+          ) : (
+            data.map((row, index) => {
+              const rowId = row.id ?? index;
+              return (
+                <React.Fragment key={rowId}>
+                  <TableRow>
+                    {enhancedColumns.map((col) => (
                       <TableCell
-                        colSpan={enhancedColumns.length + 2}
-                        style={{ paddingBottom: 0, paddingTop: 0 }}
+                        align="center"
+                        key={col.field}
+                        sx={{ padding: "8px" }}
                       >
-                        <Collapse
-                          in={openRows[rowId]}
-                          timeout="auto"
-                          unmountOnExit
-                        >
-                          <Box margin={1}>{renderExpandedRow(row)}</Box>
-                        </Collapse>
+                        {col.field === "_srNo" ? index + 1 : row[col.field]}
                       </TableCell>
-                    </TableRow>
-                  </React.Fragment>
-                );
-              })}
+                    ))}
+                    <TableCell colSpan={1} align="center">
+                      <IconButton size="small" onClick={() => toggleRow(rowId)}>
+                        {openRows[rowId] ? (
+                          <KeyboardArrowUp />
+                        ) : (
+                          <KeyboardArrowDown />
+                        )}
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell
+                      colSpan={enhancedColumns.length + 2}
+                      style={{ paddingBottom: 0, paddingTop: 0 }}
+                    >
+                      <Collapse
+                        in={openRows[rowId]}
+                        timeout="auto"
+                        unmountOnExit
+                      >
+                        <Box margin={1}>{renderExpandedRow(row)}</Box>
+                      </Collapse>
+                    </TableCell>
+                  </TableRow>
+                </React.Fragment>
+              );
+            })
+          )}
         </TableBody>
       </Table>
     </TableContainer>

@@ -14,72 +14,6 @@ import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 
-const mockSalesData = {
-  totalDesks: 146,
-  clientDetails: [
-    {
-      client: "WoNo",
-      occupiedDesks: 6,
-      memberDetails: [
-        { member: "Kalpesh Naik", date: "20-02-2024" },
-        { member: "Aiwinraj KS", date: "20-02-2024" },
-        { member: "Allan Silveira", date: "21-02-2024" },
-        { member: "Sankalp Kalangutkar", date: "22-02-2024" },
-        { member: "Muskan Dodmani", date: "22-02-2024" },
-      ],
-    },
-    {
-      client: "Axis Bank",
-      occupiedDesks: 5,
-      memberDetails: [
-        { member: "Amit Sharma", date: "25-02-2024" },
-        { member: "Priya Verma", date: "26-02-2024" },
-        { member: "Rahul Patel", date: "26-02-2024" },
-        { member: "Anjali Gupta", date: "26-02-2024" },
-        { member: "Vikram Singh", date: "26-02-2024" },
-      ],
-    },
-    {
-      client: "SquadStack",
-      occupiedDesks: 12,
-      memberDetails: [
-        { member: "Arjun Mehra", date: "01-03-2024" },
-        { member: "Sneha Kapoor", date: "01-03-2024" },
-        { member: "Rohan Malhotra", date: "02-03-2024" },
-        { member: "Kavita Joshi", date: "02-03-2024" },
-        { member: "Nikhil Rana", date: "02-03-2024" },
-        { member: "Divya Nair", date: "03-03-2024" },
-        { member: "Siddharth Iyer", date: "03-03-2024" },
-        { member: "Pooja Desai", date: "03-03-2024" },
-        { member: "Aditya Kulkarni", date: "04-03-2024" },
-        { member: "Meera Saxena", date: "04-03-2024" },
-        { member: "Karan Thakur", date: "04-03-2024" },
-        { member: "Shruti Bhatt", date: "05-03-2024" },
-        { member: "Vivek Chawla", date: "05-03-2024" },
-        { member: "Neha Aggarwal", date: "05-03-2024" },
-        { member: "Pranav Dubey", date: "06-03-2024" },
-        { member: "Aarti Saini", date: "06-03-2024" },
-        { member: "Manish Vyas", date: "06-03-2024" },
-        { member: "Riya Sengupta", date: "07-03-2024" },
-        { member: "Saurabh Mishra", date: "07-03-2024" },
-        { member: "Tanya Grover", date: "07-03-2024" },
-      ],
-    },
-    {
-      client: "BDO",
-      occupiedDesks: 4,
-      memberDetails: [
-        { member: "Suresh Yadav", date: "25-02-2024" },
-        { member: "Lakshmi Menon", date: "26-02-2024" },
-        { member: "Deepak Rawat", date: "26-02-2024" },
-        { member: "Sunita Pillai", date: "26-02-2024" },
-        { member: "Rakesh Jha", date: "26-02-2024" },
-      ],
-    },
-  ],
-};
-
-
 const ViewAvailability = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
@@ -104,7 +38,7 @@ const ViewAvailability = () => {
   const locationParam = params.get("location");
   const floorParam = params.get("floor");
   const axios = useAxiosPrivate();
-  
+
   const formatUnitDisplay = (unitNo, buildingName) => {
     const match = unitNo.match(/^(\d+)\(?([A-Za-z]*)\)?$/);
     if (!match) return `${unitNo} ${buildingName}`;
@@ -134,7 +68,7 @@ const ViewAvailability = () => {
       }
     },
   });
-  const totalOccupied = isUnitsLoading ? 0 : unitDetails?.totalOccupiedDesks
+  const totalOccupied = isUnitsLoading ? 0 : unitDetails?.totalOccupiedDesks;
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -172,9 +106,13 @@ const ViewAvailability = () => {
 
   if (error) {
     // Display error message if data fetching fails
-    return <div className="h-screen flex justify-center items-center">No Data Available</div>;
+    return (
+      <div className="h-screen flex justify-center items-center">
+        No Data Available
+      </div>
+    );
   }
-  console.log(formatUnitDisplay(floorParam))
+  console.log(formatUnitDisplay(floorParam));
 
   return (
     <div className="p-4 flex flex-col gap-8">
@@ -243,22 +181,25 @@ const ViewAvailability = () => {
       <div className=" flex flex-col gap-4">
         <WidgetSection layout={4} padding>
           <DataCard
-            data={unitDetails?.totalDesks}
+            data={unitDetails?.totalOccupiedDesks}
             title={"Total Desks"}
             description={`Last Month : Apr-25`}
           />
           <DataCard
-            data={unitDetails?.totalOccupiedDesks}
+            data={unitDetails?.totalDesks}
             title={"Occupied Desks"}
             description={`Last Month : Apr-25`}
           />
           <DataCard
-            data={((unitDetails?.totalOccupiedDesks/unitDetails?.totalDesks)*100).toFixed(0)}
+            data={(
+              (unitDetails?.totalDesks  / unitDetails?.totalOccupiedDesks) *
+              100
+            ).toFixed(0)}
             title={"Occupancy %"}
             description={`Last Month : Apr-25`}
           />
           <DataCard
-            data={(unitDetails?.totalDesks - unitDetails?.totalOccupiedDesks)}
+            data={unitDetails?.totalOccupiedDesks - unitDetails?.totalDesks }
             title={"Free Desks"}
             // description={`Last Month : ${new Date().toLocaleString("default", {
             //   month: "short",
@@ -270,7 +211,9 @@ const ViewAvailability = () => {
       {/* 4 cards section end */}
 
       <WidgetSection
-        title={`occupancy details of ${formatUnitDisplay(floorParam)} ${locationParam}`}
+        title={`occupancy details of ${formatUnitDisplay(
+          floorParam
+        )} ${locationParam}`}
         border
         TitleAmount={`TOTAL OCCUPIED : ${totalOccupied} `}
       >
@@ -285,9 +228,10 @@ const ViewAvailability = () => {
             client: data.client || "",
             occupiedDesks: data.occupiedDesks || "",
             occupancyPercent:
-              ((data.occupiedDesks / unitDetails?.totalOccupiedDesks) * 100).toFixed(
-                0
-              ) || "",
+              (
+                (data.occupiedDesks / unitDetails?.totalOccupiedDesks) *
+                100
+              ).toFixed(0) || "",
             memberDetails: data.memberDetails, // Pass memberDetails to the data for each row
           }))} // Mapping through clientDetails
           renderExpandedRow={(row) => {

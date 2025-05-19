@@ -461,10 +461,21 @@ const bulkInsertUnits = async (req, res, next) => {
   }
 };
 
+const fetchBuildings = async (req, res, next) => {
+  try {
+    const company = req.company;
+    const buildings = await Building.find({ company }).lean().exec();
+    return res.status(200).json(buildings);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   addBuilding,
   addUnit,
   fetchUnits,
   bulkInsertUnits,
   uploadUnitImage,
+  fetchBuildings,
 };
