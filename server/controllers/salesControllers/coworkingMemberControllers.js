@@ -162,6 +162,7 @@ const getMembersByUnit = async (req, res, next) => {
 
     const members = await CoworkingClient.find({
       unit: unitId,
+      isActive: true,
       company,
     }).populate({
       path: "unit",
@@ -175,12 +176,14 @@ const getMembersByUnit = async (req, res, next) => {
     let totalOccupiedDesks = 0;
 
     const clientDetails = members.map((member) => {
-      const desks = member.openDesks + member.cabinDesks;
+      const desks = member.totalDesks;
+
       totalOccupiedDesks += desks;
       return {
         client: member.clientName,
         occupiedDesks: desks,
-        memberDetails: member.clientName === "WoNo" ? memberDetails : fallbackMembers,
+        memberDetails:
+          member.clientName === "WoNo" ? memberDetails : fallbackMembers,
       };
     });
 
