@@ -15,12 +15,9 @@ import {
   sourcingChannelsOptions,
   clientGenderData,
   clientGenderPieChartOptions,
-  locationPieChartData,
-  locationPieChartOptions,
   companyTableColumns,
   formattedCompanyTableData,
   upcomingBirthdaysColumns,
-  upcomingBirthdays,
 } from "./SalesData/SalesData";
 import { useNavigate } from "react-router-dom";
 import ParentRevenue from "./ParentRevenue";
@@ -232,12 +229,12 @@ const SalesDashboard = () => {
     descriptionData: [
       {
         title: "FY 2024-25",
-        value: `INR ${(inrFormat(totalValue) || 0)}`,
+        value: `INR ${inrFormat(totalValue) || 0}`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
         title: "March 2025",
-        value: `INR ${(inrFormat(finalRevenueGraph[11])) || 0}`,
+        value: `INR ${inrFormat(finalRevenueGraph[11]) || 0}`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
@@ -259,31 +256,34 @@ const SalesDashboard = () => {
   };
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
 
-  const totalOccupiedSeats = clientsData.reduce((sum,item)=>((item.totalDesks || 0) + sum),0)
-  console.log(totalOccupiedSeats)
-  
+  const totalOccupiedSeats = clientsData.reduce(
+    (sum, item) => (item.totalDesks || 0) + sum,
+    0
+  );
+
   const keyStatsData = {
     cardTitle: "KEY STATS",
     descriptionData: [
       {
         title: "Opening Desks",
-        value: (totalCoWorkingSeats || 0),
+        value: totalCoWorkingSeats || 0,
         route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
       {
         title: "Occupied Desks",
-        value: ((totalOccupiedSeats) || 0),
+        value: totalOccupiedSeats || 0,
         route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
       {
         title: "Occupancy %",
-        value: ((totalOccupiedSeats/totalCoWorkingSeats)*100).toFixed(0) || 0,
+        value:
+          ((totalOccupiedSeats / totalCoWorkingSeats) * 100).toFixed(0) || 0,
         route:
           "/app/dashboard/sales-dashboard/co-working-seats/check-availability",
       },
       {
         title: "Current Free Desks",
-        value: (totalCoWorkingSeats - totalOccupiedSeats) || 0,
+        value: totalCoWorkingSeats - totalOccupiedSeats || 0,
         route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
       {
@@ -298,7 +298,7 @@ const SalesDashboard = () => {
     descriptionData: [
       {
         title: "Revenue",
-        value: `INR ${inrFormat(totalValue/12)}`,
+        value: `INR ${inrFormat(totalValue / 12)}`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
@@ -607,69 +607,118 @@ const SalesDashboard = () => {
   };
 
   //-----------------------------------------------Conversion of Sector-wise Pie-graph-----------------------------------------------------------//
-  const clientMemberBirthday = [
-    {
-      id: "1",
-      name: "Aarav Sharma",
-      birthday: "1990-04-20",
-      daysLeft: 6,
-      company: "Zomato",
-    },
-    {
-      id: "2",
-      name: "Priya Mehta",
-      birthday: "1988-05-02",
-      daysLeft: 18,
-      company: "Turtlemint",
-    },
-    {
-      id: "3",
-      name: "Rohan Verma",
-      birthday: "1992-04-14",
-      daysLeft: 0,
-      company: "Infuse",
-    },
-    {
-      id: "4",
-      name: "Sneha Kapoor",
-      birthday: "1995-04-25",
-      daysLeft: 11,
-      company: "Zimetrics",
-    },
-    {
-      id: "5",
-      name: "Vikram Joshi",
-      birthday: "1991-06-01",
-      daysLeft: 48,
-      company: "LanceSoft",
-    },
-    {
-      id: "6",
-      name: "Tanvi Nair",
-      birthday: "1993-04-18",
-      daysLeft: 4,
-      company: "91HR",
-    },
-    {
-      id: "7",
-      name: "Kunal Desai",
-      birthday: "1990-05-10",
-      daysLeft: 26,
-      company: "Zimetrics",
-    },
-    {
-      id: "8",
-      name: "Meera Iyer",
-      birthday: "1989-04-30",
-      daysLeft: 16,
-      company: "Turtlemint",
-    },
-  ];
 
-  const formattedClientMemberBirthday = clientMemberBirthday.map((client) => ({
+  function getUpcomingBirthdays(data) {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    let globalId = 1; // Global counter for IDs
+
+    return data.flatMap((company) => {
+      const { clientName: companyName, members } = company;
+
+      return members
+        .filter((member) => {
+          if (!member.dob) return false;
+
+          const dob = new Date(member.dob);
+          const thisYearBirthday = new Date(
+            currentYear,
+            dob.getMonth(),
+            dob.getDate()
+          );
+
+          const birthdayThisYear =
+            thisYearBirthday < today
+              ? new Date(currentYear + 1, dob.getMonth(), dob.getDate())
+              : thisYearBirthday;
+
+          const diffDays = Math.ceil(
+            (birthdayThisYear - today) / (1000 * 60 * 60 * 24)
+          );
+          return diffDays >= 0 && diffDays <= 7;
+        })
+        .map((member) => {
+          const dob = new Date(member.dob);
+          const birthdayThisYear = new Date(
+            currentYear,
+            dob.getMonth(),
+            dob.getDate()
+          );
+          const finalBirthday =
+            birthdayThisYear < today
+              ? new Date(currentYear + 1, dob.getMonth(), dob.getDate())
+              : birthdayThisYear;
+
+          const daysLeft = Math.ceil(
+            (finalBirthday - today) / (1000 * 60 * 60 * 24)
+          );
+
+          return {
+            id: globalId++,
+            name: member.employeeName,
+            birthday: dob.toISOString().split("T")[0],
+            daysLeft,
+            company: companyName,
+          };
+        });
+    });
+  }
+  const upcomingBirthdays = getUpcomingBirthdays(clientsData || []);
+  const formattedClientMemberBirthday = upcomingBirthdays.map((client) => ({
     ...client,
     birthday: dayjs(client.birthday).format("DD-MM-YYYY"),
   }));
+  //-----------------------------------------------Conversion of Sector-wise Pie-graph-----------------------------------------------------------//
+  //-----------------------------------------------Conversion of India-wise Pie-graph-----------------------------------------------------------//
+  function getLocationWiseData(data) {
+    const locationMap = {};
+  
+    // Step 1: Count companies per hoState
+    data.forEach((client) => {
+      const state = client.hoState || "Unknown";
+      if (!locationMap[state]) {
+        locationMap[state] = 0;
+      }
+      locationMap[state] += 1;
+    });
+  
+    const processed = [];
+    let othersCount = 0;
+  
+    // Step 2: Split into main locations and 'Others'
+    for (const [location, count] of Object.entries(locationMap)) {
+      if (count >= 2) {
+        processed.push({ label: location, value: count });
+      } else {
+        othersCount += count;
+      }
+    }
+  
+    if (othersCount > 0) {
+      processed.push({ label: "Others", value: othersCount });
+    }
+  
+    return processed;
+  }
+  
+  const locationWiseData = getLocationWiseData(clientsData);
+
+  const locationPieChartOptions = {
+    chart: {
+      type: "pie",
+      fontFamily: "Poppins-Regular",
+    },
+    labels: locationWiseData.map((item) => item.label),
+    tooltip: {
+      y: {
+        formatter: (val) => `${val} Companies`, // Show as count
+      },
+    },
+    legend: {
+      position: "right",
+    },
+  };
+  //-----------------------------------------------Conversion of India-wise Pie-graph-----------------------------------------------------------//
 
   const meetingsWidgets = [
     {
@@ -809,7 +858,7 @@ const SalesDashboard = () => {
         </WidgetSection>,
         <WidgetSection layout={1} title={"India-wise Members"} border>
           <PieChartMui
-            data={locationPieChartData}
+            data={locationWiseData}
             options={locationPieChartOptions}
           />
         </WidgetSection>,

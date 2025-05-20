@@ -2,9 +2,12 @@ import React from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
+import { useSelector } from "react-redux";
 
 const ClientMembers = () => {
   const navigate = useNavigate();
+  const clientsData = useSelector((state) => state.sales.clientsData);
+  console.log("FROM VIEW CLIENTS : ",clientsData.members)
 
   const viewEmployeeColumns = [
     { field: "srno", headerName: "SR No" },

@@ -376,6 +376,7 @@ const clientOccupancyPieData = processedClients.map((client) => ({
   sector: client.sector, // Keep sector field
 }));
 
+
 const clientOccupancyPieOptions = {
   chart: {
     type: "pie",
@@ -444,36 +445,8 @@ const clientGenderPieChartOptions = {
 
 // ✅ Group Clients by Sector
 // ✅ Group Companies by Location
-const locationMap = {};
 
-clientOccupancyData.forEach((client) => {
-  if (!locationMap[client.location]) {
-    locationMap[client.location] = 0;
-  }
-  locationMap[client.location] += 1; // Count companies per location
-});
 
-// ✅ Convert to Pie Chart Format
-const locationPieChartData = Object.keys(locationMap).map((location) => ({
-  label: location,
-  value: locationMap[location],
-}));
-
-const locationPieChartOptions = {
-  chart: {
-    type: "pie",
-    fontFamily: "Poppins-Regular",
-  },
-  labels: locationPieChartData.map((item) => item.label),
-  tooltip: {
-    y: {
-      formatter: (val) => `${val} Companies`, // Show as count
-    },
-  },
-  legend: {
-    position: "right",
-  },
-};
 
 // -----------------------Sector categories Pie Data End--------------------
 // -----------------------Recently Added Assets Start--------------------
@@ -505,37 +478,6 @@ const formattedCompanyTableData = clientOccupancyData.map((company) => ({
 
 // -----------------------Recently Added Assets End--------------------
 // -----------------------Client Members birthday Start--------------------
-const today = dayjs();
-const next30days = today.add(30, "days");
-
-const upcomingBirthdays = [];
-
-clientOccupancyData.forEach((company) => {
-  company.members.forEach((member) => {
-    let birthday = dayjs(member.dateOfBirth).year(today.year());
-
-    if (birthday.isBefore(today, "day")) {
-      birthday = birthday.add(1, "year");
-    }
-
-    const daysLeft = birthday.diff(today, "day");
-
-    if (birthday.isSameOrAfter(today) && birthday.isSameOrBefore(next30days)) {
-      upcomingBirthdays.push({
-        id: member.id,
-        name: member.empName,
-        birthday: member.dateOfBirth,
-        daysLeft: daysLeft,
-        company: company.client,
-      });
-    }
-  });
-});
-
-upcomingBirthdays.sort((a, b) =>
-  dayjs(a.dateOfBirth).diff(dayjs(b.dateOfBirth))
-);
-
 const upcomingBirthdaysColumns = [
   { id: "id", label: "Sr No" },
   { id: "name", label: "Employee Name" },
@@ -557,11 +499,8 @@ export {
   sectorPieChartData,
   clientGenderData,
   clientGenderPieChartOptions,
-  locationPieChartData,
-  locationPieChartOptions,
   companyTableColumns,
   formattedCompanyTableData,
-  upcomingBirthdays,
   upcomingBirthdaysColumns,
   financialYearMonths,
 };
