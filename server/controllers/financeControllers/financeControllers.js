@@ -8,7 +8,7 @@ const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const getIncomeAndExpanse = async (req, res, next) => {
   try {
     const company = req.company;
-    
+        
   } catch (error) {
     next(error);
   }
