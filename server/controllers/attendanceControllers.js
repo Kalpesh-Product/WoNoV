@@ -487,10 +487,31 @@ const correctAttendance = async (req, res, next) => {
       );
     }
 
-    const isNextDay = currentDate.getDate() - targetedDate.getDate() === 1;
-    if (!isNextDay) {
+    const isAllowed =
+      currentDate.getDate() - targetedDate.getDate() === 1 ||
+      currentDate.getDate() - targetedDate.getDate() === 0;
+
+    if (!isAllowed) {
       throw new CustomError(
-        "Correction request only for previous day is allowed",
+        "Correction request only for same or previous day is allowed",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (inTime && !foundDate.inTime) {
+      throw new CustomError(
+        "Clock in time isn't present to correct",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (outTime && !foundDate.outTime) {
+      throw new CustomError(
+        "Clock out time isn't present to correct",
         logPath,
         logAction,
         logSourceKey
@@ -526,7 +547,6 @@ const correctAttendance = async (req, res, next) => {
       createdAt: 1,
     });
 
-    console.log("update:", updatedAttendance);
     if (!updatedAttendance) {
       throw new CustomError(
         "Failed to correct the attendance",
