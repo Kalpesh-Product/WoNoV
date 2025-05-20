@@ -3,11 +3,12 @@ import { Outlet, useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
 import { useSelector } from "react-redux";
+import humanDate from "../../../../utils/humanDateForamt";
 
 const ClientMembers = () => {
   const navigate = useNavigate();
-  const clientsData = useSelector((state) => state.sales.clientsData);
-  console.log("FROM VIEW CLIENTS : ",clientsData.members)
+  const selectedClient = useSelector((state) => state.client.selectedClient);
+  console.log("ASKDJAHSJKDHA", selectedClient);
 
   const viewEmployeeColumns = [
     { field: "srno", headerName: "SR No" },
@@ -23,118 +24,57 @@ const ClientMembers = () => {
           }}
           onClick={() =>
             navigate(
-              `/app/dashboard/sales-dashboard/clients/view-clients/${params.data.clientID}/members/view-member/${params.data.memberID}`
+              `view-member/${params.data.employeeName}`,
+              { state: { memberDetails: params.data } }
             )
-          }>
+          }
+        >
           {params.value}
         </span>
       ),
     },
-    // { field: "Sr No", headerName: "Sr No" },
-    { field: "clientID", headerName: "Client ID" },
-    { field: "memberID", headerName: "Member ID" },
+    { field: "dob", headerName: "DOB" },
+    { field: "mobileNo", headerName: "Mobile No." },
     { field: "email", headerName: "Email", flex: 1 },
-    { field: "role", headerName: "Role", flex: 1 },
-    {
-      field: "status",
-      headerName: "Status",
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          Active: { backgroundColor: "#90EE90", color: "#006400" },
-          Inactive: { backgroundColor: "#D3D3D3", color: "#696969" },
-        };
+    // {
+    //   field: "status",
+    //   headerName: "Status",
+    //   cellRenderer: (params) => {
+    //     const statusColorMap = {
+    //       Active: { backgroundColor: "#90EE90", color: "#006400" },
+    //       Inactive: { backgroundColor: "#D3D3D3", color: "#696969" },
+    //     };
 
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return (
-          <Chip
-            label={params.value}
-            style={{
-              backgroundColor,
-              color,
-            }}
-          />
-        );
-      },
-    },
+    //     const { backgroundColor, color } = statusColorMap[params.value] || {
+    //       backgroundColor: "gray",
+    //       color: "white",
+    //     };
+    //     return (
+    //       <Chip
+    //         label={params.value}
+    //         style={{
+    //           backgroundColor,
+    //           color,
+    //         }}
+    //       />
+    //     );
+    //   },
+    // },
   ];
-
-  const rows = [
-    {
-      srno: "1",
-      employeeName: "Aiwinraj",
-      clientID: "CO001",
-      memberID: "MO001",
-      email: "aiwinraj.wono@gmail.com",
-      role: "Employee",
-      status: "Active",
-    },
-    {
-      srno: "2",
-      employeeName: "Allan",
-      clientID: "CO002",
-      memberID: "MO002",
-      email: "allan.wono@gmail.com",
-      role: "Employee",
-      status: "Active",
-    },
-    {
-      srno: "3",
-      employeeName: "Sankalp",
-      clientID: "CO003",
-      memberID: "MO003",
-      email: "sankalp.wono@gmail.com",
-      role: "Employee",
-      status: "Active",
-    },
-    {
-      srno: "4",
-      employeeName: "Priya",
-      clientID: "CO004",
-      memberID: "MO004",
-      email: "priya.wono@gmail.com",
-      role: "Employee",
-      status: "Active",
-    },
-    {
-      srno: "5",
-      employeeName: "Muskan",
-      clientID: "CO005",
-      memberID: "MO005",
-      email: "muskan.wono@gmail.com",
-      role: "Employee",
-      status: "Active",
-    },
-    {
-      srno: "6",
-      employeeName: "Kalpesh",
-      clientID: "CO006",
-      memberID: "MO006",
-      email: "kalpesh.wono@gmail.com",
-      role: "Employee",
-      status: "Active",
-    },
-    {
-      srno: "7",
-      employeeName: "Rohit",
-      clientID: "CO007",
-      memberID: "MO007",
-      email: "rohit.wono@gmail.com",
-      role: "Employee",
-      status: "Active",
-    },
-  ];
-  
-
   return (
     <div>
       <div className="w-full">
         <AgTable
+          key={selectedClient?.members.length}
           search={true}
           searchColumn="Email"
-          data={rows}
+          data={selectedClient?.members.map((item, index) => ({
+            srno: index + 1,
+            employeeName: item.employeeName,
+            dob: humanDate(item.dob),
+            mobileNo: item.mobileNo || 0,
+            email: item.email || "N/A",
+          }))}
           columns={viewEmployeeColumns}
         />
       </div>

@@ -256,7 +256,7 @@ const SalesDashboard = () => {
   };
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
 
-  const totalOccupiedSeats = clientsData.reduce(
+  const totalOccupiedSeats = clientsData.filter((item)=>item.isActive === true).reduce(
     (sum, item) => (item.totalDesks || 0) + sum,
     0
   );
