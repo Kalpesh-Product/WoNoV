@@ -530,11 +530,11 @@ const HistoricalPnl = () => {
   const incomeExpenseData = [
     {
       name: "Income",
-      data: [0, 0, 0, 0, 0, 0], // in ₹
+      data: [25174680, 31929380, 31929380], // in ₹
     },
     {
       name: "Expense",
-      data: [0, 0, 0, 0, 0, 0], // in ₹
+      data: [24168780, 33899540, 33899540], // in ₹
     },
   ];
 
@@ -569,7 +569,6 @@ const HistoricalPnl = () => {
     },
     xaxis: {
       categories: [
-        "2019 - 20",
         "2020 - 21",
         "2021 - 22",
         "2022 - 23",
