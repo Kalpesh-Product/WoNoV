@@ -4,6 +4,7 @@ const kraKpaRole = require("../../models/tasks/kraKpaRole");
 const kraKpaTask = require("../../models/tasks/kraKpaTask");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
+const { all } = require("../../routes/tasksRoutes");
 
 const createRoleBasedTask = async (req, res, next) => {
   const { user, ip, company } = req;
@@ -372,14 +373,22 @@ const getMyKraKpaTasks = async (req, res, next) => {
       select: "roleTitle",
     });
 
+    console.log("foundUser", foundUser.role);
     if (!foundUser) {
       return res.status(400).json({ message: "User not found" });
     }
 
+    const matchingRoles = await kraKpaRole
+      .find({
+        role: { $in: foundUser.role },
+        company: company,
+      })
+      .select("_id");
+
     const tasks = await kraKpaTask
       .find({
-        company,
-        department: { $in: foundUser.departments },
+        company: company,
+        task: { $in: matchingRoles.map((role) => role._id) },
       })
       .populate({
         path: "task",
@@ -394,9 +403,6 @@ const getMyKraKpaTasks = async (req, res, next) => {
 
     const transformedTasks = tasks
       .filter((task) => {
-        console.log(
-          task.assignedTo._id.toString() === foundUser._id.toString()
-        );
         return (
           task.assignedTo._id.toString() === foundUser._id.toString() &&
           task.task.taskType === type
@@ -424,6 +430,8 @@ const getMyKraKpaTasks = async (req, res, next) => {
 
     const individualTasks = foundUser?.kraKpa || [];
     const allTasks = [...transformedTasks, ...individualTasks];
+
+    console.log("All tasks", allTasks.length);
 
     return res.status(200).json(allTasks);
   } catch (error) {

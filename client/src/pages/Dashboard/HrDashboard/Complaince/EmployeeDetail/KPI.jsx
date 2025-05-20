@@ -6,10 +6,14 @@ import PrimaryButton from "../../../../../components/PrimaryButton";
 import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../../components/DetalisFormatted";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
+import { useParams } from "react-router-dom";
 
 const KPI = () => {
   const name = localStorage.getItem("employeeName") || "Employee";
-
+    const axios = useAxiosPrivate();
+    const { id } = useParams();
   const [modalOpen, setModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewKPI, setViewKPI] = useState(null);
@@ -59,6 +63,18 @@ const KPI = () => {
   );
 
 
+    const { data: kpa,isLoading} = useQuery({
+      queryKey: ["kpa"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(`/api/tasks/get-tasks/?empId=${id}&type=KPA`);
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response.data.message);
+        }
+      },
+    });
+
   const handleAddKPI = () => {
     if (newKPI.trim()) {
       const newEntry = {
@@ -84,7 +100,7 @@ const KPI = () => {
       valueGetter: (params) => params.node.rowIndex + 1,
       width: 100,
     },
-    { field: "kpi", headerName: "KPIs", flex: 1 },
+    { field: "description", headerName: "KPAs", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -107,10 +123,10 @@ const KPI = () => {
       <div>
         <AgTable
           search={true}
-          buttonTitle="Add KPI"
-          searchColumn="KPIs"
-          tableTitle={`${name}'s KPI List`}
-          data={rows}
+          buttonTitle="Add KPA"
+          searchColumn="KPAs"
+          tableTitle={`${name}'s KPA List`}
+          data={kpa}
           columns={kpiColumn}
           handleClick={() => setModalOpen(true)}
         />
@@ -120,11 +136,11 @@ const KPI = () => {
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Add New KPI"
+        title="Add New KPA"
       >
         <div>
           <TextField
-            label="KPI Description"
+            label="KPA Description"
             fullWidth
             value={newKPI}
             onChange={(e) => setNewKPI(e.target.value)}
