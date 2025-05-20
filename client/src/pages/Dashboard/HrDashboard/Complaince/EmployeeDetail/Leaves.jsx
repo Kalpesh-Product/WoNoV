@@ -24,7 +24,7 @@ const Leaves = () => {
       defaultValues: {
         fromDate: null,
         toDate: null,
-        leavetype:"",
+        leaveType:"",
         leavePeriod:null,
         hours:null,
         description:""
@@ -47,7 +47,7 @@ const Leaves = () => {
 
    const { mutate: correctionPost, isPending: correctionPending } = useMutation({
       mutationFn: async (data) => {
-        const response = await axios.patch("/api/attendance/correct-attendance", {
+        const response = await axios.post("/api/leaves/request-leave", {
           ...data,
           empId: id,
         });
@@ -56,7 +56,7 @@ const Leaves = () => {
       onSuccess: function (data) {
         setOpenModal(false);
         toast.success(data.message);
-        queryClient.invalidateQueries({ queryKey: ["attendance"] });
+        queryClient.invalidateQueries({ queryKey: ["leaves"] });
         reset();
       },
       onError: function (error) {
@@ -146,9 +146,6 @@ const Leaves = () => {
   //     color: "#29B6F6", // Blue for remaining allocation
   //   },
   // ];
-
-
-  
 
   const leaveData = [
     { type: "Sick Leave", allocated: 12, taken: 12 },
@@ -335,7 +332,7 @@ const Leaves = () => {
                   )}
                 />
                 <Controller
-                    name="Leavetype"
+                    name="leaveType"
                                   control={control}
                                   defaultValue=""
                                   rules={{ required: "Leavetype is required" }}
@@ -344,7 +341,7 @@ const Leaves = () => {
                                       {...field}
                                       fullWidth
                                       select
-                                      label="Leavetype"
+                                      label="Leave type"
                                       size="small"
                                     >
                                       {leaveType.map((type) => (
@@ -356,7 +353,7 @@ const Leaves = () => {
                     )}
                 />
                 <Controller
-                    name="LeavePeriod"
+                    name="leavePeriod"
                                   control={control}
                                   defaultValue=""
                                   rules={{ required: "LeavePeriod is required" }}
@@ -365,7 +362,7 @@ const Leaves = () => {
                                       {...field}
                                       fullWidth
                                       select
-                                      label="LeavePeriod"
+                                      label="Leave period"
                                       size="small"
                                     >
                                       {leavePeriod.map((period) => (

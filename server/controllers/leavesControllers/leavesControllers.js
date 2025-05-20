@@ -55,8 +55,17 @@ const requestLeave = async (req, res, next) => {
       );
     }
 
+    console.log("Leave type", leaveType);
+    console.log("start date", startDate);
+    console.log("end Date", endDate);
+    console.log("Curr Date", currDate);
+
     // Ensure the leave starts in the future
-    if (startDate < currDate) {
+    if (
+      leaveType === "Privileged" &&
+      (startDate.getDate() < currDate.getDate() ||
+        endDate.getDate() < currDate.getDate())
+    ) {
       throw new CustomError(
         "Please select future date",
         logPath,
@@ -66,12 +75,28 @@ const requestLeave = async (req, res, next) => {
     }
 
     //Check the leave period and no. of leaves taken are correct
-    const days = endDate.getDate() - startDate.getDate();
-    const period = days < 1 ? "Partial" : days === 1 ? "Single" : "Multiple";
+    const isSameDay = endDate.getDate() === startDate.getDate();
+    const workingHours = 9;
+
+    if (!isSameDay && hours < workingHours) {
+      throw new CustomError(
+        "Selected date and hours is inappropriate",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const period =
+      Number(hours) < Number(workingHours)
+        ? "Partial"
+        : Number(hours) === Number(workingHours)
+        ? "Single"
+        : "Multiple";
 
     if (leavePeriod !== period) {
       throw new CustomError(
-        "Leave period and number of leaves doesn't match",
+        "Leave period and number of hours doesn't match",
         logPath,
         logAction,
         logSourceKey
@@ -90,23 +115,49 @@ const requestLeave = async (req, res, next) => {
     // Check if the user has already taken leaves that exceed the granted limit
     const leaves = await Leave.find({ takenBy: foundUser._id });
     if (leaves) {
-      const singleLeaves = leaves.filter(
-        (leave) =>
-          (leave.leavePeriod === "Single" && leave.leaveType === leaveType) ||
-          leave.leaveType === "Abrupt"
-      );
+      const singleLeaves = leaves.filter((leave) => {
+        return leave.leavePeriod === "Single" && leave.leaveType === leaveType;
+      });
       const singleLeaveHours = singleLeaves.length * 9;
 
       const partialLeaveHours = leaves
-        .filter((leave) => leave.leavePeriod === "Partial")
+        .filter((leave) => {
+          return (
+            leave.leavePeriod === "Partial" && leave.leaveType === leaveType
+          );
+        })
+        .reduce((acc, leave) => acc + leave.hours, 0);
+
+      const multipleLeaveHours = leaves
+        .filter(
+          (leave) =>
+            leave.leavePeriod === "Multiple" && leave.leaveType === leaveType
+        )
+        .reduce((acc, leave) => acc + leave.hours, 0);
+
+      const abruptLeaveHours = leaves
+        .filter((leave) => leave.leaveType === "Abrupt")
         .reduce((acc, leave) => acc + leave.hours, 0);
 
       const grantedLeaves = foundUser.employeeType.leavesCount.find((leave) => {
         return leave.leaveType.toLowerCase() === leaveType.toLowerCase();
       });
 
+      // Calculated the number of leaves by no of working hours
       const grantedLeaveHours = grantedLeaves ? grantedLeaves.count * 9 : 0;
-      const takenLeaveHours = singleLeaveHours + partialLeaveHours;
+      let takenLeaveHours =
+        singleLeaveHours + partialLeaveHours + multipleLeaveHours;
+
+      if (leaveType === "Privileged") {
+        takenLeaveHours += abruptLeaveHours;
+      }
+
+      // console.log("single", singleLeaveHours);
+      // console.log("partial", partialLeaveHours);
+      // console.log("multiple", multipleLeaveHours);
+      // console.log("abrupt", abruptLeaveHours);
+      // console.log("takenLeaveHours", takenLeaveHours);
+      // console.log("grantedLeaveHours", grantedLeaveHours);
 
       if (takenLeaveHours > grantedLeaveHours) {
         throw new CustomError(
