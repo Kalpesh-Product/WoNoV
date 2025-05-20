@@ -530,11 +530,11 @@ const HistoricalPnl = () => {
   const incomeExpenseData = [
     {
       name: "Income",
-      data: [0, 0, 0, 0, 0, 0], // in ₹
+      data: [12500000, 13800000, 14800000, 16000000, 18500000, 21000000], // in ₹
     },
     {
       name: "Expense",
-      data: [0, 0, 0, 0, 0, 0], // in ₹
+      data: [7500000, 8200000, 8900000, 10200000, 12000000, 15000000], // in ₹
     },
   ];
 
@@ -635,21 +635,21 @@ const HistoricalPnl = () => {
               headerName: "Total Profit / Loss (INR)",
             },
           ]}
-          // data={selectedMonthData.domains.map((domain, index) => ({
-          //   id: index,
-          //   name: domain.name,
-          //   totalIncome: inrFormat(domain.totalIncome),
-          //   totalExpense: inrFormat(domain.totalExpense),
-          //   totalProfitLoss: inrFormat(domain.totalProfitLoss),
-          //   clients: domain.clients.map((client, idx) => ({
-          //     ...client,
-          //     income: inrFormat(client.income),
-          //     expense: inrFormat(client.expense),
-          //     profitLoss: inrFormat(client.profitLoss),
-          //     srNo: idx + 1, // Adding Sr No field for each client
-          //   })),
-          // }))}
-          data={[]}
+          data={selectedMonthData.domains.map((domain, index) => ({
+            id: index,
+            name: domain.name,
+            totalIncome: inrFormat(domain.totalIncome),
+            totalExpense: inrFormat(domain.totalExpense),
+            totalProfitLoss: inrFormat(domain.totalProfitLoss),
+            clients: domain.clients.map((client, idx) => ({
+              ...client,
+              income: inrFormat(client.income),
+              expense: inrFormat(client.expense),
+              profitLoss: inrFormat(client.profitLoss),
+              srNo: idx + 1, // Adding Sr No field for each client
+            })),
+          }))}
+          // data={[]}
           renderExpandedRow={(row) => {
             if (!row?.clients || !Array.isArray(row.clients)) {
               return <div>No client details available</div>; // Fallback message if no data

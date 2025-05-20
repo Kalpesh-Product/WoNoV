@@ -400,7 +400,7 @@ const SalesDashboard = () => {
     },
     yaxis: {
       title: { text: "Lead Count" },
-      tickAmount: 10,
+      tickAmount: 5,
     },
     legend: { position: "top" },
     dataLabels: { enabled: true },
@@ -903,7 +903,7 @@ const SalesDashboard = () => {
             columns={upcomingBirthdaysColumns}
             rows={formattedClientMemberBirthday}
             rowKey="id"
-            rowsToDisplay={10}
+            rowsToDisplay={40}
             scroll={true}
             className="h-full"
           />

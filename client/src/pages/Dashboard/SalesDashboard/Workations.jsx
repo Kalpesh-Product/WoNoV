@@ -215,15 +215,9 @@ const Workations = () => {
       >
         <NormalBarGraph data={series} options={options} height={400} />
       </WidgetSection>
-
-      <WidgetSection
-        border
-        title={"Monthly Revenue with Client Details"}
-        padding
-        TitleAmount={`INR ${inrFormat(totalActual)}`}
-      >
         <MonthWiseAgTable
           financialData={tableData}
+          title={"Monthly Revenue with Client Details"}
           passedColumns={[
             { headerName: "Sr No", field: "id", flex: 1 },
             { headerName: "Client Name", field: "clientName", flex: 1 },
@@ -258,8 +252,7 @@ const Workations = () => {
             { headerName: "Status", field: "status", flex: 1, pinned : "right" },
           ]}
         />
-   
-      </WidgetSection>
+
     </div>
   );
 };

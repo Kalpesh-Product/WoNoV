@@ -89,31 +89,35 @@ const CoWorking = () => {
   };
   const totalActual = coWorkingData.reduce((sum, c) => sum + c.totalRevenue, 0);
 
-  const tableData = isCoWorkingLoading ? [] : coWorkingData.map((monthData, index) => {
-    const totalRevenue = monthData?.clients?.reduce(
-      (sum, c) => sum + c.revenue,
-      0
-    );
-    return {
-      id: index,
-      month: monthData.month,
-      acutal: `INR ${totalRevenue}`,
-      revenue: monthData?.clients?.map((client, i) => ({
-        id: i + 1,
-        clientName: client.clientName,
-        channel: client.channel,
-        noOfDesks: client.noOfDesks,
-        deskRate: client.deskRate,
-        revenue: `${client.revenue.toLocaleString()}`,
-        totalTerm: client.totalTerm,
-        rentDate: dayjs(client.rentDate).format("DD-MM-YYYY"),
-        rentStatus: client.rentStatus,
-        pastDueDate: dayjs(client.pastDueDate).format("DD-MM-YYYY"),
-        annualIncrement: client.annualIncrement,
-        nextIncrementDate: dayjs(client.nextIncrementDate).format("DD-MM-YYYY"),
-      })),
-    };
-  });
+  const tableData = isCoWorkingLoading
+    ? []
+    : coWorkingData.map((monthData, index) => {
+        const totalRevenue = monthData?.clients?.reduce(
+          (sum, c) => sum + c.revenue,
+          0
+        );
+        return {
+          id: index,
+          month: monthData.month,
+          acutal: `INR ${totalRevenue}`,
+          revenue: monthData?.clients?.map((client, i) => ({
+            id: i + 1,
+            clientName: client.clientName,
+            channel: client.channel,
+            noOfDesks: client.noOfDesks,
+            deskRate: client.deskRate,
+            revenue: `${client.revenue.toLocaleString()}`,
+            totalTerm: client.totalTerm,
+            rentDate: dayjs(client.rentDate).format("DD-MM-YYYY"),
+            rentStatus: client.rentStatus,
+            pastDueDate: dayjs(client.pastDueDate).format("DD-MM-YYYY"),
+            annualIncrement: client.annualIncrement,
+            nextIncrementDate: dayjs(client.nextIncrementDate).format(
+              "DD-MM-YYYY"
+            ),
+          })),
+        };
+      });
   return (
     <div className="flex flex-col gap-4">
       {!isCoWorkingLoading ? (
@@ -130,36 +134,30 @@ const CoWorking = () => {
       )}
 
       {!isCoWorkingLoading ? (
-        <WidgetSection
-          border
+        <MonthWiseAgTable
+          financialData={tableData}
           title={"MONTHLY REVENUE WITH CLIENT DETAILS"}
-          padding
-          TitleAmount={`INR ${inrFormat(totalActual)}`}
-        >
-          <MonthWiseAgTable
-            financialData={tableData}
-            passedColumns={[
-              { headerName: "Sr No", field: "id", width: 100 },
-              { headerName: "Client Name", field: "clientName", width: 350 },
-              { headerName: "Channel", field: "channel" },
-              { headerName: "Revenue (INR)", field: "revenue" },
-              { headerName: "No. of Desks", field: "noOfDesks" },
-              { headerName: "Desk Rate", field: "deskRate" },
-              { headerName: "Total Term", field: "totalTerm" },
-              { headerName: "Rent Date", field: "rentDate" },
-              { headerName: "Rent Status", field: "rentStatus" },
-              { headerName: "Past Due Date", field: "pastDueDate" },
-              {
-                headerName: "Annual Increment (%)",
-                field: "annualIncrement",
-              },
-              {
-                headerName: "Next Increment Date",
-                field: "nextIncrementDate",
-              },
-            ]}
-          />
-        </WidgetSection>
+          passedColumns={[
+            { headerName: "Sr No", field: "id", width: 100 },
+            { headerName: "Client Name", field: "clientName", width: 350 },
+            { headerName: "Channel", field: "channel" },
+            { headerName: "Revenue (INR)", field: "revenue" },
+            { headerName: "No. of Desks", field: "noOfDesks" },
+            { headerName: "Desk Rate", field: "deskRate" },
+            { headerName: "Total Term", field: "totalTerm" },
+            { headerName: "Rent Date", field: "rentDate" },
+            { headerName: "Rent Status", field: "rentStatus" },
+            { headerName: "Past Due Date", field: "pastDueDate" },
+            {
+              headerName: "Annual Increment (%)",
+              field: "annualIncrement",
+            },
+            {
+              headerName: "Next Increment Date",
+              field: "nextIncrementDate",
+            },
+          ]}
+        />
       ) : (
         <div className="h-72 flex justify-center items-center">
           <CircularProgress />

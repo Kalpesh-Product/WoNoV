@@ -337,11 +337,14 @@ const AltRevenues = () => {
   const totalActual = alternateRevenue.reduce(
     (sum, month) =>
       sum +
-      month.revenue.reduce((monthSum, client) => monthSum + client.invoiceAmount, 0),
+      month.revenue.reduce(
+        (monthSum, client) => monthSum + client.invoiceAmount,
+        0
+      ),
     0
   );
 
-  console.log("TOTAL ACTUAL : ", totalActual)
+  console.log("TOTAL ACTUAL : ", totalActual);
 
   const totalProjected = alternateRevenue.reduce(
     (sum, month) => sum + (month.projected ?? 0),
@@ -389,14 +392,11 @@ const AltRevenues = () => {
       )}
 
       {!isLoadingAlternateRevenue ? (
-        <WidgetSection
-          border
+        <MonthWiseAgTable
           title={"Monthly Revenue with Source Details"}
-          padding
-          TitleAmount={`INR ${inrFormat(totalActual)}`}
-        >
-          <MonthWiseAgTable financialData={alternateRevenue} noFilter />
-        </WidgetSection>
+          financialData={alternateRevenue}
+          noFilter
+        />
       ) : (
         <div className="flex h-72 justify-center items-center">
           <CircularProgress />

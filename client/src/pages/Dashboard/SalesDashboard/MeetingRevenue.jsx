@@ -134,14 +134,10 @@ const MeetingRevenue = () => {
         </div>
       )}
       {!isMeetingsLoading ? (
-        <WidgetSection
-          border
-          title={"Monthly Revenue with Client Details"}
-          padding
-          TitleAmount={`INR ${inrFormat(totalActual)}`}
-        >
+
           <MonthWiseAgTable
             financialData={tableData}
+            title={"Monthly Revenue with Client Details"}
             passedColumns={[
               { headerName: "Sr No", field: "id" , width : 100 },
               { headerName: "Particulars", field: "particulars", width : 200 },
@@ -181,7 +177,7 @@ const MeetingRevenue = () => {
               { headerName: "Remarks", field: "remarks" },
             ]}
           />
-        </WidgetSection>
+
       ) : (
         <div className="flex h-72 justify-center items-center">
           <CircularProgress />

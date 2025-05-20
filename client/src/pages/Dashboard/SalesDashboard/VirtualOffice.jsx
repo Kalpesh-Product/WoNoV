@@ -44,7 +44,7 @@ const VirtualOffice = () => {
 
       if (!monthlyMap.has(monthKey)) {
         monthlyMap.set(monthKey, {
-          id : index + 1,
+          id: index + 1,
           month: monthKey,
           actual: 0,
           revenue: [],
@@ -75,7 +75,7 @@ const VirtualOffice = () => {
     return transformRevenues(virtualOfficeRevenue);
   }, [virtualOfficeRevenue, isLoadingVirtualOfficeRevenue]);
 
-  console.log("Transformded revene : ", transformRevenuesData)
+  console.log("Transformded revene : ", transformRevenuesData);
 
   const graphNumbers = transformRevenuesData?.map((item) => {
     // Remove commas and convert the value to a number
@@ -164,44 +164,16 @@ const VirtualOffice = () => {
       )}
 
       {!isLoadingVirtualOfficeRevenue ? (
-        <WidgetSection
-          border
+        <MonthWiseAgTable
           title={"Monthly Revenue with Client Details"}
-          padding
-          TitleAmount={`INR ${inrFormat(totalActual)}`}
-        >
-          <MonthWiseAgTable financialData={transformRevenuesData} passedColumns={[
-                  { headerName: "Sr No", field: "id", flex: 1 },
-                  { headerName: "Client Name", field: "clientName", flex: 1 },
-                  { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
-                  { headerName: "Status", field: "status", flex: 1 },
-                ]}/>
-          {/* <CollapsibleTable
-            columns={[
-              { headerName: "Month", field: "month" },
-              { headerName: "Revenue (INR)", field: "actual" },
-            ]}
-            data={transformRevenuesData}
-            renderExpandedRow={(row) => (
-              <AgTable
-                data={row.clients.map((client, index) => {
-                  return {
-                    srNo: index + 1,
-                    ...client,
-                  };
-                })}
-                columns={[
-                  { headerName: "Sr No", field: "srNo", flex: 1 },
-                  { headerName: "Client Name", field: "clientName", flex: 1 },
-                  { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
-                  { headerName: "Status", field: "status", flex: 1 },
-                ]}
-                tableHeight={300}
-                hideFilter
-              />
-            )}
-          /> */}
-        </WidgetSection>
+          financialData={transformRevenuesData}
+          passedColumns={[
+            { headerName: "Sr No", field: "id", flex: 1 },
+            { headerName: "Client Name", field: "clientName", flex: 1 },
+            { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
+            { headerName: "Status", field: "status", flex: 1 },
+          ]}
+        />
       ) : (
         <Skeleton height={"500px"} width={"100%"} />
       )}
