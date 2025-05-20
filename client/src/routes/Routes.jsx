@@ -449,8 +449,16 @@ export const routes = createBrowserRouter([
                         element: <MixBag />,
                       },
                       {
+                        path: "mix-bag/directors-company-KYC",
+                        element: <DirectorsCompany />,
+                      },
+                      {
                         path: "directors-company-KYC",
                         element: <DirectorsCompany />,
+                      },
+                      {
+                        path: "mix-bag/directors-company-KYC/:id",
+                        element: <DirectorData />,
                       },
                       {
                         path: "directors-company-KYC/:id",

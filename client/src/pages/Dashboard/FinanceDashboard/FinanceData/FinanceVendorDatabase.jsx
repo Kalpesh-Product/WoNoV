@@ -112,6 +112,7 @@ const FinanceVendorDatabase = () => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned : "right",
       cellRenderer: (params) => (
         <>
           <div className="flex gap-2 items-center">

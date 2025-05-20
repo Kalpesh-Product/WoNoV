@@ -11,7 +11,7 @@ const MixBag = () => {
   const routes = [
     {
       title: "Directors & Company KYC",
-      route: "/app/dashboard/finance-dashboard/directors-company-KYC",
+      route: "/app/dashboard/finance-dashboard/mix-bag/directors-company-KYC",
     },
     {
       title: "Compliance Documents",
@@ -47,11 +47,13 @@ const MixBag = () => {
           }}
         />
       </div>
-      <WidgetSection key={filteredRoutes.length} layout={3} padding>
-        {filteredRoutes.map((route, index) => {
-          return <Card key={index} title={route.title} route={route.route} />;
-        })}
-      </WidgetSection>
+      <div className="h-[50vh] uppercase">
+        <WidgetSection key={filteredRoutes.length} layout={2} padding>
+          {filteredRoutes.map((route, index) => {
+            return <Card fullHeight key={index} title={route.title} route={route.route} />;
+          })}
+        </WidgetSection>
+      </div>
     </div>
   );
 };

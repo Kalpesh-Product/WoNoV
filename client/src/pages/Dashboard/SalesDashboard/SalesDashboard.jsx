@@ -47,24 +47,42 @@ const SalesDashboard = () => {
   const dispatch = useDispatch();
 
   //-----------------------------------------------------Graph------------------------------------------------------//
+  function aggregateMonthlyRevenue(data, year = "2024-25") {
+    const monthsInYear = 12;
+    const result = new Array(monthsInYear).fill(0);
+
+    data.forEach((item) => {
+      const revenueArray = item.data[year];
+      if (revenueArray) {
+        for (let i = 0; i < monthsInYear; i++) {
+          result[i] += revenueArray[i] || 0;
+        }
+      }
+    });
+
+    return result;
+  }
+
+  const { data: totalRevenue = [], isLoading: isTotalLoading } = useQuery({
+    queryKey: ["totalRevenue"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/consolidated-revenue");
+        return response.data;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+  });
+
+  const finalRevenueGraph = aggregateMonthlyRevenue(totalRevenue);
+  const totalValue = finalRevenueGraph.reduce((sum, item) => item + sum, 0);
+
   const incomeExpenseData = [
     {
       name: "Expense",
       group: "FY 2024-25",
-      data: [
-        1123500, // Nov
-        1184200, // Oct
-        1347800, // Sep
-        1436500, // Mar
-        1489300, // Jun
-        1532100, // Dec
-        1598700, // Jan
-        1642900, // May
-        1695000, // Feb
-        1746800, // Jul
-        1791200, // Aug
-        1823400, // Apr
-      ],
+      data: finalRevenueGraph,
     },
   ];
   const incomeExpenseOptions = {
@@ -120,7 +138,7 @@ const SalesDashboard = () => {
     },
     yaxis: {
       min: 0,
-      max: 2000000,
+      max: 6000000,
       tickAmount: 4,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
@@ -205,63 +223,72 @@ const SalesDashboard = () => {
       0
     );
 
+  const totalSqft = unitsData
+    .filter((item) => item.isActive === true)
+    .reduce((sum, item) => (item.sqft || 0) + sum, 0);
+
   const RevenueData = {
     cardTitle: "REVENUE",
     descriptionData: [
       {
         title: "FY 2024-25",
-        value: "INR 2,09,00,000",
+        value: `INR ${(inrFormat(totalValue) || 0)}`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
         title: "March 2025",
-        value: "INR 18,23,400",
+        value: `INR ${(inrFormat(finalRevenueGraph[11])) || 0}`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
         title: "Closing Desks",
-        value: "589",
+        value: totalCoWorkingSeats || 0,
         route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
       {
         title: "Active Sq Ft",
-        value: "60,000",
+        value: inrFormat(totalSqft) || 0,
         route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
       {
         title: "Per Sq. Ft.",
-        value: "348",
+        value: inrFormat((totalValue || 0) / (totalSqft || 0)),
         route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
     ],
   };
+  //-----------------------------------------------For Data cards-----------------------------------------------------------//
+
+  const totalOccupiedSeats = clientsData.reduce((sum,item)=>((item.totalDesks || 0) + sum),0)
+  console.log(totalOccupiedSeats)
+  
   const keyStatsData = {
     cardTitle: "KEY STATS",
     descriptionData: [
       {
         title: "Opening Desks",
-        value: 589,
+        value: (totalCoWorkingSeats || 0),
         route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
       {
         title: "Occupied Desks",
-        value: 582,
+        value: ((totalOccupiedSeats) || 0),
         route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
       {
         title: "Occupancy %",
-        value: "98",
+        value: ((totalOccupiedSeats/totalCoWorkingSeats)*100).toFixed(0) || 0,
         route:
           "/app/dashboard/sales-dashboard/co-working-seats/check-availability",
       },
       {
         title: "Current Free Desks",
-        value: "7",
+        value: (totalCoWorkingSeats - totalOccupiedSeats) || 0,
         route: "/app/dashboard/sales-dashboard/co-working-seats",
       },
       {
         title: "Unique Clients",
-        value: "46",
+        value: clientsData.length || 0,
         route: "/app/dashboard/sales-dashboard/clients",
       },
     ],
@@ -271,7 +298,7 @@ const SalesDashboard = () => {
     descriptionData: [
       {
         title: "Revenue",
-        value: "INR 17,41,666",
+        value: `INR ${inrFormat(totalValue/12)}`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
@@ -648,13 +675,21 @@ const SalesDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <YearlyGraph
-          chartId={"bargraph-sales-dashboard"}
-          data={incomeExpenseData}
-          options={incomeExpenseOptions}
-          title={"BIZ Nest SALES DEPARTMENT REVENUES"}
-          titleAmount={`INR ${inrFormat("20900000")}`}
-        />,
+        <>
+          {!isTotalLoading ? (
+            <YearlyGraph
+              chartId={"bargraph-sales-dashboard"}
+              data={incomeExpenseData}
+              options={incomeExpenseOptions}
+              title={"BIZ Nest SALES DEPARTMENT REVENUES"}
+              titleAmount={`INR ${inrFormat(totalValue)}`}
+            />
+          ) : (
+            <div className="h-72 flex items-center justify-center">
+              <CircularProgress />
+            </div>
+          )}
+        </>,
       ],
     },
     {

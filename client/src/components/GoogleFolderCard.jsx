@@ -10,8 +10,8 @@ const GoogleFolderCard = ({ title, routeId, files }) => {
       className="rounded-xl p-2 px-4 flex items-center justify-between bg-borderGray text-black hover:bg-gray-200 cursor-pointer transition-all"
       onClick={() =>
         navigate(
-          `/app/dashboard/finance-dashboard/directors-company-KYC/${routeId}`,
-          { state: {title : title, files:files} }
+          `${routeId}`,
+          { state: {title : title, files:files}, replace:true }
         )
       }
     >
