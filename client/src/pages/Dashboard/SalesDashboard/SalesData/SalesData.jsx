@@ -376,7 +376,6 @@ const clientOccupancyPieData = processedClients.map((client) => ({
   sector: client.sector, // Keep sector field
 }));
 
-
 const clientOccupancyPieOptions = {
   chart: {
     type: "pie",
@@ -446,8 +445,6 @@ const clientGenderPieChartOptions = {
 // ✅ Group Clients by Sector
 // ✅ Group Companies by Location
 
-
-
 // -----------------------Sector categories Pie Data End--------------------
 // -----------------------Recently Added Assets Start--------------------
 
@@ -455,26 +452,21 @@ const calculateCompletedTime = (startDate) => {
   const start = dayjs(startDate);
   const today = dayjs();
   const totalMonths = today.diff(start, "month", true);
-  const years = totalMonths / 12;
 
-  return `${years.toFixed(1)} years`;
+  if (totalMonths < 1) {
+    const totalDays = today.diff(start, "day");
+    return `${totalDays} Days`;
+  } else if (totalMonths < 12) {
+    return `${Math.floor(totalMonths)} Months`;
+  } else {
+    const years = totalMonths / 12;
+    return `${years.toFixed(1)} Years`;
+  }
 };
 
-// ✅ Format Data for Table
-const companyTableColumns = [
-  { id: "id", label: "Sr No" },
-  { id: "company", label: "Company" },
-  { id: "startDate", label: "Date of Join" },
-  { id: "completedTime", label: "Completed Time" },
-];
 
-// ✅ Processed Table Data (Including Completed Time)
-const formattedCompanyTableData = clientOccupancyData.map((company) => ({
-  id: company.id,
-  company: company.client,
-  startDate: dayjs(company.startDate).format("DD-MM-YYYY"),
-  completedTime: calculateCompletedTime(company.startDate),
-}));
+
+// ✅ Format Data for Table
 
 // -----------------------Recently Added Assets End--------------------
 // -----------------------Client Members birthday Start--------------------
@@ -499,8 +491,7 @@ export {
   sectorPieChartData,
   clientGenderData,
   clientGenderPieChartOptions,
-  companyTableColumns,
-  formattedCompanyTableData,
   upcomingBirthdaysColumns,
+  calculateCompletedTime,
   financialYearMonths,
 };

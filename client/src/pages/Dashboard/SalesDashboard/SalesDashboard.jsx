@@ -15,9 +15,8 @@ import {
   sourcingChannelsOptions,
   clientGenderData,
   clientGenderPieChartOptions,
-  companyTableColumns,
-  formattedCompanyTableData,
   upcomingBirthdaysColumns,
+  calculateCompletedTime,
 } from "./SalesData/SalesData";
 import { useNavigate } from "react-router-dom";
 import ParentRevenue from "./ParentRevenue";
@@ -31,6 +30,7 @@ import { useSidebar } from "../../../context/SideBarContext";
 import FinanceCard from "../../../components/FinanceCard";
 import { YearCalendar } from "@mui/x-date-pickers";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import humanDate from "../../../utils/humanDateForamt";
 
 const SalesDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -607,6 +607,23 @@ const SalesDashboard = () => {
   };
 
   //-----------------------------------------------Conversion of Sector-wise Pie-graph-----------------------------------------------------------//
+  //-----------------------------------------------Client Anniversary-----------------------------------------------------------//
+  const companyTableColumns = [
+    { id: "id", label: "Sr No" },
+    { id: "company", label: "Company" },
+    { id: "startDate", label: "Date of Join" },
+    { id: "completedTime", label: "Completed Time" },
+  ];
+  
+  // ✅ Processed Table Data (Including Completed Time)
+  const formattedCompanyTableData = clientsData.map((company,index) => ({
+    id: index + 1,
+    company: company.clientName,
+    startDate: (humanDate(company.startDate)) || "18-10-2001",
+    completedTime: calculateCompletedTime(company.startDate ),
+  }));
+  //-----------------------------------------------Client Anniversary-----------------------------------------------------------//
+  //-----------------------------------------------Client Birthday-----------------------------------------------------------//
 
   function getUpcomingBirthdays(data) {
     const today = new Date();
@@ -668,6 +685,8 @@ const SalesDashboard = () => {
     ...client,
     birthday: dayjs(client.birthday).format("DD-MM-YYYY"),
   }));
+  //-----------------------------------------------Client Birthday-----------------------------------------------------------//
+
   //-----------------------------------------------Conversion of Sector-wise Pie-graph-----------------------------------------------------------//
   //-----------------------------------------------Conversion of India-wise Pie-graph-----------------------------------------------------------//
   function getLocationWiseData(data) {
@@ -873,7 +892,7 @@ const SalesDashboard = () => {
             columns={companyTableColumns}
             rows={formattedCompanyTableData}
             rowKey="id"
-            rowsToDisplay={10}
+            rowsToDisplay={40}
             scroll={true}
             className="h-full"
           />

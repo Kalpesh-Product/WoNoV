@@ -23,24 +23,18 @@ const CoWorking = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(`/api/sales/fetch-coworking-revenues`);
-        return response.data;
+        return Array.isArray(response.data) ? response.data : [];
       } catch (error) {
         throw new Error(error.response.data.message);
       }
     },
   });
-
-  console.log(
-    "ASDASDAIUDHAJSDHKAJSIUD",
-    coWorkingData.reduce((sum, c) => sum + c.totalRevenue, 0)
-  );
-
   const series = [
     {
       name: "Actual Revenue",
       group: "FY 2024-25",
       data: coWorkingData.map((item) =>
-        item.clients.reduce((sum, c) => sum + c.revenue, 0)
+        item.clients?.reduce((sum, c) => sum + c.revenue, 0)
       ),
     },
   ];
@@ -95,16 +89,16 @@ const CoWorking = () => {
   };
   const totalActual = coWorkingData.reduce((sum, c) => sum + c.totalRevenue, 0);
 
-  const tableData = coWorkingData.map((monthData, index) => {
-    const totalRevenue = monthData.clients.reduce(
+  const tableData = isCoWorkingLoading ? [] : coWorkingData.map((monthData, index) => {
+    const totalRevenue = monthData?.clients?.reduce(
       (sum, c) => sum + c.revenue,
       0
     );
     return {
       id: index,
       month: monthData.month,
-      acutal: `INR ${totalRevenue.toLocaleString()}`,
-      revenue: monthData.clients.map((client, i) => ({
+      acutal: `INR ${totalRevenue}`,
+      revenue: monthData?.clients?.map((client, i) => ({
         id: i + 1,
         clientName: client.clientName,
         channel: client.channel,
