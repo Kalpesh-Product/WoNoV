@@ -1,9 +1,10 @@
 import { Avatar, Button, Chip, TextField } from "@mui/material";
-import React, { useState } from "react";
+import React, { useLayoutEffect, useState } from "react";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
 
 const MemberDetails = () => {
   const { control, handleSubmit, reset } = useForm({
@@ -45,6 +46,9 @@ const MemberDetails = () => {
     },
   });
 
+  const location = useLocation();
+  const { memberDetails } = location.state;
+  console.log("TUND GUSADHASDLASIDUHAS", memberDetails);
   const [isEditing, setIsEditing] = useState(false);
 
   const handleEditToggle = () => {
@@ -79,22 +83,8 @@ const MemberDetails = () => {
             <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
               {/* Section:  Customer Details */}
               <div>
-                {/* <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Customer Details
-                  </span>
-                </div> */}
-
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {[
-                    "memberName",
-                    "memberDOB",
-                    "memberAddress",
-                    "memberDesignation",
-                    "memberAADHAR",
-                    // "employeeID",
-                    // "mobilePhone",
-                  ].map((fieldKey) => (
+                  {["dob", "email", "mobileNo"].map((fieldKey) => (
                     <div key={fieldKey}>
                       {isEditing ? (
                         <Controller
@@ -125,65 +115,7 @@ const MemberDetails = () => {
                           </div>
                           <div className="w-full">
                             <span className="text-gray-500">
-                              {control._defaultValues[fieldKey]}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Section: Company Details */}
-              <div>
-                {/* <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Company Details
-                  </span>
-                </div> */}
-
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {[
-                    "memberPAN",
-                    "memberGender",
-                    "memberPhoneNo",
-                    "memberEmailID",
-                    "memberMaritalStatus",
-                    // "jobTitle",
-                    // "jobDescription",
-                  ].map((fieldKey) => (
-                    <div key={fieldKey}>
-                      {isEditing ? (
-                        <Controller
-                          name={fieldKey}
-                          control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              fullWidth
-                            />
-                          )}
-                        />
-                      ) : (
-                        <div className="py-2 flex justify-between items-start gap-2">
-                          <div className="w-[100%] justify-start flex">
-                            <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </span>{" "}
-                          </div>
-                          <div className="">
-                            <span>:</span>
-                          </div>
-                          <div className="w-full">
-                            <span className="text-gray-500">
-                              {control._defaultValues[fieldKey]}
+                              {memberDetails[fieldKey]}
                             </span>
                           </div>
                         </div>
@@ -194,219 +126,6 @@ const MemberDetails = () => {
               </div>
 
               {/* Section: Policies*/}
-              {/* <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">Policies</span>
-                </div>
-
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {[
-                    "shift",
-                    "workSchedulePolicy",
-                    "attendanceSource",
-                    "leavePolicy",
-                    "holidayPolicy",
-                  ].map((fieldKey) => (
-                    <div key={fieldKey}>
-                      {isEditing ? (
-                        <Controller
-                          name={fieldKey}
-                          control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              fullWidth
-                            />
-                          )}
-                        />
-                      ) : (
-                        <div className="py-2 flex justify-between items-center gap-2">
-                          <div className="w-[100%] justify-start flex">
-                            <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </span>{" "}
-                          </div>
-                          <div className="">
-                            <span>:</span>
-                          </div>
-                          <div className="w-full">
-                            <span className="text-gray-500">
-                              {control._defaultValues[fieldKey]}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div> */}
-
-              {/* Section: KYC */}
-              {/* <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">KYC</span>
-                </div>
-
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {["aadharID", "pan", "pfAcNo"].map((fieldKey) => (
-                    <div key={fieldKey}>
-                      {isEditing ? (
-                        <Controller
-                          name={fieldKey}
-                          control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              fullWidth
-                            />
-                          )}
-                        />
-                      ) : (
-                        <div className="py-2 flex justify-between items-center gap-2">
-                          <div className="w-[100%] justify-start flex">
-                            <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </span>{" "}
-                          </div>
-                          <div className="">
-                            <span>:</span>
-                          </div>
-                          <div className="w-full">
-                            <span className="text-gray-500">
-                              {control._defaultValues[fieldKey]}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div> */}
-
-              {/* Section: Home Address Information*/}
-              {/* <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Home Address Information
-                  </span>
-                </div>
-
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {[
-                    "addressLine1",
-                    "addressLine2",
-                    "state",
-                    "city",
-                    "pinCode",
-                  ].map((fieldKey) => (
-                    <div key={fieldKey}>
-                      {isEditing ? (
-                        <Controller
-                          name={fieldKey}
-                          control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              fullWidth
-                            />
-                          )}
-                        />
-                      ) : (
-                        <div className="py-2 flex justify-between items-center gap-2">
-                          <div className="w-[100%] justify-start flex">
-                            <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </span>{" "}
-                          </div>
-                          <div className="">
-                            <span>:</span>
-                          </div>
-                          <div className="w-full">
-                            <span className="text-gray-500">
-                              {control._defaultValues[fieldKey]}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div> */}
-
-              {/* Section: Payroll Information */}
-              {/* <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Payroll Information
-                  </span>
-                </div>
-
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {[
-                    "includeInPayroll",
-                    "payrollBatch",
-                    "professionTaxExemption",
-                    "includePF",
-                    "pfContributionRate",
-                    "employeePF",
-                  ].map((fieldKey) => (
-                    <div key={fieldKey}>
-                      {isEditing ? (
-                        <Controller
-                          name={fieldKey}
-                          control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              fullWidth
-                            />
-                          )}
-                        />
-                      ) : (
-                        <div className="py-2 flex justify-between items-center gap-2">
-                          <div className="w-[100%] justify-start flex">
-                            <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </span>{" "}
-                          </div>
-                          <div className="">
-                            <span>:</span>
-                          </div>
-                          <div className="w-full">
-                            <span className="text-gray-500">
-                              {control._defaultValues[fieldKey]}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div> */}
             </div>
 
             <div className="flex items-center justify-center gap-2 py-4">

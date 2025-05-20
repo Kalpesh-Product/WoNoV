@@ -173,6 +173,7 @@ const ViewClients = () => {
                 createdAt: item.createdAt,
                 updatedAt: item.updatedAt,
                 occupiedImage: item.occupiedImage?.imageUrl,
+                members : item.members || []
               })),
             ]}
             columns={viewEmployeeColumns}

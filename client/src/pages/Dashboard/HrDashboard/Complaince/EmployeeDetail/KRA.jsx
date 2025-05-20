@@ -6,10 +6,14 @@ import PrimaryButton from "../../../../../components/PrimaryButton";
 import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../../components/DetalisFormatted";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
+import { useLocation, useParams } from "react-router-dom";
 
 const KRA = () => {
+   const axios = useAxiosPrivate();
+  const { id } = useParams();
   const name = localStorage.getItem("employeeName") || "Employee";
-
   const [modalOpen, setModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewKRA, setViewKRA] = useState(null);
@@ -57,6 +61,18 @@ const KRA = () => {
     }
   ]);
 
+    const { data: kra,isLoading} = useQuery({
+      queryKey: ["kra"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(`/api/tasks/get-tasks/?empId=${id}&type=KRA`);
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response.data.message);
+        }
+      },
+    });
+    
   const handleAddKRA = () => {
     if (newKRA.trim()) {
       const newEntry = {
@@ -86,7 +102,7 @@ const KRA = () => {
       valueGetter: (params) => params.node.rowIndex + 1,
       width: 100,
     },
-    { field: "kra", headerName: "KRAs", flex: 1 },
+    { field: "description", headerName: "task", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -111,7 +127,7 @@ const KRA = () => {
           buttonTitle="Add KRA"
           searchColumn="kra"
           tableTitle={`${name}'s KRA List`}
-          data={rows}
+          data={isLoading ? [] : kra}
           columns={kraColumn}
           handleClick={() => setModalOpen(true)}
         />

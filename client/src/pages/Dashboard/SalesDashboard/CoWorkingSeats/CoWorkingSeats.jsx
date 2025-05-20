@@ -15,6 +15,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ViewDetailsModal from "../../../../components/ViewDetailsModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable";
+import { useSelector } from "react-redux";
 
 // JSON data structure for coworking seats and client details
 const jsonData = {
@@ -276,7 +277,10 @@ const jsonData = {
   ],
 };
 
+
 const CoWorkingSeats = () => {
+  const clientsData = useSelector((state) => state.sales.clientsData);
+console.log(clientsData)
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const [location, setLocation] = useState({});
@@ -290,7 +294,7 @@ const CoWorkingSeats = () => {
 
   //---------------------------------------------------------API---------------------------------------------------------//
 
-  const { data: units, isPending: isUnitsPending } = useQuery({
+  const { data: units=[], isPending: isUnitsPending } = useQuery({
     queryKey: ["units"],
     queryFn: async () => {
       try {

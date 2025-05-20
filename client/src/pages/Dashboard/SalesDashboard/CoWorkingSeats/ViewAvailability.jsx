@@ -181,25 +181,26 @@ const ViewAvailability = () => {
       <div className=" flex flex-col gap-4">
         <WidgetSection layout={4} padding>
           <DataCard
-            data={unitDetails?.totalOccupiedDesks}
+            
+            data={unitDetails?.totalDesks}
             title={"Total Desks"}
             description={`Last Month : Apr-25`}
           />
           <DataCard
-            data={unitDetails?.totalDesks}
+            data={unitDetails?.totalOccupiedDesks}
             title={"Occupied Desks"}
             description={`Last Month : Apr-25`}
           />
           <DataCard
             data={(
-              (unitDetails?.totalDesks  / unitDetails?.totalOccupiedDesks) *
+              (unitDetails?.totalOccupiedDesks  / unitDetails?.totalDesks ) *
               100
             ).toFixed(0)}
             title={"Occupancy %"}
             description={`Last Month : Apr-25`}
           />
           <DataCard
-            data={unitDetails?.totalOccupiedDesks - unitDetails?.totalDesks }
+            data={unitDetails?.totalDesks  - unitDetails?.totalOccupiedDesks }
             title={"Free Desks"}
             // description={`Last Month : ${new Date().toLocaleString("default", {
             //   month: "short",
