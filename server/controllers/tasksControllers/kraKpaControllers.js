@@ -4,6 +4,7 @@ const kraKpaRole = require("../../models/tasks/kraKpaRole");
 const kraKpaTask = require("../../models/tasks/kraKpaTask");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
+const { all } = require("../../routes/tasksRoutes");
 
 const createRoleBasedTask = async (req, res, next) => {
   const { user, ip, company } = req;
@@ -354,23 +355,40 @@ const updateTaskStatus = async (req, res, next) => {
   }
 };
 
-const getMyKraTasks = async (req, res, next) => {
+const getMyKraKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { empId } = req.params;
+    const { empId, type } = req.query;
+
+    if (!empId) {
+      return res.status(400).json({ message: "Missing employee ID" });
+    }
+
+    if (!type) {
+      return res.status(400).json({ message: "Missing task type" });
+    }
 
     const foundUser = await UserData.findOne({ empId }).populate({
       path: "role",
       select: "roleTitle",
     });
 
+    console.log("foundUser", foundUser.role);
     if (!foundUser) {
       return res.status(400).json({ message: "User not found" });
     }
 
+    const matchingRoles = await kraKpaRole
+      .find({
+        role: { $in: foundUser.role },
+        company: company,
+      })
+      .select("_id");
+
     const tasks = await kraKpaTask
       .find({
-        company,
+        company: company,
+        task: { $in: matchingRoles.map((role) => role._id) },
       })
       .populate({
         path: "task",
@@ -383,32 +401,38 @@ const getMyKraTasks = async (req, res, next) => {
       .select("-company")
       .lean();
 
-    const transformedTasks = tasks.map((task) => {
-      console.log(task.assignedTo);
-      if (task.assignedTo._id.toString() !== foundUser._id.toString()) return;
+    const transformedTasks = tasks
+      .filter((task) => {
+        return (
+          task.assignedTo._id.toString() === foundUser._id.toString() &&
+          task.task.taskType === type
+        );
+      })
+      .map((task) => {
+        const assignedBy = `${task.task.assignedBy.firstName} ${
+          task.task.assignedBy.middleName || ""
+        } ${task.task.assignedBy.lastName}`;
 
-      const assignedBy = `${task.task.assignedBy.firstName} ${
-        task.task.assignedBy.middleName || ""
-      } ${task.task.assignedBy.lastName}`;
-      const assignee = `${task.assignedTo.firstName}  ${
-        task.assignedTo.middleName || ""
-      } ${task.assignedTo.lastName}`;
+        const assignee = `${task.assignedTo.firstName} ${
+          task.assignedTo.middleName || ""
+        } ${task.assignedTo.lastName}`;
 
-      return {
-        taskName: task.task.task,
-        description: task.task.description,
-        assignedBy: assignedBy.trim(),
-        assignedTo: assignee.trim(),
-        assignedDate: task.task.assignedDate,
-        dueDate: task.task.dueDate,
-        status: task.status,
-      };
-    });
+        return {
+          taskName: task.task.task,
+          description: task.task.description,
+          assignedBy: assignedBy.trim(),
+          assignedTo: assignee.trim(),
+          assignedDate: task.task.assignedDate,
+          dueDate: task.task.dueDate,
+          status: task.status,
+        };
+      });
 
     const individualTasks = foundUser?.kraKpa || [];
     const allTasks = [...transformedTasks, ...individualTasks];
 
-    console.log(allTasks.length);
+    console.log("All tasks", allTasks.length);
+
     return res.status(200).json(allTasks);
   } catch (error) {
     next(error);
@@ -486,6 +510,6 @@ module.exports = {
   createRoleBasedTask,
   createIndividualTask,
   getAllKpaTasks,
-  getMyKraTasks,
+  getMyKraKpaTasks,
   updateTaskStatus,
 };
