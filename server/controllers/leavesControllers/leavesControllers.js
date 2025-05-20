@@ -75,18 +75,18 @@ const requestLeave = async (req, res, next) => {
     }
 
     //Check the leave period and no. of leaves taken are correct
-    const isSameDay = endDate.getDate() === startDate.getDate();
+    // const isSameDay = endDate.getDate() === startDate.getDate();
+
+    // if (!isSameDay && hours < workingHours) {
+    //   throw new CustomError(
+    //     "Selected date and hours is inappropriate",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
+
     const workingHours = 9;
-
-    if (!isSameDay && hours < workingHours) {
-      throw new CustomError(
-        "Selected date and hours is inappropriate",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
     const period =
       Number(hours) < Number(workingHours)
         ? "Partial"

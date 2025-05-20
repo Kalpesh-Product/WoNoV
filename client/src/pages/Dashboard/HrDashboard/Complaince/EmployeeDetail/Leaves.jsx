@@ -65,7 +65,7 @@ const Leaves = () => {
     });
 
   const leavesColumn = [
-    { field: "id", headerName: "Sr No" },
+    { field: "id", headerName: "Sr No",sort:"desc" },
     { field: "fromDate", headerName: "From Date" },
     { field: "toDate", headerName: "To Date" },
     { field: "leaveType", headerName: "Leave Type" },
@@ -317,7 +317,7 @@ const Leaves = () => {
                       </LocalizationProvider>
                     )}
                   />
-                 <Controller
+                  <Controller
                   name="hours"
                   control={control}
                   rules={{ required: "Hours is required" }}
