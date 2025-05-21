@@ -73,13 +73,14 @@ const HrDashboard = () => {
           `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
             `
         );
-        return transformBudgetData(response.data.allBudgets);
+        return response.data?.allBudgets;
       } catch (error) {
         throw new Error("Error fetching data");
       }
     },
   });
-  const totalExpense = hrFinance?.projectedBudget?.reduce(
+  const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
+  const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
     0
   );
@@ -93,7 +94,7 @@ const HrDashboard = () => {
     {
       name: "Expense",
       group: "FY 2024-25",
-      data: hrFinance?.utilisedBudget,
+      data: hrBarData?.utilisedBudget,
     },
     {
       name: "Expense",
@@ -245,7 +246,6 @@ const HrDashboard = () => {
     "February",
     "March",
   ];
-
 
   // Init counters
   const monthlyTotals = {};
@@ -438,29 +438,30 @@ const HrDashboard = () => {
     { id: "start", label: "Date", align: "left" },
     { id: "day", label: "Day", align: "left" },
   ];
+//------------------Birthdays----------//
 
-  const { data: birthdays = [], isLoading } = useQuery({
-    queryKey: ["birthdays"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/events/get-birthdays");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
+const getUpcomingBirthdays = (employeeList) => {
+  const today = dayjs();
 
-  const dummyBirthdays = [
-    { title: "Machindrath Parkar", start: "2025-04-16" },
-    { title: "Faizan Shaikh", start: "2025-04-16" },
-    { title: "Anne Fernandes", start: "2025-04-18" },
-    { title: "Melisa Fernandes", start: "2025-04-20" },
-    { title: "Allan Silveira", start: "2025-04-22" },
-    { title: "Sankalp Kalangutkar", start: "2025-04-22" },
-    { title: "Narshiva Naik", start: "2025-04-26" },
-    { title: "Hema", start: "2025-04-30" },
-  ];
+  return employeeList
+    .map((emp) => {
+      const birthDate = dayjs(emp.dateOfBirth);
+
+      return {
+        title: `${emp.firstName} ${emp.lastName}`,
+        start: birthDate
+          .year(today.year()) // keep the year consistent
+          .format("YYYY-MM-DD"),
+      };
+    })
+    .filter((item) => {
+      const birthday = dayjs(item.start);
+      return birthday.month() === today.month(); // filter only current month
+    });
+};
+const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data);
+
+//------------------Birthdays----------//
 
   const columns2 = [
     { id: "id", label: "Sr No", align: "left" },
@@ -565,29 +566,30 @@ const HrDashboard = () => {
   };
 
   const totalUtilised =
-    hrFinance?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+    hrBarData?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
 
-  const lastUtilisedValue = hrFinance?.utilisedBudget?.at(-1) || 0;
+  const lastUtilisedValue = hrBarData?.utilisedBudget?.at(-1) || 0;
 
   //------------------- UnitData -----------------------//
-    const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
-      queryKey: ["unitsData"],
-      queryFn: async () => {
-        try {
-          const response = await axios.get("/api/company/fetch-units");
-  
-          return response.data;
-        } catch (error) {
-          console.error("Error fetching clients data:", error);
-        }
-      },
-    });
+  const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
+    queryKey: ["unitsData"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/company/fetch-units");
 
-    const totalSqft = unitsData
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching clients data:", error);
+      }
+    },
+  });
+
+  const totalSqft = unitsData
     .filter((item) => item.isActive === true)
     .reduce((sum, item) => (item.sqft || 0) + sum, 0);
   //--------------------UnitData -----------------------//
   //--------------------New Data card data -----------------------//
+  console.log(hrFinance.filter((item)=>item.expanseType === 'salary').reduce((sum,item)=>(((item.actualAmount || 0)+sum)/12),0));
   const HrExpenses = {
     cardTitle: "Expenses",
     // timePeriod: "FY 2024-25",
@@ -595,20 +597,23 @@ const HrDashboard = () => {
       {
         title: "FY 2024-25",
         value: `INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`,
-        route : "finance"
+        route: "finance",
       },
       {
         title: "March 2025",
         value: `INR ${Math.round(lastUtilisedValue).toLocaleString("en-IN")}`,
-        route : "finance"
+        route: "finance",
       },
       {
         title: "March 2025 Budget",
         value: "N/A",
-        route : "finance"
+        route: "finance",
       },
       { title: "Exit Head Count", value: "2" },
-      { title: "Per Sq. Ft.", value: `INR ${inrFormat(totalUtilised/totalSqft)}`},
+      {
+        title: "Per Sq. Ft.",
+        value: `INR ${inrFormat(totalUtilised / totalSqft)}`,
+      },
     ],
   };
 
@@ -619,28 +624,28 @@ const HrDashboard = () => {
       {
         title: "Annual Average Expense",
         value: `INR ${inrFormat(totalExpense / 12)}`,
-        route : "finance"
+        route: "finance",
       },
       {
         title: "Average Salary",
-        value: "INR 60,000",
-        route : "employee/view-employees"
+        value: "",
+        route: "employee/view-employees",
       },
       {
         title: "Average Head Count",
         value: "30",
-        route : "employee/view-employees"
+        route: "employee/view-employees",
       },
       {
         title: "Average Attendance",
-        route : "employee/attendance",
+        route: "employee/attendance",
         value: averageAttendance
           ? `${(Number(averageAttendance) - 55).toFixed(0)}%`
           : "0%",
       },
       {
         title: "Average Hours",
-        route : "employee/attendance",
+        route: "employee/attendance",
         value: averageWorkingHours
           ? `${(Number(averageWorkingHours) / 30).toFixed(2)}h`
           : "0h",
@@ -813,13 +818,13 @@ const HrDashboard = () => {
     {
       layout: 2,
       widgets: [
-        !isLoading ? (
+        !usersQuery.isLoading ? (
           <MuiTable
             key={birthdays.length}
             Title="Current Months Birthday List"
             columns={columns}
             rows={[
-              ...[...dummyBirthdays, ...birthdays].map((bd, index) => {
+              ...[ ...birthdays].map((bd, index) => {
                 const date = dayjs(bd.start);
                 return {
                   id: index + 1,
@@ -829,7 +834,9 @@ const HrDashboard = () => {
                 };
               }),
             ]}
-            scroll
+            rowsToDisplay={40}
+            scroll={true}
+            className="h-full"
           />
         ) : (
           <CircularProgress key="loading-spinner" />
@@ -847,8 +854,9 @@ const HrDashboard = () => {
               day: date.format("dddd"),
             };
           })}
-          rowsToDisplay={10}
-          scroll
+          rowsToDisplay={40}
+          scroll={true}
+          className="h-full"
         />,
       ],
     },

@@ -14,6 +14,8 @@ import { useQuery } from "@tanstack/react-query";
 import WidgetSection from "../../../../components/WidgetSection";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import { useSelector } from "react-redux";
+import DataCard from "../../../../components/DataCard";
+import FinanceCard from "../../../../components/FinanceCard";
 
 const CheckAvailability = () => {
   const navigate = useNavigate();
@@ -45,6 +47,7 @@ const CheckAvailability = () => {
     }
     groupedByBuilding.get(buildingName).push(unit);
   });
+  console.log(uniqueUnits);
 
   const chartData = Array.from(groupedByBuilding.entries()).map(
     ([buildingName, units]) => {
@@ -52,7 +55,7 @@ const CheckAvailability = () => {
         (sum, unit) => sum + (unit.openDesks || 0) + (unit.cabinDesks || 0),
         0
       );
-  
+
       const occupiedSeats = clientsData
         .filter(
           (client) => client.unit?.building?.buildingName === buildingName
@@ -62,9 +65,9 @@ const CheckAvailability = () => {
             sum + (client.openDesks || 0) + (client.cabinDesks || 0),
           0
         );
-  
+
       const remainingSeats = Math.max(totalSeats - occupiedSeats, 0);
-  
+
       return {
         name: buildingName,
         occupied: occupiedSeats,
@@ -72,7 +75,6 @@ const CheckAvailability = () => {
       };
     }
   );
-  
 
   const barGraphSeries = [
     {
@@ -84,7 +86,6 @@ const CheckAvailability = () => {
       data: chartData.map((item) => item.remaining),
     },
   ];
-  
 
   const barGraphOptions = {
     chart: {
@@ -117,21 +118,58 @@ const CheckAvailability = () => {
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "20%",
-        borderRadius : 2
+        columnWidth: "15%",
+        borderRadius: 2,
       },
     },
     dataLabels: {
       enabled: true,
       formatter: (val) => `${val.toFixed(0)}%`,
     },
+    colors: ["#36BA98", "#E83F25"],
     tooltip: {
-      y: {
-        formatter: (val) => `${val.toFixed(0)} desks`,
+      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+        const buildingName = w.globals.labels[dataPointIndex];
+        const occupied = w.globals.initialSeries[0].data[dataPointIndex];
+        const remaining = w.globals.initialSeries[1].data[dataPointIndex];
+        const total = occupied + remaining;
+
+        return `
+          <div style="padding:8px; width : 200px">
+            <strong>${buildingName}</strong><br/>
+            <hr />
+            <div style="display:flex; justify-content:space-between; margin-top : 5px; font-size : 12px">
+              <div style="width : 100%">
+                Total
+              </div>
+              <div style="width : 100%">
+              ${total} desks
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between;font-size : 12px">
+              <div style="width : 100%">
+                Occupied
+              </div>
+              <div style="width : 100%">
+              ${occupied} desks
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; font-size : 12px">
+              <div style="width : 100%">
+                Remaining
+              </div>
+              <div style="width : 100%">
+              ${remaining} desks
+              </div>
+            </div>
+          </div>
+        `;
       },
     },
   };
-  
+
   //-------------  Remove Duplicates----------------------//
 
   const { control, handleSubmit, watch } = useForm({
@@ -211,12 +249,18 @@ const CheckAvailability = () => {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <WidgetSection layout={1} border normalCase={true} title={"TOTAL v/s OCCUPIED FY 2024-25"}>
+      <WidgetSection
+        layout={1}
+        border
+        normalCase={true}
+        title={"TOTAL v/s OCCUPIED FY 2024-25"}
+      >
         <NormalBarGraph
           data={barGraphSeries}
           options={barGraphOptions}
           height={400}
         />
+        {/* <WidgetSection layout={3}><FinanceCard /></WidgetSection> */}
       </WidgetSection>
       <div className="border-default border-borderGray p-4 rounded-md text-center">
         <h2 className="font-pregular text-title text-primary mt-20 mb-10 uppercase">

@@ -11,23 +11,8 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 const HrDepartmentTasks = () => {
   const location = useLocation();
   const { month, department, tasks, year } = location.state || {};
+  console.log("month", month)
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(0); // starts from April
-  const fyMonths = [
-    "Apr-25",
-    "May-25",
-    "Jun-25",
-    "Jul-25",
-    "Aug-25",
-    "Sep-25",
-    "Oct-25",
-    "Nov-25",
-    "Dec-25",
-    "Jan-26",
-    "Feb-26",
-    "Mar-26",
-  ];
-
   const fullMonthNames = {
     Jan: "January",
     Feb: "February",
@@ -42,6 +27,35 @@ const HrDepartmentTasks = () => {
     Nov: "November",
     Dec: "December",
   };
+  const fyMonths = [
+    "Apr-25",
+    "May-25",
+    "Jun-25",
+    "Jul-25",
+    "Aug-25",
+    "Sep-25",
+    "Oct-25",
+    "Nov-25",
+    "Dec-25",
+    "Jan-26",
+    "Feb-26",
+    "Mar-26",
+  ];
+  const initialShortMonth = Object.keys(fullMonthNames).find(
+    (key) => fullMonthNames[key] === month
+  );
+  
+  const initialMonthIndex = fyMonths.findIndex((m) =>
+    m.startsWith(initialShortMonth)
+  );
+  
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(
+    initialMonthIndex !== -1 ? initialMonthIndex : 0
+  );
+  
+  
+
+
 
   const selectedMonth = fyMonths[selectedMonthIndex];
   const shortMonth = selectedMonth.split("-")[0];

@@ -1,19 +1,19 @@
 import React, { useState } from "react";
 import AgTable from "../../../../../components/AgTable";
 import MuiModal from "../../../../../components/MuiModal";
-import { TextField } from "@mui/material";
+import { CircularProgress, TextField } from "@mui/material";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../../components/DetalisFormatted";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
-import { useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const KPI = () => {
   const name = localStorage.getItem("employeeName") || "Employee";
-    const axios = useAxiosPrivate();
-    const { id } = useParams();
+  const axios = useAxiosPrivate();
+  const id = useSelector((state) => state.hr.selectedEmployee);
   const [modalOpen, setModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewKPI, setViewKPI] = useState(null);
@@ -59,21 +59,21 @@ const KPI = () => {
       status: "Pending",
       comments: "",
     },
-  ]
-  );
+  ]);
 
-
-    const { data: kpa,isLoading} = useQuery({
-      queryKey: ["kpa"],
-      queryFn: async () => {
-        try {
-          const response = await axios.get(`/api/tasks/get-tasks/?empId=${id}&type=KPA`);
-          return response.data;
-        } catch (error) {
-          throw new Error(error.response.data.message);
-        }
-      },
-    });
+  const { data: kpa =[], isLoading } = useQuery({
+    queryKey: ["kpa"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/tasks/get-tasks/?empId=${id}&type=KPA`
+        );
+        return response.data;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
 
   const handleAddKPI = () => {
     if (newKPI.trim()) {
@@ -114,22 +114,27 @@ const KPI = () => {
           </span>
         </div>
       ),
-
     },
   ];
 
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <AgTable
-          search={true}
-          buttonTitle="Add KPA"
-          searchColumn="KPAs"
-          tableTitle={`${name}'s KPA List`}
-          data={kpa}
-          columns={kpiColumn}
-          handleClick={() => setModalOpen(true)}
-        />
+        {!isLoading ? (
+          <AgTable
+            search={true}
+            buttonTitle="Add KPA"
+            searchColumn="KPAs"
+            tableTitle={`${name}'s KPA List`}
+            data={kpa}
+            columns={kpiColumn}
+            handleClick={() => setModalOpen(true)}
+          />
+        ) : (
+          <div className="h-72 flex justify-center items-center">
+            <CircularProgress />
+          </div>
+        )}
       </div>
 
       {/* Modal for adding KPI */}
@@ -166,11 +171,13 @@ const KPI = () => {
             <DetalisFormatted title="Description" detail={viewKPI.kpi} />
             <DetalisFormatted title="Assigned By" detail={viewKPI.assignedBy} />
             <DetalisFormatted title="Target Date" detail={viewKPI.targetDate} />
-            <DetalisFormatted title="Comments" detail={viewKPI.comments || "No comments"} />
+            <DetalisFormatted
+              title="Comments"
+              detail={viewKPI.comments || "No comments"}
+            />
           </div>
         )}
       </MuiModal>
-
     </div>
   );
 };

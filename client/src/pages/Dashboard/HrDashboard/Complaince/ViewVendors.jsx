@@ -17,7 +17,7 @@ const ViewVendors = () => {
   useEffect(() => {
     if (state) {
       const mapping = {
-        name: state.vendorName,
+        vendorName: state.vendorName,
         address: state.address,
         state: state.state,
         country: state.country,
@@ -32,14 +32,12 @@ const ViewVendors = () => {
         gstIn: "N/A", // assuming GSTIN is not provided
         isTransporter: state.isTransporter ? "Yes" : "No",
       };
+      reset(mapping);
 
-      Object.entries(mapping).forEach(([key, value]) => {
-        setValue(key, value);
-      });
     }
   }, [state, setValue]);
 
-  console.log(state);
+  console.log("Inside data",state);
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
   };
@@ -54,13 +52,12 @@ const ViewVendors = () => {
   };
 
   const mailingFields = [
-    "name",
+    "vendorName",
     "address",
     "state",
     "country",
-    "pinCode",
-    "gst",
-    "email",
+    // "gst",
+    // "email",
   ];
 
   const gstFields = [
@@ -120,7 +117,7 @@ const ViewVendors = () => {
                             )}
                           />
                         ) : (
-                          <div className="py-2 flex justify-between items-center gap-2">
+                          <div className="py-2 flex justify-between items-start gap-2">
                             <div className="w-[100%] justify-start flex">
                               <span className="font-pmedium text-gray-600 text-content">
                                 {fieldKey

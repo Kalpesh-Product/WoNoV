@@ -22,6 +22,8 @@ import PrimaryButton from "../../../../../components/PrimaryButton";
 import { CircularProgress, Skeleton, TextField } from "@mui/material";
 import humanTime from "../../../../../utils/humanTime";
 import { useMemo } from "react";
+import { useSelector } from "react-redux";
+import MonthWiseTable from "../../../../../components/Tables/MonthWiseTable";
 
 const Attendance = () => {
   const axios = useAxiosPrivate();
@@ -34,14 +36,15 @@ const Attendance = () => {
     },
   });
   const [openModal, setOpenModal] = useState(false);
-  const { id } = useParams();
+  const employmentID = useSelector((state) => state.hr.selectedEmployee);
   const name = localStorage.getItem("employeeName") || "Employee";
 
   const fetchAttendance = async () => {
     try {
-      const response = await axios.get(`/api/attendance/get-attendance/${id}`);
+      const response = await axios.get(
+        `/api/attendance/get-attendance/${employmentID}`
+      );
       const data = response.data;
-      console.log("attendance response", data.length);
       return Array.isArray(data) ? data : [];
     } catch (error) {
       throw new Error(error.response.data.message);
@@ -57,7 +60,7 @@ const Attendance = () => {
     mutationFn: async (data) => {
       const response = await axios.patch("/api/attendance/correct-attendance", {
         ...data,
-        empId: id,
+        empId: employmentID,
       });
       return response.data;
     },
@@ -72,8 +75,8 @@ const Attendance = () => {
     },
   });
   const attendanceColumns = [
-    { field: "id", headerName: "Sr No", width: 100 },
-    { field: "date", headerName: "Date", width: 200 },
+    // { field: "id", headerName: "Sr No", width: 100 },
+    { field: "date", headerName: "Date", width: 200, sort:'asc' },
     { field: "inTime", headerName: "In Time" },
     { field: "outTime", headerName: "Out Time" },
     { field: "workHours", headerName: "Work Hours" },
@@ -178,6 +181,7 @@ const Attendance = () => {
     chart: {
       type: "bar",
       stacked: true,
+      animations: { enabled: false },
       fontFamily: "Poppins-Regular",
       toolbar: {
         show: false,
@@ -300,7 +304,11 @@ const Attendance = () => {
           border
         >
           {!isLoading ? (
-            <BarGraph data={attendanceSeries} options={options} />
+            <BarGraph
+              data={attendanceSeries}
+              options={options}
+              responsiveResize
+            />
           ) : (
             <div className="h-72 flex justify-center items-center">
               <CircularProgress />
@@ -328,45 +336,36 @@ const Attendance = () => {
 
       <div>
         {!isLoading ? (
-          <AgTable
-            key={isLoading ? 1 : attendance.length}
-            tableTitle={`${name}'s Attendance Table`}
-            buttonTitle={"Correction Request"}
-            handleClick={() => {
-              setOpenModal(true);
-            }}
-            search={true}
-            searchColumn={"Date"}
-            data={
-              isLoading || !Array.isArray(attendance)
-                ? []
-                : attendance?.map((record, index) => ({
-                    id: index + 1,
-                    // date: humanDate(record.date),
-                    date: humanDate(record.inTime),
-                    inTime: humanTime(record.inTime),
-                    outTime: humanTime(record.outTime),
-                    // workHours: record.workHours,
-                    // workHours: "8",
-                    workHours: formatHours(
-                      new Date(record.outTime) - new Date(record.inTime)
-                    ),
-                    // breakHours: record.breakHours,
-                    breakHours: "1",
-                    // totalHours: record.totalHours,
-                    // totalHours: "9",
-                    totalHours: formatHours(
-                      new Date(record.outTime) -
-                        new Date(record.inTime) -
-                        1 * 60 * 60 * 1000
-                    ),
-                    entryType: record.entryType,
-                  }))
-            }
-            columns={attendanceColumns}
-          />
+          <WidgetSection layout={1} title={`${name}'s Attendance Table`} border>
+            <MonthWiseTable
+              data={
+                !isLoading
+                  ? attendance?.map((record, index) => ({
+                      id: index + 1,
+                      date: record.inTime,
+                      inTime: humanTime(record.inTime),
+                      outTime: humanTime(record.outTime),
+                      workHours: formatHours(
+                        new Date(record.outTime) - new Date(record.inTime)
+                      ),
+                      breakHours: "1",
+                      totalHours: formatHours(
+                        new Date(record.outTime) -
+                          new Date(record.inTime) -
+                          1 * 60 * 60 * 1000
+                      ),
+                      entryType: record.entryType,
+                    }))
+                  : []
+              }
+              columns={attendanceColumns}
+              dateColumn="date"
+            />
+          </WidgetSection>
         ) : (
-          <Skeleton height={300} width={"100%"} />
+          <>
+            <Skeleton height={300} width={"100%"} />
+          </>
         )}
       </div>
       <MuiModal
