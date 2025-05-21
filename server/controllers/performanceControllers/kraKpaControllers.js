@@ -14,7 +14,7 @@ const createDeptBasedTask = async (req, res, next) => {
   try {
     const {
       task,
-      type,
+      taskType,
       description,
       department,
       priority,
@@ -25,13 +25,13 @@ const createDeptBasedTask = async (req, res, next) => {
 
     if (
       !task ||
-      !type ||
+      !taskType ||
       !description ||
       !department ||
       !priority ||
       !assignedDate ||
       !dueDate ||
-      (type === "KPA" && !kpaType)
+      (taskType === "KPA" && !kpaType)
     ) {
       throw new CustomError(
         "Missing required fields",
@@ -76,9 +76,25 @@ const createDeptBasedTask = async (req, res, next) => {
     const parsedDueDate = new Date(dueDate);
     const dueTime = "6:30 PM";
 
+    const isSameDay =
+      parsedDueDate.getDate() - parsedAssignedDate.getDate() === 0;
+    const isSameMonth =
+      parsedDueDate.getMonth() - parsedAssignedDate.getMonth() === 0;
+
+    if (isSameDay && isSameMonth && taskType !== "KRA") {
+      console.log("inn");
+      throw new CustomError(
+        "Task type should be KRA",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const kpaTypeMatch =
-      parsedDueDate.getDay() - parsedAssignedDate.getDay() > 1 &&
-      parsedDueDate.getDay() - parsedAssignedDate.getDay() <= 31
+      taskType === "KRA" &&
+      parsedDueDate.getDate() - parsedAssignedDate.getDate() > 1 &&
+      parsedDueDate.getDate() - parsedAssignedDate.getDate() <= 31
         ? "Monthly"
         : parsedDueDate.getMonth() - parsedAssignedDate.getMonth() > 1 &&
           parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 3
@@ -90,7 +106,7 @@ const createDeptBasedTask = async (req, res, next) => {
 
     console.log(
       "Days:",
-      parsedDueDate.getMonth() - parsedAssignedDate.getMonth()
+      parsedDueDate.getDate() - parsedAssignedDate.getDate()
     );
     console.log("kpaTypeMatch:", kpaTypeMatch);
 
@@ -121,7 +137,7 @@ const createDeptBasedTask = async (req, res, next) => {
       assignedDate: parsedAssignedDate,
       dueDate: parsedDueDate,
       dueTime,
-      taskType: type,
+      taskType,
       kpaType,
       company,
     });
