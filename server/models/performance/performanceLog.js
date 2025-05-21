@@ -1,14 +1,14 @@
 const mongoose = require("mongoose");
 
-const taskLogSchema = new mongoose.Schema(
+const performanceLogSchema = new mongoose.Schema(
   {
-    project: {
+    kraKpaRoles: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Project",
+      ref: "kraKpaRole",
     },
-    task: {
+    kraKpaTasks: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Task",
+      ref: "kraKpaTask",
     },
     action: {
       type: String,
@@ -42,5 +42,5 @@ const taskLogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const TaskLog = mongoose.model("TaskLog", taskLogSchema);
-module.exports = TaskLog;
+const PerformanceLog = mongoose.model("PerformanceLog", performanceLogSchema);
+module.exports = PerformanceLog;
