@@ -278,7 +278,34 @@ const fetchUserLeaves = async (req, res, next) => {
       return res.status(204).json({ message: "No leaves found" });
     }
 
-    return res.status(200).json(leaves);
+    const allocatedPrivilegedLeaves = user.employeeType.leavesCount.reduce(
+      (acc, leaves) => leaveType === "Privileged" && acc + leaves.count,
+      0
+    );
+
+    const allocatedSickLeaves = user.employeeType.leavesCount.reduce(
+      (acc, leaves) => leaveType === "Sick" && acc + leaves.count,
+      0
+    );
+
+    const takenPrivilegedLeaves = leaves.filter((leave) => {
+      console.log("leave types", leave);
+      return leave.leaveType === "Privileged";
+    }).length;
+
+    const takenSickLeaves = leaves.filter(
+      (leave) => leave.leaveType === "Sick"
+    ).length;
+
+    const leavesCount = {
+      allocatedPrivilegedLeaves,
+      allocatedSickLeaves,
+      takenPrivilegedLeaves,
+      takenSickLeaves,
+    };
+    const transformedLeaves = [leavesCount, ...leaves];
+
+    return res.status(200).json(transformedLeaves);
   } catch (error) {
     next(error);
   }

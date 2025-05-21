@@ -16,6 +16,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { MenuItem, TextField } from "@mui/material";
 import dayjs from "dayjs";
 import { toast } from "sonner";
+import useAuth from "../../../../../hooks/useAuth";
+import { useMemo } from "react";
 
 const Leaves = () => {
   const axios = useAxiosPrivate();
@@ -33,7 +35,8 @@ const Leaves = () => {
     const [openModal, setOpenModal] = useState(false);
   const { id } = useParams();
   const name = localStorage.getItem("employeeName") || "Employee";
-  const { data: leaves = [] } = useQuery({
+
+  const { data: leaves = [],isLoading } = useQuery({
     queryKey: ["leaves"],
     queryFn: async () => {
       try {
@@ -96,7 +99,6 @@ const Leaves = () => {
   const leavePeriod = ["Partial","Single","Multiple"]
 
   // Prepare data for ApexCharts
-  const months = leavesData.monthlyData.map((entry) => entry.month);
 
   // const options = {
   //   chart: {
@@ -153,6 +155,48 @@ const Leaves = () => {
     { type: "Abrupt", allocated: 0, taken: 2 },
   ];
   
+function formatLeaveData(leaves) {
+  // Define default allocations per type (update as needed)
+  const defaultAllocations = {
+    "Sick Leave": 12,
+    "Privileged Leave": 12,
+    "Abrupt": 0, // If you allow tracking but no pre-allocation
+  };
+
+  const leaveMap = new Map();
+
+  leaves.forEach((leave) => {
+    const type = leave.leaveType;
+    const taken = leave.leavePeriod === "Partial" ? leave.hours / 8 : 1; // Assuming 8 hours = 1 full day
+
+    if (!leaveMap.has(type)) {
+      leaveMap.set(type, {
+        type,
+        allocated: defaultAllocations[type] || 0,
+        taken: 0,
+      });
+    }
+
+    const current = leaveMap.get(type);
+    current.taken += taken;
+  });
+
+  // Round to nearest 2 decimal places (optional)
+  const leaveData = Array.from(leaveMap.values()).map((entry) => ({
+    ...entry,
+    taken: parseFloat(entry.taken.toFixed(2)),
+  }));
+
+  return leaveData;
+}
+
+const leavessData = useMemo(() => {
+    if (isLoading || !leaves) return [];
+    return formatLeaveData(leaves);
+  }, [leaves, isLoading]);
+
+  console.log("leavesData",leavessData)
+    const months = leavesData.monthlyData.map((entry) => entry.month);
 
   const series = [
     {
