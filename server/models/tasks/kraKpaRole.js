@@ -32,6 +32,11 @@ const kraKpaRolesSchema = new mongoose.Schema(
       enum: ["KPA", "KRA"],
       required: true,
     },
+    taskDuration: {
+      type: String,
+      enum: ["Daily", "Monthly", "Quarterly", "Annually"],
+      required: true,
+    },
     department: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",

@@ -18,11 +18,11 @@ const createRoleBasedTask = async (req, res, next) => {
     const {
       task,
       description,
-      role,
       department,
       priority,
       assignedDate,
       dueDate,
+      taskDuration,
     } = req.body;
 
     if (!type) {
@@ -38,22 +38,13 @@ const createRoleBasedTask = async (req, res, next) => {
       !task ||
       !description ||
       !department ||
-      !role ||
       !priority ||
       !assignedDate ||
-      !dueDate
+      !dueDate ||
+      !taskDuration
     ) {
       throw new CustomError(
         "Missing required fields",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(role)) {
-      throw new CustomError(
-        "Invalid role ID provided",
         logPath,
         logAction,
         logSourceKey
@@ -101,12 +92,12 @@ const createRoleBasedTask = async (req, res, next) => {
       task,
       description,
       assignedBy: user,
-      role,
       department,
       priority,
       assignedDate: parsedAssignedDate,
       dueDate: parsedDueDate,
       taskType: type,
+      taskDuration,
       company,
     });
 
@@ -155,6 +146,7 @@ const createIndividualTask = async (req, res, next) => {
       priority,
       assignedDate,
       dueDate,
+      taskDuration,
     } = req.body;
 
     if (
@@ -164,7 +156,8 @@ const createIndividualTask = async (req, res, next) => {
       !empId ||
       !priority ||
       !assignedDate ||
-      !dueDate
+      !dueDate ||
+      !taskDuration
     ) {
       throw new CustomError(
         "Missing required fields",
@@ -235,6 +228,7 @@ const createIndividualTask = async (req, res, next) => {
       taskType: type,
       assignedDate: parsedAssignedDate,
       dueDate: parsedDueDate,
+      taskDuration,
     };
     const updateUserData = await UserData.findOneAndUpdate(
       { empId },
