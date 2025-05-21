@@ -32,9 +32,9 @@ const kraKpaRolesSchema = new mongoose.Schema(
       enum: ["KPA", "KRA"],
       required: true,
     },
-    taskDuration: {
+    kpaType: {
       type: String,
-      enum: ["Daily", "Monthly", "Quarterly", "Annually"],
+      enum: ["Monthly", "Quarterly", "Annually"],
       required: true,
     },
     department: {
@@ -47,6 +47,10 @@ const kraKpaRolesSchema = new mongoose.Schema(
     },
     dueDate: {
       type: Date,
+      required: true,
+    },
+    dueTime: {
+      type: String,
       required: true,
     },
     isDeleted: {
