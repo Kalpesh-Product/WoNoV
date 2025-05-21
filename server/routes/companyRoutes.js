@@ -16,6 +16,7 @@ const {
   uploadCompanyDocument,
   getCompanyDocuments,
   uploadDepartmentDocument,
+  getDepartmentDocuments,
 } = require("../controllers/companyControllers/documentControllers");
 const {
   addEmployeeType,
@@ -75,5 +76,6 @@ router.post(
   uploadUnitImage
 );
 router.get("/get-company-documents/:type", getCompanyDocuments);
+router.get("/get-department-documents", getDepartmentDocuments);
 
 module.exports = router;
