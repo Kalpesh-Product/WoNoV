@@ -44,8 +44,8 @@ export const calculateAverageDailyWorkingHours = (attendances, workingDays) => {
 
   attendances.forEach((entry) => {
     const userId = entry.user;
-    const inTime = parseISO(entry.inTime);
-    const outTime = parseISO(entry.outTime);
+    const inTime = entry.inTime ? parseISO(entry.inTime) : null;
+    const outTime = entry.outTime ? parseISO(entry.outTime) : null;
 
     if (!inTime || !outTime) return;
 

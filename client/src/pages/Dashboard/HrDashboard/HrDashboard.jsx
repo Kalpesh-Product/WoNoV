@@ -31,8 +31,6 @@ const HrDashboard = () => {
   const dispatch = useDispatch();
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
 
-  useEffect(()=>{console.log("TASKS FROM REDUX : ", tasksRawData)}, [tasksRawData])
-
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
@@ -75,8 +73,6 @@ const HrDashboard = () => {
           `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
             `
         );
-
-        console.log(transformBudgetData(response.data.allBudgets));
         return transformBudgetData(response.data.allBudgets);
       } catch (error) {
         throw new Error("Error fetching data");

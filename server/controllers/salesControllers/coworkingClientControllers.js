@@ -278,6 +278,15 @@ const getCoworkingClients = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid unit ID format" });
     }
 
+    const units = await Unit.find({ company }).populate({
+      path: "building",
+      select: "buildingName",
+    });
+
+    if (!units) {
+      return res.status(400).json({ message: "No unit found" });
+    }
+
     let query = { company };
 
     if (coworkingclientid) {
@@ -289,7 +298,7 @@ const getCoworkingClients = async (req, res, next) => {
     const populateOptions = [
       {
         path: "unit",
-        select: "_id unitName unitNo",
+        select: "_id unitName unitNo cabinDesks openDesks",
         populate: {
           path: "building",
           select: "_id buildingName fullAddress",
@@ -322,6 +331,7 @@ const getCoworkingClients = async (req, res, next) => {
         ),
       };
     });
+
     res.status(200).json(clientsWithMembers);
   } catch (error) {
     next(error);

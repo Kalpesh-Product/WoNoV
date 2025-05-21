@@ -21,6 +21,7 @@ import SecondaryButton from "../../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { Skeleton, TextField } from "@mui/material";
 import humanTime from "../../../../../utils/humanTime";
+import { useMemo } from "react";
 
 const Attendance = () => {
   const axios = useAxiosPrivate();
@@ -40,15 +41,16 @@ const Attendance = () => {
     try {
       const response = await axios.get(`/api/attendance/get-attendance/${id}`);
       const data = response.data;
-      return Array.isArray(data) ? data : data.attendance ?? [];
+      console.log("attendance response",data.length)
+      return Array.isArray(data) ? data : [];
     } catch (error) {
       throw new Error(error.response.data.message);
     }
   };
   
 
-  const { data: attendance = [], isPending: isLoading } = useQuery({
-    queryKey: ["attendance"],
+  const { data: attendance = [], isLoading } = useQuery({
+    queryKey: ["user-attendance"],
     queryFn: fetchAttendance,
   });
 
@@ -63,7 +65,7 @@ const Attendance = () => {
     onSuccess: function (data) {
       setOpenModal(false);
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
       reset();
     },
     onError: function (error) {
@@ -84,162 +86,75 @@ const Attendance = () => {
 
   //Attendance graph options
 
-  const attendanceData = [
-    {
-      date: "01-01-2025",
-      inTime: "9:45 AM",
-      outTime: "6:30 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0.25 }, // Gray (15 minutes)
-        { color: "#34a853", value: 8.25 }, // Green (495 minutes)
-        { color: "#ff0000", value: 0.5 }, // Red (30 minutes)
-      ],
-    },
-    {
-      date: "02-01-2025",
-      inTime: "10:00 AM",
-      outTime: "6:15 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0.5 }, // Gray (30 minutes)
-        { color: "#34a853", value: 7.75 }, // Green (465 minutes)
-        { color: "#ff0000", value: 0.75 }, // Red (45 minutes)
-      ],
-    },
-    {
-      date: "03-01-2025",
-      inTime: "9:30 AM",
-      outTime: "6:30 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0 }, // Gray (0 minutes)
-        { color: "#34a853", value: 9 }, // Green (540 minutes)
-        { color: "#ff0000", value: 0 }, // Red (0 minutes)
-      ],
-    },
-    {
-      date: "04-01-2025",
-      inTime: "9:50 AM",
-      outTime: "6:20 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0.3 }, // Gray (18 minutes)
-        { color: "#34a853", value: 8 }, // Green (480 minutes)
-        { color: "#ff0000", value: 0.5 }, // Red (30 minutes)
-      ],
-    },
-    {
-      date: "06-01-2025",
-      inTime: "10:05 AM",
-      outTime: "6:10 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0.4 }, // Gray (24 minutes)
-        { color: "#34a853", value: 7.5 }, // Green (450 minutes)
-        { color: "#ff0000", value: 1 }, // Red (60 minutes)
-      ],
-    },
-    {
-      date: "07-01-2025",
-      inTime: "9:30 AM",
-      outTime: "6:30 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0 }, // Gray (0 minutes)
-        { color: "#34a853", value: 9 }, // Green (540 minutes)
-        { color: "#ff0000", value: 0 }, // Red (0 minutes)
-      ],
-    },
-    {
-      date: "08-01-2025",
-      inTime: "9:40 AM",
-      outTime: "6:25 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0.2 }, // Gray (12 minutes)
-        { color: "#34a853", value: 8.5 }, // Green (510 minutes)
-        { color: "#ff0000", value: 0.3 }, // Red (18 minutes)
-      ],
-    },
-    {
-      date: "09-01-2025",
-      inTime: "9:55 AM",
-      outTime: "6:15 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0.4 }, // Gray (24 minutes)
-        { color: "#34a853", value: 7.75 }, // Green (465 minutes)
-        { color: "#ff0000", value: 0.85 }, // Red (51 minutes)
-      ],
-    },
-    {
-      date: "10-01-2025",
-      inTime: "9:30 AM",
-      outTime: "6:45 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0.1 }, // Gray (6 minutes)
-        { color: "#34a853", value: 8.75 }, // Green (525 minutes)
-        { color: "#ff0000", value: 0.15 }, // Red (9 minutes)
-      ],
-    },
-    {
-      date: "11-01-2025",
-      inTime: "10:00 AM",
-      outTime: "6:00 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0.6 }, // Gray (36 minutes)
-        { color: "#34a853", value: 7.25 }, // Green (435 minutes)
-        { color: "#ff0000", value: 1.15 }, // Red (69 minutes)
-      ],
-    },
-    {
-      date: "13-01-2025",
-      inTime: "9:45 AM",
-      outTime: "6:30 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0.25 }, // Gray (15 minutes)
-        { color: "#34a853", value: 8.25 }, // Green (495 minutes)
-        { color: "#ff0000", value: 0.5 }, // Red (30 minutes)
-      ],
-    },
-    {
-      date: "14-01-2025",
-      inTime: "9:35 AM",
-      outTime: "6:40 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0.2 }, // Gray (12 minutes)
-        { color: "#34a853", value: 8.75 }, // Green (525 minutes)
-        { color: "#ff0000", value: 0.05 }, // Red (3 minutes)
-      ],
-    },
-    {
-      date: "15-01-2025",
-      inTime: "10:10 AM",
-      outTime: "6:20 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0.5 }, // Gray (30 minutes)
-        { color: "#34a853", value: 7.5 }, // Green (450 minutes)
-        { color: "#ff0000", value: 1 }, // Red (60 minutes)
-      ],
-    },
-    {
-      date: "16-01-2025",
-      inTime: "9:45 AM",
-      outTime: "6:30 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0.25 }, // Gray (15 minutes)
-        { color: "#34a853", value: 8.25 }, // Green (495 minutes)
-        { color: "#ff0000", value: 0.5 }, // Red (30 minutes)
-      ],
-    },
-    {
-      date: "17-01-2025",
-      inTime: "9:50 AM",
-      outTime: "6:10 PM",
-      sections: [
-        { color: "#d3d3d3", value: 0.4 }, // Gray (24 minutes)
-        { color: "#34a853", value: 7.5 }, // Green (450 minutes)
-        { color: "#ff0000", value: 1 }, // Red (60 minutes)
-      ],
-    },
-  ];
+  const rawData = [
+  {
+    _id: "67bdb743728626dddd2b83cb",
+    inTime: "2025-01-17T04:40:00.000Z",
+    outTime: "2025-01-17T13:24:00.000Z",
+    breakDuration: 0,
+    breakCount: 0,
+    entryType: "web",
+    user: "67b83885daad0f7bab2f18a9",
+    company: "6799f0cd6a01edbe1bc3fcea",
+    __v: 0,
+    createdAt: "2025-02-25T12:27:48.134Z",
+    updatedAt: "2025-02-25T12:27:48.134Z"
+  }
+];
+
+//Attendace of January is being showed
+function formatAttendance(data) {
+  const formatted = data
+    .filter(entry => {
+      const inDate = new Date(entry.inTime);
+      return inDate.getMonth() === 0;  
+    })
+    .sort((a, b) => new Date(a.inTime) - new Date(b.inTime))  
+    .map(entry => {
+      const inDate = new Date(entry.inTime);
+      const outDate = new Date(entry.outTime);
+
+       const dateString = inDate.toLocaleDateString("en-GB").replace(/\//g, "-");  
+      
+      const inLocal = new Date(inDate);
+      const outLocal = new Date(outDate);
+
+      // Expected office hours
+      const expectedIn = new Date(inLocal);
+      expectedIn.setHours(9, 30, 0, 0);
+
+      const expectedOut = new Date(inLocal);
+      expectedOut.setHours(18, 30, 0, 0);
+
+      const lateCheckIn = Math.max(0, (inLocal - expectedIn) / (1000 * 60)); // in minutes
+      const earlyCheckOut = Math.max(0, (expectedOut - outLocal) / (1000 * 60)); // in minutes
+
+      const totalWorked = (outLocal - inLocal) / (1000 * 60);
+      const workingMinutes = Math.max(0, totalWorked - lateCheckIn - earlyCheckOut);
+
+      return {
+        date: dateString,
+        inTime: inLocal.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+        outTime: outLocal.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+        sections: [
+          { color: "#d3d3d3", value: parseFloat((lateCheckIn / 60).toFixed(2)) },
+          { color: "#34a853", value: parseFloat((workingMinutes / 60).toFixed(2)) },
+          { color: "#ff0000", value: parseFloat((earlyCheckOut / 60).toFixed(2)) }
+        ]
+      };
+    });
+
+  return formatted;
+}
+
+const attendanceData = useMemo(() => {
+    if (isLoading || !attendance) return [];
+    return formatAttendance(attendance);
+  }, [attendance, isLoading]);
 
   const attendanceSeries = [
     {
-      name: "Gray (Late Check-In)",
+      name: "Blue (Late Check-In)",
       data: attendanceData.map((entry) => entry.sections[0].value), // Gray section values
       color: "#1E3D73",
     },
@@ -272,18 +187,26 @@ const Attendance = () => {
       },
     },
     xaxis: {
-      categories: attendanceData.map((entry) => entry.date.split("-")[0]), // Extract only the day (DD)
-      labels: {
-        style: {
-          fontSize: "12px",
-        },
-      },
+       categories: attendanceData.map((entry) => entry.date.split("-")[0]),  
+  labels: {
+    style: {
+      fontSize: "12px",
+    },
+    rotate: -45,  
+    hideOverlappingLabels: false,
+    showDuplicates: true,
+    trim: false,
+  },
+  tickPlacement: "on",
+  axisTicks: {
+    show: true,
+  },
     },
 
     yaxis: {
       min: 0,
-      max: 9, // Maximum set to 9 hours
-      tickAmount: 9, // 9 ticks for 0 to 9 hours
+      max: 12, // Maximum set to 9 hours
+      tickAmount: 12, // 9 ticks for 0 to 9 hours
       labels: {
         formatter: (value) => `${value} hr`, // Display as whole hours
       },
@@ -326,7 +249,7 @@ const Attendance = () => {
               <div style="text-align: end;">${formatTime(red)}</div>
             </div>
           </div>
-        `;
+        `
       },
     },
 

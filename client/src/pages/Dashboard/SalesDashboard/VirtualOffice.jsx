@@ -75,8 +75,6 @@ const VirtualOffice = () => {
     return transformRevenues(virtualOfficeRevenue);
   }, [virtualOfficeRevenue, isLoadingVirtualOfficeRevenue]);
 
-  console.log("Transformded revene : ", transformRevenuesData);
-
   const graphNumbers = transformRevenuesData?.map((item) => {
     // Remove commas and convert the value to a number
     return parseFloat(item?.actual.replace(/,/g, ""));

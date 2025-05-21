@@ -40,7 +40,7 @@ router.get("/get-assigned-tasks", getAssignedTasks);
 router.patch("/update-task/:id", updateTask);
 router.patch("/complete-tasks/", completeTasks);
 router.patch("/delete-task/:id", deleteTask);
-router.post("/create-task", createRoleBasedTask);
+router.post("/create-task", createRoleBasedTask); //Query needed
 router.post("/create-individual-task", createIndividualTask);
 router.patch("/update-task-status/:taskId", updateTaskStatus);
 router.get("/get-kpa-tasks", getAllKpaTasks);
