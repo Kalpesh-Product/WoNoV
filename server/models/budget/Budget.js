@@ -50,7 +50,7 @@ const budgetSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  month: {
+  dueDate: {
     type: Date,
     required: true,
   },

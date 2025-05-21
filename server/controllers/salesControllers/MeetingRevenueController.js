@@ -108,7 +108,7 @@ const getMeetingRevenue = async (req, res, next) => {
         }
 
         const monthData = monthlyMap.get(monthKey);
-        monthData.actual += item.taxable;
+        monthData.actual += item.totalAmount;
 
         monthData.revenue.push({
           clientName: item.clientName,
