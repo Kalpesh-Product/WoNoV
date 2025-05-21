@@ -16,24 +16,21 @@ const createTasks = async (req, res, next) => {
     const {
       taskName,
       description,
-      projectId,
       status,
       priority,
       assignees,
       dueDate,
       dueTime,
-      taskType,
-      taskTag,
+      taskDuration,
+      assignedDate,
     } = req.body;
 
     if (
       !taskName ||
-      !taskType ||
-      !taskTag ||
+      !taskDuration ||
       !description ||
-      !projectId ||
-      !status ||
-      !dueDate
+      !dueDate ||
+      !assignedDate
     ) {
       throw new CustomError(
         "Missing required fields",
@@ -43,10 +40,18 @@ const createTasks = async (req, res, next) => {
       );
     }
 
-    const assignedDate = new Date();
+    const parsedAssignedDate = new Date(assignedDate);
     const parsedDueDate = new Date(dueDate);
     const parsedDueTime = new Date(dueTime);
 
+    if (isNaN(parsedAssignedDate.getTime())) {
+      throw new CustomError(
+        "Invalid date format",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
     if (isNaN(parsedDueDate.getTime())) {
       throw new CustomError(
         "Invalid date format",
@@ -96,16 +101,14 @@ const createTasks = async (req, res, next) => {
     const newTask = new Task({
       taskName,
       description,
-      project: projectId,
       status,
-      priority: priority ? priority : "Medium",
+      priority: priority ? priority : "High",
       assignedTo: existingUsers,
       assignedBy: user,
       assignedDate,
       dueDate: parsedDueDate,
       dueTime: dueTime ? parsedDueTime : null,
-      taskType,
-      taskTag,
+      taskDuration,
       company,
     });
 
@@ -125,13 +128,11 @@ const createTasks = async (req, res, next) => {
       changes: {
         taskName,
         description,
-        projectId,
         status,
         priority,
         assignees: existingUsers,
         dueDate,
         dueTime,
-        taskType,
       },
     });
 
@@ -155,7 +156,7 @@ const updateTask = async (req, res, next) => {
 
   try {
     const { id } = req.params;
-    const { taskName, description, status, priority, assignees, taskType } =
+    const { taskName, description, status, priority, assignees, taskDuration } =
       req.body;
 
     if (!id) {
@@ -170,11 +171,10 @@ const updateTask = async (req, res, next) => {
     const updates = {};
 
     if (taskName !== undefined) updates.taskName = taskName;
-    if (taskType !== undefined) updates.taskType = taskType;
+    if (taskDuration !== undefined) updates.taskDuration = taskDuration;
     if (description !== undefined) updates.description = description;
     if (status !== undefined) {
-      const validStatuses = ["Upcoming", "In progress", "Pending", "Completed"];
-      if (!validStatuses.includes(status)) {
+      if (status !== "Completed") {
         throw new CustomError(
           "Invalid status value",
           logPath,
@@ -261,14 +261,6 @@ const getAllTasks = async (req, res, next) => {
     const tasks = await Task.find({
       company,
     })
-      .populate({
-        path: "project",
-        select: "projectName department",
-        populate: {
-          path: "department",
-          select: "name",
-        },
-      })
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
       .select("-company")
@@ -297,14 +289,7 @@ const getMyTasks = async (req, res, next) => {
       company,
       assignedTo: { $in: [user] },
     })
-      .populate({
-        path: "project",
-        select: "projectName department",
-        populate: {
-          path: "department",
-          select: "name",
-        },
-      })
+      .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
       .select("-company")
@@ -340,10 +325,6 @@ const getMyTodayTasks = async (req, res, next) => {
       assignedTo: { $in: [user] },
       assignedDate: { $gte: startOfDay, $lte: endOfDay },
     })
-      .populate({
-        path: "project",
-        select: "projectName",
-      })
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
       .select("-company")
@@ -357,7 +338,7 @@ const getMyTodayTasks = async (req, res, next) => {
       return {
         ...task,
         task: task.taskName,
-        type: task.taskType,
+        type: task.taskDuration,
         dueTime: formatTime(task.dueTime),
         dueDate: formatTime(task.dueDate),
         assignedDate: formatDate(task.assignedDate),
@@ -393,23 +374,14 @@ const getTeamMembersTasksProjects = async (req, res, next) => {
         })
           .populate({
             path: "assignedTo",
-            select: "email firstName lastName status",
+            select: "email firstName lastName isActive",
             populate: [
               { path: "role", select: "roleTitle" },
               { path: "departments", select: "name" },
             ],
           })
           .populate("assignedBy", "firstName lastName")
-          .populate("project", "projectName")
           .select("-company")
-          .lean();
-
-        // Fetch projects assigned to the employee
-        const projects = await Project.find({
-          company,
-          assignedTo: { $in: [id] },
-        })
-          .select("projectName")
           .lean();
 
         // Find the correct user details from the first task
@@ -419,6 +391,7 @@ const getTeamMembersTasksProjects = async (req, res, next) => {
             (user) => user._id.toString() === id.toString()
           );
 
+          console.log("matchedUser.isActive", matchedUser.isActive);
           if (matchedUser) {
             userDetails = {
               email: matchedUser.email,
@@ -429,7 +402,7 @@ const getTeamMembersTasksProjects = async (req, res, next) => {
                   : ["No Role"],
               departments:
                 matchedUser.departments?.map((dept) => dept.name) || [],
-              status: matchedUser.status || "Active",
+              status: matchedUser.isActive,
             };
           }
         }
@@ -438,7 +411,6 @@ const getTeamMembersTasksProjects = async (req, res, next) => {
           return {
             ...userDetails,
             tasksCount: tasks.length,
-            projectsCount: projects.length || null,
           };
         }
 
@@ -460,10 +432,6 @@ const getAssignedTasks = async (req, res, next) => {
     const { user, company } = req;
 
     const tasks = await Task.find({ company, assignedBy: user })
-      .populate({
-        path: "project",
-        select: "projectName",
-      })
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
       .select("-company")
@@ -484,10 +452,11 @@ const getAssignedTasks = async (req, res, next) => {
   }
 };
 
+//Update multiple tasks statuses together
 const completeTasks = async (req, res, next) => {
   const { company, user, ip } = req;
   const logPath = "tasks/TaskLog";
-  const logAction = "Update Task Status";
+  const logAction = "Mark Completed Tasks";
   const logSourceKey = "task";
 
   try {
@@ -541,7 +510,7 @@ const completeTasks = async (req, res, next) => {
     );
 
     return res.status(200).json({
-      message: "Task status updated successfully",
+      message: "Tasks marked completed",
     });
   } catch (error) {
     if (error instanceof CustomError) {

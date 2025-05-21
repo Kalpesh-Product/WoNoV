@@ -5,10 +5,10 @@ const taskSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  project: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Project",
-  },
+  // project: {
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: "Project",
+  // },
   company: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Company",
@@ -42,23 +42,23 @@ const taskSchema = new mongoose.Schema({
   status: {
     type: String,
     required: true,
+    default: "Pending",
     enum: ["InProgress", "Completed", "Pending"],
   },
   priority: {
     type: String,
-    default: "Medium",
+    default: "High",
     enum: ["High", "Medium", "Low"],
   },
-  taskType: {
+  taskDuration: {
     type: String,
-    enum: ["Daily", "Monthly", "Additional"],
+    enum: ["Daily", "Monthly", "Quarterly", "Annually"],
     required: true,
   },
   //workCategory and location are maintenance related fileds
   workCategory: {
     type: String,
     enum: ["Internal", "External"],
-    required: true,
   },
   location: {
     type: mongoose.Schema.Types.ObjectId,
@@ -67,10 +67,6 @@ const taskSchema = new mongoose.Schema({
   department: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Department",
-  },
-  taskTag: {
-    type: String,
-    enum: ["KRA", "KPI"],
   },
   isDeleted: {
     type: Boolean,

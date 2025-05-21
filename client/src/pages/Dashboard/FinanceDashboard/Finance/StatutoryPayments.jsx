@@ -6,10 +6,64 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import dayjs from "dayjs";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import YearlyGraph from "../../../../components/graphs/YearlyGraph";
+import humanDate from "../../../../utils/humanDateForamt";
+import { inrFormat } from "../../../../utils/currencyFormat";
 
 const StatutoryPayments = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
+  const axios = useAxiosPrivate();
+  const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+    queryKey: ["hrFinance"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`
+        );
+        const budgets = response.data.allBudgets;
+        return Array.isArray(budgets) ? budgets : [];
+      } catch (error) {
+        console.error("Error fetching budget:", error);
+        return [];
+      }
+    },
+  });
+
+  const transformToCollectionData = (expenses) => {
+    const monthMap = {};
+
+    expenses.forEach((item) => {
+      const monthKey = dayjs(item.dueDate).format("MMM-YY");
+
+      if (!monthMap[monthKey]) {
+        monthMap[monthKey] = { total: 0, approved: 0 };
+      }
+
+      monthMap[monthKey].total += 1;
+      if (item.status === "Approved") {
+        monthMap[monthKey].approved += 1;
+      }
+    });
+
+    // Convert into desired array format
+    return Object.entries(monthMap).map(([month, { total, approved }]) => {
+      const paid = Math.round((approved / total) * 100);
+      return {
+        month,
+        paid,
+        unpaid: 100 - paid,
+      };
+    });
+  };
+
+  const statutoryRaw = hrFinance.filter(
+    (item) => item.expanseType === "Statutory"
+  );
+  const statutoryFormatted = transformToCollectionData(statutoryRaw);
+  console.log("STATSADAS : ", statutoryRaw);
 
   const collectionData = [
     { month: "Apr-24", paid: 80, unpaid: 20 },
@@ -29,11 +83,11 @@ const StatutoryPayments = () => {
   const barGraphData = [
     {
       name: "Paid",
-      data: collectionData.map((item) => item.paid),
+      data: statutoryFormatted.map((item) => item.paid),
     },
     {
       name: "Unpaid",
-      data: collectionData.map((item) => item.unpaid),
+      data: statutoryFormatted.map((item) => item.unpaid),
     },
   ];
 
@@ -79,10 +133,11 @@ const StatutoryPayments = () => {
   };
   //--------------------------------------------------------TableData----------------------------------------------------//
   const kraColumn = [
-    { field: "srNo", headerName: "Sr No", flex: 1 },
-    { field: "client", headerName: "Client", flex: 1 },
-    { field: "amount", headerName: "Amount (INR)", flex: 1 },
-    { field: "due", headerName: "Due Date", flex: 1 },
+    { field: "srNo", headerName: "Sr No", width : 100 },
+    { field: "expanseName", headerName: "Client", flex: 1 },
+    { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
+    { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
+    { field: "dueDate", headerName: "Due Date", flex: 1 },
     { field: "status", headerName: "Status", flex: 1 },
     {
       field: "actions",
@@ -92,7 +147,8 @@ const StatutoryPayments = () => {
           <div className="p-2 mb-2 flex gap-2">
             <span
               className="text-subtitle cursor-pointer"
-              onClick={() => handleViewModal(params.data)}>
+              onClick={() => handleViewModal(params.data)}
+            >
               <MdOutlineRemoveRedEye />
             </span>
           </div>
@@ -152,7 +208,13 @@ const StatutoryPayments = () => {
     },
   ];
 
-  const formattedRows = rows.map((row) => ({ ...row, due: dayjs(row.due).format("DD-MM-YYYY") }))
+  const formattedRows = statutoryRaw.map((row, index) => ({
+    ...row,
+    srNo: index + 1,
+    projectedAmount : inrFormat(row.projectedAmount),
+    actualAmount : inrFormat(row.actualAmount),
+    dueDate: dayjs(new Date(row.dueDate)).format("DD-MM-YYYY"),
+  }));
 
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
@@ -162,12 +224,10 @@ const StatutoryPayments = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection
-        titleLabel={"FY 2024-25"}
-        title={"Statutory Payments".toUpperCase()}
-        border>
+      <WidgetSection titleLabel={"FY 2024-25"} border>
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
+      {/* <YearlyGraph title={"Statutory Payments".toUpperCase()} /> */}
 
       <div>
         <AgTable
@@ -187,14 +247,18 @@ const StatutoryPayments = () => {
             <DetalisFormatted title="Client" detail={viewDetails.client} />
             <DetalisFormatted
               title="Amount Paid"
-              detail={`INR ${Number(viewDetails.amount.replace(/,/g, "")).toLocaleString("en-IN")}`}
+              detail={`INR ${Number(
+                viewDetails.amount.replace(/,/g, "")
+              ).toLocaleString("en-IN")}`}
             />
             <DetalisFormatted title="Due Date" detail={viewDetails.due} />
-            <DetalisFormatted title="Payment Status" detail={viewDetails.status} />
+            <DetalisFormatted
+              title="Payment Status"
+              detail={viewDetails.status}
+            />
           </div>
         </MuiModal>
       )}
-
     </div>
   );
 };

@@ -87,53 +87,6 @@ const userDataSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  kraKpa: [
-    {
-      task: {
-        type: String,
-        required: true,
-      },
-      assignedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "UserData",
-      },
-      department: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Department",
-      },
-      description: {
-        type: String,
-        // required: true,
-      },
-      priority: {
-        type: String,
-        default: "High",
-        enum: ["High", "Medium", "Low"],
-      },
-      taskType: {
-        type: String,
-        enum: ["KPA", "KRA"],
-        required: true,
-      },
-      status: {
-        type: String,
-        enum: ["Pending", "InProgress", "Completed"],
-        default: "Pending",
-      },
-      assignedDate: {
-        type: Date,
-        required: true,
-      },
-      dueDate: {
-        type: Date,
-        required: true,
-      },
-      isDeleted: {
-        type: Boolean,
-        default: false,
-      },
-    },
-  ],
   employeeType: {
     name: { type: String, required: true },
     leavesCount: [

@@ -38,7 +38,7 @@ const AllocatedBudget = ({
         types.add(row.expanseType || "Unknown");
       });
     });
-    return Array.from(types);
+    return ["All", ...Array.from(types)];
   }, [financialData]);
 
   const allMonths = useMemo(() => {
@@ -66,11 +66,13 @@ const AllocatedBudget = ({
       result[type] = {};
       allMonths.forEach((month) => {
         const monthData = financialData.find((fd) => fd.month === month);
-        const rows = noFilter
+        const rows =
+        noFilter || type === "All"
           ? monthData?.tableData?.rows || []
           : monthData?.tableData?.rows?.filter(
               (r) => (r.expanseType || "Unknown") === type
             ) || [];
+      
 
         const projectedAmount = rows.reduce(
           (sum, r) =>
@@ -182,7 +184,7 @@ const AllocatedBudget = ({
               )}
             </div>
             <div className="flex gap-4 justify-end items-center w-3/4 ">
-            <div className="">
+              <div className="">
                 {/* Month Switcher */}
                 {filteredMonths.length > 0 && (
                   <div className="flex gap-4 items-center">
@@ -229,21 +231,19 @@ const AllocatedBudget = ({
                   disabled={selectedFYIndex === fiscalYears.length - 1}
                 />
               </div>
-
-           
             </div>
           </div>
           <hr />
 
           {/* AgTable */}
           {monthDataForSelectedType.rows.length > 0 ? (
-            <div className="h-72 overflow-y-auto mt-4">
+            <div className="h-full  mt-4">
               <AgTable
-                search={monthDataForSelectedType.rows.length >= 10}
+                search
                 data={monthDataForSelectedType.rows}
                 columns={monthDataForSelectedType.columns}
-                tableHeight={250}
-                hideFilter={monthDataForSelectedType.rows.length <= 9}
+                tableHeight={350}
+                // hideFilter={monthDataForSelectedType.rows.length <= 9}
               />
             </div>
           ) : (

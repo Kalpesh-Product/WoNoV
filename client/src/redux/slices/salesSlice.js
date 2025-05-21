@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   leadsData: [],
   clientsData: [],
+  unitsData : [],
 };
 
 const salesSlice = createSlice({
@@ -21,8 +22,11 @@ const salesSlice = createSlice({
     clearClientData: (state) => {
       state.clientsData = [];
     },
+    setUnitData : (state,action)=>{
+      state.unitsData = action.payload;
+    }
   },
 });
 
-export const { setLeadsData, clearLeadsData, setClientData, clearClientData } = salesSlice.actions;
+export const { setLeadsData, clearLeadsData, setClientData, clearClientData, setUnitData } = salesSlice.actions;
 export default salesSlice.reducer;

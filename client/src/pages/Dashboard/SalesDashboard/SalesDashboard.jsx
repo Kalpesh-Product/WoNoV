@@ -15,22 +15,22 @@ import {
   sourcingChannelsOptions,
   clientGenderData,
   clientGenderPieChartOptions,
-  companyTableColumns,
-  formattedCompanyTableData,
   upcomingBirthdaysColumns,
+  calculateCompletedTime,
 } from "./SalesData/SalesData";
 import { useNavigate } from "react-router-dom";
 import ParentRevenue from "./ParentRevenue";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
-import { setClientData, setLeadsData } from "../../../redux/slices/salesSlice";
+import { setClientData, setLeadsData, setUnitData } from "../../../redux/slices/salesSlice";
 import { CircularProgress, Skeleton } from "@mui/material";
 import { SiCashapp } from "react-icons/si";
 import { useSidebar } from "../../../context/SideBarContext";
 import FinanceCard from "../../../components/FinanceCard";
 import { YearCalendar } from "@mui/x-date-pickers";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import humanDate from "../../../utils/humanDateForamt";
 
 const SalesDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -189,8 +189,9 @@ const SalesDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/sales/co-working-clients");
-        dispatch(setClientData(response.data));
-        return response.data;
+        const data = response.data.filter((item)=>item.isActive)
+        dispatch(setClientData(data));
+        return data;
       } catch (error) {
         console.error("Error fetching clients data:", error);
       }
@@ -201,7 +202,7 @@ const SalesDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/company/fetch-units");
-
+        dispatch(setUnitData(response.data));
         return response.data;
       } catch (error) {
         console.error("Error fetching clients data:", error);
@@ -400,7 +401,7 @@ const SalesDashboard = () => {
     },
     yaxis: {
       title: { text: "Lead Count" },
-      tickAmount: 10,
+      tickAmount: 5,
     },
     legend: { position: "top" },
     dataLabels: { enabled: true },
@@ -607,6 +608,23 @@ const SalesDashboard = () => {
   };
 
   //-----------------------------------------------Conversion of Sector-wise Pie-graph-----------------------------------------------------------//
+  //-----------------------------------------------Client Anniversary-----------------------------------------------------------//
+  const companyTableColumns = [
+    { id: "id", label: "Sr No" },
+    { id: "company", label: "Company" },
+    { id: "startDate", label: "Date of Join" },
+    { id: "completedTime", label: "Completed Time" },
+  ];
+  
+  // ✅ Processed Table Data (Including Completed Time)
+  const formattedCompanyTableData = clientsData.map((company,index) => ({
+    id: index + 1,
+    company: company.clientName,
+    startDate: (humanDate(company.startDate)) || "18-10-2001",
+    completedTime: calculateCompletedTime(company.startDate ),
+  }));
+  //-----------------------------------------------Client Anniversary-----------------------------------------------------------//
+  //-----------------------------------------------Client Birthday-----------------------------------------------------------//
 
   function getUpcomingBirthdays(data) {
     const today = new Date();
@@ -668,6 +686,8 @@ const SalesDashboard = () => {
     ...client,
     birthday: dayjs(client.birthday).format("DD-MM-YYYY"),
   }));
+  //-----------------------------------------------Client Birthday-----------------------------------------------------------//
+
   //-----------------------------------------------Conversion of Sector-wise Pie-graph-----------------------------------------------------------//
   //-----------------------------------------------Conversion of India-wise Pie-graph-----------------------------------------------------------//
   function getLocationWiseData(data) {
@@ -873,7 +893,7 @@ const SalesDashboard = () => {
             columns={companyTableColumns}
             rows={formattedCompanyTableData}
             rowKey="id"
-            rowsToDisplay={10}
+            rowsToDisplay={40}
             scroll={true}
             className="h-full"
           />
@@ -884,7 +904,7 @@ const SalesDashboard = () => {
             columns={upcomingBirthdaysColumns}
             rows={formattedClientMemberBirthday}
             rowKey="id"
-            rowsToDisplay={10}
+            rowsToDisplay={40}
             scroll={true}
             className="h-full"
           />

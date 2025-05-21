@@ -32,6 +32,11 @@ const kraKpaRolesSchema = new mongoose.Schema(
       enum: ["KPA", "KRA"],
       required: true,
     },
+    kpaType: {
+      type: String,
+      enum: ["Monthly", "Quarterly", "Annually"],
+      required: true,
+    },
     department: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
@@ -42,6 +47,10 @@ const kraKpaRolesSchema = new mongoose.Schema(
     },
     dueDate: {
       type: Date,
+      required: true,
+    },
+    dueTime: {
+      type: String,
       required: true,
     },
     isDeleted: {

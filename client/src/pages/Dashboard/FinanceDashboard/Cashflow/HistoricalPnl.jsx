@@ -634,21 +634,21 @@ const HistoricalPnl = () => {
               headerName: "Total Profit / Loss (INR)",
             },
           ]}
-          // data={selectedMonthData.domains.map((domain, index) => ({
-          //   id: index,
-          //   name: domain.name,
-          //   totalIncome: inrFormat(domain.totalIncome),
-          //   totalExpense: inrFormat(domain.totalExpense),
-          //   totalProfitLoss: inrFormat(domain.totalProfitLoss),
-          //   clients: domain.clients.map((client, idx) => ({
-          //     ...client,
-          //     income: inrFormat(client.income),
-          //     expense: inrFormat(client.expense),
-          //     profitLoss: inrFormat(client.profitLoss),
-          //     srNo: idx + 1, // Adding Sr No field for each client
-          //   })),
-          // }))}
-          data={[]}
+          data={selectedMonthData.domains.map((domain, index) => ({
+            id: index,
+            name: domain.name,
+            totalIncome: inrFormat(domain.totalIncome),
+            totalExpense: inrFormat(domain.totalExpense),
+            totalProfitLoss: inrFormat(domain.totalProfitLoss),
+            clients: domain.clients.map((client, idx) => ({
+              ...client,
+              income: inrFormat(client.income),
+              expense: inrFormat(client.expense),
+              profitLoss: inrFormat(client.profitLoss),
+              srNo: idx + 1, // Adding Sr No field for each client
+            })),
+          }))}
+          // data={[]}
           renderExpandedRow={(row) => {
             if (!row?.clients || !Array.isArray(row.clients)) {
               return <div>No client details available</div>; // Fallback message if no data

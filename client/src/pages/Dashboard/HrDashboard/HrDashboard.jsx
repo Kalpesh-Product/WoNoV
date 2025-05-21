@@ -31,8 +31,6 @@ const HrDashboard = () => {
   const dispatch = useDispatch();
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
 
-  useEffect(()=>{console.log("TASKS FROM REDUX : ", tasksRawData)}, [tasksRawData])
-
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
@@ -75,8 +73,6 @@ const HrDashboard = () => {
           `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
             `
         );
-
-        console.log(transformBudgetData(response.data.allBudgets));
         return transformBudgetData(response.data.allBudgets);
       } catch (error) {
         throw new Error("Error fetching data");
@@ -573,6 +569,24 @@ const HrDashboard = () => {
 
   const lastUtilisedValue = hrFinance?.utilisedBudget?.at(-1) || 0;
 
+  //------------------- UnitData -----------------------//
+    const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
+      queryKey: ["unitsData"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/company/fetch-units");
+  
+          return response.data;
+        } catch (error) {
+          console.error("Error fetching clients data:", error);
+        }
+      },
+    });
+
+    const totalSqft = unitsData
+    .filter((item) => item.isActive === true)
+    .reduce((sum, item) => (item.sqft || 0) + sum, 0);
+  //--------------------UnitData -----------------------//
   //--------------------New Data card data -----------------------//
   const HrExpenses = {
     cardTitle: "Expenses",
@@ -594,7 +608,7 @@ const HrDashboard = () => {
         route : "finance"
       },
       { title: "Exit Head Count", value: "2" },
-      { title: "Per Sq. Ft.", value: "810" },
+      { title: "Per Sq. Ft.", value: `INR ${inrFormat(totalUtilised/totalSqft)}`},
     ],
   };
 
@@ -628,7 +642,7 @@ const HrDashboard = () => {
         title: "Average Hours",
         route : "employee/attendance",
         value: averageWorkingHours
-          ? `${(Number(averageWorkingHours) / 30 + 3.4).toFixed(2)}h`
+          ? `${(Number(averageWorkingHours) / 30).toFixed(2)}h`
           : "0h",
       },
     ],
@@ -642,7 +656,7 @@ const HrDashboard = () => {
   const cityData = {};
 
   usersQuery.data?.forEach((emp) => {
-    let rawCity = emp?.homeAddress?.city || "Panaji";
+    let rawCity = emp?.homeAddress?.city || "Others";
     let normalizedCity = rawCity.trim().toLowerCase();
     let displayCity =
       normalizedCity.charAt(0).toUpperCase() + normalizedCity.slice(1);
