@@ -289,6 +289,7 @@ const getMyTasks = async (req, res, next) => {
       company,
       assignedTo: { $in: [user] },
     })
+      .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
       .select("-company")
