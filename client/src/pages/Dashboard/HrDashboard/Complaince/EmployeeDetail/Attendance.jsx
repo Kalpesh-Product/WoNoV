@@ -187,12 +187,20 @@ const attendanceData = useMemo(() => {
       },
     },
     xaxis: {
-      categories: attendanceData.map((entry) => entry.date.split("-")[0]),
-      labels: {
-        style: {
-          fontSize: "12px",
-        },
-      },
+       categories: attendanceData.map((entry) => entry.date.split("-")[0]),  
+  labels: {
+    style: {
+      fontSize: "12px",
+    },
+    rotate: -45,  
+    hideOverlappingLabels: false,
+    showDuplicates: true,
+    trim: false,
+  },
+  tickPlacement: "on",
+  axisTicks: {
+    show: true,
+  },
     },
 
     yaxis: {
