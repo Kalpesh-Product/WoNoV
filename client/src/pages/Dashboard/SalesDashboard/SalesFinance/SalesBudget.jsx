@@ -288,8 +288,8 @@ const SalesBudget = () => {
           </Suspense>
         </div>
         <div>
-          <WidgetSection layout={3} padding>
-            <DataCard
+          <WidgetSection layout={2} padding>
+            {/* <DataCard
               data={"INR " + inrFormat("2000000")}
               title={"Projected"}
               route={"/app/dashboard/hr-dashboard/finance/budget"}
@@ -299,9 +299,9 @@ const SalesBudget = () => {
                   month: "short",
                 }
               )}-25`}
-            />
+            /> */}
             <DataCard
-              data={"INR " + inrFormat("150000")}
+              data={"N/A"}
               title={"Actual"}
               route={"/app/dashboard/hr-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString(
@@ -312,7 +312,7 @@ const SalesBudget = () => {
               )}-25`}
             />
             <DataCard
-              data={"INR " + inrFormat(12000)}
+              data={"N/A"}
               title={"Requested"}
               route={"/app/dashboard/hr-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString(

@@ -11,7 +11,7 @@ const SalesMixBag = () => {
   const [search, setSearch] = useState("");
   const routes = [
     {
-      title: "Occupancy",
+      title: "Inventory",
       route:
         "/app/dashboard/sales-dashboard/mix-bag/co-working-seats/check-availability",
     },

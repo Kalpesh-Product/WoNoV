@@ -94,7 +94,7 @@ const getMeetingRevenue = async (req, res, next) => {
       const monthlyMap = new Map();
 
       revenues.forEach((item) => {
-        const referenceDate = item.paymentDate || item.date;
+        const referenceDate =  item.date;
         const month = MONTHS_SHORT[new Date(referenceDate).getMonth()];
         const year = new Date(referenceDate).getFullYear().toString().slice(-2);
         const monthKey = `${month}-${year}`;

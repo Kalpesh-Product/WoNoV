@@ -49,9 +49,9 @@ const getConsolidatedRevenue = async (req, res, next) => {
 
     // Meetings (use paymentDate)
     meetingRevenue.forEach((item) => {
-      if (item.paymentDate) {
-        const fy = getFinancialYear(item.paymentDate);
-        const idx = getFinancialMonthIndex(item.paymentDate);
+      if (item.date) {
+        const fy = getFinancialYear(item.date);
+        const idx = getFinancialMonthIndex(item.date);
         categoryMap.Meetings.data[fy] ??= initFYData();
         categoryMap.Meetings.data[fy][idx] += item.totalAmount || 0;
       }
