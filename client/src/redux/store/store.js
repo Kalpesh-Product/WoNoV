@@ -11,7 +11,7 @@ import hrReducer from "../slices/hrSlice"
 const persistConfig = {
   key: "root",
   storage: sessionStorage,
-  whitelist: ["client","tickets","hr"],
+  whitelist: ["client","tickets","hr","sales"],
   transforms: [
     encryptTransform({
       secretKey: import.meta.env.VITE_REDUX_PERSIST,

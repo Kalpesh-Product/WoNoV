@@ -11,13 +11,31 @@ import { Controller, useForm } from "react-hook-form";
 import { useLocation, useNavigate } from "react-router-dom";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import WidgetSection from "../../../../components/WidgetSection";
+import NormalBarGraph from "../../../../components/graphs/NormalBarGraph"
+import { useSelector } from "react-redux";
 
 const CheckAvailability = () => {
   const navigate = useNavigate();
   const address = useLocation();
   const axios = useAxiosPrivate();
-  // const [selectedUnit, setSelectedUnit] = useState("")
+  const unitsData = useSelector((state)=>state.sales.unitsData)
+   const clientsData = useSelector((state) => state.sales.clientsData);
+   const unitMap = new Map();
 
+   clientsData.forEach((item) => {
+     const unit = item.unit;
+     if (unit && unit.unitNo && !unitMap.has(unit.unitNo)) {
+       unitMap.set(unit.unitNo, unit);
+     }
+   });
+   
+   const uniqueUnits = Array.from(unitMap.values());
+   console.log("Unique Units:", uniqueUnits);
+   
+
+//  const combinedData =   [...unitsData , ...clientsData]
+//  console.log("COMBINED : ",combinedData)
   const { control, handleSubmit, watch } = useForm({
     defaultValues: {
       location: "",
@@ -94,7 +112,11 @@ const CheckAvailability = () => {
   };
 
   return (
-    <div className="border-default border-borderGray m-4 p-4 rounded-md text-center">
+    <div className="flex flex-col gap-4 p-4">
+    <WidgetSection layout={1}>
+      {/* <NormalBarGraph /> */}
+    </WidgetSection>
+    <div className="border-default border-borderGray p-4 rounded-md text-center">
       <h2 className="font-pregular text-title text-primary mt-20 mb-10 uppercase">
         Check Occupancy
       </h2>
@@ -174,6 +196,7 @@ const CheckAvailability = () => {
           externalStyles="w-48 mb-20"
         />
       </form>
+    </div>
     </div>
   );
 };

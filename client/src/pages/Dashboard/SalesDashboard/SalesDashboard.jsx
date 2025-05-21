@@ -23,7 +23,7 @@ import ParentRevenue from "./ParentRevenue";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
-import { setClientData, setLeadsData } from "../../../redux/slices/salesSlice";
+import { setClientData, setLeadsData, setUnitData } from "../../../redux/slices/salesSlice";
 import { CircularProgress, Skeleton } from "@mui/material";
 import { SiCashapp } from "react-icons/si";
 import { useSidebar } from "../../../context/SideBarContext";
@@ -201,7 +201,7 @@ const SalesDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/company/fetch-units");
-
+        dispatch(setUnitData(response.data));
         return response.data;
       } catch (error) {
         console.error("Error fetching clients data:", error);
