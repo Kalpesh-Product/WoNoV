@@ -53,7 +53,7 @@ const getConsolidatedRevenue = async (req, res, next) => {
         const fy = getFinancialYear(item.date);
         const idx = getFinancialMonthIndex(item.date);
         categoryMap.Meetings.data[fy] ??= initFYData();
-        categoryMap.Meetings.data[fy][idx] += item.totalAmount || 0;
+        categoryMap.Meetings.data[fy][idx] += item.taxable || 0;
       }
     });
 
@@ -63,7 +63,7 @@ const getConsolidatedRevenue = async (req, res, next) => {
         const fy = getFinancialYear(item.invoiceCreationDate);
         const idx = getFinancialMonthIndex(item.invoiceCreationDate);
         categoryMap["Alt. Revenues"].data[fy] ??= initFYData();
-        categoryMap["Alt. Revenues"].data[fy][idx] += item.invoiceAmount || 0;
+        categoryMap["Alt. Revenues"].data[fy][idx] += item.taxableAmount || 0;
       }
     });
 
@@ -87,7 +87,7 @@ const getConsolidatedRevenue = async (req, res, next) => {
         const fy = getFinancialYear(item.date);
         const idx = getFinancialMonthIndex(item.date);
         categoryMap.Workations.data[fy] ??= initFYData();
-        categoryMap.Workations.data[fy][idx] += item.totalAmount || 0;
+        categoryMap.Workations.data[fy][idx] += item.taxableAmount || 0;
       }
     });
 

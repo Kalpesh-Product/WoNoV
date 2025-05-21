@@ -337,8 +337,78 @@ const uploadDepartmentDocument = async (req, res, next) => {
   }
 };
 
+const getDepartmentDocuments = async (req, res, next) => {
+  try {
+    const companyId = req.company;
+    const { departmentId } = req.query; 
+    const { type } = req.query;
+
+    if (!departmentId) {
+      return res.status(400).json({ message: "Department ID is required" });
+    }
+
+    const companyData = await Company.findOne({ _id: companyId }).lean().exec();
+    const department = companyData?.selectedDepartments?.find(
+      (dept) => dept.department.toString() === departmentId
+    );
+
+    if (!department) {
+      return res.status(404).json({ message: "Department not found" });
+    }
+
+    const hasSOP = Array.isArray(department.sop) && department.sop.length > 0;
+    const hasPolicies =
+      Array.isArray(department.policies) && department.policies.length > 0;
+
+    // Check based on 'type'
+    if (type) {
+      if (type === "sop") {
+        if (!hasSOP) {
+          return res
+            .status(404)
+            .json({ message: "No SOP documents found for this department" });
+        }
+        return res
+          .status(200)
+          .json({ documents: { sopDocuments: department.sop } });
+      } else if (type === "policies") {
+        if (!hasPolicies) {
+          return res
+            .status(404)
+            .json({ message: "No policy documents found for this department" });
+        }
+        return res
+          .status(200)
+          .json({ documents: { policyDocuments: department.policies } });
+      } else {
+        return res
+          .status(400)
+          .json({
+            message: "Invalid document type. Must be 'sop' or 'policies'",
+          });
+      }
+    }
+
+    // If no type provided, return both if available
+    if (!hasSOP && !hasPolicies) {
+      return res
+        .status(404)
+        .json({ message: "No documents found for this department" });
+    }
+
+    const response = {};
+    if (hasSOP) response.sopDocuments = department.sop;
+    if (hasPolicies) response.policyDocuments = department.policies;
+
+    return res.status(200).json({ documents: response });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   uploadCompanyDocument,
   getCompanyDocuments,
   uploadDepartmentDocument,
+  getDepartmentDocuments,
 };
