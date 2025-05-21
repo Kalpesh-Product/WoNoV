@@ -1,21 +1,20 @@
 const { default: mongoose } = require("mongoose");
 const UserData = require("../../models/hr/UserData");
-const kraKpaRole = require("../../models/tasks/kraKpaRole");
-const kraKpaTask = require("../../models/tasks/kraKpaTask");
+const kraKpaRole = require("../../models/performance/kraKpaRole");
+const kraKpaTask = require("../../models/performance/kraKpaTask");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 
 const createDeptBasedTask = async (req, res, next) => {
   const { user, ip, company } = req;
-  const logPath = "tasks/TaskLog";
+  const logPath = "performance/PerformanceLog";
   const logAction = "Create Task";
   const logSourceKey = "kraKpaRoles";
 
   try {
-    const { type } = req.query;
-
     const {
       task,
+      taskType,
       description,
       department,
       priority,
@@ -24,23 +23,15 @@ const createDeptBasedTask = async (req, res, next) => {
       kpaType,
     } = req.body;
 
-    if (!type) {
-      throw new CustomError(
-        "Missing Task type",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
     if (
       !task ||
+      !taskType ||
       !description ||
       !department ||
       !priority ||
       !assignedDate ||
       !dueDate ||
-      (type === "KPA" && !kpaType)
+      (taskType === "KPA" && !kpaType)
     ) {
       throw new CustomError(
         "Missing required fields",
@@ -72,22 +63,50 @@ const createDeptBasedTask = async (req, res, next) => {
       );
     }
 
+    if (taskType === "KRA" && kpaType) {
+      throw new CustomError(
+        "Task type should be KRA for the provided KPA type",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const parsedAssignedDate = new Date(assignedDate);
     const parsedDueDate = new Date(dueDate);
     const dueTime = "6:30 PM";
 
+    const isSameDay =
+      parsedDueDate.getDate() - parsedAssignedDate.getDate() === 0;
+    const isSameMonth =
+      parsedDueDate.getMonth() - parsedAssignedDate.getMonth() === 0;
+
+    if (isSameDay && isSameMonth && taskType !== "KRA") {
+      console.log("inn");
+      throw new CustomError(
+        "Task type should be KRA",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const kpaTypeMatch =
-      parsedAssignedDate.getMonth() - parsedDueDate.getMonth() > 1 &&
-      parsedAssignedDate.getMonth() - parsedDueDate.getMonth() < 93
+      taskType === "KRA" &&
+      parsedDueDate.getDate() - parsedAssignedDate.getDate() > 1 &&
+      parsedDueDate.getDate() - parsedAssignedDate.getDate() <= 31
+        ? "Monthly"
+        : parsedDueDate.getMonth() - parsedAssignedDate.getMonth() > 1 &&
+          parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 3
         ? "Quarterly"
-        : parsedAssignedDate.getMonth() - parsedDueDate.getMonth() > 1 &&
-          parsedAssignedDate.getMonth() - parsedDueDate.getMonth() < 93
+        : parsedDueDate.getMonth() - parsedAssignedDate.getMonth() > 1 &&
+          parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 12
         ? "Annualy"
         : "No match";
 
     console.log(
       "Days:",
-      parsedDueDate.getMonth() - parsedAssignedDate.getMonth()
+      parsedDueDate.getDate() - parsedAssignedDate.getDate()
     );
     console.log("kpaTypeMatch:", kpaTypeMatch);
 
@@ -118,7 +137,7 @@ const createDeptBasedTask = async (req, res, next) => {
       assignedDate: parsedAssignedDate,
       dueDate: parsedDueDate,
       dueTime,
-      taskType: type,
+      taskType,
       kpaType,
       company,
     });
@@ -300,7 +319,7 @@ const createDeptBasedTask = async (req, res, next) => {
 
 const updateTaskStatus = async (req, res, next) => {
   const { user, ip, company } = req;
-  const logPath = "tasks/TaskLog";
+  const logPath = "performance/performanceLog";
   const logAction = "Update KRA/KPA status";
   const logSourceKey = "kraKpaTasks";
 

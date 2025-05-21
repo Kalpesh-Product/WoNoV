@@ -1,6 +1,7 @@
 const CoworkingClient = require("../../models/sales/CoworkingClient");
-const CoworkingClientMember = require("../../models/sales/CoworkingMembers");
+const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 const CustomError = require("../../utils/customErrorlogs");
+const { formatDate } = require("../../utils/formatDateTime");
 const { createLog } = require("../../utils/moduleLogs");
 const mongoose = require("mongoose");
 
@@ -116,7 +117,7 @@ const getAllMembers = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid client ID provided" });
     }
 
-    const members = await CoworkingClientMember.find({
+    const members = await CoworkingMembers.find({
       company,
       client,
     }).populate("client", "clientName service");
@@ -136,22 +137,6 @@ const getMembersByUnit = async (req, res, next) => {
     const { company } = req;
     const { unitId } = req.query;
 
-    const memberDetails = [
-      { member: "Kalpesh Naik", date: "20-02-2024" },
-      { member: "Aiwinraj KS", date: "20-02-2024" },
-      { member: "Allan Silveira", date: "21-02-2024" },
-      { member: "Sankalp Kalangutkar", date: "22-02-2024" },
-      { member: "Muskan Dodmani", date: "22-02-2024" },
-    ];
-
-    const fallbackMembers = [
-      { member: "Rohan Mehta", date: "23-02-2024" },
-      { member: "Sneha Iyer", date: "23-02-2024" },
-      { member: "Arjun Sharma", date: "24-02-2024" },
-      { member: "Priya Nair", date: "25-02-2024" },
-      { member: "Vikram Patil", date: "25-02-2024" },
-    ];
-
     if (!unitId) {
       return res.status(400).json({ message: "Unit is missing" });
     }
@@ -160,7 +145,7 @@ const getMembersByUnit = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid unit ID provided" });
     }
 
-    const members = await CoworkingClient.find({
+    const clients = await CoworkingClient.find({
       unit: unitId,
       isActive: true,
       company,
@@ -169,23 +154,58 @@ const getMembersByUnit = async (req, res, next) => {
       select: "unitName unitNo openDesks cabinDesks clearImage occupiedImage",
     });
 
+    const totalOccupiedDesks = clients.reduce(
+      (acc, client) => acc + (client.openDesks + client.cabinDesks),
+      0
+    );
+
+    const members = await CoworkingMembers.find({
+      unit: unitId,
+      company,
+    }).populate([
+      {
+        path: "client",
+        select: "clientName cabinDesks openDesks isActive",
+      },
+      {
+        path: "unit",
+        select: "unitName unitNo openDesks cabinDesks clearImage occupiedImage",
+      },
+    ]);
+
     if (!members) {
       return res.status(400).json({ message: "No Member found" });
     }
 
-    let totalOccupiedDesks = 0;
+    const clientMap = new Map();
 
-    const clientDetails = members.map((member) => {
-      const desks = member.totalDesks;
+    members.forEach((member) => {
+      if (!member.client.isActive) return;
 
-      totalOccupiedDesks += desks;
-      return {
-        client: member.clientName,
-        occupiedDesks: desks,
-        memberDetails:
-          member.clientName === "WoNo" ? memberDetails : fallbackMembers,
-      };
+      const clientName = member.client?.clientName || "Unknown";
+      const memberName = member.employeeName || "Unnamed";
+      const formattedDate = formatDate(member.dob);
+
+      if (!clientMap.has(clientName)) {
+        clientMap.set(clientName, {
+          client: clientName,
+          occupiedDesks: 0,
+          memberDetails: [],
+        });
+      }
+
+      const clientEntry = clientMap.get(clientName);
+      clientEntry.occupiedDesks =
+        member.client.openDesks + member.client.cabinDesks;
+      clientEntry.memberDetails.push({
+        member: memberName,
+        date: formattedDate,
+        email: member.email,
+        mobileNo: member.mobileNo,
+      });
     });
+
+    const clientDetails = Array.from(clientMap.values());
 
     const totalDesks = members[0].unit?.openDesks + members[0].unit?.cabinDesks;
     const clearImage = members[0].unit.clearImage;
@@ -217,7 +237,7 @@ const getMemberById = async (req, res) => {
       return res.status(400).json({ message: "Invalid memeber ID provided" });
     }
 
-    const member = await CoworkingClientMember.findById(memberId).populate(
+    const member = await CoworkingMembers.findById(memberId).populate(
       "client",
       "clientName service"
     );
@@ -244,7 +264,7 @@ const updateMember = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid memeber ID provided" });
     }
 
-    const updatedMember = await CoworkingClientMember.findByIdAndUpdate(
+    const updatedMember = await CoworkingMembers.findByIdAndUpdate(
       memberId,
       data,
       { new: true, runValidators: true }

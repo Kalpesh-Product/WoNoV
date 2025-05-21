@@ -2,7 +2,13 @@ const { format, intervalToDuration } = require("date-fns");
 
 const formatDate = (date) => {
   if (!date) return "N/A";
-  return format(new Date(date), "dd/MM/yyyy");
+  // return format(new Date(date), "dd/MM/yyyy");
+  return new Date(date)
+    .toISOString()
+    .split("T")[0]
+    .split("-")
+    .reverse()
+    .join("-");
 };
 
 const formatWithOrdinal = (date) => {
@@ -53,6 +59,5 @@ const formatDuration = (startTime, endTime) => {
 
   return `${totalMinutes}m`;
 };
-
 
 module.exports = { formatDate, formatWithOrdinal, formatTime, formatDuration };
