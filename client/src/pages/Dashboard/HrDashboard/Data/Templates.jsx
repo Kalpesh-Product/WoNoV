@@ -40,7 +40,7 @@ const Templates = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "/api/company//get-company-documents/templates"
+          "/api/company/get-company-documents/templates"
         );
         return response.data.templates;
       } catch (error) {

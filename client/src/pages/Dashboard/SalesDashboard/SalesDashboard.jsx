@@ -189,8 +189,9 @@ const SalesDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/sales/co-working-clients");
-        dispatch(setClientData(response.data));
-        return response.data;
+        const data = response.data.filter((item)=>item.isActive)
+        dispatch(setClientData(data));
+        return data;
       } catch (error) {
         console.error("Error fetching clients data:", error);
       }
