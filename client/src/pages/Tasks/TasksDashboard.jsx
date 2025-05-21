@@ -306,7 +306,7 @@ const TasksDashboard = () => {
   const calculatePendingTasks = (tasks) => {
     // Group tasks by department
     const departmentMap = tasks.reduce((acc, task) => {
-      const department = task.project.department.name;
+      const department = task.department.name;
       const isPending = task.status === "Pending";
 
       if (!acc[department]) {
