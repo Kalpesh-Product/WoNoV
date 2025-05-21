@@ -4,6 +4,7 @@ const AlternateRevenues = require("../../models/sales/AlternateRevenue");
 const VirtualOfficeRevenues = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationRevenues = require("../../models/sales/WorkationRevenue");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
+const Unit = require("../../models/locations/Unit");
 
 const getIncomeAndExpanse = async (req, res, next) => {
   try {
@@ -16,6 +17,7 @@ const getIncomeAndExpanse = async (req, res, next) => {
       virtualOfficeRevenues,
       workationRevenues,
       coworkingRevenues,
+      units,
     ] = await Promise.all([
       Budget.find({ company, status: "Approved" }).lean().exec(),
       MeetingRevenue.find({ company }).lean().exec(),
@@ -23,47 +25,31 @@ const getIncomeAndExpanse = async (req, res, next) => {
       VirtualOfficeRevenues.find({ company }).lean().exec(),
       WorkationRevenues.find({ company }).lean().exec(),
       CoworkingRevenue.find({ company }).lean().exec(),
+      Unit.find({ company })
+        .populate([{ path: "building", select: "buildingName" }])
+        .lean()
+        .exec(),
     ]);
 
-    const totalBudget = budgets.reduce(
-      (acc, budget) => acc + budget.actualAmount,
-      0 
-    );
-    const totalMeetingRevenue = meetingRevenue.reduce(
-      (acc, revenue) => acc + revenue.totalAmount,
-      0
-    );
-    const totalAlternateRevenue = alternateRevenues.reduce(
-      (acc, revenue) => acc + revenue.invoiceAmount,
-      0
-    );
+    const response = [
+      {
+        expense: [...budgets],
+      },
+      {
+        income: {
+          meetingRevenue: [...meetingRevenue],
+          alternateRevenues: [...alternateRevenues],
+          virtualOfficeRevenues: [...virtualOfficeRevenues],
+          workationRevenues: [...workationRevenues],
+          coworkingRevenues: [...coworkingRevenues],
+        },
+      },
+      {
+        units: [...units],
+      },
+    ];
 
-    const totalWorkationRevenue = workationRevenues.reduce(
-      (acc, revenue) => acc + revenue.totalAmount,
-      0
-    );
-
-    const totalVirtualOfficeRevenue = virtualOfficeRevenues.reduce(
-      (acc, revenue) => acc + revenue.actualRevenue,
-      0
-    );
-
-    const totalCoworkingRevenue = coworkingRevenues.reduce(
-      (acc, revenue) => acc + revenue.revenue,
-      0
-    );
-
-    console.log("totalBudget", totalBudget);
-    console.log(
-      "totalRevenue",
-        totalMeetingRevenue +
-        totalAlternateRevenue +
-        totalWorkationRevenue +
-        totalVirtualOfficeRevenue +
-        totalCoworkingRevenue
-    );
-
-    return res.status(200).json({ message: "Some response" });
+    return res.status(200).json({ response });
   } catch (error) {
     next(error);
   }
