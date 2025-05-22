@@ -17,24 +17,23 @@ const createDeptBasedTask = async (req, res, next) => {
       taskType,
       description,
       department,
-      priority,
-      assignedDate,
       dueDate,
       kpaType,
+      assignedDate,
     } = req.body;
 
-    if (
-      !task ||
-      !taskType ||
-      !description ||
-      !department ||
-      !priority ||
-      !assignedDate ||
-      !dueDate ||
-      (taskType === "KPA" && !kpaType)
-    ) {
+    if (!task || !taskType || !description || !department || !assignedDate) {
       throw new CustomError(
         "Missing required fields",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (taskType === "KPA" && (!kpaType || !dueDate)) {
+      throw new CustomError(
+        "KPA type or due date is missing",
         logPath,
         logAction,
         logSourceKey
@@ -63,25 +62,16 @@ const createDeptBasedTask = async (req, res, next) => {
       );
     }
 
-    if (taskType === "KRA" && kpaType) {
-      throw new CustomError(
-        "Task type should be KRA for the provided KPA type",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
     const parsedAssignedDate = new Date(assignedDate);
     const parsedDueDate = new Date(dueDate);
     const dueTime = "6:30 PM";
 
-    const isSameDay =
-      parsedDueDate.getDate() - parsedAssignedDate.getDate() === 0;
-    const isSameMonth =
-      parsedDueDate.getMonth() - parsedAssignedDate.getMonth() === 0;
+    // const isSameDay =
+    //   parsedDueDate.getDate() - parsedAssignedDate.getDate() === 0;
+    // const isSameMonth =
+    //   parsedDueDate.getMonth() - parsedAssignedDate.getMonth() === 0;
 
-    if (isSameDay && isSameMonth && taskType !== "KRA") {
+    if (parsedAssignedDate === parsedDueDate && taskType !== "KRA") {
       console.log("inn");
       throw new CustomError(
         "Task type should be KRA",
@@ -92,9 +82,7 @@ const createDeptBasedTask = async (req, res, next) => {
     }
 
     const kpaTypeMatch =
-      taskType === "KRA" &&
-      parsedDueDate.getDate() - parsedAssignedDate.getDate() > 1 &&
-      parsedDueDate.getDate() - parsedAssignedDate.getDate() <= 31
+      parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 1
         ? "Monthly"
         : parsedDueDate.getMonth() - parsedAssignedDate.getMonth() > 1 &&
           parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 3
@@ -104,13 +92,7 @@ const createDeptBasedTask = async (req, res, next) => {
         ? "Annualy"
         : "No match";
 
-    console.log(
-      "Days:",
-      parsedDueDate.getDate() - parsedAssignedDate.getDate()
-    );
-    console.log("kpaTypeMatch:", kpaTypeMatch);
-
-    if (kpaTypeMatch !== kpaType) {
+    if (taskType === "KPA" && kpaTypeMatch !== kpaType) {
       throw new CustomError(
         "Selected dates and kpa type doesn't match",
         logPath,
@@ -133,8 +115,7 @@ const createDeptBasedTask = async (req, res, next) => {
       description,
       assignedBy: user,
       department,
-      priority,
-      assignedDate: parsedAssignedDate,
+      assignedDate,
       dueDate: parsedDueDate,
       dueTime,
       taskType,
@@ -148,7 +129,7 @@ const createDeptBasedTask = async (req, res, next) => {
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: `${type} added successfully`,
+      remarks: `${taskType} added successfully`,
       status: "Success",
       user: user,
       ip: ip,
@@ -158,7 +139,7 @@ const createDeptBasedTask = async (req, res, next) => {
       changes: newRoleKraKpa,
     });
 
-    return res.status(201).json({ message: `${type} added successfully` });
+    return res.status(201).json({ message: `${taskType} added successfully` });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);
