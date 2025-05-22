@@ -8,7 +8,7 @@ import { useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 
-const PerformanceKra = () => {
+const PerformanceAnnual = () => {
   const axios = useAxiosPrivate();
   const { department } = useParams();
   const deptId = useSelector((state) => state.performance.selectedDepartment);
@@ -32,15 +32,14 @@ const PerformanceKra = () => {
     { headerName: "Sr no", field: "srno",width:100 },
     { headerName: "KRA List", field: "taskName", flex : 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
-    { headerName: "DueTime", field: "dueDate" },
+    { headerName: "Due Date", field: "dueDate" },
     { headerName: "Status", field: "status" },
   ];
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection padding layout={1}>
         <DateWiseTable
-        formatTime
-        tableTitle={`${department} DEPARTMENT - DAILY KRA`}
+        tableTitle={`${department} DEPARTMENT - ANNUAL KRA`}
         // checkbox={true}
           data={[
             ...departmentKra.map((item,index) => ({
@@ -66,4 +65,4 @@ const PerformanceKra = () => {
   );
 };
 
-export default PerformanceKra;
+export default PerformanceAnnual;

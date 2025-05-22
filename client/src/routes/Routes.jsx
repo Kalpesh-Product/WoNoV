@@ -322,6 +322,8 @@ import PerformanceLayout from "../pages/Performance/PerformanceLayout";
 import PerformanceHome from "../pages/Performance/PerformanceHome";
 import DepartmentPerformanceLayout from "../pages/Performance/DepartmentPerformanceLayout";
 import PerformanceKra from "../pages/Performance/DepartmentDetails/PerformanceKra";
+import PerformanceAnnual from "../pages/Performance/DepartmentDetails/PerformanceAnnual";
+import PerformanceMonthly from "../pages/Performance/DepartmentDetails/PerformanceMonthly";
 
 export const routes = createBrowserRouter([
   {
@@ -1711,6 +1713,14 @@ export const routes = createBrowserRouter([
                       {
                         path: "daily-KRA",
                         element: <PerformanceKra />,
+                      },
+                      {
+                        path: "monthly-KPA",
+                        element: <PerformanceMonthly />,
+                      },
+                      {
+                        path: "Annual-KRA",
+                        element: <PerformanceAnnual />,
                       },
                     ],
                   },
