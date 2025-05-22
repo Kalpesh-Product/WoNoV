@@ -48,7 +48,7 @@ const HrBudget = () => {
 
   const budgetBar = useMemo(() => {
     if (isHrLoading || !Array.isArray(hrFinance)) return null;
-    return transformBudgetData(hrFinance);
+    return transformBudgetData(isHrLoading ? [] : hrFinance);
   }, [isHrLoading, hrFinance]);
 
   useEffect(() => {
@@ -273,8 +273,8 @@ const HrBudget = () => {
           </Suspense>
         </div>
         <div>
-          <WidgetSection layout={3} padding>
-            <DataCard
+          <WidgetSection layout={2} padding>
+            {/* <DataCard
               data={"INR " + inrFormat("2000000")}
               title={"Projected"}
               route={"/app/dashboard/hr-dashboard/finance/budget"}
@@ -284,9 +284,9 @@ const HrBudget = () => {
                   month: "short",
                 }
               )}-25`}
-            />
+            /> */}
             <DataCard
-              data={"INR " + inrFormat("150000")}
+              data={("N/A")}
               title={"Actual"}
               route={"/app/dashboard/hr-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString(
@@ -297,7 +297,7 @@ const HrBudget = () => {
               )}-25`}
             />
             <DataCard
-              data={"INR " + inrFormat(12000)}
+              data={"INR " + inrFormat(0)}
               title={"Requested"}
               route={"/app/dashboard/hr-dashboard/finance/budget"}
               description={`Current Month: ${new Date().toLocaleString(

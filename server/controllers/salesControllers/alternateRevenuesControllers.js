@@ -47,41 +47,38 @@ const getAlternateRevenues = async (req, res, next) => {
 
     const transformRevenues = (revenues) => {
       const monthlyMap = new Map();
+      const MONTHS_SHORT = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
 
       revenues.forEach((item) => {
-        const MONTHS_SHORT = [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ];
-
         const invoiceCreationDate = new Date(item.invoiceCreationDate);
         const month = MONTHS_SHORT[invoiceCreationDate.getMonth()];
         const year = invoiceCreationDate.getFullYear().toString().slice(-2);
-
         const monthKey = `${month}-${year}`;
-
         const amount = item.taxableAmount;
 
         if (!monthlyMap.has(monthKey)) {
           monthlyMap.set(monthKey, {
             month: monthKey,
-            actual: 0,
+            taxable: 0,
             revenue: [],
           });
         }
 
         const monthData = monthlyMap.get(monthKey);
-        monthData.actual += amount;
+        monthData.taxable += amount;
 
         monthData.revenue.push({
           particulars: item.particulars,
@@ -94,10 +91,17 @@ const getAlternateRevenues = async (req, res, next) => {
         });
       });
 
-      return Array.from(monthlyMap.values()).map((monthData) => ({
-        ...monthData,
-        actual: monthData.actual,
-      }));
+      // Sort month-wise in ascending order (Apr-24, May-24, etc.)
+      return Array.from(monthlyMap.values()).sort((a, b) => {
+        const parseKey = (key) => {
+          const [month, year] = key.split("-");
+          const monthIndex = MONTHS_SHORT.indexOf(month);
+          return parseInt(
+            `20${year}${String(monthIndex + 1).padStart(2, "0")}`
+          );
+        };
+        return parseKey(a.month) - parseKey(b.month); // Ascending
+      });
     };
 
     const transformedRecords = transformRevenues(records);

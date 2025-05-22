@@ -10,17 +10,20 @@ import { useParams } from "react-router-dom";
 import { useLocation, useSearchParams } from "react-router-dom";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { useSelector } from "react-redux";
 
 dayjs.extend(customParseFormat);
 
 const EditDetails = () => {
-  const { id } = useParams(); // both are available
+  const location = useLocation()
+  // const { employmentID } = location.state; 
+  const employmentID = useSelector((state)=>state.hr.selectedEmployee)
   const axios = useAxiosPrivate();
   const { data: employeeData, isLoading } = useQuery({
     queryKey: ["employeeData"],
     queryFn: async () => {
       try {
-        const response = await axios.get(`/api/users/fetch-single-user/${id}`);
+        const response = await axios.get(`/api/users/fetch-single-user/${employmentID}`);
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -103,7 +106,7 @@ const EditDetails = () => {
         {!isEditing ? (
           
         <div>
-          <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
+          <PrimaryButton disabled={true} handleSubmit={handleEditToggle} title={"Edit"} />
         </div>
         ) : (
           <div>

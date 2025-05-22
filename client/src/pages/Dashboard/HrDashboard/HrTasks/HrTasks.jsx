@@ -26,7 +26,6 @@ const calendarMonths = [
 const HrTasks = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [selectedDepartment, setSelectedDepartment] = useState();
 
   const selectedMonth = useSelector((state) => state.hr.selectedMonth);
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
@@ -48,13 +47,6 @@ const HrTasks = () => {
       dispatch(setSelectedMonth(calendarMonths[currentMonthIndex + 1]));
     }
   };
-
-  // const isPrevAvailable =
-  //   currentMonthIndex > 0 &&
-  //   hasMonthData(calendarMonths[currentMonthIndex - 1]);
-  // const isNextAvailable =
-  //   currentMonthIndex < calendarMonths.length - 1 &&
-  //   hasMonthData(calendarMonths[currentMonthIndex + 1]);
 
   const filteredTasks = useMemo(() => {
     if (!selectedMonth || tasksRawData.length === 0) return [];
@@ -151,6 +143,7 @@ const HrTasks = () => {
               tasks: departmentTasks,
               year : yearArray[0].split("-")[2]
             },
+            
           });
         },
       },

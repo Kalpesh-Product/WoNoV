@@ -154,6 +154,8 @@ const VendorOnboard = () => {
         status: vendor.status,
       })) || [];
 
+
+  console.log("VENDOR DETALS : ", rows)
   const onSubmit = (data) => {
     vendorDetails(data);
   };

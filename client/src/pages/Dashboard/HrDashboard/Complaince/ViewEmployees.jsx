@@ -4,24 +4,29 @@ import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import { useDispatch } from "react-redux";
+import { setSelectedEmployee } from "../../../../redux/slices/hrSlice";
 
 const ViewEmployees = () => {
   const navigate = useNavigate();
-
+  const dispatch = useDispatch()
   const axios = useAxiosPrivate();
   const { data: employees, isLoading } = useQuery({
     queryKey: ["employees"],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/users/fetch-users");
-        const filteredData = response.data.filter((employee) => employee.isActive);
+        const filteredData = response.data.filter(
+          (employee) => employee.isActive
+        );
         return filteredData;
       } catch (error) {
-        throw new Error(error.response?.data?.message || "Failed to fetch employees");
+        throw new Error(
+          error.response?.data?.message || "Failed to fetch employees"
+        );
       }
     },
   });
-  
 
   const viewEmployeeColumns = [
     { field: "srno", headerName: "SR No", width: 100 },
@@ -38,9 +43,11 @@ const ViewEmployees = () => {
           }}
           onClick={() => {
             localStorage.setItem("employeeName", params.data.employeeName);
+
             navigate(
-              `/app/dashboard/HR-dashboard/employee/view-employees/${params.data.employeeName}/${params.data.employmentID}/edit-details`
+              `/app/dashboard/HR-dashboard/employee/view-employees/${params.data.employeeName}/edit-details`,
             );
+            dispatch(setSelectedEmployee(params.data.employmentID))
           }}
         >
           {params.value}

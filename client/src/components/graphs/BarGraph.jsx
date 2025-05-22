@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Chart from "react-apexcharts";
 import { Select, MenuItem, FormControl, CircularProgress } from "@mui/material";
 import SecondaryButton from "../SecondaryButton";
@@ -22,36 +22,33 @@ const BarGraph = ({
   const [isChartLoading, setIsChartLoading] = useState(false);
   const [selectedYear, setSelectedYear] = useState("2024-2025");
   const [departmentIndex, setDepartmentIndex] = useState(0);
+  useEffect(() => {
+    // Trigger loading once on initial render
+    setIsChartLoading(true);
+    const timer = setTimeout(() => {
+      setIsChartLoading(false);
+    }, 400); // adjust as needed
+  
+    return () => clearTimeout(timer);
+  }, []);
+  
 
   // Hooks always called
   const responsive = useResponsiveChart();
   const fallbackRef = useRef(null);
   const containerRef = responsiveResize ? responsive.containerRef : fallbackRef;
   const chartKey = responsiveResize ? responsive.chartKey : 0;
-  const [updatedOptions, setUpdatedOptions] = useState({
+  const updatedOptions = useMemo(() => ({
     ...options,
     chart: {
-      id: chartId, // Required for ApexCharts.exec("resize")
+      id: chartId,
       ...options.chart,
       zoom: { enabled: false },
     },
     xaxis: {
       ...options?.xaxis,
     },
-  })
-  useEffect(() => {
-    // Safe to update options now
-    setUpdatedOptions((prev) => ({
-      ...prev,
-      chart: {
-        ...prev.chart,
-        zoom: {
-          enabled: false,
-        },
-      },
-    }));
-  }, []);
-
+  }), [options, chartId]);
   useEffect(() => {
     if (!responsiveResize) return;
     setIsChartLoading(true);

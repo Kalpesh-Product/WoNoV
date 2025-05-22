@@ -19,9 +19,11 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import SecondaryButton from "../../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../../components/PrimaryButton";
-import { Skeleton, TextField } from "@mui/material";
+import { CircularProgress, Skeleton, TextField } from "@mui/material";
 import humanTime from "../../../../../utils/humanTime";
 import { useMemo } from "react";
+import { useSelector } from "react-redux";
+import MonthWiseTable from "../../../../../components/Tables/MonthWiseTable";
 
 const Attendance = () => {
   const axios = useAxiosPrivate();
@@ -34,20 +36,20 @@ const Attendance = () => {
     },
   });
   const [openModal, setOpenModal] = useState(false);
-  const { id } = useParams();
+  const employmentID = useSelector((state) => state.hr.selectedEmployee);
   const name = localStorage.getItem("employeeName") || "Employee";
 
   const fetchAttendance = async () => {
     try {
-      const response = await axios.get(`/api/attendance/get-attendance/${id}`);
+      const response = await axios.get(
+        `/api/attendance/get-attendance/${employmentID}`
+      );
       const data = response.data;
-      console.log("attendance response",data.length)
       return Array.isArray(data) ? data : [];
     } catch (error) {
       throw new Error(error.response.data.message);
     }
   };
-  
 
   const { data: attendance = [], isLoading } = useQuery({
     queryKey: ["user-attendance"],
@@ -58,7 +60,7 @@ const Attendance = () => {
     mutationFn: async (data) => {
       const response = await axios.patch("/api/attendance/correct-attendance", {
         ...data,
-        empId: id,
+        empId: employmentID,
       });
       return response.data;
     },
@@ -73,8 +75,8 @@ const Attendance = () => {
     },
   });
   const attendanceColumns = [
-    { field: "id", headerName: "Sr No", width: 100 },
-    { field: "date", headerName: "Date", width: 200 },
+    // { field: "id", headerName: "Sr No", width: 100 },
+    { field: "date", headerName: "Date", width: 200, sort:'asc' },
     { field: "inTime", headerName: "In Time" },
     { field: "outTime", headerName: "Out Time" },
     { field: "workHours", headerName: "Work Hours" },
@@ -84,70 +86,75 @@ const Attendance = () => {
     // { field: "entryType", headerName: "Entry Type" },
   ];
 
-  //Attendance graph options
+  //Attendace of January is being showed
+  function formatAttendance(data) {
+    const formatted = data
+      .filter((entry) => {
+        const inDate = new Date(entry.inTime);
+        return inDate.getMonth() === 0;
+      })
+      .sort((a, b) => new Date(a.inTime) - new Date(b.inTime))
+      .map((entry) => {
+        const inDate = new Date(entry.inTime);
+        const outDate = new Date(entry.outTime);
 
-  const rawData = [
-  {
-    _id: "67bdb743728626dddd2b83cb",
-    inTime: "2025-01-17T04:40:00.000Z",
-    outTime: "2025-01-17T13:24:00.000Z",
-    breakDuration: 0,
-    breakCount: 0,
-    entryType: "web",
-    user: "67b83885daad0f7bab2f18a9",
-    company: "6799f0cd6a01edbe1bc3fcea",
-    __v: 0,
-    createdAt: "2025-02-25T12:27:48.134Z",
-    updatedAt: "2025-02-25T12:27:48.134Z"
+        const dateString = inDate
+          .toLocaleDateString("en-GB")
+          .replace(/\//g, "-");
+
+        const inLocal = new Date(inDate);
+        const outLocal = new Date(outDate);
+
+        // Expected office hours
+        const expectedIn = new Date(inLocal);
+        expectedIn.setHours(9, 30, 0, 0);
+
+        const expectedOut = new Date(inLocal);
+        expectedOut.setHours(18, 30, 0, 0);
+
+        const lateCheckIn = Math.max(0, (inLocal - expectedIn) / (1000 * 60)); // in minutes
+        const earlyCheckOut = Math.max(
+          0,
+          (expectedOut - outLocal) / (1000 * 60)
+        ); // in minutes
+
+        const totalWorked = (outLocal - inLocal) / (1000 * 60);
+        const workingMinutes = Math.max(
+          0,
+          totalWorked - lateCheckIn - earlyCheckOut
+        );
+
+        return {
+          date: dateString,
+          inTime: inLocal.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+          }),
+          outTime: outLocal.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+          }),
+          sections: [
+            {
+              color: "#d3d3d3",
+              value: parseFloat((lateCheckIn / 60).toFixed(2)),
+            },
+            {
+              color: "#34a853",
+              value: parseFloat((workingMinutes / 60).toFixed(2)),
+            },
+            {
+              color: "#ff0000",
+              value: parseFloat((earlyCheckOut / 60).toFixed(2)),
+            },
+          ],
+        };
+      });
+
+    return formatted;
   }
-];
 
-//Attendace of January is being showed
-function formatAttendance(data) {
-  const formatted = data
-    .filter(entry => {
-      const inDate = new Date(entry.inTime);
-      return inDate.getMonth() === 0;  
-    })
-    .sort((a, b) => new Date(a.inTime) - new Date(b.inTime))  
-    .map(entry => {
-      const inDate = new Date(entry.inTime);
-      const outDate = new Date(entry.outTime);
-
-       const dateString = inDate.toLocaleDateString("en-GB").replace(/\//g, "-");  
-      
-      const inLocal = new Date(inDate);
-      const outLocal = new Date(outDate);
-
-      // Expected office hours
-      const expectedIn = new Date(inLocal);
-      expectedIn.setHours(9, 30, 0, 0);
-
-      const expectedOut = new Date(inLocal);
-      expectedOut.setHours(18, 30, 0, 0);
-
-      const lateCheckIn = Math.max(0, (inLocal - expectedIn) / (1000 * 60)); // in minutes
-      const earlyCheckOut = Math.max(0, (expectedOut - outLocal) / (1000 * 60)); // in minutes
-
-      const totalWorked = (outLocal - inLocal) / (1000 * 60);
-      const workingMinutes = Math.max(0, totalWorked - lateCheckIn - earlyCheckOut);
-
-      return {
-        date: dateString,
-        inTime: inLocal.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
-        outTime: outLocal.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
-        sections: [
-          { color: "#d3d3d3", value: parseFloat((lateCheckIn / 60).toFixed(2)) },
-          { color: "#34a853", value: parseFloat((workingMinutes / 60).toFixed(2)) },
-          { color: "#ff0000", value: parseFloat((earlyCheckOut / 60).toFixed(2)) }
-        ]
-      };
-    });
-
-  return formatted;
-}
-
-const attendanceData = useMemo(() => {
+  const attendanceData = useMemo(() => {
     if (isLoading || !attendance) return [];
     return formatAttendance(attendance);
   }, [attendance, isLoading]);
@@ -174,6 +181,7 @@ const attendanceData = useMemo(() => {
     chart: {
       type: "bar",
       stacked: true,
+      animations: { enabled: false },
       fontFamily: "Poppins-Regular",
       toolbar: {
         show: false,
@@ -187,20 +195,20 @@ const attendanceData = useMemo(() => {
       },
     },
     xaxis: {
-       categories: attendanceData.map((entry) => entry.date.split("-")[0]),  
-  labels: {
-    style: {
-      fontSize: "12px",
-    },
-    rotate: -45,  
-    hideOverlappingLabels: false,
-    showDuplicates: true,
-    trim: false,
-  },
-  tickPlacement: "on",
-  axisTicks: {
-    show: true,
-  },
+      categories: attendanceData.map((entry) => entry.date.split("-")[0]),
+      labels: {
+        style: {
+          fontSize: "12px",
+        },
+        rotate: -45,
+        hideOverlappingLabels: false,
+        showDuplicates: true,
+        trim: false,
+      },
+      tickPlacement: "on",
+      axisTicks: {
+        show: true,
+      },
     },
 
     yaxis: {
@@ -225,7 +233,7 @@ const attendanceData = useMemo(() => {
           const m = Math.round((hours - h) * 60);
           if (h === 0 && m > 0) return `${m}m`; // Only minutes
           if (m === 0) return `${h}h`; // Only hours
-          return `${h}h ${m}m`; // Hours and minutes
+          return `${h}. ${m}m`; // Hours and minutes
         };
 
         return `
@@ -249,7 +257,7 @@ const attendanceData = useMemo(() => {
               <div style="text-align: end;">${formatTime(red)}</div>
             </div>
           </div>
-        `
+        `;
       },
     },
 
@@ -261,7 +269,7 @@ const attendanceData = useMemo(() => {
         const m = Math.round((value - h) * 60);
         if (h === 0 && m > 0) return `${m}m`; // Only minutes
         if (m === 0) return `${h}h`; // Only hours
-        return `${h}h ${m}m`; // Hours and minutes
+        return `${h}.${m}`; // Hours and minutes
       },
       style: {
         fontSize: "12px",
@@ -295,31 +303,32 @@ const attendanceData = useMemo(() => {
           title={"Attendance"}
           border
         >
-          <BarGraph data={attendanceSeries} options={options} />
+          {!isLoading ? (
+            <BarGraph
+              data={attendanceSeries}
+              options={options}
+              responsiveResize
+            />
+          ) : (
+            <div className="h-72 flex justify-center items-center">
+              <CircularProgress />
+            </div>
+          )}
           <WidgetSection layout={3} padding>
             <DataCard
-              data={"18"}
+              data={"27"}
               title={"Accurate Checkins"}
-              description={`Current Month : ${new Date().toLocaleString(
-                "default",
-                { month: "short" }
-              )}-24`}
+              description={`Current Month : April-25`}
             />
             <DataCard
-              data={"8"}
+              data={"4"}
               title={"Late Checkins"}
-              description={`Current Month : ${new Date().toLocaleString(
-                "default",
-                { month: "short" }
-              )}-24`}
+              description={`Current Month : April-25`}
             />
             <DataCard
               data={"10"}
               title={"Late Checkouts"}
-              description={`Current Month : ${new Date().toLocaleString(
-                "default",
-                { month: "short" }
-              )}-24`}
+              description={`Current Month : April-25`}
             />
           </WidgetSection>
         </WidgetSection>
@@ -327,45 +336,36 @@ const attendanceData = useMemo(() => {
 
       <div>
         {!isLoading ? (
-          <AgTable
-            key={isLoading ? 1 : attendance.length}
-            tableTitle={`${name}'s Attendance Table`}
-            buttonTitle={"Correction Request"}
-            handleClick={() => {
-              setOpenModal(true);
-            }}
-            search={true}
-            searchColumn={"Date"}
-            data={
-              isLoading || !Array.isArray(attendance)
-                ? []
-                : attendance?.map((record, index) => ({
-                    id: index + 1,
-                    // date: humanDate(record.date),
-                    date: humanDate(record.inTime),
-                    inTime: humanTime(record.inTime),
-                    outTime: humanTime(record.outTime),
-                    // workHours: record.workHours,
-                    // workHours: "8",
-                    workHours: formatHours(
-                      new Date(record.outTime) - new Date(record.inTime)
-                    ),
-                    // breakHours: record.breakHours,
-                    breakHours: "1",
-                    // totalHours: record.totalHours,
-                    // totalHours: "9",
-                    totalHours: formatHours(
-                      new Date(record.outTime) -
-                        new Date(record.inTime) -
-                        1 * 60 * 60 * 1000
-                    ),
-                    entryType: record.entryType,
-                  }))
-            }
-            columns={attendanceColumns}
-          />
+          <WidgetSection layout={1} title={`${name}'s Attendance Table`} border>
+            <MonthWiseTable
+              data={
+                !isLoading
+                  ? attendance?.map((record, index) => ({
+                      id: index + 1,
+                      date: record.inTime,
+                      inTime: humanTime(record.inTime),
+                      outTime: humanTime(record.outTime),
+                      workHours: formatHours(
+                        new Date(record.outTime) - new Date(record.inTime)
+                      ),
+                      breakHours: "1",
+                      totalHours: formatHours(
+                        new Date(record.outTime) -
+                          new Date(record.inTime) -
+                          1 * 60 * 60 * 1000
+                      ),
+                      entryType: record.entryType,
+                    }))
+                  : []
+              }
+              columns={attendanceColumns}
+              dateColumn="date"
+            />
+          </WidgetSection>
         ) : (
-          <Skeleton height={300} width={"100%"} />
+          <>
+            <Skeleton height={300} width={"100%"} />
+          </>
         )}
       </div>
       <MuiModal

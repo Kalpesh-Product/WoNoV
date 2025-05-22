@@ -8,11 +8,11 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../../components/DetalisFormatted";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
-import { useLocation, useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const KRA = () => {
    const axios = useAxiosPrivate();
-  const { id } = useParams();
+   const id = useSelector((state)=>state.hr.selectedEmployee)
   const name = localStorage.getItem("employeeName") || "Employee";
   const [modalOpen, setModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);

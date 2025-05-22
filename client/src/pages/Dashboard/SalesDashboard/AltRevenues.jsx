@@ -281,7 +281,7 @@ const AltRevenues = () => {
     {
       name: "Actual Revenue",
       data: alternateRevenue.map((item) =>
-        item.revenue?.reduce((sum, c) => sum + c.invoiceAmount, 0)
+        item.revenue?.reduce((sum, c) => sum + c.taxableAmount, 0)
       ),
     },
   ];
@@ -338,7 +338,7 @@ const AltRevenues = () => {
     (sum, month) =>
       sum +
       month.revenue.reduce(
-        (monthSum, client) => monthSum + client.invoiceAmount,
+        (monthSum, client) => monthSum + client.taxableAmount,
         0
       ),
     0
