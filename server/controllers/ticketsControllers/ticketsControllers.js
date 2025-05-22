@@ -279,6 +279,43 @@ const getTickets = async (req, res, next) => {
   }
 };
 
+const getAllDeptTickets = async (req, res, next) => {
+  try {
+    const { company } = req;
+
+    let departmentMap = new Map();
+
+    const tickets = await Tickets.find({ company })
+      .populate([{ path: "raisedToDepartment", select: "name" }])
+      .select("-company")
+      .lean();
+
+    tickets.forEach((ticket) => {
+      const dept = ticket.raisedToDepartment || "Unknown";
+
+      if (!departmentMap.has(dept)) {
+        departmentMap.set(dept, {
+          department: dept,
+          totalTickets: 0,
+          openTickets: 0,
+          closedTickets: 0,
+        });
+      }
+
+      const department = departmentMap.get(dept);
+      department.totalTickets++;
+      if (ticket.status === "Open") department.openTickets++;
+      if (ticket.status === "Closed") department.closedTickets++;
+    });
+
+    const result = Array.from(departmentMap.values());
+
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getAllTickets = async (req, res, next) => {
   try {
     const { user } = req;
@@ -1311,4 +1348,5 @@ module.exports = {
   filterTodayTickets,
   ticketData,
   getOtherTickets,
+  getAllDeptTickets,
 };
