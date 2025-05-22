@@ -231,7 +231,7 @@ const getKraKpaTasks = async (req, res, next) => {
     const { empId, type, dept, duration } = req.query;
 
     const query = { company };
-    const subQuery = { company };
+    let subQuery;
 
     if (dept) {
       query.department = dept;
@@ -240,9 +240,8 @@ const getKraKpaTasks = async (req, res, next) => {
       query.duration = duration;
     }
     if (empId) {
-      subQuery.assignedTo = empId;
+      subQuery = { company, assignedTo: empId };
     }
-
     // const foundUser = await UserData.findOne({ empId }).populate({
     //   path: "role",
     //   select: "roleTitle",
@@ -272,10 +271,12 @@ const getKraKpaTasks = async (req, res, next) => {
 
     const transformedTasks = tasks
       .filter((task) => {
-        return (
-          task.assignedTo._id.toString() === foundUser._id.toString() &&
-          task.task.taskType === type
-        );
+        if (empId)
+          return (
+            task.assignedTo._id.toString() === foundUser._id.toString() &&
+            task.task.taskType === type
+          );
+        else return true;
       })
       .map((task) => {
         const assignedBy = `${task.task.assignedBy.firstName} ${
@@ -301,6 +302,7 @@ const getKraKpaTasks = async (req, res, next) => {
     // const allTasks = [...transformedTasks, ...individualTasks];
     const allTasks = [...transformedTasks];
 
+    console.log(allTasks.length);
     return res.status(200).json(allTasks);
   } catch (error) {
     next(error);

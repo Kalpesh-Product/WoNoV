@@ -107,15 +107,6 @@ const FinanceVendorDatabase = () => {
   { field: "onboardingDate", headerName: "Onboarding Date" },
   { field: "emailId", headerName: "Email Id" },
   { field: "mobileNo", headerName: "Mobile No" },
-  { field: "address", headerName: "Address" },
-  { field: "country", headerName: "Country" },
-  { field: "state", headerName: "State" },
-  { field: "city", headerName: "City" },
-  { field: "pinCode", headerName: "Pin Code" },
-  { field: "pan", headerName: "PAN" },
-  { field: "gstin", headerName: "GSTIN" },
-  { field: "partyType", headerName: "Party Type" },
-  { field: "vendorStatus", headerName: "Vendor Status" },
     {
       field: "actions",
       headerName: "Actions",
@@ -124,7 +115,6 @@ const FinanceVendorDatabase = () => {
         <>
           <div className="flex gap-2 items-center">
             <div
-
               className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
             >
               <span className="text-subtitle cursor-pointer" onClick={() => handleViewModal(params.data)}>
@@ -137,56 +127,6 @@ const FinanceVendorDatabase = () => {
     },
   ];
 
-  // const { data: assetsList = [] } = useQuery({
-  //   queryKey: ["assetsList"],
-  //   queryFn: async () => {
-  //     try {
-  //       const response = await axios.get("/api/assets/get-assets");
-  //       return response.data;
-  //     } catch (error) {
-  //       throw new Error(error.response.data.message);
-  //     }
-  //   },
-  // });
-
-  // const vendorData = [
-  //   {
-  //     vendorName: "FinAudit Consultants",
-  //     contactPerson: "Amit Verma",
-  //     email: "amit@finaudit.com",
-  //     phone: "9988776655",
-  //     company: "FinAudit & Associates LLP",
-  //     address: "78, Residency Road, Bangalore",
-  //     gstNumber: "29AMITX7654D7Z9",
-  //   },
-  //   {
-  //     vendorName: "Tally Solutions",
-  //     contactPerson: "Rohan Khanna",
-  //     email: "rohan.khanna@tallysolutions.com",
-  //     phone: "9988776655",
-  //     company: "Tally Solutions Pvt. Ltd.",
-  //     address: "Richmond Circle, Bangalore, Karnataka",
-  //     gstNumber: "29AABCT1234D1Z8",
-  //   },
-  //   {
-  //     vendorName: "ClearTax",
-  //     contactPerson: "Vikram Patel",
-  //     email: "vikram.patel@cleartax.in",
-  //     phone: "9012345678",
-  //     company: "Defmacro Software Pvt. Ltd.",
-  //     address: "HSR Layout, Bangalore, Karnataka",
-  //     gstNumber: "29AACCD1111L1Z4",
-  //   },
-  //   {
-  //     vendorName: "QuickBooks India",
-  //     contactPerson: "Priya Sharma",
-  //     email: "priya.sharma@quickbooks.in",
-  //     phone: "9988001122",
-  //     company: "Intuit India Software Solutions Pvt. Ltd.",
-  //     address: "Whitefield, Bangalore, Karnataka",
-  //     gstNumber: "29AAACU4567M1Z9",
-  //   },
-  // ];
   const vendorData = [
   {
     vendorName: "Apex Supplies",
@@ -350,7 +290,6 @@ const FinanceVendorDatabase = () => {
   }
 ];
 
-
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
     setViewModalOpen(true);
@@ -400,12 +339,20 @@ const FinanceVendorDatabase = () => {
         >
           <div className="space-y-3">
             <DetalisFormatted title="Vendor Name" detail={viewDetails.vendorName} />
-            <DetalisFormatted title="Contact Person" detail={viewDetails.contactPerson} />
-            <DetalisFormatted title="Email" detail={viewDetails.email} />
-            <DetalisFormatted title="Phone" detail={viewDetails.phone} />
-            <DetalisFormatted title="Company" detail={viewDetails.company} />
-            <DetalisFormatted title="Address" detail={viewDetails.address} />
-            <DetalisFormatted title="GST Number" detail={viewDetails.gstNumber} />
+            <DetalisFormatted title="Company Name" detail={viewDetails.companyName} />
+            <DetalisFormatted title="Onboarding Date" detail={viewDetails.onboardingDate} />
+            <DetalisFormatted title="Email" detail={viewDetails.emailId} />
+            <DetalisFormatted title="Mobile No" detail={viewDetails.mobileNo} />
+<DetalisFormatted title="Address" detail={viewDetails.address} />
+<DetalisFormatted title="Country" detail={viewDetails.country} />
+<DetalisFormatted title="State" detail={viewDetails.state} />
+<DetalisFormatted title="City" detail={viewDetails.city} />
+<DetalisFormatted title="Pin Code" detail={viewDetails.pinCode} />
+<DetalisFormatted title="PAN" detail={viewDetails.pan} />
+<DetalisFormatted title="GSTIN" detail={viewDetails.gstin} />
+<DetalisFormatted title="Party Type" detail={viewDetails.partyType} />
+<DetalisFormatted title="Vendor Status" detail={viewDetails.vendorStatus} />
+
           </div>
         </MuiModal>
       )}
