@@ -213,7 +213,7 @@ const HrDashboard = () => {
       queryKey: ["departmentTasks"],
       queryFn: async () => {
         try {
-          const response = await axios.get("/api/tasks/get-kpa-tasks");
+          const response = await axios.get("/api/performance/get-kpa-tasks");
           const formattedData = response.data.map((dept) => ({
             ...dept,
             tasks: dept.tasks.map((task) => ({
