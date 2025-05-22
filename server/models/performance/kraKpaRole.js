@@ -22,11 +22,6 @@ const kraKpaRolesSchema = new mongoose.Schema(
       type: String,
       // required: true,
     },
-    priority: {
-      type: String,
-      default: "High",
-      enum: ["High", "Medium", "Low"],
-    },
     taskType: {
       type: String,
       enum: ["KPA", "KRA"],
