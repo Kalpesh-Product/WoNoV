@@ -12,17 +12,10 @@ const createDeptBasedTask = async (req, res, next) => {
   const logSourceKey = "kraKpaRoles";
 
   try {
-    const {
-      task,
-      taskType,
-      description,
-      department,
-      dueDate,
-      kpaDuration,
-      assignedDate,
-    } = req.body;
+    const { task, taskType, description, department, dueDate, kpaDuration } =
+      req.body;
 
-    if (!task || !taskType || !description || !department || !assignedDate) {
+    if (!task || !taskType || !description || !department) {
       throw new CustomError(
         "Missing required fields",
         logPath,
@@ -62,7 +55,7 @@ const createDeptBasedTask = async (req, res, next) => {
       );
     }
 
-    const parsedAssignedDate = new Date(assignedDate);
+    const parsedAssignedDate = new Date();
     const parsedDueDate = new Date(dueDate);
     const dueTime = "6:30 PM";
 
@@ -86,8 +79,9 @@ const createDeptBasedTask = async (req, res, next) => {
         ? "Monthly"
         : parsedDueDate.getMonth() - parsedAssignedDate.getMonth() > 1 &&
           parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 12
-        ? "Annualy"
+        ? "Annually"
         : "No match";
+    console.log("match", kpaTypeMatch);
 
     if (taskType === "KPA" && kpaTypeMatch !== kpaDuration) {
       throw new CustomError(
@@ -112,7 +106,7 @@ const createDeptBasedTask = async (req, res, next) => {
       description,
       assignedBy: user,
       department,
-      assignedDate,
+      assignedDate: parsedAssignedDate,
       dueDate: parsedDueDate,
       dueTime,
       taskType,
