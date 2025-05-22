@@ -59,13 +59,7 @@ const createDeptBasedTask = async (req, res, next) => {
     const parsedDueDate = new Date(dueDate);
     const dueTime = "6:30 PM";
 
-    // const isSameDay =
-    //   parsedDueDate.getDate() - parsedAssignedDate.getDate() === 0;
-    // const isSameMonth =
-    //   parsedDueDate.getMonth() - parsedAssignedDate.getMonth() === 0;
-
     if (parsedAssignedDate === parsedDueDate && taskType !== "KRA") {
-      console.log("inn");
       throw new CustomError(
         "Task type should be KRA",
         logPath,
@@ -81,7 +75,6 @@ const createDeptBasedTask = async (req, res, next) => {
           parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 12
         ? "Annually"
         : "No match";
-    console.log("match", kpaTypeMatch);
 
     if (taskType === "KPA" && kpaTypeMatch !== kpaDuration) {
       throw new CustomError(
