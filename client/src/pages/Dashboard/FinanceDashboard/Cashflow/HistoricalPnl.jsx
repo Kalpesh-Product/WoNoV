@@ -569,7 +569,6 @@ const HistoricalPnl = () => {
     },
     xaxis: {
       categories: [
-        "2020 - 21",
         "2021 - 22",
         "2022 - 23",
         "2023 - 24",

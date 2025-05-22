@@ -19,7 +19,20 @@ const getIncomeAndExpanse = async (req, res, next) => {
       coworkingRevenues,
       units,
     ] = await Promise.all([
-      Budget.find({ company, status: "Approved" }).lean().exec(),
+      Budget.find({ company, status: "Approved" })
+        .populate([
+          {
+            path: "unit",
+            populate: {
+              path: "building",
+              select: "buildingName",
+              model: "Building",
+            },
+          },
+          { path: "department", select: "name" },
+        ])
+        .lean()
+        .exec(),
       MeetingRevenue.find({ company }).lean().exec(),
       AlternateRevenues.find({ company }).lean().exec(),
       VirtualOfficeRevenues.find({ company }).lean().exec(),
