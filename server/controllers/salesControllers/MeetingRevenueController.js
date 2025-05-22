@@ -94,16 +94,22 @@ const getMeetingRevenue = async (req, res, next) => {
       const monthlyMap = new Map();
 
       revenues.forEach((item) => {
-        const referenceDate =  item.date;
-        const month = MONTHS_SHORT[new Date(referenceDate).getMonth()];
-        const year = new Date(referenceDate).getFullYear().toString().slice(-2);
+        const referenceDate = new Date(item.date);
+        const month = MONTHS_SHORT[referenceDate.getMonth()];
+        const year = referenceDate.getFullYear().toString().slice(-2);
         const monthKey = `${month}-${year}`;
+        const monthDateKey = new Date(
+          referenceDate.getFullYear(),
+          referenceDate.getMonth(),
+          1
+        ); // First day of the month
 
         if (!monthlyMap.has(monthKey)) {
           monthlyMap.set(monthKey, {
             month: monthKey,
             actual: 0,
             revenue: [],
+            date: monthDateKey, // used for sorting
           });
         }
 
@@ -124,7 +130,10 @@ const getMeetingRevenue = async (req, res, next) => {
         });
       });
 
-      return Array.from(monthlyMap.values());
+      // Convert map to array and sort by actual month date
+      return Array.from(monthlyMap.values())
+        .sort((a, b) => a.date - b.date)
+        .map(({ date, ...rest }) => rest); // remove the temp 'date' field from final output
     };
 
     const transformed = transformRevenues(revenues);
