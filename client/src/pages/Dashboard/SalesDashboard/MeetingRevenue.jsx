@@ -27,7 +27,7 @@ const MeetingRevenue = () => {
     {
       name: "Actual Revenue",
       data: meetingsData.map((item) =>
-        item.revenue?.reduce((sum, c) => sum + c.totalAmount, 0)
+        item.revenue?.reduce((sum, c) => sum + c.taxable, 0)
       ),
     },
   ];
@@ -85,7 +85,7 @@ const MeetingRevenue = () => {
     (sum, month) =>
       sum +
       month.revenue.reduce(
-        (monthSum, client) => monthSum + client.totalAmount,
+        (monthSum, client) => monthSum + client.taxable,
         0
       ),
     0
