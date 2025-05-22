@@ -21,17 +21,10 @@ const createTasks = async (req, res, next) => {
       assignees,
       dueDate,
       dueTime,
-      taskDuration,
       assignedDate,
     } = req.body;
 
-    if (
-      !taskName ||
-      !taskDuration ||
-      !description ||
-      !dueDate ||
-      !assignedDate
-    ) {
+    if (!taskName || !description || !dueDate || !assignedDate || !dueTime) {
       throw new CustomError(
         "Missing required fields",
         logPath,
@@ -108,7 +101,6 @@ const createTasks = async (req, res, next) => {
       assignedDate,
       dueDate: parsedDueDate,
       dueTime: dueTime ? parsedDueTime : null,
-      taskDuration,
       company,
     });
 
@@ -156,8 +148,7 @@ const updateTask = async (req, res, next) => {
 
   try {
     const { id } = req.params;
-    const { taskName, description, status, priority, assignees, taskDuration } =
-      req.body;
+    const { taskName, description, status, priority, assignees } = req.body;
 
     if (!id) {
       throw new CustomError(
@@ -171,7 +162,6 @@ const updateTask = async (req, res, next) => {
     const updates = {};
 
     if (taskName !== undefined) updates.taskName = taskName;
-    if (taskDuration !== undefined) updates.taskDuration = taskDuration;
     if (description !== undefined) updates.description = description;
     if (status !== undefined) {
       if (status !== "Completed") {
@@ -281,6 +271,40 @@ const getAllTasks = async (req, res, next) => {
   }
 };
 
+const getTasks = async (req, res, next) => {
+  try {
+    const { company } = req;
+    const { dept, empId } = req.query;
+    const query = { company };
+
+    if (dept) {
+      query.department = dept;
+    }
+    if (empId) {
+      query.assignedTo = empId;
+    }
+
+    const tasks = await Task.find(query)
+      .populate("assignedBy", "firstName lastName")
+      .populate("assignedTo", "firstName lastName")
+      .select("-company")
+      .lean();
+
+    const transformedTasks = tasks.map((task) => {
+      return {
+        ...task,
+        dueDate: formatDate(task.dueDate),
+        dueTime: task.dueTime ? formatTime(task.dueTime) : null,
+        assignedDate: formatDate(task.assignedDate),
+      };
+    });
+
+    return res.status(200).json(transformedTasks);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getMyTasks = async (req, res, next) => {
   try {
     const { user, company } = req;
@@ -338,7 +362,6 @@ const getMyTodayTasks = async (req, res, next) => {
       return {
         ...task,
         task: task.taskName,
-        type: task.taskDuration,
         dueTime: formatTime(task.dueTime),
         dueDate: formatTime(task.dueDate),
         assignedDate: formatDate(task.assignedDate),
@@ -391,7 +414,6 @@ const getTeamMembersTasksProjects = async (req, res, next) => {
             (user) => user._id.toString() === id.toString()
           );
 
-          console.log("matchedUser.isActive", matchedUser.isActive);
           if (matchedUser) {
             userDetails = {
               email: matchedUser.email,
@@ -422,6 +444,45 @@ const getTeamMembersTasksProjects = async (req, res, next) => {
     const filteredData = teamMembersData.filter((member) => member !== null);
 
     return res.status(200).json(filteredData);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAllDeptTasks = async (req, res, next) => {
+  try {
+    const { company } = req;
+
+    let departmentMap = new Map();
+    let query = { company };
+
+    const tasks = await Task.find(query)
+      .populate([{ path: "department", select: "name" }])
+      .select("-company")
+      .lean();
+
+    tasks.forEach((task) => {
+      const dept = task.department || "Unknown";
+
+      if (!departmentMap.has(dept)) {
+        departmentMap.set(dept, {
+          department: dept,
+          totalTasks: 0,
+          pendingTasks: 0,
+          completedTasks: 0,
+        });
+      }
+
+      const department = departmentMap.get(dept);
+
+      department.totalTasks++;
+      if (task.status === "Pending") department.pendingTasks++;
+      if (task.status === "Completed") department.completedTasks++;
+    });
+
+    const result = Array.from(departmentMap.values());
+
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -587,8 +648,10 @@ module.exports = {
   getMyTasks,
   getMyTodayTasks,
   getAllTasks,
+  getTasks,
   getTeamMembersTasksProjects,
   getAssignedTasks,
+  getAllDeptTasks,
   completeTasks,
   deleteTask,
 };

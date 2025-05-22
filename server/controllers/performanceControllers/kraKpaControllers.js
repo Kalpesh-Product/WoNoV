@@ -18,7 +18,7 @@ const createDeptBasedTask = async (req, res, next) => {
       description,
       department,
       dueDate,
-      kpaType,
+      kpaDuration,
       assignedDate,
     } = req.body;
 
@@ -31,7 +31,7 @@ const createDeptBasedTask = async (req, res, next) => {
       );
     }
 
-    if (taskType === "KPA" && (!kpaType || !dueDate)) {
+    if (taskType === "KPA" && (!kpaDuration || !dueDate)) {
       throw new CustomError(
         "KPA type or due date is missing",
         logPath,
@@ -92,7 +92,7 @@ const createDeptBasedTask = async (req, res, next) => {
         ? "Annualy"
         : "No match";
 
-    if (taskType === "KPA" && kpaTypeMatch !== kpaType) {
+    if (taskType === "KPA" && kpaTypeMatch !== kpaDuration) {
       throw new CustomError(
         "Selected dates and kpa type doesn't match",
         logPath,
@@ -119,7 +119,7 @@ const createDeptBasedTask = async (req, res, next) => {
       dueDate: parsedDueDate,
       dueTime,
       taskType,
-      kpaType,
+      kpaDuration,
       company,
     });
 
@@ -169,7 +169,7 @@ const createDeptBasedTask = async (req, res, next) => {
 //       assignedDate,
 //       dueDate,
 //       dueTime,
-//       kpaType,
+//       kpaDuration,
 //     } = req.body;
 
 //     if (
@@ -181,7 +181,7 @@ const createDeptBasedTask = async (req, res, next) => {
 //       !assignedDate ||
 //       !dueDate ||
 //       !dueTime ||
-//       !kpaType
+//       !kpaDuration
 //     ) {
 //       throw new CustomError(
 //         "Missing required fields",
@@ -253,7 +253,7 @@ const createDeptBasedTask = async (req, res, next) => {
 //       assignedDate: parsedAssignedDate,
 //       dueDate: parsedDueDate,
 //       dueTime,
-//       kpaType,
+//       kpaDuration,
 //     };
 //     const updateUserData = await UserData.findOneAndUpdate(
 //       { empId },
@@ -375,17 +375,22 @@ const updateTaskStatus = async (req, res, next) => {
   }
 };
 
-const getMyKraKpaTasks = async (req, res, next) => {
+const getKraKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { empId, type } = req.query;
+    const { empId, type, dept, duration } = req.query;
 
-    if (!empId) {
-      return res.status(400).json({ message: "Missing employee ID" });
+    const query = { company };
+    const subQuery = { company };
+
+    if (dept) {
+      query.department = dept;
     }
-
-    if (!type) {
-      return res.status(400).json({ message: "Missing task type" });
+    if (duration) {
+      query.duration = duration;
+    }
+    if (empId) {
+      subQuery.assignedTo = empId;
     }
 
     // const foundUser = await UserData.findOne({ empId }).populate({
@@ -397,16 +402,11 @@ const getMyKraKpaTasks = async (req, res, next) => {
     //   return res.status(400).json({ message: "User not found" });
     // }
 
-    const matchingDepartments = await kraKpaRole
-      .find({
-        department: { $in: foundUser.departments },
-        company: company,
-      })
-      .select("_id");
+    const matchingDepartments = await kraKpaRole.find(query).select("-company");
 
     const tasks = await kraKpaTask
       .find({
-        company: company,
+        subQuery,
         task: { $in: matchingDepartments.map((dept) => dept._id) },
       })
       .populate({
@@ -451,9 +451,57 @@ const getMyKraKpaTasks = async (req, res, next) => {
     // const allTasks = [...transformedTasks, ...individualTasks];
     const allTasks = [...transformedTasks];
 
-    console.log("All tasks", allTasks.length);
-
     return res.status(200).json(allTasks);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAllDeptTasks = async (req, res, next) => {
+  try {
+    const { company } = req;
+    const { duration, taskType } = req.query;
+
+    let departmentMap = new Map();
+    let query = { company };
+
+    if (duration) {
+      query.kpaDuration = duration;
+    }
+    if (taskType) {
+      query.taskType = taskType;
+    }
+
+    const tasks = await kraKpaRole
+      .find(query)
+      .populate([{ path: "department", select: "name" }])
+      .select("-company")
+      .lean();
+
+    tasks.forEach((task) => {
+      const dept = task.department || "Unknown";
+
+      if (!departmentMap.has(dept)) {
+        departmentMap.set(dept, {
+          department: dept,
+          dailyKRA: 0,
+          monthlyKPA: 0,
+          annuallyKPA: 0,
+        });
+      }
+
+      const department = departmentMap.get(dept);
+
+      if (task.taskType === "KRA") department.dailyKRA++;
+      if (task.taskType === "KPA" && task.kpaDuration === "Monthly")
+        department.monthlyKPA++;
+      if (task.taskType === "KPA" && task.kpaDuration === "Annually")
+        department.annuallyKPA++;
+    });
+
+    const result = Array.from(departmentMap.values());
+
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -530,6 +578,7 @@ module.exports = {
   createDeptBasedTask,
   // createIndividualTask,
   getAllKpaTasks,
-  getMyKraKpaTasks,
+  getKraKpaTasks,
+  getAllDeptTasks,
   updateTaskStatus,
 };
