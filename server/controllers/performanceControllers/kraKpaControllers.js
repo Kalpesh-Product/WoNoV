@@ -228,7 +228,7 @@ const updateTaskStatus = async (req, res, next) => {
 const getKraKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { empId, type, dept, duration } = req.query;
+    const { type, dept, duration } = req.query;
 
     const query = { company };
     let subQuery;
@@ -244,7 +244,7 @@ const getKraKpaTasks = async (req, res, next) => {
 
     const tasks = await kraKpaTask
       .find({
-        subQuery,
+        company,
         task: { $in: matchingDepartments.map((dept) => dept._id) },
       })
       .populate({
@@ -278,16 +278,87 @@ const getKraKpaTasks = async (req, res, next) => {
           assignedTo: assignee.trim(),
           assignedDate: task.task.assignedDate,
           dueDate: task.task.dueDate,
+          assignedDate: "9:30 AM",
+          dueTime: "6:30 PM",
+          completionDate: task.completionDate ? task.completionDate : "N/A",
           status: task.status,
         };
       });
 
-    // const individualTasks = foundUser?.kraKpa || [];
-    // const allTasks = [...transformedTasks, ...individualTasks];
-    const allTasks = [...transformedTasks];
+    return res.status(200).json(transformedTasks);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    console.log(allTasks.length);
-    return res.status(200).json(allTasks);
+const getMyKraKpaTasks = async (req, res, next) => {
+  try {
+    const { company } = req;
+    const { empId, type, dept, duration } = req.query;
+
+    const query = { company };
+    if (dept) {
+      query.department = dept;
+    }
+    if (duration) {
+      query.duration = duration;
+    }
+
+    const foundUser = await UserData.findOne({ empId });
+
+    if (!foundUser) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    const matchingDepartments = await kraKpaRole.find(query).select("_id");
+
+    const tasks = await kraKpaTask
+      .find({
+        company: company,
+        task: { $in: matchingDepartments.map((dept) => dept._id) },
+      })
+      .populate({
+        path: "task",
+        populate: [
+          { path: "department", select: "name" },
+          { path: "assignedBy", select: "firstName middleName lastName" },
+        ],
+      })
+      .populate({ path: "assignedTo", select: "firstName middleName lastName" })
+      .select("-company")
+      .lean();
+
+    const transformedTasks = tasks
+      .filter((task) => {
+        return (
+          task.assignedTo._id.toString() === foundUser._id.toString() &&
+          task.task.taskType === type
+        );
+      })
+      .map((task) => {
+        const assignedBy = `${task.task.assignedBy.firstName} ${
+          task.task.assignedBy.middleName || ""
+        } ${task.task.assignedBy.lastName}`;
+
+        const assignee = `${task.assignedTo.firstName} ${
+          task.assignedTo.middleName || ""
+        } ${task.assignedTo.lastName}`;
+
+        return {
+          taskName: task.task.task,
+          description: task.task.description,
+          assignedBy: assignedBy.trim(),
+          assignedTo: assignee.trim(),
+          assignedDate: task.task.assignedDate,
+          dueDate: task.task.dueDate,
+          assignedDate: "9:30 AM",
+          dueTime: "6:30 PM",
+          completionDate: task.completionDate ? task.completionDate : "N/A",
+          status: task.status,
+        };
+      });
+
+    return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);
   }
@@ -415,6 +486,7 @@ module.exports = {
   // createIndividualTask,
   getAllKpaTasks,
   getKraKpaTasks,
+  getMyKraKpaTasks,
   getAllDeptTasks,
   updateTaskStatus,
 };
