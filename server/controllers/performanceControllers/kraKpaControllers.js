@@ -177,14 +177,24 @@ const updateTaskStatus = async (req, res, next) => {
 
     const completionDate = new Date();
 
-    const updateTaskStatus = await kraKpaTask.findOneAndUpdate(
-      { _id: taskId },
-      {
-        status: "Completed",
-        completionDate,
-      },
-      { new: true }
-    );
+    const newKraKpaTask = new kraKpaTask({
+      task: taskId,
+      assignedTo: user,
+      status: "Completed",
+      completionDate,
+      company,
+    });
+
+    const savedNewKraKpaTask = await newKraKpaTask.save();
+
+    // const updateTaskStatus = await kraKpaTask.findOneAndUpdate(
+    //   { _id: taskId },
+    //   {
+    //     status: "Completed",
+    //     completionDate,
+    //   },
+    //   { new: true }
+    // );
 
     if (!updateTaskStatus) {
       throw new CustomError(
@@ -205,7 +215,7 @@ const updateTaskStatus = async (req, res, next) => {
       ip: ip,
       company: company,
       sourceKey: logSourceKey,
-      sourceId: updateTaskStatus._id,
+      sourceId: savedNewKraKpaTask._id,
       changes: {
         status: "Completed",
         prevStatus: "Pending",
