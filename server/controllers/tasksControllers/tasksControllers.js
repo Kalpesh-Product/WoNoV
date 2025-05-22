@@ -30,7 +30,8 @@ const createTasks = async (req, res, next) => {
       !taskDuration ||
       !description ||
       !dueDate ||
-      !assignedDate
+      !assignedDate ||
+      !dueTime
     ) {
       throw new CustomError(
         "Missing required fields",
@@ -281,6 +282,35 @@ const getAllTasks = async (req, res, next) => {
   }
 };
 
+const getTasks = async (req, res, next) => {
+  try {
+    const { company } = req;
+    const { duration } = req.query;
+
+    const tasks = await Task.find({
+      company,
+      taskDuration: duration,
+    })
+      .populate("assignedBy", "firstName lastName")
+      .populate("assignedTo", "firstName lastName")
+      .select("-company")
+      .lean();
+
+    const transformedTasks = tasks.map((task) => {
+      return {
+        ...task,
+        dueDate: formatDate(task.dueDate),
+        dueTime: task.dueTime ? formatTime(task.dueTime) : null,
+        assignedDate: formatDate(task.assignedDate),
+      };
+    });
+
+    return res.status(200).json(transformedTasks);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getMyTasks = async (req, res, next) => {
   try {
     const { user, company } = req;
@@ -351,77 +381,120 @@ const getMyTodayTasks = async (req, res, next) => {
   }
 };
 
-const getTeamMembersTasksProjects = async (req, res, next) => {
-  try {
-    const { company, departments } = req;
+// const getTeamMembersTasksProjects = async (req, res, next) => {
+//   try {
+//     const { company, departments } = req;
 
-    // Find team members
-    const teamMembers = await User.find({
-      departments: { $in: departments },
+//     // Find team members
+//     const teamMembers = await User.find({
+//       departments: { $in: departments },
+//     });
+
+//     console.log("----teamMembers---");
+
+//     const teamMemberIds = teamMembers.map((member) => member._id);
+
+//     const teamMembersData = await Promise.all(
+//       teamMemberIds.map(async (id) => {
+//         // Fetch tasks assigned to the team member
+//         const tasks = await Task.find({
+//           company,
+//           $and: [
+//             { assignedTo: { $in: [id] } }, // User must be in assignedTo
+//             { assignedBy: { $ne: id } }, // User must NOT be assignedBy
+//           ],
+//         })
+//           .populate({
+//             path: "assignedTo",
+//             select: "email firstName lastName isActive",
+//             populate: [
+//               { path: "role", select: "roleTitle" },
+//               { path: "departments", select: "name" },
+//             ],
+//           })
+//           .populate("assignedBy", "firstName lastName")
+//           .select("-company")
+//           .lean();
+
+//         console.log(tasks);
+//         // Find the correct user details from the first task
+//         let userDetails = {};
+//         if (tasks.length > 0) {
+//           const matchedUser = tasks[0].assignedTo.find(
+//             (user) => user._id.toString() === id.toString()
+//           );
+
+//           if (matchedUser) {
+//             userDetails = {
+//               email: matchedUser.email,
+//               name: `${matchedUser.firstName} ${matchedUser.lastName}`,
+//               role:
+//                 Array.isArray(matchedUser.role) && matchedUser.role.length
+//                   ? matchedUser.role.map((role) => role.roleTitle)
+//                   : ["No Role"],
+//               departments:
+//                 matchedUser.departments?.map((dept) => dept.name) || [],
+//               status: matchedUser.isActive,
+//             };
+//           }
+//         }
+
+//         if (tasks.length > 0) {
+//           return {
+//             ...userDetails,
+//             tasksCount: tasks.length,
+//           };
+//         }
+
+//         return null; // Return null for users with no tasks
+//       })
+//     );
+
+//     // Filter out null elements (users with 0 tasks)
+//     const filteredData = teamMembersData.filter((member) => member !== null);
+
+//     console.log("team", filteredData);
+//     return res.status(200).json(filteredData);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+const getAllDeptTasks = async (req, res, next) => {
+  try {
+    const { user, company } = req;
+
+    let pendingTasks = 0;
+    let completedTasks = 0;
+    let departmentMap = new Map();
+
+    const tasks = await Task.find({ company })
+      .populate([{ path: "department", select: "name" }])
+      .select("-company")
+      .lean();
+
+    tasks.forEach((task) => {
+      const dept = task.department || "Unknown";
+
+      if (!departmentMap.has(dept)) {
+        departmentMap.set(dept, {
+          department: dept,
+          totalTasks: 0,
+          pendingTasks: 0,
+          completedTasks: 0,
+        });
+      }
+
+      const department = departmentMap.get(dept);
+
+      department.totalTasks++;
+      if (task.status === "Pending") department.pendingTasks++;
+      if (task.status === "Completed") department.completedTasks++;
     });
 
-    const teamMemberIds = teamMembers.map((member) => member._id);
+    const result = Array.from(departmentMap.values());
 
-    const teamMembersData = await Promise.all(
-      teamMemberIds.map(async (id) => {
-        // Fetch tasks assigned to the team member
-        const tasks = await Task.find({
-          company,
-          $and: [
-            { assignedTo: { $in: [id] } }, // User must be in assignedTo
-            { assignedBy: { $ne: id } }, // User must NOT be assignedBy
-          ],
-        })
-          .populate({
-            path: "assignedTo",
-            select: "email firstName lastName isActive",
-            populate: [
-              { path: "role", select: "roleTitle" },
-              { path: "departments", select: "name" },
-            ],
-          })
-          .populate("assignedBy", "firstName lastName")
-          .select("-company")
-          .lean();
-
-        // Find the correct user details from the first task
-        let userDetails = {};
-        if (tasks.length > 0) {
-          const matchedUser = tasks[0].assignedTo.find(
-            (user) => user._id.toString() === id.toString()
-          );
-
-          console.log("matchedUser.isActive", matchedUser.isActive);
-          if (matchedUser) {
-            userDetails = {
-              email: matchedUser.email,
-              name: `${matchedUser.firstName} ${matchedUser.lastName}`,
-              role:
-                Array.isArray(matchedUser.role) && matchedUser.role.length
-                  ? matchedUser.role.map((role) => role.roleTitle)
-                  : ["No Role"],
-              departments:
-                matchedUser.departments?.map((dept) => dept.name) || [],
-              status: matchedUser.isActive,
-            };
-          }
-        }
-
-        if (tasks.length > 0) {
-          return {
-            ...userDetails,
-            tasksCount: tasks.length,
-          };
-        }
-
-        return null; // Return null for users with no tasks
-      })
-    );
-
-    // Filter out null elements (users with 0 tasks)
-    const filteredData = teamMembersData.filter((member) => member !== null);
-
-    return res.status(200).json(filteredData);
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -587,6 +660,7 @@ module.exports = {
   getMyTasks,
   getMyTodayTasks,
   getAllTasks,
+  getTasks,
   getTeamMembersTasksProjects,
   getAssignedTasks,
   completeTasks,

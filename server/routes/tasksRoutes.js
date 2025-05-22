@@ -17,6 +17,7 @@ const {
   getAssignedTasks,
   getAllTasks,
   completeTasks,
+  getTasks,
 } = require("../controllers/tasksControllers/tasksControllers");
 
 router.post("/create-project", createProject);
@@ -27,6 +28,7 @@ router.delete("/delete-project/:id", deleteProject);
 router.post("/create-tasks", createTasks);
 router.get("/my-tasks", getMyTasks);
 router.get("/get-all-tasks", getAllTasks);
+router.get("/get-tasks", getTasks);
 router.get("/get-team-tasks-projects", getTeamMembersTasksProjects);
 router.get("/get-today-tasks", getMyTodayTasks);
 router.get("/get-assigned-tasks", getAssignedTasks);

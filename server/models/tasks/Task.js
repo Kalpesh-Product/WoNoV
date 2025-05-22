@@ -5,10 +5,6 @@ const taskSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  // project: {
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   ref: "Project",
-  // },
   company: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Company",
@@ -25,7 +21,6 @@ const taskSchema = new mongoose.Schema({
   ],
   description: {
     type: String,
-    // required: true,
   },
   assignedDate: {
     type: Date,
@@ -52,7 +47,7 @@ const taskSchema = new mongoose.Schema({
   },
   taskDuration: {
     type: String,
-    enum: ["Daily", "Monthly", "Quarterly", "Annually"],
+    enum: ["Daily", "Monthly", "Annually"],
     required: true,
   },
   //workCategory and location are maintenance related fileds
