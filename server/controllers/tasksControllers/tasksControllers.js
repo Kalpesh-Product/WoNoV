@@ -285,12 +285,20 @@ const getAllTasks = async (req, res, next) => {
 const getTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { duration } = req.query;
+    const { dept, duration, empId } = req.query;
+    const query = { company };
 
-    const tasks = await Task.find({
-      company,
-      taskDuration: duration,
-    })
+    if (dept) {
+      query.department = dept;
+    }
+    if (duration) {
+      query.taskDuration = duration;
+    }
+    if (empId) {
+      query.assignedTo = empId;
+    }
+
+    const tasks = await Task.find(query)
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
       .select("-company")
@@ -390,8 +398,6 @@ const getTeamMembersTasksProjects = async (req, res, next) => {
       departments: { $in: departments },
     });
 
-    console.log("----teamMembers---");
-
     const teamMemberIds = teamMembers.map((member) => member._id);
 
     const teamMembersData = await Promise.all(
@@ -416,7 +422,6 @@ const getTeamMembersTasksProjects = async (req, res, next) => {
           .select("-company")
           .lean();
 
-        console.log(tasks);
         // Find the correct user details from the first task
         let userDetails = {};
         if (tasks.length > 0) {
@@ -453,7 +458,6 @@ const getTeamMembersTasksProjects = async (req, res, next) => {
     // Filter out null elements (users with 0 tasks)
     const filteredData = teamMembersData.filter((member) => member !== null);
 
-    console.log("team", filteredData);
     return res.status(200).json(filteredData);
   } catch (error) {
     next(error);
@@ -462,13 +466,17 @@ const getTeamMembersTasksProjects = async (req, res, next) => {
 
 const getAllDeptTasks = async (req, res, next) => {
   try {
-    const { user, company } = req;
+    const { company } = req;
+    const { duration } = req.query;
 
-    let pendingTasks = 0;
-    let completedTasks = 0;
     let departmentMap = new Map();
+    let query = { company };
 
-    const tasks = await Task.find({ company })
+    if (duration) {
+      query.taskDuration = duration;
+    }
+
+    const tasks = await Task.find(query)
       .populate([{ path: "department", select: "name" }])
       .select("-company")
       .lean();
