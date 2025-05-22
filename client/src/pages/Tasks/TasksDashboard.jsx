@@ -282,11 +282,11 @@ const TasksDashboard = () => {
         return project.assignedBy === auth.user._id;
       }).length;
 
-  const projectsAssignedToMe = allProjectsQuery.isLoading
-    ? 0
-    : allProjectsQuery?.data.filter((project) => {
-        return auth.user.firstName in project.assignees;
-      }).length;
+  // const projectsAssignedToMe = allProjectsQuery.isLoading
+  //   ? 0
+  //   : allProjectsQuery?.data.filter((project) => {
+  //       return auth.user.firstName in project.assignees;
+  //     }).length;
 
   // Data for Overall Pending v/s Assigned Tasks
   const completedPercentagePie = allTasksQuery.isLoading
@@ -432,12 +432,12 @@ const TasksDashboard = () => {
       widgets: [
         <DataCard
           title={"Total"}
-          data={allProjectsQuery.isLoading ? 0 : allProjectsQuery.data.length}
+          data={allProjectsQuery.isLoading ? 0 : allProjectsQuery.data?.length}
           description={"My Projects"}
         />,
         <DataCard
           title={"Total"}
-          data={projectsAssignedToMe}
+          // data={projectsAssignedToMe}
           description={"Tasks Assigned to Me"}
         />,
         <DataCard

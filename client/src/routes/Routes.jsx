@@ -318,6 +318,10 @@ import HrEvents from "../pages/Dashboard/HrDashboard/Complaince/HrEvents";
 import HrTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrTasks";
 import HrDepartmentTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentTasks";
 import HrTasksLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrTasksLayout";
+import PerformanceLayout from "../pages/Performance/PerformanceLayout";
+import PerformanceHome from "../pages/Performance/PerformanceHome";
+import DepartmentPerformanceLayout from "../pages/Performance/DepartmentPerformanceLayout";
+import PerformanceKra from "../pages/Performance/DepartmentDetails/PerformanceKra";
 
 export const routes = createBrowserRouter([
   {
@@ -1247,7 +1251,7 @@ export const routes = createBrowserRouter([
                           {
                             path: "",
                             element: <HrTasks />,
-                            index: true
+                            index: true,
                           },
                           {
                             path: "department-tasks",
@@ -1686,6 +1690,27 @@ export const routes = createBrowserRouter([
                       {
                         path: "bulk-upload",
                         element: <AssetsBulkUpload />,
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                path: "performance",
+                element: <PerformanceLayout />,
+                children: [
+                  {
+                    path: "",
+                    element: <PerformanceHome />,
+                    index: true,
+                  },
+                  {
+                    path: ":department",
+                    element: <DepartmentPerformanceLayout />,
+                    children: [
+                      {
+                        path: "daily-KRA",
+                        element: <PerformanceKra />,
                       },
                     ],
                   },

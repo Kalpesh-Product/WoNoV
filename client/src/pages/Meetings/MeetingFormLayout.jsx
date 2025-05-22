@@ -208,7 +208,7 @@ const MeetingFormLayout = () => {
             }}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             initialView="timeGridDay"
-            contentHeight={425}
+            contentHeight={555}
             dayMaxEvents={2}
             eventDisplay="auto"
             selectable={true}

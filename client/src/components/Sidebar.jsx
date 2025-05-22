@@ -58,6 +58,11 @@ const Sidebar = () => {
       route: "tasks",
     },
     {
+      name: "Performance",
+      icon: <FaTasks />,
+      route: "performance",
+    },
+    {
       name: "Visitors",
       icon: <VscPersonAdd />,
       route: "visitors",
