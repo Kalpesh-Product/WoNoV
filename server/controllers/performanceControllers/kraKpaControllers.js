@@ -239,17 +239,6 @@ const getKraKpaTasks = async (req, res, next) => {
     if (duration) {
       query.duration = duration;
     }
-    if (empId) {
-      subQuery = { company, assignedTo: empId };
-    }
-    // const foundUser = await UserData.findOne({ empId }).populate({
-    //   path: "role",
-    //   select: "roleTitle",
-    // });
-
-    // if (!foundUser) {
-    //   return res.status(400).json({ message: "User not found" });
-    // }
 
     const matchingDepartments = await kraKpaRole.find(query).select("-company");
 
@@ -271,12 +260,7 @@ const getKraKpaTasks = async (req, res, next) => {
 
     const transformedTasks = tasks
       .filter((task) => {
-        if (empId)
-          return (
-            task.assignedTo._id.toString() === foundUser._id.toString() &&
-            task.task.taskType === type
-          );
-        else return true;
+        return task.task.taskType === type;
       })
       .map((task) => {
         const assignedBy = `${task.task.assignedBy.firstName} ${
