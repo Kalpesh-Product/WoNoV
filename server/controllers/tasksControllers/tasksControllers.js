@@ -21,18 +21,10 @@ const createTasks = async (req, res, next) => {
       assignees,
       dueDate,
       dueTime,
-      taskDuration,
       assignedDate,
     } = req.body;
 
-    if (
-      !taskName ||
-      !taskDuration ||
-      !description ||
-      !dueDate ||
-      !assignedDate ||
-      !dueTime
-    ) {
+    if (!taskName || !description || !dueDate || !assignedDate || !dueTime) {
       throw new CustomError(
         "Missing required fields",
         logPath,
@@ -109,7 +101,6 @@ const createTasks = async (req, res, next) => {
       assignedDate,
       dueDate: parsedDueDate,
       dueTime: dueTime ? parsedDueTime : null,
-      taskDuration,
       company,
     });
 
@@ -157,8 +148,7 @@ const updateTask = async (req, res, next) => {
 
   try {
     const { id } = req.params;
-    const { taskName, description, status, priority, assignees, taskDuration } =
-      req.body;
+    const { taskName, description, status, priority, assignees } = req.body;
 
     if (!id) {
       throw new CustomError(
@@ -172,7 +162,6 @@ const updateTask = async (req, res, next) => {
     const updates = {};
 
     if (taskName !== undefined) updates.taskName = taskName;
-    if (taskDuration !== undefined) updates.taskDuration = taskDuration;
     if (description !== undefined) updates.description = description;
     if (status !== undefined) {
       if (status !== "Completed") {
@@ -285,14 +274,11 @@ const getAllTasks = async (req, res, next) => {
 const getTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { dept, duration, empId } = req.query;
+    const { dept, empId } = req.query;
     const query = { company };
 
     if (dept) {
       query.department = dept;
-    }
-    if (duration) {
-      query.taskDuration = duration;
     }
     if (empId) {
       query.assignedTo = empId;
@@ -376,7 +362,6 @@ const getMyTodayTasks = async (req, res, next) => {
       return {
         ...task,
         task: task.taskName,
-        type: task.taskDuration,
         dueTime: formatTime(task.dueTime),
         dueDate: formatTime(task.dueDate),
         assignedDate: formatDate(task.assignedDate),
@@ -467,14 +452,9 @@ const getTeamMembersTasksProjects = async (req, res, next) => {
 const getAllDeptTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { duration } = req.query;
 
     let departmentMap = new Map();
     let query = { company };
-
-    if (duration) {
-      query.taskDuration = duration;
-    }
 
     const tasks = await Task.find(query)
       .populate([{ path: "department", select: "name" }])
