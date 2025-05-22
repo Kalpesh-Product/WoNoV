@@ -5,7 +5,7 @@ import AgTable from "../AgTable";
 import PrimaryButton from "../PrimaryButton";
 import humanDate from "../../utils/humanDateForamt";
 
-const DateWiseTable = ({ data = [], columns = [], dateColumn }) => {
+const DateWiseTable = ({ data = [], columns = [], dateColumn, checkbox }) => {
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
 
   // Step 1: Get unique dates from the data
@@ -60,6 +60,7 @@ const DateWiseTable = ({ data = [], columns = [], dateColumn }) => {
 
       <AgTable
         tableHeight={300}
+        enableCheckbox={checkbox}
         columns={columns}
         data={filteredData.map((item) => ({
           ...item,
