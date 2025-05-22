@@ -29,7 +29,7 @@ const kraKpaRolesSchema = new mongoose.Schema(
     },
     kpaDuration: {
       type: String,
-      enum: ["Monthly", "Quarterly", "Annually"],
+      enum: ["Monthly", "Annually"],
       required: true,
     },
     department: {
