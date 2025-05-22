@@ -1,25 +1,23 @@
 import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
-  MdNavigateBefore,
-  MdNavigateNext,
   MdOutlineMiscellaneousServices,
 } from "react-icons/md";
 import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import WidgetSection from "../../../components/WidgetSection";
-import BarGraph from "../../../components/graphs/BarGraph";
 import FinanceCard from "../../../components/FinanceCard";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import DataCard from "../../../components/DataCard";
 import { useSidebar } from "../../../context/SideBarContext";
 import { useEffect, useState } from "react";
-import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
-import SecondaryButton from "../../../components/SecondaryButton";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const FinanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -29,32 +27,151 @@ const FinanceDashboard = () => {
   }, []); // Empty dependency array ensures this runs once on mount
 
   const navigate = useNavigate();
+
+  const axios = useAxiosPrivate();
+  const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
+    useQuery({
+      queryKey: ["revenueExpenseData"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/finance/income-expense");
+          return response.data?.response;
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    });
+
+  const testExpense = revenueExpenseData
+    .filter((item) => item.expense)
+    .flatMap((item) => item.expense);
+  const testUnits = revenueExpenseData
+    .filter((item) => item.units)
+    .flatMap((item) => item.units);
+  const totalSqft = testUnits.reduce((sum, item) => (item.sqft || 0) + sum, 0);
+  console.log(
+    "TEST asdas",
+    testExpense.filter((item) => item.expanseType === "Monthly Rent")
+  );
+  const totalExpense = testExpense.reduce(
+    (sum, item) => (item.actualAmount || 0) + sum,
+    0
+  );
+
+  //----------INCOME-EXPENSE GRAPH conversion------------------//
+  const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
+  const monthWiseExpenses = {};
+
+  testExpense.forEach((exp) => {
+    const monthKey = dayjs(exp.dueDate).format("MMM-YY"); // e.g., "Apr-24"
+
+    // Skip excluded months
+    if (excludedMonths.includes(monthKey)) return;
+
+    if (!monthWiseExpenses[monthKey]) {
+      monthWiseExpenses[monthKey] = {
+        month: monthKey,
+        actualExpense: 0,
+        projectedExpense: 0,
+        expenses: [],
+      };
+    }
+
+    monthWiseExpenses[monthKey].actualExpense += exp.actualAmount || 0;
+    monthWiseExpenses[monthKey].projectedExpense += exp.projectedAmount || 0;
+    monthWiseExpenses[monthKey].expenses.push(exp);
+  });
+
+  const transformedExpenses = Object.values(monthWiseExpenses);
+
+  const sortedExpenses = transformedExpenses.sort((a, b) =>
+    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
+  );
+
+  console.log(
+    "Filtered & Sorted Month-wise Expenses:",
+    sortedExpenses.map((item) => ({
+      ...item,
+      expenses: item.expenses.filter(
+        (item) => item.expanseType === "Monthly Rent"
+      ),
+    }))
+  );
+
+  const yearCategories = {
+    "FY 2024-25": [
+      "Apr-24",
+      "May-24",
+      "Jun-24",
+      "Jul-24",
+      "Aug-24",
+      "Sep-24",
+      "Oct-24",
+      "Nov-24",
+      "Dec-24",
+      "Jan-25",
+      "Feb-25",
+      "Mar-25",
+    ],
+    "FY 2025-26": [
+      "Apr-25",
+      "May-25",
+      "Jun-25",
+      "Jul-25",
+      "Aug-25",
+      "Sep-25",
+      "Oct-25",
+      "Nov-25",
+      "Dec-25",
+      "Jan-26",
+      "Feb-26",
+      "Mar-26",
+    ],
+  };
+
+  // Build map of month => actualExpense
+  const expenseMap = {};
+  sortedExpenses.forEach((item) => {
+    expenseMap[item.month] = item.actualExpense;
+  });
+
+  // Generate expenseData for all fiscal years defined in `yearCategories`
+  const expenseData = Object.entries(yearCategories).map(
+    ([fiscalYear, months]) => ({
+      name: "Expense",
+      group: fiscalYear,
+      data: months.map((month) => expenseMap[month] || 0),
+    })
+  );
+
+  console.log("Final Multi-Year Expense Data:", expenseData);
+  const lastMonthRaw = expenseData.filter(
+    (item) => item.group === "FY 2024-25"
+  );
+  const lastMonthData = lastMonthRaw.map(
+    (item) => item.data[item.data.length - 1]
+  );
+  console.log("LASt month data : ", lastMonthData[0]);
+  //----------INCOME-EXPENSE GRAPH conversion------------------//
+
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [
     {
       name: "Income",
       group: "FY 2024-25",
       data: [
-        1550000, // Jan
-        1620000, // Feb
-        1750000, // Mar
-        1900000, // Apr
-        2100000, // May
-        2250000, // Jun
-        2450000, // Jul
-        2400000, // Aug
-        2300000, // Sep
-        2650000, // Oct
-        2850000, // Nov
-        3100000, // Dec
-      ],
-    },
-    {
-      name: "Expense",
-      group: "FY 2024-25",
-      data: [
-        950000, 1000000, 1080000, 1200000, 1350000, 1450000, 1550000, 1500000,
-        1480000, 1600000, 1750000, 1850000,
+        1550000, // Apr
+        1620000, // May
+        1750000, // Jun
+        1900000, // Jul
+        2100000, // Aug
+        2250000, // Sep
+        2450000, // Oct
+        2400000, // Nov
+        2300000, // Dec
+        2650000, // Jan
+        2850000, // Feb
+        3100000, // Mar
       ],
     },
     {
@@ -75,24 +192,7 @@ const FinanceDashboard = () => {
         3300000, // Dec
       ],
     },
-    {
-      name: "Expense",
-      group: "FY 2025-26",
-      data: [
-        1020000, // Jan
-        1080000, // Feb
-        1150000, // Mar
-        1250000, // Apr
-        1400000, // May
-        1520000, // Jun
-        1620000, // Jul
-        1580000, // Aug
-        1550000, // Sep
-        1700000, // Oct
-        1850000, // Nov
-        1950000, // Dec
-      ],
-    },
+    ...expenseData,
   ];
 
   const incomeExpenseOptions = {
@@ -164,7 +264,7 @@ const FinanceDashboard = () => {
               </div>
               <div style="display: flex; justify-content: space-between;">
                 <strong>Expense</strong>
-                <span>INR ${expense?.toLocaleString() || "0"}</span>
+                <span>INR ${inrFormat(expense) || "0"}</span>
               </div>
             </div>
           </div>
@@ -202,10 +302,13 @@ const FinanceDashboard = () => {
     cardTitle: "Expense",
     timePeriod: "FY 2024-25",
     descriptionData: [
-      { title: "March 2025", value: "INR 18,00,000" },
-      { title: "Annual Average", value: "INR 22,00,000" },
-      { title: "Overall", value: "INR 2,64,00,000" },
-      { title: "Per Sq. Ft.", value: "660" },
+      { title: "March 2025", value: `INR ${inrFormat(lastMonthData)}` },
+      { title: "Annual Average", value: `INR ${inrFormat(totalExpense / 12)}` },
+      { title: "Overall", value: `INR ${inrFormat(totalExpense)}` },
+      {
+        title: "Per Sq. Ft.",
+        value: `INR ${inrFormat(totalExpense / totalSqft)}`,
+      },
     ],
   };
 
@@ -222,13 +325,32 @@ const FinanceDashboard = () => {
 
   //-----------------------------------------------------DataCards------------------------------------------------------//
   //-----------------------------------------------------Pie Monthly Payout------------------------------------------------------//
-  const clientPayouts = [
-    { clientName: "Axis", amount: 20000, status: "paid" },
-    { clientName: "HDFC", amount: 35000, status: "paid" },
-    { clientName: "ICICI", amount: 25000, status: "unpaid" },
-    { clientName: "Kotak", amount: 40000, status: "paid" },
-    { clientName: "SBI", amount: 10000, status: "unpaid" },
-  ];
+  const availableMonths = sortedExpenses.map((e) => e.month);
+  const todayMonth = dayjs().format("MMM-YY");
+
+  // 2. Determine the latest applicable month
+  let selectedMonth = todayMonth;
+  if (!availableMonths.includes(todayMonth)) {
+    const todayIndex = availableMonths.indexOf(todayMonth);
+    selectedMonth =
+      availableMonths[Math.max(0, todayIndex - 1)] || availableMonths.at(-1);
+  }
+
+  // 3. Get that month's data
+  const selectedMonthData = sortedExpenses.find(
+    (item) => item.month === selectedMonth
+  );
+
+  // 4. Transform to `clientPayouts`
+
+  const clientPayouts = (selectedMonthData?.expenses || []).map((expense) => ({
+    clientName: expense.expanseName,
+    amount: expense.actualAmount,
+    status: expense.status === "Approved" ? "paid" : "unpaid",
+    date: dayjs(expense.dueDate).format("DD-MMM-YYYY"), // e.g., "15-May-2024"
+  }));
+
+  console.log("clientPayouts:", clientPayouts);
 
   // Group and sum by status
   const paidClients = clientPayouts.filter((c) => c.status === "paid");
@@ -376,20 +498,31 @@ const FinanceDashboard = () => {
   const donutStatutoryColors = ["#4CAF50", "#2196F3", "#FFC107", "#FF5722"]; // Custom color palette
   //-----------------------------------------------------Donut Statutory Payments------------------------------------------------------//
   //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
-  const rentalPayments = [
-    { month: "April", amount: 40000, status: "paid" },
-    { month: "May", amount: 40000, status: "paid" },
-    { month: "June", amount: 40000, status: "paid" },
-    { month: "July", amount: 40000, status: "paid" },
-    { month: "August", amount: 40000, status: "paid" },
-    { month: "September", amount: 40000, status: "paid" },
-    { month: "October", amount: 40000, status: "paid" },
-    { month: "November", amount: 40000, status: "paid" },
-    { month: "December", amount: 40000, status: "unpaid" },
-    { month: "January", amount: 40000, status: "unpaid" },
-    { month: "February", amount: 40000, status: "unpaid" },
-    { month: "March", amount: 40000, status: "unpaid" },
-  ];
+  const rentalPayments = sortedExpenses.map((monthData) => {
+    // Filter only Monthly Rent
+    const rentExpenses = monthData.expenses.filter(
+      (exp) => exp.expanseType === "Monthly Rent"
+    );
+
+    // Sum actualAmount
+    const amount = rentExpenses.reduce(
+      (sum, exp) => sum + (exp.actualAmount || 0),
+      0
+    );
+
+    // Determine status
+    const status =
+      rentExpenses.length > 0 &&
+      rentExpenses.every((exp) => exp.status === "Approved")
+        ? "paid"
+        : "unpaid";
+
+    return {
+      month: monthData.month,
+      amount,
+      status,
+    };
+  });
 
   const totalPaid = rentalPayments
     .filter((item) => item.status === "paid")
@@ -403,8 +536,8 @@ const FinanceDashboard = () => {
   const donutRentalLabels = ["Paid", "Unpaid"];
   const donutRentalSeries = [totalPaid, totalUnpaid];
   const donutRentalTooltipValue = [
-    `Paid - INR ${totalPaid.toLocaleString()}`,
-    `Unpaid - INR ${totalUnpaid.toLocaleString()}`,
+    ` INR ${totalPaid.toLocaleString()}`,
+    ` INR ${totalUnpaid.toLocaleString()}`,
   ];
   const donutRentalColors = ["#4CAF50", "#F44336"];
 
@@ -520,7 +653,7 @@ const FinanceDashboard = () => {
           chartId={"bargraph-finance-income"}
           title={"BIZNest FINANCE INCOME V/S EXPENSE"}
           TitleAmountGreen={`INR 53,29,345`}
-          TitleAmountRed={`INR 42,36,894`}
+          TitleAmountRed={`INR ${inrFormat(totalExpense)}`}
         />,
       ],
     },
@@ -562,7 +695,7 @@ const FinanceDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection title={`Payouts - ${monthYear} `} border>
+        <WidgetSection title={`Payouts ${selectedMonthData?.month} `} border>
           <PieChartMui
             data={pieMonthlyPayoutData}
             options={pieMonthlyPayoutOptions}

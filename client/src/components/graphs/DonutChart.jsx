@@ -31,8 +31,6 @@ const DonutChart = ({
         dataPointSelection: (event, chartContext, config) => {
           handleClick?.(); // trigger the click handler
           if (onSliceClick && config?.dataPointIndex !== undefined) {
-            // to get index
-            console.log(config);
             const index = config.dataPointIndex;
             onSliceClick?.(index);
           }
@@ -60,6 +58,17 @@ const DonutChart = ({
           size: "65%",
           labels: {
             show: true,
+            value: {
+              show: true,
+              fontSize: "14px",
+              fontWeight: 500,
+              formatter: function (val) {
+                const numericVal = parseFloat(val);
+                return isMonetary
+                  ? `INR ${numericVal.toLocaleString("en-IN")}`
+                  : `${numericVal.toLocaleString("en-IN")}`;
+              },
+            },
             total: {
               show: true,
               label: `Total ${centerLabel}`,
@@ -76,6 +85,7 @@ const DonutChart = ({
         },
       },
     },
+    
   };
 
   return (
