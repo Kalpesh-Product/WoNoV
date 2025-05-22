@@ -381,84 +381,84 @@ const getMyTodayTasks = async (req, res, next) => {
   }
 };
 
-// const getTeamMembersTasksProjects = async (req, res, next) => {
-//   try {
-//     const { company, departments } = req;
+const getTeamMembersTasksProjects = async (req, res, next) => {
+  try {
+    const { company, departments } = req;
 
-//     // Find team members
-//     const teamMembers = await User.find({
-//       departments: { $in: departments },
-//     });
+    // Find team members
+    const teamMembers = await User.find({
+      departments: { $in: departments },
+    });
 
-//     console.log("----teamMembers---");
+    console.log("----teamMembers---");
 
-//     const teamMemberIds = teamMembers.map((member) => member._id);
+    const teamMemberIds = teamMembers.map((member) => member._id);
 
-//     const teamMembersData = await Promise.all(
-//       teamMemberIds.map(async (id) => {
-//         // Fetch tasks assigned to the team member
-//         const tasks = await Task.find({
-//           company,
-//           $and: [
-//             { assignedTo: { $in: [id] } }, // User must be in assignedTo
-//             { assignedBy: { $ne: id } }, // User must NOT be assignedBy
-//           ],
-//         })
-//           .populate({
-//             path: "assignedTo",
-//             select: "email firstName lastName isActive",
-//             populate: [
-//               { path: "role", select: "roleTitle" },
-//               { path: "departments", select: "name" },
-//             ],
-//           })
-//           .populate("assignedBy", "firstName lastName")
-//           .select("-company")
-//           .lean();
+    const teamMembersData = await Promise.all(
+      teamMemberIds.map(async (id) => {
+        // Fetch tasks assigned to the team member
+        const tasks = await Task.find({
+          company,
+          $and: [
+            { assignedTo: { $in: [id] } }, // User must be in assignedTo
+            { assignedBy: { $ne: id } }, // User must NOT be assignedBy
+          ],
+        })
+          .populate({
+            path: "assignedTo",
+            select: "email firstName lastName isActive",
+            populate: [
+              { path: "role", select: "roleTitle" },
+              { path: "departments", select: "name" },
+            ],
+          })
+          .populate("assignedBy", "firstName lastName")
+          .select("-company")
+          .lean();
 
-//         console.log(tasks);
-//         // Find the correct user details from the first task
-//         let userDetails = {};
-//         if (tasks.length > 0) {
-//           const matchedUser = tasks[0].assignedTo.find(
-//             (user) => user._id.toString() === id.toString()
-//           );
+        console.log(tasks);
+        // Find the correct user details from the first task
+        let userDetails = {};
+        if (tasks.length > 0) {
+          const matchedUser = tasks[0].assignedTo.find(
+            (user) => user._id.toString() === id.toString()
+          );
 
-//           if (matchedUser) {
-//             userDetails = {
-//               email: matchedUser.email,
-//               name: `${matchedUser.firstName} ${matchedUser.lastName}`,
-//               role:
-//                 Array.isArray(matchedUser.role) && matchedUser.role.length
-//                   ? matchedUser.role.map((role) => role.roleTitle)
-//                   : ["No Role"],
-//               departments:
-//                 matchedUser.departments?.map((dept) => dept.name) || [],
-//               status: matchedUser.isActive,
-//             };
-//           }
-//         }
+          if (matchedUser) {
+            userDetails = {
+              email: matchedUser.email,
+              name: `${matchedUser.firstName} ${matchedUser.lastName}`,
+              role:
+                Array.isArray(matchedUser.role) && matchedUser.role.length
+                  ? matchedUser.role.map((role) => role.roleTitle)
+                  : ["No Role"],
+              departments:
+                matchedUser.departments?.map((dept) => dept.name) || [],
+              status: matchedUser.isActive,
+            };
+          }
+        }
 
-//         if (tasks.length > 0) {
-//           return {
-//             ...userDetails,
-//             tasksCount: tasks.length,
-//           };
-//         }
+        if (tasks.length > 0) {
+          return {
+            ...userDetails,
+            tasksCount: tasks.length,
+          };
+        }
 
-//         return null; // Return null for users with no tasks
-//       })
-//     );
+        return null; // Return null for users with no tasks
+      })
+    );
 
-//     // Filter out null elements (users with 0 tasks)
-//     const filteredData = teamMembersData.filter((member) => member !== null);
+    // Filter out null elements (users with 0 tasks)
+    const filteredData = teamMembersData.filter((member) => member !== null);
 
-//     console.log("team", filteredData);
-//     return res.status(200).json(filteredData);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+    console.log("team", filteredData);
+    return res.status(200).json(filteredData);
+  } catch (error) {
+    next(error);
+  }
+};
 
 const getAllDeptTasks = async (req, res, next) => {
   try {
@@ -663,6 +663,7 @@ module.exports = {
   getTasks,
   getTeamMembersTasksProjects,
   getAssignedTasks,
+  getAllDeptTasks,
   completeTasks,
   deleteTask,
 };
