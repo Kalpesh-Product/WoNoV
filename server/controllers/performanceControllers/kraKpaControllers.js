@@ -12,17 +12,10 @@ const createDeptBasedTask = async (req, res, next) => {
   const logSourceKey = "kraKpaRoles";
 
   try {
-    const {
-      task,
-      taskType,
-      description,
-      department,
-      dueDate,
-      kpaDuration,
-      assignedDate,
-    } = req.body;
+    const { task, taskType, description, department, dueDate, kpaDuration } =
+      req.body;
 
-    if (!task || !taskType || !description || !department || !assignedDate) {
+    if (!task || !taskType || !description || !department) {
       throw new CustomError(
         "Missing required fields",
         logPath,
@@ -62,17 +55,12 @@ const createDeptBasedTask = async (req, res, next) => {
       );
     }
 
-    const parsedAssignedDate = new Date(assignedDate);
-    const parsedDueDate = new Date(dueDate);
+    const currDate = new Date();
+
+    const parsedDueDate = dueDate ? new Date(dueDate) : currDate;
     const dueTime = "6:30 PM";
 
-    // const isSameDay =
-    //   parsedDueDate.getDate() - parsedAssignedDate.getDate() === 0;
-    // const isSameMonth =
-    //   parsedDueDate.getMonth() - parsedAssignedDate.getMonth() === 0;
-
-    if (parsedAssignedDate === parsedDueDate && taskType !== "KRA") {
-      console.log("inn");
+    if (currDate === parsedDueDate && taskType !== "KRA") {
       throw new CustomError(
         "Task type should be KRA",
         logPath,
@@ -82,11 +70,11 @@ const createDeptBasedTask = async (req, res, next) => {
     }
 
     const kpaTypeMatch =
-      parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 1
+      parsedDueDate.getMonth() - currDate.getMonth() <= 1
         ? "Monthly"
-        : parsedDueDate.getMonth() - parsedAssignedDate.getMonth() > 1 &&
-          parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 12
-        ? "Annualy"
+        : parsedDueDate.getMonth() - currDate.getMonth() > 1 &&
+          parsedDueDate.getMonth() - currDate.getMonth() <= 12
+        ? "Annually"
         : "No match";
 
     if (taskType === "KPA" && kpaTypeMatch !== kpaDuration) {
@@ -98,7 +86,7 @@ const createDeptBasedTask = async (req, res, next) => {
       );
     }
 
-    if (isNaN(parsedAssignedDate.getTime()) || isNaN(parsedDueDate.getTime())) {
+    if (isNaN(currDate.getTime()) || isNaN(parsedDueDate.getTime())) {
       throw new CustomError(
         "Invalid date format provided",
         logPath,
@@ -112,8 +100,8 @@ const createDeptBasedTask = async (req, res, next) => {
       description,
       assignedBy: user,
       department,
-      assignedDate,
-      dueDate: parsedDueDate,
+      assignedDate: currDate,
+      dueDate: taskType === "KRA" ? currDate : parsedDueDate,
       dueTime,
       taskType,
       kpaDuration,
@@ -177,14 +165,15 @@ const updateTaskStatus = async (req, res, next) => {
 
     const completionDate = new Date();
 
-    const updateTaskStatus = await kraKpaTask.findOneAndUpdate(
-      { _id: taskId },
-      {
-        status: "Completed",
-        completionDate,
-      },
-      { new: true }
-    );
+    const newKraKpaTask = new kraKpaTask({
+      task: taskId,
+      assignedTo: user,
+      status: "Completed",
+      completionDate,
+      company,
+    });
+
+    const savedNewKraKpaTask = await newKraKpaTask.save();
 
     if (!updateTaskStatus) {
       throw new CustomError(
@@ -195,7 +184,6 @@ const updateTaskStatus = async (req, res, next) => {
       );
     }
 
-    // Log success with createLog
     await createLog({
       path: logPath,
       action: logAction,
@@ -205,7 +193,7 @@ const updateTaskStatus = async (req, res, next) => {
       ip: ip,
       company: company,
       sourceKey: logSourceKey,
-      sourceId: updateTaskStatus._id,
+      sourceId: savedNewKraKpaTask._id,
       changes: {
         status: "Completed",
         prevStatus: "Pending",
@@ -228,7 +216,7 @@ const updateTaskStatus = async (req, res, next) => {
 const getKraKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { empId, type, dept, duration } = req.query;
+    const { type, dept, duration } = req.query;
 
     const query = { company };
     let subQuery;
@@ -244,7 +232,7 @@ const getKraKpaTasks = async (req, res, next) => {
 
     const tasks = await kraKpaTask
       .find({
-        subQuery,
+        company,
         task: { $in: matchingDepartments.map((dept) => dept._id) },
       })
       .populate({
@@ -278,16 +266,87 @@ const getKraKpaTasks = async (req, res, next) => {
           assignedTo: assignee.trim(),
           assignedDate: task.task.assignedDate,
           dueDate: task.task.dueDate,
+          assignedDate: "9:30 AM",
+          dueTime: "6:30 PM",
+          completionDate: task.completionDate ? task.completionDate : "N/A",
           status: task.status,
         };
       });
 
-    // const individualTasks = foundUser?.kraKpa || [];
-    // const allTasks = [...transformedTasks, ...individualTasks];
-    const allTasks = [...transformedTasks];
+    return res.status(200).json(transformedTasks);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    console.log(allTasks.length);
-    return res.status(200).json(allTasks);
+const getMyKraKpaTasks = async (req, res, next) => {
+  try {
+    const { company } = req;
+    const { empId, type, dept, duration } = req.query;
+
+    const query = { company };
+    if (dept) {
+      query.department = dept;
+    }
+    if (duration) {
+      query.duration = duration;
+    }
+
+    const foundUser = await UserData.findOne({ empId });
+
+    if (!foundUser) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    const matchingDepartments = await kraKpaRole.find(query).select("_id");
+
+    const tasks = await kraKpaTask
+      .find({
+        company: company,
+        task: { $in: matchingDepartments.map((dept) => dept._id) },
+      })
+      .populate({
+        path: "task",
+        populate: [
+          { path: "department", select: "name" },
+          { path: "assignedBy", select: "firstName middleName lastName" },
+        ],
+      })
+      .populate({ path: "assignedTo", select: "firstName middleName lastName" })
+      .select("-company")
+      .lean();
+
+    const transformedTasks = tasks
+      .filter((task) => {
+        return (
+          task.assignedTo._id.toString() === foundUser._id.toString() &&
+          task.task.taskType === type
+        );
+      })
+      .map((task) => {
+        const assignedBy = `${task.task.assignedBy.firstName} ${
+          task.task.assignedBy.middleName || ""
+        } ${task.task.assignedBy.lastName}`;
+
+        const assignee = `${task.assignedTo.firstName} ${
+          task.assignedTo.middleName || ""
+        } ${task.assignedTo.lastName}`;
+
+        return {
+          taskName: task.task.task,
+          description: task.task.description,
+          assignedBy: assignedBy.trim(),
+          assignedTo: assignee.trim(),
+          assignedDate: task.task.assignedDate,
+          dueDate: task.task.dueDate,
+          assignedDate: "9:30 AM",
+          dueTime: "6:30 PM",
+          completionDate: task.completionDate ? task.completionDate : "N/A",
+          status: task.status,
+        };
+      });
+
+    return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);
   }
@@ -415,6 +474,7 @@ module.exports = {
   // createIndividualTask,
   getAllKpaTasks,
   getKraKpaTasks,
+  getMyKraKpaTasks,
   getAllDeptTasks,
   updateTaskStatus,
 };

@@ -1,5 +1,5 @@
+const { default: mongoose } = require("mongoose");
 const User = require("../../models/hr/UserData");
-const Project = require("../../models/tasks/Project");
 const Task = require("../../models/tasks/Task");
 const CustomError = require("../../utils/customErrorlogs");
 const { formatDate, formatTime } = require("../../utils/formatDateTime");
@@ -15,6 +15,7 @@ const createTasks = async (req, res, next) => {
   try {
     const {
       taskName,
+      department,
       description,
       status,
       priority,
@@ -24,7 +25,14 @@ const createTasks = async (req, res, next) => {
       assignedDate,
     } = req.body;
 
-    if (!taskName || !description || !dueDate || !assignedDate || !dueTime) {
+    if (
+      !taskName ||
+      !department ||
+      !description ||
+      !dueDate ||
+      !assignedDate ||
+      !dueTime
+    ) {
       throw new CustomError(
         "Missing required fields",
         logPath,
@@ -33,9 +41,17 @@ const createTasks = async (req, res, next) => {
       );
     }
 
+    if (!mongoose.Types.ObjectId.isValid(department)) {
+      throw new CustomError(
+        "Invalid department ID provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const parsedAssignedDate = new Date(assignedDate);
     const parsedDueDate = new Date(dueDate);
-    const parsedDueTime = new Date(dueTime);
 
     if (isNaN(parsedAssignedDate.getTime())) {
       throw new CustomError(
@@ -46,15 +62,6 @@ const createTasks = async (req, res, next) => {
       );
     }
     if (isNaN(parsedDueDate.getTime())) {
-      throw new CustomError(
-        "Invalid date format",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    if (dueTime && isNaN(parsedDueTime.getTime())) {
       throw new CustomError(
         "Invalid date format",
         logPath,
@@ -77,7 +84,6 @@ const createTasks = async (req, res, next) => {
     }
 
     // Validate all assignees
-
     let existingUsers = [];
     if (Array.isArray(assignees)) {
       existingUsers = await validateUsers(assignees);
@@ -93,6 +99,7 @@ const createTasks = async (req, res, next) => {
 
     const newTask = new Task({
       taskName,
+      department,
       description,
       status,
       priority: priority ? priority : "High",
@@ -100,7 +107,7 @@ const createTasks = async (req, res, next) => {
       assignedBy: user,
       assignedDate,
       dueDate: parsedDueDate,
-      dueTime: dueTime ? parsedDueTime : null,
+      dueTime: dueTime,
       company,
     });
 
@@ -129,6 +136,71 @@ const createTasks = async (req, res, next) => {
     });
 
     return res.status(201).json({ message: "Task added successfully" });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
+  }
+};
+
+const updateTaskStatus = async (req, res, next) => {
+  const { user, ip, company } = req;
+  const logPath = "tasks/TaskLog";
+  const logAction = "Update Task Status";
+  const logSourceKey = "task";
+
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      throw new CustomError(
+        "Task ID must be provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new CustomError(
+        "Invalid task ID provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(
+      id,
+      { status: "Completed" },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedTask) {
+      throw new CustomError("Task not found", logPath, logAction, logSourceKey);
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Task status updated successfully",
+      status: "Success",
+      user: user,
+      ip: ip,
+      company: company,
+      sourceKey: logSourceKey,
+      sourceId: updatedTask._id,
+      changes: {
+        status: "Completed",
+        prevStatus: "Pending",
+      },
+    });
+
+    return res.status(200).json({ message: "Task marked completed" });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);
@@ -285,6 +357,7 @@ const getTasks = async (req, res, next) => {
     }
 
     const tasks = await Task.find(query)
+      .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
       .select("-company")
@@ -294,7 +367,7 @@ const getTasks = async (req, res, next) => {
       return {
         ...task,
         dueDate: formatDate(task.dueDate),
-        dueTime: task.dueTime ? formatTime(task.dueTime) : null,
+        dueTime: task.dueTime ? formatTime(task.dueTime) : "06:30 PM",
         assignedDate: formatDate(task.assignedDate),
       };
     });
@@ -323,7 +396,7 @@ const getMyTasks = async (req, res, next) => {
       return {
         ...task,
         dueDate: formatDate(task.dueDate),
-        dueTime: task.dueTime ? formatTime(task.dueTime) : null,
+        dueTime: task.dueTime ? task.dueTime : "06:30 PM",
         assignedDate: formatDate(task.assignedDate),
       };
     });
@@ -374,7 +447,7 @@ const getMyTodayTasks = async (req, res, next) => {
   }
 };
 
-const getTeamMembersTasksProjects = async (req, res, next) => {
+const getTeamMembersTasks = async (req, res, next) => {
   try {
     const { company, departments } = req;
 
@@ -645,11 +718,12 @@ const deleteTask = async (req, res, next) => {
 module.exports = {
   createTasks,
   updateTask,
+  updateTaskStatus,
   getMyTasks,
   getMyTodayTasks,
   getAllTasks,
   getTasks,
-  getTeamMembersTasksProjects,
+  getTeamMembersTasks,
   getAssignedTasks,
   getAllDeptTasks,
   completeTasks,

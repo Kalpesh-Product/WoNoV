@@ -30,7 +30,6 @@ const kraKpaRolesSchema = new mongoose.Schema(
     kpaDuration: {
       type: String,
       enum: ["Monthly", "Annually"],
-      required: true,
     },
     department: {
       type: mongoose.Schema.Types.ObjectId,

@@ -31,7 +31,7 @@ const taskSchema = new mongoose.Schema({
     required: true,
   },
   dueTime: {
-    type: Date,
+    type: String,
     default: null,
   },
   status: {
@@ -57,6 +57,7 @@ const taskSchema = new mongoose.Schema({
   department: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Department",
+    required: true,
   },
   isDeleted: {
     type: Boolean,

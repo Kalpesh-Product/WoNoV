@@ -10,7 +10,7 @@ const TeamMember = () => {
     queryKey: ["taskList"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/tasks/get-team-tasks-projects");
+        const response = await axios.get("/api/tasks/get-team-tasks");
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -23,7 +23,6 @@ const TeamMember = () => {
     { field: "name", headerName: "Name", flex: 1 },
     { field: "email", headerName: "Email", flex: 1 },
     { field: "role", headerName: "Role", flex: 1 },
-    { field: "projects", headerName: "Projects", flex: 1 },
     { field: "task", headerName: "Task", flex: 1 },
     { field: "status", headerName: "Status", flex: 1 },
     {
@@ -130,7 +129,7 @@ const TeamMember = () => {
       task: 11,
       status: "Active",
     },
-  ];
+  ];p
 
   return (
     <div className="flex flex-col gap-8 p-4">
@@ -144,11 +143,10 @@ const TeamMember = () => {
               ? []
               : [
                   ...taskList.map((task, index) => ({
-                    id: index + 1,
+                    srNo: index + 1,
                     name: task.name,
                     email: task.email,
                     role: task.role,
-                    projects: task.projectsCount,
                     task: task.tasksCount,
                     status: task.status,
                   })),
