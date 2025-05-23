@@ -55,11 +55,12 @@ const createDeptBasedTask = async (req, res, next) => {
       );
     }
 
-    const parsedAssignedDate = new Date();
-    const parsedDueDate = new Date(dueDate);
+    const currDate = new Date();
+
+    const parsedDueDate = dueDate ? new Date(dueDate) : currDate;
     const dueTime = "6:30 PM";
 
-    if (parsedAssignedDate === parsedDueDate && taskType !== "KRA") {
+    if (currDate === parsedDueDate && taskType !== "KRA") {
       throw new CustomError(
         "Task type should be KRA",
         logPath,
@@ -69,10 +70,10 @@ const createDeptBasedTask = async (req, res, next) => {
     }
 
     const kpaTypeMatch =
-      parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 1
+      parsedDueDate.getMonth() - currDate.getMonth() <= 1
         ? "Monthly"
-        : parsedDueDate.getMonth() - parsedAssignedDate.getMonth() > 1 &&
-          parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 12
+        : parsedDueDate.getMonth() - currDate.getMonth() > 1 &&
+          parsedDueDate.getMonth() - currDate.getMonth() <= 12
         ? "Annually"
         : "No match";
 
@@ -85,7 +86,7 @@ const createDeptBasedTask = async (req, res, next) => {
       );
     }
 
-    if (isNaN(parsedAssignedDate.getTime()) || isNaN(parsedDueDate.getTime())) {
+    if (isNaN(currDate.getTime()) || isNaN(parsedDueDate.getTime())) {
       throw new CustomError(
         "Invalid date format provided",
         logPath,
@@ -99,8 +100,8 @@ const createDeptBasedTask = async (req, res, next) => {
       description,
       assignedBy: user,
       department,
-      assignedDate: parsedAssignedDate,
-      dueDate: parsedDueDate,
+      assignedDate: currDate,
+      dueDate: taskType === "KRA" ? currDate : parsedDueDate,
       dueTime,
       taskType,
       kpaDuration,
