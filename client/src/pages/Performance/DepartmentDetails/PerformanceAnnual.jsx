@@ -25,7 +25,7 @@ const PerformanceAnnual = () => {
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-    queryKey: ["fetchedDepartments"],
+    queryKey: ["fetchedAnnualKra"],
     queryFn: fetchDepartments,
   });
   console.log(department);

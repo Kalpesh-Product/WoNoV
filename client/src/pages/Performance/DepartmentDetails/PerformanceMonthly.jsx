@@ -57,7 +57,7 @@ const PerformanceMonthly = () => {
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-    queryKey: ["fetchedDepartments"],
+    queryKey: ["fetchedMonthlyKra"],
     queryFn: fetchDepartments,
   });
   const completedEntries = departmentKra.filter(

@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import AgTable from "../AgTable";
 import PrimaryButton from "../PrimaryButton";
 import humanDate from "../../utils/humanDateForamt";
+import useRefWithInitialRerender from "../../hooks/useRefWithInitialRerender";
 
 const DateWiseTable = ({
   data = [],
@@ -16,6 +17,7 @@ const DateWiseTable = ({
   formatTime = false, // <-- added default value
 }) => {
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
+  const {ref} = useRefWithInitialRerender
 
   const dateLabels = useMemo(() => {
     const dateSet = new Set();
@@ -61,7 +63,7 @@ const DateWiseTable = ({
   }, [columns, formatTime]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div ref={ref} className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <span className="text-title text-primary font-pmedium uppercase">
           {tableTitle}

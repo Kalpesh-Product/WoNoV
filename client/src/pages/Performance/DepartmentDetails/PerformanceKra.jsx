@@ -13,10 +13,13 @@ import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
 import useAuth from "../../../hooks/useAuth";
+import { toast } from "sonner";
+import { queryClient } from "../../../main";
+
 
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
-  const { auth } = useAuth()
+  const { auth } = useAuth();
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
@@ -28,7 +31,7 @@ const PerformanceKra = () => {
   } = useForm({
     defaultValues: {
       dailyKra: "",
-      description : '',
+      description: "",
     },
   });
 
@@ -36,17 +39,28 @@ const PerformanceKra = () => {
   const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
     mutationKey: ["addDailyKra"],
     mutationFn: async (data) => {
-      console.log("Submitted");
+      const response = await axios.post("/api/performance/create-task", {
+        task: data.dailyKra,
+        taskType: "KRA",
+        description: data.description,
+        department: deptId,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["fetchedDepartments"] });
+      toast.success(data.message || "KRA Added");
+      setOpenModal(false);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error Adding KRA");
     },
   });
 
+  console.log("DEPARTEMNT : ", auth.user?.departments[0]?._id);
+
   const handleFormSubmit = (data) => {
-    addDailyKra({
-      task: data.dailyKra,
-      taskType : "KRA",
-      description : data.description,
-      department : auth.user?.departments?._id
-    });
+    addDailyKra(data);
   };
   //--------------POST REQUEST FOR DAILY KRA-----------------//
 
@@ -115,8 +129,8 @@ const PerformanceKra = () => {
               buttonTitle={"Add Daily KRA"}
               handleSubmit={() => setOpenModal(true)}
               tableTitle={`${department} DEPARTMENT - DAILY KRA`}
-              data={[
-                ...departmentKra
+              data={
+                (departmentKra || [])
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({
                     srno: index + 1,
@@ -124,8 +138,9 @@ const PerformanceKra = () => {
                     assignedDate: item.assignedDate,
                     dueDate: item.dueDate,
                     status: item.status,
-                  })),
-              ]}
+                  }))
+              }
+              
               dateColumn={"dueDate"}
               columns={departmentColumns}
             />
@@ -202,7 +217,12 @@ const PerformanceKra = () => {
               />
             )}
           />
-          <PrimaryButton type="submit" title={"Submit"} />
+          <PrimaryButton
+            type="submit"
+            title={"Submit"}
+            isLoading={isAddKraPending}
+            disabled={isAddKraPending}
+          />
         </form>
       </MuiModal>
     </>
