@@ -10,8 +10,8 @@ const HrCommonLayout = () => {
   const tabs = [
     { label: "Attendance", path: "attendance" },
     { label: "Leaves", path: "leaves" },
-    { label: "Agreements", path: "agreements" },
-    { label: "Payslips", path: "payslips" },
+    // { label: "Agreements", path: "agreements" },
+    // { label: "Payslips", path: "payslips" },
   ];
 
   // Redirect to "attendance" if at "/app/HR"

@@ -38,9 +38,9 @@ const Profile = () => {
         }}
       >
         <Tab label="My Profile" />
-        <Tab label="Change Password" />
-        <Tab label="Access Grant" />
-        <Tab label="My Assets" />
+        {/* <Tab label="Change Password" /> */}
+        {/* <Tab label="Access Grant" /> */}
+        {/* <Tab label="My Assets" /> */}
         <Tab label="Meetings" />
         <Tab label="Tickets History" />
       </Tabs>
@@ -51,7 +51,7 @@ const Profile = () => {
             <MyProfile pageTitle={"Profile settings"} />
           </div>
         )}
-        {activeTab === 1 && (
+        {/* {activeTab === 1 && (
           <div>
             <ChangePassword pageTitle={"Change password"} />
           </div>
@@ -60,12 +60,12 @@ const Profile = () => {
           <div>
             <AccessGrant pageTitle={"Access grant"} />
           </div>
-        )}
-        {activeTab === 3 && (
+        )} */}
+        {/* {activeTab === 3 && (
           <div>
             <MyAssets pageTitle={"My Assets"} />
           </div>
-        )}
+        )} */}
         {activeTab === 4 && (
           <div>
             <MeetingRoomCredits pageTitle={"Meeting Room Credits"} />

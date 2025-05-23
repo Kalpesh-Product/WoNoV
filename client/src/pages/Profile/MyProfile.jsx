@@ -14,7 +14,7 @@ import SecondaryButton from "../../components/SecondaryButton";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 
-const MyProfile = ({ handleClose, pageTitle }) => {
+const   MyProfile = ({ handleClose, pageTitle }) => {
   const api = useAxiosPrivate();
   const { auth } = useAuth();
   const [roles, setRoles] = useState([]);
@@ -82,7 +82,7 @@ const MyProfile = ({ handleClose, pageTitle }) => {
     const userId = auth.user._id;
     try {
       const response = await api.patch(
-        `/api/users/update-single-user/${userId}`,
+        `/api/users/update-single-user`,
         consolidatedFormData
       );
       toast.success(response.data.message);

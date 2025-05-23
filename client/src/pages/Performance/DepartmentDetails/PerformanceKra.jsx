@@ -66,16 +66,25 @@ const PerformanceKra = () => {
 
   const {mutate : updateDailyKra, isPending : isUpdatePending} = useMutation({
     mutationKey: ["updateDailyKra"],
-    mutationFn: async (data) =>{},
-    onSuccess: (data) =>{},
-    onError: (error) =>{}
+    mutationFn: async (data) =>{
+      const response = await axios.patch(`/api/performance/update-task-status/${data}`)
+      return response.data
+    },
+    onSuccess: (data) =>{
+      queryClient.invalidateQueries({queryKey:["fetchedDepartments"]})
+      toast.success(data.message || "DATA UPDATED")
+    },
+    onError: (error) =>{
+      toast.error(error.message || "Error Updating")
+    }
   })
+
   //--------------POST REQUEST FOR DAILY KRA-----------------//
 
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        `api/performance/get-tasks?dept=${deptId}`
+        `api/performance/get-tasks?dept=${deptId}&type=KRA`
       );
       return response.data;
     } catch (error) {
@@ -125,7 +134,7 @@ const PerformanceKra = () => {
     },
     {headerName : "Actions", field : "actions", cellRenderer : (params)=>{
       return(
-        <div role="button" onClick={()=>setSelectedKra(params.data)} className="p-2">
+        <div role="button" onClick={()=>updateDailyKra(params.data.id)} className="p-2">
           <PrimaryButton title={<FaCheck />} />
         </div>
       )
@@ -145,6 +154,7 @@ const PerformanceKra = () => {
                 .filter((item) => item.status !== "Completed")
                 .map((item, index) => ({
                   srno: index + 1,
+                  id : item.id,
                   taskName: item.taskName,
                   assignedDate: item.assignedDate,
                   dueDate: item.dueDate,
@@ -165,15 +175,17 @@ const PerformanceKra = () => {
             <DateWiseTable
               formatTime
               tableTitle={`COMPLETED - DAILY KRA`}
-              data={[
-                ...completedEntries.map((item, index) => ({
+  
+              data={(completedEntries || [])
+                .filter((item) => item.status !== "Completed")
+                .map((item, index) => ({
                   srno: index + 1,
+                  id : item.id,
                   taskName: item.taskName,
                   assignedDate: item.assignedDate,
                   dueDate: item.dueDate,
                   status: item.status,
-                })),
-              ]}
+                }))}
               dateColumn={"dueDate"}
               columns={departmentColumns}
             />

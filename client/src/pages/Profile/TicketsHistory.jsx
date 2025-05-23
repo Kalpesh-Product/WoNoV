@@ -1,87 +1,166 @@
-import React from "react";
+import React, { useState } from "react";
 import AgTable from "../../components/AgTable";
+import { Chip, CircularProgress } from "@mui/material";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../components/DetalisFormatted";
+import MuiModal from "../../components/MuiModal";
 
 const TicketsHistory = ({ pageTitle }) => {
-  const laptopColumns = [
-    { field: "id", headerName: "ID"},
-    { field: "department", headerName: "Department" },
-    { field: "assetNumber", headerName: "Asset Number" },
-    { field: "category", headerName: "Category"},
+  const axios = useAxiosPrivate();
+  const [openModal, setOpenModal] = useState(false);
+  const [viewTicketDetails, setViewTicketDetails] = useState({});
+  const { data: tickets, isPending: ticketsLoading } = useQuery({
+    queryKey: ["my-tickets"],
+    queryFn: async function () {
+      const response = await axios.get("/api/tickets/today");
+      return response.data;
+    },
+  });
+  const handleViewTicketDetails = (ticket) => {
+    setViewTicketDetails(ticket);
+    setOpenModal(true);
+  };
+  const recievedTicketsColumns = [
+    { field: "id", headerName: "Sr No", width: 80, sort: "desc" },
+    { field: "raisedBy", headerName: "Raised By", width: 150 },
+    { field: "raisedTo", headerName: "To Department", width: 150 },
+    { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
+    { field: "description", headerName: "Description", width: 300 },
 
-    { field: "brandName", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
-    { field: "quantity", headerName: "Quantity"},
-
-    { field: "purchaseDate", headerName: "Purchase Date" },
-    { field: "warranty", headerName: "Warranty (Months)" },
     {
-        field: "priority",
-        headerName: "Priority",
-        width: 190,
-        type: "singleSelect",
-        valueOptions: ["High", "Medium", "Low"],
-        cellRenderer: (params) => {
-          const statusColors = {
-            Medium: "text-blue-600 bg-blue-100",
-            High: "text-red-600 bg-red-100",
-            Low: "text-yellow-600 bg-yellow-100",
-          };
-          const statusClass = statusColors[params.value] || "";
-          return (
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${statusClass}`}>
-              {params.value}
-            </span>
-          );
-        },
+      field: "priority",
+      headerName: "Priority",
+      width: 130,
+      cellRenderer: (params) => {
+        const statusColorMap = {
+          High: { backgroundColor: "#FFC5C5", color: "#8B0000" },
+          Medium: { backgroundColor: "#FFECC5", color: "#CC8400" },
+          Low: { backgroundColor: "#ADD8E6", color: "#00008B" },
+        };
+
+        const { backgroundColor, color } = statusColorMap[params.value] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+
+        return (
+          <Chip
+            label={params.value}
+            style={{
+              backgroundColor,
+              color,
+            }}
+          />
+        );
       },
-  ];
-  const rows = [
-    {
-      id: "1",
-      department: "IT",
-      assetNumber: "1203",
-      category: "XYZ",
-      brandName: "ababa",
-      price: "1000",
-      quantity: "12",
-      purchaseDate: "24/03/200",
-      warranty: "2",
-      priority:"High"
     },
     {
-      id: "2",
-      department: "IT",
-      assetNumber: "1203",
-      category: "XYZ",
-      brandName: "ababab",
-      price: "1000",
-      quantity: "12",
-      purchaseDate: "24/03/200",
-      warranty: "2",
-       priority:"Medium"
+      field: "status",
+      headerName: "Status",
+      width: 140,
+      cellRenderer: (params) => {
+        const statusColorMap = {
+          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
+          "in-progress": { backgroundColor: "#ADD8E6", color: "#00008B" },
+          resolved: { backgroundColor: "#90EE90", color: "#006400" },
+          open: { backgroundColor: "#E6E6FA", color: "#4B0082" },
+          completed: { backgroundColor: "#D3D3D3", color: "#696969" },
+        };
+
+        const { backgroundColor, color } = statusColorMap[params.value] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+
+        return (
+          <Chip
+            label={params.value}
+            style={{
+              backgroundColor,
+              color,
+            }}
+          />
+        );
+      },
     },
     {
-      id: "3",
-      department: "IT",
-      assetNumber: "1203",
-      category: "XYZ",
-      brandName: "ababab",
-      price: "1000",
-      quantity: "12",
-      purchaseDate: "24/03/200",
-      warranty: "2",
-      priority:"Low"
+      field: "actions",
+      headerName: "Actions",
+      width: 100,
+      cellRenderer: (params) => (
+        <div className="p-2 mb-2 flex gap-2">
+          <span
+            className="text-subtitle cursor-pointer"
+            onClick={() => handleViewTicketDetails(params.data)}
+          >
+            <MdOutlineRemoveRedEye />
+          </span>
+        </div>
+      ),
     },
   ];
   return (
     <>
       <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary">Ticket History</span>
+        <span className="text-title font-pmedium text-primary uppercase">
+          Ticket History
+        </span>
       </div>
       <div className=" w-full">
-        <AgTable data={rows} columns={laptopColumns} paginationPageSize={10} />
+        {ticketsLoading ? (
+          <div className="w-full h-full flex justify-center items-center">
+            <CircularProgress color="black" />
+          </div>
+        ) : (
+          <AgTable
+            key={tickets?.length}
+            search
+            data={tickets?.map((ticket, index) => ({
+              id: index + 1,
+              raisedBy: ticket.raisedBy.firstName,
+              raisedTo: ticket.raisedToDepartment.name,
+              description: ticket.description,
+              ticketTitle: ticket.ticket,
+              status: ticket.status,
+              priority: ticket.priority,
+            }))}
+            columns={recievedTicketsColumns}
+            paginationPageSize={10}
+          />
+        )}
       </div>
+
+      <MuiModal
+        open={openModal && viewTicketDetails}
+        onClose={() => setOpenModal(false)}
+        title={"View Ticket Details"}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+          <DetalisFormatted
+            title="Raised By"
+            detail={viewTicketDetails?.raisedBy}
+          />
+          <DetalisFormatted
+            title="Raised To"
+            detail={viewTicketDetails?.raisedTo}
+          />
+          <DetalisFormatted
+            title="Ticket Title"
+            detail={viewTicketDetails?.ticketTitle}
+          />
+          <DetalisFormatted
+            title="Description"
+            detail={viewTicketDetails?.description}
+          />
+          <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
+          <DetalisFormatted
+            title="Priority"
+            detail={viewTicketDetails?.priority}
+          />
+        </div>
+      </MuiModal>
     </>
   );
 };

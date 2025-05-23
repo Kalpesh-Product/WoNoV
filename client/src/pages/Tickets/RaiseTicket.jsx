@@ -224,7 +224,7 @@ const RaiseTicket = () => {
   return (
     <div className="p-4 flex flex-col gap-4">
       <div className="p-4 bg-white border-2 rounded-md">
-        <h3 className="my-5 text-center text-3xl text-primary">
+        <h3 className="my-5 text-center text-3xl text-primary uppercase">
           Raise A Ticket
         </h3>
         <div>

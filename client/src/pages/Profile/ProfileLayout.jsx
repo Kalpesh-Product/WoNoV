@@ -9,10 +9,10 @@ const ProfileLayout = () => {
   // Map routes to tabs
   const tabs = [
     { label: "My Profile", path: "my-profile" },
-    { label: "Change Password", path: "change-password" },
-    { label: "Permissions", path: "permissions" },
+    // { label: "Change Password", path: "change-password" },
+    // { label: "Permissions", path: "permissions" },
     { label: "HR", path: "HR" },
-    { label: "My Assets", path: "my-assets" },
+    // { label: "My Assets", path: "my-assets" },
     { label: "Meetings", path: "my-meetings" },
     { label: "Tickets History", path: "tickets-history" },
   ];
