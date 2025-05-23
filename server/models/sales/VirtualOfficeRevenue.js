@@ -1,33 +1,63 @@
 const mongoose = require("mongoose");
 
-const virtualOfficeRevenue = new mongoose.Schema(
+const virtualOfficeRevenueSchema = new mongoose.Schema(
   {
-    actualRevenue: {
-      type: String,
+    client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "VirtualOfficeClient",
+      required: true,
     },
-    projectedRevenue: {
+    location: {
       type: String,
       required: true,
     },
     channel: {
       type: String,
       enum: ["Direct", "SPV"],
+      required: true,
+    },
+    taxableAmount: {
+      type: Number,
+      required: true,
+    },
+    revenue: {
+      type: Number,
+      required: true,
+    },
+    totalTerm: {
+      type: Number, // Assuming in months
+      required: true,
+    },
+    dueTerm: {
+      type: Number, // Assuming in months
+      required: true,
     },
     rentDate: {
       type: Date,
       required: true,
     },
-    clientName: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "VirtualOfficeClient",
+    rentStatus: {
+      type: String,
+      enum: ["Paid", "Unpaid", "Partial"],
+      required: true,
     },
-    service: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "ClientService",
+    pastDueDate: {
+      type: Date,
+    },
+    annualIncrement: {
+      type: Number, // Represented in percentage or amount depending on use-case
+    },
+    nextIncrementDate: {
+      type: Date,
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
+      required: true,
+    },
+    service: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ClientService",
     },
   },
   { timestamps: true }
@@ -35,6 +65,7 @@ const virtualOfficeRevenue = new mongoose.Schema(
 
 const VirtualOfficeRevenue = mongoose.model(
   "VirtualOfficeRevenue",
-  virtualOfficeRevenue
+  virtualOfficeRevenueSchema
 );
+
 module.exports = VirtualOfficeRevenue;

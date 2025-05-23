@@ -2,24 +2,47 @@ const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 
 const createVirtualOfficeRevenue = async (req, res, next) => {
   try {
-    const { nameOfClient, particulars, taxableAmount, gst, totalAmount } =
-      req.body;
+    const {
+      client,
+      location,
+      channel,
+      taxableAmount,
+      revenue,
+      totalTerm,
+      dueTerm,
+      rentDate,
+      rentStatus,
+      pastDueDate,
+      annualIncrement,
+      nextIncrementDate,
+      service,
+    } = req.body;
 
     const company = req.company;
 
     const newRevenue = new VirtualOfficeRevenue({
-      company,
-      nameOfClient,
-      particulars,
+      client,
+      location,
+      channel,
       taxableAmount,
-      gst,
-      totalAmount,
+      revenue,
+      totalTerm,
+      dueTerm,
+      rentDate,
+      rentStatus,
+      pastDueDate,
+      annualIncrement,
+      nextIncrementDate,
+      company,
+      service,
     });
 
     await newRevenue.save();
-    res
-      .status(201)
-      .json({ message: "Workation revenue created", data: newRevenue });
+
+    res.status(201).json({
+      message: "Virtual office revenue created",
+      data: newRevenue,
+    });
   } catch (error) {
     next(error);
   }
@@ -30,10 +53,7 @@ const getVirtualOfficeRevenue = async (req, res, next) => {
     const { company } = req;
 
     const revenues = await VirtualOfficeRevenue.find({ company })
-      .populate([
-        { path: "clientName", select: "clientName" },
-        { path: "company", select: "companyName" },
-      ])
+      .populate([{ path: "client", select: "clientName" }])
       .lean()
       .exec();
 
