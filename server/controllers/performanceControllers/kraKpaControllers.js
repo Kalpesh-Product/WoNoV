@@ -174,15 +174,6 @@ const updateTaskStatus = async (req, res, next) => {
 
     const savedNewKraKpaTask = await newKraKpaTask.save();
 
-    // const updateTaskStatus = await kraKpaTask.findOneAndUpdate(
-    //   { _id: taskId },
-    //   {
-    //     status: "Completed",
-    //     completionDate,
-    //   },
-    //   { new: true }
-    // );
-
     if (!updateTaskStatus) {
       throw new CustomError(
         `Failed to update the task`,
@@ -192,7 +183,6 @@ const updateTaskStatus = async (req, res, next) => {
       );
     }
 
-    // Log success with createLog
     await createLog({
       path: logPath,
       action: logAction,
