@@ -165,6 +165,17 @@ const updateTaskStatus = async (req, res, next) => {
 
     const completionDate = new Date();
 
+    const existingTask = await kraKpaTask.findOne({ task: taskId });
+
+    if (existingTask) {
+      throw new CustomError(
+        "Task already marked completed",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const newKraKpaTask = new kraKpaTask({
       task: taskId,
       assignedTo: user,
