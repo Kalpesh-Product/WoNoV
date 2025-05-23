@@ -1,37 +1,28 @@
 const router = require("express").Router();
 
 const {
-  createProject,
-  getProjects,
-  updateProject,
-  deleteProject,
-} = require("../controllers/tasksControllers/ProjectControllers");
-const {
   createTasks,
   getMyTasks,
   updateTask,
   deleteTask,
   todayTasks,
   getMyTodayTasks,
-  getTeamMembersTasksProjects,
+  getTeamMembersTasks,
   getAssignedTasks,
   getAllTasks,
   completeTasks,
   getTasks,
   getAllDeptTasks,
+  updateTaskStatus,
 } = require("../controllers/tasksControllers/tasksControllers");
 
-router.post("/create-project", createProject);
-router.get("/get-projects", getProjects);
-router.patch("/update-project/:id", updateProject);
-router.patch("/update-project/:id", updateProject);
-router.delete("/delete-project/:id", deleteProject);
 router.post("/create-tasks", createTasks);
 router.get("/my-tasks", getMyTasks);
 router.get("/get-all-tasks", getAllTasks);
 router.get("/get-tasks", getTasks);
 router.get("/get-depts-tasks", getAllDeptTasks);
-router.get("/get-team-tasks-projects", getTeamMembersTasksProjects);
+router.get("/get-team-tasks", getTeamMembersTasks);
+router.patch("/update-task-status/:id", updateTaskStatus);
 router.get("/get-today-tasks", getMyTodayTasks);
 router.get("/get-assigned-tasks", getAssignedTasks);
 router.patch("/update-task/:id", updateTask);
