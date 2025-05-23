@@ -40,23 +40,23 @@ const VirtualOffice = () => {
         month: "short",
       })}-${rentDate.getFullYear().toString().slice(-2)}`;
 
-      const actual = item.actualRevenue;
+      const actual = item.taxableAmount;
 
       if (!monthlyMap.has(monthKey)) {
         monthlyMap.set(monthKey, {
           id: index + 1,
           month: monthKey,
-          actual: 0,
+          taxable: 0,
           revenue: [],
         });
       }
 
       const monthData = monthlyMap.get(monthKey);
-      monthData.actual += actual;
+      monthData.taxable += actual;
 
       monthData.revenue.push({
         id: index + 1,
-        clientName: item.clientName.clientName,
+        clientName: item.client.clientName,
         revenue: inrFormat(actual),
         channel: item.channel,
         status: item.status || "Paid",
@@ -65,7 +65,7 @@ const VirtualOffice = () => {
 
     return Array.from(monthlyMap.values()).map((monthData) => ({
       ...monthData,
-      actual: inrFormat(monthData.actual),
+      actual: inrFormat(monthData.taxable),
     }));
   };
 

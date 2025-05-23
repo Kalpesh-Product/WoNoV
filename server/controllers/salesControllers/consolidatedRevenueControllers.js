@@ -73,8 +73,7 @@ const getConsolidatedRevenue = async (req, res, next) => {
         const fy = getFinancialYear(item.rentDate);
         const idx = getFinancialMonthIndex(item.rentDate);
         const amount =
-          parseFloat(item.actualRevenue) ||
-          parseFloat(item.projectedRevenue) ||
+          parseFloat(item.taxableAmount) ||
           0;
         categoryMap["Virtual Offices"].data[fy] ??= initFYData();
         categoryMap["Virtual Offices"].data[fy][idx] += amount;
