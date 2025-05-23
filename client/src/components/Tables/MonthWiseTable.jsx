@@ -15,6 +15,7 @@ const MonthWiseTable = ({
   handleSubmit
 }) => {
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
+  console.log("Recieved data : ", data)
 
   // Step 1: Get unique months from the date column
   const monthLabels = useMemo(() => {

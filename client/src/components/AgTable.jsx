@@ -308,13 +308,13 @@ const AgTableComponent = React.memo(
         </div>
 
         {/* Floating Action Button */}
-        {selectedRows.length > 0 && isTableInView && (
+        {/* {selectedRows.length > 0 && isTableInView && (
           <div
             className="fixed bottom-8 right-[38rem] bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition motion-preset-slide-up-sm"
             onClick={handleActionClick}>
             Mark as Done ({selectedRows.length})
           </div>
-        )}
+        )} */}
       </div>
     );
   }

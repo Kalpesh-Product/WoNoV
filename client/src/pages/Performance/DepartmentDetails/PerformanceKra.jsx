@@ -147,6 +147,7 @@ const PerformanceKra = () => {
           <WidgetSection padding layout={1}>
             <DateWiseTable
               formatTime
+              checkbox
               buttonTitle={"Add Daily KRA"}
               handleSubmit={() => setOpenModal(true)}
               tableTitle={`${department} DEPARTMENT - DAILY KRA`}
