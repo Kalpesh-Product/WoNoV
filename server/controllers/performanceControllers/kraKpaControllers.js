@@ -168,12 +168,26 @@ const updateTaskStatus = async (req, res, next) => {
     const existingTask = await kraKpaTask.findOne({
       task: taskId,
       status: "Completed",
-      assignedTo: { $in: [user] },
     });
 
     if (existingTask) {
       throw new CustomError(
         "Task already marked completed",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const updatedStatus = await kraKpaRole.findByIdAndUpdate(
+      taskId,
+      { $push: { completedDate: completionDate } },
+      { new: true }
+    );
+
+    if (!updatedStatus) {
+      throw new CustomError(
+        "Failed to update the status",
         logPath,
         logAction,
         logSourceKey
@@ -245,11 +259,25 @@ const getKraKpaTasks = async (req, res, next) => {
       query.kpaDuration = duration;
     }
 
+    const today = new Date();
+    const startOfDay = new Date(today.setUTCHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setUTCHours(23, 59, 59, 999));
+
     query.department = dept;
     query.taskType = type;
 
     const tasks = await kraKpaRole
-      .find(query)
+      .find({
+        ...query,
+        completedDate: {
+          $not: {
+            $elemMatch: {
+              $gte: startOfDay,
+              $lte: endOfDay,
+            },
+          },
+        },
+      })
       .populate([
         { path: "department", select: "name" },
         { path: "assignedBy", select: "firstName middleName lastName" },
@@ -322,6 +350,10 @@ const getMyKraKpaTasks = async (req, res, next) => {
       query.kpaDuration = duration;
     }
 
+    const today = new Date();
+    const startOfDay = new Date(today.setUTCHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setUTCHours(23, 59, 59, 999));
+
     query.department = dept;
     query.taskType = type;
 
@@ -332,7 +364,17 @@ const getMyKraKpaTasks = async (req, res, next) => {
     // }
 
     const tasks = await kraKpaRole
-      .find(query)
+      .find({
+        ...query,
+        completedDate: {
+          $not: {
+            $elemMatch: {
+              $gte: startOfDay,
+              $lte: endOfDay,
+            },
+          },
+        },
+      })
       .populate([
         { path: "department", select: "name" },
         { path: "assignedBy", select: "firstName middleName lastName" },

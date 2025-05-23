@@ -27,6 +27,7 @@ const kraKpaRolesSchema = new mongoose.Schema(
       enum: ["KPA", "KRA"],
       required: true,
     },
+    completedDate: [{ type: Date, required: true }],
     kpaDuration: {
       type: String,
       enum: ["Monthly", "Annually"],
