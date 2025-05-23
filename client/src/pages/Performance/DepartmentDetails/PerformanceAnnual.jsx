@@ -82,13 +82,6 @@ const PerformanceAnnual = () => {
           dateColumn={"dueDate"}
           columns={departmentColumns}
         />
-        {/* <AgTable
-          data={[...departmentKra.map((item)=>({}))]}
-          columns={[]}
-          tableTitle={`${department || ""} DEPARTMENT DAILY KRA`}
-          buttonTitle={"Add Daily KRA"}
-          hideFilter
-        /> */}
       </WidgetSection>
     </div>
   );

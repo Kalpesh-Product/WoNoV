@@ -11,6 +11,8 @@ const DateWiseTable = ({
   dateColumn,
   checkbox,
   tableTitle,
+  buttonTitle,
+  handleSubmit,
   formatTime = false, // <-- added default value
 }) => {
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
@@ -23,8 +25,9 @@ const DateWiseTable = ({
         dateSet.add(date.format("D-MMM-YYYY"));
       }
     });
-    return Array.from(dateSet).sort((a, b) =>
-      dayjs(a, "D-MMM-YYYY").toDate() - dayjs(b, "D-MMM-YYYY").toDate()
+    return Array.from(dateSet).sort(
+      (a, b) =>
+        dayjs(a, "D-MMM-YYYY").toDate() - dayjs(b, "D-MMM-YYYY").toDate()
     );
   }, [data, dateColumn]);
 
@@ -63,31 +66,38 @@ const DateWiseTable = ({
         <span className="text-title text-primary font-pmedium uppercase">
           {tableTitle}
         </span>
-        <div className="flex justify-end items-center">
-          <PrimaryButton
-            title={<MdNavigateBefore />}
-            handleSubmit={() =>
-              setSelectedDateIndex((prev) => Math.max(prev - 1, 0))
-            }
-            disabled={selectedDateIndex === 0}
-          />
-          <div className="text-subtitle text-center font-pmedium w-[140px]">
-            {selectedDate}
+        <div className="flex items-center gap-4">
+          <div className="flex justify-end items-center">
+            <PrimaryButton
+              title={<MdNavigateBefore />}
+              handleSubmit={() =>
+                setSelectedDateIndex((prev) => Math.max(prev - 1, 0))
+              }
+              disabled={selectedDateIndex === 0}
+            />
+            <div className="text-subtitle text-center font-pmedium w-[140px]">
+              {selectedDate}
+            </div>
+            <PrimaryButton
+              title={<MdNavigateNext />}
+              handleSubmit={() =>
+                setSelectedDateIndex((prev) =>
+                  Math.min(prev + 1, dateLabels.length - 1)
+                )
+              }
+              disabled={selectedDateIndex === dateLabels.length - 1}
+            />
           </div>
-          <PrimaryButton
-            title={<MdNavigateNext />}
-            handleSubmit={() =>
-              setSelectedDateIndex((prev) =>
-                Math.min(prev + 1, dateLabels.length - 1)
-              )
-            }
-            disabled={selectedDateIndex === dateLabels.length - 1}
-          />
+          {buttonTitle ? (
+            <div>
+              <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
+            </div>
+          ) : null}
         </div>
       </div>
 
       <AgTable
-        tableHeight={420}
+        tableHeight={350}
         enableCheckbox={checkbox}
         columns={formattedColumns}
         data={filteredData}
