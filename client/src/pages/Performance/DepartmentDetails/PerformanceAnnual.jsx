@@ -17,7 +17,7 @@ const PerformanceAnnual = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        `api/performance/get-tasks?dept=${deptId}&type=KRA`
+        `api/performance/get-tasks?dept=${deptId}`
       );
       return response.data;
     } catch (error) {

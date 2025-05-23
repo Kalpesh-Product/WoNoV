@@ -12,7 +12,7 @@ import performanceReducer from "../slices/performanceSlice"
 const persistConfig = {
   key: "root",
   storage: sessionStorage,
-  whitelist: ["client","tickets","hr","sales"],
+  whitelist: ["client","tickets","hr","sales","performance"],
   transforms: [
     encryptTransform({
       secretKey: import.meta.env.VITE_REDUX_PERSIST,

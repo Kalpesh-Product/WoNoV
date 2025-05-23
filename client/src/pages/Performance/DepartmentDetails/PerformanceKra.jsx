@@ -8,14 +8,14 @@ import { useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 import { Chip, CircularProgress, TextField } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
 import useAuth from "../../../hooks/useAuth";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
-
+import { FaCheck } from "react-icons/fa6";
 
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
@@ -23,6 +23,7 @@ const PerformanceKra = () => {
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
+  const [selectedKra, setSelectedKra] = useState(null)
 
   const {
     handleSubmit: submitDailyKra,
@@ -34,6 +35,8 @@ const PerformanceKra = () => {
       description: "",
     },
   });
+
+  useEffect(()=>console.log("SELECTD",selectedKra),[selectedKra])
 
   //--------------POST REQUEST FOR DAILY KRA-----------------//
   const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
@@ -56,18 +59,23 @@ const PerformanceKra = () => {
       toast.error(error.message || "Error Adding KRA");
     },
   });
-
-  console.log("DEPARTEMNT : ", auth.user?.departments[0]?._id);
-
   const handleFormSubmit = (data) => {
     addDailyKra(data);
   };
+
+
+  const {mutate : updateDailyKra, isPending : isUpdatePending} = useMutation({
+    mutationKey: ["updateDailyKra"],
+    mutationFn: async (data) =>{},
+    onSuccess: (data) =>{},
+    onError: (error) =>{}
+  })
   //--------------POST REQUEST FOR DAILY KRA-----------------//
 
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        `api/performance/get-tasks?dept=${deptId}&type=KRA`
+        `api/performance/get-tasks?dept=${deptId}`
       );
       return response.data;
     } catch (error) {
@@ -79,10 +87,7 @@ const PerformanceKra = () => {
     queryFn: fetchDepartments,
   });
   const completedEntries = departmentKra.filter(
-    (item) => item.status === "Completed" || "completed"
-  );
-  console.log(
-    departmentKra.filter((item) => item.status === "Completed" || "completed")
+    (item) => item.status === "Completed"
   );
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
@@ -118,6 +123,13 @@ const PerformanceKra = () => {
         );
       },
     },
+    {headerName : "Actions", field : "actions", cellRenderer : (params)=>{
+      return(
+        <div role="button" onClick={()=>setSelectedKra(params.data)} className="p-2">
+          <PrimaryButton title={<FaCheck />} />
+        </div>
+      )
+    }}
   ];
   return (
     <>
@@ -129,18 +141,15 @@ const PerformanceKra = () => {
               buttonTitle={"Add Daily KRA"}
               handleSubmit={() => setOpenModal(true)}
               tableTitle={`${department} DEPARTMENT - DAILY KRA`}
-              data={
-                (departmentKra || [])
-                  .filter((item) => item.status !== "Completed")
-                  .map((item, index) => ({
-                    srno: index + 1,
-                    taskName: item.taskName,
-                    assignedDate: item.assignedDate,
-                    dueDate: item.dueDate,
-                    status: item.status,
-                  }))
-              }
-              
+              data={(departmentKra || [])
+                .filter((item) => item.status !== "Completed")
+                .map((item, index) => ({
+                  srno: index + 1,
+                  taskName: item.taskName,
+                  assignedDate: item.assignedDate,
+                  dueDate: item.dueDate,
+                  status: item.status,
+                }))}
               dateColumn={"dueDate"}
               columns={departmentColumns}
             />
