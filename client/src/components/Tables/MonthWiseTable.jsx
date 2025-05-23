@@ -7,7 +7,6 @@ import humanDate from "../../utils/humanDateForamt";
 
 const MonthWiseTable = ({ data = [], columns = [], dateColumn }) => {
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
-  console.log("REcieved data in month : ", data);
 
   // Step 1: Get unique months from the date column
   const monthLabels = useMemo(() => {

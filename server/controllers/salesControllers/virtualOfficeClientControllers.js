@@ -162,11 +162,45 @@ const getVirtualOfficeClients = async (req, res, next) => {
       return res.status(404).json({ message: "No clients found" });
     }
 
-    res.status(200).json(clients);
+    const MONTHS_SHORT = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+
+    const groupByMonth = (clients) => {
+      const monthMap = new Map();
+
+      clients.forEach(client => {
+        const date = new Date(client.createdAt); // or use client.registrationDate
+        const month = MONTHS_SHORT[date.getMonth()];
+        const year = date.getFullYear().toString().slice(-2);
+        const key = `${month}-${year}`;
+        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+
+        if (!monthMap.has(key)) {
+          monthMap.set(key, {
+            month: key,
+            date: monthStart,
+            clients: []
+          });
+        }
+
+        monthMap.get(key).clients.push(client);
+      });
+
+      return Array.from(monthMap.values())
+        .sort((a, b) => a.date - b.date)
+        .map(({ date, ...rest }) => rest); // remove internal date before returning
+    };
+
+    const transformed = groupByMonth(clients);
+
+    res.status(200).json(transformed);
   } catch (error) {
     next(error);
   }
 };
+
 
 const updateVirtualOfficeClient = async (req, res, next) => {
   try {
