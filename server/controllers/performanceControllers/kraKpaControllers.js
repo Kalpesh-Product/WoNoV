@@ -230,14 +230,19 @@ const getKraKpaTasks = async (req, res, next) => {
     const { type, dept, duration } = req.query;
 
     const query = { company };
-    let subQuery;
 
-    if (dept) {
-      query.department = dept;
+    if (!dept) {
+      return res.status(400).json({ message: "Missing department ID" });
+    }
+    if (!type) {
+      return res.status(400).json({ message: "Missing task type" });
     }
     if (duration) {
-      query.duration = duration;
+      query.kpaDuration = duration;
     }
+
+    query.department = dept;
+    query.taskType = type;
 
     const tasks = await kraKpaRole
       .find(query)
@@ -265,7 +270,7 @@ const getKraKpaTasks = async (req, res, next) => {
 
     const transformedTasks = tasks
       .filter((task) => {
-        return task.task.taskType === type;
+        return task.taskType === type;
       })
       .map((task) => {
         const assignedBy = `${task.assignedBy.firstName} ${
@@ -277,6 +282,7 @@ const getKraKpaTasks = async (req, res, next) => {
         // } ${task.assignedTo.lastName}`;
 
         return {
+          id: task._id,
           taskName: task.task,
           description: task.description,
           assignedBy: assignedBy.trim(),
@@ -301,63 +307,76 @@ const getMyKraKpaTasks = async (req, res, next) => {
     const { empId, type, dept, duration } = req.query;
 
     const query = { company };
-    if (dept) {
-      query.department = dept;
+
+    if (!dept) {
+      return res.status(400).json({ message: "Missing department ID" });
+    }
+    if (!type) {
+      return res.status(400).json({ message: "Missing task type" });
     }
     if (duration) {
-      query.duration = duration;
+      query.kpaDuration = duration;
     }
 
-    const foundUser = await UserData.findOne({ empId });
+    query.department = dept;
+    query.taskType = type;
 
-    if (!foundUser) {
-      return res.status(400).json({ message: "User not found" });
-    }
+    // const foundUser = await UserData.findOne({ empId });
 
-    const matchingDepartments = await kraKpaRole.find(query).select("_id");
+    // if (!foundUser) {
+    //   return res.status(400).json({ message: "User not found" });
+    // }
 
-    const tasks = await kraKpaTask
-      .find({
-        company: company,
-        task: { $in: matchingDepartments.map((dept) => dept._id) },
-      })
-      .populate({
-        path: "task",
-        populate: [
-          { path: "department", select: "name" },
-          { path: "assignedBy", select: "firstName middleName lastName" },
-        ],
-      })
-      .populate({ path: "assignedTo", select: "firstName middleName lastName" })
-      .select("-company")
-      .lean();
+    const tasks = await kraKpaRole
+      .find(query)
+      .populate([
+        { path: "department", select: "name" },
+        { path: "assignedBy", select: "firstName middleName lastName" },
+      ])
+      .select("-company");
+
+    // const tasks = await kraKpaTask
+    //   .find({
+    //     company: company,
+    //     task: { $in: matchingDepartments.map((dept) => dept._id) },
+    //   })
+    //   .populate({
+    //     path: "task",
+    //     populate: [
+    //       { path: "department", select: "name" },
+    //       { path: "assignedBy", select: "firstName middleName lastName" },
+    //     ],
+    //   })
+    //   .populate({ path: "assignedTo", select: "firstName middleName lastName" })
+    //   .select("-company")
+    //   .lean();
 
     const transformedTasks = tasks
       .filter((task) => {
         return (
-          task.assignedTo._id.toString() === foundUser._id.toString() &&
-          task.task.taskType === type
+          // task.assignedTo._id.toString() === foundUser._id.toString() &&
+          task.taskType === type
         );
       })
       .map((task) => {
-        const assignedBy = `${task.task.assignedBy.firstName} ${
-          task.task.assignedBy.middleName || ""
-        } ${task.task.assignedBy.lastName}`;
+        const assignedBy = `${task.assignedBy.firstName} ${
+          task.assignedBy.middleName || ""
+        } ${task.assignedBy.lastName}`;
 
-        const assignee = `${task.assignedTo.firstName} ${
-          task.assignedTo.middleName || ""
-        } ${task.assignedTo.lastName}`;
+        // const assignee = `${task.assignedTo.firstName} ${
+        //   task.assignedTo.middleName || ""
+        // } ${task.assignedTo.lastName}`;
 
         return {
-          taskName: task.task.task,
-          description: task.task.description,
+          id: task._id,
+          taskName: task.task,
+          description: task.description,
           assignedBy: assignedBy.trim(),
-          assignedTo: assignee.trim(),
-          assignedDate: task.task.assignedDate,
-          dueDate: task.task.dueDate,
-          assignedDate: "9:30 AM",
+          // assignedTo: assignee.trim(),
+          assignedDate: task.assignedDate,
+          dueDate: task.dueDate,
           dueTime: "6:30 PM",
-          completionDate: task.completionDate ? task.completionDate : "N/A",
+          // completionDate: task.completionDate ? task.completionDate : "N/A",
           status: task.status,
         };
       });
@@ -487,7 +506,6 @@ const getAllKpaTasks = async (req, res, next) => {
 
 module.exports = {
   createDeptBasedTask,
-  // createIndividualTask,
   getAllKpaTasks,
   getKraKpaTasks,
   getMyKraKpaTasks,
