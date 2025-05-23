@@ -7,6 +7,7 @@ const {
   getKraKpaTasks,
   getAllDeptTasks,
   getMyKraKpaTasks,
+  getCompletedKraKpaTasks,
 } = require("../controllers/performanceControllers/kraKpaControllers");
 
 router.post("/create-task", createDeptBasedTask);
@@ -14,6 +15,7 @@ router.patch("/update-task-status/:taskId", updateTaskStatus);
 router.get("/get-kpa-tasks", getAllKpaTasks);
 router.get("/get-my-tasks", getMyKraKpaTasks);
 router.get("/get-tasks/", getKraKpaTasks);
+router.get("/get-completed-tasks/", getCompletedKraKpaTasks);
 router.get("/get-depts-tasks/", getAllDeptTasks);
 
 module.exports = router;
