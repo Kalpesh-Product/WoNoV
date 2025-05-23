@@ -279,22 +279,23 @@ const fetchUserLeaves = async (req, res, next) => {
     }
 
     const allocatedPrivilegedLeaves = user.employeeType.leavesCount.reduce(
-      (acc, leaves) => leaveType === "Privileged" && acc + leaves.count,
+      (acc, leave) =>
+        leave.leaveType === "Privileged" ? acc + leave.count : acc,
       0
     );
 
     const allocatedSickLeaves = user.employeeType.leavesCount.reduce(
-      (acc, leaves) => leaveType === "Sick" && acc + leaves.count,
+      (acc, leave) => (leave.leaveType === "Sick" ? acc + leave.count : acc),
       0
     );
 
     const takenPrivilegedLeaves = leaves.filter((leave) => {
-      console.log("leave types", leave);
-      return leave.leaveType === "Privileged";
+      console.log("taken", leave);
+      return leave.leaveType === "Privileged Leave";
     }).length;
 
     const takenSickLeaves = leaves.filter(
-      (leave) => leave.leaveType === "Sick"
+      (leave) => leave.leaveType === "Sick Leave"
     ).length;
 
     const leavesCount = {
