@@ -252,7 +252,6 @@ const getKraKpaTasks = async (req, res, next) => {
       ])
       .select("-company");
 
-    console.log("duration", tasks);
     // const tasks = await kraKpaTask
     //   .find({
     //     company,
@@ -283,6 +282,7 @@ const getKraKpaTasks = async (req, res, next) => {
         // } ${task.assignedTo.lastName}`;
 
         return {
+          id: task._id,
           taskName: task.task,
           description: task.description,
           assignedBy: assignedBy.trim(),
@@ -368,6 +368,7 @@ const getMyKraKpaTasks = async (req, res, next) => {
         // } ${task.assignedTo.lastName}`;
 
         return {
+          id: task._id,
           taskName: task.task,
           description: task.description,
           assignedBy: assignedBy.trim(),
@@ -505,7 +506,6 @@ const getAllKpaTasks = async (req, res, next) => {
 
 module.exports = {
   createDeptBasedTask,
-  // createIndividualTask,
   getAllKpaTasks,
   getKraKpaTasks,
   getMyKraKpaTasks,
