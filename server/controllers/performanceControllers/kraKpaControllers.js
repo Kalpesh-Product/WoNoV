@@ -165,6 +165,17 @@ const updateTaskStatus = async (req, res, next) => {
 
     const completionDate = new Date();
 
+    const existingTask = await kraKpaTask.findOne({ task: taskId });
+
+    if (existingTask) {
+      throw new CustomError(
+        "Task already marked completed",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const newKraKpaTask = new kraKpaTask({
       task: taskId,
       assignedTo: user,
@@ -228,48 +239,53 @@ const getKraKpaTasks = async (req, res, next) => {
       query.duration = duration;
     }
 
-    const matchingDepartments = await kraKpaRole.find(query).select("-company");
+    const tasks = await kraKpaRole
+      .find(query)
+      .populate([
+        { path: "department", select: "name" },
+        { path: "assignedBy", select: "firstName middleName lastName" },
+      ])
+      .select("-company");
 
-    const tasks = await kraKpaTask
-      .find({
-        company,
-        task: { $in: matchingDepartments.map((dept) => dept._id) },
-      })
-      .populate({
-        path: "task",
-        populate: [
-          { path: "department", select: "name" },
-          { path: "assignedBy", select: "firstName middleName lastName" },
-        ],
-      })
-      .populate({ path: "assignedTo", select: "firstName middleName lastName" })
-      .select("-company")
-      .lean();
+    // const tasks = await kraKpaTask
+    //   .find({
+    //     company,
+    //     task: { $in: matchingDepartments.map((dept) => dept._id) },
+    //   })
+    //   .populate({
+    //     path: "task",
+    //     populate: [
+    //       { path: "department", select: "name" },
+    //       { path: "assignedBy", select: "firstName middleName lastName" },
+    //     ],
+    //   })
+    //   .populate({ path: "assignedTo", select: "firstName middleName lastName" })
+    //   .select("-company")
+    //   .lean();
 
     const transformedTasks = tasks
       .filter((task) => {
         return task.task.taskType === type;
       })
       .map((task) => {
-        const assignedBy = `${task.task.assignedBy.firstName} ${
-          task.task.assignedBy.middleName || ""
-        } ${task.task.assignedBy.lastName}`;
+        const assignedBy = `${task.assignedBy.firstName} ${
+          task.assignedBy.middleName || ""
+        } ${task.assignedBy.lastName}`;
 
-        const assignee = `${task.assignedTo.firstName} ${
-          task.assignedTo.middleName || ""
-        } ${task.assignedTo.lastName}`;
+        // const assignee = `${task.assignedTo.firstName} ${
+        //   task.assignedTo.middleName || ""
+        // } ${task.assignedTo.lastName}`;
 
         return {
-          taskName: task.task.task,
-          description: task.task.description,
+          taskName: task.task,
+          description: task.description,
           assignedBy: assignedBy.trim(),
-          assignedTo: assignee.trim(),
-          assignedDate: task.task.assignedDate,
-          dueDate: task.task.dueDate,
-          assignedDate: "9:30 AM",
+          // assignedTo: assignee.trim(),
+          dueDate: task.dueDate,
+          assignedDate: task.assignedDate,
           dueTime: "6:30 PM",
-          completionDate: task.completionDate ? task.completionDate : "N/A",
-          status: task.status,
+          // completionDate: task.completionDate ? task.completionDate : "N/A",
+          status: task.status ? task.status : "Pending",
         };
       });
 

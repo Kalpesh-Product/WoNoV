@@ -47,6 +47,11 @@ const kraKpaRolesSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    status: {
+      type: String,
+      enum: ["Pending"],
+      default: "Pending",
+    },
     isDeleted: {
       type: Boolean,
       default: false,
