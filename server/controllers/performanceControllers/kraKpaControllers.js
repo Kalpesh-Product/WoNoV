@@ -165,7 +165,11 @@ const updateTaskStatus = async (req, res, next) => {
 
     const completionDate = new Date();
 
-    const existingTask = await kraKpaTask.findOne({ task: taskId });
+    const existingTask = await kraKpaTask.findOne({
+      task: taskId,
+      status: "Completed",
+      assignedTo: { $in: [user] },
+    });
 
     if (existingTask) {
       throw new CustomError(
@@ -387,6 +391,77 @@ const getMyKraKpaTasks = async (req, res, next) => {
   }
 };
 
+const getCompletedKraKpaTasks = async (req, res, next) => {
+  try {
+    const { company } = req;
+    const { type, dept, duration, empId } = req.query;
+
+    if (!dept) {
+      return res.status(400).json({ message: "Missing department ID" });
+    }
+    if (!type) {
+      return res.status(400).json({ message: "Missing task type" });
+    }
+
+    const tasks = await kraKpaTask
+      .find({ company, status: "Completed" })
+      .populate([
+        {
+          path: "task",
+          select: "",
+          populate: [
+            { path: "department", select: "name" },
+            {
+              path: "assignedBy",
+              select: "firstName middleName lastName",
+            },
+          ],
+        },
+        {
+          path: "assignedTo",
+          select: "firstName middleName lastName empId",
+        },
+      ])
+      .select("-company");
+
+    const transformedTasks = tasks
+      .filter((task) => {
+        if (duration && duration !== task.task.kpaDuration) return;
+        if (empId && task.assignedTo.empId !== empId) return;
+        return (
+          task.task.department._id.toString() === dept &&
+          task.task.taskType === type
+        );
+      })
+      .map((task) => {
+        const assignedBy = `${task.task.assignedBy.firstName} ${
+          task.task.assignedBy.middleName || ""
+        } ${task.task.assignedBy.lastName}`;
+
+        const completedBy = `${task.assignedTo.firstName} ${
+          task.assignedTo.middleName || ""
+        } ${task.assignedTo.lastName}`;
+
+        return {
+          id: task._id,
+          taskName: task.task.task,
+          description: task.task.description,
+          assignedBy: assignedBy.trim(),
+          completedBy: completedBy,
+          assignedDate: task.task.assignedDate,
+          dueDate: task.task.dueDate,
+          dueTime: "6:30 PM",
+          completionDate: task.completionDate ? task.completionDate : "N/A",
+          status: task.status,
+        };
+      });
+
+    return res.status(200).json(transformedTasks);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getAllDeptTasks = async (req, res, next) => {
   try {
     const { company } = req;
@@ -511,4 +586,5 @@ module.exports = {
   getMyKraKpaTasks,
   getAllDeptTasks,
   updateTaskStatus,
+  getCompletedKraKpaTasks,
 };
