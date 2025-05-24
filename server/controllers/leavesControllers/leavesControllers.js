@@ -55,10 +55,10 @@ const requestLeave = async (req, res, next) => {
       );
     }
 
-    console.log("Leave type", leaveType);
-    console.log("start date", startDate);
-    console.log("end Date", endDate);
-    console.log("Curr Date", currDate);
+    // console.log("Leave type", leaveType);
+    // console.log("start date", startDate);
+    // console.log("end Date", endDate);
+    // console.log("Curr Date", currDate);
 
     // Ensure the leave starts in the future
     if (
@@ -289,14 +289,25 @@ const fetchUserLeaves = async (req, res, next) => {
       0
     );
 
-    const takenPrivilegedLeaves = leaves.filter((leave) => {
-      console.log("taken", leave);
-      return leave.leaveType === "Privileged Leave";
-    }).length;
+    const privilegedLeaveHours = leaves
+      .filter((leave) => leave.leaveType === "Privileged Leave")
+      .reduce((acc, leave) => acc + leave.hours, 0);
 
-    const takenSickLeaves = leaves.filter(
-      (leave) => leave.leaveType === "Sick Leave"
-    ).length;
+    const sickLeaveHours = leaves
+      .filter((leave) => leave.leaveType === "Sick Leave")
+      .reduce((acc, leave) => acc + leave.hours, 0);
+
+    // const abruptLeaveHours = leaves
+    //   .filter((leave) => leave.leaveType === "Abrupt Leave")
+    //   .reduce((acc, leave) => acc + leave.hours, 0);
+
+    const workingHours = 9;
+
+    const takenPrivilegedLeaves = Number(
+      (privilegedLeaveHours / workingHours).toFixed(2)
+    );
+
+    const takenSickLeaves = Number((sickLeaveHours / workingHours).toFixed(2));
 
     const leavesCount = {
       allocatedPrivilegedLeaves,
@@ -304,7 +315,8 @@ const fetchUserLeaves = async (req, res, next) => {
       takenPrivilegedLeaves,
       takenSickLeaves,
     };
-    const transformedLeaves = [leavesCount, ...leaves];
+
+    const transformedLeaves = { leavesCount, leavesData: leaves };
 
     return res.status(200).json(transformedLeaves);
   } catch (error) {
