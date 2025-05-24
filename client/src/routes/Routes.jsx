@@ -324,6 +324,10 @@ import DepartmentPerformanceLayout from "../pages/Performance/DepartmentPerforma
 import PerformanceKra from "../pages/Performance/DepartmentDetails/PerformanceKra";
 import PerformanceAnnual from "../pages/Performance/DepartmentDetails/PerformanceAnnual";
 import PerformanceMonthly from "../pages/Performance/DepartmentDetails/PerformanceMonthly";
+import DepartmentTasksLayout from "../pages/Tasks/DepartmentTasks/DepartmentTasksLayout";
+import DepartmentTasks from "../pages/Tasks/DepartmentTasks/DepartmentTasks";
+import TasksDepartmentLayout from "../pages/Tasks/DepartmentTasks/TasksDepartmentLayout";
+import TasksViewDepartment from "../pages/Tasks/DepartmentTasks/TasksViewDepartment";
 
 export const routes = createBrowserRouter([
   {
@@ -1736,16 +1740,42 @@ export const routes = createBrowserRouter([
                     index: true,
                   },
                   {
-                    path: "project-list", // Default route for /app/tasks
-                    element: <ProjectList />, // Dashboard is rendered by default
+                    path: "department-tasks", 
+                    element: <DepartmentTasksLayout />, 
+                    children : [
+                      {
+                        path: "",
+                        element : <DepartmentTasks />,
+                        index : true
+                      },
+                      {
+                        path: ":department",
+                        element: <TasksDepartmentLayout />,
+                        children: [
+                          {
+                            path: "",
+                            element: <TasksViewDepartment />,
+                            index : true
+                          },
+                          {
+                            path: "monthly-KPA",
+                            element: <PerformanceMonthly />,
+                          },
+                          {
+                            path: "Annual-KRA",
+                            element: <PerformanceAnnual />,
+                          },
+                        ],
+                      },
+                    ]
                   },
                   {
-                    path: "project-list/edit-project", // Default route for /app/tasks
-                    element: <ProjectList />, // Dashboard is rendered by default
+                    path: "project-list/edit-project", 
+                    element: <ProjectList />, 
                   },
                   {
-                    path: "project-list/edit-project/:id", // Default route for /app/tasks
-                    element: <EditProject />, // Dashboard is rendered by default
+                    path: "project-list/edit-project/:id", 
+                    element: <EditProject />, 
                   },
                   {
                     path: "KRA",

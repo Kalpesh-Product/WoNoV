@@ -81,7 +81,7 @@ const ChangePassword = ({ pageTitle }) => {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary">Change password</span>
+        <span className="text-title font-pmedium text-primary uppercase">Change password</span>
       </div>
 
       {/* Current Password Field */}
@@ -90,7 +90,8 @@ const ChangePassword = ({ pageTitle }) => {
           size="small"
           label="Current Password"
           type="password"
-          disabled={passwordVerified}
+          // disabled={passwordVerified}
+          disabled={true}
           sx={{ width: "49.3%" }}
           value={formData.currentPassword}
           onChange={(e) => handleChange("currentPassword", e.target.value)}
@@ -100,6 +101,7 @@ const ChangePassword = ({ pageTitle }) => {
           <PrimaryButton
             title="Verify"
             type="button"
+            disabled={true}
             handleSubmit={handlePasswordCheck}
           />
         )}
@@ -110,6 +112,7 @@ const ChangePassword = ({ pageTitle }) => {
         <TextField
           size="small"
           label="New Password"
+          disabled
           type="password"
           value={formData.newPassword}
           onChange={(e) => handleChange("newPassword", e.target.value)}
@@ -120,6 +123,7 @@ const ChangePassword = ({ pageTitle }) => {
           size="small"
           label="Confirm Password"
           type="password"
+          disabled
           value={formData.confirmPassword}
           onChange={(e) => handleChange("confirmPassword", e.target.value)}
           fullWidth
@@ -144,7 +148,7 @@ const ChangePassword = ({ pageTitle }) => {
 
       {/* Submit Button */}
       <div className="mt-4 flex justify-center items-center">
-        <PrimaryButton title={"Submit"} handleSubmit={handlePasswordChange}>
+        <PrimaryButton title={"Submit"} handleSubmit={handlePasswordChange} disabled={true}>
           Change Password
         </PrimaryButton>
       </div>

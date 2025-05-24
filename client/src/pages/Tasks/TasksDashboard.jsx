@@ -268,19 +268,19 @@ const TasksDashboard = () => {
     },
   });
 
-  const completedTasks = allTasksQuery.isLoading
-    ? 0
-    : allTasksQuery.data.filter((task) => task.status === "Completed").length;
+  // const completedTasks = allTasksQuery.isLoading
+  //   ? 0
+  //   : allTasksQuery.data.filter((task) => task.status === "Completed").length;
 
-  const pendingTasks = allTasksQuery.isLoading
-    ? 0
-    : allTasksQuery.data.length - completedTasks;
+  // const pendingTasks = allTasksQuery.isLoading
+  //   ? 0
+  //   : allTasksQuery.data.length - completedTasks;
 
-  const projectsAssignedByMe = allProjectsQuery.isLoading
-    ? 0
-    : allProjectsQuery.data?.filter((project) => {
-        return project.assignedBy === auth.user._id;
-      }).length;
+  // const projectsAssignedByMe = allProjectsQuery.isLoading
+  //   ? 0
+  //   : allProjectsQuery.data?.filter((project) => {
+  //       return project.assignedBy === auth.user._id;
+  //     }).length;
 
   // const projectsAssignedToMe = allProjectsQuery.isLoading
   //   ? 0
@@ -289,17 +289,17 @@ const TasksDashboard = () => {
   //     }).length;
 
   // Data for Overall Pending v/s Assigned Tasks
-  const completedPercentagePie = allTasksQuery.isLoading
-    ? 0
-    : (completedTasks / allTasksQuery.data.length) * 100;
-  const pendingPercentagePie = allTasksQuery.isLoading
-    ? 0
-    : (pendingTasks / allTasksQuery.data.length) * 100;
+  // const completedPercentagePie = allTasksQuery.isLoading
+  //   ? 0
+  //   : (completedTasks / allTasksQuery.data.length) * 100;
+  // const pendingPercentagePie = allTasksQuery.isLoading
+  //   ? 0
+  //   : (pendingTasks / allTasksQuery.data.length) * 100;
 
-  const tasksPieChartData = [
-    { label: "Completed", value: completedPercentagePie },
-    { label: "Pending", value: pendingPercentagePie },
-  ];
+  // const tasksPieChartData = [
+  //   { label: "Completed", value: completedPercentagePie },
+  //   { label: "Pending", value: pendingPercentagePie },
+  // ];
 
   //Department-wise Pending Tasks
 
@@ -327,23 +327,23 @@ const TasksDashboard = () => {
 
   const tasks = allTasksQuery.isLoading ? [] : allTasksQuery.data;
 
-  const departmentPendingStats = calculatePendingTasks(tasks);
+  // const departmentPendingStats = calculatePendingTasks(tasks);
 
-  const departmentPieChartOptions = {
-    chart: {
-      type: "pie",
-    },
-    labels: departmentPendingStats.map((d) => d.label),
-    colors: ["#FF5733", "#FFC300", "#36A2EB"], // Different colors for each department
-    legend: {
-      position: "right",
-    },
-    tooltip: {
-      y: {
-        formatter: (val) => `${val.toFixed(1)}%`, // Show percentage with 1 decimal
-      },
-    },
-  };
+  // const departmentPieChartOptions = {
+  //   chart: {
+  //     type: "pie",
+  //   },
+  //   labels: departmentPendingStats.map((d) => d.label),
+  //   colors: ["#FF5733", "#FFC300", "#36A2EB"], // Different colors for each department
+  //   legend: {
+  //     position: "right",
+  //   },
+  //   tooltip: {
+  //     y: {
+  //       formatter: (val) => `${val.toFixed(1)}%`, // Show percentage with 1 decimal
+  //     },
+  //   },
+  // };
 
   const myTodayMeetingsData = !meetingsQuery.isLoading
     ? meetingsQuery.data.map((meeting, index) => {
@@ -385,8 +385,8 @@ const TasksDashboard = () => {
       widgets: [
         <Card route={"KRA"} title={"KRA"} icon={<RiPagesLine />} />,
         <Card
-          route={"/app/tasks/project-list"}
-          title={"Project List"}
+          route={"/app/tasks/department-tasks"}
+          title={"Department Tasks"}
           icon={<RiPagesLine />}
         />,
         <Card
@@ -412,17 +412,18 @@ const TasksDashboard = () => {
       widgets: [
         <DataCard
           title={"Total"}
-          data={allTasksQuery.isLoading ? 0 : allTasksQuery.data.length}
+          // data={allTasksQuery.isLoading ? 0 : allTasksQuery.data.length}
+          data={0}
           description={"Tasks"}
         />,
         <DataCard
           title={"Total"}
-          data={pendingTasks}
+          data={0}
           description={"Pending Tasks"}
         />,
         <DataCard
           title={"Total"}
-          data={completedTasks}
+          data={0}
           description={"Completed Tasks"}
         />,
       ],
@@ -442,7 +443,7 @@ const TasksDashboard = () => {
         />,
         <DataCard
           title={"Total"}
-          data={projectsAssignedByMe}
+          data={0}
           description={"Tasks Assigned by Me"}
         />,
       ],

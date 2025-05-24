@@ -28,6 +28,7 @@ import { GrCafeteria } from "react-icons/gr";
 import { TiTicket } from "react-icons/ti";
 import SeperatorUnderline from "./SeperatorUnderline";
 import { VscPersonAdd } from "react-icons/vsc";
+import useAuth from "../hooks/useAuth";
 
 const Sidebar = () => {
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
@@ -69,27 +70,28 @@ const Sidebar = () => {
     },
   ];
   const generalItems = [
-    {
-      name: "Reports",
-      icon: <TbReportSearch />,
-      route: "#",
-    },
-
     { name: "Calendar", icon: <FaRegCalendarAlt />, route: "calendar" },
-    { name: "Chat", icon: <HiOutlineChatAlt2 />, route: "chat" },
     { name: "Access", icon: <SiAuthelia />, route: "access" },
-
-    {
-      name: "Notifications",
-      icon: <IoMdNotifications />,
-      route: "notifications",
-    },
     {
       name: "Profile",
       icon: <FaUserTie />,
       route: "profile",
     },
   ];
+  const upcomingItems = [
+    {
+      name: "Reports",
+      icon: <TbReportSearch />,
+      route: "#",
+    },
+    { name: "Chat", icon: <HiOutlineChatAlt2 />, route: "#" },
+    {
+      name: "Notifications",
+      icon: <IoMdNotifications />,
+      route: "#",
+    },
+  ];
+  const { auth } = useAuth();
 
   const defaultModules = [
     {
@@ -100,18 +102,21 @@ const Sidebar = () => {
         {
           id: 4,
           title: "Finance Dashboard",
+          codeName : "Finance",
           route: "/app/dashboard/finance-dashboard",
           icon: <TbCashRegister />,
         },
         {
           id: 5,
           title: "Sales Dashboard",
+          codeName : "Sales",
           icon: <FaChartLine />,
           route: "/app/dashboard/sales-dashboard",
         },
         {
           id: 3,
           title: "HR Dashboard",
+          codeName : "HR",
           icon: <RiAdminFill />,
           route: "/app/dashboard/HR-dashboard",
         },
@@ -119,6 +124,7 @@ const Sidebar = () => {
         {
           id: 2,
           title: "Frontend Dashboard",
+          codeName : "Tec",
           icon: <FaLaptopCode />,
           route: "/app/dashboard/frontend-dashboard",
         },
@@ -126,6 +132,7 @@ const Sidebar = () => {
         {
           id: 6,
           title: "Admin Dashboard",
+          codeName : "Administration",
           route: "/app/dashboard/admin-dashboard",
           icon: <FaUserShield />,
         },
@@ -133,12 +140,14 @@ const Sidebar = () => {
         {
           id: 7,
           title: "Maintenance Dashboard",
+          codeName : "Maintenance",
           route: "/app/dashboard/maintenance-dashboard",
           icon: <GiAutoRepair />,
         },
         {
           id: 9,
           title: "IT Dashboard",
+          codeName : "IT",
           route: "/app/dashboard/IT-dashboard",
           icon: <FaLaptopMedical />,
         },
@@ -146,12 +155,37 @@ const Sidebar = () => {
         {
           id: 8,
           title: "Cafe Dashboard",
+          codeName : "Cafe",
           route: "/app/dashboard/cafe-dashboard",
           icon: <GrCafeteria />,
         },
       ],
     },
   ];
+
+  console.log(auth.user.departments.map((item)=>item.name)[0])
+  const userDepartments = auth.user.departments.map((item) => item.name);
+
+  // First, attempt to filter submenus based on user departments
+  const filteredModules = defaultModules.map((module) => {
+    const filteredSubmenus = module.submenus.filter((submenu) =>
+      userDepartments.includes(submenu.codeName)
+    );
+  
+    return {
+      ...module,
+      submenus: filteredSubmenus,
+    };
+  });
+  
+  // Check if all submenus are empty
+  const hasAnySubmenus = filteredModules.some(module => module.submenus.length > 0);
+  
+  // If none match, return the original defaultModules
+  const finalModules = hasAnySubmenus ? filteredModules : defaultModules;
+
+console.log("FILTERED MODUELS : ", finalModules);
+
 
   const handleMenuOpen = (item) => {
     navigate(item.route);
@@ -178,7 +212,7 @@ const Sidebar = () => {
                 expandedModule === 0 ? "bg-gray-200" : "bg-white"
               }`}
             >
-              {defaultModules.map((module, index) => (
+              {finalModules.map((module, index) => (
                 <div key={index} className="">
                   <div
                     className={`cursor-pointer text-gray-500  flex ${
@@ -306,6 +340,36 @@ const Sidebar = () => {
             <div className="pt-2  flex flex-col gap-2 w-full">
               <SeperatorUnderline title={"General"} />
               {generalItems.map((item, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleMenuOpen(item)}
+                  className={`cursor-pointer hover:text-primary transition-all duration-100 ${
+                    isAppsActive(item.route)
+                      ? "text-primary bg-gray-200 rounded-md"
+                      : "text-gray-500"
+                  } flex ${
+                    isSidebarOpen ? "" : "justify-center"
+                  } items-center py-0 `}
+                >
+                  <div
+                    className={`flex justify-center items-center w-9 h-9 ${
+                      isAppsActive(item.route)
+                        ? "bg-primary text-white rounded-md"
+                        : ""
+                    } text-sm`}
+                  >
+                    {item.icon}
+                  </div>
+                  {isSidebarOpen && (
+                    <span className="pl-5 text-sm">{item.name}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* coming soon */}
+            <div className="pt-2  flex flex-col gap-2 w-full">
+              <SeperatorUnderline smallText title={"Coming-soon"} />
+              {upcomingItems.map((item, index) => (
                 <div
                   key={index}
                   onClick={() => handleMenuOpen(item)}
