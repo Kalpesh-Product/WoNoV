@@ -1723,7 +1723,7 @@ export const routes = createBrowserRouter([
                         element: <PerformanceMonthly />,
                       },
                       {
-                        path: "Annual-KRA",
+                        path: "annual-KPA",
                         element: <PerformanceAnnual />,
                       },
                     ],

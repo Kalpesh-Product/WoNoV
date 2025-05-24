@@ -15,6 +15,9 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { useState } from "react";
+import { FaCheck } from "react-icons/fa6";
+import { queryClient } from "../../../main";
+import { toast } from "sonner";
 
 const PerformanceMonthly = () => {
   const axios = useAxiosPrivate();
@@ -31,20 +34,59 @@ const PerformanceMonthly = () => {
       kraName: "",
       startDate: null,
       endDate: null,
+      description: "",
     },
   });
 
-  //--------------POST REQUEST FOR DAILY KRA-----------------//
+  //--------------POST REQUEST FOR MONTHLY KPA-----------------//
   const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
     mutationKey: ["addMonthlyKpa"],
     mutationFn: async (data) => {
-      console.log("Submitted");
+      const response = await axios.post("/api/performance/create-task", {
+        task: data.kpaName,
+        taskType: "KPA",
+        description: data.description,
+        department: deptId,
+        assignedDate : data.startDate,
+        dueDate: data.endDate,
+        kpaDuration : "Monthly"
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["fetchedDepartments"] });
+      toast.success(data.message || "KRA Added");
+      setOpenModal(false);
+    },
+    onError: (error) => {
+      queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKra"] });
+      toast.success("DATA UPDATED");
+      setOpenModal(false)
     },
   });
 
   const handleFormSubmit = (data) => {
     addMonthlyKpa(data);
   };
+  //--------------POST REQUEST FOR MONTHLY KPA-----------------//
+  //--------------UPDATE REQUEST FOR MONTHLY KPA-----------------//
+  const { mutate: updateMonthlyKpa, isPending: isUpdatePending } = useMutation({
+    mutationKey: ["updateMonthlyKpa"],
+    mutationFn: async (data) => {
+      const response = await axios.patch(
+        `/api/performance/update-task-status/${data}`
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKra"] });
+      toast.success(data.message || "DATA UPDATED");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error Updating");
+    },
+  });
+  //--------------UPDATE REQUEST FOR MONTHLY KPA-----------------//
 
   const fetchDepartments = async () => {
     try {
@@ -60,13 +102,63 @@ const PerformanceMonthly = () => {
     queryKey: ["fetchedMonthlyKra"],
     queryFn: fetchDepartments,
   });
-  const completedEntries = departmentKra.filter(
-    (item) => item.status === "Completed"
-  );
+  const completedEntries = departmentLoading
+    ? []
+    : departmentKra.filter((item) => item.status === "Completed");
   console.log(department);
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
-    { headerName: "KRA List", field: "taskName", flex: 1 },
+    { headerName: "KPA List", field: "taskName", flex: 1 },
+    // { headerName: "Assigned Time", field: "assignedDate" },
+    { headerName: "Due Date", field: "dueDate" },
+    {
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => {
+        const statusColorMap = {
+          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+          InProgress: { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+          resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+          open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
+          Completed: { backgroundColor: "#16f8062c", color: "#00731b" }, // Light gray bg, dark gray font
+        };
+
+        const { backgroundColor, color } = statusColorMap[params.value] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+        return (
+          <>
+            <Chip
+              label={params.value}
+              style={{
+                backgroundColor,
+                color,
+              }}
+            />
+          </>
+        );
+      },
+    },
+    {
+      headerName: "Actions",
+      field: "actions",
+      cellRenderer: (params) => {
+        return (
+          <div
+            role="button"
+            onClick={() => updateMonthlyKpa(params.data.id)}
+            className="p-2"
+          >
+            <PrimaryButton title={<FaCheck />} />
+          </div>
+        );
+      },
+    },
+  ];
+  const completedColumns = [
+    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "KPA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
     {
@@ -106,12 +198,13 @@ const PerformanceMonthly = () => {
           <MonthWiseTable
             tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
             buttonTitle={"Add Monthly KPA"}
-            handleSubmit={()=>setOpenModal(true)}
+            handleSubmit={() => setOpenModal(true)}
             data={[
               ...departmentKra
                 .filter((item) => item.status !== "Completed")
                 .map((item, index) => ({
                   srno: index + 1,
+                  id: item.id,
                   taskName: item.taskName,
                   assignedDate: item.assignedDate,
                   dueDate: item.dueDate,
@@ -135,7 +228,7 @@ const PerformanceMonthly = () => {
               })),
             ]}
             dateColumn={"dueDate"}
-            columns={departmentColumns}
+            columns={completedColumns}
           />
         </WidgetSection>
       </div>
@@ -161,6 +254,23 @@ const PerformanceMonthly = () => {
                 fullWidth
                 error={!!errors?.kraName?.message}
                 helperText={errors?.kraName?.message}
+              />
+            )}
+          />
+          <Controller
+            name="description"
+            control={control}
+            rules={{ required: "Description is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                size="small"
+                label={"Description"}
+                multiline
+                rows={4}
+                fullWidth
+                error={!!errors?.description?.message}
+                helperText={errors?.description?.message}
               />
             )}
           />
@@ -217,7 +327,7 @@ const PerformanceMonthly = () => {
             )}
           />
 
-          <PrimaryButton type="submit" title={"Submit"} />
+          <PrimaryButton type="submit" title={"Submit"} disabled={isAddKpaPending} isLoading={isAddKpaPending}/>
         </form>
       </MuiModal>
     </>

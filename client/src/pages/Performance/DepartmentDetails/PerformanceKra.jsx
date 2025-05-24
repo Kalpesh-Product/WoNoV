@@ -140,6 +140,48 @@ const PerformanceKra = () => {
       )
     }}
   ];
+  const completedColumns = [
+    { headerName: "Sr no", field: "srno", width: 100, sort:'desc' },
+    { headerName: "KRA List", field: "taskName", flex: 1 },
+    // { headerName: "Assigned Time", field: "assignedDate" },
+    { headerName: "DueTime", field: "dueDate" },
+    {
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => {
+        const statusColorMap = {
+          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+          InProgress: { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+          resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+          open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
+          Completed: { backgroundColor: "#16f8062c", color: "#00731b" }, // Light gray bg, dark gray font
+        };
+
+        const { backgroundColor, color } = statusColorMap[params.value] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+        return (
+          <>
+            <Chip
+              label={params.value}
+              style={{
+                backgroundColor,
+                color,
+              }}
+            />
+          </>
+        );
+      },
+    },
+    {headerName : "Actions", field : "actions", cellRenderer : (params)=>{
+      return(
+        <div role="button" onClick={()=>updateDailyKra(params.data.id)} className="p-2">
+          <PrimaryButton title={<FaCheck />} />
+        </div>
+      )
+    }}
+  ];
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -188,7 +230,7 @@ const PerformanceKra = () => {
                   status: item.status,
                 }))}
               dateColumn={"dueDate"}
-              columns={departmentColumns}
+              columns={completedColumns}
             />
           </WidgetSection>
         ) : (

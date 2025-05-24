@@ -26,7 +26,6 @@ const TasksViewDepartment = () => {
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
-  const [selectedKra, setSelectedKra] = useState(null);
 
   const {
     handleSubmit: submitDailyKra,
@@ -41,8 +40,6 @@ const TasksViewDepartment = () => {
       dueTime: null,
     },
   });
-
-  useEffect(() => console.log("SELECTD", selectedKra), [selectedKra]);
 
   //--------------POST REQUEST FOR DAILY KRA-----------------//
   const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
