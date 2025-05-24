@@ -36,7 +36,6 @@ const PerformanceKra = () => {
     },
   });
 
-  useEffect(()=>console.log("SELECTD",selectedKra),[selectedKra])
 
   //--------------POST REQUEST FOR DAILY KRA-----------------//
   const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
@@ -95,9 +94,10 @@ const PerformanceKra = () => {
     queryKey: ["fetchedDepartments"],
     queryFn: fetchDepartments,
   });
-  const completedEntries = departmentKra.filter(
+  const completedEntries = departmentLoading ? [] : departmentKra.filter(
     (item) => item.status === "Completed"
   );
+
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
     { headerName: "KRA List", field: "taskName", flex: 1 },
@@ -177,8 +177,8 @@ const PerformanceKra = () => {
               formatTime
               tableTitle={`COMPLETED - DAILY KRA`}
   
-              data={(completedEntries || [])
-                .filter((item) => item.status !== "Completed")
+              data={(completedEntries)
+                .filter((item) => item.status === "Completed")
                 .map((item, index) => ({
                   srno: index + 1,
                   id : item.id,

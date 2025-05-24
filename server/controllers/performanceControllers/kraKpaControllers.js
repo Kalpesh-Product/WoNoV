@@ -170,14 +170,14 @@ const updateTaskStatus = async (req, res, next) => {
       status: "Completed",
     });
 
-    if (existingTask) {
-      throw new CustomError(
-        "Task already marked completed",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // if (existingTask) {
+    //   throw new CustomError(
+    //     "Task already marked completed",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
 
     const updatedStatus = await kraKpaRole.findByIdAndUpdate(
       taskId,
@@ -245,7 +245,7 @@ const updateTaskStatus = async (req, res, next) => {
 const getKraKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { type, dept, duration } = req.query;
+    const { type, dept, duration, empId } = req.query;
 
     const query = { company };
 
@@ -284,22 +284,6 @@ const getKraKpaTasks = async (req, res, next) => {
       ])
       .select("-company");
 
-    // const tasks = await kraKpaTask
-    //   .find({
-    //     company,
-    //     task: { $in: matchingDepartments.map((dept) => dept._id) },
-    //   })
-    //   .populate({
-    //     path: "task",
-    //     populate: [
-    //       { path: "department", select: "name" },
-    //       { path: "assignedBy", select: "firstName middleName lastName" },
-    //     ],
-    //   })
-    //   .populate({ path: "assignedTo", select: "firstName middleName lastName" })
-    //   .select("-company")
-    //   .lean();
-
     const transformedTasks = tasks
       .filter((task) => {
         return task.taskType === type;
@@ -327,7 +311,62 @@ const getKraKpaTasks = async (req, res, next) => {
         };
       });
 
-    return res.status(200).json(transformedTasks);
+    const completedTasks = await kraKpaTask
+      .find({ company, status: "Completed" })
+      .populate([
+        {
+          path: "task",
+          select: "",
+          populate: [
+            { path: "department", select: "name" },
+            {
+              path: "assignedBy",
+              select: "firstName middleName lastName",
+            },
+          ],
+        },
+        {
+          path: "assignedTo",
+          select: "firstName middleName lastName empId",
+        },
+      ])
+      .select("-company");
+
+    const transformedCompletedTasks = completedTasks
+      .filter((task) => {
+        if (duration && duration !== task.task.kpaDuration) return;
+        if (empId && task.assignedTo.empId !== empId) return;
+        return (
+          task.task.department._id.toString() === dept &&
+          task.task.taskType === type
+        );
+      })
+      .map((task) => {
+        const assignedBy = `${task.task.assignedBy.firstName} ${
+          task.task.assignedBy.middleName || ""
+        } ${task.task.assignedBy.lastName}`;
+
+        const completedBy = `${task.assignedTo.firstName} ${
+          task.assignedTo.middleName || ""
+        } ${task.assignedTo.lastName}`;
+
+        return {
+          id: task._id,
+          taskName: task.task.task,
+          description: task.task.description,
+          assignedBy: assignedBy.trim(),
+          completedBy: completedBy,
+          assignedDate: task.task.assignedDate,
+          dueDate: task.task.dueDate,
+          dueTime: "6:30 PM",
+          completionDate: task.completionDate ? task.completionDate : "N/A",
+          status: task.status,
+        };
+      });
+
+    const allTasks = [...transformedTasks, ...transformedCompletedTasks];
+
+    return res.status(200).json(allTasks);
   } catch (error) {
     next(error);
   }
