@@ -22,7 +22,7 @@ const TicketDashboard = () => {
     queryKey: ["tickets-data"],
     queryFn: async () => {
       try {
-        const response = await axios.get(`/api/tickets/get-all-tickets`);
+        const response = await axios.get(`/api/tickets/department-tickets/${auth.user?.departments.map((item)=>item._id)[0]}`);
 
         return response.data;
       } catch (error) {
@@ -277,7 +277,7 @@ const TicketDashboard = () => {
             descriptionData={[
               {
                 title: "MT. AV. Performance",
-                value: "70%",
+                value: `${((ticketsFilteredData.closedTickets/ticketsData.length)*100).toFixed(0)}%`,
                 route: "/app/tickets/manage-tickets",
               },
               {

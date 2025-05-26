@@ -43,7 +43,6 @@ const RecievedTickets = ({ title }) => {
   const { mutate: acceptMutate } = useMutation({
     mutationKey: ["accept-ticket"],
     mutationFn: async (ticket) => {
-      console.log("ticket is : ", ticket);
       const response = await axios.patch(
         `/api/tickets/accept-ticket/${ticket.id}`
       );
@@ -52,6 +51,7 @@ const RecievedTickets = ({ title }) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
+       queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
       toast.success(data);
     },
     onError: (error) => {
@@ -69,6 +69,7 @@ const RecievedTickets = ({ title }) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      
       toast.success(data);
     },
     onError: (error) => {

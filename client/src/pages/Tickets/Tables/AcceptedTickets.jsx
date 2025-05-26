@@ -1,5 +1,13 @@
 import AgTable from "../../../components/AgTable";
-import { Autocomplete, Chip, CircularProgress, LinearProgress, MenuItem, TextField, Typography } from "@mui/material";
+import {
+  Autocomplete,
+  Chip,
+  CircularProgress,
+  LinearProgress,
+  MenuItem,
+  TextField,
+  Typography,
+} from "@mui/material";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -81,6 +89,7 @@ const AcceptedTickets = ({ title }) => {
     onSuccess: (data) => {
       toast.success(data.message || "Ticket closed successfully");
       queryClient.invalidateQueries({ queryKey: ["accepted-tickets"] }); // Refetch tickets
+      queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
     },
     onError: (err) => {
       toast.error(err.response.data.message || "Failed to close ticket");
@@ -96,6 +105,7 @@ const AcceptedTickets = ({ title }) => {
     onSuccess: function (data) {
       toast.success(data.message || "Support ticket created successfully");
       queryClient.invalidateQueries({ queryKey: ["accepted-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
       resetSupportTicketForm();
       setOpenModal(false);
     },
@@ -116,10 +126,11 @@ const AcceptedTickets = ({ title }) => {
       return response.data;
     },
     onSuccess: (data) => {
-      setEscalateModal(false)
-      resetEscalateForm()
+      setEscalateModal(false);
+      resetEscalateForm();
       toast.success(data.message || "Ticket escalated successfully");
       queryClient.invalidateQueries({ queryKey: ["accepted-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
     },
     onError: (error) => {
       toast.error(error.response.data.message || "Failed to escalate ticket");
@@ -139,7 +150,7 @@ const AcceptedTickets = ({ title }) => {
     getSupport({ ticketId: selectedTicketId, reason: data.reason });
   };
   const onEscalate = (ticketDetails) => {
-    console.log(ticketDetails)
+    console.log(ticketDetails);
     if (!ticketDetails) return;
     escalateTicket({
       ticketId: esCalatedTicket.id,
@@ -197,7 +208,6 @@ const AcceptedTickets = ({ title }) => {
     },
   ];
 
-
   return (
     <div className="p-4 border-default border-borderGray rounded-md">
       <div className="pb-4">
@@ -213,8 +223,8 @@ const AcceptedTickets = ({ title }) => {
           <AgTable
             key={acceptedTickets.length}
             data={[
-              ...acceptedTickets.map((ticket,index) => ({
-                srNo: index+1,
+              ...acceptedTickets.map((ticket, index) => ({
+                srNo: index + 1,
                 id: ticket._id,
                 raisedBy: ticket.raisedBy?.firstName || "Unknown",
                 description: ticket.description,
@@ -268,41 +278,41 @@ const AcceptedTickets = ({ title }) => {
             onSubmit={handleEscalateTicketSubmit(onEscalate)}
             className="grid grid-cols-1 gap-4"
           >
-          <Controller
-  name="departmentIds"
-  control={escalateFormControl}
-  rules={{ required: "Department is required" }}
-  render={({ field }) => (
-    <Autocomplete
-      multiple
-      options={departments}
-      getOptionLabel={(dept) => `${dept.department.name}`}
-      onChange={(_, newValue) =>
-        field.onChange(newValue.map((dept) => dept.department._id))
-      }
-      renderTags={(selected, getTagProps) =>
-        selected.map((dept, index) => (
-          <Chip
-            key={dept.department._id}
-            label={`${dept.department.name}`}
-            {...getTagProps({ index })}
-            deleteIcon={<IoMdClose />}
-          />
-        ))
-      }
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Select Departments"
-          size="small"
-          fullWidth
-          error={!!escalateTicketErrors.departmentIds}
-          helperText={escalateTicketErrors.departmentIds?.message}
-        />
-      )}
-    />
-  )}
-/>
+            <Controller
+              name="departmentIds"
+              control={escalateFormControl}
+              rules={{ required: "Department is required" }}
+              render={({ field }) => (
+                <Autocomplete
+                  multiple
+                  options={departments}
+                  getOptionLabel={(dept) => `${dept.department.name}`}
+                  onChange={(_, newValue) =>
+                    field.onChange(newValue.map((dept) => dept.department._id))
+                  }
+                  renderTags={(selected, getTagProps) =>
+                    selected.map((dept, index) => (
+                      <Chip
+                        key={dept.department._id}
+                        label={`${dept.department.name}`}
+                        {...getTagProps({ index })}
+                        deleteIcon={<IoMdClose />}
+                      />
+                    ))
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Departments"
+                      size="small"
+                      fullWidth
+                      error={!!escalateTicketErrors.departmentIds}
+                      helperText={escalateTicketErrors.departmentIds?.message}
+                    />
+                  )}
+                />
+              )}
+            />
 
             <Controller
               name="description"
