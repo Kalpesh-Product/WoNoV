@@ -25,6 +25,7 @@ import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedMonth, setTasksData } from "../../../redux/slices/hrSlice";
 import dateToHyphen from "../../../utils/dateToHyphen";
+import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardWidget";
 
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -793,16 +794,17 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
       layout: 2,
       heading: "Site Visitor Analytics",
       widgets: [
-        <WidgetSection title={"Employee Gender Distribution"} border>
+        <WidgetSection title={"Employee Gender Distribution"} border >
           <PieChartMui
             percent={true} // Enable percentage display
             title={"Gender Distribution"}
             data={genderData} // Pass processed data
             options={genderPieChart}
-            height={360}
+            // height={"100%"}
+            // width={"100%"}
           />
         </WidgetSection>,
-        <WidgetSection layout={1} border title={"City Wise Employees"}>
+        <WidgetSection layout={1} border title={"City Wise Employees"} >
           {!usersQuery.isLoading ? (
             <PieChartMui
               percent={true} // Enable percentage display
@@ -864,16 +866,17 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
 
   return (
     <>
-      <PayRollExpenseGraph />
       <div>
-        {hrWidgets.map((widget, index) => (
-          <div>
-            <WidgetSection layout={widget.layout} key={index}>
-              {widget.widgets}
-            </WidgetSection>
-          </div>
+      <div className="flex flex-col gap-4">
+        {hrWidgets.map((widget,index)=>(
+          <LazyDashboardWidget
+          key={index}
+          layout={widget.layout}
+          widgets={widget.widgets}
+          />
         ))}
       </div>
+    </div>
     </>
   );
 };

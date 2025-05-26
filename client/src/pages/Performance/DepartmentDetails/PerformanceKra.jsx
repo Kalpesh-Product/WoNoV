@@ -218,7 +218,7 @@ const PerformanceKra = () => {
             <DateWiseTable
               formatTime
               tableTitle={`COMPLETED - DAILY KRA`}
-  
+              checkAll={false}
               data={(completedEntries)
                 .filter((item) => item.status === "Completed")
                 .map((item, index) => ({

@@ -105,7 +105,7 @@ const TeamMembers = () => {
         {/* <PrimaryButton title="Add New Member"></PrimaryButton> */}
       </div>
       <div className=" w-full">
-        <AgTable data={rows} columns={laptopColumns} paginationPageSize={10} />
+        <AgTable data={rows} columns={laptopColumns} paginationPageSize={10} hideFilter />
       </div>
     </div>
   );

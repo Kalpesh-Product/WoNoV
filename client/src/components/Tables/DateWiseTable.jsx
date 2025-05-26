@@ -14,6 +14,7 @@ const DateWiseTable = ({
   tableTitle,
   buttonTitle,
   handleSubmit,
+  checkAll,
   formatTime = false, // <-- added default value
 }) => {
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
@@ -101,6 +102,7 @@ const DateWiseTable = ({
       <AgTable
         tableHeight={350}
         enableCheckbox={checkbox}
+        checkAll={checkAll}
         columns={formattedColumns}
         data={filteredData}
         hideFilter={filteredData.length <= 9}

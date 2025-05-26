@@ -66,7 +66,7 @@ const ManageTickets = () => {
             layout={3}
             title={"Department Pending Tickets"}
             titleDataColor={"red"}
-            titleData={ticketsFilteredData.pendingTickets}>
+            TitleAmount={ticketsFilteredData.pendingTickets}>
             <TicketCard
               title={"Recieved Tickets"}
               titleColor={"#1E3D73"}
@@ -96,7 +96,7 @@ const ManageTickets = () => {
             layout={3}
             title={"Personal Pending Tickets"}
             titleDataColor={"black"}
-            titleData={"0"}>
+            TitleAmount={"0"}>
             <TicketCard
               title={"Accepted Tickets"}
               data={ticketsFilteredData.acceptedTickets}

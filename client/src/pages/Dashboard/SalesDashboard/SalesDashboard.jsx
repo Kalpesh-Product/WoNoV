@@ -31,6 +31,7 @@ import FinanceCard from "../../../components/FinanceCard";
 import { YearCalendar } from "@mui/x-date-pickers";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import humanDate from "../../../utils/humanDateForamt";
+import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardWidget";
 
 const SalesDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -914,13 +915,13 @@ const SalesDashboard = () => {
   ];
   return (
     <div>
-      <div className="flex flex-col p-4 gap-4">
-        {meetingsWidgets.map((widget, index) => (
-          <div>
-            <WidgetSection key={index} layout={widget.layout} padding>
-              {widget?.widgets}
-            </WidgetSection>
-          </div>
+      <div className="flex flex-col gap-4">
+        {meetingsWidgets.map((widget,index)=>(
+          <LazyDashboardWidget
+          key={index}
+          layout={widget.layout}
+          widgets={widget.widgets}
+          />
         ))}
       </div>
     </div>
