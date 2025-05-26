@@ -5,7 +5,6 @@ import CustomYAxis from "../../../../../components/graphs/CustomYAxis";
 import WidgetSection from "../../../../../components/WidgetSection";
 import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
 import humanDate from "../../../../../utils/humanDateForamt";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../../components/SecondaryButton";
@@ -23,6 +22,7 @@ import { toast } from "sonner";
 import useAuth from "../../../../../hooks/useAuth";
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
+import MonthWiseTable from "../../../../../components/Tables/MonthWiseTable";
 
 const Leaves = () => {
   const axios = useAxiosPrivate();
@@ -300,7 +300,7 @@ const Leaves = () => {
         </WidgetSection> */}
       </div>
       <div>
-        <AgTable
+        <MonthWiseTable
           key={leaves.length}
           search={true}
           searchColumn={"Leave Type"}
