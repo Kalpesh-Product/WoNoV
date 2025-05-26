@@ -47,6 +47,7 @@ router.patch("/escalate-ticket", escalateTicket);
 router.patch("/close-ticket", closeTicket);
 router.post("/support-ticket", supportTicket);
 router.get("/department-tickets/:departmentId", ticketData);
+router.get("/team-members-tickets/", ticketData);
 router.get("/ticket-filter/:flag", fetchFilteredTickets);
 router.get("/other-tickets/:department", getOtherTickets);
 
