@@ -1,26 +1,28 @@
 import { useLocation, useParams } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
-import MonthWiseTable from "../../../components/Tables/MonthWiseTable";
+import DateWiseTable from "../../../components/Tables/DateWiseTable";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
-import { Chip, TextField } from "@mui/material";
-import PrimaryButton from "../../../components/PrimaryButton";
-import { Controller, useForm } from "react-hook-form";
+import { Chip, CircularProgress, TextField } from "@mui/material";
+import { useEffect, useState } from "react";
 import MuiModal from "../../../components/MuiModal";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs from "dayjs";
-import { useState } from "react";
-import { FaCheck } from "react-icons/fa6";
-import { queryClient } from "../../../main";
+import { Controller, useForm } from "react-hook-form";
+import PrimaryButton from "../../../components/PrimaryButton";
+import useAuth from "../../../hooks/useAuth";
 import { toast } from "sonner";
+import { queryClient } from "../../../main";
+import { FaCheck } from "react-icons/fa6";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
 
-const PerformanceMonthly = () => {
+const TasksViewDepartment = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
@@ -31,25 +33,23 @@ const PerformanceMonthly = () => {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      kraName: "",
+      taskName: "",
+      description: "",
       startDate: null,
       endDate: null,
-      description: "",
+      dueTime: null,
     },
   });
 
-  //--------------POST REQUEST FOR MONTHLY KPA-----------------//
-  const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
-    mutationKey: ["addMonthlyKpa"],
+  //--------------POST REQUEST FOR DAILY KRA-----------------//
+  const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
+    mutationKey: ["addDailyKra"],
     mutationFn: async (data) => {
       const response = await axios.post("/api/performance/create-task", {
-        task: data.kpaName,
-        taskType: "KPA",
+        task: data.dailyKra,
+        taskType: "KRA",
         description: data.description,
         department: deptId,
-        assignedDate : data.startDate,
-        dueDate: data.endDate,
-        kpaDuration : "Monthly"
       });
       return response.data;
     },
@@ -59,19 +59,15 @@ const PerformanceMonthly = () => {
       setOpenModal(false);
     },
     onError: (error) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKra"] });
-      toast.success("DATA UPDATED");
-      setOpenModal(false)
+      toast.error(error.message || "Error Adding KRA");
     },
   });
-
   const handleFormSubmit = (data) => {
-    addMonthlyKpa(data);
+    addDailyKra(data);
   };
-  //--------------POST REQUEST FOR MONTHLY KPA-----------------//
-  //--------------UPDATE REQUEST FOR MONTHLY KPA-----------------//
-  const { mutate: updateMonthlyKpa, isPending: isUpdatePending } = useMutation({
-    mutationKey: ["updateMonthlyKpa"],
+
+  const { mutate: updateDailyKra, isPending: isUpdatePending } = useMutation({
+    mutationKey: ["updateDailyKra"],
     mutationFn: async (data) => {
       const response = await axios.patch(
         `/api/performance/update-task-status/${data}`
@@ -79,19 +75,20 @@ const PerformanceMonthly = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKra"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedDepartments"] });
       toast.success(data.message || "DATA UPDATED");
     },
     onError: (error) => {
       toast.error(error.message || "Error Updating");
     },
   });
-  //--------------UPDATE REQUEST FOR MONTHLY KPA-----------------//
+
+  //--------------POST REQUEST FOR DAILY KRA-----------------//
 
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        `api/performance/get-tasks?dept=${deptId}&type=KPA`
+        `api/performance/get-tasks?dept=${deptId}&type=KRA`
       );
       return response.data;
     } catch (error) {
@@ -99,17 +96,18 @@ const PerformanceMonthly = () => {
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-    queryKey: ["fetchedMonthlyKra"],
+    queryKey: ["fetchedDepartments"],
     queryFn: fetchDepartments,
   });
-  const completedEntries = departmentLoading
-    ? []
-    : departmentKra.filter((item) => item.status === "Completed");
-  console.log(department);
+  const completedEntries = departmentKra.filter(
+    (item) => item.status === "Completed"
+  );
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
-    { headerName: "KPA List", field: "taskName", flex: 1 },
+    { headerName: "Task List", field: "taskName", width: 300 },
     // { headerName: "Assigned Time", field: "assignedDate" },
+    { headerName: "Assigned By", field: "assignedBy", width: 300 },
+    { headerName: "Assigned Date", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
     {
       field: "status",
@@ -142,12 +140,13 @@ const PerformanceMonthly = () => {
     },
     {
       headerName: "Actions",
+      pinned: "right",
       field: "actions",
       cellRenderer: (params) => {
         return (
           <div
             role="button"
-            onClick={() => updateMonthlyKpa(params.data.id)}
+            onClick={() => updateDailyKra(params.data.id)}
             className="p-2"
           >
             <PrimaryButton title={<FaCheck />} />
@@ -157,9 +156,12 @@ const PerformanceMonthly = () => {
     },
   ];
   const completedColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
-    { headerName: "KPA List", field: "taskName", flex: 1 },
+    { headerName: "Sr no", field: "srno", width: 100 },
+    { headerName: "Task List", field: "taskName", width: 300 },
     // { headerName: "Assigned Time", field: "assignedDate" },
+    { headerName: "Completed By", field: "completedBy", width: 300 },
+    { headerName: "Assigned Date", field: "assignedDate" },
+    { headerName: "Due Time", field: "dueTime" },
     { headerName: "Due Date", field: "dueDate" },
     {
       field: "status",
@@ -194,13 +196,15 @@ const PerformanceMonthly = () => {
   return (
     <>
       <div className="flex flex-col gap-4">
-        <WidgetSection padding layout={1}>
-          <MonthWiseTable
-            tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
-            buttonTitle={"Add Monthly KPA"}
-            handleSubmit={() => setOpenModal(true)}
-            data={[
-              ...departmentKra
+        {!departmentLoading ? (
+          <WidgetSection padding layout={1}>
+            <DateWiseTable
+              formatTime
+              checkbox
+              buttonTitle={"Add Task"}
+              handleSubmit={() => setOpenModal(true)}
+              tableTitle={`${department} DEPARTMENT TASKS`}
+              data={(departmentKra || [])
                 .filter((item) => item.status !== "Completed")
                 .map((item, index) => ({
                   srno: index + 1,
@@ -209,51 +213,64 @@ const PerformanceMonthly = () => {
                   assignedDate: item.assignedDate,
                   dueDate: item.dueDate,
                   status: item.status,
-                })),
-            ]}
-            dateColumn={"dueDate"}
-            columns={departmentColumns}
-          />
-        </WidgetSection>
-        <WidgetSection padding layout={1}>
-          <MonthWiseTable
-            tableTitle={`COMPLETED - MONTHLY KPA`}
-            data={[
-              ...completedEntries.map((item, index) => ({
-                srno: index + 1,
-                taskName: item.taskName,
-                assignedDate: item.assignedDate,
-                dueDate: item.dueDate,
-                status: item.status,
-              })),
-            ]}
-            dateColumn={"dueDate"}
-            columns={completedColumns}
-          />
-        </WidgetSection>
+                }))}
+              dateColumn={"dueDate"}
+              columns={departmentColumns}
+            />
+          </WidgetSection>
+        ) : (
+          <div className="h-72 flex items-center justify-center">
+            <CircularProgress />
+          </div>
+        )}
+
+        {!departmentLoading ? (
+          <WidgetSection padding>
+            <DateWiseTable
+              formatTime
+              tableTitle={`COMPLETED TASKS`}
+              data={(completedEntries || [])
+                .filter((item) => item.status !== "Completed")
+                .map((item, index) => ({
+                  srno: index + 1,
+                  id: item.id,
+                  taskName: item.taskName,
+                  assignedDate: item.assignedDate,
+                  dueDate: item.dueDate,
+                  status: item.status,
+                }))}
+              dateColumn={"dueDate"}
+              columns={completedColumns}
+            />
+          </WidgetSection>
+        ) : (
+          <div className="h-72 flex items-center justify-center">
+            <CircularProgress />
+          </div>
+        )}
       </div>
 
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Monthly KPA"}
+        title={"Add Task"}
       >
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
           className="grid grid-cols-1 lg:grid-cols-1 gap-4"
         >
           <Controller
-            name="kpaName"
+            name="taskName"
             control={control}
-            rules={{ required: "KPA Name is required" }}
+            rules={{ required: "Task Name is required" }}
             render={({ field }) => (
               <TextField
                 {...field}
                 size="small"
-                label={"KPA Name"}
+                label={"Task Name"}
                 fullWidth
-                error={!!errors?.kraName?.message}
-                helperText={errors?.kraName?.message}
+                error={!!errors?.taskName?.message}
+                helperText={errors?.taskName?.message}
               />
             )}
           />
@@ -274,6 +291,7 @@ const PerformanceMonthly = () => {
               />
             )}
           />
+
           <Controller
             name="startDate"
             control={control}
@@ -326,12 +344,33 @@ const PerformanceMonthly = () => {
               </LocalizationProvider>
             )}
           />
-
-          <PrimaryButton type="submit" title={"Submit"} disabled={isAddKpaPending} isLoading={isAddKpaPending}/>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Controller
+              name="dueTime"
+              control={control}
+              rules={{ required: "Due time is required" }}
+              render={({ field }) => (
+                <TimePicker
+                  label="Due Time"
+                  {...field}
+                  slotProps={{ textField: { size: "small" } }}
+                  renderInput={(params) => (
+                    <TextField fullWidth size="small" {...params} helperText={errors?.dueTime?.message} error={!!errors?.dueTime} />
+                  )}
+                />
+              )}
+            />
+          </LocalizationProvider>
+          <PrimaryButton
+            type="submit"
+            title={"Submit"}
+            isLoading={isAddKraPending}
+            disabled={isAddKraPending}
+          />
         </form>
       </MuiModal>
     </>
   );
 };
 
-export default PerformanceMonthly;
+export default TasksViewDepartment;

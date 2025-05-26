@@ -27,10 +27,89 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const refresh = useRefresh();
+  const defaultModules = [
+    {
+      id: 1,
+      title: "Dashboard",
+      submenus: [
+        {
+          id: 4,
+          title: "Finance Dashboard",
+          codeName: "Finance",
+          route: "/app/dashboard/finance-dashboard",
+        },
+        {
+          id: 5,
+          title: "Sales Dashboard",
+          codeName: "Sales",
+          route: "/app/dashboard/sales-dashboard",
+        },
+        {
+          id: 3,
+          title: "HR Dashboard",
+          codeName: "HR",
+          route: "/app/dashboard/HR-dashboard",
+        },
 
+        {
+          id: 2,
+          title: "Frontend Dashboard",
+          codeName: "Tec",
+          route: "/app/dashboard/frontend-dashboard",
+        },
+
+        {
+          id: 6,
+          title: "Admin Dashboard",
+          codeName: "Administration",
+          route: "/app/dashboard/admin-dashboard",
+        },
+
+        {
+          id: 7,
+          title: "Maintenance Dashboard",
+          codeName: "Maintenance",
+          route: "/app/dashboard/maintenance-dashboard",
+        },
+        {
+          id: 9,
+          title: "IT Dashboard",
+          codeName: "IT",
+          route: "/app/dashboard/IT-dashboard",
+        },
+
+        {
+          id: 8,
+          title: "Cafe Dashboard",
+          codeName: "Cafe",
+          route: "/app/dashboard/cafe-dashboard",
+        },
+      ],
+    },
+  ];
+  const userDepartments = auth.user?.departments?.map((item) => item.name);
+
+  const filteredModules = defaultModules.map((module) => {
+    const filteredSubmenus = module.submenus?.filter((submenu) =>
+      userDepartments?.includes(submenu.codeName)
+    );
+  
+    return {
+      ...module,
+      submenus: filteredSubmenus,
+    };
+  });
+  
+  const hasAnySubmenus = filteredModules.some((module) => module.submenus.length > 0);
+  
+  // If there are matches, use first matched route. Else fallback to Finance Dashboard
+  const firstAvailableRoute = hasAnySubmenus
+    ? filteredModules.find((module) => module.submenus.length > 0).submenus[0].route
+    : "/app/dashboard/finance-dashboard";
+  
   useEffect(() => {
     if (auth.accessToken) {
-      navigate("/app/dashboard/finance-dashboard");
+      navigate(firstAvailableRoute);
     } else {
       refresh();
     }
@@ -113,7 +192,8 @@ const LoginPage = () => {
       <Drawer
         anchor="left"
         open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}>
+        onClose={() => setDrawerOpen(false)}
+      >
         {/* Drawer Header */}
         <div className="w-full bg-black text-white flex justify-end items-center border-b border-gray-700 p-4 text-2xl">
           <button onClick={() => setDrawerOpen(false)}>
@@ -125,7 +205,8 @@ const LoginPage = () => {
         <div className="w-96 h-screen p-6 flex flex-col gap-8 items-center uppercase bg-black text-white text-center">
           <div
             className="cursor-pointer hover:text-gray-400"
-            onClick={() => setDrawerOpen(false)}>
+            onClick={() => setDrawerOpen(false)}
+          >
             <a href="https://wono.co/" className="block w-full uppercase">
               Home
             </a>
@@ -137,7 +218,8 @@ const LoginPage = () => {
             <React.Fragment key={index}>
               <div
                 className="cursor-pointer hover:text-gray-400"
-                onClick={() => setDrawerOpen(false)}>
+                onClick={() => setDrawerOpen(false)}
+              >
                 <a href={item.link} className="block w-full uppercase">
                   {item.label}
                 </a>
@@ -151,7 +233,8 @@ const LoginPage = () => {
             <div>
               <a
                 href="https://wonofe.vercel.app"
-                className="block px-10 py-2 uppercase bg-white text-black mx-auto w-max rounded-full">
+                className="block px-10 py-2 uppercase bg-white text-black mx-auto w-max rounded-full"
+              >
                 Sign In
               </a>
             </div>
@@ -159,7 +242,8 @@ const LoginPage = () => {
             <div>
               <a
                 href="https://wono.co/register"
-                className="block px-10 py-2 uppercase bg-[#0aa9ef] text-white mx-auto w-max rounded-full">
+                className="block px-10 py-2 uppercase bg-[#0aa9ef] text-white mx-auto w-max rounded-full"
+              >
                 Sign Up
               </a>
             </div>
@@ -174,13 +258,15 @@ const LoginPage = () => {
             <Container
               maxWidth="lg"
               style={{ padding: "3rem 0 0" }}
-              direction={{ xs: "column", md: "row" }}>
+              direction={{ xs: "column", md: "row" }}
+            >
               <Box
                 component="form"
                 sx={{ flexGrow: 1 }}
                 onSubmit={handleLogin}
                 noValidate
-                autoComplete="off">
+                autoComplete="off"
+              >
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <Grid item xs={12}>
                     <TextField
@@ -208,7 +294,8 @@ const LoginPage = () => {
                             <IconButton
                               onClick={() => setShowPassword(!showPassword)}
                               edge="end"
-                              size="small">
+                              size="small"
+                            >
                               {showPassword ? (
                                 <VisibilityOff />
                               ) : (
@@ -225,7 +312,8 @@ const LoginPage = () => {
                 <div className="mt-2 col-span-2 text-end">
                   <Link
                     to="https://wono.co/forgot-password"
-                    className="hover:underline text-black">
+                    className="hover:underline text-black"
+                  >
                     Forgot Password?
                   </Link>
                 </div>
@@ -236,7 +324,8 @@ const LoginPage = () => {
                         <button
                           disabled={loading}
                           type="submit"
-                          className="loginButtonStyling text-decoration-none text-subtitle w-40">
+                          className="loginButtonStyling text-decoration-none text-subtitle w-40"
+                        >
                           {loading ? (
                             <CircularProgress size={20} color="white" />
                           ) : (
@@ -251,7 +340,8 @@ const LoginPage = () => {
                         onClick={() =>
                           (window.location.href = "https://wono.co/register")
                         }
-                        className="underline hover:text-primary cursor-pointer">
+                        className="underline hover:text-primary cursor-pointer"
+                      >
                         Sign Up
                       </span>
                     </p>

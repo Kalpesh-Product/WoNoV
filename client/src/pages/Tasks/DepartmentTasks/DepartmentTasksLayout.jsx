@@ -1,33 +1,24 @@
-import { Tabs } from "@mui/material";
+import { Tab, Tabs } from "@mui/material";
 import React, { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
-const ProfileLayout = () => {
+const DepartmentTasksLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-
   // Map routes to tabs
   const tabs = [
-    { label: "My Profile", path: "my-profile" },
-    { label: "Change Password", path: "change-password" },
-    { label: "Permissions", path: "permissions" },
-    { label: "HR", path: "HR" },
-    { label: "My Assets", path: "my-assets" },
-    { label: "Meetings", path: "my-meetings" },
-    { label: "Tickets History", path: "tickets-history" },
+    { label: "Employee On-Boarding", path: ":/month" },
+    { label: "View Employees", path: "view-employees" },
+    { label: "Attendance", path: "attendance" },
+    { label: "Leaves", path: "leaves" },
   ];
 
-  // Redirect to "first tab" if the current path is "/module/first-page"
-  useEffect(() => {
-    if (location.pathname === "/app/profile") {
-      navigate("/app/profile/my-profile", {
-        replace: true,
-      });
-    }
-  }, [location, navigate]);
+  // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
+
 
   // Determine whether to show the tabs
-  const showTabs = !location.pathname.includes("budget/");
+  const showTabs = !location.pathname.includes("department-tasks");
 
   // Determine active tab based on location
   const activeTab = tabs.findIndex((tab) =>
@@ -36,7 +27,6 @@ const ProfileLayout = () => {
 
   return (
     <div className="p-4">
-      {/* Render tabs only if the current route is not EmployeeDetails */}
       {showTabs && (
         <Tabs
           value={activeTab}
@@ -53,7 +43,7 @@ const ProfileLayout = () => {
               borderRight: "0.1px solid #d1d5db",
             },
             "& .Mui-selected": {
-              backgroundColor: "#1E3D73",
+              backgroundColor: "#1E3D73", // Highlight background color for the active tab
               color: "white",
             },
           }}
@@ -79,11 +69,12 @@ const ProfileLayout = () => {
         </Tabs>
       )}
 
-      <div className="py-4">
+      <div className="py-0 bg-white">
+        {/* Render the nested routes */}
         <Outlet />
       </div>
     </div>
   );
 };
 
-export default ProfileLayout;
+export default DepartmentTasksLayout;

@@ -17,7 +17,7 @@ const DepartmentPerformanceLayout = () => {
   const tabs = [
     { label: "Daily KRA", path: "daily-KRA" },
     { label: "Monthly KPA", path: "monthly-KPA" },
-    { label: "Annual KRA", path: "annual-KRA" },
+    { label: "Annual KPA", path: "annual-KPA" },
   ];
 
   // Inside your component

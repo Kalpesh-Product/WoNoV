@@ -7,7 +7,7 @@ const Access = () => {
     <>
       <div>
         <div>
-          <AccessTree />
+          <AccessTree clickState={false} />
         </div>
       </div>
     </>

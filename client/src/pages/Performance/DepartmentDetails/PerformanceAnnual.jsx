@@ -31,7 +31,7 @@ const PerformanceAnnual = () => {
   console.log(department);
   const departmentColumns = [
     { headerName: "Sr no", field: "srno",width:100 },
-    { headerName: "KRA List", field: "taskName", flex : 1 },
+    { headerName: "KPA List", field: "taskName", flex : 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
     {
@@ -68,7 +68,7 @@ const PerformanceAnnual = () => {
     <div className="flex flex-col gap-4">
       <WidgetSection padding layout={1}>
         <DateWiseTable
-        tableTitle={`${department} DEPARTMENT - ANNUAL KRA`}
+        tableTitle={`${department} DEPARTMENT - ANNUAL KPA`}
         // checkbox={true}
           data={[
             ...departmentKra.map((item,index) => ({

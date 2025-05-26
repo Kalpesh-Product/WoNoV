@@ -56,11 +56,11 @@ const MyAssets = ({ pageTitle }) => {
   return (
     <>
       <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary">My Assets</span>
+        <span className="text-title font-pmedium text-primary uppercase">My Assets</span>
       </div>
 
       <div className=" w-full">
-        <AgTable data={rows} columns={laptopColumns} paginationPageSize={10} />
+        <AgTable data={[]} columns={laptopColumns} paginationPageSize={10} />
       </div>
     </>
   );

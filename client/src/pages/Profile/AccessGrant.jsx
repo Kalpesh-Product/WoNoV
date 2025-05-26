@@ -169,11 +169,11 @@ const AccessGrant = () => {
           {departments.map((department) => (
             <div
               key={department.departmentId}
-              className={`cursor-pointer rounded-md shadow-md transition-all duration-200 p-4 ${selectedDepartment?.departmentId === department.departmentId
+              className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${selectedDepartment?.departmentId === department.departmentId
                   ? "border-default border-primary"
-                  : "hover:shadow-lg"
+                  : ""
                 }`}
-              onClick={() => setSelectedDepartment(department)}
+              // onClick={() => setSelectedDepartment(department)}
             >
               <span className="text-subtitle">{department.departmentName}</span>
             </div>

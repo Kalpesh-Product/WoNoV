@@ -49,10 +49,6 @@ const FinanceDashboard = () => {
     .filter((item) => item.units)
     .flatMap((item) => item.units);
   const totalSqft = testUnits.reduce((sum, item) => (item.sqft || 0) + sum, 0);
-  console.log(
-    "TEST asdas",
-    testExpense.filter((item) => item.expanseType === "Monthly Rent")
-  );
   const totalExpense = testExpense.reduce(
     (sum, item) => (item.actualAmount || 0) + sum,
     0
@@ -86,16 +82,6 @@ const FinanceDashboard = () => {
 
   const sortedExpenses = transformedExpenses.sort((a, b) =>
     dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
-  );
-
-  console.log(
-    "Filtered & Sorted Month-wise Expenses:",
-    sortedExpenses.map((item) => ({
-      ...item,
-      expenses: item.expenses.filter(
-        (item) => item.expanseType === "Monthly Rent"
-      ),
-    }))
   );
 
   const yearCategories = {
@@ -143,15 +129,12 @@ const FinanceDashboard = () => {
       data: months.map((month) => expenseMap[month] || 0),
     })
   );
-
-  console.log("Final Multi-Year Expense Data:", expenseData);
   const lastMonthRaw = expenseData.filter(
     (item) => item.group === "FY 2024-25"
   );
   const lastMonthData = lastMonthRaw.map(
     (item) => item.data[item.data.length - 1]
   );
-  console.log("LASt month data : ", lastMonthData[0]);
   //----------INCOME-EXPENSE GRAPH conversion------------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
@@ -349,8 +332,6 @@ const FinanceDashboard = () => {
     status: expense.status === "Approved" ? "paid" : "unpaid",
     date: dayjs(expense.dueDate).format("DD-MMM-YYYY"), // e.g., "15-May-2024"
   }));
-
-  console.log("clientPayouts:", clientPayouts);
 
   // Group and sum by status
   const paidClients = clientPayouts.filter((c) => c.status === "paid");

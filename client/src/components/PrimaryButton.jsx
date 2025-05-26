@@ -20,7 +20,7 @@ const PrimaryButton = ({
       disabled={disabled || isLoading} // Disable if loading
       type={type}
       className={` flex items-center justify-center gap-2 ${
-        disabled || isLoading ? "bg-gray-400" : "bg-primary"
+        disabled || isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-primary"
       } motion-preset-slide-up-sm text-white rounded-md ${
         fontSize ? fontSize : "text-content leading-5"
       } ${externalStyles} ${padding ? padding : "px-8 py-2"} ${className}`}
