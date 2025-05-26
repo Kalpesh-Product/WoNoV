@@ -316,6 +316,35 @@ const getAllDeptTickets = async (req, res, next) => {
   }
 };
 
+const getTeamMemberTickets = async (req, res, next) => {
+  try {
+    const { company, departments, roles } = req;
+
+    const tickets = await Tickets.find({
+      company,
+      raisedToDepartment: { $in: departments },
+    })
+      .populate([
+        { path: "raisedToDepartment", select: "name" },
+        {
+          path: "assignees",
+          select: "firstName middleName lastName",
+          populate: { path: "role", select: "roleTitle" },
+        },
+      ])
+      .select("-company")
+      .lean();
+
+    const transformedTickets = tickets.map((ticket) => {
+      return {};
+    });
+
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getAllTickets = async (req, res, next) => {
   try {
     const { user } = req;
@@ -710,7 +739,31 @@ const ticketData = async (req, res, next) => {
       .lean()
       .exec();
 
-    res.status(200).json(tickets);
+    const foundCompany = await Company.findOne({ _id: company })
+      .select("selectedDepartments")
+      .lean()
+      .exec();
+
+    if (!foundCompany) {
+      return res.status(400).josn({ message: "Company not found" });
+    }
+
+    // Extract the ticket priority from the company's selected departments
+    const updatedTickets = tickets.map((ticket) => {
+      let updatedTicket = { ...ticket };
+
+      foundCompany.selectedDepartments.forEach((dept) => {
+        dept.ticketIssues.forEach((issue) => {
+          if (issue.title === ticket.ticket) {
+            updatedTicket.priority = issue.priority;
+          }
+        });
+      });
+
+      return updatedTicket;
+    });
+
+    res.status(200).json(updatedTickets);
   } catch (error) {
     next(error);
   }
