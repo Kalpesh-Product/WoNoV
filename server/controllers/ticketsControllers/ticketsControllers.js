@@ -721,11 +721,7 @@ const ticketData = async (req, res, next) => {
       (dept) => new mongoose.Types.ObjectId(dept._id)
     );
 
-    if (
-      !roles.includes("Master Admin") &&
-      !roles.includes("Super Admin") &&
-      !roles.includes("Tech Admin")
-    ) {
+    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
       query.raisedToDepartment = { $in: departmentIds };
     }
 
