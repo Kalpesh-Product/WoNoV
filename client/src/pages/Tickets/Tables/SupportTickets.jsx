@@ -85,6 +85,7 @@ const SupportTickets = ({ title }) => {
     onSuccess: (data) => {
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ["supported-tickets"] }); // Refetch tickets
+       queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
     },
     onError: (err) => {
       toast.error(err.response.data.message || "Failed to close ticket");
@@ -125,6 +126,7 @@ const SupportTickets = ({ title }) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["supported-tickets"] });
+       queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
       toast.success(data);
       setopenModal(false); // Close modal on success
       reset(); // Reset form after submission
@@ -190,6 +192,7 @@ const SupportTickets = ({ title }) => {
         resetEscalateForm()
         toast.success(data.message || "Ticket escalated successfully");
         queryClient.invalidateQueries({ queryKey: ["supported-tickets"] });
+         queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
       },
       onError: (error) => {
         toast.error(error.response.data.message || "Failed to escalate ticket");

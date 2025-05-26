@@ -33,7 +33,7 @@ const ManageTickets = () => {
         const response = await axios.get(
           `/api/tickets/department-tickets/${auth.user?.departments?.map(
             (dept) => dept._id
-          )}`
+          )[0]}`
         );
         return response.data;
       } catch (error) {
@@ -66,7 +66,7 @@ const ManageTickets = () => {
             layout={3}
             title={"Department Pending Tickets"}
             titleDataColor={"red"}
-            TitleAmount={ticketsFilteredData.pendingTickets}>
+            TitleAmount={ticketsFilteredData.openTickets}>
             <TicketCard
               title={"Recieved Tickets"}
               titleColor={"#1E3D73"}
