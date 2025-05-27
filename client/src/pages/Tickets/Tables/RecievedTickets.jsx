@@ -10,6 +10,8 @@ import { queryClient } from "../../../main";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../../hooks/useAuth";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 
 const RecievedTickets = ({ title }) => {
   const [open, setOpen] = useState(false);
@@ -19,13 +21,18 @@ const RecievedTickets = ({ title }) => {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [openView, setOpenView] = useState();
 
   const handleRejectClick = (ticket) => {
     setSelectedTicket(ticket);
     setRejectModalOpen(true);
   };
 
-
+  const handleViewTicket = (ticket) => {
+    setSelectedTicket(ticket);
+    setOpenView(true);
+  };
+  console.log("SELECTED TICKET", selectedTicket);
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["tickets"],
@@ -51,7 +58,7 @@ const RecievedTickets = ({ title }) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
-       queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
+      queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
       toast.success(data);
     },
     onError: (error) => {
@@ -69,7 +76,7 @@ const RecievedTickets = ({ title }) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
-      
+
       toast.success(data);
     },
     onError: (error) => {
@@ -145,10 +152,14 @@ const RecievedTickets = ({ title }) => {
       srNo: index + 1,
       id: ticket._id,
       raisedBy: ticket.raisedBy?.firstName || "Unknown",
+      description: ticket.description,
       fromDepartment:
         ticket.raisedBy?.departments?.map((dept) => dept.name) || "N/A",
       ticketTitle: ticket?.ticket || "No Title",
+      raisedToDepartment: ticket.raisedToDepartment?.name || "N/A",
       status: ticket.status || "Pending",
+      raisedDate: ticket.createdAt,
+      image: ticket.image?.url,
     }));
   };
 
@@ -168,7 +179,6 @@ const RecievedTickets = ({ title }) => {
       console.error("Rejection failed", error);
     }
   };
-
 
   // Example usage
   const rows = isLoading ? [] : transformTicketsData(tickets);
@@ -222,7 +232,14 @@ const RecievedTickets = ({ title }) => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <>
+        <div className="flex items-center gap-2">
+          <div
+            role="button"
+            onClick={() => handleViewTicket(params.data)}
+            className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
+          >
+            <MdOutlineRemoveRedEye />
+          </div>
           <ThreeDotMenu
             rowId={params.data.id}
             menuItems={[
@@ -233,24 +250,23 @@ const RecievedTickets = ({ title }) => {
               },
               // Conditionally add "Assign"
               ...(auth.user.role.length > 0 &&
-                (auth.user.role[0].roleTitle === "Master Admin" ||
-                  auth.user.role[0].roleTitle === "Super Admin" ||
-                  auth.user.role[0].roleTitle.endsWith("Admin"))
+              (auth.user.role[0].roleTitle === "Master Admin" ||
+                auth.user.role[0].roleTitle === "Super Admin" ||
+                auth.user.role[0].roleTitle.endsWith("Admin"))
                 ? [
-                  {
-                    label: "Assign",
-                    onClick: () => handleOpenAssignModal(params.data.id),
-                  },
-                  {
-                    label: "Reject",
-                    onClick: () => handleRejectClick(params.data), // opens modal instead
-                  }
-
-                ]
+                    {
+                      label: "Assign",
+                      onClick: () => handleOpenAssignModal(params.data.id),
+                    },
+                    {
+                      label: "Reject",
+                      onClick: () => handleRejectClick(params.data), // opens modal instead
+                    },
+                  ]
                 : []),
             ]}
           />
-        </>
+        </div>
       ),
     },
   ];
@@ -274,6 +290,51 @@ const RecievedTickets = ({ title }) => {
           />
         )}
       </div>
+      <MuiModal
+        open={openView}
+        onClose={() => setOpenView(false)}
+        title={"View Ticket"}
+      >
+        {selectedTicket && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <DetalisFormatted
+              title="Ticket"
+              detail={selectedTicket.ticketTitle}
+            />
+            <DetalisFormatted
+              title="Raised By"
+              detail={`${selectedTicket.raisedBy}`}
+            />
+            <DetalisFormatted
+              title="From Department"
+              detail={selectedTicket.fromDepartment || "N/A"}
+            />
+            <DetalisFormatted
+              title="Raised To Department"
+              detail={selectedTicket.raisedToDepartment || "N/A"}
+            />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
+            <DetalisFormatted
+              title="Description"
+              detail={selectedTicket.description}
+            />
+            <DetalisFormatted
+              title="Created At"
+              detail={new Date(selectedTicket.raisedDate).toLocaleString()}
+            />
+            {selectedTicket.image && (
+              <div className="lg:col-span-2">
+                <img
+                  src={selectedTicket.image}
+                  alt="Ticket Attachment"
+                  className="max-w-full max-h-96 rounded border"
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </MuiModal>
+
       <MuiModal open={open} onClose={handleClose} title="Assign Tickets">
         <form onSubmit={handleSubmit(onSubmit)}>
           <ul>
@@ -305,7 +366,12 @@ const RecievedTickets = ({ title }) => {
         </form>
       </MuiModal>
 
-      <MuiModal open={rejectModalOpen} setOpen={setRejectModalOpen} title="Reject Ticket" onClose={() => setRejectModalOpen(false)}>
+      <MuiModal
+        open={rejectModalOpen}
+        setOpen={setRejectModalOpen}
+        title="Reject Ticket"
+        onClose={() => setRejectModalOpen(false)}
+      >
         <div className="flex flex-col gap-4">
           <textarea
             placeholder="Please mention the reason for rejection..."
@@ -315,12 +381,12 @@ const RecievedTickets = ({ title }) => {
           />
           <button
             onClick={handleRejectSubmit}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+          >
             Submit Rejection
           </button>
         </div>
       </MuiModal>
-
     </div>
   );
 };

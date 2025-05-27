@@ -73,7 +73,7 @@ const AcceptedTickets = ({ title }) => {
         const hasAssigned = filtered.some(
           (ticket) => ticket.assignees?.length > 0
         );
-        return hasAssigned ? [] : filtered;
+        return  filtered;
       } catch (error) {
         console.error("Error fetching tickets:", error);
         throw new Error("Failed to fetch tickets");
