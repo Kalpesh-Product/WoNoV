@@ -24,7 +24,7 @@ const raiseTicket = async (req, res, next) => {
   const logPath = "tickets/TicketLog";
   const logAction = "Raise Ticket";
   const logSourceKey = "ticket";
-  const { departmentId, issueId, newIssue, description } = req.body;
+  const { departmentId, title, description } = req.body;
   const image = req.file;
   const { user, ip, company } = req;
 
@@ -113,7 +113,9 @@ const raiseTicket = async (req, res, next) => {
     }
 
     let foundIssue;
-    if (issueId) {
+    let ticketTitle = title;
+
+    if (typeof title !== "string") {
       if (!mongoose.Types.ObjectId.isValid(issueId)) {
         throw new CustomError(
           "Invalid issueId provided",
@@ -126,6 +128,8 @@ const raiseTicket = async (req, res, next) => {
       foundIssue = department?.ticketIssues?.find(
         (ticketIssue) => ticketIssue._id.toString() === issueId
       );
+
+      ticketTitle = foundIssue ? foundIssue.title : "";
       if (!foundIssue) {
         throw new CustomError(
           "Issue not found",
@@ -137,28 +141,28 @@ const raiseTicket = async (req, res, next) => {
     }
 
     // Handle "Other" ticket issue case
-    let ticketTitle;
-    if (foundIssue && foundIssue.title === "Other") {
-      if (!newIssue || typeof newIssue !== "string" || !newIssue.trim()) {
-        throw new CustomError(
-          "You must specify a title for the 'Other' issue",
-          logPath,
-          logAction,
-          logSourceKey
-        );
-      }
-      ticketTitle = newIssue;
-      const newTicketIssue = new NewTicketIssue({
-        company: req.company,
-        raisedBy: user,
-        departmentId,
-        issueTitle: newIssue,
-        status: "Pending",
-      });
-      await newTicketIssue.save();
-    } else {
-      ticketTitle = foundIssue ? foundIssue.title : newIssue;
-    }
+    // let ticketTitle;
+    // if (foundIssue && foundIssue.title === "Other") {
+    //   // if (!newIssue || typeof newIssue !== "string" || !newIssue.trim()) {
+    //   //   throw new CustomError(
+    //   //     "You must specify a title for the 'Other' issue",
+    //   //     logPath,
+    //   //     logAction,
+    //   //     logSourceKey
+    //   //   );
+    //   // }
+    //   // ticketTitle = newIssue;
+    //   const newTicketIssue = new NewTicketIssue({
+    //     company: req.company,
+    //     raisedBy: user,
+    //     departmentId,
+    //     issueTitle: newIssue,
+    //     status: "Pending",
+    //   });
+    //   await newTicketIssue.save();
+    // } else {
+    //   ticketTitle = foundIssue ? foundIssue.title : newIssue;
+    // }
 
     const newTicket = new Ticket({
       ticket: ticketTitle,
@@ -199,6 +203,79 @@ const raiseTicket = async (req, res, next) => {
         new CustomError(error.message, logPath, logAction, logSourceKey, 500)
       );
     }
+  }
+};
+
+const updateOtherTicket = async (req, res, next) => {
+  const logPath = "tickets/TicketLog";
+  const logAction = "Update Ticket";
+  const logSourceKey = "ticket";
+  //Update other ticket title
+  const { user, company, ip } = req;
+  const { ticketId, ticketTitle } = req.body;
+  try {
+    if (!ticketId) {
+      return res.status(200).json({ message: "ticket ID is required" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(ticketId)) {
+      throw new CustomError(
+        "Invalid ticket ID provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const foundTicket = await Ticket.findById({ _id: ticketId });
+
+    if (!foundTicket) {
+      throw new CustomError(
+        "Ticket not found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const updatedTicket = await Ticket.findByIdAndUpdate(
+      { _id: ticketId },
+      { ticket: ticketTitle },
+      { new: true }
+    );
+
+    if (!updatedTicket) {
+      throw new CustomError(
+        "Failed to update ticket",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Ticket updated successfully",
+      status: "Success",
+      user: user,
+      ip: ip,
+      company: company,
+      sourceKey: logSourceKey,
+      sourceId: updatedTicket._id,
+      changes: {
+        prevTicketTitle: foundTicket.ticket,
+        currTicketTitle: ticketTitle,
+      },
+    });
+
+    return res.status(200).json({ message: "Ticket updated successfully" });
+  } catch (error) {
+    error instanceof CustomError
+      ? next(error)
+      : next(
+          new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        );
   }
 };
 
@@ -857,142 +934,6 @@ const ticketData = async (req, res, next) => {
   }
 };
 
-// const escalateTicket = async (req, res, next) => {
-//   const logPath = "tickets/TicketLog";
-//   const logAction = "Escalate Ticket";
-//   const logSourceKey = "ticket";
-//   const { user, company, ip } = req;
-//   const { ticketId, description, departmentId } = req.body;
-
-//   try {
-//     const foundUser = await User.findOne({ _id: user })
-//       .select("-refreshToken -password")
-//       .lean()
-//       .exec();
-//     if (!foundUser) {
-//       throw new CustomError("User not found", logPath, logAction, logSourceKey);
-//     }
-//     if (!description) {
-//       throw new CustomError(
-//         "Description not provided",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     if (!mongoose.Types.ObjectId.isValid(departmentId)) {
-//       throw new CustomError(
-//         "Invalid Department ID provided",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-//     const foundDepartment = await Department.findOne({ _id: departmentId })
-//       .lean()
-//       .exec();
-//     if (!foundDepartment) {
-//       throw new CustomError(
-//         "Department does not exist",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     if (!mongoose.Types.ObjectId.isValid(ticketId)) {
-//       throw new CustomError(
-//         "Invalid ticket ID provided",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-//     const foundTicket = await Tickets.findOne({ _id: ticketId }).lean().exec();
-//     if (!foundTicket) {
-//       throw new CustomError(
-//         "Ticket does not exist",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     // Check if the current user belongs to any department relevant to the ticket
-//     const userDepartments = foundUser.departments.map((dept) =>
-//       dept.toString()
-//     );
-//     const foundTickets = await Tickets.find({
-//       raisedToDepartment: {
-//         $in: userDepartments.map((id) => new mongoose.Types.ObjectId(id)),
-//       },
-//     });
-//     if (!foundTickets.length) {
-//       throw new CustomError(
-//         "User does not have permission to escalate this ticket",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     const newTicket = new Ticket({
-//       ticket: foundTicket.ticket,
-//       description,
-//       raisedToDepartment: departmentId,
-//       raisedBy: user,
-//       company: company,
-//       image: foundTicket.image ? foundTicket.image : null,
-//     });
-
-//     const savedTicket = await newTicket.save();
-
-//     // Update the ticket: add the departmentId to the escalatedTo array
-//     const updatedTicket = await Tickets.findByIdAndUpdate(
-//       ticketId,
-//       {
-//         $push: { escalatedTo: savedTicket._id },
-//         $set: { status: "Escalated" },
-//       },
-//       { new: true }
-//     );
-
-//     if (!updatedTicket) {
-//       throw new CustomError(
-//         "Failed to escalate ticket",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     // Log the successful escalation
-//     await createLog({
-//       path: logPath,
-//       action: logAction,
-//       remarks: "Ticket escalated successfully",
-//       status: "Success",
-//       user: user,
-//       ip: ip,
-//       company: company,
-//       sourceKey: logSourceKey,
-//       sourceId: updatedTicket._id,
-//       changes: { escalatedTo: savedTicket._id, escalatedBy: user },
-//     });
-
-//     return res.status(200).json({ message: "Ticket escalated successfully" });
-//   } catch (error) {
-//     if (error instanceof CustomError) {
-//       next(error);
-//     } else {
-//       next(
-//         new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-//       );
-//     }
-//   }
-// };
-
 const escalateTicket = async (req, res, next) => {
   const logPath = "tickets/TicketLog";
   const logAction = "Escalate Ticket";
@@ -1509,4 +1450,5 @@ module.exports = {
   getOtherTickets,
   getAllDeptTickets,
   getTeamMemberTickets,
+  updateOtherTicket,
 };
