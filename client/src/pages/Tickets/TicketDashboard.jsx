@@ -45,6 +45,7 @@ const TicketDashboard = () => {
       }
     },
   });
+    console.log()
 
   const ticketsFilteredData = {
     openTickets: ticketsData.filter((item) => item.status === "Open").length,
