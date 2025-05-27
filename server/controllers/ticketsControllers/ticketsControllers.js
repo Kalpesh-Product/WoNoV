@@ -18,6 +18,7 @@ const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const Ticket = require("../../models/tickets/Tickets");
 const validateUsers = require("../../utils/validateUsers");
+const UserData = require("../../models/hr/UserData");
 
 const raiseTicket = async (req, res, next) => {
   const logPath = "tickets/TicketLog";
@@ -319,13 +320,45 @@ const getAllDeptTickets = async (req, res, next) => {
 const getTeamMemberTickets = async (req, res, next) => {
   try {
     const { company, departments, roles } = req;
+    const { departmentId } = req.params;
+    const query = { company };
+
+    const allValid = departments.every((dept) =>
+      mongoose.Types.ObjectId.isValid(dept._id)
+    );
+
+    if (!allValid) {
+      return res
+        .status(400)
+        .json({ message: "One or more department IDs are invalid" });
+    }
+
+    const departmentIds = departments.map(
+      (dept) => new mongoose.Types.ObjectId(dept._id)
+    );
+
+    const teamMembers = await UserData.find({
+      departments: { $in: departmentIds },
+    })
+      .populate([
+        { path: "role", select: "roleTitle" },
+        { path: "departments", select: "name" },
+      ])
+      .select("firstName middleName lastName");
+
+    const teamMemberIds = teamMembers.map((member) => member._id);
 
     const tickets = await Tickets.find({
       company,
-      raisedToDepartment: { $in: departments },
+      raisedToDepartment: { $in: departmentIds },
     })
       .populate([
         { path: "raisedToDepartment", select: "name" },
+        {
+          path: "raisedBy",
+          select: "firstName middleName lastName departments",
+          populate: { path: "role", select: "roleTitle" },
+        },
         {
           path: "assignees",
           select: "firstName middleName lastName",
@@ -335,11 +368,70 @@ const getTeamMemberTickets = async (req, res, next) => {
       .select("-company")
       .lean();
 
-    const transformedTickets = tickets.map((ticket) => {
-      return {};
+    // const transformedDeptTickets = teamMembers.flatMap((member) =>
+    //   tickets
+    //     .filter((ticket) =>
+    //       ticket.assignees.some(
+    //         (assignee) => assignee._id.toString() === member._id.toString()
+    //       )
+    //     )
+    //     .map((ticket) => {
+    //       const name = `${member.firstName} ${member.middleName || ""} ${
+    //         member.lastName
+    //       }`.trim();
+    //       const department = member.departments.map((dept) => dept.name);
+    //       const role = member.role.map((role) => role.roleTitle);
+
+    //       return {
+    //         name,
+    //         department,
+    //         role,
+    //       };
+    //     })
+    // );
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const transformedDeptTickets = teamMembers.map((member, index) => {
+      const memberId = member._id.toString();
+
+      const relevantAssignedTickets = tickets.filter((ticket) =>
+        ticket.assignees.some(
+          (assignee) => assignee._id.toString() === memberId
+        )
+      );
+      const relevantAcceptedTickets = tickets.filter(
+        (ticket) =>
+          ticket.acceptedBy &&
+          ticket.acceptedBy.toString() === memberId &&
+          ticket.status === "Closed"
+      );
+
+      const totalassigned = relevantAssignedTickets.length;
+
+      const totalresolved =
+        relevantAssignedTickets.filter((ticket) => ticket.status === "Closed")
+          .length + relevantAcceptedTickets.length;
+
+      const assignedToday = relevantAssignedTickets.filter((ticket) => {
+        const createdAt = new Date(ticket.createdAt);
+        return createdAt >= today;
+      }).length;
+
+      return {
+        name: `${member.firstName} ${member.middleName || ""} ${
+          member.lastName
+        }`.trim(),
+        department: member.departments.map((dept) => dept.name),
+        role: member.role.map((r) => r.roleTitle),
+        assignedToday,
+        totalassigned,
+        totalresolved,
+      };
     });
 
-    return res.status(200).json(result);
+    return res.status(200).json(transformedDeptTickets);
   } catch (error) {
     next(error);
   }
@@ -1416,4 +1508,5 @@ module.exports = {
   ticketData,
   getOtherTickets,
   getAllDeptTickets,
+  getTeamMemberTickets,
 };
