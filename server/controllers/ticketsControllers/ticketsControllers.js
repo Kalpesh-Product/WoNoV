@@ -180,6 +180,8 @@ const raiseTicket = async (req, res, next) => {
 
     const savedTicket = await newTicket.save();
 
+    console.log("title", ticketTitle);
+    // console.log("savedTicket",savedTicket)
     // Log the successful ticket creation
     await createLog({
       path: logPath,
@@ -1404,6 +1406,7 @@ const getOtherTickets = async (req, res, next) => {
       .lean()
       .exec();
 
+    console.log("issue", tickets);
     if (!tickets.length) {
       return res.status(200).json([]);
     }
@@ -1422,7 +1425,9 @@ const getOtherTickets = async (req, res, next) => {
     const updatedTickets = tickets.filter((ticket) => {
       const isNotFoundInAnyDepartment = foundCompany.selectedDepartments.every(
         (dept) =>
-          dept.ticketIssues.every((issue) => issue.title !== ticket.ticket)
+          dept.ticketIssues.every((issue) => {
+            return issue.title !== ticket.ticket;
+          })
       );
       return isNotFoundInAnyDepartment;
     });
