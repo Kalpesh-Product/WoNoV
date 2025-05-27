@@ -1406,7 +1406,6 @@ const getOtherTickets = async (req, res, next) => {
       .lean()
       .exec();
 
-    console.log("issue", tickets);
     if (!tickets.length) {
       return res.status(200).json([]);
     }
@@ -1426,6 +1425,7 @@ const getOtherTickets = async (req, res, next) => {
       const isNotFoundInAnyDepartment = foundCompany.selectedDepartments.every(
         (dept) =>
           dept.ticketIssues.every((issue) => {
+            console.log(issue.title, "==", ticket.ticket);
             return issue.title !== ticket.ticket;
           })
       );
