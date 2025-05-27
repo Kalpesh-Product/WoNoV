@@ -116,9 +116,9 @@ const raiseTicket = async (req, res, next) => {
     let ticketTitle = title;
 
     if (typeof title !== "string") {
-      if (!mongoose.Types.ObjectId.isValid(issueId)) {
+      if (!mongoose.Types.ObjectId.isValid(title)) {
         throw new CustomError(
-          "Invalid issueId provided",
+          "Invalid title Id provided",
           logPath,
           logAction,
           logSourceKey
@@ -126,7 +126,7 @@ const raiseTicket = async (req, res, next) => {
       }
 
       foundIssue = department?.ticketIssues?.find(
-        (ticketIssue) => ticketIssue._id.toString() === issueId
+        (ticketIssue) => ticketIssue._id.toString() === title
       );
 
       ticketTitle = foundIssue ? foundIssue.title : "";
@@ -180,6 +180,8 @@ const raiseTicket = async (req, res, next) => {
 
     const savedTicket = await newTicket.save();
 
+    console.log("title", ticketTitle);
+    // console.log("savedTicket",savedTicket)
     // Log the successful ticket creation
     await createLog({
       path: logPath,
@@ -1422,7 +1424,10 @@ const getOtherTickets = async (req, res, next) => {
     const updatedTickets = tickets.filter((ticket) => {
       const isNotFoundInAnyDepartment = foundCompany.selectedDepartments.every(
         (dept) =>
-          dept.ticketIssues.every((issue) => issue.title !== ticket.ticket)
+          dept.ticketIssues.every((issue) => {
+            console.log(issue.title, "==", ticket.ticket);
+            return issue.title !== ticket.ticket;
+          })
       );
       return isNotFoundInAnyDepartment;
     });
