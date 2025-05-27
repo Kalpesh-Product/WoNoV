@@ -294,7 +294,7 @@ const RaiseTicket = () => {
                   </>
                 )}
               />
-              {watchFields.ticketTitle === getOtherTicketId() && (
+              {/* {watchFields.ticketTitle === getOtherTicketId() && (
                 <Controller
                   name="newIssue"
                   control={control}
@@ -319,7 +319,7 @@ const RaiseTicket = () => {
                     </>
                   )}
                 />
-              )}
+              )} */}
               <Controller
                 name="message"
                 rules={{ required: "Please specify your message" }}
