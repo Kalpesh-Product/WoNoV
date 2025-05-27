@@ -74,7 +74,7 @@ const RaiseTicket = () => {
       const formData = new FormData();
 
       formData.append("departmentId", data.department);
-      formData.append("issueId", data.ticketTitle);
+      formData.append("title", data.ticketTitle);
       formData.append("description", data.message);
       if (data.newIssue) {
         formData.append("newIssue", data.newIssue);
