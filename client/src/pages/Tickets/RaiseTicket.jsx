@@ -283,7 +283,7 @@ const RaiseTicket = () => {
                       <MenuItem value="">Select Ticket Title</MenuItem>
                       {ticketIssues.length > 0 ? (
                         ticketIssues.map((issue) => (
-                          <MenuItem key={issue._id} value={issue._id}>
+                          <MenuItem key={issue._id} value={issue.title}>
                             {issue.title}
                           </MenuItem>
                         ))
