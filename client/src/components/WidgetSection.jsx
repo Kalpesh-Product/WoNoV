@@ -9,6 +9,7 @@ const WidgetSection = ({
   children,
   title,
   titleData,
+  height,
   titleDataColor,
   padding,
   border,
@@ -36,7 +37,7 @@ const WidgetSection = ({
   };
 
   return (
-    <div className="py-0 motion-preset-slide-up-sm">
+    <div className={`py-0 motion-preset-slide-up-sm ${height ? height : ""}`}>
       {title && (
         <div
           className={`border-default border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl ${

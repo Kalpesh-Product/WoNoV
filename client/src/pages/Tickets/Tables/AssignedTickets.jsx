@@ -11,7 +11,7 @@ import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
 import { IoMdClose } from "react-icons/io";
 
-const SupportTickets = ({ title }) => {
+const AssignedTickets = ({ title }) => {
   const [openModal, setopenModal] = useState(false);
   const [esCalateModal, setEscalateModal] = useState(false);
   const [esCalatedTicket, setEscalatedTicket] = useState(null);
@@ -21,10 +21,10 @@ const SupportTickets = ({ title }) => {
 
   // Fetch Supported Tickets
   const { data: supportedTickets = [], isLoading } = useQuery({
-    queryKey: ["supported-tickets"],
+    queryKey: ["assigned-tickets"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/tickets/ticket-filter/support");
+        const response = await axios.get("/api/tickets/ticket-filter/assign");
 
         return response.data;
       } catch (error) {
@@ -32,6 +32,7 @@ const SupportTickets = ({ title }) => {
       }
     },
   });
+  console.log(supportedTickets)
   const handleOpenAssignModal = (ticketId) => {
     setSelectedTicketId(ticketId);
     setopenModal(true);
@@ -44,32 +45,130 @@ const SupportTickets = ({ title }) => {
       ? []
       : tickets.map((ticket, index) => {
         const supportTicket = {
-          id: ticket.ticket?._id,
+          id: ticket._id,
           srno: index + 1,
-          raisedBy: ticket.ticket.raisedBy?.firstName && ticket.ticket.raisedBy?.lastName
-          ? `${ticket.ticket.raisedBy.firstName} ${ticket.ticket.raisedBy.lastName}`
+          raisedBy: ticket.raisedBy?.firstName && ticket.raisedBy?.lastName
+          ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`
           : "Unknown",
         
           selectedDepartment:
-          Array.isArray(ticket.ticket.raisedBy?.departments) &&
-          ticket.ticket.raisedBy.departments.length > 0
-            ? ticket.ticket.raisedBy.departments.map((dept) => dept.name)
+          Array.isArray(ticket.raisedBy?.departments) &&
+          ticket.raisedBy.departments.length > 0
+            ? ticket.raisedBy.departments.map((dept) => dept.name)
             : ["N/A"],
         
           ticketTitle: ticket.reason || "No Title",
-          acceptedBy : `${ticket.ticket.acceptedBy?.firstName ?? ""} ${ticket.ticket.acceptedBy?.lastName ?? ""}`,
+          assignees : `${ticket.assignees.map((item)=>item.firstName)[0]}`,
           tickets:
-            ticket.ticket?.assignees.length > 0
+            ticket.assignees.length > 0
               ? "Assigned Ticket"
               : ticket.ticket?.acceptedBy
                 ? "Accepted Ticket"
                 : "N/A",
-          status: ticket.ticket.status || "Pending",
+          status: ticket.status || "Pending",
         };
 
         return supportTicket;
       });
   };
+
+  
+  const recievedTicketsColumns = [
+    { field: "srno", headerName: "Sr No" },
+    { field: "raisedBy", headerName: "Raised By" },
+    {
+      field: "selectedDepartment",
+      headerName: "From Department",
+      width: 100,
+    },
+    { field: "assignees", headerName: "Assigned To", width: 300 },
+    // { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
+    {
+      field: "tickets",
+      headerName: "Tickets",
+      cellRenderer: (params) => {
+        const statusColorMap = {
+          "Assigned Ticket": { backgroundColor: "#ffbac2", color: "#ed0520" }, // Light orange bg, dark orange font
+          "Accepted Ticket": { backgroundColor: "#90EE90", color: "#02730a" }, // Light green bg, dark green font
+        };
+
+        const { backgroundColor, color } = statusColorMap[params.value] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+        return (
+          <div className="flex flex-col gap-1 p-2">
+            <Chip
+              label={params.value}
+              style={{
+                backgroundColor,
+                color,
+              }}
+            />
+             <span className="text-small text-borderGray text-center h-full">
+              {params.data.acceptedBy}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => {
+        console.log(params.data)
+        const statusColorMap = {
+          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+          "In Progress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+          Closed: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+          Open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
+          Completed: { backgroundColor: "#D3D3D3", color: "#696969" }, // Light gray bg, dark gray font
+        };
+
+        const { backgroundColor, color } = statusColorMap[params.value] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+        return (
+          <div className="flex flex-col justify-center pt-4">
+            <Chip
+              label={params.value}
+              style={{
+                backgroundColor,
+                color,
+              }}
+            />
+           
+          </div>
+        );
+      },
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      cellRenderer: (params) => (
+        <>
+          <ThreeDotMenu
+            rowId={params.data.id}
+            menuItems={[
+              {
+                label: "Close",
+                onClick: () => closeTicket(params.data.id),
+              },
+              {
+                label: "Re-Assign",
+                onClick: () => handleOpenAssignModal(params.data.id),
+              },
+              {
+                label: "Escalate",
+                onClick: () => handleEscalateTicket(params.data)
+              }
+            ]}
+          />
+        </>
+      ),
+    },
+  ];
 
   const rows = isLoading ? [] : transformTicketsData(supportedTickets);
 
@@ -84,7 +183,7 @@ const SupportTickets = ({ title }) => {
 
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: ["supported-tickets"] }); // Refetch tickets
+      queryClient.invalidateQueries({ queryKey: ["assigned-tickets"] }); // Refetch tickets
        queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
     },
     onError: (err) => {
@@ -215,101 +314,6 @@ const SupportTickets = ({ title }) => {
 
 
 
-  const recievedTicketsColumns = [
-    { field: "srno", headerName: "Sr No" },
-    { field: "raisedBy", headerName: "Raised By" },
-    {
-      field: "selectedDepartment",
-      headerName: "From Department",
-      width: 100,
-    },
-    { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
-    {
-      field: "tickets",
-      headerName: "Tickets",
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          "Assigned Ticket": { backgroundColor: "#ffbac2", color: "#ed0520" }, // Light orange bg, dark orange font
-          "Accepted Ticket": { backgroundColor: "#90EE90", color: "#02730a" }, // Light green bg, dark green font
-        };
-
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return (
-          <div className="flex flex-col gap-1 p-2">
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-             <span className="text-small text-borderGray text-center h-full">
-              {params.data.acceptedBy}
-            </span>
-          </div>
-        );
-      },
-    },
-    {
-      field: "status",
-      headerName: "Status",
-      cellRenderer: (params) => {
-        console.log(params.data)
-        const statusColorMap = {
-          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-          "In Progress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
-          Closed: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-          Open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
-          Completed: { backgroundColor: "#D3D3D3", color: "#696969" }, // Light gray bg, dark gray font
-        };
-
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return (
-          <div className="flex flex-col justify-center pt-4">
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-           
-          </div>
-        );
-      },
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <>
-          <ThreeDotMenu
-            rowId={params.data.id}
-            menuItems={[
-              {
-                label: "Close",
-                onClick: () => closeTicket(params.data.id),
-              },
-              {
-                label: "Re-Assign",
-                onClick: () => handleOpenAssignModal(params.data.id),
-              },
-              {
-                label: "Escalate",
-                onClick: () => handleEscalateTicket(params.data)
-              }
-            ]}
-          />
-        </>
-      ),
-    },
-  ];
 
   return (
     <div className="p-4 border-default border-borderGray rounded-md">
@@ -441,4 +445,4 @@ const SupportTickets = ({ title }) => {
   );
 };
 
-export default SupportTickets;
+export default AssignedTickets;

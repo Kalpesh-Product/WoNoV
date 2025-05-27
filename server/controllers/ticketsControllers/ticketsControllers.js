@@ -18,6 +18,7 @@ const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const Ticket = require("../../models/tickets/Tickets");
 const validateUsers = require("../../utils/validateUsers");
+const UserData = require("../../models/hr/UserData");
 
 const raiseTicket = async (req, res, next) => {
   const logPath = "tickets/TicketLog";
@@ -311,6 +312,126 @@ const getAllDeptTickets = async (req, res, next) => {
     const result = Array.from(departmentMap.values());
 
     return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getTeamMemberTickets = async (req, res, next) => {
+  try {
+    const { company, departments, roles } = req;
+    const { departmentId } = req.params;
+    const query = { company };
+
+    const allValid = departments.every((dept) =>
+      mongoose.Types.ObjectId.isValid(dept._id)
+    );
+
+    if (!allValid) {
+      return res
+        .status(400)
+        .json({ message: "One or more department IDs are invalid" });
+    }
+
+    const departmentIds = departments.map(
+      (dept) => new mongoose.Types.ObjectId(dept._id)
+    );
+
+    const teamMembers = await UserData.find({
+      departments: { $in: departmentIds },
+    })
+      .populate([
+        { path: "role", select: "roleTitle" },
+        { path: "departments", select: "name" },
+      ])
+      .select("firstName middleName lastName");
+
+    const teamMemberIds = teamMembers.map((member) => member._id);
+
+    const tickets = await Tickets.find({
+      company,
+      raisedToDepartment: { $in: departmentIds },
+    })
+      .populate([
+        { path: "raisedToDepartment", select: "name" },
+        {
+          path: "raisedBy",
+          select: "firstName middleName lastName departments",
+          populate: { path: "role", select: "roleTitle" },
+        },
+        {
+          path: "assignees",
+          select: "firstName middleName lastName",
+          populate: { path: "role", select: "roleTitle" },
+        },
+      ])
+      .select("-company")
+      .lean();
+
+    // const transformedDeptTickets = teamMembers.flatMap((member) =>
+    //   tickets
+    //     .filter((ticket) =>
+    //       ticket.assignees.some(
+    //         (assignee) => assignee._id.toString() === member._id.toString()
+    //       )
+    //     )
+    //     .map((ticket) => {
+    //       const name = `${member.firstName} ${member.middleName || ""} ${
+    //         member.lastName
+    //       }`.trim();
+    //       const department = member.departments.map((dept) => dept.name);
+    //       const role = member.role.map((role) => role.roleTitle);
+
+    //       return {
+    //         name,
+    //         department,
+    //         role,
+    //       };
+    //     })
+    // );
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const transformedDeptTickets = teamMembers.map((member, index) => {
+      const memberId = member._id.toString();
+
+      const relevantAssignedTickets = tickets.filter((ticket) =>
+        ticket.assignees.some(
+          (assignee) => assignee._id.toString() === memberId
+        )
+      );
+      const relevantAcceptedTickets = tickets.filter(
+        (ticket) =>
+          ticket.acceptedBy &&
+          ticket.acceptedBy.toString() === memberId &&
+          ticket.status === "Closed"
+      );
+
+      const totalassigned = relevantAssignedTickets.length;
+
+      const totalresolved =
+        relevantAssignedTickets.filter((ticket) => ticket.status === "Closed")
+          .length + relevantAcceptedTickets.length;
+
+      const assignedToday = relevantAssignedTickets.filter((ticket) => {
+        const createdAt = new Date(ticket.createdAt);
+        return createdAt >= today;
+      }).length;
+
+      return {
+        name: `${member.firstName} ${member.middleName || ""} ${
+          member.lastName
+        }`.trim(),
+        department: member.departments.map((dept) => dept.name),
+        role: member.role.map((r) => r.roleTitle),
+        assignedToday,
+        totalassigned,
+        totalresolved,
+      };
+    });
+
+    return res.status(200).json(transformedDeptTickets);
   } catch (error) {
     next(error);
   }
@@ -675,12 +796,28 @@ const assignTicket = async (req, res, next) => {
 
 const ticketData = async (req, res, next) => {
   try {
-    const company = req.company;
-    const { departmentId } = req.params;
-    const tickets = await Ticket.find({
-      company,
-      raisedToDepartment: departmentId,
-    })
+    const { company, departments, roles } = req;
+    const query = { company };
+
+    const allValid = departments.every((dept) =>
+      mongoose.Types.ObjectId.isValid(dept._id)
+    );
+
+    if (!allValid) {
+      return res
+        .status(400)
+        .json({ message: "One or more department IDs are invalid" });
+    }
+
+    const departmentIds = departments.map(
+      (dept) => new mongoose.Types.ObjectId(dept._id)
+    );
+
+    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
+      query.raisedToDepartment = { $in: departmentIds };
+    }
+
+    const tickets = await Ticket.find(query)
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
@@ -690,9 +827,31 @@ const ticketData = async (req, res, next) => {
       .lean()
       .exec();
 
-    console.log(tickets);
+    const foundCompany = await Company.findOne({ _id: company })
+      .select("selectedDepartments")
+      .lean()
+      .exec();
 
-    res.status(200).json(tickets);
+    if (!foundCompany) {
+      return res.status(400).josn({ message: "Company not found" });
+    }
+
+    // Extract the ticket priority from the company's selected departments
+    const updatedTickets = tickets.map((ticket) => {
+      let updatedTicket = { ...ticket };
+
+      foundCompany.selectedDepartments.forEach((dept) => {
+        dept.ticketIssues.forEach((issue) => {
+          if (issue.title === ticket.ticket) {
+            updatedTicket.priority = issue.priority;
+          }
+        });
+      });
+
+      return updatedTicket;
+    });
+
+    res.status(200).json(updatedTickets);
   } catch (error) {
     next(error);
   }
@@ -1349,4 +1508,5 @@ module.exports = {
   ticketData,
   getOtherTickets,
   getAllDeptTickets,
+  getTeamMemberTickets,
 };

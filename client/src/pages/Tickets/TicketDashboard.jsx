@@ -1,8 +1,6 @@
-import React, { useEffect } from "react";
 import WidgetSection from "../../components/WidgetSection";
 import AreaGraph from "../../components/graphs/AreaGraph";
 import Card from "../../components/Card";
-import TicketCard from "../../components/TicketCard";
 import DonutChart from "../../components/graphs/DonutChart";
 import { RiArchiveDrawerLine } from "react-icons/ri";
 import { RiPagesLine } from "react-icons/ri";
@@ -13,19 +11,18 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import useAuth from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import FinanceCard from "../../components/FinanceCard";
+import { CircularProgress } from "@mui/material";
 
 const TicketDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
- 
+
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
     queryFn: async () => {
       try {
-        const response = await axios.get(
-          `/api/tickets/get-all-tickets`
-        );
+        const response = await axios.get(`/api/tickets/department-tickets/${auth.user?.departments.map((item)=>item._id)[0]}`);
 
         return response.data;
       } catch (error) {
@@ -39,9 +36,7 @@ const TicketDashboard = () => {
     queryKey: ["departments-data"],
     queryFn: async () => {
       try {
-        const response = await axios.get(
-          `/api/departments/get-departments`
-        );
+        const response = await axios.get(`/api/departments/get-departments`);
 
         return response.data;
       } catch (error) {
@@ -50,102 +45,112 @@ const TicketDashboard = () => {
       }
     },
   });
-  
-  const ticketsFilteredData =  {
+    console.log()
+
+  const ticketsFilteredData = {
     openTickets: ticketsData.filter((item) => item.status === "Open").length,
     closedTickets: ticketsData.filter((item) => item.status === "Closed")
       .length,
     pendingTickets: ticketsData.filter((item) => item.status === "Pending")
       .length,
-      acceptedTickets: ticketsData
-      .filter((item) => item.acceptedBy?._id === auth.user?._id).filter((item)=>item.status === "In Progress").length,
-    assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0).length,
-    escalatedTickets: ticketsData.filter((item)=> auth.user.departments.includes(item.raisedToDepartment) && item.status === "Escalated").length,
+    acceptedTickets: ticketsData
+      .filter((item) => item.acceptedBy?._id === auth.user?._id)
+      .filter((item) => item.status === "In Progress").length,
+    assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0)
+      .length,
+    escalatedTickets: ticketsData.filter(
+      (item) =>
+        auth.user.departments.includes(item.raisedToDepartment) &&
+        item.status === "Escalated"
+    ).length,
   };
 
-  const masterDepartments = !departmentsIsLoading ? departments.map((dept)=>dept.name) : []
-  
+  const masterDepartments = !departmentsIsLoading
+    ? departments.map((dept) => dept.name)
+    : [];
+
   const departmentCountMap = {};
 
-  const today = new Date(); 
-  const currentYear = new Date().getFullYear(); 
-  
+  const today = new Date();
+  const currentYear = new Date().getFullYear();
+
   const todayTickets = ticketsData.filter((ticket) => {
     const createdAt = new Date(ticket.createdAt);
-     return (
-      createdAt.getDate()  === today.getDate()  &&
+    return (
+      createdAt.getDate() === today.getDate() &&
       createdAt.getFullYear() === currentYear
     );
   });
 
+  const lastMonth = new Date().getMonth();
 
-  const lastMonth = new Date().getMonth();  
- 
-  
   const lastMonthTickets = ticketsData.filter((ticket) => {
     const createdAt = new Date(ticket.createdAt);
-      return (
-      createdAt.getMonth() - 1  === lastMonth - 1  &&
+    return (
+      createdAt.getMonth() - 1 === lastMonth - 1 &&
       createdAt.getFullYear() === currentYear
     );
   });
 
+  const currentMonth = new Date().getMonth();
 
-  const currentMonth = new Date().getMonth();  
-  
   const currentMonthTickets = ticketsData.filter((ticket) => {
     const createdAt = new Date(ticket.createdAt);
 
     return (
-      createdAt.getMonth()  === currentMonth  &&
+      createdAt.getMonth() === currentMonth &&
       createdAt.getFullYear() === currentYear
     );
   });
 
-
-  currentMonthTickets.forEach(item => {
+  currentMonthTickets.forEach((item) => {
     const dept = item.raisedToDepartment.name;
     if (dept) {
       departmentCountMap[dept] = (departmentCountMap[dept] || 0) + 1;
     }
   });
-  
-  const donutSeries =   masterDepartments.map(dept => departmentCountMap[dept] || 0) ;
 
-
- 
+  const donutSeries = masterDepartments.map(
+    (dept) => departmentCountMap[dept] || 0
+  );
 
   //Task Priority data for widget
   const priorityCountMap = {};
 
-  lastMonthTickets.forEach(item => {
+  lastMonthTickets.forEach((item) => {
     const priority = item.priority;
     if (priority) {
       priorityCountMap[priority] = (priorityCountMap[priority] || 0) + 1;
     }
   });
-  
-  const priorityOrder = ["high", "medium", "low"]; // order you want in the chart
-  const series = priorityOrder.map(priority => priorityCountMap[priority] || 0);
 
+  const priorityOrder = ["high", "medium", "low"]; // order you want in the chart
+  const series = priorityOrder.map(
+    (priority) => priorityCountMap[priority] || 0
+  );
 
   //Live tickets
   const todayPriorityCountMap = {};
 
-  todayTickets.forEach(item => {
+  todayTickets.forEach((item) => {
     const priority = item.priority;
     if (priority) {
-      todayPriorityCountMap[priority] = (todayPriorityCountMap[priority] || 0) + 1;
+      todayPriorityCountMap[priority] =
+        (todayPriorityCountMap[priority] || 0) + 1;
     }
   });
-  
+
   const todayPriorityOrder = ["high", "medium", "low"]; // order you want in the chart
-  const todayTicketseries = todayPriorityOrder.map(priority => todayPriorityCountMap[priority] || 0);
-  
-  const filterDepartmentTickts = (department)=>{
-    const tickets = currentMonthTickets.filter((ticket)=> ticket.raisedToDepartment.name === department)
-    return tickets
-  }
+  const todayTicketseries = todayPriorityOrder.map(
+    (priority) => todayPriorityCountMap[priority] || 0
+  );
+
+  const filterDepartmentTickts = (department) => {
+    const tickets = currentMonthTickets.filter(
+      (ticket) => ticket.raisedToDepartment.name === department
+    );
+    return tickets;
+  };
 
   const ticketWidgets = [
     {
@@ -155,8 +160,15 @@ const TicketDashboard = () => {
           layout={1}
           border
           padding
-          title={"Annual Tickets Raised"}>
-          <AreaGraph responseData={ticketsData} />
+          title={"Annual Tickets Raised"}
+        >
+          {!isLoading ? (
+            <AreaGraph responseData={ticketsData} />
+          ) : (
+            <div className="h-72 flex items-center justify-center">
+              <CircularProgress />
+            </div>
+          )}
         </WidgetSection>,
       ],
     },
@@ -197,8 +209,18 @@ const TicketDashboard = () => {
           layout={1}
           padding
           border
-          titleLabel={`${new Date(new Date().getFullYear(), new Date().getMonth() - 1).toLocaleString("default", { month: "short" })}-${new Date(new Date().getFullYear(), new Date().getMonth() - 1).getFullYear().toString().slice(-2)}`}
-          title={"Total Tickets"}>
+          titleLabel={`${new Date(
+            new Date().getFullYear(),
+            new Date().getMonth() - 1
+          ).toLocaleString("default", { month: "short" })}-${new Date(
+            new Date().getFullYear(),
+            new Date().getMonth() - 1
+          )
+            .getFullYear()
+            .toString()
+            .slice(-2)}`}
+          title={"Total Tickets"}
+        >
           <DonutChart
             series={series}
             labels={["High", "Medium", "Low"]}
@@ -211,8 +233,11 @@ const TicketDashboard = () => {
           layout={1}
           padding
           border
-          titleLabel={`${new Date().toLocaleString("default", { month: "short" })}-${new Date().getFullYear().toString().slice(-2)}`}
-          title={"Department Tickets"}>
+          titleLabel={`${new Date().toLocaleString("default", {
+            month: "short",
+          })}-${new Date().getFullYear().toString().slice(-2)}`}
+          title={"Department Tickets"}
+        >
           <DonutChart
             series={donutSeries}
             labels={masterDepartments}
@@ -229,12 +254,14 @@ const TicketDashboard = () => {
             tooltipValue={donutSeries}
             onSliceClick={(index) => {
               const clickedDepartment = masterDepartments[index];
-            
-              const departmentTickets = filterDepartmentTickts(clickedDepartment)
-             
-              navigate("department-wise-tickets", { state: { departmentTickets } });
+
+              const departmentTickets =
+                filterDepartmentTickts(clickedDepartment);
+
+              navigate("department-wise-tickets", {
+                state: { departmentTickets },
+              });
             }}
-           
           />
         </WidgetSection>,
       ],
@@ -251,7 +278,7 @@ const TicketDashboard = () => {
             descriptionData={[
               {
                 title: "MT. AV. Performance",
-                value: "70%",
+                value: `${((ticketsFilteredData.closedTickets/ticketsData.length)*100).toFixed(0)}%`,
                 route: "/app/tickets/manage-tickets",
               },
               {
@@ -315,7 +342,9 @@ const TicketDashboard = () => {
             },
             {
               title: "Escalated Tickets",
-              value: ticketsFilteredData.escalatedTickets ? ticketsFilteredData.escalatedTickets : 0,
+              value: ticketsFilteredData.escalatedTickets
+                ? ticketsFilteredData.escalatedTickets
+                : 0,
               route: "/app/tickets/manage-tickets",
             },
           ]}

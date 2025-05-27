@@ -62,7 +62,7 @@ const MaintainanceDashboard = () => {
 
   // ------------------------------------------------------------------------------------------------------------------//
   const executiveTasks = [
-    { name: "Mac", tasks: 10 },
+    { name: "Mac", tasks:  10 },
     { name: "Rajiv", tasks: 20 },
     { name: "Faizan", tasks: 30 },
   ];

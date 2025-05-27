@@ -31,6 +31,20 @@ async function fetchTickets(query) {
         {
           path: "acceptedBy",
           select: "firstName lastName",
+          populate: {
+            path: "departments",
+            select: "name",
+            model: "Department",
+          },
+        },
+        {
+          path: "assignees",
+          select: "firstName lastName",
+          populate: {
+            path: "departments",
+            select: "name",
+            model: "Department",
+          },
         },
         { path: "raisedToDepartment", select: "name" },
         {
@@ -101,21 +115,11 @@ async function filterAcceptedAssignedTickets(user, roles, userDepartments) {
       ],
     },
     Admin: {
-      $or: [
+      $and: [
         {
-          $and: [
-            { acceptedBy: { $exists: true } },
-            { raisedToDepartment: { $in: userDepartments } },
-            { status: "In Progress" },
-          ],
+          $or: [{ acceptedBy: user }, { assignees: { $in: [user] } }],
         },
-        {
-          $and: [
-            { assignees: { $exists: true, $ne: [] } },
-            { raisedToDepartment: { $in: userDepartments } },
-            { status: "In Progress" },
-          ],
-        },
+        { status: "In Progress" },
       ],
     },
     Employee: {
@@ -248,17 +252,18 @@ async function filterSupportTickets(user, roles, userDepartments) {
     // if (matchedRole === "Master Admin" || matchedRole === "Super Admin") {
     //   return supportTickets;
     // }
-    if (matchedRole.endsWith("Admin")) {
-      let adminTickets = supportTickets.filter((ticket) => {
-        return userDepartments.some((dept) => {
-          return ticket.ticket.raisedToDepartment._id.equals(
-            new mongoose.Types.ObjectId(dept)
-          );
-        });
-      });
+    // if (matchedRole.endsWith("Admin")) {
+    //   let adminTickets = supportTickets.filter((ticket) => {
+    //     return userDepartments.some((dept) => {
+    //       return ticket.ticket.raisedToDepartment._id.equals(
+    //         new mongoose.Types.ObjectId(dept)
+    //       );
+    //     });
+    //   });
 
-      return adminTickets;
-    } else if (matchedRole === "Employee") {
+    //   return adminTickets;
+    // }
+    if (matchedRole.endsWith("Admin") || matchedRole === "Employee") {
       let employeeTickets = supportTickets.filter((ticket) =>
         ticket.user._id.equals(new mongoose.Types.ObjectId(user))
       );
@@ -317,9 +322,25 @@ async function filterCloseTickets(user, roles, userDepartments) {
       ],
     },
     Admin: {
-      $and: [
-        { status: "Closed" },
-        { raisedToDepartment: { $in: userDepartments } },
+      // $and: [
+      //   { status: "Closed" },
+      //   { raisedToDepartment: { $in: userDepartments } },
+      // ],
+      $or: [
+        {
+          $and: [
+            { status: "Closed" },
+            { raisedToDepartment: { $in: userDepartments } },
+            { acceptedBy: user },
+          ],
+        },
+        {
+          $and: [
+            { status: "Closed" },
+            { assignees: [user] },
+            { raisedToDepartment: { $in: userDepartments } },
+          ],
+        },
       ],
     },
     Employee: {

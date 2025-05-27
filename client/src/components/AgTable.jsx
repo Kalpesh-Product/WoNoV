@@ -31,6 +31,7 @@ const AgTableComponent = React.memo(
     tableHeight,
     enableCheckbox, // ✅ New prop to enable checkboxes
     getRowStyle,
+    checkAll
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -143,23 +144,23 @@ const AgTableComponent = React.memo(
       // You can implement delete, edit, or any batch operation here
     };
 
-    // ✅ Modify columns to conditionally include checkboxes
     const modifiedColumns = useMemo(() => {
-      if (!enableCheckbox) return columns; // No change if checkboxes are not needed
+      if (!enableCheckbox) return columns;
+
       return [
         {
           field: "",
-          headerCheckboxSelection: true, // Select all checkbox in header
-          checkboxSelection: true, // Enable row selection checkboxes
+          headerCheckboxSelection: checkAll, // ✅ Only allow header checkbox when checkAll is true
+          checkboxSelection: true,
           width: 50,
         },
-        ...columns, // Append existing columns after checkbox column
+        ...columns,
       ];
-    }, [columns, enableCheckbox]);
+    }, [columns, enableCheckbox, checkAll]);
 
     return (
       <div className="border-b-[1px] border-borderGray">
-            {tableTitle && (
+        {tableTitle && (
           <div className="flex items-center justify-between pb-4">
             <span className="font-pmedium text-title text-primary uppercase">
               {tableTitle}
@@ -202,7 +203,9 @@ const AgTableComponent = React.memo(
                 ),
               }}
             />
-          ) : <></>}
+          ) : (
+            <></>
+          )}
           {hideFilter ? (
             ""
           ) : (
@@ -238,12 +241,12 @@ const AgTableComponent = React.memo(
             ) : null
           )}
         </div>
-    
 
         <MuiAside
           open={isFilterDrawerOpen}
           onClose={() => setFilterDrawerOpen(false)}
-          title="Advanced Filter">
+          title="Advanced Filter"
+        >
           {columns.map((column) =>
             dropdownColumns.includes(column.field) ? (
               <TextField
@@ -257,7 +260,8 @@ const AgTableComponent = React.memo(
                 value={filters[column.field] || ""}
                 onChange={(e) =>
                   handleFilterChange(column.field, e.target.value)
-                }>
+                }
+              >
                 <MenuItem value="">All</MenuItem>
                 {columnOptions[column.field]?.map((option) => (
                   <MenuItem key={option} value={option}>
@@ -287,7 +291,8 @@ const AgTableComponent = React.memo(
         <div
           ref={tableRef}
           className="ag-theme-quartz border-none w-full font-pregular"
-          style={{ height: tableHeight || 500 }}>
+          style={{ height: tableHeight || 500 }}
+        >
           <AgGridReact
             ref={gridRef}
             rowData={filteredData}
@@ -296,7 +301,9 @@ const AgTableComponent = React.memo(
             pagination={false}
             paginationPageSize={paginationPageSize}
             rowHeight={50}
-            rowSelection={enableCheckbox ? "multiple" : rowSelection} // ✅ Enable multiple selection only when checkboxes are on
+            rowSelection={
+              enableCheckbox ? (checkAll ? "multiple" : "single") : rowSelection
+            }
             onSelectionChanged={handleSelectionChanged}
             getRowStyle={getRowStyle}
             className="font-pregular"

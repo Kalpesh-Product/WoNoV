@@ -25,6 +25,7 @@ import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import LazyDashboardWidget from "../../components/Optimization/LazyDashboardWidget";
 
 const VisitorDashboard = () => {
   const navigate = useNavigate();
@@ -332,7 +333,8 @@ const VisitorDashboard = () => {
           layout={1}
           border
           title={"Monthly Total Visitors"}
-          titleLabel={"FY 2024-25"}>
+          titleLabel={"FY 2024-25"}
+        >
           <BarGraph
             height={400}
             data={averageBookingSeries}
@@ -425,7 +427,8 @@ const VisitorDashboard = () => {
           layout={1}
           title={"Visitor Categories"}
           titleLabel={"This Month"}
-          border>
+          border
+        >
           <DonutChart
             centerLabel="Visitors"
             labels={labels}
@@ -438,7 +441,8 @@ const VisitorDashboard = () => {
           layout={1}
           title={"Checked Out v/s Yet To Check Out"}
           titleLabel={"Today"}
-          border>
+          border
+        >
           <PieChartMui
             data={assetAvailabilityDataV}
             options={assetAvailabilityOptionsV}
@@ -468,7 +472,8 @@ const VisitorDashboard = () => {
         <WidgetSection
           title={"Visitor Gender Data"}
           titleLabel={"This Month"}
-          border>
+          border
+        >
           <PieChartMui
             percent={true}
             title={"Visitor Gender Data"}
@@ -482,7 +487,8 @@ const VisitorDashboard = () => {
           layout={1}
           title={"Department Wise Visits"}
           titleLabel={"This Month"}
-          border>
+          border
+        >
           <PieChartMui
             data={departmentPieDataVX}
             options={departmentPieOptionsVX}
@@ -530,15 +536,13 @@ const VisitorDashboard = () => {
   ];
   return (
     <div>
-      <div>
-        {meetingsWidgets.map((widget, index) => (
-          <div>
-            <WidgetSection key={index} layout={widget.layout}>
-              {widget?.widgets}
-            </WidgetSection>
-          </div>
-        ))}
-      </div>
+      {meetingsWidgets.map((widget, index) => (
+        <LazyDashboardWidget
+          key={index}
+          layout={widget.layout}
+          widgets={widget.widgets}
+        />
+      ))}
     </div>
   );
 };

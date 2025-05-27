@@ -316,9 +316,9 @@ const fetchUserLeaves = async (req, res, next) => {
       takenSickLeaves,
     };
 
-    const transformedLeaves = { leavesCount, leavesData: leaves };
+    // const transformedLeaves = { leaves };
 
-    return res.status(200).json(transformedLeaves);
+    return res.status(200).json(leaves);
   } catch (error) {
     next(error);
   }

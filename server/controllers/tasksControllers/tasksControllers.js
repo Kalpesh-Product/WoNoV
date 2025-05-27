@@ -480,7 +480,6 @@ const getTeamMembersTasks = async (req, res, next) => {
           .select("-company")
           .lean();
 
-        console.log("tasks", tasks);
         // Find the correct user details from the first task
         let userDetails = {};
         if (tasks.length > 0) {

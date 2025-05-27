@@ -12,10 +12,17 @@ const createDeptBasedTask = async (req, res, next) => {
   const logSourceKey = "kraKpaRoles";
 
   try {
-    const { task, taskType, description, department, dueDate, kpaDuration } =
-      req.body;
+    const {
+      task,
+      taskType,
+      description,
+      department,
+      dueDate,
+      assignedDate,
+      kpaDuration,
+    } = req.body;
 
-    if (!task || !taskType || !description || !department) {
+    if (!task || !taskType || !description || !department || !assignedDate) {
       throw new CustomError(
         "Missing required fields",
         logPath,
@@ -57,6 +64,7 @@ const createDeptBasedTask = async (req, res, next) => {
 
     const currDate = new Date();
 
+    const parsedAssignedDate = assignedDate ? new Date(assignedDate) : currDate;
     const parsedDueDate = dueDate ? new Date(dueDate) : currDate;
     const dueTime = "6:30 PM";
 
@@ -70,10 +78,10 @@ const createDeptBasedTask = async (req, res, next) => {
     }
 
     const kpaTypeMatch =
-      parsedDueDate.getMonth() - currDate.getMonth() <= 1
+      parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 1
         ? "Monthly"
-        : parsedDueDate.getMonth() - currDate.getMonth() > 1 &&
-          parsedDueDate.getMonth() - currDate.getMonth() <= 12
+        : parsedDueDate.getMonth() - parsedAssignedDate.getMonth() > 1 &&
+          parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 12
         ? "Annually"
         : "No match";
 
@@ -86,7 +94,11 @@ const createDeptBasedTask = async (req, res, next) => {
       );
     }
 
-    if (isNaN(currDate.getTime()) || isNaN(parsedDueDate.getTime())) {
+    if (
+      isNaN(currDate.getTime()) ||
+      isNaN(parsedDueDate.getTime()) ||
+      isNaN(parsedAssignedDate.getTime())
+    ) {
       throw new CustomError(
         "Invalid date format provided",
         logPath,
@@ -100,7 +112,7 @@ const createDeptBasedTask = async (req, res, next) => {
       description,
       assignedBy: user,
       department,
-      assignedDate: currDate,
+      assignedDate: parsedAssignedDate,
       dueDate: taskType === "KRA" ? currDate : parsedDueDate,
       dueTime,
       taskType,
