@@ -158,14 +158,14 @@ const RaiseTicket = () => {
           Low: { backgroundColor: "#ADD8E6", color: "#00008B" },
         };
 
-        const { backgroundColor, color } = statusColorMap[params.value] || {
+        const { backgroundColor, color } = statusColorMap[params.value === "high" ? "High" : params.value] || {
           backgroundColor: "gray",
           color: "white",
         };
 
         return (
           <Chip
-            label={params.value}
+            label={params.value === "high" ? "High" : params.value}
             style={{
               backgroundColor,
               color,
@@ -182,8 +182,8 @@ const RaiseTicket = () => {
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
           "in-progress": { backgroundColor: "#ADD8E6", color: "#00008B" },
-          resolved: { backgroundColor: "#90EE90", color: "#006400" },
-          open: { backgroundColor: "#E6E6FA", color: "#4B0082" },
+          Closed: { backgroundColor: "#cce7fc", color: "#259bf5" },
+          Open: { backgroundColor: "#E6E6FA", color: "#4B0082" },
           completed: { backgroundColor: "#D3D3D3", color: "#696969" },
         };
 

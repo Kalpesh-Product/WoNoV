@@ -6,24 +6,17 @@ import { useQuery } from "@tanstack/react-query";
 import MuiModal from "../../../components/MuiModal";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
-import useAuth from "../../../hooks/useAuth";
 
 const ClosedTickets = ({ title }) => {
   const axios = useAxiosPrivate();
-  const { auth } = useAuth();
   const [openModal, setOpenModal] = useState(false);
   const [viewTicketDetails, setViewTicketDetails] = useState({});
 
   const { data, isLoading } = useQuery({
     queryKey: ["closed-tickets"],
     queryFn: async () => {
-      const response = await axios.get(
-        `/api/tickets/department-tickets/${
-          auth.user?.departments?.map((dept) => dept._id)[0]
-        }`
-      );
-      const filtered = response.data
-      return filtered.filter((item)=>item.status === "Closed") || [];
+      const response = await axios.get("/api/tickets/ticket-filter/close");
+      return response.data || [];
     },
     initialData: [],
   });
@@ -37,15 +30,15 @@ const ClosedTickets = ({ title }) => {
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => ({
-          srNo: index + 1,
-          id: ticket._id,
-          raisedBy: ticket.raisedBy?.firstName || "Unknown",
-          fromDepartment: ticket.raisedToDepartment?.name || "N/A",
-          ticketTitle: ticket?.ticket || "No Title",
-          status: ticket.status || "Pending",
-          description: ticket.description || "-",
-          priority: ticket.priority || "-",
-        }));
+        srNo: index + 1,
+        id: ticket._id,
+        raisedBy: ticket.raisedBy?.firstName || "Unknown",
+        fromDepartment: ticket.raisedToDepartment?.name || "N/A",
+        ticketTitle: ticket?.ticket || "No Title",
+        status: ticket.status || "Pending",
+        description: ticket.description || "-",
+        priority: ticket.priority || "-",
+      }));
   };
 
   const rows = isLoading ? [] : transformTicketsData(data);
@@ -125,27 +118,12 @@ const ClosedTickets = ({ title }) => {
         title={"View Ticket Details"}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-          <DetalisFormatted
-            title="Raised By"
-            detail={viewTicketDetails?.raisedBy}
-          />
-          <DetalisFormatted
-            title="From Department"
-            detail={viewTicketDetails?.fromDepartment}
-          />
-          <DetalisFormatted
-            title="Ticket Title"
-            detail={viewTicketDetails?.ticketTitle}
-          />
-          <DetalisFormatted
-            title="Description"
-            detail={viewTicketDetails?.description}
-          />
+          <DetalisFormatted title="Raised By" detail={viewTicketDetails?.raisedBy} />
+          <DetalisFormatted title="From Department" detail={viewTicketDetails?.fromDepartment} />
+          <DetalisFormatted title="Ticket Title" detail={viewTicketDetails?.ticketTitle} />
+          <DetalisFormatted title="Description" detail={viewTicketDetails?.description} />
           <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
-          <DetalisFormatted
-            title="Priority"
-            detail={viewTicketDetails?.priority}
-          />
+          <DetalisFormatted title="Priority" detail={viewTicketDetails?.priority} />
         </div>
       </MuiModal>
     </div>

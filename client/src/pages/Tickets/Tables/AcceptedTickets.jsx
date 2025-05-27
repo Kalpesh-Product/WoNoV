@@ -69,7 +69,11 @@ const AcceptedTickets = ({ title }) => {
         const response = await axios.get(
           "/api/tickets/ticket-filter/accept-assign"
         );
-        return response.data;
+        const filtered = response.data;
+        const hasAssigned = filtered.some(
+          (ticket) => ticket.assignees?.length > 0
+        );
+        return hasAssigned ? [] : filtered;
       } catch (error) {
         console.error("Error fetching tickets:", error);
         throw new Error("Failed to fetch tickets");
@@ -236,7 +240,9 @@ const AcceptedTickets = ({ title }) => {
             ]}
             columns={recievedTicketsColumns}
           />
-        ) : null}
+        ) : (
+          []
+        )}
       </div>
 
       <MuiModal
