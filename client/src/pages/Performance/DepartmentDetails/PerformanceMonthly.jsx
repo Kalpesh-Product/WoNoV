@@ -45,7 +45,7 @@ const PerformanceMonthly = () => {
       const response = await axios.post("/api/performance/create-task", {
         task: data.kpaName,
         taskType: "KPA",
-        description: data.description,
+        // description: data.description,
         department: deptId,
         assignedDate : data.startDate,
         dueDate: data.endDate,
@@ -257,7 +257,7 @@ const PerformanceMonthly = () => {
               />
             )}
           />
-          <Controller
+          {/* <Controller
             name="description"
             control={control}
             rules={{ required: "Description is required" }}
@@ -273,7 +273,7 @@ const PerformanceMonthly = () => {
                 helperText={errors?.description?.message}
               />
             )}
-          />
+          /> */}
           <Controller
             name="startDate"
             control={control}

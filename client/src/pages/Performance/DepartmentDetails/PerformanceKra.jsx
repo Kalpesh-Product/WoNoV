@@ -44,7 +44,7 @@ const PerformanceKra = () => {
       const response = await axios.post("/api/performance/create-task", {
         task: data.dailyKra,
         taskType: "KRA",
-        description: data.description,
+        // description: data.description,
         department: deptId,
       });
       return response.data;
@@ -264,7 +264,7 @@ const PerformanceKra = () => {
               />
             )}
           />
-          <Controller
+          {/* <Controller
             name="description"
             control={control}
             rules={{ required: "Description is required" }}
@@ -280,7 +280,7 @@ const PerformanceKra = () => {
                 helperText={errors?.description?.message}
               />
             )}
-          />
+          /> */}
           <PrimaryButton
             type="submit"
             title={"Submit"}
