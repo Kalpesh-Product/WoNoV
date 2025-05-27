@@ -116,9 +116,9 @@ const raiseTicket = async (req, res, next) => {
     let ticketTitle = title;
 
     if (typeof title !== "string") {
-      if (!mongoose.Types.ObjectId.isValid(issueId)) {
+      if (!mongoose.Types.ObjectId.isValid(title)) {
         throw new CustomError(
-          "Invalid issueId provided",
+          "Invalid title Id provided",
           logPath,
           logAction,
           logSourceKey
@@ -126,7 +126,7 @@ const raiseTicket = async (req, res, next) => {
       }
 
       foundIssue = department?.ticketIssues?.find(
-        (ticketIssue) => ticketIssue._id.toString() === issueId
+        (ticketIssue) => ticketIssue._id.toString() === title
       );
 
       ticketTitle = foundIssue ? foundIssue.title : "";
