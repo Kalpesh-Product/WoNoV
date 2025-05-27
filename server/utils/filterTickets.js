@@ -115,15 +115,12 @@ async function filterAcceptedAssignedTickets(user, roles, userDepartments) {
       ],
     },
     Admin: {
-      $or: [{ acceptedBy: user }, { assignees: { $in: [user] } }],
-      // {
-      //   $and: [
-      //     { assignees: { $exists: true, $ne: [] } },
-      //     { raisedToDepartment: { $in: userDepartments } },
-      //     { status: "In Progress" },
-      //   ],
-      // },
-      //],
+      $and: [
+        {
+          $or: [{ acceptedBy: user }, { assignees: { $in: [user] } }],
+        },
+        { status: "In Progress" },
+      ],
     },
     Employee: {
       $or: [{ acceptedBy: user }, { assignees: { $in: [user] } }],
