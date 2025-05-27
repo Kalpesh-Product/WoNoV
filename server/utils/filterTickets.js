@@ -31,6 +31,20 @@ async function fetchTickets(query) {
         {
           path: "acceptedBy",
           select: "firstName lastName",
+          populate: {
+            path: "departments",
+            select: "name",
+            model: "Department",
+          },
+        },
+        {
+          path: "assignees",
+          select: "firstName lastName",
+          populate: {
+            path: "departments",
+            select: "name",
+            model: "Department",
+          },
         },
         { path: "raisedToDepartment", select: "name" },
         {
