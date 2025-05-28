@@ -237,6 +237,15 @@ const updateVisitor = async (req, res, next) => {
     const { visitorId } = req.params;
     const updateData = req.body;
 
+    if (!mongoose.Types.ObjectId.isValid(visitorId)) {
+      throw new CustomError(
+        "Invalid visitor ID provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const updatedVisitor = await Visitor.findByIdAndUpdate(
       visitorId,
       updateData,
