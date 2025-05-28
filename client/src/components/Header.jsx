@@ -135,6 +135,7 @@ const Header = () => {
               auth.user.firstName.charAt(0)
             )}
           </Avatar>
+
           <div
             className="w-full relative"
             onMouseEnter={() => setIsHovered(true)}
