@@ -88,6 +88,8 @@ app.use("/api/inventory", verifyJwt, inventoryRoutes);
 app.use("/api/administration", verifyJwt, administrationRoutes);
 app.use("/api/finance", verifyJwt, financeRoutes);
 app.use("/api/logs/:path", verifyJwt, getLogs);
+
+
 app.all("*", (req, res) => {
   if (req.accepts("html")) {
     res.status(404).sendFile(path.join(__dirname, "views", "404.html"));

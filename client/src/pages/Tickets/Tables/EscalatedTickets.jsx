@@ -5,9 +5,14 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
-
+import MuiModal from "../../../components/MuiModal";
+import DetalisFormatted from "../../../components/DetalisFormatted";
+import { useState } from "react";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 const EscalatedTickets = ({ title }) => {
   const axios = useAxiosPrivate();
+  const [openView, setOpenView] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
 
   // Fetch Supported Tickets
   const { data: escalatedTickets = [], isLoading } = useQuery({
@@ -18,6 +23,11 @@ const EscalatedTickets = ({ title }) => {
       return response.data;
     },
   });
+
+  const handleViewTicket = (ticket) => {
+    setSelectedTicket(ticket);
+    setOpenView(true);
+  };
 
   const { mutate } = useMutation({
     mutationKey: ["close-ticket"],
@@ -73,7 +83,10 @@ const EscalatedTickets = ({ title }) => {
                 : "N/A",
             status: ticket.status || "Pending",
             escalatedStatus,
-            escalatedTo,
+            escalatedTo:
+              ticket.escalatedTo
+                .map((dept) => dept.raisedToDepartment.name)
+                .join(", ") || "N/A",
           };
 
           return escalatedTicket;
@@ -187,14 +200,15 @@ const EscalatedTickets = ({ title }) => {
       field: "action",
       headerName: "Action",
       cellRenderer: (params) => (
-        <>
-          <ThreeDotMenu
-            rowId={params.data.id}
-            menuItems={[
-              { label: "Close", onClick: () => mutate(params.data.id) },
-            ]}
-          />
-        </>
+        <div className="flex items-center gap-2">
+          <div
+            role="button"
+            onClick={() => handleViewTicket(params.data)}
+            className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
+          >
+            <MdOutlineRemoveRedEye />
+          </div>
+        </div>
       ),
     },
   ];
@@ -206,6 +220,37 @@ const EscalatedTickets = ({ title }) => {
       </div>
       <div className="w-full">
         <AgTable data={rows} columns={recievedTicketsColumns} />
+        <MuiModal
+          open={openView}
+          onClose={() => setOpenView(false)}
+          title="View Escalated Ticket"
+        >
+          {selectedTicket && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <DetalisFormatted
+                title="Ticket"
+                detail={selectedTicket.ticketTitle}
+              />
+              <DetalisFormatted
+                title="Raised By"
+                detail={selectedTicket.raisedBy}
+              />
+              <DetalisFormatted
+                title="From Department"
+                detail={selectedTicket.selectedDepartment?.join(", ") || "N/A"}
+              />
+              <DetalisFormatted
+                title="Escalated To"
+                detail={selectedTicket.escalatedTo || "N/A"}
+              />
+              <DetalisFormatted title="Status" detail={selectedTicket.status} />
+              <DetalisFormatted
+                title="Escalated Status"
+                detail={selectedTicket.escalatedStatus}
+              />
+            </div>
+          )}
+        </MuiModal>
       </div>
     </div>
   );

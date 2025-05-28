@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const SupportTicket = require("../models/tickets/supportTickets");
 const Ticket = require("../models/tickets/Tickets");
+const Company = require("../models/hr/Company");
 
 function generateQuery(queryMapping, roles) {
   const roleHierarchy = ["Master Admin", "Super Admin", "Admin", "Employee"]; // For users with multiple roles, use query of higher entity
@@ -15,7 +16,7 @@ function generateQuery(queryMapping, roles) {
   return queryMapping[matchedRole] || {};
 }
 
-async function fetchTickets(query) {
+async function fetchTickets(query, companyId) {
   try {
     const tickets = await Ticket.find(query)
       .populate([
@@ -69,13 +70,58 @@ async function fetchTickets(query) {
       .lean()
       .exec();
 
-    return tickets;
+    if (!tickets.length) return [];
+
+    const company = await Company.findById(companyId)
+      .select("selectedDepartments")
+      .lean()
+      .exec();
+
+    if (!company) return tickets; // or [] if you want to skip all in case of no company
+
+    const updatedTickets = tickets.map((ticket) => {
+      const department = company.selectedDepartments.find(
+        (dept) =>
+          dept.department.toString() ===
+          ticket.raisedToDepartment?._id.toString()
+      );
+
+      let priority = "Low"; // Default priority
+
+      if (department) {
+        const issue = department.ticketIssues.find(
+          (issue) => issue.title === ticket.ticket
+        );
+        priority = issue?.priority || "High";
+      }
+
+      // If no match found or still Low, look for "Other"
+      if (!priority || priority === "Low") {
+        const otherIssue = company.selectedDepartments
+          .flatMap((dept) => dept.ticketIssues)
+          .find((issue) => issue.title === "Other");
+
+        priority = otherIssue?.priority || "Low";
+      }
+
+      return {
+        ...ticket,
+        priority,
+      };
+    });
+
+    return updatedTickets;
   } catch (error) {
     return [];
   }
 }
 
-async function filterAcceptedAssignedTickets(user, roles, userDepartments) {
+async function filterAcceptedAssignedTickets(
+  user,
+  roles,
+  userDepartments,
+  companyId
+) {
   // Role-based query mapping
   const queryMapping = {
     "Master Admin": {
@@ -132,10 +178,10 @@ async function filterAcceptedAssignedTickets(user, roles, userDepartments) {
   if (!Object.keys(query).length) {
     return [];
   }
-  return await fetchTickets(query);
+  return await fetchTickets(query, companyId);
 }
 
-async function filterAcceptedTickets(user, roles, userDepartments) {
+async function filterAcceptedTickets(user, roles, userDepartments, companyId) {
   const queryMapping = {
     "Master Admin": {
       $and: [
@@ -165,10 +211,10 @@ async function filterAcceptedTickets(user, roles, userDepartments) {
   if (!Object.keys(query).length) {
     return [];
   }
-  return await fetchTickets(query);
+  return await fetchTickets(query, companyId);
 }
 
-async function filterAssignedTickets(user, roles, userDepartments) {
+async function filterAssignedTickets(user, roles, userDepartments, companyId) {
   const queryMapping = {
     "Master Admin": {
       $and: [
@@ -194,14 +240,14 @@ async function filterAssignedTickets(user, roles, userDepartments) {
     Employee: { assignees: { $in: [user] }, status: "In Progress" },
   };
 
-  const query = generateQuery(queryMapping, roles);
+  const query = generateQuery(queryMapping, roles, companyId);
   if (!Object.keys(query).length) {
     return [];
   }
   return await fetchTickets(query);
 }
 
-async function filterSupportTickets(user, roles, userDepartments) {
+async function filterSupportTickets(user, roles, userDepartments, companyId) {
   const roleHierarchy = ["Master Admin", "Super Admin", "Admin", "Employee"]; // For users with multiple roles, use query of higher entity
 
   const matchedRole =
@@ -275,7 +321,7 @@ async function filterSupportTickets(user, roles, userDepartments) {
   }
 }
 
-async function filterEscalatedTickets(roles, userDepartments) {
+async function filterEscalatedTickets(roles, userDepartments, companyId) {
   const queryMapping = {
     "Master Admin": {
       $and: [
@@ -304,10 +350,10 @@ async function filterEscalatedTickets(roles, userDepartments) {
     return [];
   }
 
-  return await fetchTickets(query);
+  return await fetchTickets(query, companyId);
 }
 
-async function filterCloseTickets(user, roles, userDepartments) {
+async function filterCloseTickets(user, roles, userDepartments, companyId) {
   const queryMapping = {
     "Master Admin": {
       $and: [
@@ -367,7 +413,7 @@ async function filterCloseTickets(user, roles, userDepartments) {
   if (!Object.keys(query).length) {
     return [];
   }
-  return await fetchTickets(query);
+  return await fetchTickets(query, companyId);
 }
 
 module.exports = {

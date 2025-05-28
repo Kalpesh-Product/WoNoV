@@ -648,7 +648,7 @@ const acceptTicket = async (req, res, next) => {
     // Update the ticket by marking it as accepted and setting status to "In Progress"
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
-      { acceptedBy: user, status: "In Progress", $unset: { rejectedBy: 1 } },
+      { acceptedBy: user, status: "In Progress" },
       { new: true }
     );
     if (!updatedTicket) {
@@ -726,7 +726,7 @@ const rejectTicket = async (req, res, next) => {
     // Update the ticket by marking it as accepted and setting status to "In Progress"
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
-      { rejectedBy: user, status: "Closed", $unset: { acceptedBy: 1 } },
+      { rejectedBy: user, status: "Rejected" },
       { new: true }
     );
 
@@ -901,6 +901,7 @@ const ticketData = async (req, res, next) => {
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
         { path: "acceptedBy", select: "firstName lastName email" },
+        { path: "rejectedBy", select: "firstName lastName email" },
         { path: "company", select: "companyName" },
       ])
       .lean()
@@ -1234,7 +1235,8 @@ const fetchFilteredTickets = async (req, res, next) => {
         filteredTickets = await filterAcceptedAssignedTickets(
           user,
           roles,
-          userDepartments
+          userDepartments,
+          company
         );
 
         break;
@@ -1242,21 +1244,24 @@ const fetchFilteredTickets = async (req, res, next) => {
         filteredTickets = await filterAcceptedTickets(
           user,
           roles,
-          userDepartments
+          userDepartments,
+          company
         );
         break;
       case "assign":
         filteredTickets = await filterAssignedTickets(
           user,
           roles,
-          userDepartments
+          userDepartments,
+          company
         );
         break;
       case "support":
         filteredTickets = await filterSupportTickets(
           user,
           roles,
-          userDepartments
+          userDepartments,
+          company
         );
         break;
       case "escalate":
@@ -1266,7 +1271,8 @@ const fetchFilteredTickets = async (req, res, next) => {
         filteredTickets = await filterCloseTickets(
           user,
           roles,
-          userDepartments
+          userDepartments,
+          company
         );
         break;
 
@@ -1410,65 +1416,11 @@ const getOtherTickets = async (req, res, next) => {
       return res.status(200).json([]);
     }
 
-    const departmentId = new mongoose.Types.ObjectId(department);
-    // Fetch the company's selected departments with ticket issues
-    const foundCompany = await Company.aggregate([
-      {
-        $match: {
-          _id: new mongoose.Types.ObjectId(company),
-        },
-      },
-      {
-        $project: {
-          selectedDepartments: {
-            $filter: {
-              input: "$selectedDepartments",
-              as: "dept",
-              cond: {
-                $eq: [
-                  "$$dept.department",
-                  new mongoose.Types.ObjectId(departmentId),
-                ],
-              },
-            },
-          },
-        },
-      },
-    ]);
+    const foundOtherTickets = tickets.filter(
+      (ticket) => ticket.ticket === "Other"
+    );
 
-    if (!foundCompany) {
-      return res.status(400).json({ message: "Company not found" });
-    }
-
-    const companyDepts = foundCompany[0].selectedDepartments;
-    console.log("company", companyDepts);
-    // Extract the ticket priority from the company's selected departments
-    // const updatedTickets = tickets.filter((ticket) => {
-    //   const isNotFoundInAnyDepartment = companyDepts.every((dept) =>
-    //     dept.ticketIssues.some((issue) => {
-    //       console.log(issue.title, "==", ticket.ticket);
-    //       return issue.title !== ticket.ticket;
-    //     })
-    //   );
-    //   return isNotFoundInAnyDepartment;
-    // });
-
-    // const updatedTickets = tickets.filter((ticket) => {
-    //   const isTicketFound = companyDepts.some((dept) =>
-    //     dept.ticketIssues.some((issue) => issue.title === ticket.ticket)
-    //   );
-    //   return !isTicketFound; // keep only those not found in any department
-    // });
-
-    const updatedTickets = tickets.filter((ticket) => {
-      const isTicketFoundInAnyDept = companyDepts.some((dept) => {
-        console.log(dept);
-        return dept.ticketIssues.some((issue) => issue.title !== ticket.ticket);
-      });
-      return !isTicketFoundInAnyDept;
-    });
-
-    return res.status(200).json(updatedTickets);
+    return res.status(200).json(foundOtherTickets);
   } catch (error) {
     next(error);
   }
