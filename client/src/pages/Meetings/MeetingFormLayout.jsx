@@ -35,8 +35,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { queryClient } from "../../main";
 import humanDate from "../../utils/humanDateForamt";
+import useAuth from "../../hooks/useAuth";
 
 const MeetingFormLayout = () => {
+  const { auth } = useAuth();
   const [open, setOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const locationName = searchParams.get("location") || "";
@@ -62,6 +64,7 @@ const MeetingFormLayout = () => {
       internalParticipants: [],
       externalParticipants: [],
     },
+     mode: "onChange",
   });
 
   const meetingType = watch("meetingType");
@@ -217,11 +220,32 @@ const MeetingFormLayout = () => {
             slotLabelFormat={{
               hour: "numeric",
               minute: "2-digit",
-              meridiem: "lowercase", // Ensures "AM/PM" is uppercase
+              meridiem: "lowercase",
             }}
             allDayText="Full Day"
             select={handleDateClick}
-            events={events} // Pass the events state here
+            selectAllow={({ start }) => {
+              const now = new Date();
+              return start.getTime() > now.getTime();
+            }}
+            datesSet={() => {
+              setTimeout(() => {
+                const now = new Date();
+                const today = now.toISOString().slice(0, 10);
+                const allSlots = document.querySelectorAll(`.fc-timegrid-slot`);
+
+                allSlots.forEach((slot) => {
+                  const timeAttr = slot.getAttribute("data-time");
+                  if (!timeAttr) return;
+
+                  const slotTime = new Date(`${today}T${timeAttr}`);
+                  if (slotTime < now) {
+                    slot.classList.add("fc-slot-past");
+                  }
+                });
+              }, 0);
+            }}
+            events={events}
           />
         )}
       </div>
@@ -229,10 +253,12 @@ const MeetingFormLayout = () => {
       <MuiModal
         open={open}
         onClose={() => setOpen(false)}
-        title={`${meetingType} Meeting`}>
+        title={`${meetingType} Meeting`}
+      >
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col w-full gap-4">
+          className="flex flex-col w-full gap-4"
+        >
           <div className="w-full flex justify-between items-center">
             <span className="text-content">
               Selected Date : {humanDate(startDate)}
@@ -264,8 +290,11 @@ const MeetingFormLayout = () => {
                     label="Meeting Type"
                     select
                     fullWidth
-                    size="small">
-                    <MenuItem value="">Select a Meeting Type</MenuItem>
+                    size="small"
+                  >
+                    <MenuItem value="" disabled>
+                      Select a Meeting Type
+                    </MenuItem>
                     <MenuItem value="Internal">Internal</MenuItem>
                     <MenuItem value="External">External</MenuItem>
                   </TextField>
@@ -273,17 +302,45 @@ const MeetingFormLayout = () => {
               />
             </div>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <Controller
-                name="startTime"
-                control={control}
-                render={({ field }) => (
-                  <TimePicker
-                    slotProps={{ textField: { size: "small" } }}
-                    {...field}
-                    label={"Select a Start Time"}
-                  />
-                )}
-              />
+          <Controller
+  name="startTime"
+  control={control}
+  rules={{
+    validate: (value) => {
+      if (!value) return "Start time is required";
+
+      const selectedTime = new Date(value);
+      const minAllowedTime = new Date();
+      minAllowedTime.setHours(9, 30, 0, 0); // 09:30 AM today
+
+      const now = new Date();
+
+      if (selectedTime < minAllowedTime) {
+        return "Start time must be after 9:30 AM";
+      }
+
+      if (selectedTime < now) {
+        return "Start time cannot be in the past";
+      }
+
+      return true;
+    },
+  }}
+  render={({ field, fieldState }) => (
+    <TimePicker
+      {...field}
+      label="Select a Start Time"
+      slotProps={{
+        textField: {
+          size: "small",
+          error: !!fieldState.error,
+          helperText: fieldState.error?.message,
+        },
+      }}
+    />
+  )}
+/>
+
             </LocalizationProvider>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <Controller
@@ -300,6 +357,24 @@ const MeetingFormLayout = () => {
                   />
                 )}
               />
+              <div>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={auth.user?.company?.companyName}
+                  disabled
+                  label="Company Name"
+                />
+              </div>
+              <div>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={`${auth.user?.firstName} ${auth.user?.lastName} `}
+                  disabled
+                  label="Booked by"
+                />
+              </div>
             </LocalizationProvider>
             <div className="col-span-2 sm:col-span-1 md:col-span-2">
               <div className="mb-6">
@@ -309,7 +384,9 @@ const MeetingFormLayout = () => {
                   render={({ field }) => (
                     <Autocomplete
                       multiple
-                      options={employees} // The user list
+                      options={employees.filter(
+                        (item) => item._id !== auth.user?._id
+                      )} // The user list
                       getOptionLabel={(user) =>
                         `${user.firstName} ${user.lastName}`
                       }
@@ -373,9 +450,7 @@ const MeetingFormLayout = () => {
                     )}
                   />
                 </div>
-              ) : (
-                <></>
-              )}
+              ) : null}
             </div>
             {/* New Start */}
             {meetingType === "External" ? (
