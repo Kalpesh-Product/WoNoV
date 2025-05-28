@@ -13,6 +13,7 @@ const createAdminEvent = async (req, res, next) => {
     const { title, type, description, start, end, unitId } = req.body;
     const company = req.company;
     const user = req.user;
+
     const ip = req.ip;
 
     // Validate required fields
