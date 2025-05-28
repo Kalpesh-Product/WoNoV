@@ -191,14 +191,16 @@ const MeetingFormLayout = () => {
       await axios.post("/api/meetings/create-meeting", {
         bookedRoom: meetingRoomId,
         meetingType: data.meetingType,
-        // startDate: startDate,
-        // endDate: endDate,
+        startDate: startDate,
+        endDate: endDate,
         startTime: startTime,
         endTime: endTime,
+        client : data.company,
         subject: data.subject,
         agenda: data.agenda,
         internalParticipants: data.internalParticipants,
-        externalParticipants: data.externalParticipants,
+        bookedBy : data.bookedBy,
+        // externalParticipants: data.externalParticipants,
       });
     },
     onSuccess: () => {

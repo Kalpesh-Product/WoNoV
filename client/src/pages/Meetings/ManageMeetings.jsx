@@ -91,13 +91,15 @@ const ManageMeetings = () => {
       ...meeting,
       // startTime: humanTime(meeting.startTime),
       // endTime: humanTime(meeting.endTime),
-      date: humanDate(meeting.date),
+      date: (meeting.date),
     }));
 
   const transformedMeetings = filteredMeetings.map((meeting, index) => ({
     ...meeting,
-    startTime: humanTime(meeting.startTime),
-    endTime: humanTime(meeting.endTime),
+    date : meeting.date,
+    client : meeting.client,
+    startTime: (meeting.startTime),
+    endTime: (meeting.endTime),
     srNo: index + 1,
   }));
 
@@ -264,9 +266,9 @@ const ManageMeetings = () => {
   const columns = [
     { field: "srNo", headerName: "Sr No" },
     { field: "roomName", headerName: "Room Name" },
-    { field: "date", headerName: "Date" },
-    { field: "startTime", headerName: "Start Time" },
-    { field: "endTime", headerName: "End Time" },
+    { field: "date", headerName: "Date", cellRenderer :(params)=>(humanDate(params.value)) },
+    { field: "startTime", headerName: "Start Time",cellRenderer :(params)=>(humanTime(params.value)) },
+    { field: "endTime", headerName: "End Time",cellRenderer :(params)=>(humanTime(params.value)) },
     {
       field: "meetingStatus",
       headerName: "Meeting Status",
@@ -503,8 +505,13 @@ const ManageMeetings = () => {
             <DetalisFormatted
               title={"Room Name"}
               detail={selectedMeeting?.roomName}
+              upperCase
             />
-            <DetalisFormatted title={"Date"} detail={selectedMeeting?.date} />
+            <DetalisFormatted
+              title={"Client Name"}
+              detail={selectedMeeting?.client}
+            />
+            <DetalisFormatted title={"Date"} detail={humanDate(selectedMeeting?.date)} />
             <DetalisFormatted
               title={"Start Time"}
               detail={humanTime(selectedMeeting?.startTime)}
@@ -517,8 +524,8 @@ const ManageMeetings = () => {
               <DetalisFormatted
                 title={"Participants"}
                 detail={selectedMeeting?.participants.map((item) => (
-                  <span>{`${item.firstName || "Unknown"} ${
-                    item.lastName || "Unknown"
+                  <span>{`${item.firstName || item.employeeName || "unknown"} ${
+                    item.lastName || ""
                   }`}</span>
                 ))}
               />
