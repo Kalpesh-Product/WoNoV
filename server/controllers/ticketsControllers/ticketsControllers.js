@@ -129,7 +129,6 @@ const raiseTicket = async (req, res, next) => {
         (ticketIssue) => ticketIssue._id.toString() === title
       );
 
-      ticketTitle = foundIssue ? foundIssue.title : "";
       if (!foundIssue) {
         throw new CustomError(
           "Issue not found",
@@ -138,6 +137,7 @@ const raiseTicket = async (req, res, next) => {
           logSourceKey
         );
       }
+      ticketTitle = foundIssue.title;
     }
 
     // Handle "Other" ticket issue case
@@ -1410,29 +1410,11 @@ const getOtherTickets = async (req, res, next) => {
       return res.status(200).json([]);
     }
 
-    // Fetch the company's selected departments with ticket issues
-    const foundCompany = await Company.findOne({ _id: company })
-      .select("selectedDepartments")
-      .lean()
-      .exec();
+    const foundOtherTickets = tickets.filter(
+      (ticket) => ticket.ticket === "Other"
+    );
 
-    if (!foundCompany) {
-      return res.status(400).josn({ message: "Company not found" });
-    }
-
-    // Extract the ticket priority from the company's selected departments
-    const updatedTickets = tickets.filter((ticket) => {
-      const isNotFoundInAnyDepartment = foundCompany.selectedDepartments.every(
-        (dept) =>
-          dept.ticketIssues.every((issue) => {
-            console.log(issue.title, "==", ticket.ticket);
-            return issue.title !== ticket.ticket;
-          })
-      );
-      return isNotFoundInAnyDepartment;
-    });
-
-    return res.status(200).json(updatedTickets);
+    return res.status(200).json(foundOtherTickets);
   } catch (error) {
     next(error);
   }

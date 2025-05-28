@@ -24,14 +24,14 @@ const TicketReports = () => {
     queryKey: ["tickets-data"],
     queryFn: async () => {
       try {
-        // const response = await axios.get(
-        //   `/api/tickets/department-tickets/${auth.user?.departments?.map(
-        //     (dept) => dept._id
-        //   )}`
-        // );
         const response = await axios.get(
-          `/api/tickets/get-all-tickets`
+          `/api/tickets/department-tickets/${auth.user?.departments?.map(
+            (dept) => dept._id
+          )}`
         );
+        // const response = await axios.get(
+        //   `/api/tickets/get-all-tickets`
+        // );
 
         return response.data;
       } catch (error) {
