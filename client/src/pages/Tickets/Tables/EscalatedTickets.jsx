@@ -73,7 +73,10 @@ const EscalatedTickets = ({ title }) => {
                 : "N/A",
             status: ticket.status || "Pending",
             escalatedStatus,
-            escalatedTo,
+            escalatedTo:
+              ticket.escalatedTo
+                .map((dept) => dept.raisedToDepartment.name)
+                .join(", ") || "N/A",
           };
 
           return escalatedTicket;

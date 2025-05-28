@@ -299,6 +299,10 @@ const getKraKpaTasks = async (req, res, next) => {
           select: "",
           populate: [{ path: "department", select: "name" }],
         },
+        {
+          path: "completedBy",
+          select: "firstName middleName lastName empId",
+        },
       ])
       .select("-company");
 
@@ -309,7 +313,6 @@ const getKraKpaTasks = async (req, res, next) => {
             .filter((task) => {
               if (duration && duration !== task.task.kpaDuration) return;
               if (empId && task.completedBy.empId !== empId) return;
-              console.log(task);
               return (
                 task.task.department._id.toString() === dept &&
                 task.task.taskType === type
