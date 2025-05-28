@@ -36,7 +36,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { queryClient } from "../../main";
 import humanDate from "../../utils/humanDateForamt";
 import useAuth from "../../hooks/useAuth";
-import { useFormContext } from "react-hook-form";
+import { useFieldArray } from "react-hook-form";
 
 const MeetingFormLayout = () => {
   const { auth } = useAuth();
@@ -67,6 +67,10 @@ const MeetingFormLayout = () => {
     },
     mode: "onChange",
   });
+  const { fields, append } = useFieldArray({
+    control,
+    name: "externalParticipants",
+  });
   const isReceptionist = auth.user?.role?.some(
     (item) => item._id === "6798c034e469e809084e2514"
   );
@@ -83,6 +87,11 @@ const MeetingFormLayout = () => {
   const endTime = watch("endTime");
   const company = watch("company");
   const isBizNest = company === "6799f0cd6a01edbe1bc3fcea";
+  const externalCompany = watch("externalCompany");
+  useEffect(
+    () => console.log("EXTERNAL COMPANY : ", externalCompany || ""),
+    [externalCompany]
+  );
 
   const [shouldFetchParticipants, setShouldFetchParticipants] = useState(false);
 
@@ -195,12 +204,13 @@ const MeetingFormLayout = () => {
         endDate: endDate,
         startTime: startTime,
         endTime: endTime,
-        client : data.company,
+        client: data.company,
         subject: data.subject,
         agenda: data.agenda,
         internalParticipants: data.internalParticipants,
-        bookedBy : data.bookedBy,
-        // externalParticipants: data.externalParticipants,
+        bookedBy: data.bookedBy,
+        externalParticipants: data.externalParticipants,
+        externalCompany : data.externalCompany
       });
     },
     onSuccess: () => {
@@ -411,7 +421,7 @@ const MeetingFormLayout = () => {
             {meetingType === "Internal" ? (
               <>
                 {isReceptionist ? (
-                  <div>
+                  <>
                     <Controller
                       name="company"
                       control={control}
@@ -437,7 +447,7 @@ const MeetingFormLayout = () => {
                         </TextField>
                       )}
                     />
-                  </div>
+                  </>
                 ) : (
                   <div>
                     <TextField
@@ -549,90 +559,115 @@ const MeetingFormLayout = () => {
             ) : null}
             {/* New Start */}
             {meetingType === "External" ? (
-              <div className="col-span-2">
-                <Controller
-                  name="externalParticipants"
-                  control={control}
-                  render={({ field }) => (
-                    <Autocomplete
-                      multiple
-                      options={externalUsers} // The user list
-                      getOptionLabel={(user) => `${user.firstName}`} // Display names
-                      onChange={(_, newValue) =>
-                        field.onChange(newValue.map((user) => user._id))
-                      } // Sync selected users with form state
-                      renderTags={(selected, getTagProps) =>
-                        selected.map((user, index) => (
-                          <Chip
-                            key={user._id}
-                            label={`${user.firstName}`}
-                            {...getTagProps({ index })}
-                            deleteIcon={<IoMdClose />}
-                          />
-                        ))
-                      }
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Select External Participants"
-                          size="small"
-                          fullWidth
-                        />
-                      )}
-                    />
-                  )}
-                />
-              </div>
-            ) : null}
-            {meetingType === "External" ? (
               <>
-                {[...Array(participantCount)].map((_, index) => (
-                  <React.Fragment key={index}>
-                    <div className="flex justify-between col-span-1 sm:col-span-1 md:col-span-1 w-full">
-                      <Controller
-                        name={`name_${index}`} // Unique name for each participant
-                        control={control}
-                        render={({ field }) => (
+                <div className="col-span-1">
+                  <Controller
+                    name="externalCompany"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        select
+                        label="Select External Company"
+                        size="small"
+                        fullWidth
+                      >
+                        <MenuItem value="" disabled>
+                          Select a company
+                        </MenuItem>
+                        {externalUsers
+                          .filter((item) => item.visitorCompany)
+                          .map((user) => (
+                            <MenuItem
+                              key={user._id}
+                              value={user.visitorCompany?._id}
+                            >
+                              {user.visitorCompany?.companyName ?? ""}
+                            </MenuItem>
+                          ))}
+                      </TextField>
+                    )}
+                  />
+                </div>
+                <div className="col-span-1">
+                  <Controller
+                    name="externalParticipants"
+                    control={control}
+                    render={({ field }) => (
+                      <Autocomplete
+                        multiple
+                        options={externalUsers.filter(
+                          (item) => item.visitorCompany?._id === externalCompany
+                        )} // The user list
+                        getOptionLabel={(user) => `${user.firstName}`} // Display names
+                        onChange={(_, newValue) =>
+                          field.onChange(newValue.map((user) => user.firstName))
+                        } // Sync selected users with form state
+                        renderTags={(selected, getTagProps) =>
+                          selected.map((user, index) => (
+                            <Chip
+                              key={user._id}
+                              label={`${user.firstName}`}
+                              {...getTagProps({ index })}
+                              deleteIcon={<IoMdClose />}
+                            />
+                          ))
+                        }
+                        renderInput={(params) => (
                           <TextField
-                            label={`Name ${index + 1}`}
-                            placeholder="John Doe"
-                            {...field}
-                            fullWidth
+                            {...params}
+                            label="Select Participants"
                             size="small"
+                            fullWidth
                           />
                         )}
                       />
-                    </div>
-
-                    <div className="flex justify-between col-span-1 sm:col-span-1 md:col-span-1 w-full">
-                      <Controller
-                        name={`mob_${index}`} // Unique name for each participant
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            label={`Mobile Number ${index + 1}`}
-                            placeholder="+919876543201"
-                            {...field}
-                            fullWidth
-                            size="small"
-                          />
-                        )}
-                      />
-                    </div>
-                  </React.Fragment>
-                ))}
-
-                <div className="flex justify-between col-span-1 sm:col-span-1 md:col-span-1 w-full">
-                  <PrimaryButton
-                    title="Add Participant"
-                    type="button"
-                    handleSubmit={addParticipant}
+                    )}
                   />
                 </div>
               </>
-            ) : (
-              <></>
+            ) : null}
+            {meetingType === "External" && (
+              <>
+                {fields.map((field, index) => (
+                  <React.Fragment key={field.id}>
+                    <Controller
+                      name={`externalParticipants.${index}.name`}
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          label={`Name ${index + 1}`}
+                          placeholder="John Doe"
+                          {...field}
+                          fullWidth
+                          size="small"
+                        />
+                      )}
+                    />
+                    <Controller
+                      name={`externalParticipants.${index}.mobileNumber`}
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          label={`Mobile Number ${index + 1}`}
+                          placeholder="+919876543210"
+                          {...field}
+                          fullWidth
+                          size="small"
+                        />
+                      )}
+                    />
+                  </React.Fragment>
+                ))}
+
+                <PrimaryButton
+                  title="Add Participant"
+                  type="button"
+                  handleSubmit={() => append({ name: "", mobileNumber: "" })}
+                />
+              </>
             )}
+
             {/* New End */}
             <div className="col-span-2 sm:col-span-1 md:col-span-2">
               <Controller

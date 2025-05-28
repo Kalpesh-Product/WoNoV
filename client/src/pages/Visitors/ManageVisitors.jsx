@@ -104,7 +104,7 @@ const ManageVisitors = () => {
           onClick={() => {
             handleDetailsClick({ ...params.data });
           }}
-          className="p-2 rouned-full hover:bg-borderGray"
+          className="p-2 rounded-full w-fit hover:bg-borderGray"
         >
           <MdOutlineRemoveRedEye />
         </div>
