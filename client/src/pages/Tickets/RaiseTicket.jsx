@@ -74,7 +74,7 @@ const RaiseTicket = () => {
       const formData = new FormData();
 
       formData.append("departmentId", data.department);
-      formData.append("issueId", data.ticketTitle);
+      formData.append("title", data.ticketTitle);
       formData.append("description", data.message);
       if (data.newIssue) {
         formData.append("newIssue", data.newIssue);
@@ -283,7 +283,7 @@ const RaiseTicket = () => {
                       <MenuItem value="">Select Ticket Title</MenuItem>
                       {ticketIssues.length > 0 ? (
                         ticketIssues.map((issue) => (
-                          <MenuItem key={issue._id} value={issue._id}>
+                          <MenuItem key={issue._id} value={issue.title}>
                             {issue.title}
                           </MenuItem>
                         ))
@@ -294,7 +294,7 @@ const RaiseTicket = () => {
                   </>
                 )}
               />
-              {watchFields.ticketTitle === getOtherTicketId() && (
+              {/* {watchFields.ticketTitle === getOtherTicketId() && (
                 <Controller
                   name="newIssue"
                   control={control}
@@ -319,7 +319,7 @@ const RaiseTicket = () => {
                     </>
                   )}
                 />
-              )}
+              )} */}
               <Controller
                 name="message"
                 rules={{ required: "Please specify your message" }}
