@@ -308,16 +308,17 @@ const getKraKpaTasks = async (req, res, next) => {
         : completedTasks
             .filter((task) => {
               if (duration && duration !== task.task.kpaDuration) return;
-              if (empId && task.assignedTo.empId !== empId) return;
+              if (empId && task.completedBy.empId !== empId) return;
+              console.log(task);
               return (
                 task.task.department._id.toString() === dept &&
                 task.task.taskType === type
               );
             })
             .map((task) => {
-              const completedBy = `${task.assignedTo.firstName} ${
-                task.assignedTo.middleName || ""
-              } ${task.assignedTo.lastName}`;
+              const completedBy = `${task.completedBy.firstName} ${
+                task.completedBy.middleName || ""
+              } ${task.completedBy.lastName}`;
 
               return {
                 id: task._id,
