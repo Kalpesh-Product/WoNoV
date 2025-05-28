@@ -309,7 +309,7 @@ const getKraKpaTasks = async (req, res, next) => {
             .filter((task) => {
               if (duration && duration !== task.task.kpaDuration) return;
               if (empId && task.completedBy.empId !== empId) return;
-              console.log(task);
+
               return (
                 task.task.department._id.toString() === dept &&
                 task.task.taskType === type
