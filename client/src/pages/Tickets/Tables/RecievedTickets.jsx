@@ -32,7 +32,6 @@ const RecievedTickets = ({ title }) => {
     setSelectedTicket(ticket);
     setOpenView(true);
   };
-  console.log("SELECTED TICKET", selectedTicket);
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["tickets"],
@@ -260,7 +259,7 @@ const RecievedTickets = ({ title }) => {
                     },
                     {
                       label: "Reject",
-                      onClick: () => handleRejectClick(params.data), // opens modal instead
+                      onClick: () => rejectMutate(params.data), // opens modal instead
                     },
                   ]
                 : []),

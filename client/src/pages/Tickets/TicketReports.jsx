@@ -24,14 +24,14 @@ const TicketReports = () => {
     queryKey: ["tickets-data"],
     queryFn: async () => {
       try {
-        // const response = await axios.get(
-        //   `/api/tickets/department-tickets/${auth.user?.departments?.map(
-        //     (dept) => dept._id
-        //   )}`
-        // );
         const response = await axios.get(
-          `/api/tickets/get-all-tickets`
+          `/api/tickets/department-tickets/${auth.user?.departments?.map(
+            (dept) => dept._id
+          )}`
         );
+        // const response = await axios.get(
+        //   `/api/tickets/get-all-tickets`
+        // );
 
         return response.data;
       } catch (error) {
@@ -131,6 +131,7 @@ const TicketReports = () => {
                   createdAt:  dayjs(item.createdAt).format("DD-MM-YYYY") || "",
                   updatedAt: humanDate(item.updatedAt) || "",
                   acceptedBy: `${item.acceptedBy?.firstName || ""} ${item.acceptedBy?.lastName || ""}`,
+                  rejectedBy: `${item.rejectedBy?.firstName || ""} ${item.rejectedBy?.lastName || ""}`,
                 })),
             ]}
             exportData
@@ -175,6 +176,10 @@ const TicketReports = () => {
           <DetalisFormatted
             title={"Accepted By"}
             detail={selectedMeeting.acceptedBy || "None"}
+          />
+          <DetalisFormatted
+            title={"Rejected By"}
+            detail={selectedMeeting.rejectedBy || "None"}
           />
         </div>
         ) : <CircularProgress />}

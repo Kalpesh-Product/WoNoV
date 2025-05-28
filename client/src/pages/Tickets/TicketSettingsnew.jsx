@@ -84,6 +84,7 @@ const Row = ({ row, onApprove, onReject }) => {
   };
 
   const onSubmit = (data) => {
+    console.log("data ticket:",data)
     onApprove({
       ...data,
       title: row.ticket,
@@ -153,7 +154,7 @@ const Row = ({ row, onApprove, onReject }) => {
                           </MenuItem>
                           {ticketIssues.length > 0 ? (
                             ticketIssues.map((issue) => (
-                              <MenuItem key={issue._id} value={issue._id}>
+                              <MenuItem key={issue._id} value={issue.title}>
                                 {issue.title}
                               </MenuItem>
                             ))
