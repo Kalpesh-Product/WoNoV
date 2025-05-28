@@ -14,7 +14,11 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import AgTable from "../../components/AgTable";
 import useAuth from "../../hooks/useAuth";
-import { MdEventSeat, MdOutlineRateReview, MdOutlineRemoveRedEye } from "react-icons/md";
+import {
+  MdEventSeat,
+  MdOutlineRateReview,
+  MdOutlineRemoveRedEye,
+} from "react-icons/md";
 import MuiModal from "../../components/MuiModal";
 import { queryClient } from "../../main";
 import CustomRating from "../../components/CustomRating";
@@ -84,8 +88,8 @@ const BookMeetings = () => {
   // Filter meeting rooms based on selected location
   const filteredMeetingRooms = selectedUnitId
     ? allMeetingRooms.filter(
-      (room) => room.location?.building?._id === selectedUnitId
-    )
+        (room) => room.location?.building?._id === selectedUnitId
+      )
     : [];
 
   const groupedRooms = filteredMeetingRooms.reduce((acc, room) => {
@@ -168,8 +172,8 @@ const BookMeetings = () => {
         const meetingReviews = Array.isArray(rawReview)
           ? rawReview
           : rawReview
-            ? [rawReview]
-            : [];
+          ? [rawReview]
+          : [];
 
         return (
           <div className="p-2 flex items-center gap-2">
@@ -192,8 +196,7 @@ const BookMeetings = () => {
           </div>
         );
       },
-    }
-
+    },
   ];
   // ------------------------------ API Integrations ------------------------------------//
 
@@ -230,7 +233,8 @@ const BookMeetings = () => {
         </h2>
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col items-center">
+          className="flex flex-col items-center"
+        >
           <div className="grid grid-cols-1 px-0 sm:grid-cols-1 md:grid-cols-2 md:px-0 sm:px-0 justify-center gap-4 mb-10 w-full">
             {/* Location Dropdown */}
             <Controller
@@ -255,7 +259,8 @@ const BookMeetings = () => {
                         (building) => building?._id === locationId
                       );
                       setSelectedUnitId(selectedLocation?._id || "");
-                    }}>
+                    }}
+                  >
                     <MenuItem value="" disabled>
                       {" "}
                       Seletc Location
@@ -282,7 +287,8 @@ const BookMeetings = () => {
                   select
                   disabled={!watchFields.location}
                   error={!!errors.meetingRoom}
-                  helperText={errors.meetingRoom?.message}>
+                  helperText={errors.meetingRoom?.message}
+                >
                   <MenuItem value="" disabled>
                     Select Room
                   </MenuItem>
@@ -291,22 +297,26 @@ const BookMeetings = () => {
                     .sort((a, b) => a.seats - b.seats)
                     .map((room) => (
                       <MenuItem key={room._id} value={room._id}>
-                        <div className="flex w-full items-center justify-between">
-                          <div className="flex items-center w-[30%] justify-between">
-                            <span>{room.name}</span>
-                            <div className="flex text-small gap-2 items-center py-1 px-2 rounded-full bg-primary bg-opacity-10 text-primary">
-                              <span>{room.seats}</span>
-                              {/* <MdEventSeat /> */}
-                              Seater
-                            </div>
+                        <div className="flex  items-center gap-6 w-80">
+                          <div className="flex text-content gap-2 items-center  rounded-full ">
+                            <span>{String(room.seats).padStart(2, "0")}</span>
+                            Seater
                           </div>
+                          -
+                          <div className="flex items-center w-fit justify-between">
+                            <span className="uppercase">{room.name}</span>
+                          </div>
+                          -
                           <div>
+                            <span>{room.location?.unitNo}</span>
+                          </div>
+                          {/* <div>
                             <div
                               className={` w-2 h-2 rounded-full  ${room.status === "Available"
                                 ? "bg-green-400"
                                 : "bg-red-600"
                                 }`}></div>
-                          </div>
+                          </div> */}
                         </div>
                       </MenuItem>
                     ))}
@@ -354,10 +364,12 @@ const BookMeetings = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add review"}>
+        title={"Add review"}
+      >
         <form
           onSubmit={reviewForm(submitReview)}
-          className="flex flex-col gap-4">
+          className="flex flex-col gap-4"
+        >
           <div className="flex gap-4 items-center">
             <span className="text-content">
               How was your meeting room experience ?
@@ -405,16 +417,27 @@ const BookMeetings = () => {
       >
         {selectedMeeting ? (
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-            <DetalisFormatted title="Agenda" detail={selectedMeeting?.agenda || "N/A"} />
-            <DetalisFormatted title="Date" detail={selectedMeeting?.date || "N/A"} />
-            <DetalisFormatted title="Room" detail={selectedMeeting?.roomName || "N/A"} />
-            <DetalisFormatted title="Location" detail={selectedMeeting?.location || "N/A"} />
+            <DetalisFormatted
+              title="Agenda"
+              detail={selectedMeeting?.agenda || "N/A"}
+            />
+            <DetalisFormatted
+              title="Date"
+              detail={selectedMeeting?.date || "N/A"}
+            />
+            <DetalisFormatted
+              title="Room"
+              detail={selectedMeeting?.roomName || "N/A"}
+            />
+            <DetalisFormatted
+              title="Location"
+              detail={selectedMeeting?.location || "N/A"}
+            />
           </div>
         ) : (
           <CircularProgress />
         )}
       </MuiModal>
-
     </div>
   );
 };

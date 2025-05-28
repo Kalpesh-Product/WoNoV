@@ -620,7 +620,7 @@ const MeetingDashboard = () => {
       widgets: [
         <DataCard
           title={"Total"}
-          data={totalDurationInHours}
+          data={totalDurationInHours.toFixed(0)}
           description={"Hours Booked"}
           route={"reports"}
         />,
