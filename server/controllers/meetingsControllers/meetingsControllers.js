@@ -13,6 +13,8 @@ const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const Visitor = require("../../models/visitor/Visitor");
 const Review = require("../../models/meetings/Reviews");
+const CoworkingClient = require("../../models/sales/CoworkingClient");
+const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 
 const addMeetings = async (req, res, next) => {
   const logPath = "meetings/MeetingLog";
@@ -23,10 +25,15 @@ const addMeetings = async (req, res, next) => {
     const {
       meetingType,
       bookedRoom,
+      receptionist,
+      bookedBy,
+      startDate,
+      endDate,
       startTime,
       endTime,
       subject,
       agenda,
+      client,
       internalParticipants,
       externalParticipants,
     } = req.body;
@@ -35,9 +42,27 @@ const addMeetings = async (req, res, next) => {
     const user = req.user;
     const ip = req.ip;
 
-    if (!meetingType || !startTime || !endTime || !subject || !agenda) {
+    if (
+      !meetingType ||
+      !startDate ||
+      !endDate ||
+      !startTime ||
+      !endTime ||
+      !subject ||
+      !agenda ||
+      !client
+    ) {
       throw new CustomError(
         "Missing required fields",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(client)) {
+      throw new CustomError(
+        "Invalid client Id provided",
         logPath,
         logAction,
         logSourceKey
@@ -53,11 +78,17 @@ const addMeetings = async (req, res, next) => {
       );
     }
 
-    const currDate = new Date();
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
     const startTimeObj = new Date(startTime);
     const endTimeObj = new Date(endTime);
 
-    if (isNaN(startTimeObj.getTime()) || isNaN(endTimeObj.getTime())) {
+    if (
+      isNaN(startDateObj.getTime()) ||
+      isNaN(endDateObj.getTime()) ||
+      isNaN(startTimeObj.getTime()) ||
+      isNaN(endTimeObj.getTime())
+    ) {
       throw new CustomError(
         "Invalid date format",
         logPath,
@@ -82,6 +113,8 @@ const addMeetings = async (req, res, next) => {
 
     let internalUsers = [];
     let externalUsers = [];
+    let users = [];
+    let isClient = company.toString() !== client.toString();
 
     if (internalParticipants) {
       const invalidIds = internalParticipants.filter(
@@ -97,10 +130,19 @@ const addMeetings = async (req, res, next) => {
         );
       }
 
-      const users = await User.find({ _id: { $in: internalParticipants } });
+      if (isClient) {
+        users = await CoworkingMembers.find({
+          _id: { $in: internalParticipants },
+        });
+      } else {
+        users = await User.find({ _id: { $in: internalParticipants } });
+      }
 
       const unmatchedIds = internalParticipants.filter(
-        (id) => !users.find((user) => user._id.toString() === id)
+        (id) =>
+          !users.find((user) => {
+            return user._id.toString() === id.toString();
+          })
       );
 
       if (unmatchedIds.length > 0) {
@@ -187,6 +229,10 @@ const addMeetings = async (req, res, next) => {
 
     const conflictingMeeting = await Meeting.findOne({
       bookedRoom: roomAvailable._id,
+      // First, check if dates overlap
+      startDate: { $lte: endDateObj },
+      endDate: { $gte: startDateObj },
+      // Then check time overlap within those dates
       $or: [
         {
           $and: [
@@ -220,16 +266,20 @@ const addMeetings = async (req, res, next) => {
 
     const meeting = new Meeting({
       meetingType,
-      bookedBy: user,
-      startDate: startTimeObj,
-      endDate: endTimeObj,
+      bookedBy,
+      receptionist,
+      startDate: startDateObj,
+      endDate: endDateObj,
       startTime: startTimeObj,
       endTime: endTimeObj,
       bookedRoom: roomAvailable._id,
       subject,
       agenda,
+      client,
       company,
-      internalParticipants: internalParticipants ? internalUsers : [],
+      internalParticipants:
+        internalParticipants && !isClient ? internalUsers : [],
+      clientParticipants: internalParticipants && isClient ? internalUsers : [],
       externalParticipants: externalParticipants ? externalUsers : [],
     });
 
@@ -237,24 +287,9 @@ const addMeetings = async (req, res, next) => {
     emitter.emit("meeting-creation", {
       roomId: roomAvailable._id.toString(),
       meetingId: meeting._id.toString(),
-      startTime: startTimeObj,
-      endTime: endTimeObj,
+      startTime: startDateObj,
+      endTime: endDateObj,
     });
-
-    const data = {
-      meetingType,
-      bookedBy: user,
-      bookedRoom: bookedRoom,
-      startDate: startTimeObj,
-      endDate: endTimeObj,
-      startTime: startTimeObj,
-      endTime: endTimeObj,
-      subject,
-      agenda,
-      company,
-      internalParticipants,
-      externalParticipants,
-    };
 
     await createLog({
       path: logPath,
@@ -266,7 +301,7 @@ const addMeetings = async (req, res, next) => {
       company: company,
       sourceKey: logSourceKey,
       sourceId: meeting._id,
-      changes: data,
+      changes: meeting,
     });
 
     return res.status(201).json({
@@ -353,11 +388,12 @@ const getMeetings = async (req, res, next) => {
           },
         },
       })
-      .populate([
-        { path: "bookedBy", select: "firstName lastName" },
-        { path: "internalParticipants", select: "firstName lastName email" },
-        { path: "externalParticipants", select: "firstName lastName email" },
-      ]);
+      .populate("bookedBy", "firstName lastName")
+      .populate("receptionist", "firstName lastName")
+      .populate("client", "clientName")
+      .populate("internalParticipants", "firstName lastName email")
+      .populate("clientParticipants", "employeeName email")
+      .populate("externalParticipants", "firstName lastName email");
 
     const departments = await User.findById({ _id: user }).select(
       "departments"
@@ -378,11 +414,15 @@ const getMeetings = async (req, res, next) => {
     const internalParticipants = meetings.map((meeting) =>
       meeting.internalParticipants.map((participant) => participant)
     );
+    const clientParticipants = meetings.map((meeting) =>
+      meeting.clientParticipants.map((participant) => participant)
+    );
 
     const transformedMeetings = meetings.map((meeting, index) => {
       let totalParticipants = [];
       if (
         internalParticipants[index].length &&
+        clientParticipants[index].length &&
         meeting.externalParticipants.length
       ) {
         totalParticipants = [
@@ -395,16 +435,32 @@ const getMeetings = async (req, res, next) => {
         (review) => review.meeting.toString() === meeting._id.toString()
       );
 
+      const isClient = meeting.client ? true : false;
+
+      const receptionist = meeting.receptionist
+        ? [
+            meeting.receptionist.firstName,
+            meeting.receptionist.middleName,
+            meeting.receptionist.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "";
+
       return {
         _id: meeting._id,
         name: meeting.bookedBy?.name,
+        receptionist: receptionist,
+        bookedBy: { ...meeting.bookedBy },
         department: department.name,
         roomName: meeting.bookedRoom.name,
         bookedBy: meeting.bookedBy,
         location: meeting.bookedRoom.location,
+        client: isClient ? meeting.client.clientName : "BIZ Nest",
         meetingType: meeting.meetingType,
         housekeepingStatus: meeting.houeskeepingStatus,
         date: meeting.startDate,
+        endDate: meeting.endDate,
         startTime: meeting.startTime,
         endTime: meeting.endTime,
         credits: meeting.credits,
@@ -419,6 +475,8 @@ const getMeetings = async (req, res, next) => {
             ? totalParticipants
             : internalParticipants[index].length > 0
             ? internalParticipants[index]
+            : clientParticipants[index].length > 0
+            ? clientParticipants[index]
             : meeting.externalParticipants,
         reviews: meetingReviews ? meetingReviews : [],
         company: meeting.company,

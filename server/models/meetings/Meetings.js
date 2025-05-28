@@ -6,6 +6,10 @@ const meetingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
     },
+    receptionist: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
     bookedRoom: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Room",
@@ -37,6 +41,27 @@ const meetingSchema = new mongoose.Schema(
         ref: "UserData",
       },
     ],
+    clientParticipants: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "CoworkingMember",
+      },
+    ],
+    // internalParticipants: [
+    //   {
+    //     participantId: {
+    //       type: mongoose.Schema.Types.ObjectId,
+    //       required: true,
+    //       refPath: "participants.participantModel", // Dynamic reference
+    //     },
+    //     participantModel: {
+    //       type: String,
+    //       required: true,
+    //       enum: ["UserData", "CoworkingMember"], // Allowed models
+    //     },
+    //   },
+    // ],
+
     externalParticipants: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -59,6 +84,10 @@ const meetingSchema = new mongoose.Schema(
       type: String,
       default: "Upcoming",
       enum: ["Upcoming", "Ongoing", "Completed", "Extended", "Cancelled"],
+    },
+    client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CoworkingClient",
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,
