@@ -129,7 +129,6 @@ const raiseTicket = async (req, res, next) => {
         (ticketIssue) => ticketIssue._id.toString() === title
       );
 
-      ticketTitle = foundIssue ? foundIssue.title : "";
       if (!foundIssue) {
         throw new CustomError(
           "Issue not found",
@@ -138,6 +137,7 @@ const raiseTicket = async (req, res, next) => {
           logSourceKey
         );
       }
+      ticketTitle = foundIssue.title;
     }
 
     // Handle "Other" ticket issue case
@@ -1410,26 +1410,62 @@ const getOtherTickets = async (req, res, next) => {
       return res.status(200).json([]);
     }
 
+    const departmentId = new mongoose.Types.ObjectId(department);
     // Fetch the company's selected departments with ticket issues
-    const foundCompany = await Company.findOne({ _id: company })
-      .select("selectedDepartments")
-      .lean()
-      .exec();
+    const foundCompany = await Company.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(company),
+        },
+      },
+      {
+        $project: {
+          selectedDepartments: {
+            $filter: {
+              input: "$selectedDepartments",
+              as: "dept",
+              cond: {
+                $eq: [
+                  "$$dept.department",
+                  new mongoose.Types.ObjectId(departmentId),
+                ],
+              },
+            },
+          },
+        },
+      },
+    ]);
 
     if (!foundCompany) {
-      return res.status(400).josn({ message: "Company not found" });
+      return res.status(400).json({ message: "Company not found" });
     }
 
+    const companyDepts = foundCompany[0].selectedDepartments;
+    console.log("company", companyDepts);
     // Extract the ticket priority from the company's selected departments
+    // const updatedTickets = tickets.filter((ticket) => {
+    //   const isNotFoundInAnyDepartment = companyDepts.every((dept) =>
+    //     dept.ticketIssues.some((issue) => {
+    //       console.log(issue.title, "==", ticket.ticket);
+    //       return issue.title !== ticket.ticket;
+    //     })
+    //   );
+    //   return isNotFoundInAnyDepartment;
+    // });
+
+    // const updatedTickets = tickets.filter((ticket) => {
+    //   const isTicketFound = companyDepts.some((dept) =>
+    //     dept.ticketIssues.some((issue) => issue.title === ticket.ticket)
+    //   );
+    //   return !isTicketFound; // keep only those not found in any department
+    // });
+
     const updatedTickets = tickets.filter((ticket) => {
-      const isNotFoundInAnyDepartment = foundCompany.selectedDepartments.every(
-        (dept) =>
-          dept.ticketIssues.every((issue) => {
-            console.log(issue.title, "==", ticket.ticket);
-            return issue.title !== ticket.ticket;
-          })
-      );
-      return isNotFoundInAnyDepartment;
+      const isTicketFoundInAnyDept = companyDepts.some((dept) => {
+        console.log(dept);
+        return dept.ticketIssues.some((issue) => issue.title !== ticket.ticket);
+      });
+      return !isTicketFoundInAnyDept;
     });
 
     return res.status(200).json(updatedTickets);
