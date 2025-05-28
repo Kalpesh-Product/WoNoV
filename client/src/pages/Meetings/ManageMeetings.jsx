@@ -535,10 +535,10 @@ const ManageMeetings = () => {
               title={"House Keeping Status"}
               detail={selectedMeeting?.housekeepingStatus}
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title={"Department"}
               detail={selectedMeeting?.department}
-            />
+            /> */}
           </div>
         )}
         {modalMode === "cancel" && (
