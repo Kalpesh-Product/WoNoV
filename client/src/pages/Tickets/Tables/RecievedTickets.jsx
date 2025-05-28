@@ -12,6 +12,7 @@ import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import humanDate from "../../../utils/humanDateForamt";
 
 const RecievedTickets = ({ title }) => {
   const [open, setOpen] = useState(false);
@@ -319,7 +320,7 @@ const RecievedTickets = ({ title }) => {
             />
             <DetalisFormatted
               title="Created At"
-              detail={new Date(selectedTicket.raisedDate).toLocaleString()}
+              detail={humanDate(new Date(selectedTicket.raisedDate))}
             />
             {selectedTicket.image && (
               <div className="lg:col-span-2">

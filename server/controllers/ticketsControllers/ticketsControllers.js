@@ -1235,7 +1235,8 @@ const fetchFilteredTickets = async (req, res, next) => {
         filteredTickets = await filterAcceptedAssignedTickets(
           user,
           roles,
-          userDepartments
+          userDepartments,
+          company
         );
 
         break;
@@ -1243,21 +1244,24 @@ const fetchFilteredTickets = async (req, res, next) => {
         filteredTickets = await filterAcceptedTickets(
           user,
           roles,
-          userDepartments
+          userDepartments,
+          company
         );
         break;
       case "assign":
         filteredTickets = await filterAssignedTickets(
           user,
           roles,
-          userDepartments
+          userDepartments,
+          company
         );
         break;
       case "support":
         filteredTickets = await filterSupportTickets(
           user,
           roles,
-          userDepartments
+          userDepartments,
+          company
         );
         break;
       case "escalate":
@@ -1267,7 +1271,8 @@ const fetchFilteredTickets = async (req, res, next) => {
         filteredTickets = await filterCloseTickets(
           user,
           roles,
-          userDepartments
+          userDepartments,
+          company
         );
         break;
 
