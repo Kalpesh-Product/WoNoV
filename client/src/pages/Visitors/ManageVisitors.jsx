@@ -14,6 +14,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { queryClient } from "../../main";
 import { toast } from "sonner";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const ManageVisitors = () => {
   const axios = useAxiosPrivate();
@@ -85,7 +86,7 @@ const ManageVisitors = () => {
   });
 
   const visitorsColumns = [
-    { field: "srNo", headerName: "Sr No",sort:"desc" },
+    { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "firstName", headerName: "First Name" },
     { field: "lastName", headerName: "Last Name" },
     { field: "email", headerName: "Email" },
@@ -98,13 +99,14 @@ const ManageVisitors = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <div className="p-2">
-          <PrimaryButton
-            title={"View"}
-            handleSubmit={() => {
-              handleDetailsClick({ ...params.data });
-            }}
-          />
+        <div
+          role="button"
+          onClick={() => {
+            handleDetailsClick({ ...params.data });
+          }}
+          className="p-2 rouned-full hover:bg-borderGray"
+        >
+          <MdOutlineRemoveRedEye />
         </div>
       ),
     },
@@ -326,6 +328,7 @@ const ManageVisitors = () => {
                           label="Checkout Time"
                           value={field.value ? dayjs(field.value) : null}
                           onChange={field.onChange}
+                          slotProps={{ textField: { size: "small" } }}
                           renderInput={(params) => (
                             <TextField {...params} size="small" fullWidth />
                           )}
