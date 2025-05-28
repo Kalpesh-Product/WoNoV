@@ -77,7 +77,7 @@ const visitorSchema = new mongoose.Schema(
     },
     visitorCompany: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "ExternalClient",
+      ref: "ExternalCompany",
     },
   },
   { timestamps: true }
