@@ -299,6 +299,10 @@ const getKraKpaTasks = async (req, res, next) => {
           select: "",
           populate: [{ path: "department", select: "name" }],
         },
+        {
+          path: "completedBy",
+          select: "firstName middleName lastName empId",
+        },
       ])
       .select("-company");
 

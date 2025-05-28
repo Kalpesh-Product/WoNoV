@@ -388,12 +388,14 @@ const getMeetings = async (req, res, next) => {
           },
         },
       })
-      .populate("bookedBy", "firstName lastName")
-      .populate("receptionist", "firstName lastName")
-      .populate("client", "clientName")
-      .populate("internalParticipants", "firstName lastName email")
-      .populate("clientParticipants", "employeeName email")
-      .populate("externalParticipants", "firstName lastName email");
+      .populate([
+        { path: "bookedBy", select: "firstName lastName" },
+        { path: "receptionist", select: "firstName lastName" },
+        { path: "client", select: "clientName" },
+        { path: "internalParticipants", select: "firstName lastName email" },
+        { path: "clientParticipants", select: "employeeName email" },
+        { path: "externalParticipants", select: "firstName lastName email" },
+      ]);
 
     const departments = await User.findById({ _id: user }).select(
       "departments"
@@ -451,10 +453,12 @@ const getMeetings = async (req, res, next) => {
         _id: meeting._id,
         name: meeting.bookedBy?.name,
         receptionist: receptionist,
+        bookedBy: { ...meeting.bookedBy },
         department: department.name,
         roomName: meeting.bookedRoom.name,
+        bookedBy: meeting.bookedBy,
         location: meeting.bookedRoom.location,
-        client: isClient ? meeting.client.clientName : company,
+        client: isClient ? meeting.client.clientName : "BIZ Nest",
         meetingType: meeting.meetingType,
         housekeepingStatus: meeting.houeskeepingStatus,
         date: meeting.startDate,

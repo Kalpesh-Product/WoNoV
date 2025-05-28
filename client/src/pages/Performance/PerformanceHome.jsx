@@ -49,7 +49,6 @@ const PerformanceHome = () => {
     },
     { headerName: "Daily KRA", field: "dailyKra" },
     { headerName: "Monthly KPA", field: "monthlyKpa" },
-    { headerName: "Annual KPA", field: "annualKpa" },
   ];
   return (
     <div className="flex flex-col gap-4">
