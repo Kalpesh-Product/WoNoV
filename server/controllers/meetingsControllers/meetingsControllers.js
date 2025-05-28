@@ -25,7 +25,6 @@ const addMeetings = async (req, res, next) => {
     const {
       meetingType,
       bookedRoom,
-      receptionist,
       bookedBy,
       startDate,
       endDate,
@@ -34,6 +33,7 @@ const addMeetings = async (req, res, next) => {
       subject,
       agenda,
       client,
+      externalCompany,
       internalParticipants,
       externalParticipants,
     } = req.body;
@@ -50,7 +50,9 @@ const addMeetings = async (req, res, next) => {
       !endTime ||
       !subject ||
       !agenda ||
-      !client
+      (meetingType === "Internal" && !bookedBy) ||
+      (meetingType === "Internal" && !client) ||
+      (meetingType === "External" && !externalCompany)
     ) {
       throw new CustomError(
         "Missing required fields",
@@ -60,9 +62,18 @@ const addMeetings = async (req, res, next) => {
       );
     }
 
-    if (!mongoose.Types.ObjectId.isValid(client)) {
+    if (client && !mongoose.Types.ObjectId.isValid(client)) {
       throw new CustomError(
         "Invalid client Id provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (externalCompany && !mongoose.Types.ObjectId.isValid(externalCompany)) {
+      throw new CustomError(
+        "Invalid external company Id provided",
         logPath,
         logAction,
         logSourceKey
@@ -112,9 +123,9 @@ const addMeetings = async (req, res, next) => {
     }
 
     let internalUsers = [];
-    let externalUsers = [];
+    // let externalUsers = [];
     let users = [];
-    let isClient = company.toString() !== client.toString();
+    let isClient = client ? company.toString() !== client.toString() : false;
 
     if (internalParticipants) {
       const invalidIds = internalParticipants.filter(
@@ -156,76 +167,76 @@ const addMeetings = async (req, res, next) => {
 
       internalUsers = users.map((user) => user._id);
     }
-    if (externalParticipants) {
-      // const {
-      //   companyName,
-      //   registeredCompanyName,
-      //   companyURL,
-      //   email,
-      //   mobileNumber,
-      //   gstNumber,
-      //   panNumber,
-      //   address,
-      //   personName,
-      // } = externalCompanyData;
+    // if (externalParticipants) {
+    //   // const {
+    //   //   companyName,
+    //   //   registeredCompanyName,
+    //   //   companyURL,
+    //   //   email,
+    //   //   mobileNumber,
+    //   //   gstNumber,
+    //   //   panNumber,
+    //   //   address,
+    //   //   personName,
+    //   // } = externalCompanyData;
 
-      // if (!companyName || !email || !mobileNumber || !personName) {
-      //   throw new CustomError(
-      //     "Missing required fields for external participants",
-      //     logPath,
-      //     logAction,
-      //     logSourceKey
-      //   );
-      // }
+    //   // if (!companyName || !email || !mobileNumber || !personName) {
+    //   //   throw new CustomError(
+    //   //     "Missing required fields for external participants",
+    //   //     logPath,
+    //   //     logAction,
+    //   //     logSourceKey
+    //   //   );
+    //   // }
 
-      // const newExternalCompany = new ExternalCompany({
-      //   companyName,
-      //   registeredCompanyName,
-      //   companyURL,
-      //   email,
-      //   mobileNumber,
-      //   gstNumber: gstNumber,
-      //   panNumber: panNumber,
-      //   address: address || "",
-      //   personName,
-      // });
+    //   // const newExternalCompany = new ExternalCompany({
+    //   //   companyName,
+    //   //   registeredCompanyName,
+    //   //   companyURL,
+    //   //   email,
+    //   //   mobileNumber,
+    //   //   gstNumber: gstNumber,
+    //   //   panNumber: panNumber,
+    //   //   address: address || "",
+    //   //   personName,
+    //   // });
 
-      // const savedExternalCompany = await newExternalCompany.save();
+    //   // const savedExternalCompany = await newExternalCompany.save();
 
-      // externalClientData = {
-      //   participants: [...externalParticipants],
-      //   company: savedExternalCompany._id,
-      // };
-      const invalidIds = externalParticipants.filter(
-        (id) => !mongoose.Types.ObjectId.isValid(id)
-      );
+    //   // externalClientData = {
+    //   //   participants: [...externalParticipants],
+    //   //   company: savedExternalCompany._id,
+    //   // };
+    //   // const invalidIds = externalParticipants.filter(
+    //   //   (id) => !mongoose.Types.ObjectId.isValid(id)
+    //   // );
 
-      if (invalidIds.length > 0) {
-        throw new CustomError(
-          "Invalid internal participant IDs",
-          logPath,
-          logAction,
-          logSourceKey
-        );
-      }
+    //   // if (invalidIds.length > 0) {
+    //   //   throw new CustomError(
+    //   //     "Invalid internal participant IDs",
+    //   //     logPath,
+    //   //     logAction,
+    //   //     logSourceKey
+    //   //   );
+    //   // }
 
-      const users = await Visitor.find({ _id: { $in: externalParticipants } });
+    //   // const users = await Visitor.find({ _id: { $in: externalParticipants } });
 
-      const unmatchedIds = externalParticipants.filter(
-        (id) => !users.find((user) => user._id.toString() === id)
-      );
+    //   // const unmatchedIds = externalParticipants.filter(
+    //   //   (id) => !users.find((user) => user._id.toString() === id)
+    //   // );
 
-      if (unmatchedIds.length > 0) {
-        throw new CustomError(
-          "Some external participant IDs did not match any user",
-          logPath,
-          logAction,
-          logSourceKey
-        );
-      }
+    //   // if (unmatchedIds.length > 0) {
+    //   //   throw new CustomError(
+    //   //     "Some external participant IDs did not match any user",
+    //   //     logPath,
+    //   //     logAction,
+    //   //     logSourceKey
+    //   //   );
+    //   // }
 
-      externalUsers = users.map((user) => user._id);
-    }
+    //   // externalUsers = users.map((user) => user._id);
+    // }
 
     const conflictingMeeting = await Meeting.findOne({
       bookedRoom: roomAvailable._id,
@@ -267,7 +278,7 @@ const addMeetings = async (req, res, next) => {
     const meeting = new Meeting({
       meetingType,
       bookedBy,
-      receptionist,
+      receptionist: user,
       startDate: startDateObj,
       endDate: endDateObj,
       startTime: startTimeObj,
@@ -275,12 +286,13 @@ const addMeetings = async (req, res, next) => {
       bookedRoom: roomAvailable._id,
       subject,
       agenda,
-      client,
+      client: meetingType === "Internal" ? client : null,
+      externalClient: meetingType === "External" ? externalCompany : null,
       company,
       internalParticipants:
         internalParticipants && !isClient ? internalUsers : [],
       clientParticipants: internalParticipants && isClient ? internalUsers : [],
-      externalParticipants: externalParticipants ? externalUsers : [],
+      externalParticipants: externalParticipants ? externalParticipants : [],
     });
 
     await meeting.save();
@@ -392,6 +404,7 @@ const getMeetings = async (req, res, next) => {
         { path: "bookedBy", select: "firstName lastName" },
         { path: "receptionist", select: "firstName lastName" },
         { path: "client", select: "clientName" },
+        { path: "externalClient", select: "companyName pocName" },
         { path: "internalParticipants", select: "firstName lastName email" },
         { path: "clientParticipants", select: "employeeName email" },
         { path: "externalParticipants", select: "firstName lastName email" },
@@ -458,7 +471,13 @@ const getMeetings = async (req, res, next) => {
         roomName: meeting.bookedRoom.name,
         bookedBy: meeting.bookedBy,
         location: meeting.bookedRoom.location,
-        client: isClient ? meeting.client.clientName : "BIZ Nest",
+        client:
+          isClient && meeting.externalClient
+            ? meeting.client.clientName
+            : "BIZ Nest",
+        externalClient: meeting.externalClient
+          ? meeting.externalClient.companyName
+          : "BIZ Nest",
         meetingType: meeting.meetingType,
         housekeepingStatus: meeting.houeskeepingStatus,
         date: meeting.startDate,

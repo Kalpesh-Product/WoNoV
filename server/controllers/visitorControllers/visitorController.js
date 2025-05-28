@@ -74,7 +74,7 @@ const fetchVisitors = async (req, res, next) => {
           },
           {
             path: "visitorCompany",
-            select: "companyName",
+            select: "companyName pocName",
           },
         ]);
     }
