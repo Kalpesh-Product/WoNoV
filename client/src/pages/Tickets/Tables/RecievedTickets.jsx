@@ -12,6 +12,7 @@ import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import humanDate from "../../../utils/humanDateForamt";
 
 const RecievedTickets = ({ title }) => {
   const [open, setOpen] = useState(false);
@@ -32,7 +33,6 @@ const RecievedTickets = ({ title }) => {
     setSelectedTicket(ticket);
     setOpenView(true);
   };
-  console.log("SELECTED TICKET", selectedTicket);
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["tickets"],
@@ -260,7 +260,7 @@ const RecievedTickets = ({ title }) => {
                     },
                     {
                       label: "Reject",
-                      onClick: () => handleRejectClick(params.data), // opens modal instead
+                      onClick: () => rejectMutate(params.data), // opens modal instead
                     },
                   ]
                 : []),
@@ -320,7 +320,7 @@ const RecievedTickets = ({ title }) => {
             />
             <DetalisFormatted
               title="Created At"
-              detail={new Date(selectedTicket.raisedDate).toLocaleString()}
+              detail={humanDate(new Date(selectedTicket.raisedDate))}
             />
             {selectedTicket.image && (
               <div className="lg:col-span-2">

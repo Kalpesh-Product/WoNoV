@@ -789,11 +789,9 @@ const getAssignees = async (req, res, next) => {
       return res.status(400).json({ message: "No assigness found" });
     }
 
-    const assignees = team.filter((member) =>
-      member.role.some((role) => !role.roleTitle.endsWith("Admin"))
-    );
 
-    const transformAssignees = assignees.map((assignee) => {
+
+    const transformAssignees = team.map((assignee) => {
       return {
         id: assignee._id,
         name: `${assignee.firstName} ${assignee.lastName}`,

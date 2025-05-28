@@ -16,6 +16,8 @@ import useAuth from "../../../hooks/useAuth";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
 import { FaCheck } from "react-icons/fa6";
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
 
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
@@ -23,7 +25,7 @@ const PerformanceKra = () => {
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
-  const [selectedKra, setSelectedKra] = useState(null)
+  const [selectedKra, setSelectedKra] = useState(null);
 
   const {
     handleSubmit: submitDailyKra,
@@ -36,7 +38,6 @@ const PerformanceKra = () => {
     },
   });
 
-
   //--------------POST REQUEST FOR DAILY KRA-----------------//
   const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
     mutationKey: ["addDailyKra"],
@@ -46,6 +47,7 @@ const PerformanceKra = () => {
         taskType: "KRA",
         // description: data.description,
         department: deptId,
+        assignedDate: data.assignedDate,
       });
       return response.data;
     },
@@ -62,21 +64,22 @@ const PerformanceKra = () => {
     addDailyKra(data);
   };
 
-
-  const {mutate : updateDailyKra, isPending : isUpdatePending} = useMutation({
+  const { mutate: updateDailyKra, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateDailyKra"],
-    mutationFn: async (data) =>{
-      const response = await axios.patch(`/api/performance/update-task-status/${data}`)
-      return response.data
+    mutationFn: async (data) => {
+      const response = await axios.patch(
+        `/api/performance/update-task-status/${data}`
+      );
+      return response.data;
     },
-    onSuccess: (data) =>{
-      queryClient.invalidateQueries({queryKey:["fetchedDepartments"]})
-      toast.success(data.message || "DATA UPDATED")
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["fetchedDepartments"] });
+      toast.success(data.message || "DATA UPDATED");
     },
-    onError: (error) =>{
-      toast.error(error.message || "Error Updating")
-    }
-  })
+    onError: (error) => {
+      toast.error(error.message || "Error Updating");
+    },
+  });
 
   //--------------POST REQUEST FOR DAILY KRA-----------------//
 
@@ -94,9 +97,9 @@ const PerformanceKra = () => {
     queryKey: ["fetchedDepartments"],
     queryFn: fetchDepartments,
   });
-  const completedEntries = departmentLoading ? [] : departmentKra.filter(
-    (item) => item.status === "Completed"
-  );
+  const completedEntries = departmentLoading
+    ? []
+    : departmentKra.filter((item) => item.status === "Completed");
 
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
@@ -132,19 +135,31 @@ const PerformanceKra = () => {
         );
       },
     },
-    {headerName : "Actions", field : "actions", cellRenderer : (params)=>{
-      return(
-        <div role="button" onClick={()=>updateDailyKra(params.data.id)} className="p-2">
-          <PrimaryButton title={<FaCheck />} />
-        </div>
-      )
-    }}
+    {
+      headerName: "Actions",
+      field: "actions",
+      cellRenderer: (params) => {
+        return (
+          <div
+            role="button"
+            onClick={() => updateDailyKra(params.data.id)}
+            className="p-2"
+          >
+            <PrimaryButton
+              title={<FaCheck />}
+              disabled={!params.node.selected}
+            />
+          </div>
+        );
+      },
+    },
   ];
   const completedColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort:'desc' },
+    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "KRA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "DueTime", field: "dueDate" },
+    { headerName: "Completed By", field: "completedBy" },
     {
       field: "status",
       headerName: "Status",
@@ -174,13 +189,6 @@ const PerformanceKra = () => {
         );
       },
     },
-    {headerName : "Actions", field : "actions", cellRenderer : (params)=>{
-      return(
-        <div role="button" onClick={()=>updateDailyKra(params.data.id)} className="p-2">
-          <PrimaryButton title={<FaCheck />} />
-        </div>
-      )
-    }}
   ];
   return (
     <>
@@ -197,7 +205,7 @@ const PerformanceKra = () => {
                 .filter((item) => item.status !== "Completed")
                 .map((item, index) => ({
                   srno: index + 1,
-                  id : item.id,
+                  id: item.id,
                   taskName: item.taskName,
                   assignedDate: item.assignedDate,
                   dueDate: item.dueDate,
@@ -219,15 +227,16 @@ const PerformanceKra = () => {
               formatTime
               tableTitle={`COMPLETED - DAILY KRA`}
               checkAll={false}
-              data={(completedEntries)
+              data={completedEntries
                 .filter((item) => item.status === "Completed")
                 .map((item, index) => ({
                   srno: index + 1,
-                  id : item.id,
+                  id: item.id,
                   taskName: item.taskName,
                   assignedDate: item.assignedDate,
                   dueDate: item.dueDate,
                   status: item.status,
+                  completedBy: item.completedBy,
                 }))}
               dateColumn={"dueDate"}
               columns={completedColumns}
@@ -261,6 +270,29 @@ const PerformanceKra = () => {
                 fullWidth
                 error={!!errors?.dailyKra?.message}
                 helperText={errors?.dailyKra?.message}
+              />
+            )}
+          />
+
+          <Controller
+            name="assignedDate"
+            control={control}
+            rules={{ required: "Assinged Date Is Required" }}
+            render={({ field, fieldState: { error } }) => (
+              <DatePicker
+                label="Assigned Date"
+                value={field.value ? dayjs(field.value) : null}
+                onChange={(date) =>
+                  field.onChange(date ? date.toISOString() : null)
+                }
+                slotProps={{
+                  textField: {
+                    size: "small",
+                    fullWidth: true,
+                    error: !!error,
+                    helperText: error?.message,
+                  },
+                }}
               />
             )}
           />
