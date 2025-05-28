@@ -200,7 +200,7 @@ const updateTaskStatus = async (req, res, next) => {
 
     const newKraKpaTask = new kraKpaTask({
       task: taskId,
-      assignedTo: user,
+      completedBy: user,
       status: "Completed",
       completionDate,
       company,
@@ -273,10 +273,7 @@ const getKraKpaTasks = async (req, res, next) => {
           },
         },
       })
-      .populate([
-        { path: "department", select: "name" },
-        { path: "assignedBy", select: "firstName middleName lastName" },
-      ])
+      .populate([{ path: "department", select: "name" }])
       .select("-company");
 
     const transformedTasks = tasks
@@ -284,24 +281,12 @@ const getKraKpaTasks = async (req, res, next) => {
         return task.taskType === type;
       })
       .map((task) => {
-        const assignedBy = `${task.assignedBy.firstName} ${
-          task.assignedBy.middleName || ""
-        } ${task.assignedBy.lastName}`;
-
-        // const assignee = `${task.assignedTo.firstName} ${
-        //   task.assignedTo.middleName || ""
-        // } ${task.assignedTo.lastName}`;
-
         return {
           id: task._id,
           taskName: task.task,
-          // description: task.description,
-          assignedBy: assignedBy.trim(),
-          // assignedTo: assignee.trim(),
           dueDate: task.dueDate,
           assignedDate: task.assignedDate,
           dueTime: "6:30 PM",
-          // completionDate: task.completionDate ? task.completionDate : "N/A",
           status: task.status ? task.status : "Pending",
         };
       });
@@ -312,52 +297,41 @@ const getKraKpaTasks = async (req, res, next) => {
         {
           path: "task",
           select: "",
-          populate: [
-            { path: "department", select: "name" },
-            {
-              path: "assignedBy",
-              select: "firstName middleName lastName",
-            },
-          ],
-        },
-        {
-          path: "assignedTo",
-          select: "firstName middleName lastName empId",
+          populate: [{ path: "department", select: "name" }],
         },
       ])
       .select("-company");
 
-    const transformedCompletedTasks = completedTasks
-      .filter((task) => {
-        if (duration && duration !== task.task.kpaDuration) return;
-        if (empId && task.assignedTo.empId !== empId) return;
-        return (
-          task.task.department._id.toString() === dept &&
-          task.task.taskType === type
-        );
-      })
-      .map((task) => {
-        const assignedBy = `${task.task.assignedBy.firstName} ${
-          task.task.assignedBy.middleName || ""
-        } ${task.task.assignedBy.lastName}`;
+    const transformedCompletedTasks =
+      completedTasks.length < 0
+        ? []
+        : completedTasks
+            .filter((task) => {
+              if (duration && duration !== task.task.kpaDuration) return;
+              if (empId && task.assignedTo.empId !== empId) return;
+              return (
+                task.task.department._id.toString() === dept &&
+                task.task.taskType === type
+              );
+            })
+            .map((task) => {
+              const completedBy = `${task.assignedTo.firstName} ${
+                task.assignedTo.middleName || ""
+              } ${task.assignedTo.lastName}`;
 
-        const completedBy = `${task.assignedTo.firstName} ${
-          task.assignedTo.middleName || ""
-        } ${task.assignedTo.lastName}`;
-
-        return {
-          id: task._id,
-          taskName: task.task.task,
-          // description: task.task.description,
-          assignedBy: assignedBy.trim(),
-          completedBy: completedBy,
-          assignedDate: task.task.assignedDate,
-          dueDate: task.task.dueDate,
-          dueTime: "6:30 PM",
-          completionDate: task.completionDate ? task.completionDate : "N/A",
-          status: task.status,
-        };
-      });
+              return {
+                id: task._id,
+                taskName: task.task.task,
+                completedBy: completedBy,
+                assignedDate: task.task.assignedDate,
+                dueDate: task.task.dueDate,
+                dueTime: "6:30 PM",
+                completionDate: task.completionDate
+                  ? task.completionDate
+                  : "N/A",
+                status: task.status,
+              };
+            });
 
     const allTasks = [...transformedTasks, ...transformedCompletedTasks];
 
@@ -439,10 +413,6 @@ const getMyKraKpaTasks = async (req, res, next) => {
         );
       })
       .map((task) => {
-        const assignedBy = `${task.assignedBy.firstName} ${
-          task.assignedBy.middleName || ""
-        } ${task.assignedBy.lastName}`;
-
         // const assignee = `${task.assignedTo.firstName} ${
         //   task.assignedTo.middleName || ""
         // } ${task.assignedTo.lastName}`;
@@ -450,9 +420,6 @@ const getMyKraKpaTasks = async (req, res, next) => {
         return {
           id: task._id,
           taskName: task.task,
-          // description: task.description,
-          assignedBy: assignedBy.trim(),
-          // assignedTo: assignee.trim(),
           assignedDate: task.assignedDate,
           dueDate: task.dueDate,
           dueTime: "6:30 PM",
@@ -485,13 +452,7 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
         {
           path: "task",
           select: "",
-          populate: [
-            { path: "department", select: "name" },
-            {
-              path: "assignedBy",
-              select: "firstName middleName lastName",
-            },
-          ],
+          populate: [{ path: "department", select: "name" }],
         },
         {
           path: "assignedTo",
@@ -510,10 +471,6 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
         );
       })
       .map((task) => {
-        const assignedBy = `${task.task.assignedBy.firstName} ${
-          task.task.assignedBy.middleName || ""
-        } ${task.task.assignedBy.lastName}`;
-
         const completedBy = `${task.assignedTo.firstName} ${
           task.assignedTo.middleName || ""
         } ${task.assignedTo.lastName}`;
@@ -521,8 +478,6 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
         return {
           id: task._id,
           taskName: task.task.task,
-          // description: task.task.description,
-          assignedBy: assignedBy.trim(),
           completedBy: completedBy,
           assignedDate: task.task.assignedDate,
           dueDate: task.task.dueDate,

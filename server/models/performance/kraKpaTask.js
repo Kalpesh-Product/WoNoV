@@ -10,7 +10,7 @@ const kraKpaTasksSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
     },
-    assignedTo: {
+    completedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
     },
