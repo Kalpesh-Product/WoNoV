@@ -131,6 +131,7 @@ const TicketReports = () => {
                   createdAt:  dayjs(item.createdAt).format("DD-MM-YYYY") || "",
                   updatedAt: humanDate(item.updatedAt) || "",
                   acceptedBy: `${item.acceptedBy?.firstName || ""} ${item.acceptedBy?.lastName || ""}`,
+                  rejectedBy: `${item.rejectedBy?.firstName || ""} ${item.rejectedBy?.lastName || ""}`,
                 })),
             ]}
             exportData
@@ -175,6 +176,10 @@ const TicketReports = () => {
           <DetalisFormatted
             title={"Accepted By"}
             detail={selectedMeeting.acceptedBy || "None"}
+          />
+          <DetalisFormatted
+            title={"Rejected By"}
+            detail={selectedMeeting.rejectedBy || "None"}
           />
         </div>
         ) : <CircularProgress />}
