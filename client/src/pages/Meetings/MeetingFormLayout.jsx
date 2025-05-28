@@ -36,6 +36,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { queryClient } from "../../main";
 import humanDate from "../../utils/humanDateForamt";
 import useAuth from "../../hooks/useAuth";
+import { useFormContext } from "react-hook-form";
 
 const MeetingFormLayout = () => {
   const { auth } = useAuth();
@@ -64,17 +65,69 @@ const MeetingFormLayout = () => {
       internalParticipants: [],
       externalParticipants: [],
     },
-     mode: "onChange",
+    mode: "onChange",
   });
+  const isReceptionist = auth.user?.role?.some(
+    (item) => item._id === "6798c034e469e809084e2514"
+  );
+  useEffect(() => {
+    if (!isReceptionist) {
+      setValue("company", "6799f0cd6a01edbe1bc3fcea");
+    }
+  }, [isReceptionist, setValue]);
 
   const meetingType = watch("meetingType");
   const startDate = watch("startDate"); // Watch startDate
   const endDate = watch("endDate"); // Watch endDate
   const startTime = watch("startTime");
   const endTime = watch("endTime");
-  const internalParticipants = watch("internalParticipants");
-  const externalParticipants = watch("externalParticipants");
+  const company = watch("company");
+  const isBizNest = company === "6799f0cd6a01edbe1bc3fcea";
 
+  const [shouldFetchParticipants, setShouldFetchParticipants] = useState(false);
+
+  //-------------------------------API-------------------------------//
+  const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
+    queryKey: ["clientsData"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/co-working-clients");
+        const data = response.data.filter((item) => item.isActive);
+        return data;
+      } catch (error) {
+        console.error("Error fetching clients data:", error);
+      }
+    },
+  });
+  //-------------------------------API-------------------------------//
+
+  //-------------------------------API-------------------------------//
+  const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
+    queryKey: ["participants", company],
+    queryFn: async () => {
+      if (company === "6799f0cd6a01edbe1bc3fcea") {
+        const response = await axios.get("/api/users/fetch-users");
+        return response.data.filter((user) => user._id !== auth.user?._id);
+      } else {
+        const response = await axios.get("/api/sales/co-working-clients");
+        const activeClients = response.data.filter((item) => item.isActive);
+        const flattened = activeClients.flatMap((client) =>
+          client.members.map((member) => ({
+            ...member,
+            clientName: client.clientName,
+          }))
+        );
+        // Flatten members and inject clientName for context
+        return flattened.filter((item) => {
+          return item.client?._id === company;
+        });
+      }
+    },
+    enabled: shouldFetchParticipants && !!company,
+  });
+  //-------------------------------API-------------------------------//
+
+  //--------------Handling Date internally----------------//
   const handleDateClick = (arg) => {
     if (!arg.start) return;
 
@@ -90,18 +143,10 @@ const MeetingFormLayout = () => {
 
     setOpen(true);
   };
+  //--------------Handling Date internally----------------//
 
-  const { data: employees = [], isLoading } = useQuery({
-    queryKey: ["employees"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/users/fetch-users");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
+  //-------------------------------API-------------------------------//
+
   const { data: checkAvailability = [], isPending: isCheckingAvailability } =
     useQuery({
       queryKey: ["checkAvailability", meetingRoomId],
@@ -115,6 +160,7 @@ const MeetingFormLayout = () => {
         toast.error("Error checking meeting room availability");
       },
     });
+  //-------------------------------API-------------------------------//
 
   // Transform data inside useEffect
   useEffect(() => {
@@ -138,6 +184,7 @@ const MeetingFormLayout = () => {
     setEvents(formattedEvents);
   };
 
+  //-------------------------------API POST-------------------------------//
   const { mutate: createMeeting, isPending: isCreateMeeting } = useMutation({
     mutationKey: ["createMeeting"],
     mutationFn: async (data) => {
@@ -170,6 +217,9 @@ const MeetingFormLayout = () => {
       // toast.error(errorMessage);
     },
   });
+  //-------------------------------API POST-------------------------------//
+
+  //-------------------------------API vISITORS-------------------------------//
 
   const {
     data: externalUsers = [],
@@ -182,6 +232,7 @@ const MeetingFormLayout = () => {
       return response.data;
     },
   });
+  //-------------------------------API vISITORS-------------------------------//
 
   const onSubmit = (data) => {
     createMeeting(data);
@@ -302,47 +353,44 @@ const MeetingFormLayout = () => {
               />
             </div>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <Controller
-  name="startTime"
-  control={control}
-  rules={{
-    validate: (value) => {
-      if (!value) return "Start time is required";
+              <Controller
+                name="startTime"
+                control={control}
+                rules={{
+                  validate: (value) => {
+                    if (!value) return "Start time is required";
 
-      const selectedTime = new Date(value);
-      const minAllowedTime = new Date();
-      minAllowedTime.setHours(9, 30, 0, 0); // 09:30 AM today
+                    const selectedTime = new Date(value);
+                    const minAllowedTime = new Date();
+                    minAllowedTime.setHours(9, 30, 0, 0); // 09:30 AM today
 
-      const now = new Date();
+                    const now = new Date();
 
-      if (selectedTime < minAllowedTime) {
-        return "Start time must be after 9:30 AM";
-      }
+                    if (selectedTime < minAllowedTime) {
+                      return "Start time must be after 9:30 AM";
+                    }
 
-      if (selectedTime < now) {
-        return "Start time cannot be in the past";
-      }
+                    if (selectedTime < now) {
+                      return "Start time cannot be in the past";
+                    }
 
-      return true;
-    },
-  }}
-  render={({ field, fieldState }) => (
-    <TimePicker
-      {...field}
-      label="Select a Start Time"
-      slotProps={{
-        textField: {
-          size: "small",
-          error: !!fieldState.error,
-          helperText: fieldState.error?.message,
-        },
-      }}
-    />
-  )}
-/>
-
-            </LocalizationProvider>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    return true;
+                  },
+                }}
+                render={({ field, fieldState }) => (
+                  <TimePicker
+                    {...field}
+                    label="Select a Start Time"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        error: !!fieldState.error,
+                        helperText: fieldState.error?.message,
+                      },
+                    }}
+                  />
+                )}
+              />
               <Controller
                 name="endTime"
                 control={control}
@@ -357,47 +405,165 @@ const MeetingFormLayout = () => {
                   />
                 )}
               />
-              <div>
-                <TextField
-                  fullWidth
-                  size="small"
-                  value={auth.user?.company?.companyName}
-                  disabled
-                  label="Company Name"
-                />
-              </div>
-              <div>
-                <TextField
-                  fullWidth
-                  size="small"
-                  value={`${auth.user?.firstName} ${auth.user?.lastName} `}
-                  disabled
-                  label="Booked by"
-                />
-              </div>
             </LocalizationProvider>
-            <div className="col-span-2 sm:col-span-1 md:col-span-2">
-              <div className="mb-6">
+            {meetingType === "Internal" ? (
+              <>
+                {isReceptionist ? (
+                  <div>
+                    <Controller
+                      name="company"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Company"
+                          select
+                          size="small"
+                          fullWidth
+                        >
+                          <MenuItem value="" disabled>
+                            Select a company
+                          </MenuItem>
+                          <MenuItem value="6799f0cd6a01edbe1bc3fcea">
+                            BizNest
+                          </MenuItem>
+                          {clientsData.map((item) => (
+                            <MenuItem key={item._id} value={item._id}>
+                              {item.clientName}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      )}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={`${auth.user?.company?.companyName} `}
+                      disabled
+                      label={`Company`}
+                    />
+                  </div>
+                )}
+                <div>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={`${auth.user?.firstName} ${auth.user?.lastName} `}
+                    disabled
+                    label={`${isReceptionist ? "Receptionist" : "Booked By"}`}
+                  />
+                </div>
+
+                {isReceptionist ? (
+                  <div className="col-span-2">
+                    <Controller
+                      name="bookedBy"
+                      control={control}
+                      render={({ field }) => (
+                        <Autocomplete
+                          options={employees}
+                          getOptionLabel={(user) =>
+                            isBizNest
+                              ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
+                              : `${user.employeeName ?? ""} (${
+                                  user.clientName ?? ""
+                                })`
+                          }
+                          value={
+                            employees.find((u) => u._id === field.value) || null
+                          }
+                          onFocus={() => setShouldFetchParticipants(true)}
+                          onChange={(_, newValue) =>
+                            field.onChange(newValue?._id || "")
+                          }
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Booked by"
+                              size="small"
+                              fullWidth
+                            />
+                          )}
+                        />
+                      )}
+                    />
+                  </div>
+                ) : null}
+                <div className="col-span-2 sm:col-span-1 md:col-span-2">
+                  <div className="">
+                    <Controller
+                      name="internalParticipants"
+                      control={control}
+                      render={({ field }) => (
+                        <Autocomplete
+                          multiple
+                          options={employees}
+                          getOptionLabel={(user) =>
+                            isBizNest
+                              ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
+                              : `${user.employeeName ?? ""} (${
+                                  user.clientName ?? ""
+                                }`
+                          }
+                          onFocus={() => setShouldFetchParticipants(true)}
+                          onChange={(_, newValue) =>
+                            field.onChange(newValue.map((user) => user._id))
+                          }
+                          renderTags={(selected, getTagProps) =>
+                            selected.map((user, index) => (
+                              <Chip
+                                key={user._id}
+                                label={
+                                  isBizNest
+                                    ? `${user.firstName ?? ""} ${
+                                        user.lastName ?? ""
+                                      }`
+                                    : `${user.employeeName ?? ""} (${
+                                        user.clientName ?? ""
+                                      })`
+                                }
+                                {...getTagProps({ index })}
+                                deleteIcon={<IoMdClose />}
+                              />
+                            ))
+                          }
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Select Participants"
+                              size="small"
+                              fullWidth
+                            />
+                          )}
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : null}
+            {/* New Start */}
+            {meetingType === "External" ? (
+              <div className="col-span-2">
                 <Controller
-                  name="internalParticipants"
+                  name="externalParticipants"
                   control={control}
                   render={({ field }) => (
                     <Autocomplete
                       multiple
-                      options={employees.filter(
-                        (item) => item._id !== auth.user?._id
-                      )} // The user list
-                      getOptionLabel={(user) =>
-                        `${user.firstName} ${user.lastName}`
-                      }
+                      options={externalUsers} // The user list
+                      getOptionLabel={(user) => `${user.firstName}`} // Display names
                       onChange={(_, newValue) =>
                         field.onChange(newValue.map((user) => user._id))
-                      }
+                      } // Sync selected users with form state
                       renderTags={(selected, getTagProps) =>
                         selected.map((user, index) => (
                           <Chip
                             key={user._id}
-                            label={`${user.firstName} ${user.lastName}`}
+                            label={`${user.firstName}`}
                             {...getTagProps({ index })}
                             deleteIcon={<IoMdClose />}
                           />
@@ -406,7 +572,7 @@ const MeetingFormLayout = () => {
                       renderInput={(params) => (
                         <TextField
                           {...params}
-                          label="Select Internal Participants"
+                          label="Select External Participants"
                           size="small"
                           fullWidth
                         />
@@ -415,44 +581,7 @@ const MeetingFormLayout = () => {
                   )}
                 />
               </div>
-              {meetingType === "External" ? (
-                <div>
-                  <Controller
-                    name="externalParticipants"
-                    control={control}
-                    render={({ field }) => (
-                      <Autocomplete
-                        multiple
-                        options={externalUsers} // The user list
-                        getOptionLabel={(user) => `${user.firstName}`} // Display names
-                        onChange={(_, newValue) =>
-                          field.onChange(newValue.map((user) => user._id))
-                        } // Sync selected users with form state
-                        renderTags={(selected, getTagProps) =>
-                          selected.map((user, index) => (
-                            <Chip
-                              key={user._id}
-                              label={`${user.firstName}`}
-                              {...getTagProps({ index })}
-                              deleteIcon={<IoMdClose />}
-                            />
-                          ))
-                        }
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Select External Participants"
-                            size="small"
-                            fullWidth
-                          />
-                        )}
-                      />
-                    )}
-                  />
-                </div>
-              ) : null}
-            </div>
-            {/* New Start */}
+            ) : null}
             {meetingType === "External" ? (
               <>
                 {[...Array(participantCount)].map((_, index) => (
