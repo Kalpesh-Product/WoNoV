@@ -771,7 +771,7 @@ const bulkInsertUsers = async (req, res, next) => {
 
 const getAssignees = async (req, res, next) => {
   try {
-    const { company, departments } = req;
+    const { company, departments, user } = req;
 
     const departmentIds = departments.map((dept) => dept._id);
 
@@ -788,8 +788,6 @@ const getAssignees = async (req, res, next) => {
     if (!team?.length) {
       return res.status(400).json({ message: "No assigness found" });
     }
-
-
 
     const transformAssignees = team.map((assignee) => {
       return {
