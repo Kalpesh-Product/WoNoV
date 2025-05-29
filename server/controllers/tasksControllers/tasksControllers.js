@@ -407,6 +407,79 @@ const getMyTasks = async (req, res, next) => {
   }
 };
 
+const getCompletedTasks = async (req, res, next) => {
+  try {
+    const { user, company } = req;
+    const { dept } = req.query;
+    const query = { company };
+
+    if (!dept) {
+      query.raisedToDepartment = dept;
+    }
+
+    const tasks = await Task.find({
+      company,
+      department: dept,
+      status: "Completed",
+    })
+      .populate("department", "name")
+      .populate("assignedBy", "firstName lastName")
+      .populate("assignedTo", "firstName lastName")
+      .select("-company")
+      .lean();
+
+    if (!tasks) {
+      return res.status(400).json({ message: "No tasks found" });
+    }
+
+    const transformedTasks = tasks.map((task) => {
+      return {
+        ...task,
+        dueDate: formatDate(task.dueDate),
+        dueTime: task.dueTime ? task.dueTime : "06:30 PM",
+        assignedDate: formatDate(task.assignedDate),
+      };
+    });
+
+    return res.status(200).json(transformedTasks);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getMyCompletedTasks = async (req, res, next) => {
+  try {
+    const { user, company } = req;
+
+    const tasks = await Task.find({
+      company,
+      assignedTo: { $in: [user] },
+      status: "Completed",
+    })
+      .populate("department", "name")
+      .populate("assignedBy", "firstName lastName")
+      .populate("assignedTo", "firstName lastName")
+      .select("-company")
+      .lean();
+
+    if (!tasks) {
+      return res.status(400).json({ message: "No tasks found" });
+    }
+    const transformedTasks = tasks.map((task) => {
+      return {
+        ...task,
+        dueDate: formatDate(task.dueDate),
+        dueTime: task.dueTime ? task.dueTime : "06:30 PM",
+        assignedDate: formatDate(task.assignedDate),
+      };
+    });
+
+    return res.status(200).json(transformedTasks);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getMyTodayTasks = async (req, res, next) => {
   try {
     const { user, company } = req;
@@ -728,4 +801,6 @@ module.exports = {
   getAllDeptTasks,
   completeTasks,
   deleteTask,
+  getCompletedTasks,
+  getMyCompletedTasks,
 };
