@@ -2,7 +2,7 @@ import { Outlet } from 'react-router-dom'
 
 const ManageTicketLayout = () => {
   return (
-    <div className='p-4'>
+    <div className=''>
       <Outlet />
     </div>
   )
