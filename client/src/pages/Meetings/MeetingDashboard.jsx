@@ -372,7 +372,7 @@ for (let [monthIndex, hours] of monthMap.entries()) {
   // console.log("bookedHours",calculateBookedHoursPerMonth)
 
   // const totalBookableHours = 1980;
-  const workinghoursPerDay = 9
+  const workinghoursPerDay = 10
   const workingDays = 24
   const totalBookableHours = roomsData.length * workinghoursPerDay * workingDays
 
@@ -381,9 +381,9 @@ for (let [monthIndex, hours] of monthMap.entries()) {
     y: (actualBookedHoursPerMonth[month] / totalBookableHours) * 100,
   }));
 
+  console.log("hours",data)
   const averageBookingSeries = [{ name: "Booking Utilization", data }];
 
-  console.log("series",averageBookingSeries)
 
   const averageBookingOptions = {
     chart: {
