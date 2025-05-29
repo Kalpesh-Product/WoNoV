@@ -35,7 +35,7 @@ router.patch("/add-ticket-issue", addTicketIssue);
 router.get("/ticket-issues/:department", getTicketIssues);
 router.get("/new-ticket-issues/:department", getNewTicketIssues);
 router.delete("/reject-ticket-issue/:id", rejectTicketIssue);
-router.get("/get-tickets", getTickets);
+router.get("/get-tickets/:departmentId", getTickets);
 router.get("/get-all-tickets", getAllTickets);
 router.get("/get-depts-tickets", getAllDeptTickets);
 router.get("/my-tickets", filterMyTickets);
@@ -51,7 +51,7 @@ router.patch("/close-ticket", closeTicket);
 router.post("/support-ticket", supportTicket);
 router.get("/department-tickets/:departmentId", ticketData);
 router.get("/team-members-tickets/", ticketData);
-router.get("/ticket-filter/:flag", fetchFilteredTickets);
+router.get("/ticket-filter/:flag/:dept", fetchFilteredTickets);
 router.get("/other-tickets/:department", getOtherTickets);
 router.get("/get-team-members/:departmentId", getTeamMemberTickets);
 
