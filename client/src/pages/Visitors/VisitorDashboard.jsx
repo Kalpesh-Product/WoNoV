@@ -80,27 +80,6 @@ const VisitorDashboard = () => {
   const colors = ["#1E3D73", "#4C66A1", "#637BB8"];
   //---------------------------------------------------Category Wise Visitors Donut Data---------------------------------------------------//
   //---------------------------------------------------Visitors Table Data---------------------------------------------------//
-  // const visitorsColumns = [
-  //   { id: "id", label: "Sr No" },
-  //   { id: "firstName", label: "First Name" },
-  //   { id: "lastName", label: "Last Name" },
-  //   { id: "email", label: "Email" },
-  //   { id: "phoneNumber", label: "Phone No" },
-  //   {
-  //     id: "purposeOfVisit",
-  //     label: "Purpose",
-  //     align: "right",
-  //   },
-  //   { id: "toMeet", label: "To Meet", align: "right" },
-  //   { id: "checkIn", label: "Check In" },
-  //   { id: "checkOut", label: "Checkout" },
-  //   //   {
-  //   //     id: "actions",
-  //   //     label: "Actions",
-  //   //     align: "center",
-  //   //     renderCell: () => <PrimaryButton title={"View"} />,
-  //   //   },
-  // ];
 
   const visitorsColumns = [
     { id: "id", label: "Sr No", minWidth: 100 }, // Fixed width
@@ -214,26 +193,6 @@ const VisitorDashboard = () => {
       },
     },
     colors: ["#0aa9ef"], // Black color for bars
-    // annotations: {
-    //   yaxis: [
-    //     {
-    //       y: 100,
-    //       borderColor: "#ff0000",
-    //       borderWidth: 3,
-    //       strokeDashArray: 0, // Solid line
-    //       label: {
-    //         text: "100% Utilization",
-    //         position: "center",
-    //         offsetX: 10,
-    //         offsetY: -10,
-    //         style: {
-    //           color: "#ff0000",
-    //           fontWeight: "bold",
-    //         },
-    //       },
-    //     },
-    //   ],
-    // },
   };
 
   const usersQuery = useQuery({

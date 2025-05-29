@@ -19,7 +19,7 @@ import { useState } from "react";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import { IoMdClose } from "react-icons/io";
 
-const AcceptedTickets = ({ title }) => {
+const AcceptedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
   const [esCalateModal, setEscalateModal] = useState(false);
@@ -67,7 +67,7 @@ const AcceptedTickets = ({ title }) => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "/api/tickets/ticket-filter/accept-assign"
+          `/api/tickets/ticket-filter/accept-assign/${departmentId}`
         );
         const filtered = response.data;
         const hasAssigned = filtered.some(

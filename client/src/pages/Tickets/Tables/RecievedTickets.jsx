@@ -14,7 +14,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
 
-const RecievedTickets = ({ title }) => {
+const RecievedTickets = ({ title, departmentId }) => {
   const [open, setOpen] = useState(false);
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
@@ -38,7 +38,7 @@ const RecievedTickets = ({ title }) => {
     queryKey: ["tickets"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/tickets/get-tickets");
+        const response = await axios.get(`/api/tickets/get-tickets/${departmentId}`);
 
         return response.data;
       } catch (error) {
