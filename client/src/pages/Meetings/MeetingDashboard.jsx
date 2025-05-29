@@ -513,17 +513,118 @@ const MeetingDashboard = () => {
     "7PM-8PM",
   ];
 
-  // Mock Data: Replace this with real booking data
-  const generateRandomData = () =>
-    timeSlots.map(() => Math.floor(Math.random() * 20)); // Max 20 bookings
+// Utility to convert time to slot label
+// const getTimeSlotLabel = (date) => {
+//   const hour = date.getHours();
+//   if (hour >= 8 && hour < 20) {
+//     const ampm = hour < 12 ? "AM" : "PM";
+//     const start = hour % 12 === 0 ? 12 : hour % 12;
+//     const end = (hour + 1) % 12 === 0 ? 12 : (hour + 1) % 12;
+//     const endAMPM = (hour + 1) < 12 ? "AM" : "PM";
+//     return `${start}${ampm}-${end}${endAMPM}`;
+//   }
+//   return null;
+// };
+ 
+  // Create empty matrix: [timeSlot][day] = count
+  // const matrix = Array(timeSlots.length).fill(null).map(() => Array(7).fill(0));
 
-  const heatmapData = timeSlots.map((slot, index) => ({
+  // meetingsData.forEach((meeting) => {
+  //   const date = new Date(meeting.startTime);
+  //   const day = date.getDay(); // 0 = Sun, 6 = Sat
+  //   const slot = getTimeSlotLabel(date);
+
+  //   if (slot) {
+  //     const slotIndex = timeSlots.indexOf(slot);
+  //     if (slotIndex !== -1) {
+  //       matrix[slotIndex][day]++;
+  //     }
+  //   }
+  // });
+
+  // // Convert matrix to heatmapData
+  // const heatmapData = timeSlots.map((slot, slotIndex) => ({
+  //   name: slot,
+  //   data: days.map((day, dayIndex) => ({
+  //     x: day,
+  //     y: day === "Sun" || day === "Sat" ? 0 : matrix[slotIndex][dayIndex],
+  //   })),
+  // }));
+
+
+  //////////////////////////////////////
+
+// 🗓️ Get Mon–Fri Dates of Current Week
+function getCurrentWeekDays() {
+  const today = new Date();
+  const day = today.getDay(); // 0 (Sun) to 6 (Sat)
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((day + 6) % 7)); // Move to Monday
+  monday.setHours(0, 0, 0, 0);
+
+  const weekDays = [];
+
+  for (let i = 0; i < 5; i++) {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
+    date.setHours(0, 0, 0, 0);
+    weekDays.push(date);
+  }
+
+  return weekDays;
+}
+
+// 🕘 Convert Date to Time Slot Label (e.g., 10AM–11AM)
+function getTimeSlotLabel(date) {
+  const hour = date.getHours();
+  if (hour >= 8 && hour < 20) {
+    const ampm = hour < 12 ? "AM" : "PM";
+    const nextHour = hour + 1;
+    const nextAMPM = nextHour < 12 ? "AM" : "PM";
+    const start = hour % 12 === 0 ? 12 : hour % 12;
+    const end = nextHour % 12 === 0 ? 12 : nextHour % 12;
+    return `${start}${ampm}-${end}${nextAMPM}`;
+  }
+  return null;
+}
+
+  const weekdays = getCurrentWeekDays();  
+
+  // Create a [timeSlot][dayIndex] matrix initialized with 0s
+  const matrix = Array(timeSlots.length).fill(null).map(() => Array(5).fill(0));
+
+  meetingsData.forEach((meeting) => {
+    const date = new Date(meeting.startTime);
+    date.setSeconds(0, 0); // remove milliseconds
+
+    // Match meeting to current week (Mon–Fri)
+   for (let i = 0; i < weekdays.length; i++) {
+  const weekDate = weekdays[i];
+
+  // Format both to YYYY-MM-DD for accurate day match
+  const meetingDayStr = date.toISOString().split("T")[0];
+  const weekDayStr = weekDate.toISOString().split("T")[0];
+
+  if (meetingDayStr === weekDayStr) {
+    const timeSlot = getTimeSlotLabel(date);
+    const slotIndex = timeSlots.indexOf(timeSlot);
+    if (slotIndex !== -1) {
+      matrix[slotIndex][i]++;
+    }
+  }
+}
+
+  });
+
+  // Convert to heatmap format
+  const heatmapData = timeSlots.map((slot, slotIndex) => ({
     name: slot,
     data: days.map((day, dayIndex) => ({
-      x: day, // Day of the week
-      y: day === "Sun" || day === "Sat" ? 0 : generateRandomData()[index], // No bookings for Sun/Sat
+      x: day,
+      y: matrix[slotIndex][dayIndex],
     })),
   }));
+
 
   const heatmapOptions = {
     chart: {
