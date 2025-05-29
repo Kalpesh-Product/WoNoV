@@ -12,7 +12,9 @@ const MonthWiseTable = ({
   formatTime = false,
   tableTitle,
   buttonTitle,
-  handleSubmit
+  handleSubmit,
+  checkbox,
+  checkAll,
 }) => {
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
 
@@ -100,6 +102,8 @@ const MonthWiseTable = ({
       </div>
 
       <AgTable
+        enableCheckbox={checkbox}
+        checkAll={checkAll}
         tableHeight={300}
         columns={formattedColumns}
         data={filteredData.map((item) => ({

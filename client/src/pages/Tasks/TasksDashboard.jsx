@@ -18,12 +18,14 @@ import {
   myTasksColumns,
   myTodayMeetingsColumns,
   recentlyAddedTasksCol,
-  recentlyAddedTasksData,
 } from "./TasksData";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import useAuth from "../../hooks/useAuth";
 import { Chip } from "@mui/material";
+import humanDate from "../../utils/humanDateForamt";
+import humanTime from "../../utils/humanTime";
+import dayjs from "dayjs";
 
 const TasksDashboard = () => {
   const axios = useAxiosPrivate();
@@ -92,54 +94,33 @@ const TasksDashboard = () => {
   //   { taskName: "Calibrate Sensors", type: "Monthly", endTime: "01:00 PM" },
   // ];
 
-  const priorityTasks = [
-    { taskName: "Review member feedback", type: "Daily", endTime: "12:00 PM" },
-    {
-      taskName: "Meet with community manager",
-      type: "Daily",
-      endTime: "03:00 PM",
-    },
-    {
-      taskName: "Analyze space utilization data",
-      type: "Monthly",
-      endTime: "10:00 AM",
-    },
-    {
-      taskName: "Check inventory of office supplies",
-      type: "Daily",
-      endTime: "02:30 PM",
-    },
-    {
-      taskName: "Verify cleaning crew checklist",
-      type: "Daily",
-      endTime: "08:00 AM",
-    },
-    {
-      taskName: "Review security protocols",
-      type: "Daily",
-      endTime: "11:45 PM",
-    },
-    {
-      taskName: "Approve monthly financial reports",
-      type: "Monthly",
-      endTime: "06:00 PM",
-    },
-    {
-      taskName: "Plan next community event",
-      type: "Daily",
-      endTime: "07:30 PM",
-    },
-    {
-      taskName: "Evaluate new location prospects",
-      type: "Monthly",
-      endTime: "04:15 PM",
-    },
-    {
-      taskName: "Meet with potential partners",
-      type: "Monthly",
-      endTime: "01:00 PM",
-    },
-  ];
+  const today = dayjs().startOf("day");
+  const recentlyAddedTasksData = allTasksQuery.isLoading
+    ? []
+    : allTasksQuery.data
+        .filter((task) => dayjs(task.assignedDate).isSame(today, "day"))
+        .map((task, index) => ({
+          id: index + 1,
+          taskName: task.taskName,
+          department: task.department?.name || "N/A",
+          status: task.status,
+          assignedBy: `${task.assignedBy?.firstName || ""} ${
+            task.assignedBy?.lastName || ""
+          }`,
+          assignedDate: dayjs(task.assignedDate).format("DD MMM YYYY, hh:mm A"),
+        }));
+
+  const priorityTasks = allTasksQuery.isLoading
+    ? []
+    : allTasksQuery.data
+        .filter((task) => task.priority === "High")
+        .slice(0, 10) // Top 10 only
+        .map((task, index) => ({
+          id: index + 1,
+          taskName: task.taskName,
+          type: task.workCategory || "N/A",
+          endTime: dayjs(task.dueDate).format("hh:mm A"),
+        }));
 
   const priorityTasksColumns = [
     { id: "id", label: "Sr No", align: "left" },
@@ -147,113 +128,27 @@ const TasksDashboard = () => {
     {
       id: "type",
       label: "Type",
-      renderCell: (data) => {
-        return (
-          <>
-            <Chip sx={{ color: "#1E3D73" }} label={data.type} />
-          </>
-        );
-      },
+      renderCell: (data) => (
+        <Chip sx={{ color: "#1E3D73" }} label={data.type} />
+      ),
       align: "left",
     },
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
-  const executiveTimings = [
-    {
-      name: "Mac",
-      building: "DTC",
-      unitNo: "002",
-      startTime: "9:00AM",
-      endTime: "06:00PM",
-    },
-  ];
-  const executiveTimingsColumns = [
-    { id: "id", label: "ID", align: "left" },
-    { id: "name", label: "Name", align: "left" },
-    { id: "building", label: "Building", align: "left" },
-    { id: "unitNo", label: "Unit No", align: "left" },
-    { id: "startTime", label: "Start Time", align: "left" },
-    { id: "endTime", label: "End Time", align: "left" },
-  ];
   //----------------------------------------------------------------------------------------------------------//
 
   // Dept wise tsks
   //----------------------------------------------------------------------------------------------------------//
-  const clientComplaints = [
-    { client: "Tech", complaints: "50" },
-    { client: "HR", complaints: "60" },
-    { client: "Sales", complaints: "30" },
-    { client: "Finance", complaints: "80" },
-    { client: "Admin", complaints: "80" },
-    { client: "IT", complaints: "80" },
-    { client: "Maintenamce", complaints: "80" },
-    // { client: "G-7", complaints: "8" },
-  ];
 
-  const totalClientComplaints = clientComplaints.reduce(
-    (sum, item) => sum + item.complaints,
-    0
-  );
-  const pieComplaintsData = clientComplaints.map((item) => ({
-    label: `${item.client} (${(
-      (item.complaints / totalClientComplaints) *
-      100
-    ).toFixed(1)}%)`,
-    value: item.complaints,
-  }));
-  const pieComplaintsOptions = {
-    labels: clientComplaints.map((item) => item.client),
-    chart: {
-      fontFamily: "Poppins-Regular",
-    },
-    tooltip: {
-      y: {
-        formatter: (val) =>
-          `${((val / totalClientComplaints) * 100).toFixed(1)}`,
-      },
-    },
-    colors: [
-      "#00ba09",
-      "#ff4545",
-      "#ffa500",
-      "#0000ff",
-      "#800080",
-      "#ede900",
-      "#dc00b0",
-    ],
-  };
+
+
+
+
   //----------------------------------------------------------------------------------------------------------//
 
   // MonthlyDueTasks Data
-  const monthlyDueTasksData = [
-    { monthlyDueTasks: "Completed Tasks", count: "45" },
-    { monthlyDueTasks: "Pending Tasks", count: "40" },
-  ];
-  const totalMonthlyDueTasksCount = monthlyDueTasksData.reduce(
-    (sum, item) => sum + item.count,
-    0
-  );
-  const pieMonthlyDueTasksData = monthlyDueTasksData.map((item) => ({
-    label: `${item.monthlyDueTasks} ${(
-      (item.count / totalMonthlyDueTasksCount) *
-      100
-    ).toFixed(1)}%`,
-    value: item.count,
-  }));
-  const pieMonthlyDueTasksOptions = {
-    labels: monthlyDueTasksData.map((item) => item.monthlyDueTasks),
-    chart: {
-      fontFamily: "Poppins-Regular",
-    },
-    tooltip: {
-      y: {
-        formatter: (val) =>
-          `${((val / totalMonthlyDueTasksCount) * 100).toFixed(1)}%`,
-      },
-    },
-    colors: ["#00ba09", "#ff4545"],
-  };
+
   //----------------------------------------------------------------------------------------------------------//
 
   const meetingsQuery = useQuery({
@@ -267,6 +162,46 @@ const TasksDashboard = () => {
       }
     },
   });
+
+  const completedTasks = allTasksQuery.isLoading
+    ? 0
+    : allTasksQuery.data.filter((task) => task.status === "Completed").length;
+
+  const pendingTasks = allTasksQuery.isLoading
+    ? 0
+    : allTasksQuery.data.filter((task) => task.status === "Pending").length;
+
+  const totalTasks = completedTasks + pendingTasks;
+
+  const dynamicTasksPieChartData = [
+    {
+      label: `Completed (${((completedTasks / totalTasks) * 100).toFixed(1)}%)`,
+      value: completedTasks,
+    },
+    {
+      label: `Pending (${((pendingTasks / totalTasks) * 100).toFixed(1)}%)`,
+      value: pendingTasks,
+    },
+  ];
+
+  const dynamicTasksPieChartOptions = {
+    labels: ["Completed", "Pending"],
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `${val} Tasks`,
+      },
+    },
+    datalabels: {
+      enabled: true,
+      formatter: (val) => {
+        `${((val / totalTasks) * 100).toFixed(0)}%`;
+      },
+    },
+    colors: ["#00ba09", "#ff4545"],
+  };
 
   // const completedTasks = allTasksQuery.isLoading
   //   ? 0
@@ -303,47 +238,59 @@ const TasksDashboard = () => {
 
   //Department-wise Pending Tasks
 
-  const calculatePendingTasks = (tasks) => {
-    // Group tasks by department
+  const calculateDepartmentPendingStats = (tasks) => {
     const departmentMap = tasks.reduce((acc, task) => {
-      const department = task.department.name;
+      const departmentName = task.department?.name || "Unknown";
       const isPending = task.status === "Pending";
 
-      if (!acc[department]) {
-        acc[department] = { total: 0, pending: 0 };
+      if (!acc[departmentName]) {
+        acc[departmentName] = { total: 0, pending: 0 };
       }
 
-      acc[department].total += 1;
-      if (isPending) acc[department].pending += 1;
+      acc[departmentName].total += 1;
+      if (isPending) acc[departmentName].pending += 1;
 
       return acc;
     }, {});
 
     return Object.entries(departmentMap).map(([department, data]) => ({
-      label: department,
-      value: (data.pending / data.total) * 100,
+      label: `${department} (${((data.pending / data.total) * 100).toFixed(
+        1
+      )}%)`,
+      value: data.pending,
     }));
   };
 
+  const departmentPendingStats = allTasksQuery.isLoading
+    ? []
+    : calculateDepartmentPendingStats(allTasksQuery.data);
+
   const tasks = allTasksQuery.isLoading ? [] : allTasksQuery.data;
 
-  // const departmentPendingStats = calculatePendingTasks(tasks);
-
-  // const departmentPieChartOptions = {
-  //   chart: {
-  //     type: "pie",
-  //   },
-  //   labels: departmentPendingStats.map((d) => d.label),
-  //   colors: ["#FF5733", "#FFC300", "#36A2EB"], // Different colors for each department
-  //   legend: {
-  //     position: "right",
-  //   },
-  //   tooltip: {
-  //     y: {
-  //       formatter: (val) => `${val.toFixed(1)}%`, // Show percentage with 1 decimal
-  //     },
-  //   },
-  // };
+  const departmentPendingOptions = {
+    labels: departmentPendingStats.map((d) => d.label),
+    chart: {
+      type: "pie",
+      fontFamily: "Poppins-Regular",
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `${val} Pending Tasks`,
+      },
+    },
+    legend: {
+      position: "right",
+    },
+    colors: [
+      "#FF5733",
+      "#FFC300",
+      "#36A2EB",
+      "#4CAF50",
+      "#9C27B0",
+      "#FF9800",
+      "#795548",
+    ],
+  };
 
   const myTodayMeetingsData = !meetingsQuery.isLoading
     ? meetingsQuery.data.map((meeting, index) => {
@@ -359,7 +306,7 @@ const TasksDashboard = () => {
                     "https://ui-avatars.com/api/?name=Alice+Johnson&background=random",
                 }))
               : [],
-          time: meeting.startTime,
+          time: humanTime(meeting.startTime),
         };
       })
     : [];
@@ -371,7 +318,8 @@ const TasksDashboard = () => {
         <WidgetSection
           layout={1}
           border
-          title={"Overall Average Tasks Completion"}>
+          title={"Overall Average Tasks Completion"}
+        >
           <BarGraph
             height={400}
             data={tasksMonthlyData}
@@ -383,7 +331,7 @@ const TasksDashboard = () => {
     {
       layout: 6,
       widgets: [
-        <Card route={"KRA"} title={"KRA"} icon={<RiPagesLine />} />,
+        <Card route={"KRA"} title={"My Tasks"} icon={<RiPagesLine />} />,
         <Card
           route={"/app/tasks/department-tasks"}
           title={"Department Tasks"}
@@ -413,38 +361,28 @@ const TasksDashboard = () => {
         <DataCard
           title={"Total"}
           // data={allTasksQuery.isLoading ? 0 : allTasksQuery.data.length}
-          data={0}
+          data={allTasksQuery.isLoading ? 0 : allTasksQuery.data.length}
           description={"Tasks"}
         />,
         <DataCard
           title={"Total"}
-          data={0}
+          data={
+            allTasksQuery.isLoading
+              ? 0
+              : allTasksQuery.data.filter((task) => task.status === "Pending")
+                  .length
+          }
           description={"Pending Tasks"}
         />,
         <DataCard
           title={"Total"}
-          data={0}
+          data={
+            allTasksQuery.isLoading
+              ? 0
+              : allTasksQuery.data.filter((task) => task.status === "Completed")
+                  .length
+          }
           description={"Completed Tasks"}
-        />,
-      ],
-    },
-    {
-      layout: 3,
-      widgets: [
-        <DataCard
-          title={"Total"}
-          data={allProjectsQuery.isLoading ? 0 : allProjectsQuery.data?.length}
-          description={"My Projects"}
-        />,
-        <DataCard
-          title={"Total"}
-          // data={projectsAssignedToMe}
-          description={"Tasks Assigned to Me"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={0}
-          description={"Tasks Assigned by Me"}
         />,
       ],
     },
@@ -462,8 +400,8 @@ const TasksDashboard = () => {
         // </WidgetSection>,
         <WidgetSection border title={"Overall Pending v/s Completed Tasks"}>
           <PieChartMui
-            data={pieMonthlyDueTasksData}
-            options={pieMonthlyDueTasksOptions}
+            data={dynamicTasksPieChartData}
+            options={dynamicTasksPieChartOptions}
           />
         </WidgetSection>,
         // <WidgetSection
@@ -478,8 +416,8 @@ const TasksDashboard = () => {
 
         <WidgetSection border title={"Department-wise Pending Tasks"}>
           <PieChartMui
-            data={pieComplaintsData}
-            options={pieComplaintsOptions}
+            data={departmentPendingStats}
+            options={departmentPendingOptions}
           />
         </WidgetSection>,
       ],
@@ -502,16 +440,10 @@ const TasksDashboard = () => {
             scroll
             rowsToDisplay={4}
             Title={"Top 10 High Priority Due Tasks"}
-            rows={[
-              ...priorityTasks.map((task, index) => ({
-                id: index + 1,
-                taskName: task.taskName,
-                type: task.type,
-                endTime: task.endTime,
-              })),
-            ]}
+            rows={priorityTasks}
             columns={priorityTasksColumns}
           />
+
           <MuiTable
             Title="My Meetings Today"
             columns={myTodayMeetingsColumns}
