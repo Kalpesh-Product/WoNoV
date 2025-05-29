@@ -3,7 +3,10 @@ const idGenerator = require("../../utils/idGenerator");
 const User = require("../../models/hr/UserData");
 const sharp = require("sharp");
 const mongoose = require("mongoose");
-const { handleFileUpload } = require("../../config/cloudinaryConfig");
+const {
+  handleFileUpload,
+  handleFileDelete,
+} = require("../../config/cloudinaryConfig");
 const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const Unit = require("../../models/locations/Unit");
