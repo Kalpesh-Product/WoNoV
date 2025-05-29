@@ -8,7 +8,7 @@ import { setSelectedDepartment } from "../../redux/slices/performanceSlice";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
 import useAuth from "../../hooks/useAuth";
 
-const PerformanceHome = () => {
+const ManageTicketsHome = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const dispatch = useDispatch();
@@ -23,19 +23,17 @@ const PerformanceHome = () => {
     },
   });
 
-  const fetchDepartments = async () => {
-    try {
-      const response = await axios.get("api/performance/get-depts-tasks");
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
-  const { data: fetchedDepartments = [], isPending: departmentLoading } =
-    useQuery({
-      queryKey: ["fetchedDepartments"],
-      queryFn: fetchDepartments,
-    });
+  const { data: getAllTickets=[], isLoading } = useQuery({
+    queryKey: ["all-tickets"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/tickets/get-depts-tickets");
+        return response.data;
+      } catch (error) {
+        console.log(error);
+      }
+    },
+  });
 
   const departmentColumns = [
     { headerName: "Sr No", field: "srNo", width: 100 },
@@ -59,25 +57,26 @@ const PerformanceHome = () => {
         );
       },
     },
-    { headerName: "Daily KRA", field: "dailyKra" },
-    { headerName: "Monthly KPA", field: "monthlyKpa" },
+    { headerName: "Total Tickets", field: "totalTickets" },
+    { headerName: "Open Tickets", field: "openTickets" },
+    { headerName: "Closed Tickets", field: "closedTickets" },
   ];
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection layout={1} padding>
         <AgTable
           data={[
-            ...fetchedDepartments.map((item, index) => ({
+            ...getAllTickets.map((item, index) => ({
               srNo: index + 1,
               mongoId: item.department?._id,
               department: item.department?.name,
-              dailyKra: item.dailyKRA,
-              monthlyKpa: item.monthlyKPA,
-              annualKpa: item.annualKPA,
+              totalTickets: item.totalTickets,
+              openTickets: item.openTickets,
+              closedTickets: item.closedTickets,
             })),
           ]}
           columns={departmentColumns}
-          tableTitle={"DEPARTMENT WISE KRA/KPA"}
+          tableTitle={"DEPARTMENT WISE TICKETS"}
           hideFilter
         />
       </WidgetSection>
@@ -85,4 +84,4 @@ const PerformanceHome = () => {
   );
 };
 
-export default PerformanceHome;
+export default ManageTicketsHome;

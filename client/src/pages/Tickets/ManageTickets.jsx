@@ -11,11 +11,17 @@ import AssignedTickets from "./Tables/AssignedTickets";
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import { useSelector } from "react-redux";
 
 const ManageTickets = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
+  const selectedDepartment = useSelector(
+    (state) => state.performance.selectedDepartment
+  );
+
+  console.log("Tickets department : ", selectedDepartment);
 
   const ticketLabel =
     auth.user.designation === "Founder & CEO" ||
@@ -31,9 +37,7 @@ const ManageTickets = () => {
     queryKey: ["tickets-data"],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/tickets/department-tickets/${
-          auth.user?.departments?.map((dept) => dept._id)[0]
-        }`
+        `/api/tickets/department-tickets/${selectedDepartment}`
       );
       return response.data;
     },
@@ -41,14 +45,20 @@ const ManageTickets = () => {
 
   const ticketsFilteredData = {
     openTickets: ticketsData.filter((item) => item.status === "Open").length,
-    closedTickets: ticketsData.filter((item) => item.status === "Closed").length,
-    pendingTickets: ticketsData.filter((item) => item.status === "Pending").length,
+    closedTickets: ticketsData.filter((item) => item.status === "Closed")
+      .length,
+    pendingTickets: ticketsData.filter((item) => item.status === "Pending")
+      .length,
     acceptedTickets: ticketsData
       .filter((item) => item.acceptedBy?._id === auth.user?._id)
       .filter((item) => item.status === "In Progress").length,
-    assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0).length,
-    escalatedTickets: ticketsData.filter((item) => item.status === "Escalated").length,
+    assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0)
+      .length,
+    escalatedTickets: ticketsData.filter((item) => item.status === "Escalated")
+      .length,
   };
+
+  console.log(`Tickets data ${selectedDepartment}`, ticketsData.length);
 
   const widgets = [
     {
@@ -164,7 +174,9 @@ const ManageTickets = () => {
       <div>
         {widgets.map((widget, index) => (
           <div key={index}>
-            <WidgetSection layout={widget.layout}>{widget.widgets}</WidgetSection>
+            <WidgetSection layout={widget.layout}>
+              {widget.widgets}
+            </WidgetSection>
           </div>
         ))}
       </div>
@@ -206,9 +218,7 @@ const ManageTickets = () => {
         </Tabs>
 
         {/* Tab Content */}
-        <div className="py-4 bg-white">
-          {tabItems[activeTab]?.component}
-        </div>
+        <div className="py-4 bg-white">{tabItems[activeTab]?.component}</div>
       </div>
     </div>
   );
