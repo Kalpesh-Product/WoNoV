@@ -27,6 +27,14 @@ const MeetingDashboard = () => {
       return response.data;
     },
   });
+  
+  const { data: roomsData = [], isLoading:isRoomLoading } = useQuery({
+    queryKey: ["rooms"],
+    queryFn: async () => {
+      const response = await axios.get("/api/meetings/get-rooms");
+      return response.data;
+    },
+  });
 
   // Function to calculate total duration in hours
   const calculateTotalDurationInHours = (meetings) => {
@@ -86,6 +94,11 @@ const MeetingDashboard = () => {
       return response.data;
     },
   });
+
+
+  const totalMeetingsOccupancy = meetingsData.map((meeting)=>{
+    
+  })
 
   const meetingColumns = [
     { id: "id", label: "Sr No", align: "left" },
@@ -319,13 +332,59 @@ const MeetingDashboard = () => {
   };
 
   // Calculate percentage utilization
-  const totalBookableHours = 1980;
+  const monthNames = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+
+const monthMap = new Map();
+
+meetingsData.forEach((meeting) => {
+  const date = new Date(meeting.startTime); // or startDate if that's correct
+  const monthIndex = date.getMonth(); // 0 to 11
+  const durationMinutes = parseInt(meeting.duration); // "60m" → 60
+  const durationHours = durationMinutes / 60;
+
+  const current = monthMap.get(monthIndex) || 0;
+  monthMap.set(monthIndex, current + durationHours);
+});
+
+// Convert Map to object with month names
+const monthlyBookedHours = {};
+for (let [monthIndex, hours] of monthMap.entries()) {
+  const monthName = monthNames[monthIndex];
+  monthlyBookedHours[monthName] = hours;
+}
+
+console.log("months",monthlyBookedHours)
+
+
+  // const monthMap = new Map()
+  // const calculateBookedHoursPerMonth = meetingsData.map((meeting)=>{
+
+  //   const date = new Date(meeting.startDate)
+  //   const month = date.getMonth()
+  //   const hours = month.duration * 24
+  //   if(!monthMap.has(month)){
+  //     monthMap.set({month:hours})
+  //   }
+
+  // })
+  // console.log("bookedHours",calculateBookedHoursPerMonth)
+
+  // const totalBookableHours = 1980;
+  const workinghoursPerDay = 9
+  const workingDays = 24
+  const totalBookableHours = roomsData.length * workinghoursPerDay * workingDays
+
   const data = Object.keys(actualBookedHoursPerMonth).map((month) => ({
     x: month,
     y: (actualBookedHoursPerMonth[month] / totalBookableHours) * 100,
   }));
 
   const averageBookingSeries = [{ name: "Booking Utilization", data }];
+
+  console.log("series",averageBookingSeries)
 
   const averageBookingOptions = {
     chart: {
@@ -497,6 +556,7 @@ const MeetingDashboard = () => {
     colors: ["#2DC1C6"],
   };
 
+  // Heatmap for meeting timeslots
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const timeSlots = [
     "8AM-9AM",
@@ -512,49 +572,7 @@ const MeetingDashboard = () => {
     "6PM-7PM",
     "7PM-8PM",
   ];
-
-// Utility to convert time to slot label
-// const getTimeSlotLabel = (date) => {
-//   const hour = date.getHours();
-//   if (hour >= 8 && hour < 20) {
-//     const ampm = hour < 12 ? "AM" : "PM";
-//     const start = hour % 12 === 0 ? 12 : hour % 12;
-//     const end = (hour + 1) % 12 === 0 ? 12 : (hour + 1) % 12;
-//     const endAMPM = (hour + 1) < 12 ? "AM" : "PM";
-//     return `${start}${ampm}-${end}${endAMPM}`;
-//   }
-//   return null;
-// };
  
-  // Create empty matrix: [timeSlot][day] = count
-  // const matrix = Array(timeSlots.length).fill(null).map(() => Array(7).fill(0));
-
-  // meetingsData.forEach((meeting) => {
-  //   const date = new Date(meeting.startTime);
-  //   const day = date.getDay(); // 0 = Sun, 6 = Sat
-  //   const slot = getTimeSlotLabel(date);
-
-  //   if (slot) {
-  //     const slotIndex = timeSlots.indexOf(slot);
-  //     if (slotIndex !== -1) {
-  //       matrix[slotIndex][day]++;
-  //     }
-  //   }
-  // });
-
-  // // Convert matrix to heatmapData
-  // const heatmapData = timeSlots.map((slot, slotIndex) => ({
-  //   name: slot,
-  //   data: days.map((day, dayIndex) => ({
-  //     x: day,
-  //     y: day === "Sun" || day === "Sat" ? 0 : matrix[slotIndex][dayIndex],
-  //   })),
-  // }));
-
-
-  //////////////////////////////////////
-
-// 🗓️ Get Mon–Fri Dates of Current Week
 function getCurrentWeekDays() {
   const today = new Date();
   const day = today.getDay(); // 0 (Sun) to 6 (Sat)
