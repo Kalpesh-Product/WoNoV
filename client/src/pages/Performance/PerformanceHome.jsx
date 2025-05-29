@@ -5,11 +5,24 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setSelectedDepartment } from "../../redux/slices/performanceSlice";
+import { useTopDepartment } from "../../hooks/useTopDepartment";
+import useAuth from "../../hooks/useAuth";
 
 const PerformanceHome = () => {
   const axios = useAxiosPrivate();
-  const dispatch = useDispatch()
+  const { auth } = useAuth();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const currentDepartmentId = auth.user?.departments?.[0]?._id;
+  const currentDepartment = auth.user?.departments?.[0]?.name;
+
+  useTopDepartment({
+    onNotTop: () => {
+      dispatch(setSelectedDepartment(currentDepartmentId));
+      navigate(`${currentDepartment}`);
+    },
+  });
+
   const fetchDepartments = async () => {
     try {
       const response = await axios.get("api/performance/get-depts-tasks");
@@ -31,12 +44,11 @@ const PerformanceHome = () => {
       field: "department",
       flex: 1,
       cellRenderer: (params) => {
-        console.log(params.data.mongoId);
         return (
           <span
             role="button"
             onClick={() => {
-              dispatch(setSelectedDepartment(params.data.mongoId))
+              dispatch(setSelectedDepartment(params.data.mongoId));
               navigate(`${params.value}`);
               console.log("Navigating with ID:", params.data?.mongoId);
             }}

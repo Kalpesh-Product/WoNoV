@@ -39,6 +39,7 @@ const Calender = () => {
     // "cancelled",
   ]);
   const meetings = useSelector((state) => state.meetings.data);
+  console.log("Calendar Meetings from redux",meetings)
 
   const transformedMeetings = meetings.map((meeting) => {
     const formattedStart = `${meeting.startTime.split("/").reverse().join("-")}`;
@@ -51,6 +52,7 @@ const Calender = () => {
       extendedProps: { ...meeting },
     };
   });
+    console.log("Calendar Meetings from redux transformed",transformedMeetings)
 
   useEffect(() => {
     if (eventFilter.length === 0) {
@@ -60,7 +62,7 @@ const Calender = () => {
         eventFilter.includes(event.extendedProps?.meetingStatus.toLowerCase())
       );
       setFilteredEvents(filtered);
-      console.log(filteredEvents)
+      console.log("Filtered events",filteredEvents)
     }
   }, [eventFilter, meetings]);
 
