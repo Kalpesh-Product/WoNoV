@@ -17,12 +17,12 @@ const createTasks = async (req, res, next) => {
       taskName,
       department,
       description,
-      status,
+      // status,
       priority,
-      assignees,
+      // assignees,
       dueDate,
-      dueTime,
-      assignedDate,
+      endDate: dueTime,
+      startDate: assignedDate,
     } = req.body;
 
     if (
@@ -325,19 +325,11 @@ const getAllTasks = async (req, res, next) => {
     })
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
+      .populate("department", "name")
       .select("-company")
       .lean();
 
-    const transformedTasks = tasks.map((task) => {
-      return {
-        ...task,
-        dueDate: formatDate(task.dueDate),
-        dueTime: task.dueTime ? formatTime(task.dueTime) : null,
-        assignedDate: formatDate(task.assignedDate),
-      };
-    });
-
-    return res.status(200).json(transformedTasks);
+    return res.status(200).json(tasks);
   } catch (error) {
     next(error);
   }

@@ -17,7 +17,11 @@ import { toast } from "sonner";
 import { queryClient } from "../../../main";
 import { FaCheck } from "react-icons/fa6";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import {
+  DatePicker,
+  LocalizationProvider,
+  TimePicker,
+} from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 
 const TasksViewDepartment = () => {
@@ -45,9 +49,11 @@ const TasksViewDepartment = () => {
   const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
     mutationKey: ["addDailyKra"],
     mutationFn: async (data) => {
-      const response = await axios.post("/api/performance/create-task", {
-        task: data.dailyKra,
-        taskType: "KRA",
+      const response = await axios.post("/api/tasks/create-tasks", {
+        taskName: data.taskName,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        dueTime: data.dueTime,
         description: data.description,
         department: deptId,
       });
@@ -149,7 +155,10 @@ const TasksViewDepartment = () => {
             onClick={() => updateDailyKra(params.data.id)}
             className="p-2"
           >
-            <PrimaryButton title={<FaCheck />} />
+            <PrimaryButton
+              title={<FaCheck />}
+              disabled={!params.node.selected}
+            />
           </div>
         );
       },
@@ -355,7 +364,13 @@ const TasksViewDepartment = () => {
                   {...field}
                   slotProps={{ textField: { size: "small" } }}
                   renderInput={(params) => (
-                    <TextField fullWidth size="small" {...params} helperText={errors?.dueTime?.message} error={!!errors?.dueTime} />
+                    <TextField
+                      fullWidth
+                      size="small"
+                      {...params}
+                      helperText={errors?.dueTime?.message}
+                      error={!!errors?.dueTime}
+                    />
                   )}
                 />
               )}
