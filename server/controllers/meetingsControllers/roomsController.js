@@ -151,11 +151,24 @@ const updateRoom = async (req, res, next) => {
 
   try {
     const { id: roomId } = req.params;
-    const { name, description, seats } = req.body;
+    const { name, description, seats, location } = req.body;
 
     if (!roomId) {
       throw new CustomError(
         "Room ID must be provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const isValidLocation = await Unit.findById({ _id: location })
+      .lean()
+      .exec();
+
+    if (!isValidLocation) {
+      throw new CustomError(
+        "Invalid location. Must be a valid company work location.",
         logPath,
         logAction,
         logSourceKey
@@ -211,6 +224,8 @@ const updateRoom = async (req, res, next) => {
       updatedFields.description = description;
     }
     if (seats && seats !== room.seats) updatedFields.seats = seats;
+    if (location && location !== room.location)
+      updatedFields.location = location;
     if (req.file) updatedFields.image = { id: imageId, url: imageUrl };
 
     Object.assign(room, updatedFields);
