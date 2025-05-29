@@ -771,9 +771,43 @@ const bulkInsertUsers = async (req, res, next) => {
 
 const getAssignees = async (req, res, next) => {
   try {
-    const { company, departments } = req;
+    const { company, departments, user } = req;
 
     const departmentIds = departments.map((dept) => dept._id);
+
+    const loggedInUser = await User.findOne({ _id: user })
+      .populate([{ path: "role", select: "roleTitle" }])
+      .lean()
+      .exec();
+
+    if (
+      loggedInUser.role.some((role) =>
+        ["Master Admin", "Super Admin"].includes(role.roleTitle)
+      )
+    ) {
+      const users = await User.find({ company, isActive: true })
+        .populate([{ path: "role", select: "roleTitle" }])
+        .select("_id firstName lastName")
+        .lean()
+        .exec();
+
+      const admins = users.filter(
+        (user) =>
+          user.role.some((r) => r.roleTitle.endsWith("Admin")) &&
+          !user.role.some((r) =>
+            ["Master Admin", "Super Admin"].includes(r.roleTitle)
+          )
+      );
+
+      const transformAdmins = admins.map((admin) => {
+        return {
+          id: admin._id,
+          name: `${admin.firstName} ${admin.lastName}`,
+        };
+      });
+
+      return res.status(200).json(transformAdmins);
+    }
 
     const team = await User.find({
       company,
@@ -788,8 +822,6 @@ const getAssignees = async (req, res, next) => {
     if (!team?.length) {
       return res.status(400).json({ message: "No assigness found" });
     }
-
-
 
     const transformAssignees = team.map((assignee) => {
       return {
