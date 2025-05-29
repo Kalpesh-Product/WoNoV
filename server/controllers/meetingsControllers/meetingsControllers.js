@@ -13,7 +13,6 @@ const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const Visitor = require("../../models/visitor/Visitor");
 const Review = require("../../models/meetings/Reviews");
-const CoworkingClient = require("../../models/sales/CoworkingClient");
 const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 
 const addMeetings = async (req, res, next) => {
@@ -167,83 +166,11 @@ const addMeetings = async (req, res, next) => {
 
       internalUsers = users.map((user) => user._id);
     }
-    // if (externalParticipants) {
-    //   // const {
-    //   //   companyName,
-    //   //   registeredCompanyName,
-    //   //   companyURL,
-    //   //   email,
-    //   //   mobileNumber,
-    //   //   gstNumber,
-    //   //   panNumber,
-    //   //   address,
-    //   //   personName,
-    //   // } = externalCompanyData;
-
-    //   // if (!companyName || !email || !mobileNumber || !personName) {
-    //   //   throw new CustomError(
-    //   //     "Missing required fields for external participants",
-    //   //     logPath,
-    //   //     logAction,
-    //   //     logSourceKey
-    //   //   );
-    //   // }
-
-    //   // const newExternalCompany = new ExternalCompany({
-    //   //   companyName,
-    //   //   registeredCompanyName,
-    //   //   companyURL,
-    //   //   email,
-    //   //   mobileNumber,
-    //   //   gstNumber: gstNumber,
-    //   //   panNumber: panNumber,
-    //   //   address: address || "",
-    //   //   personName,
-    //   // });
-
-    //   // const savedExternalCompany = await newExternalCompany.save();
-
-    //   // externalClientData = {
-    //   //   participants: [...externalParticipants],
-    //   //   company: savedExternalCompany._id,
-    //   // };
-    //   // const invalidIds = externalParticipants.filter(
-    //   //   (id) => !mongoose.Types.ObjectId.isValid(id)
-    //   // );
-
-    //   // if (invalidIds.length > 0) {
-    //   //   throw new CustomError(
-    //   //     "Invalid internal participant IDs",
-    //   //     logPath,
-    //   //     logAction,
-    //   //     logSourceKey
-    //   //   );
-    //   // }
-
-    //   // const users = await Visitor.find({ _id: { $in: externalParticipants } });
-
-    //   // const unmatchedIds = externalParticipants.filter(
-    //   //   (id) => !users.find((user) => user._id.toString() === id)
-    //   // );
-
-    //   // if (unmatchedIds.length > 0) {
-    //   //   throw new CustomError(
-    //   //     "Some external participant IDs did not match any user",
-    //   //     logPath,
-    //   //     logAction,
-    //   //     logSourceKey
-    //   //   );
-    //   // }
-
-    //   // externalUsers = users.map((user) => user._id);
-    // }
 
     const conflictingMeeting = await Meeting.findOne({
       bookedRoom: roomAvailable._id,
-      // First, check if dates overlap
       startDate: { $lte: endDateObj },
       endDate: { $gte: startDateObj },
-      // Then check time overlap within those dates
       $or: [
         {
           $and: [
