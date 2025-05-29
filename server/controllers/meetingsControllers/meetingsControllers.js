@@ -479,6 +479,7 @@ const getMeetings = async (req, res, next) => {
         externalClient: meeting.externalClient
           ? meeting.externalClient.companyName
           : null,
+        pocName: meeting.externalClient ? meeting.externalClient.pocName : "",
         meetingType: meeting.meetingType,
         housekeepingStatus: meeting.houeskeepingStatus,
         date: meeting.startDate,
