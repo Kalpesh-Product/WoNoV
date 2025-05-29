@@ -291,56 +291,56 @@ const getKraKpaTasks = async (req, res, next) => {
         };
       });
 
-    const completedTasks = await kraKpaTask
-      .find({ company, status: "Completed" })
-      .populate([
-        {
-          path: "task",
-          select: "",
-          populate: [{ path: "department", select: "name" }],
-        },
-        {
-          path: "completedBy",
-          select: "firstName middleName lastName empId",
-        },
-      ])
-      .select("-company");
+    // const completedTasks = await kraKpaTask
+    //   .find({ company, status: "Completed" })
+    //   .populate([
+    //     {
+    //       path: "task",
+    //       select: "",
+    //       populate: [{ path: "department", select: "name" }],
+    //     },
+    //     {
+    //       path: "completedBy",
+    //       select: "firstName middleName lastName empId",
+    //     },
+    //   ])
+    //   .select("-company");
 
-    const transformedCompletedTasks =
-      completedTasks.length < 0
-        ? []
-        : completedTasks
-            .filter((task) => {
-              if (duration && duration !== task.task.kpaDuration) return;
-              if (empId && task.completedBy.empId !== empId) return;
+    // const transformedCompletedTasks =
+    //   completedTasks.length < 0
+    //     ? []
+    //     : completedTasks
+    //         .filter((task) => {
+    //           if (duration && duration !== task.task.kpaDuration) return;
+    //           if (empId && task.completedBy.empId !== empId) return;
 
-              return (
-                task.task.department._id.toString() === dept &&
-                task.task.taskType === type
-              );
-            })
-            .map((task) => {
-              const completedBy = `${task.completedBy.firstName} ${
-                task.completedBy.middleName || ""
-              } ${task.completedBy.lastName}`;
+    //           return (
+    //             task.task.department._id.toString() === dept &&
+    //             task.task.taskType === type
+    //           );
+    //         })
+    //         .map((task) => {
+    //           const completedBy = `${task.completedBy.firstName} ${
+    //             task.completedBy.middleName || ""
+    //           } ${task.completedBy.lastName}`;
 
-              return {
-                id: task._id,
-                taskName: task.task.task,
-                completedBy: completedBy,
-                assignedDate: task.task.assignedDate,
-                dueDate: task.task.dueDate,
-                dueTime: "6:30 PM",
-                completionDate: task.completionDate
-                  ? task.completionDate
-                  : "N/A",
-                status: task.status,
-              };
-            });
+    //           return {
+    //             id: task._id,
+    //             taskName: task.task.task,
+    //             completedBy: completedBy,
+    //             assignedDate: task.task.assignedDate,
+    //             dueDate: task.task.dueDate,
+    //             dueTime: "6:30 PM",
+    //             completionDate: task.completionDate
+    //               ? task.completionDate
+    //               : "N/A",
+    //             status: task.status,
+    //           };
+    //         });
 
-    const allTasks = [...transformedTasks, ...transformedCompletedTasks];
+    // const allTasks = [...transformedTasks, ...transformedCompletedTasks];
 
-    return res.status(200).json(allTasks);
+    return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);
   }
@@ -451,7 +451,7 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
       return res.status(400).json({ message: "Missing task type" });
     }
 
-    const tasks = await kraKpaTask
+    const completedTasks = await kraKpaTask
       .find({ company, status: "Completed" })
       .populate([
         {
@@ -460,39 +460,46 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
           populate: [{ path: "department", select: "name" }],
         },
         {
-          path: "assignedTo",
+          path: "completedBy",
           select: "firstName middleName lastName empId",
         },
       ])
       .select("-company");
 
-    const transformedTasks = tasks
-      .filter((task) => {
-        if (duration && duration !== task.task.kpaDuration) return;
-        if (empId && task.assignedTo.empId !== empId) return;
-        return (
-          task.task.department._id.toString() === dept &&
-          task.task.taskType === type
-        );
-      })
-      .map((task) => {
-        const completedBy = `${task.assignedTo.firstName} ${
-          task.assignedTo.middleName || ""
-        } ${task.assignedTo.lastName}`;
+    const transformedCompletedTasks =
+      completedTasks.length < 0
+        ? []
+        : completedTasks
+            .filter((task) => {
+              if (duration && duration !== task.task.kpaDuration) return;
+              if (empId && task.completedBy.empId !== empId) return;
 
-        return {
-          id: task._id,
-          taskName: task.task.task,
-          completedBy: completedBy,
-          assignedDate: task.task.assignedDate,
-          dueDate: task.task.dueDate,
-          dueTime: "6:30 PM",
-          completionDate: task.completionDate ? task.completionDate : "N/A",
-          status: task.status,
-        };
-      });
+              return (
+                task.task.department._id.toString() === dept &&
+                task.task.taskType === type
+              );
+            })
+            .map((task) => {
+              const completedBy = `${task.completedBy.firstName} ${
+                task.completedBy.middleName || ""
+              } ${task.completedBy.lastName}`;
 
-    return res.status(200).json(transformedTasks);
+              return {
+                id: task._id,
+                taskName: task.task.task,
+                department: task.task.department.name,
+                completedBy: completedBy,
+                assignedDate: task.task.assignedDate,
+                dueDate: task.task.dueDate,
+                dueTime: "6:30 PM",
+                completionDate: task.completionDate
+                  ? task.completionDate
+                  : "N/A",
+                status: task.status,
+              };
+            });
+
+    return res.status(200).json(transformedCompletedTasks);
   } catch (error) {
     next(error);
   }
