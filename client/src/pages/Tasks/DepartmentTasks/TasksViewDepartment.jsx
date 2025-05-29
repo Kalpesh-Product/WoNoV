@@ -17,7 +17,11 @@ import { toast } from "sonner";
 import { queryClient } from "../../../main";
 import { FaCheck } from "react-icons/fa6";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import {
+  DatePicker,
+  LocalizationProvider,
+  TimePicker,
+} from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 
 const TasksViewDepartment = () => {
@@ -149,7 +153,10 @@ const TasksViewDepartment = () => {
             onClick={() => updateDailyKra(params.data.id)}
             className="p-2"
           >
-            <PrimaryButton title={<FaCheck />} />
+            <PrimaryButton
+              title={<FaCheck />}
+              disabled={!params.node.selected}
+            />
           </div>
         );
       },
@@ -355,7 +362,13 @@ const TasksViewDepartment = () => {
                   {...field}
                   slotProps={{ textField: { size: "small" } }}
                   renderInput={(params) => (
-                    <TextField fullWidth size="small" {...params} helperText={errors?.dueTime?.message} error={!!errors?.dueTime} />
+                    <TextField
+                      fullWidth
+                      size="small"
+                      {...params}
+                      helperText={errors?.dueTime?.message}
+                      error={!!errors?.dueTime}
+                    />
                   )}
                 />
               )}

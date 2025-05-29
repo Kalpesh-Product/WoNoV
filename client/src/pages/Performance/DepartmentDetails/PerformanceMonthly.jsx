@@ -47,9 +47,9 @@ const PerformanceMonthly = () => {
         taskType: "KPA",
         // description: data.description,
         department: deptId,
-        assignedDate : data.startDate,
+        assignedDate: data.startDate,
         dueDate: data.endDate,
-        kpaDuration : "Monthly"
+        kpaDuration: "Monthly",
       });
       return response.data;
     },
@@ -61,7 +61,7 @@ const PerformanceMonthly = () => {
     onError: (error) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKra"] });
       toast.success("DATA UPDATED");
-      setOpenModal(false)
+      setOpenModal(false);
     },
   });
 
@@ -144,13 +144,17 @@ const PerformanceMonthly = () => {
       headerName: "Actions",
       field: "actions",
       cellRenderer: (params) => {
+        console.log(params.node);
         return (
           <div
             role="button"
             onClick={() => updateMonthlyKpa(params.data.id)}
             className="p-2"
           >
-            <PrimaryButton title={<FaCheck />} />
+            <PrimaryButton
+              disabled={!params.node.selected}
+              title={<FaCheck />}
+            />
           </div>
         );
       },
@@ -196,6 +200,7 @@ const PerformanceMonthly = () => {
       <div className="flex flex-col gap-4">
         <WidgetSection padding layout={1}>
           <MonthWiseTable
+            checkbox
             tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
             buttonTitle={"Add Monthly KPA"}
             handleSubmit={() => setOpenModal(true)}
@@ -327,7 +332,12 @@ const PerformanceMonthly = () => {
             )}
           />
 
-          <PrimaryButton type="submit" title={"Submit"} disabled={isAddKpaPending} isLoading={isAddKpaPending}/>
+          <PrimaryButton
+            type="submit"
+            title={"Submit"}
+            disabled={isAddKpaPending}
+            isLoading={isAddKpaPending}
+          />
         </form>
       </MuiModal>
     </>
