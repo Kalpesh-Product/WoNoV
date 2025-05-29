@@ -15,17 +15,15 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import {
   assetAvailabilityDataV,
   assetAvailabilityOptionsV,
-  assetCategoriesDataV,
   departmentPieDataVX,
   departmentPieOptionsVX,
-  recentAssetsColumnsVX,
-  recentAssetsDataVX,
 } from "./VisitorsData/VisitorsData";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import LazyDashboardWidget from "../../components/Optimization/LazyDashboardWidget";
+import dayjs from "dayjs";
 
 const VisitorDashboard = () => {
   const navigate = useNavigate();
@@ -65,6 +63,65 @@ const VisitorDashboard = () => {
   );
 
   console.log("Visitor Type :", visitorTypeRawData);
+  //---------------------------------------------------First Graph Data---------------------------------------------------//
+  // Define financial year start and end
+const fyStart = dayjs("2025-04-01");
+const fyEnd = dayjs("2026-03-31");
+
+// Create month labels and a map
+const months = [];
+const monthlyVisitorMap = {};
+
+for (let i = 0; i < 12; i++) {
+  const month = fyStart.add(i, "month");
+  const label = month.format("MMM-YY"); // e.g., "Apr-25"
+  months.push(label);
+  monthlyVisitorMap[label] = 0;
+}
+
+// Populate the map
+visitorsData.forEach((visitor) => {
+  const visitDate = dayjs(visitor.dateOfVisit);
+  if (visitDate.isAfter(fyStart.subtract(1, "day")) && visitDate.isBefore(fyEnd.add(1, "day"))) {
+    const label = visitDate.format("MMM-YY");
+    if (monthlyVisitorMap[label] !== undefined) {
+      monthlyVisitorMap[label]++;
+    }
+  }
+});
+
+const visitorsSeries = [
+  {
+    name: "Visitors",
+    data: months.map((m) => monthlyVisitorMap[m]),
+  },
+];
+
+const visitorsChartOptions = {
+  chart: {
+    type: "bar",
+    toolbar: { show: false },
+  },
+  xaxis: {
+    categories: months,
+  },
+  yaxis: {
+    title: {
+      text: "No. of Visitors",
+    },
+     labels: {
+      formatter: (val) => `${Math.round(val)}`, // ✅ Correct placement
+    },
+  },
+  plotOptions: {
+    bar: {
+      borderRadius: 4,
+      horizontal: false,
+    },
+  },
+};
+
+  //---------------------------------------------------First Graph Data---------------------------------------------------//
   //---------------------------------------------------Category Wise Visitors Donut Data---------------------------------------------------//
   const totalVisitorCategories = visitorTypeRawData.reduce(
     (sum, visitor) => sum + visitor.count,
@@ -158,43 +215,6 @@ const VisitorDashboard = () => {
     x: month,
     y: (actualBookedHoursPerMonth[month] / totalBookableHours) * 100,
   }));
-
-  const averageBookingSeries = [{ name: "Total Visitors", data }];
-
-  const averageBookingOptions = {
-    chart: { type: "bar", fontFamily: "Poppins-Regular", toolbar: false },
-    xaxis: { categories: BookingMonths },
-    yaxis: {
-      max: 100,
-      title: { text: "Visitors" },
-      labels: {
-        formatter: function (value) {
-          return Math.round(value) + ""; // Removes decimals
-        },
-      },
-    },
-    dataLabels: {
-      enabled: true,
-      formatter: function (val) {
-        return Math.round(val) + ""; // Display percentage without decimals
-      },
-      style: {
-        fontSize: "11px",
-        colors: ["#ffff"], // White color for visibility inside bars
-      },
-    },
-    plotOptions: {
-      bar: {
-        dataLabels: {
-          position: "top", // Places labels inside the bar
-        },
-        borderRadius: 5,
-        columnWidth: "40%",
-      },
-    },
-    colors: ["#0aa9ef"], // Black color for bars
-  };
-
   const usersQuery = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
@@ -296,8 +316,8 @@ const VisitorDashboard = () => {
         >
           <BarGraph
             height={400}
-            data={averageBookingSeries}
-            options={averageBookingOptions}
+            data={visitorsSeries}
+            options={visitorsChartOptions}
           />
         </WidgetSection>,
       ],
