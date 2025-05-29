@@ -37,14 +37,27 @@ const MeetingSettings = () => {
     watch: editWatch,
   } = useForm({
     defaultValues: {
-      location: "",
+      location: selectedRoom?.location?.building?._id,
     },
   });
   const [editFile, setEditFile] = useState(null);
   const editLocation = editWatch("location");
+
   useEffect(() => {
-    console.log("Location selected:", editLocation);
-  }, [editLocation]);
+    if (selectedRoom) {
+      resetEditForm({
+        roomName: selectedRoom.name ?? "",
+        seats: selectedRoom.seats ?? "",
+        description: selectedRoom.description ?? "",
+        location: selectedRoom.location?.building?._id ?? "",
+        unit: selectedRoom.location?._id ?? "",
+      });
+    }
+  }, [selectedRoom, resetEditForm]);
+
+  useEffect(() => {
+    console.log("Location selected:", selectedRoom);
+  }, [selectedRoom]);
 
   const handleOpenEditModal = (room) => {
     setSelectedRoom(room);
@@ -68,7 +81,7 @@ const MeetingSettings = () => {
 
   const editRoomMutation = useMutation({
     mutationFn: async ({ id, formData }) => {
-      return axios.put(`/api/meetings/update-room/${id}`, formData, {
+      return axios.patch(`/api/meetings/update-room/${id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
     },
@@ -87,7 +100,8 @@ const MeetingSettings = () => {
     formData.append("name", data.roomName);
     formData.append("seats", data.seats);
     formData.append("description", data.description);
-    formData.append("location", data.location);
+    formData.append("location", data.unit);
+    // formData.append("unit", data.unit);
 
     if (editFile) {
       formData.append("room", editFile);
@@ -415,7 +429,6 @@ const MeetingSettings = () => {
               <Controller
                 name="location"
                 control={editControl}
-                defaultValue=""
                 render={({ field }) => (
                   <FormControl size="small" fullWidth>
                     <InputLabel>Location</InputLabel>
