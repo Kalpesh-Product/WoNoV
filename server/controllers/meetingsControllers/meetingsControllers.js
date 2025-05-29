@@ -328,7 +328,7 @@ const getMeetings = async (req, res, next) => {
         { path: "bookedBy", select: "firstName lastName" },
         { path: "receptionist", select: "firstName lastName" },
         { path: "client", select: "clientName" },
-        { path: "externalClient", select: "companyName pocName" },
+        { path: "externalClient", select: "companyName pocName mobileNumber" },
         { path: "internalParticipants", select: "firstName lastName email" },
         { path: "clientParticipants", select: "employeeName email" },
         { path: "externalParticipants", select: "firstName lastName email" },
@@ -404,6 +404,9 @@ const getMeetings = async (req, res, next) => {
           ? meeting.externalClient.companyName
           : null,
         pocName: meeting.externalClient ? meeting.externalClient.pocName : "",
+        mobileNumber: meeting.externalClient
+          ? meeting.externalClient.mobileNumber
+          : "",
         meetingType: meeting.meetingType,
         housekeepingStatus: meeting.houeskeepingStatus,
         date: meeting.startDate,
