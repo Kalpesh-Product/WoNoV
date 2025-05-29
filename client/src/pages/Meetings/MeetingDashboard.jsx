@@ -356,7 +356,6 @@ for (let [monthIndex, hours] of monthMap.entries()) {
   monthlyBookedHours[monthName] = hours;
 }
 
-console.log("months",monthlyBookedHours)
 
 
   // const monthMap = new Map()
@@ -377,7 +376,7 @@ console.log("months",monthlyBookedHours)
   const workingDays = 24
   const totalBookableHours = roomsData.length * workinghoursPerDay * workingDays
 
-  const data = Object.keys(actualBookedHoursPerMonth).map((month) => ({
+  const data = Object.keys(monthlyBookedHours).map((month) => ({
     x: month,
     y: (actualBookedHoursPerMonth[month] / totalBookableHours) * 100,
   }));
