@@ -49,9 +49,11 @@ const TasksViewDepartment = () => {
   const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
     mutationKey: ["addDailyKra"],
     mutationFn: async (data) => {
-      const response = await axios.post("/api/performance/create-task", {
-        task: data.dailyKra,
-        taskType: "KRA",
+      const response = await axios.post("/api/tasks/create-tasks", {
+        taskName: data.taskName,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        dueTime: data.dueTime,
         description: data.description,
         department: deptId,
       });
