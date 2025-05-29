@@ -34,6 +34,8 @@ const RaiseTicket = () => {
 
   // Fetch departments and ticket issues in the same useEffect
 
+
+
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(

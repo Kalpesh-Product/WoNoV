@@ -328,6 +328,8 @@ import DepartmentTasksLayout from "../pages/Tasks/DepartmentTasks/DepartmentTask
 import DepartmentTasks from "../pages/Tasks/DepartmentTasks/DepartmentTasks";
 import TasksDepartmentLayout from "../pages/Tasks/DepartmentTasks/TasksDepartmentLayout";
 import TasksViewDepartment from "../pages/Tasks/DepartmentTasks/TasksViewDepartment";
+import ManageTicketLayout from "../pages/Tickets/Tables/ManageTicketLayout";
+import ManageTicketsHome from "../pages/Tickets/ManageTicketsHome";
 
 export const routes = createBrowserRouter([
   {
@@ -1564,7 +1566,18 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "manage-tickets",
-                    element: <ManageTickets />,
+                    element: <ManageTicketLayout />,
+                    children:[
+                      {
+                        path:"",
+                        element : <ManageTicketsHome />,
+                        index : true
+                      },
+                      {
+                        path:":department",
+                        element : <ManageTickets />,
+                      }
+                    ]
                   },
                   {
                     path: "ticket-settings",

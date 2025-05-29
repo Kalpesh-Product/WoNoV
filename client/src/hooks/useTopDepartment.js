@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useAuth } from "../hooks/useAuth"; // adjust path if needed
+import  useAuth  from "../hooks/useAuth"; // adjust path if needed
 
 export function useTopDepartment({
   onNotTop,
