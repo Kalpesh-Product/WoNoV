@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import PrimaryButton from "../../components/PrimaryButton";
 import {
   Button,
@@ -34,9 +34,17 @@ const MeetingSettings = () => {
     control: editControl,
     handleSubmit: handleEditSubmit,
     reset: resetEditForm,
-  } = useForm();
+    watch: editWatch,
+  } = useForm({
+    defaultValues: {
+      location: "",
+    },
+  });
   const [editFile, setEditFile] = useState(null);
-  const editInputRef = useRef();
+  const editLocation = editWatch("location");
+  useEffect(() => {
+    console.log("Location selected:", editLocation);
+  }, [editLocation]);
 
   const handleOpenEditModal = (room) => {
     setSelectedRoom(room);
@@ -88,16 +96,28 @@ const MeetingSettings = () => {
     editRoomMutation.mutate({ id: selectedRoom._id, formData });
   };
 
-
   // Fetch Meeting Rooms from API
-  const { data: meetingRooms = [], isPending: isMeetingRoomsLoading } = useQuery({
-    queryKey: ["meetingRooms"],
+  const { data: meetingRooms = [], isPending: isMeetingRoomsLoading } =
+    useQuery({
+      queryKey: ["meetingRooms"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/meetings/get-rooms");
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response.data.message);
+        }
+      },
+    });
+
+  const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
+    queryKey: ["unitsData"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/meetings/get-rooms");
+        const response = await axios.get("/api/company/fetch-units");
         return response.data;
       } catch (error) {
-        throw new Error(error.response.data.message);
+        console.error("Error fetching clients data:", error);
       }
     },
   });
@@ -152,7 +172,7 @@ const MeetingSettings = () => {
   const handleCloseModal = () => {
     setOpenModal(false);
     // inputRef.current.value = "";
-    setSelectedFile("")
+    setSelectedFile("");
     reset();
   };
 
@@ -172,51 +192,55 @@ const MeetingSettings = () => {
         </div>
 
         <div className="grid grid-cols-3 gap-4">
-          {!isMeetingRoomsLoading ? meetingRooms.map((room) => (
-            <Card
-              key={room._id}
-              className="shadow-md hover:shadow-lg transition-shadow border border-gray-200"
-            >
-              <CardMedia
-                component="img"
-                sx={{ height: "350px" }}
-                image={room.image?.url || "https://via.placeholder.com/350"} // Fallback Image
-                alt={room.name}
-                className="object-cover"
-              />
-              <CardContent>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-subtitle">{room.name}</span>
-                  <span
-                    className={`px-4 py-1 text-content font-pregular rounded-full ${room.status === "Available"
-                      ? "bg-green-100 text-green-600"
-                      : "bg-red-100 text-red-600"
+          {!isMeetingRoomsLoading ? (
+            meetingRooms.map((room) => (
+              <Card
+                key={room._id}
+                className="shadow-md hover:shadow-lg transition-shadow border border-gray-200"
+              >
+                <CardMedia
+                  component="img"
+                  sx={{ height: "350px" }}
+                  image={room.image?.url || "https://via.placeholder.com/350"} // Fallback Image
+                  alt={room.name}
+                  className="object-cover"
+                />
+                <CardContent>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-subtitle">{room.name}</span>
+                    <span
+                      className={`px-4 py-1 text-content font-pregular rounded-full ${
+                        room.status === "Available"
+                          ? "bg-green-100 text-green-600"
+                          : "bg-red-100 text-red-600"
                       }`}
-                  >
-                    {room.status}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2 mb-4 text-gray-500">
-                  <FiWifi />
-                  <FiSun />
-                  <FiMonitor />
-                </div>
-                <p className="mb-2 text-sm font-medium text-gray-800">
-                  <span role="img" aria-label="person">
-                    👥
-                  </span>{" "}
-                  Fits {room.seats} people
-                </p>
-                <div className="mt-4">
-                  <PrimaryButton
-                    title={"Edit Room"}
-                    handleSubmit={() => handleOpenEditModal(room)}
-                  />
-
-                </div>
-              </CardContent>
-            </Card>
-          )) : <CircularProgress color="#1E3D73" />}
+                    >
+                      {room.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 mb-4 text-gray-500">
+                    <FiWifi />
+                    <FiSun />
+                    <FiMonitor />
+                  </div>
+                  <p className="mb-2 text-sm font-medium text-gray-800">
+                    <span role="img" aria-label="person">
+                      👥
+                    </span>{" "}
+                    Fits {room.seats} people
+                  </p>
+                  <div className="mt-4">
+                    <PrimaryButton
+                      title={"Edit Room"}
+                      handleSubmit={() => handleOpenEditModal(room)}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <CircularProgress color="#1E3D73" />
+          )}
         </div>
       </div>
 
@@ -350,7 +374,13 @@ const MeetingSettings = () => {
                 control={editControl}
                 defaultValue=""
                 render={({ field }) => (
-                  <TextField {...field} label="Room Name" variant="outlined" size="small" fullWidth />
+                  <TextField
+                    {...field}
+                    label="Room Name"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                  />
                 )}
               />
               <Controller
@@ -358,7 +388,13 @@ const MeetingSettings = () => {
                 control={editControl}
                 defaultValue=""
                 render={({ field }) => (
-                  <TextField {...field} label="Seats" variant="outlined" size="small" fullWidth />
+                  <TextField
+                    {...field}
+                    label="Seats"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                  />
                 )}
               />
               <Controller
@@ -366,7 +402,14 @@ const MeetingSettings = () => {
                 control={editControl}
                 defaultValue=""
                 render={({ field }) => (
-                  <TextField {...field} label="Description" multiline rows={5} variant="outlined" fullWidth />
+                  <TextField
+                    {...field}
+                    label="Description"
+                    multiline
+                    rows={5}
+                    variant="outlined"
+                    fullWidth
+                  />
                 )}
               />
               <Controller
@@ -380,7 +423,7 @@ const MeetingSettings = () => {
                       <MenuItem value="">Select Location</MenuItem>
                       {auth.user.company.workLocations.length > 0 ? (
                         auth.user.company.workLocations.map((loc) => (
-                          <MenuItem key={loc._id} value={loc.buildingName}>
+                          <MenuItem key={loc._id} value={loc._id}>
                             {loc.buildingName}
                           </MenuItem>
                         ))
@@ -389,6 +432,36 @@ const MeetingSettings = () => {
                       )}
                     </Select>
                   </FormControl>
+                )}
+              />
+              <Controller
+                name="unit"
+                control={editControl}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    select
+                    size="small"
+                    label="Select Unit"
+                    placeholder="ST 701 A"
+                  >
+                    <MenuItem value="" disabled>
+                      Select Unit
+                    </MenuItem>
+                    {isUnitsPending ? (
+                      <>
+                        <CircularProgress />
+                      </>
+                    ) : (
+                      unitsData
+                        .filter((item) => item.building?._id === editLocation)
+                        .map((item) => (
+                          <MenuItem key={item._id} value={item._id}>
+                            {item.unitNo}
+                          </MenuItem>
+                        ))
+                    )}
+                  </TextField>
                 )}
               />
               <Controller
@@ -437,7 +510,6 @@ const MeetingSettings = () => {
           </form>
         </div>
       </MuiModal>
-
     </div>
   );
 };
