@@ -1,7 +1,7 @@
 const allowedOrigins = [
   "http://localhost:3000",
   "https://wonofe.vercel.app",
-  "http://localhost:4173"
+  "http://localhost:4173",
 ];
 
 const corsConfig = {
