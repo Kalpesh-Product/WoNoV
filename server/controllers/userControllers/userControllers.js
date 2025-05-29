@@ -779,9 +779,11 @@ const getAssignees = async (req, res, next) => {
       .populate([{ path: "role", select: "roleTitle" }])
       .lean()
       .exec();
+
     if (
-      loggedInUser.role.roleTitle === "Master Admin" ||
-      loggedInUser.role.roleTitle === "Super Admin"
+      loggedInUser.role.some((role) =>
+        ["Master Admin", "Super Admin"].includes(role.roleTitle)
+      )
     ) {
       const users = await User.find({ company, isActive: true })
         .populate([{ path: "role", select: "roleTitle" }])
@@ -789,12 +791,13 @@ const getAssignees = async (req, res, next) => {
         .lean()
         .exec();
 
-      const admins = users
-        .filter((user) => user.role.roleTitle.endsWith("Admin"))
-        .filter(
-          (user) =>
-            !["Master Admin", "Super Admin"].includes(user.role.roleTitle)
-        );
+      const admins = users.filter(
+        (user) =>
+          user.role.some((r) => r.roleTitle.endsWith("Admin")) &&
+          !user.role.some((r) =>
+            ["Master Admin", "Super Admin"].includes(r.roleTitle)
+          )
+      );
 
       const transformAdmins = admins.map((admin) => {
         return {
