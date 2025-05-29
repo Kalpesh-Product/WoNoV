@@ -471,13 +471,14 @@ const getMeetings = async (req, res, next) => {
         roomName: meeting.bookedRoom.name,
         bookedBy: meeting.bookedBy,
         location: meeting.bookedRoom.location,
-        client:
-          isClient && meeting.externalClient
-            ? meeting.client.clientName
-            : "BIZ Nest",
+        client: isClient
+          ? meeting.client.clientName
+          : meeting.externalClient
+          ? null
+          : "BIZ Nest",
         externalClient: meeting.externalClient
           ? meeting.externalClient.companyName
-          : "BIZ Nest",
+          : null,
         meetingType: meeting.meetingType,
         housekeepingStatus: meeting.houeskeepingStatus,
         date: meeting.startDate,
