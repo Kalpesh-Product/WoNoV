@@ -876,27 +876,18 @@ const assignTicket = async (req, res, next) => {
 const ticketData = async (req, res, next) => {
   try {
     const { company, departments, roles } = req;
-    const query = { company };
+    const { departmentId } = req.params;
 
-    const allValid = departments.every((dept) =>
-      mongoose.Types.ObjectId.isValid(dept._id)
-    );
-
-    if (!allValid) {
+    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
       return res
         .status(400)
-        .json({ message: "One or more department IDs are invalid" });
+        .json({ message: "Invalid department ID provided" });
     }
 
-    const departmentIds = departments.map(
-      (dept) => new mongoose.Types.ObjectId(dept._id)
-    );
-
-    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
-      query.raisedToDepartment = { $in: departmentIds };
-    }
-
-    const tickets = await Ticket.find(query)
+    const tickets = await Ticket.find({
+      company,
+      raisedToDepartment: { $in: [departmentId] },
+    })
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },

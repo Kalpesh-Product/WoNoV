@@ -34,7 +34,7 @@ const ManageTickets = () => {
   );
 
   const { data: ticketsData = [], isLoading } = useQuery({
-    queryKey: ["tickets-data"],
+    queryKey: ["tickets-dept"],
     queryFn: async () => {
       const response = await axios.get(
         `/api/tickets/department-tickets/${selectedDepartment}`
