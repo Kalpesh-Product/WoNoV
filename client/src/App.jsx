@@ -5,7 +5,6 @@ import { Toaster } from "sonner";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
-
 const theme = createTheme({
   typography: {
     fontFamily: [
@@ -28,9 +27,9 @@ const theme = createTheme({
     MuiMenuItem: {
       styleOverrides: {
         root: {
-          fontSize: '0.875rem'
-        }
-      }
+          fontSize: "0.875rem",
+        },
+      },
     },
     MuiOutlinedInput: {
       styleOverrides: {
@@ -41,6 +40,7 @@ const theme = createTheme({
         },
       },
     },
+
     MuiInputLabel: {
       styleOverrides: {
         root: {

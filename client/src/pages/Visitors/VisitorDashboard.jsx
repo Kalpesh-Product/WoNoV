@@ -15,17 +15,13 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import {
   assetAvailabilityDataV,
   assetAvailabilityOptionsV,
-  assetCategoriesDataV,
-  departmentPieDataVX,
-  departmentPieOptionsVX,
-  recentAssetsColumnsVX,
-  recentAssetsDataVX,
 } from "./VisitorsData/VisitorsData";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import LazyDashboardWidget from "../../components/Optimization/LazyDashboardWidget";
+import dayjs from "dayjs";
 
 const VisitorDashboard = () => {
   const navigate = useNavigate();
@@ -42,6 +38,7 @@ const VisitorDashboard = () => {
       }
     },
   });
+
   console.log(
     "Visitors data : ",
     visitorsData.map((item) => item.firstName)
@@ -65,6 +62,81 @@ const VisitorDashboard = () => {
   );
 
   console.log("Visitor Type :", visitorTypeRawData);
+  //---------------------------------------------------First Graph Data---------------------------------------------------//
+  // Define financial year start and end
+  const fyStart = dayjs("2025-04-01");
+  const fyEnd = dayjs("2026-03-31");
+
+  // Create month labels and a map
+  const months = [];
+  const monthlyVisitorMap = {};
+
+  for (let i = 0; i < 12; i++) {
+    const month = fyStart.add(i, "month");
+    const label = month.format("MMM-YY"); // e.g., "Apr-25"
+    months.push(label);
+    monthlyVisitorMap[label] = 0;
+  }
+
+  // Populate the map
+  visitorsData.forEach((visitor) => {
+    const visitDate = dayjs(visitor.dateOfVisit);
+    if (
+      visitDate.isAfter(fyStart.subtract(1, "day")) &&
+      visitDate.isBefore(fyEnd.add(1, "day"))
+    ) {
+      const label = visitDate.format("MMM-YY");
+      if (monthlyVisitorMap[label] !== undefined) {
+        monthlyVisitorMap[label]++;
+      }
+    }
+  });
+
+  const visitorsSeries = [
+    {
+      name: "Visitors",
+      data: months.map((m) => monthlyVisitorMap[m]),
+    },
+  ];
+
+  const visitorsChartOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      fontFamily: "Poppins-Regular",
+    },
+    xaxis: {
+      categories: months,
+    },
+    yaxis: {
+      title: {
+        text: "No. of Visitors",
+      },
+      labels: {
+        formatter: (val) => `${Math.round(val)}`,
+      },
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 4,
+        horizontal: false,
+        columnWidth: "40%",
+        dataLabels: {
+          position: "top", // 👈 Place labels on top of bars
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      offsetY: -25, // ✅ Add this
+      style: {
+        fontSize: "12px",
+        colors: ["#000"], // Optional: customize label color
+      },
+    },
+  };
+
+  //---------------------------------------------------First Graph Data---------------------------------------------------//
   //---------------------------------------------------Category Wise Visitors Donut Data---------------------------------------------------//
   const totalVisitorCategories = visitorTypeRawData.reduce(
     (sum, visitor) => sum + visitor.count,
@@ -80,27 +152,6 @@ const VisitorDashboard = () => {
   const colors = ["#1E3D73", "#4C66A1", "#637BB8"];
   //---------------------------------------------------Category Wise Visitors Donut Data---------------------------------------------------//
   //---------------------------------------------------Visitors Table Data---------------------------------------------------//
-  // const visitorsColumns = [
-  //   { id: "id", label: "Sr No" },
-  //   { id: "firstName", label: "First Name" },
-  //   { id: "lastName", label: "Last Name" },
-  //   { id: "email", label: "Email" },
-  //   { id: "phoneNumber", label: "Phone No" },
-  //   {
-  //     id: "purposeOfVisit",
-  //     label: "Purpose",
-  //     align: "right",
-  //   },
-  //   { id: "toMeet", label: "To Meet", align: "right" },
-  //   { id: "checkIn", label: "Check In" },
-  //   { id: "checkOut", label: "Checkout" },
-  //   //   {
-  //   //     id: "actions",
-  //   //     label: "Actions",
-  //   //     align: "center",
-  //   //     renderCell: () => <PrimaryButton title={"View"} />,
-  //   //   },
-  // ];
 
   const visitorsColumns = [
     { id: "id", label: "Sr No", minWidth: 100 }, // Fixed width
@@ -142,21 +193,6 @@ const VisitorDashboard = () => {
       (durationCount[meeting.meetingTime] || 0) + 1;
   });
 
-  const BookingMonths = [
-    "Apr-24",
-    "May-24",
-    "Jun-24",
-    "Jul-24",
-    "Aug-24",
-    "Sep-24",
-    "Oct-24",
-    "Nov-24",
-    "Dec-24",
-    "Jan-25",
-    "Feb-25",
-    "Mar-25",
-  ];
-
   // Example booked hours data per month
   const actualBookedHoursPerMonth = {
     Jan: 1500,
@@ -179,63 +215,6 @@ const VisitorDashboard = () => {
     x: month,
     y: (actualBookedHoursPerMonth[month] / totalBookableHours) * 100,
   }));
-
-  const averageBookingSeries = [{ name: "Total Visitors", data }];
-
-  const averageBookingOptions = {
-    chart: { type: "bar", fontFamily: "Poppins-Regular", toolbar: false },
-    xaxis: { categories: BookingMonths },
-    yaxis: {
-      max: 100,
-      title: { text: "Visitors" },
-      labels: {
-        formatter: function (value) {
-          return Math.round(value) + ""; // Removes decimals
-        },
-      },
-    },
-    dataLabels: {
-      enabled: true,
-      formatter: function (val) {
-        return Math.round(val) + ""; // Display percentage without decimals
-      },
-      style: {
-        fontSize: "11px",
-        colors: ["#ffff"], // White color for visibility inside bars
-      },
-    },
-    plotOptions: {
-      bar: {
-        dataLabels: {
-          position: "top", // Places labels inside the bar
-        },
-        borderRadius: 5,
-        columnWidth: "40%",
-      },
-    },
-    colors: ["#0aa9ef"], // Black color for bars
-    // annotations: {
-    //   yaxis: [
-    //     {
-    //       y: 100,
-    //       borderColor: "#ff0000",
-    //       borderWidth: 3,
-    //       strokeDashArray: 0, // Solid line
-    //       label: {
-    //         text: "100% Utilization",
-    //         position: "center",
-    //         offsetX: 10,
-    //         offsetY: -10,
-    //         style: {
-    //           color: "#ff0000",
-    //           fontWeight: "bold",
-    //         },
-    //       },
-    //     },
-    //   ],
-    // },
-  };
-
   const usersQuery = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
@@ -251,13 +230,13 @@ const VisitorDashboard = () => {
   // Calculate total and gender-specific counts
   const totalUsers = usersQuery.isLoading ? [] : usersQuery.data.length;
 
-  const maleCount = usersQuery.isLoading
+  const maleCount = isVisitorsData
     ? []
-    : usersQuery.data.filter((user) => user.gender === "Male").length;
+    : visitorsData.filter((user) => user.gender === "Male").length;
 
   const femaleCount = usersQuery.isLoading
     ? []
-    : usersQuery.data.filter((user) => user.gender === "Female").length;
+    : visitorsData.filter((user) => user.gender === "Female").length;
 
   const genderData = [
     {
@@ -322,6 +301,64 @@ const VisitorDashboard = () => {
       horizontalAlign: "center",
     },
   };
+  //--------------------------------------------//
+  // -----------------------Department Pie Data Start--------------------
+  // const departmentWiseAssets = [
+  //   { label: "IT", value: 120 },
+  //   { label: "Tech", value: 90 },
+  //   { label: "HR", value: 70 },
+  //   { label: "Sales", value: 110 },
+  //   { label: "Admin", value: 110 },
+  //   { label: "Finance", value: 60 },
+  //   { label: "Maintenance", value: 96 },
+  // ];
+
+  const departmentCountMap = {};
+
+  visitorsData.forEach((visitor) => {
+    const departmentName = visitor.department?.name ?? "Unknown";
+    departmentCountMap[departmentName] =
+      (departmentCountMap[departmentName] || 0) + 1;
+  });
+
+  const departmentWiseAssets = Object.entries(departmentCountMap).map(
+    ([label, value]) => ({ label, value })
+  );
+
+  const totalDepartmentAssets = departmentWiseAssets.reduce(
+    (sum, dept) => sum + dept.value,
+    0
+  );
+
+  const departmentPieDataVX = departmentWiseAssets.map((dept) => ({
+    label: `${dept.label} `,
+    value: ((dept.value / totalDepartmentAssets) * 100).toFixed(1),
+    count: dept.value,
+  }));
+
+  const departmentPieOptionsVX = {
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    labels: departmentPieDataVX.map((item) => item.label),
+    legend: { show: true },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => `${val.toFixed(0)}%`,
+    },
+    tooltip: {
+      y: {
+        formatter: (val, { seriesIndex }) => {
+          const count = departmentPieDataVX[seriesIndex].count;
+          return `${count} visitors (${val}%)`;
+        },
+      },
+    },
+    colors: ["#003f5c", "#2f4b7c", "#665191", "#a05195", "#d45087"], // Different colors for departments
+  };
+
+  // -----------------------Department Pie Data End--------------------
+  //--------------------------------------------//
 
   //First pie-chart config data end
   const meetingsWidgets = [
@@ -333,12 +370,12 @@ const VisitorDashboard = () => {
           layout={1}
           border
           title={"Monthly Total Visitors"}
-          titleLabel={"FY 2024-25"}
+          titleLabel={"FY 2025-26"}
         >
           <BarGraph
             height={400}
-            data={averageBookingSeries}
-            options={averageBookingOptions}
+            data={visitorsSeries}
+            options={visitorsChartOptions}
           />
         </WidgetSection>,
       ],
@@ -388,12 +425,12 @@ const VisitorDashboard = () => {
         />,
         <DataCard
           title={"Total"}
-          data={"9"}
+          data={visitorsData.filter((item) => item.checkOut).length}
           description={"Checked Out Today"}
         />,
         <DataCard
           title={"Total"}
-          data={"6"}
+          data={visitorsData.filter((item) => item.checkIn).length}
           description={"Yet To Check Out"}
         />,
         <DataCard
@@ -451,21 +488,7 @@ const VisitorDashboard = () => {
         </WidgetSection>,
       ],
     },
-    {
-      layout: 2,
-      widgets: [
-        // <MuiTable
-        //   Title="Visitors Expected Today"
-        //   columns={columns3}
-        //   rows={rows3}
-        // />,
-        // <MuiTable
-        //   Title="Pending Visits Today"
-        //   columns={columns3}
-        //   rows={rows3}
-        // />,
-      ],
-    },
+
     {
       layout: 2,
       widgets: [
@@ -479,8 +502,7 @@ const VisitorDashboard = () => {
             title={"Visitor Gender Data"}
             data={genderData}
             options={genderPieChart}
-            height={400}
-            width={460}
+            width={438}
           />
         </WidgetSection>,
         <WidgetSection
@@ -492,8 +514,8 @@ const VisitorDashboard = () => {
           <PieChartMui
             data={departmentPieDataVX}
             options={departmentPieOptionsVX}
-            height={700}
-            width={570}
+            width={500}
+            // height={600}
           />
         </WidgetSection>,
       ],

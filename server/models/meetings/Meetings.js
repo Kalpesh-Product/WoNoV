@@ -47,25 +47,20 @@ const meetingSchema = new mongoose.Schema(
         ref: "CoworkingMember",
       },
     ],
-    // internalParticipants: [
+    // externalParticipants: [
     //   {
-    //     participantId: {
-    //       type: mongoose.Schema.Types.ObjectId,
-    //       required: true,
-    //       refPath: "participants.participantModel", // Dynamic reference
-    //     },
-    //     participantModel: {
-    //       type: String,
-    //       required: true,
-    //       enum: ["UserData", "CoworkingMember"], // Allowed models
-    //     },
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "Visitor",
     //   },
     // ],
-
     externalParticipants: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Visitor",
+        name: {
+          type: String,
+        },
+        mobileNumber: {
+          type: String,
+        },
       },
     ],
     agenda: {
@@ -88,6 +83,10 @@ const meetingSchema = new mongoose.Schema(
     client: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CoworkingClient",
+    },
+    externalClient: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ExternalCompany",
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,

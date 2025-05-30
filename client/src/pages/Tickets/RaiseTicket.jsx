@@ -28,10 +28,13 @@ const RaiseTicket = () => {
   const [ticketIssues, setTicketIssues] = useState([]); // State for ticket issues
   const [openModal, setOpenModal] = useState(false);
   const [viewTicketDetails, setViewTicketDetails] = useState({})
+  const [viewDetails,setViewDetails] = useState()
   const axios = useAxiosPrivate();
   const imageRef = useRef();
 
   // Fetch departments and ticket issues in the same useEffect
+
+
 
   const fetchDepartments = async () => {
     try {
@@ -136,7 +139,7 @@ const RaiseTicket = () => {
 
   const handleViewTicketDetails = (ticket) => {
     setViewTicketDetails(ticket);
-    setOpenModal(true);
+    setViewDetails(true);
   };
 
 
@@ -466,8 +469,8 @@ const RaiseTicket = () => {
         </div>
       </div>
       <MuiModal
-        open={openModal && viewTicketDetails}
-        onClose={() => setOpenModal(false)}
+        open={viewDetails && viewTicketDetails}
+        onClose={() => setViewDetails(false)}
         title={"View Ticket Details"}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">

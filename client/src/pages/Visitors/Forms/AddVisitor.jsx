@@ -31,7 +31,6 @@ const AddVisitor = () => {
       idProof: { idType: "", idNumber: "" },
       dateOfVisit: null,
       checkIn: null,
-      checkOut: null,
       toMeet: "",
       department: "",
       visitorType: "",
@@ -101,7 +100,7 @@ const AddVisitor = () => {
   };
 
   return (
-    <div className="h-[65vh] overflow-y-auto p-4">
+    <div className=" p-4">
       <form onSubmit={handleSubmit(onSubmit)} className="">
         <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -123,12 +122,14 @@ const AddVisitor = () => {
                     select
                     label="Select Visitor Type"
                     error={!!errors.visitorType}
-                    helperText={errors.visitorType?.message}>
+                    helperText={errors.visitorType?.message}
+                  >
                     <MenuItem value="" disabled>
                       Select Visitor Type
                     </MenuItem>
                     <MenuItem value="Walk In">Walk In</MenuItem>
                     <MenuItem value="Scheduled">Scheduled</MenuItem>
+                    <MenuItem value="Meeting">Meeting</MenuItem>
                     {/* <MenuItem value="Meeting Booking">Meeting Booking</MenuItem> */}
                   </TextField>
                 )}
@@ -203,7 +204,8 @@ const AddVisitor = () => {
                     helperText={errors.gender?.message}
                     size="small"
                     label="Gender"
-                    fullWidth>
+                    fullWidth
+                  >
                     <MenuItem value="" disabled>
                       Select Gender
                     </MenuItem>
@@ -280,7 +282,8 @@ const AddVisitor = () => {
                       field.onChange(e);
                       setSelectedDepartment(e.target.value);
                     }}
-                    select>
+                    select
+                  >
                     <MenuItem value="">Select Department</MenuItem>
                     {uniqueDepartments.map((department) => (
                       <MenuItem key={department._id} value={department._id}>
@@ -300,15 +303,15 @@ const AddVisitor = () => {
                     select
                     size="small"
                     fullWidth
-                    label={"Select Person"}>
+                    label={"Select Person"}
+                  >
                     <MenuItem value="">Select the person to meet</MenuItem>
                     {!isLoading ? (
                       departmentEmployees.map((employee) => (
                         <MenuItem
                           key={employee._id}
-                          value={
-                            employee._id
-                          }>{`${employee.firstName} ${employee.lastName}`}</MenuItem>
+                          value={employee._id}
+                        >{`${employee.firstName} ${employee.lastName}`}</MenuItem>
                       ))
                     ) : (
                       <CircularProgress />
@@ -328,7 +331,8 @@ const AddVisitor = () => {
                     select
                     error={!!errors.idProof?.idType}
                     helperText={errors.idProof?.idType?.message}
-                    fullWidth>
+                    fullWidth
+                  >
                     <MenuItem value="" disabled>
                       Select Id Type
                     </MenuItem>
@@ -354,8 +358,7 @@ const AddVisitor = () => {
                 )}
               />
             </div>
-          </div>
-          <div>
+             <div>
             <div className="py-4 border-b-default border-borderGray">
               <span className="text-subtitle font-pmedium">Timings</span>
             </div>
@@ -406,29 +409,10 @@ const AddVisitor = () => {
                   )}
                 />
               </LocalizationProvider>
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <Controller
-                  name="checkOut"
-                  control={control}
-                  render={({ field }) => (
-                    <TimePicker
-                      {...field}
-                      label={"Check-Out Time"}
-                      slotProps={{ textField: { size: "small" } }}
-                      render={(params) => (
-                        <TextField
-                          {...params}
-                          fullWidth
-                          error={!!errors.checkOut}
-                          helperText={errors.checkOut?.message}
-                        />
-                      )}
-                    />
-                  )}
-                />
-              </LocalizationProvider>
             </div>
           </div>
+          </div>
+         
         </div>
 
         {/* Submit Button */}

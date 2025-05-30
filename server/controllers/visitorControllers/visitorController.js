@@ -52,6 +52,10 @@ const fetchVisitors = async (req, res, next) => {
             select: "name",
           },
           {
+            path: "visitorCompany",
+            select: "companyName",
+          },
+          {
             path: "toMeet",
             select: "firstName lastName email",
           },
@@ -67,6 +71,10 @@ const fetchVisitors = async (req, res, next) => {
           {
             path: "toMeet",
             select: "firstName lastName email",
+          },
+          {
+            path: "visitorCompany",
+            select: "companyName pocName",
           },
         ]);
     }

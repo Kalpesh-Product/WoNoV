@@ -283,40 +283,42 @@ const updateOtherTicket = async (req, res, next) => {
 
 const getTickets = async (req, res, next) => {
   try {
-    const { user, roles } = req;
+    const { departmentId } = req.params;
+    const { company } = req;
 
-    const loggedInUser = await User.findOne({ _id: user })
-      .populate({ path: "role", select: "roleTitle" })
-      .lean()
-      .exec();
-
-    if (!loggedInUser || !loggedInUser.departments) {
-      return res.sendStatus(403);
+    if (!departmentId) {
+      return res.status(400).json({ message: "Missing department ID" });
+    }
+    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid department ID provided" });
     }
 
+    const foundDepartment = await Department.findById({ _id: departmentId });
+
+    if (!foundDepartment) {
+      return res.status(400).json({ message: "Department not found" });
+    }
     // Fetch the company document to get selectedDepartments and ticketIssues
-    const company = await Company.findOne({ _id: loggedInUser.company })
+    const foundCompany = await Company.findOne({ _id: company })
       .select("selectedDepartments")
       .lean()
       .exec();
 
-    if (!company) {
+    if (!foundCompany) {
       return res.status(400).json({ message: "Company not found" });
     }
-
-    const userDepartments = loggedInUser.departments.map((dept) =>
-      dept.toString()
-    );
 
     let matchingTickets;
 
     matchingTickets = await Tickets.find({
       $or: [
-        { raisedToDepartment: { $in: userDepartments } },
-        { escalatedTo: { $in: userDepartments } },
+        { raisedToDepartment: { $in: departmentId } },
+        { escalatedTo: { $in: departmentId } },
       ],
       acceptedBy: { $exists: false },
-      company: loggedInUser.company,
+      company: company,
       status: "Open",
     })
       .populate([
@@ -339,21 +341,22 @@ const getTickets = async (req, res, next) => {
     }
 
     // Attach ticket issueId title from Company.selectedDepartments.ticketIssues
-    const ticketsWithIssueTitle = matchingTickets.map((ticket) => {
-      const department = company.selectedDepartments.find(
-        (dept) =>
-          dept.department.toString() === ticket.raisedToDepartment.toString()
-      );
+    // const ticketsWithIssueTitle = matchingTickets.map((ticket) => {
+    //   const department = foundCompany.selectedDepartments.find(
+    //     (dept) =>
+    //       dept.department.toString() === ticket.raisedToDepartment.toString()
+    //   );
 
-      const ticketIssue = department?.ticketIssues.find(
-        (issueId) => issueId._id.toString() === ticket.ticket.toString()
-      );
-      return {
-        ...ticket,
-        ticketIssueTitle: ticketIssue ? ticketIssue.title : "Issue not found",
-      };
-    });
-    return res.status(200).json(ticketsWithIssueTitle);
+    //   const ticketIssue = department?.ticketIssues.find(
+    //     (issueId) => issueId._id.toString() === ticket.ticket.toString()
+    //   );
+    //   return {
+    //     ...ticket,
+    //     ticketIssueTitle: ticketIssue ? ticketIssue.title : "Issue not found",
+    //   };
+    // });
+
+    return res.status(200).json(matchingTickets);
   } catch (error) {
     next(error);
   }
@@ -876,27 +879,18 @@ const assignTicket = async (req, res, next) => {
 const ticketData = async (req, res, next) => {
   try {
     const { company, departments, roles } = req;
-    const query = { company };
+    const { departmentId } = req.params;
 
-    const allValid = departments.every((dept) =>
-      mongoose.Types.ObjectId.isValid(dept._id)
-    );
-
-    if (!allValid) {
+    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
       return res
         .status(400)
-        .json({ message: "One or more department IDs are invalid" });
+        .json({ message: "Invalid department ID provided" });
     }
 
-    const departmentIds = departments.map(
-      (dept) => new mongoose.Types.ObjectId(dept._id)
-    );
-
-    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
-      query.raisedToDepartment = { $in: departmentIds };
-    }
-
-    const tickets = await Ticket.find(query)
+    const tickets = await Ticket.find({
+      company,
+      raisedToDepartment: { $in: [departmentId] },
+    })
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
@@ -1225,9 +1219,14 @@ const fetchFilteredTickets = async (req, res, next) => {
   try {
     const { user, roles, departments, company } = req;
 
-    const { flag } = req.params;
+    // const { flag } = req.query;
+    const { flag, dept } = req.params;
 
-    const userDepartments = departments.map((dept) => dept._id.toString());
+    if (!mongoose.Types.ObjectId.isValid(dept)) {
+      return res.status(400).json({ error: "Invalid department ID" });
+    }
+
+    const department = dept;
 
     let filteredTickets = [];
     switch (flag) {
@@ -1235,7 +1234,7 @@ const fetchFilteredTickets = async (req, res, next) => {
         filteredTickets = await filterAcceptedAssignedTickets(
           user,
           roles,
-          userDepartments,
+          department,
           company
         );
 
@@ -1244,7 +1243,7 @@ const fetchFilteredTickets = async (req, res, next) => {
         filteredTickets = await filterAcceptedTickets(
           user,
           roles,
-          userDepartments,
+          department,
           company
         );
         break;
@@ -1252,7 +1251,7 @@ const fetchFilteredTickets = async (req, res, next) => {
         filteredTickets = await filterAssignedTickets(
           user,
           roles,
-          userDepartments,
+          department,
           company
         );
         break;
@@ -1260,18 +1259,18 @@ const fetchFilteredTickets = async (req, res, next) => {
         filteredTickets = await filterSupportTickets(
           user,
           roles,
-          userDepartments,
+          department,
           company
         );
         break;
       case "escalate":
-        filteredTickets = await filterEscalatedTickets(roles, userDepartments);
+        filteredTickets = await filterEscalatedTickets(roles, department);
         break;
       case "close":
         filteredTickets = await filterCloseTickets(
           user,
           roles,
-          userDepartments,
+          department,
           company
         );
         break;

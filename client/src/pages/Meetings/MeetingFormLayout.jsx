@@ -35,8 +35,11 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { queryClient } from "../../main";
 import humanDate from "../../utils/humanDateForamt";
+import useAuth from "../../hooks/useAuth";
+import { useFieldArray } from "react-hook-form";
 
 const MeetingFormLayout = () => {
+  const { auth } = useAuth();
   const [open, setOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const locationName = searchParams.get("location") || "";
@@ -62,16 +65,78 @@ const MeetingFormLayout = () => {
       internalParticipants: [],
       externalParticipants: [],
     },
+    mode: "onChange",
   });
+  const { fields, append } = useFieldArray({
+    control,
+    name: "externalParticipants",
+  });
+  const isReceptionist = auth.user?.role?.some(
+    (item) => item._id === "6798c034e469e809084e2514"
+  );
+  useEffect(() => {
+    if (!isReceptionist) {
+      setValue("company", "6799f0cd6a01edbe1bc3fcea");
+    }
+  }, [isReceptionist, setValue]);
 
   const meetingType = watch("meetingType");
   const startDate = watch("startDate"); // Watch startDate
   const endDate = watch("endDate"); // Watch endDate
   const startTime = watch("startTime");
   const endTime = watch("endTime");
-  const internalParticipants = watch("internalParticipants");
-  const externalParticipants = watch("externalParticipants");
+  const company = watch("company");
+  const isBizNest = company === "6799f0cd6a01edbe1bc3fcea";
+  const externalCompany = watch("externalCompany");
+  useEffect(
+    () => console.log("EXTERNAL COMPANY : ", externalCompany || ""),
+    [externalCompany]
+  );
 
+  const [shouldFetchParticipants, setShouldFetchParticipants] = useState(false);
+
+  //-------------------------------API-------------------------------//
+  const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
+    queryKey: ["clientsData"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/co-working-clients");
+        const data = response.data.filter((item) => item.isActive);
+        return data;
+      } catch (error) {
+        console.error("Error fetching clients data:", error);
+      }
+    },
+  });
+  //-------------------------------API-------------------------------//
+
+  //-------------------------------API-------------------------------//
+  const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
+    queryKey: ["participants", company],
+    queryFn: async () => {
+      if (company === "6799f0cd6a01edbe1bc3fcea") {
+        const response = await axios.get("/api/users/fetch-users");
+        return response.data.filter((user) => user._id !== auth.user?._id);
+      } else {
+        const response = await axios.get("/api/sales/co-working-clients");
+        const activeClients = response.data.filter((item) => item.isActive);
+        const flattened = activeClients.flatMap((client) =>
+          client.members.map((member) => ({
+            ...member,
+            clientName: client.clientName,
+          }))
+        );
+        // Flatten members and inject clientName for context
+        return flattened.filter((item) => {
+          return item.client?._id === company;
+        });
+      }
+    },
+    enabled: shouldFetchParticipants && !!company,
+  });
+  //-------------------------------API-------------------------------//
+
+  //--------------Handling Date internally----------------//
   const handleDateClick = (arg) => {
     if (!arg.start) return;
 
@@ -87,18 +152,10 @@ const MeetingFormLayout = () => {
 
     setOpen(true);
   };
+  //--------------Handling Date internally----------------//
 
-  const { data: employees = [], isLoading } = useQuery({
-    queryKey: ["employees"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/users/fetch-users");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
+  //-------------------------------API-------------------------------//
+
   const { data: checkAvailability = [], isPending: isCheckingAvailability } =
     useQuery({
       queryKey: ["checkAvailability", meetingRoomId],
@@ -112,6 +169,7 @@ const MeetingFormLayout = () => {
         toast.error("Error checking meeting room availability");
       },
     });
+  //-------------------------------API-------------------------------//
 
   // Transform data inside useEffect
   useEffect(() => {
@@ -135,20 +193,24 @@ const MeetingFormLayout = () => {
     setEvents(formattedEvents);
   };
 
+  //-------------------------------API POST-------------------------------//
   const { mutate: createMeeting, isPending: isCreateMeeting } = useMutation({
     mutationKey: ["createMeeting"],
     mutationFn: async (data) => {
       await axios.post("/api/meetings/create-meeting", {
         bookedRoom: meetingRoomId,
         meetingType: data.meetingType,
-        // startDate: startDate,
-        // endDate: endDate,
+        startDate: startDate,
+        endDate: endDate,
         startTime: startTime,
         endTime: endTime,
+        client: data.company,
         subject: data.subject,
         agenda: data.agenda,
         internalParticipants: data.internalParticipants,
+        bookedBy: data.bookedBy,
         externalParticipants: data.externalParticipants,
+        externalCompany : data.externalCompany
       });
     },
     onSuccess: () => {
@@ -167,6 +229,9 @@ const MeetingFormLayout = () => {
       // toast.error(errorMessage);
     },
   });
+  //-------------------------------API POST-------------------------------//
+
+  //-------------------------------API vISITORS-------------------------------//
 
   const {
     data: externalUsers = [],
@@ -179,6 +244,7 @@ const MeetingFormLayout = () => {
       return response.data;
     },
   });
+  //-------------------------------API vISITORS-------------------------------//
 
   const onSubmit = (data) => {
     createMeeting(data);
@@ -217,11 +283,32 @@ const MeetingFormLayout = () => {
             slotLabelFormat={{
               hour: "numeric",
               minute: "2-digit",
-              meridiem: "lowercase", // Ensures "AM/PM" is uppercase
+              meridiem: "lowercase",
             }}
             allDayText="Full Day"
             select={handleDateClick}
-            events={events} // Pass the events state here
+            selectAllow={({ start }) => {
+              const now = new Date();
+              return start.getTime() > now.getTime();
+            }}
+            datesSet={() => {
+              setTimeout(() => {
+                const now = new Date();
+                const today = now.toISOString().slice(0, 10);
+                const allSlots = document.querySelectorAll(`.fc-timegrid-slot`);
+
+                allSlots.forEach((slot) => {
+                  const timeAttr = slot.getAttribute("data-time");
+                  if (!timeAttr) return;
+
+                  const slotTime = new Date(`${today}T${timeAttr}`);
+                  if (slotTime < now) {
+                    slot.classList.add("fc-slot-past");
+                  }
+                });
+              }, 0);
+            }}
+            events={events}
           />
         )}
       </div>
@@ -229,10 +316,12 @@ const MeetingFormLayout = () => {
       <MuiModal
         open={open}
         onClose={() => setOpen(false)}
-        title={`${meetingType} Meeting`}>
+        title={`${meetingType} Meeting`}
+      >
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col w-full gap-4">
+          className="flex flex-col w-full gap-4"
+        >
           <div className="w-full flex justify-between items-center">
             <span className="text-content">
               Selected Date : {humanDate(startDate)}
@@ -264,8 +353,11 @@ const MeetingFormLayout = () => {
                     label="Meeting Type"
                     select
                     fullWidth
-                    size="small">
-                    <MenuItem value="">Select a Meeting Type</MenuItem>
+                    size="small"
+                  >
+                    <MenuItem value="" disabled>
+                      Select a Meeting Type
+                    </MenuItem>
                     <MenuItem value="Internal">Internal</MenuItem>
                     <MenuItem value="External">External</MenuItem>
                   </TextField>
@@ -276,16 +368,41 @@ const MeetingFormLayout = () => {
               <Controller
                 name="startTime"
                 control={control}
-                render={({ field }) => (
+                rules={{
+                  validate: (value) => {
+                    if (!value) return "Start time is required";
+
+                    const selectedTime = new Date(value);
+                    const minAllowedTime = new Date();
+                    minAllowedTime.setHours(9, 30, 0, 0); // 09:30 AM today
+
+                    const now = new Date();
+
+                    if (selectedTime < minAllowedTime) {
+                      return "Start time must be after 9:30 AM";
+                    }
+
+                    if (selectedTime < now) {
+                      return "Start time cannot be in the past";
+                    }
+
+                    return true;
+                  },
+                }}
+                render={({ field, fieldState }) => (
                   <TimePicker
-                    slotProps={{ textField: { size: "small" } }}
                     {...field}
-                    label={"Select a Start Time"}
+                    label="Select a Start Time"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        error: !!fieldState.error,
+                        helperText: fieldState.error?.message,
+                      },
+                    }}
                   />
                 )}
               />
-            </LocalizationProvider>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
               <Controller
                 name="endTime"
                 control={control}
@@ -301,55 +418,190 @@ const MeetingFormLayout = () => {
                 )}
               />
             </LocalizationProvider>
-            <div className="col-span-2 sm:col-span-1 md:col-span-2">
-              <div className="mb-6">
-                <Controller
-                  name="internalParticipants"
-                  control={control}
-                  render={({ field }) => (
-                    <Autocomplete
-                      multiple
-                      options={employees} // The user list
-                      getOptionLabel={(user) =>
-                        `${user.firstName} ${user.lastName}`
-                      }
-                      onChange={(_, newValue) =>
-                        field.onChange(newValue.map((user) => user._id))
-                      }
-                      renderTags={(selected, getTagProps) =>
-                        selected.map((user, index) => (
-                          <Chip
-                            key={user._id}
-                            label={`${user.firstName} ${user.lastName}`}
-                            {...getTagProps({ index })}
-                            deleteIcon={<IoMdClose />}
-                          />
-                        ))
-                      }
-                      renderInput={(params) => (
+            {meetingType === "Internal" ? (
+              <>
+                {isReceptionist ? (
+                  <>
+                    <Controller
+                      name="company"
+                      control={control}
+                      render={({ field }) => (
                         <TextField
-                          {...params}
-                          label="Select Internal Participants"
+                          {...field}
+                          label="Company"
+                          select
                           size="small"
                           fullWidth
+                        >
+                          <MenuItem value="" disabled>
+                            Select a company
+                          </MenuItem>
+                          <MenuItem value="6799f0cd6a01edbe1bc3fcea">
+                            BizNest
+                          </MenuItem>
+                          {clientsData.map((item) => (
+                            <MenuItem key={item._id} value={item._id}>
+                              {item.clientName}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      )}
+                    />
+                  </>
+                ) : (
+                  <div>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={`${auth.user?.company?.companyName} `}
+                      disabled
+                      label={`Company`}
+                    />
+                  </div>
+                )}
+                <div>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={`${auth.user?.firstName} ${auth.user?.lastName} `}
+                    disabled
+                    label={`${isReceptionist ? "Receptionist" : "Booked By"}`}
+                  />
+                </div>
+
+                {isReceptionist ? (
+                  <div className="col-span-2">
+                    <Controller
+                      name="bookedBy"
+                      control={control}
+                      render={({ field }) => (
+                        <Autocomplete
+                          options={employees}
+                          getOptionLabel={(user) =>
+                            isBizNest
+                              ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
+                              : `${user.employeeName ?? ""} (${
+                                  user.clientName ?? ""
+                                })`
+                          }
+                          value={
+                            employees.find((u) => u._id === field.value) || null
+                          }
+                          onFocus={() => setShouldFetchParticipants(true)}
+                          onChange={(_, newValue) =>
+                            field.onChange(newValue?._id || "")
+                          }
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Booked by"
+                              size="small"
+                              fullWidth
+                            />
+                          )}
                         />
                       )}
                     />
-                  )}
-                />
-              </div>
-              {meetingType === "External" ? (
-                <div>
+                  </div>
+                ) : null}
+                <div className="col-span-2 sm:col-span-1 md:col-span-2">
+                  <div className="">
+                    <Controller
+                      name="internalParticipants"
+                      control={control}
+                      render={({ field }) => (
+                        <Autocomplete
+                          multiple
+                          options={employees}
+                          getOptionLabel={(user) =>
+                            isBizNest
+                              ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
+                              : `${user.employeeName ?? ""} (${
+                                  user.clientName ?? ""
+                                }`
+                          }
+                          onFocus={() => setShouldFetchParticipants(true)}
+                          onChange={(_, newValue) =>
+                            field.onChange(newValue.map((user) => user._id))
+                          }
+                          renderTags={(selected, getTagProps) =>
+                            selected.map((user, index) => (
+                              <Chip
+                                key={user._id}
+                                label={
+                                  isBizNest
+                                    ? `${user.firstName ?? ""} ${
+                                        user.lastName ?? ""
+                                      }`
+                                    : `${user.employeeName ?? ""} (${
+                                        user.clientName ?? ""
+                                      })`
+                                }
+                                {...getTagProps({ index })}
+                                deleteIcon={<IoMdClose />}
+                              />
+                            ))
+                          }
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Select Participants"
+                              size="small"
+                              fullWidth
+                            />
+                          )}
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : null}
+            {/* New Start */}
+            {meetingType === "External" ? (
+              <>
+                <div className="col-span-1">
+                  <Controller
+                    name="externalCompany"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        select
+                        label="Select External Company"
+                        size="small"
+                        fullWidth
+                      >
+                        <MenuItem value="" disabled>
+                          Select a company
+                        </MenuItem>
+                        {externalUsers
+                          .filter((item) => item.visitorCompany)
+                          .map((user) => (
+                            <MenuItem
+                              key={user._id}
+                              value={user.visitorCompany?._id}
+                            >
+                              {user.visitorCompany?.companyName ?? ""}
+                            </MenuItem>
+                          ))}
+                      </TextField>
+                    )}
+                  />
+                </div>
+                <div className="col-span-1">
                   <Controller
                     name="externalParticipants"
                     control={control}
                     render={({ field }) => (
                       <Autocomplete
                         multiple
-                        options={externalUsers} // The user list
+                        options={externalUsers.filter(
+                          (item) => item.visitorCompany?._id === externalCompany
+                        )} // The user list
                         getOptionLabel={(user) => `${user.firstName}`} // Display names
                         onChange={(_, newValue) =>
-                          field.onChange(newValue.map((user) => user._id))
+                          field.onChange(newValue.map((user) => user.firstName))
                         } // Sync selected users with form state
                         renderTags={(selected, getTagProps) =>
                           selected.map((user, index) => (
@@ -364,7 +616,7 @@ const MeetingFormLayout = () => {
                         renderInput={(params) => (
                           <TextField
                             {...params}
-                            label="Select External Participants"
+                            label="Select Participants"
                             size="small"
                             fullWidth
                           />
@@ -373,60 +625,49 @@ const MeetingFormLayout = () => {
                     )}
                   />
                 </div>
-              ) : (
-                <></>
-              )}
-            </div>
-            {/* New Start */}
-            {meetingType === "External" ? (
+              </>
+            ) : null}
+            {meetingType === "External" && (
               <>
-                {[...Array(participantCount)].map((_, index) => (
-                  <React.Fragment key={index}>
-                    <div className="flex justify-between col-span-1 sm:col-span-1 md:col-span-1 w-full">
-                      <Controller
-                        name={`name_${index}`} // Unique name for each participant
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            label={`Name ${index + 1}`}
-                            placeholder="John Doe"
-                            {...field}
-                            fullWidth
-                            size="small"
-                          />
-                        )}
-                      />
-                    </div>
-
-                    <div className="flex justify-between col-span-1 sm:col-span-1 md:col-span-1 w-full">
-                      <Controller
-                        name={`mob_${index}`} // Unique name for each participant
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            label={`Mobile Number ${index + 1}`}
-                            placeholder="+919876543201"
-                            {...field}
-                            fullWidth
-                            size="small"
-                          />
-                        )}
-                      />
-                    </div>
+                {fields.map((field, index) => (
+                  <React.Fragment key={field.id}>
+                    <Controller
+                      name={`externalParticipants.${index}.name`}
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          label={`Name ${index + 1}`}
+                          placeholder="John Doe"
+                          {...field}
+                          fullWidth
+                          size="small"
+                        />
+                      )}
+                    />
+                    <Controller
+                      name={`externalParticipants.${index}.mobileNumber`}
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          label={`Mobile Number ${index + 1}`}
+                          placeholder="+919876543210"
+                          {...field}
+                          fullWidth
+                          size="small"
+                        />
+                      )}
+                    />
                   </React.Fragment>
                 ))}
 
-                <div className="flex justify-between col-span-1 sm:col-span-1 md:col-span-1 w-full">
-                  <PrimaryButton
-                    title="Add Participant"
-                    type="button"
-                    handleSubmit={addParticipant}
-                  />
-                </div>
+                <PrimaryButton
+                  title="Add Participant"
+                  type="button"
+                  handleSubmit={() => append({ name: "", mobileNumber: "" })}
+                />
               </>
-            ) : (
-              <></>
             )}
+
             {/* New End */}
             <div className="col-span-2 sm:col-span-1 md:col-span-2">
               <Controller

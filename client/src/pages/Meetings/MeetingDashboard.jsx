@@ -27,6 +27,14 @@ const MeetingDashboard = () => {
       return response.data;
     },
   });
+  
+  const { data: roomsData = [], isLoading:isRoomLoading } = useQuery({
+    queryKey: ["rooms"],
+    queryFn: async () => {
+      const response = await axios.get("/api/meetings/get-rooms");
+      return response.data;
+    },
+  });
 
   // Function to calculate total duration in hours
   const calculateTotalDurationInHours = (meetings) => {
@@ -86,6 +94,11 @@ const MeetingDashboard = () => {
       return response.data;
     },
   });
+
+
+  const totalMeetingsOccupancy = meetingsData.map((meeting)=>{
+    
+  })
 
   const meetingColumns = [
     { id: "id", label: "Sr No", align: "left" },
@@ -319,13 +332,58 @@ const MeetingDashboard = () => {
   };
 
   // Calculate percentage utilization
-  const totalBookableHours = 1980;
-  const data = Object.keys(actualBookedHoursPerMonth).map((month) => ({
+  const monthNames = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+
+const monthMap = new Map();
+
+meetingsData.forEach((meeting) => {
+  const date = new Date(meeting.startTime); // or startDate if that's correct
+  const monthIndex = date.getMonth(); // 0 to 11
+  const durationMinutes = parseInt(meeting.duration); // "60m" → 60
+  const durationHours = durationMinutes / 60;
+
+  const current = monthMap.get(monthIndex) || 0;
+  monthMap.set(monthIndex, current + durationHours);
+});
+
+// Convert Map to object with month names
+const monthlyBookedHours = {};
+for (let [monthIndex, hours] of monthMap.entries()) {
+  const monthName = monthNames[monthIndex];
+  monthlyBookedHours[monthName] = hours;
+}
+
+
+
+  // const monthMap = new Map()
+  // const calculateBookedHoursPerMonth = meetingsData.map((meeting)=>{
+
+  //   const date = new Date(meeting.startDate)
+  //   const month = date.getMonth()
+  //   const hours = month.duration * 24
+  //   if(!monthMap.has(month)){
+  //     monthMap.set({month:hours})
+  //   }
+
+  // })
+  // console.log("bookedHours",calculateBookedHoursPerMonth)
+
+  // const totalBookableHours = 1980;
+  const workinghoursPerDay = 10
+  const workingDays = 24
+  const totalBookableHours = roomsData.length * workinghoursPerDay * workingDays
+
+  const data = Object.keys(monthlyBookedHours).map((month) => ({
     x: month,
     y: (actualBookedHoursPerMonth[month] / totalBookableHours) * 100,
   }));
 
+  console.log("hours",data)
   const averageBookingSeries = [{ name: "Booking Utilization", data }];
+
 
   const averageBookingOptions = {
     chart: {
@@ -497,6 +555,7 @@ const MeetingDashboard = () => {
     colors: ["#2DC1C6"],
   };
 
+  // Heatmap for meeting timeslots
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const timeSlots = [
     "8AM-9AM",
@@ -512,18 +571,77 @@ const MeetingDashboard = () => {
     "6PM-7PM",
     "7PM-8PM",
   ];
+ 
+function getCurrentWeekDays() {
+  const today = new Date();
+  const day = today.getDay(); // 0 (Sun) to 6 (Sat)
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((day + 6) % 7)); // Move to Monday
+  monday.setHours(0, 0, 0, 0);
 
-  // Mock Data: Replace this with real booking data
-  const generateRandomData = () =>
-    timeSlots.map(() => Math.floor(Math.random() * 20)); // Max 20 bookings
+  const weekDays = [];
 
-  const heatmapData = timeSlots.map((slot, index) => ({
+  for (let i = 0; i < 5; i++) {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
+    date.setHours(0, 0, 0, 0);
+    weekDays.push(date);
+  }
+
+  return weekDays;
+}
+
+// 🕘 Convert Date to Time Slot Label (e.g., 10AM–11AM)
+function getTimeSlotLabel(date) {
+  const hour = date.getHours();
+  if (hour >= 8 && hour < 20) {
+    const ampm = hour < 12 ? "AM" : "PM";
+    const nextHour = hour + 1;
+    const nextAMPM = nextHour < 12 ? "AM" : "PM";
+    const start = hour % 12 === 0 ? 12 : hour % 12;
+    const end = nextHour % 12 === 0 ? 12 : nextHour % 12;
+    return `${start}${ampm}-${end}${nextAMPM}`;
+  }
+  return null;
+}
+
+  const weekdays = getCurrentWeekDays();  
+
+  // Create a [timeSlot][dayIndex] matrix initialized with 0s
+  const matrix = Array(timeSlots.length).fill(null).map(() => Array(5).fill(0));
+
+  meetingsData.forEach((meeting) => {
+    const date = new Date(meeting.startTime);
+    date.setSeconds(0, 0); // remove milliseconds
+
+    // Match meeting to current week (Mon–Fri)
+   for (let i = 0; i < weekdays.length; i++) {
+  const weekDate = weekdays[i];
+
+  // Format both to YYYY-MM-DD for accurate day match
+  const meetingDayStr = date.toISOString().split("T")[0];
+  const weekDayStr = weekDate.toISOString().split("T")[0];
+
+  if (meetingDayStr === weekDayStr) {
+    const timeSlot = getTimeSlotLabel(date);
+    const slotIndex = timeSlots.indexOf(timeSlot);
+    if (slotIndex !== -1) {
+      matrix[slotIndex][i]++;
+    }
+  }
+}
+
+  });
+
+  // Convert to heatmap format
+  const heatmapData = timeSlots.map((slot, slotIndex) => ({
     name: slot,
     data: days.map((day, dayIndex) => ({
-      x: day, // Day of the week
-      y: day === "Sun" || day === "Sat" ? 0 : generateRandomData()[index], // No bookings for Sun/Sat
+      x: day,
+      y: matrix[slotIndex][dayIndex],
     })),
   }));
+
 
   const heatmapOptions = {
     chart: {
@@ -620,7 +738,7 @@ const MeetingDashboard = () => {
       widgets: [
         <DataCard
           title={"Total"}
-          data={totalDurationInHours}
+          data={totalDurationInHours.toFixed(0)}
           description={"Hours Booked"}
           route={"reports"}
         />,
