@@ -75,6 +75,7 @@ const TasksViewDepartment = () => {
   const { mutate: updateDailyKra, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateDailyTasks"],
     mutationFn: async (data) => {
+      console.log("tasks",data)
       const response = await axios.patch(
         `/api/tasks/update-task-status/${data}`
       );
@@ -113,7 +114,7 @@ const TasksViewDepartment = () => {
     queryFn: fetchDepartments,
   });
 
-  const { data: completedTasks = [], isPending: completedTasksFetchPending } =
+  const { data: completedTasks = [], isLoading: completedTasksFetchPending } =
     useQuery({
       queryKey: ["fetchedCompletedTasks"],
       queryFn: fetchCompletedTasks,
@@ -214,6 +215,7 @@ const TasksViewDepartment = () => {
       },
     },
   ];
+
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -249,11 +251,10 @@ const TasksViewDepartment = () => {
             <DateWiseTable
               formatTime
               tableTitle={`COMPLETED TASKS`}
-              data={(completedEntries || [])
-                .filter((item) => item.status !== "Completed")
+              data={ completedTasksFetchPending ? [] : completedTasks
                 .map((item, index) => ({
                   srno: index + 1,
-                  id: item.id,
+                  id: item._id,
                   taskName: item.taskName,
                   assignedDate: item.assignedDate,
                   dueDate: item.dueDate,
