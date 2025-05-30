@@ -154,8 +154,8 @@ const Row = ({ row, onApprove, onReject }) => {
                           </MenuItem>
                           {ticketIssues.length > 0 ? (
                             ticketIssues.map((issue) => (
-                              <MenuItem key={issue._id} value={issue.title}>
-                                {issue.title}
+                              <MenuItem key={issue._id} value={issue.description}>
+                                {issue.description}
                               </MenuItem>
                             ))
                           ) : (

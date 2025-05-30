@@ -399,9 +399,9 @@ const getMyTasks = async (req, res, next) => {
     const transformedTasks = tasks.map((task) => {
       return {
         ...task,
-        dueDate: formatDate(task.dueDate),
-        dueTime: task.dueTime ? task.dueTime : "06:30 PM",
-        assignedDate: formatDate(task.assignedDate),
+        dueDate: task.dueDate,
+        dueTime: task.dueTime ? task.dueTime : null,
+        assignedDate: task.assignedDate,
       };
     });
 
