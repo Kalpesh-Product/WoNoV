@@ -16,8 +16,6 @@ const MonthWiseTable = ({
   checkbox,
   checkAll,
 }) => {
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
-
   // Step 1: Get unique months from the date column
   const monthLabels = useMemo(() => {
     const monthSet = new Set();
@@ -34,16 +32,26 @@ const MonthWiseTable = ({
     });
   }, [data, dateColumn]);
 
+  // Step 2: Pick current month if present
+  const currentMonth = dayjs().format("MMM-YYYY");
+
+  const selectedMonthIndexDefault = useMemo(() => {
+    const index = monthLabels.findIndex((label) => label === currentMonth);
+    return index >= 0 ? index : 0;
+  }, [monthLabels]);
+
+  // Step 3: Selected month state
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(selectedMonthIndexDefault);
+
   const selectedMonth = monthLabels[selectedMonthIndex];
 
-  // Step 2: Filter data by selected month
+  // Step 4: Filter data by selected month
   const filteredData = useMemo(() => {
     return data.filter((item) => {
       const date = dayjs(item[dateColumn]);
       return date.isValid() && date.format("MMM-YYYY") === selectedMonth;
     });
   }, [data, selectedMonth, dateColumn]);
-  console.log("Filtered inside : ", filteredData);
 
   const formattedColumns = useMemo(() => {
     return columns.map((col) => {

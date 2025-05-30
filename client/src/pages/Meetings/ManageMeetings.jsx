@@ -26,6 +26,8 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import { Controller, useForm } from "react-hook-form";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
+import { TimePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
 
 const ManageMeetings = () => {
   const axios = useAxiosPrivate();
@@ -35,6 +37,7 @@ const ManageMeetings = () => {
   const [newItem, setNewItem] = useState("");
   const [modalMode, setModalMode] = useState("update"); // 'update', or 'view'
   const [selectedMeeting, setSelectedMeeting] = useState(null);
+  useEffect(() => console.log(selectedMeeting), [selectedMeeting]);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
 
@@ -75,6 +78,18 @@ const ManageMeetings = () => {
       reason: "",
     },
   });
+  const {
+    handleSubmit: extendMeetingSubmit,
+    control: extendMeetingControl,
+    reset: resetExtendMeeting,
+    formState: { errors: extendMeetingErrors },
+  } = useForm({
+    mode: "onChange",
+    defaultValues: {
+      newEndTime: null,
+    },
+  });
+
   //-----------------------------Form--------------------------------//
 
   //------------------------------API--------------------------------//
@@ -86,20 +101,22 @@ const ManageMeetings = () => {
     },
   });
   const filteredMeetings = meetings
-    .filter((item) => item.meetingStatus === "Upcoming")
+    .filter((item) => item.meetingStatus !== "Completed")
     .map((meeting) => ({
       ...meeting,
       // startTime: humanTime(meeting.startTime),
       // endTime: humanTime(meeting.endTime),
-      date: (meeting.date),
+      date: meeting.date,
     }));
 
   const transformedMeetings = filteredMeetings.map((meeting, index) => ({
     ...meeting,
-    date : meeting.date,
-    client : meeting.client,
-    startTime: (meeting.startTime),
-    endTime: (meeting.endTime),
+    date: meeting.date,
+    bookedBy: `${meeting.bookedBy?.firstName || "Unknown"} ${
+      meeting.bookedBy?.lastName || "Unknown"
+    }`,
+    startTime: meeting.startTime,
+    endTime: meeting.endTime,
     srNo: index + 1,
   }));
 
@@ -138,6 +155,41 @@ const ManageMeetings = () => {
     },
     onError: (error) => {},
   });
+
+  const { mutate: extendMeeting, isPending: isExtendPending } = useMutation({
+    mutationFn: async (data) => {
+      console.log(data);
+      const respone = await axios.patch(`/api/meetings/extend-meeting`, data);
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      return respone.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+      setDetailsModal(false)
+      resetExtendMeeting()
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  const { mutate: completeMeeting, isPending: isCompletePending } = useMutation(
+    {
+      mutationFn: async (data) => {
+        const respone = await axios.patch(
+          `/api/meetings/update-meeting-status`,
+          data
+        );
+        queryClient.invalidateQueries({ queryKey: ["meetings"] });
+        return respone.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data.message);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }
+  );
   //------------------------------API--------------------------------//
 
   // Initialize checklists when meetings are loaded
@@ -160,6 +212,27 @@ const ManageMeetings = () => {
     setModalMode(mode);
     setSelectedMeetingId(meetingId);
     setChecklistModalOpen(true); // ✅ Open checklist modal
+  };
+
+  const handleExtendMeetingModal = (mode, meetingId) => {
+    setModalMode(mode);
+    setSelectedMeeting(meetingId);
+    setDetailsModal(true);
+  };
+
+  const handleOngoing = (mode, meetingId) => {
+    setSelectedMeetingId(meetingId);
+    completeMeeting({
+      meetingId: meetingId,
+      status: "Ongoing",
+    });
+  };
+  const handleCompleted = (mode, meetingId) => {
+    setSelectedMeetingId(meetingId);
+    completeMeeting({
+      meetingId: meetingId,
+      status: "Completed",
+    });
   };
 
   const handleCloseChecklistModal = () => {
@@ -264,11 +337,24 @@ const ManageMeetings = () => {
   //---------------------------------Event handlers----------------------------------------//
 
   const columns = [
-    { field: "srNo", headerName: "Sr No" },
+    { field: "srNo", headerName: "Sr No", sort: "desc" },
+    { field: "bookedBy", headerName: "Booked By" },
     { field: "roomName", headerName: "Room Name" },
-    { field: "date", headerName: "Date", cellRenderer :(params)=>(humanDate(params.value)) },
-    { field: "startTime", headerName: "Start Time",cellRenderer :(params)=>(humanTime(params.value)) },
-    { field: "endTime", headerName: "End Time",cellRenderer :(params)=>(humanTime(params.value)) },
+    {
+      field: "date",
+      headerName: "Date",
+      cellRenderer: (params) => humanDate(params.value),
+    },
+    {
+      field: "startTime",
+      headerName: "Start Time",
+      cellRenderer: (params) => humanTime(params.value),
+    },
+    {
+      field: "endTime",
+      headerName: "End Time",
+      cellRenderer: (params) => humanTime(params.value),
+    },
     {
       field: "meetingStatus",
       headerName: "Meeting Status",
@@ -325,43 +411,64 @@ const ManageMeetings = () => {
         );
       },
     },
-    {
-      field: "action",
-      headerName: "Action",
-      cellRenderer: (params) => {
-        const isDisabled = params.data.housekeepingStatus === "Completed";
+{
+  field: "action",
+  headerName: "Action",
+  pinned: "right",
+  cellRenderer: (params) => {
+    const status = params.data.meetingStatus;
+    const housekeepingStatus = params.data.housekeepingStatus;
 
-        return (
-          <div className="flex gap-2 items-center">
-            <div
-              onClick={() => handleSelectedMeeting("viewDetails", params.data)}
-              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-            >
-              <span className="text-subtitle">
-                <MdOutlineRemoveRedEye />
-              </span>
-            </div>
+    const isUpcoming = status === "Upcoming";
+    const isOngoing = status === "Ongoing";
+    const isCompleted = status === "Completed";
+    const isHousekeepingPending = housekeepingStatus === "Pending";
+    const isHousekeepingCompleted = housekeepingStatus === "Completed";
 
-            {/* ⋮ Three-dot menu - hidden if housekeeping is completed */}
-            {!isDisabled && (
-              <ThreeDotMenu
-                menuItems={[
-                  {
-                    label: "Update Checklist",
-                    onClick: () =>
-                      handleOpenChecklistModal("update", params.data._id),
-                  },
-                  {
-                    label: "Cancel",
-                    onClick: () => handleSelectedMeeting("cancel", params.data),
-                  },
-                ]}
-              />
-            )}
-          </div>
-        );
+    const menuItems = [
+      // Show only if not ongoing and housekeeping is not completed
+      !isOngoing && !isHousekeepingCompleted && {
+        label: "Update Checklist",
+        onClick: () => handleOpenChecklistModal("update", params.data._id),
       },
-    },
+      // Show only if not ongoing and housekeeping is not pending
+      !isOngoing && !isHousekeepingPending && {
+        label: "Mark As Ongoing",
+        onClick: () => handleOngoing("ongoing", params.data._id),
+      },
+      // Show only if not upcoming
+      !isUpcoming && {
+        label: "Mark As Completed",
+        onClick: () => handleCompleted("complete", params.data._id),
+      },
+      // Show only if not upcoming
+      !isUpcoming && {
+        label: "Extend Meeting",
+        onClick: () => handleExtendMeetingModal("extend", params.data),
+      },
+      {
+        label: "Cancel",
+        onClick: () => handleSelectedMeeting("cancel", params.data),
+      },
+    ].filter(Boolean); // Remove any false/null values
+
+    return (
+      <div className="flex gap-2 items-center">
+        <div
+          onClick={() => handleSelectedMeeting("viewDetails", params.data)}
+          className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+        >
+          <span className="text-subtitle">
+            <MdOutlineRemoveRedEye />
+          </span>
+        </div>
+
+        <ThreeDotMenu menuItems={menuItems} />
+      </div>
+    );
+  },
+}
+
   ];
 
   return (
@@ -495,6 +602,8 @@ const ManageMeetings = () => {
             ? "Meeting Details"
             : modalMode === "cancel"
             ? "Cancel Meeting"
+            : modalMode === "extend"
+            ? "Extend Meeting"
             : ""
         }
         open={detailsModal}
@@ -508,10 +617,17 @@ const ManageMeetings = () => {
               upperCase
             />
             <DetalisFormatted
+              title={"Booked By"}
+              detail={selectedMeeting?.bookedBy}
+            />
+            <DetalisFormatted
               title={"Client Name"}
               detail={selectedMeeting?.client}
             />
-            <DetalisFormatted title={"Date"} detail={humanDate(selectedMeeting?.date)} />
+            <DetalisFormatted
+              title={"Date"}
+              detail={humanDate(selectedMeeting?.date)}
+            />
             <DetalisFormatted
               title={"Start Time"}
               detail={humanTime(selectedMeeting?.startTime)}
@@ -580,6 +696,76 @@ const ManageMeetings = () => {
                   externalStyles={"w-full"}
                 />
               </div>
+            </form>
+          </div>
+        )}
+        {modalMode === "extend" && (
+          <div>
+            <form
+              className="flex flex-col gap-4"
+              onSubmit={extendMeetingSubmit((data) => {
+                extendMeeting({
+                  meetingId: selectedMeeting?._id,
+                  newEndTime: data.newEndTime,
+                });
+              })}
+            >
+              <div className="flex flex-col gap-4">
+                <span className="text-content">Meeting Details</span>
+                <hr />
+              </div>
+              <div className="flex justify-between w-full items-center">
+                <div>
+                  <span>
+                    Start Time :{" "}
+                    <span>{humanTime(selectedMeeting?.startTime)}</span>
+                  </span>
+                </div>
+                <div>
+                  <span>
+                    End Time :{" "}
+                    <span>{humanTime(selectedMeeting?.endTime)}</span>
+                  </span>
+                </div>
+              </div>
+              <Controller
+                name="newEndTime"
+                control={extendMeetingControl}
+                rules={{
+                  required: "New end time is required",
+                  validate: (value) => {
+                    if (!value || !selectedMeeting?.endTime) return true;
+                    const originalEnd = dayjs(selectedMeeting.endTime);
+                    const newEnd = dayjs(value);
+
+                    if (newEnd.diff(originalEnd, "minute") < 30) {
+                      return "New end time must be at least 30 minutes after current end time.";
+                    }
+
+                    return true;
+                  },
+                }}
+                render={({ field }) => (
+                  <TimePicker
+                    {...field}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        error: !!extendMeetingErrors.newEndTime,
+                        helperText: extendMeetingErrors.newEndTime?.message,
+                      },
+                    }}
+                    label={"Select an End Time"}
+                  />
+                )}
+              />
+
+              <PrimaryButton
+                title={"Extend Meeting"}
+                type={"submit"}
+                disabled={isExtendPending}
+                isLoading={isExtendPending}
+              />
             </form>
           </div>
         )}

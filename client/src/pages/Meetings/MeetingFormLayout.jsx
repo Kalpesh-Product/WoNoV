@@ -220,13 +220,7 @@ const MeetingFormLayout = () => {
       navigate("/app/meetings/calendar");
     },
     onError: (error) => {
-      console.log(error);
-      toast.success("Meeting booked successfully");
-      setOpen(false);
-      navigate("/app/meetings/calendar");
-      // const errorMessage =
-      //   error?.response?.data?.message || "Failed to book meeting";
-      // toast.error(errorMessage);
+      toast.error(error.message || "ERROR");
     },
   });
   //-------------------------------API POST-------------------------------//

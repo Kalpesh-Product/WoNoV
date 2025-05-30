@@ -19,7 +19,8 @@ const PerformanceHome = () => {
   useTopDepartment({
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
-      navigate(`${currentDepartment}`);
+      navigate(`/app/performance/${currentDepartment}`);
+
     },
   });
 
