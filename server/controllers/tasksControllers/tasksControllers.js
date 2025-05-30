@@ -18,10 +18,10 @@ const createTasks = async (req, res, next) => {
       department,
       description,
       // status,
-      priority,
+      // priority,
       // assignees,
-      dueDate,
-      endDate: dueTime,
+      dueTime,
+      endDate: dueDate,
       startDate: assignedDate,
     } = req.body;
 
@@ -84,26 +84,26 @@ const createTasks = async (req, res, next) => {
     }
 
     // Validate all assignees
-    let existingUsers = [];
-    if (Array.isArray(assignees)) {
-      existingUsers = await validateUsers(assignees);
-      if (existingUsers.length !== assignees.length) {
-        throw new CustomError(
-          "One or more assignees are invalid or do not exist",
-          logPath,
-          logAction,
-          logSourceKey
-        );
-      }
-    }
+    // let existingUsers = [];
+    // if (Array.isArray(assignees)) {
+    //   existingUsers = await validateUsers(assignees);
+    //   if (existingUsers.length !== assignees.length) {
+    //     throw new CustomError(
+    //       "One or more assignees are invalid or do not exist",
+    //       logPath,
+    //       logAction,
+    //       logSourceKey
+    //     );
+    //   }
+    // }
 
     const newTask = new Task({
       taskName,
       department,
       description,
-      status,
-      priority: priority ? priority : "High",
-      assignedTo: existingUsers,
+      // status,
+      // priority: priority ? priority : "High",
+      // assignedTo: existingUsers,
       assignedBy: user,
       assignedDate,
       dueDate: parsedDueDate,
@@ -124,15 +124,7 @@ const createTasks = async (req, res, next) => {
       company: company,
       sourceKey: logSourceKey,
       sourceId: newTask._id,
-      changes: {
-        taskName,
-        description,
-        status,
-        priority,
-        assignees: existingUsers,
-        dueDate,
-        dueTime,
-      },
+      changes: newTask,
     });
 
     return res.status(201).json({ message: "Task added successfully" });

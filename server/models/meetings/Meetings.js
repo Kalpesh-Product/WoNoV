@@ -35,6 +35,9 @@ const meetingSchema = new mongoose.Schema(
       enum: ["Internal", "External"],
       required: true,
     },
+    creditsUsed: {
+      type: Number,
+    },
     internalParticipants: [
       {
         type: mongoose.Schema.Types.ObjectId,

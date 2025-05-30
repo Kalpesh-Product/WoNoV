@@ -34,16 +34,16 @@ const taskSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
-  status: {
-    type: String,
-    default: "Pending",
-    enum: ["InProgress", "Completed", "Pending"],
-  },
-  priority: {
-    type: String,
-    default: "High",
-    enum: ["High", "Medium", "Low"],
-  },
+  // status: {
+  //   type: String,
+  //   default: "Pending",
+  //   enum: ["InProgress", "Completed", "Pending"],
+  // },
+  // priority: {
+  //   type: String,
+  //   default: "High",
+  //   enum: ["High", "Medium", "Low"],
+  // },
   //workCategory and location are maintenance related fields
   workCategory: {
     type: String,

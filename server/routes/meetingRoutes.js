@@ -10,6 +10,7 @@ const {
   getMyMeetings,
   getSingleRoomMeetings,
   extendMeeting,
+  updateMeetingStatus,
 } = require("../controllers/meetingsControllers/meetingsControllers");
 const {
   getReviews,
@@ -40,5 +41,6 @@ router.patch("/create-housekeeping-tasks", addHousekeepingTask);
 router.delete("/delete-housekeeping-tasks", deleteHousekeepingTask);
 router.patch("/cancel-meeting/:meetingId", cancelMeeting);
 router.get("/get-available-users", getAvaliableUsers);
+router.patch("/update-meeting-status/:meetingId", updateMeetingStatus);
 
 module.exports = router;

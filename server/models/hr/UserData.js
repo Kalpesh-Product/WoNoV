@@ -176,6 +176,10 @@ const userDataSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  credits: {
+    type: Number,
+    default: 10,
+  },
 });
 
 const UserData = mongoose.model("UserData", userDataSchema);

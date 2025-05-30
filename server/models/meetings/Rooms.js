@@ -45,6 +45,18 @@ const roomSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Company",
   },
+  perHourCredit: {
+    type: Number,
+  },
+  perHourPrice: {
+    type: Number,
+  },
+  dailyHours: {
+    type: Number,
+  },
+  monthlyHours: {
+    type: Number,
+  },
 });
 
 const Room = mongoose.model("Room", roomSchema);
