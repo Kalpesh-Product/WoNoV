@@ -109,16 +109,18 @@ const ManageMeetings = () => {
       date: meeting.date,
     }));
 
-  const transformedMeetings = filteredMeetings.map((meeting, index) => ({
-    ...meeting,
-    date: meeting.date,
-    bookedBy: `${meeting.bookedBy?.firstName || "Unknown"} ${
-      meeting.bookedBy?.lastName || "Unknown"
-    }`,
-    startTime: meeting.startTime,
-    endTime: meeting.endTime,
-    srNo: index + 1,
-  }));
+const transformedMeetings = filteredMeetings.map((meeting, index) => ({
+  ...meeting,
+  date: meeting.date,
+  bookedBy: meeting.bookedBy
+    ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
+    : meeting.clientBookedBy?.employeeName || "Unknown",
+  startTime: meeting.startTime,
+  endTime: meeting.endTime,
+  srNo: index + 1,
+}));
+
+
 
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
@@ -333,6 +335,10 @@ const ManageMeetings = () => {
 
     housekeepingMutation.mutate(payload);
   };
+  useEffect(()=>{
+
+      console.log("meeting",selectedMeeting)
+  },[selectedMeeting])
 
   //---------------------------------Event handlers----------------------------------------//
 
@@ -394,6 +400,7 @@ const ManageMeetings = () => {
       field: "participants",
       headerName: "Participants",
       cellRenderer: (params) => {
+          console.log("meeting",params.data)
         const participants = Array.isArray(params.data?.participants)
           ? params.data?.participants
           : [];
@@ -623,7 +630,7 @@ const ManageMeetings = () => {
             />
             <DetalisFormatted
               title={"Booked By"}
-              detail={selectedMeeting?.bookedBy}
+              detail={selectedMeeting?.bookedBy || selectedMeeting?.clientBookedBy}
             />
             <DetalisFormatted
               title={"Client Name"}

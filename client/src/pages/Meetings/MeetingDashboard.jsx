@@ -517,8 +517,8 @@ for (let label of monthBookings) {
   monthlyBookedHours[label] = monthMap.get(label) || 0;
 }
 
-const workinghoursPerDay = 10;
-const workingDays = 24;
+const workinghoursPerDay = 1;
+const workingDays = 5;
 const totalBookableHours = roomsData.length * workinghoursPerDay * workingDays;
 
 const data = monthBookings.map((month) => ({
