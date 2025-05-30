@@ -903,7 +903,7 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
-    const meeting = await Meeting.findById(meetingId);
+    const meeting = await Meeting.findById(meetingId).populate("bookedRoom");
     if (!meeting) {
       throw new CustomError(
         "Meeting not found",
@@ -934,7 +934,7 @@ const extendMeeting = async (req, res, next) => {
 
     // Check for conflicting meeting
     const conflictingMeeting = await Meeting.findOne({
-      bookedRoom: meeting.bookedRoom,
+      bookedRoom: meeting.bookedRoom._id,
       startDate: meeting.startDate,
       startTime: { $lt: newEndTimeObj },
       endTime: { $gt: meeting.endTime },
@@ -949,13 +949,52 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
-    // Store the old endTime for logging
-    const oldEndTime = meeting.endTime;
+    // Step 1: Calculate additional duration
+    const oldEndTime = new Date(meeting.endTime);
+    const addedMs = newEndTimeObj - oldEndTime;
+    const addedHours = addedMs / (1000 * 60 * 60);
+
+    const creditPerHour = meeting.bookedRoom.perHourCredit || 0;
+    const addedCredits = addedHours * creditPerHour;
+
+    // Step 2: Deduct credits from the user
+    let bookingUser;
+    const isClient = !!meeting.externalClient;
+
+    if (isClient) {
+      bookingUser = await CoworkingClient.findById(meeting.externalClient);
+    } else {
+      bookingUser = await User.findById(meeting.bookedBy);
+    }
+
+    if (!bookingUser) {
+      throw new CustomError(
+        "Booking user not found for credit deduction",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (bookingUser.credits < addedCredits) {
+      throw new CustomError(
+        "Insufficient credits to extend this meeting",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    bookingUser.credits -= addedCredits;
+    await bookingUser.save();
+
+    // Step 3: Update meeting details
     meeting.endTime = newEndTimeObj;
     meeting.endDate = newEndTimeObj;
+    meeting.creditsUsed = (meeting.creditsUsed || 0) + addedCredits;
     await meeting.save();
 
-    // Log the successful extension
+    // Step 4: Log success
     await createLog({
       path: logPath,
       action: logAction,
@@ -966,7 +1005,12 @@ const extendMeeting = async (req, res, next) => {
       company: company,
       sourceKey: logSourceKey,
       sourceId: meeting._id,
-      changes: { meetingId, oldEndTime, newEndTime: newEndTimeObj },
+      changes: {
+        meetingId,
+        oldEndTime,
+        newEndTime: newEndTimeObj,
+        addedCredits,
+      },
     });
 
     return res.status(200).json({
