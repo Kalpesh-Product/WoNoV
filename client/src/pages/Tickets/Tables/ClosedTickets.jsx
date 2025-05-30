@@ -7,7 +7,7 @@ import MuiModal from "../../../components/MuiModal";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 
-const ClosedTickets = ({ title }) => {
+const ClosedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
   const [viewTicketDetails, setViewTicketDetails] = useState({});
@@ -15,7 +15,7 @@ const ClosedTickets = ({ title }) => {
   const { data, isLoading } = useQuery({
     queryKey: ["closed-tickets"],
     queryFn: async () => {
-      const response = await axios.get("/api/tickets/ticket-filter/close");
+      const response = await axios.get(`/api/tickets/ticket-filter/close/${departmentId}`);
       return response.data || [];
     },
     initialData: [],

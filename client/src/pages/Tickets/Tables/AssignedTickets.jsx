@@ -11,7 +11,7 @@ import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
 import { IoMdClose } from "react-icons/io";
 
-const AssignedTickets = ({ title }) => {
+const AssignedTickets = ({ title, departmentId }) => {
   const [openModal, setopenModal] = useState(false);
   const [esCalateModal, setEscalateModal] = useState(false);
   const [esCalatedTicket, setEscalatedTicket] = useState(null);
@@ -24,7 +24,7 @@ const AssignedTickets = ({ title }) => {
     queryKey: ["assigned-tickets"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/tickets/ticket-filter/assign");
+        const response = await axios.get(`/api/tickets/ticket-filter/assign/${departmentId}`);
 
         return response.data;
       } catch (error) {

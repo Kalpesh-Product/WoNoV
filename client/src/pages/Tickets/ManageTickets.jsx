@@ -21,8 +21,6 @@ const ManageTickets = () => {
     (state) => state.performance.selectedDepartment
   );
 
-  console.log("Tickets department : ", selectedDepartment);
-
   const ticketLabel =
     auth.user.designation === "Founder & CEO" ||
     auth.user.designation === "Co-Founder & COO"
@@ -34,7 +32,7 @@ const ManageTickets = () => {
   );
 
   const { data: ticketsData = [], isLoading } = useQuery({
-    queryKey: ["tickets-dept"],
+    queryKey: ["tickets-data"],
     queryFn: async () => {
       const response = await axios.get(
         `/api/tickets/department-tickets/${selectedDepartment}`
@@ -58,7 +56,6 @@ const ManageTickets = () => {
       .length,
   };
 
-  console.log(`Tickets data ${selectedDepartment}`, ticketsData.length);
 
   const widgets = [
     {
@@ -133,12 +130,12 @@ const ManageTickets = () => {
     {
       label: "Recieved Tickets",
       subLabel: "Department",
-      component: <RecievedTickets title="Department Ticket Received" />,
+      component: <RecievedTickets departmentId={selectedDepartment} title="Department Ticket Received" />,
     },
     {
       label: "Accepted Tickets",
       subLabel: ticketLabel,
-      component: <AcceptedTickets title="Accepted & Assigned Tickets" />,
+      component: <AcceptedTickets departmentId={selectedDepartment} title="Accepted & Assigned Tickets" />,
     },
   ];
 
@@ -146,7 +143,7 @@ const ManageTickets = () => {
     tabItems.push({
       label: "Assigned Tickets",
       subLabel: ticketLabel,
-      component: <AssignedTickets title="Assigned Tickets" />,
+      component: <AssignedTickets departmentId={selectedDepartment} title="Assigned Tickets" />,
     });
   }
 
@@ -154,17 +151,17 @@ const ManageTickets = () => {
     {
       label: "Support Tickets",
       subLabel: ticketLabel,
-      component: <SupportTickets title="Support Tickets" />,
+      component: <SupportTickets departmentId={selectedDepartment} title="Support Tickets" />,
     },
     {
       label: "Escalated Tickets",
       subLabel: ticketLabel,
-      component: <EscalatedTickets title="Escalated Tickets" />,
+      component: <EscalatedTickets departmentId={selectedDepartment} title="Escalated Tickets" />,
     },
     {
       label: "Closed Tickets",
       subLabel: ticketLabel,
-      component: <ClosedTickets title="Closed / Resolved Tickets" />,
+      component: <ClosedTickets departmentId={selectedDepartment} title="Closed / Resolved Tickets" />,
     }
   );
 

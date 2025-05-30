@@ -9,7 +9,7 @@ import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { useState } from "react";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-const EscalatedTickets = ({ title }) => {
+const EscalatedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
   const [openView, setOpenView] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -18,7 +18,7 @@ const EscalatedTickets = ({ title }) => {
   const { data: escalatedTickets = [], isLoading } = useQuery({
     queryKey: ["escalate-tickets"],
     queryFn: async () => {
-      const response = await axios.get("/api/tickets/ticket-filter/escalate");
+      const response = await axios.get(`/api/tickets/ticket-filter/escalate/${departmentId}`);
 
       return response.data;
     },

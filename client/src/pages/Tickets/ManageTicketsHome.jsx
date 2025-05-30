@@ -62,7 +62,7 @@ const ManageTicketsHome = () => {
     { headerName: "Closed Tickets", field: "closedTickets" },
   ];
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 p-4">
       <WidgetSection layout={1} padding>
         <AgTable
           data={[

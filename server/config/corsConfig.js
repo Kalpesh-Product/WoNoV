@@ -1,7 +1,9 @@
+require("dotenv").config();
+
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://wonofe.vercel.app",
-  "http://localhost:4173"
+  process.env.CORS_FRONTEND_URL,
+  "http://localhost:4173",
 ];
 
 const corsConfig = {

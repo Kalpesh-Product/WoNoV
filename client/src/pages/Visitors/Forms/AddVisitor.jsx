@@ -129,6 +129,7 @@ const AddVisitor = () => {
                     </MenuItem>
                     <MenuItem value="Walk In">Walk In</MenuItem>
                     <MenuItem value="Scheduled">Scheduled</MenuItem>
+                    <MenuItem value="Meeting">Meeting</MenuItem>
                     {/* <MenuItem value="Meeting Booking">Meeting Booking</MenuItem> */}
                   </TextField>
                 )}

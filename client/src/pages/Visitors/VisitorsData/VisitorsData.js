@@ -227,50 +227,7 @@ const physicalDigitalOptions = {
 
 // -----------------------Physical vs Digital Assets Pie Data End--------------------
 
-// -----------------------Department Pie Data Start--------------------
-const departmentWiseAssets = [
-  { label: "IT", value: 120 },
-  { label: "Tech", value: 90 },
-  { label: "HR", value: 70 },
-  { label: "Sales", value: 110 },
-  { label: "Admin", value: 110 },
-  { label: "Finance", value: 60 },
-  { label: "Maintenance", value: 96 },
-];
 
-const totalDepartmentAssets = departmentWiseAssets.reduce(
-  (sum, dept) => sum + dept.value,
-  0
-);
-
-const departmentPieDataVX = departmentWiseAssets.map((dept) => ({
-  label: `${dept.label} Department`,
-  value: ((dept.value / totalDepartmentAssets) * 100).toFixed(1),
-  count: dept.value,
-}));
-
-const departmentPieOptionsVX = {
-  chart: {
-    fontFamily: "Poppins-Regular",
-  },
-  labels: departmentPieDataVX.map((item) => item.label),
-  legend: { show: true },
-  dataLabels: {
-    enabled: true,
-    formatter: (val) => `${val.toFixed(0)}%`,
-  },
-  tooltip: {
-    y: {
-      formatter: (val, { seriesIndex }) => {
-        const count = departmentPieDataVX[seriesIndex].count;
-        return `${count} visitors (${val}%)`;
-      },
-    },
-  },
-  colors: ["#003f5c", "#2f4b7c", "#665191", "#a05195", "#d45087"], // Different colors for departments
-};
-
-// -----------------------Department Pie Data End--------------------
 
 // -----------------------Asset categories Donut Data Start--------------------
 const assetCategoriesDataV = {
@@ -389,8 +346,6 @@ export {
   assetAvailabilityOptionsV,
   physicalDigitalOptions,
   physicalDigitalPieData,
-  departmentPieDataVX,
-  departmentPieOptionsVX,
   assetCategoriesDataV,
   recentAssetsColumnsVX,
   recentAssetsDataVX,
