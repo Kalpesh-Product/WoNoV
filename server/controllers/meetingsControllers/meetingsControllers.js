@@ -206,34 +206,27 @@ const addMeetings = async (req, res, next) => {
     const creditPerHour = roomAvailable.perHourCredit || 0;
     const totalCreditsUsed = durationInHours * creditPerHour;
 
-    // Get the user/client and deduct credits
-    let bookingUser;
-    if (isClient) {
-      bookingUser = await CoworkingClient.findById(client);
-    } else {
-      bookingUser = await User.findById(bookedBy);
-    }
+    // Atomically deduct credits using findOneAndUpdate with credit check
+    const updateQuery = isClient ? { _id: client } : { _id: bookedBy };
+    const BookingModel = isClient ? CoworkingClient : User;
 
-    if (!bookingUser) {
+    const updatedUser = await BookingModel.findOneAndUpdate(
+      {
+        ...updateQuery,
+        credits: { $gte: totalCreditsUsed },
+      },
+      { $inc: { credits: -totalCreditsUsed } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
       throw new CustomError(
-        "Booking user not found",
+        "Insufficient credits or booking user not found",
         logPath,
         logAction,
         logSourceKey
       );
     }
-
-    if (bookingUser.credits < totalCreditsUsed) {
-      throw new CustomError(
-        "Insufficient credits to book this meeting room",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    bookingUser.credits -= totalCreditsUsed;
-    await bookingUser.save();
 
     const meeting = new Meeting({
       meetingType,
