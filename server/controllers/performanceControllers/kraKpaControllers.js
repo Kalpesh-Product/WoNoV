@@ -567,30 +567,35 @@ const getAllKpaTasks = async (req, res, next) => {
         path: "task",
         populate: [
           { path: "department", select: "name" },
-          { path: "assignedBy", select: "firstName middleName lastName" },
+          // { path: "assignedBy", select: "firstName middleName lastName" },
         ],
       })
-      .populate({ path: "assignedTo", select: "firstName middleName lastName" })
+      .populate({
+        path: "completedBy",
+        select: "firstName middleName lastName",
+      })
       .select("-company")
       .lean();
 
+    // console.log(tasks);
     const transformedByDepartment = {};
 
     tasks.forEach((task) => {
       if (task.task.taskType !== "KPA") return;
-
+      console.log("name", task);
       const departmentName = task.task.department.name;
-      const assignedBy = `${task.task.assignedBy.firstName} ${
-        task.task.assignedBy.middleName || ""
-      } ${task.task.assignedBy.lastName}`;
-      const assignee = `${task.assignedTo.firstName}  ${
-        task.assignedTo.middleName || ""
-      } ${task.assignedTo.lastName}`;
+      // const assignedBy = `${task.task.assignedBy.firstName} ${
+      //   task.task.assignedBy.middleName || ""
+      // } ${task.task.assignedBy.lastName}`;
+
+      const assignee = `${task.completedBy.firstName}  ${
+        task.completedBy.middleName || ""
+      } ${task.completedBy.lastName}`;
 
       const transformedTask = {
         taskName: task.task.task,
         // description: task.task.description,
-        assignedBy: assignedBy.trim(),
+        // assignedBy: assignedBy.trim(),
         assignedTo: assignee.trim(),
         assignedDate: task.task.assignedDate,
         dueDate: task.task.dueDate,
