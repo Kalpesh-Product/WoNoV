@@ -568,7 +568,7 @@ const getTeamMembersTasks = async (req, res, next) => {
         const tasks = await Task.find({
           company,
           $and: [
-            { completedBy: { $in: [id] } }, // User must be in assignedTo
+            { assignedTo: { $in: [id] } }, // User must be in assignedTo
             { assignedBy: { $ne: id } }, // User must NOT be assignedBy
           ],
         })
@@ -582,7 +582,7 @@ const getTeamMembersTasks = async (req, res, next) => {
               ],
             },
             {
-              path: "completedBy",
+              path: "assignedTo",
               select: "email firstName lastName isActive",
               populate: [
                 { path: "role", select: "roleTitle" },
@@ -597,7 +597,7 @@ const getTeamMembersTasks = async (req, res, next) => {
         // Find the correct user details from the first task
         let userDetails = {};
         if (tasks.length > 0) {
-          const matchedUser = tasks[0].completedBy.find(
+          const matchedUser = tasks[0].assignedTo.find(
             (user) => user._id.toString() === id.toString()
           );
 
