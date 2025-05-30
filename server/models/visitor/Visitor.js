@@ -79,6 +79,14 @@ const visitorSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "ExternalCompany",
     },
+    building: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Building",
+    },
+    unit: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Unit",
+    },
   },
   { timestamps: true }
 );

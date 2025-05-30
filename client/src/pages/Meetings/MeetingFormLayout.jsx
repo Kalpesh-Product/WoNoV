@@ -474,9 +474,7 @@ const MeetingFormLayout = () => {
                           getOptionLabel={(user) =>
                             isBizNest
                               ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
-                              : `${user.employeeName ?? ""} (${
-                                  user.clientName ?? ""
-                                })`
+                              : `${user.employeeName ?? ""}`
                           }
                           value={
                             employees.find((u) => u._id === field.value) || null

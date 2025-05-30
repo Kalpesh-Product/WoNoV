@@ -207,8 +207,11 @@ const addMeetings = async (req, res, next) => {
     const totalCreditsUsed = durationInHours * creditPerHour;
 
     // Atomically deduct credits using findOneAndUpdate with credit check
-    const updateQuery = isClient ? { _id: client } : { _id: bookedBy };
-    const BookingModel = isClient ? CoworkingClient : User;
+    const updateQuery = { _id: bookedBy };
+    const BookingModel = isClient ? CoworkingMembers : User;
+
+    console.log(BookingModel);
+    console.log(updateQuery);
 
     const updatedUser = await BookingModel.findOneAndUpdate(
       {
@@ -376,7 +379,7 @@ const getMeetings = async (req, res, next) => {
         },
       })
       .populate([
-        { path: "bookedBy", select: "firstName lastName" },
+        { path: "bookedBy" },
         { path: "receptionist", select: "firstName lastName" },
         { path: "client", select: "clientName" },
         { path: "externalClient", select: "companyName pocName mobileNumber" },

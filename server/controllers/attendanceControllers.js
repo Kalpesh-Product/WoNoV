@@ -416,7 +416,7 @@ const getAttendance = async (req, res, next) => {
       .exec();
 
     if (!attendances || attendances.length === 0) {
-      return res.status(400).json({ message: "No attendance exists" });
+      return res.status(200).json([]);
     }
 
     return res.status(200).json(attendances);
