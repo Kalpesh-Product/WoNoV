@@ -952,15 +952,11 @@ const extendMeeting = async (req, res, next) => {
     const addedCredits = addedHours * creditPerHour;
 
     // Step 2: Deduct credits from the user
-    let bookingUser;
     const isClient = !!meeting.externalClient;
+    const bookingUserModel = isClient ? CoworkingClient : User;
+    const bookingUserId = isClient ? meeting.externalClient : meeting.bookedBy;
 
-    if (isClient) {
-      bookingUser = await CoworkingClient.findById(meeting.externalClient);
-    } else {
-      bookingUser = await User.findById(meeting.bookedBy);
-    }
-
+    const bookingUser = await bookingUserModel.findById(bookingUserId);
     if (!bookingUser) {
       throw new CustomError(
         "Booking user not found for credit deduction",
@@ -979,8 +975,11 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
-    bookingUser.credits -= addedCredits;
-    await bookingUser.save();
+    // Atomic deduction of credits
+    await bookingUserModel.findOneAndUpdate(
+      { _id: bookingUserId },
+      { $inc: { credits: -addedCredits } }
+    );
 
     // Step 3: Update meeting details
     meeting.endTime = newEndTimeObj;
@@ -1020,6 +1019,7 @@ const extendMeeting = async (req, res, next) => {
     }
   }
 };
+
 
 const getSingleRoomMeetings = async (req, res, next) => {
   const { roomId } = req.params;
