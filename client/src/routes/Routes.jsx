@@ -1791,7 +1791,7 @@ export const routes = createBrowserRouter([
                     element: <EditProject />,
                   },
                   {
-                    path: "KRA",
+                    path: "my-tasks",
                     element: <MyTaskListLayout />, // This is your first page
                     children: [
                       {

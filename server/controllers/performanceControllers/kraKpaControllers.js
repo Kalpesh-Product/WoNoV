@@ -147,7 +147,7 @@ const updateTaskStatus = async (req, res, next) => {
   const logSourceKey = "kraKpaTasks";
 
   try {
-    const { taskId } = req.params;
+    const { taskId, taskType } = req.params;
 
     if (!taskId) {
       throw new CustomError(
@@ -211,7 +211,7 @@ const updateTaskStatus = async (req, res, next) => {
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: "Task status updated successfully",
+      remarks: `${taskType}  marked completed`,
       status: "Success",
       user: user,
       ip: ip,
@@ -225,7 +225,7 @@ const updateTaskStatus = async (req, res, next) => {
       },
     });
 
-    return res.status(201).json({ message: `Task completed` });
+    return res.status(201).json({ message: `${taskType} marked completed` });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);

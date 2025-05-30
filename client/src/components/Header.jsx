@@ -135,6 +135,7 @@ const Header = () => {
               auth.user.firstName.charAt(0)
             )}
           </Avatar>
+
           <div
             className="w-full relative"
             onMouseEnter={() => setIsHovered(true)}
@@ -148,7 +149,7 @@ const Header = () => {
                   {/* {auth.user.designation.split(" ").length > 2 */}
                   {auth.user.designation.split(" ").length > 3
                     ? // ? auth.user.designation.split(" ").slice(0, 2).join(" ") +
-                      auth.user.designation.split(" ").slice(0, 3).join(" ") +
+                      auth.user.designation.split(" ").slice(0, 2).join(" ") +
                       "..."
                     : auth.user.designation}
                 </span>

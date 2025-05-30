@@ -74,6 +74,7 @@ const PerformanceKra = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedDepartments"] });
+      queryClient.invalidateQueries({ queryKey: ["completedEntries"] });
       toast.success(data.message || "DATA UPDATED");
     },
     onError: (error) => {
@@ -97,9 +98,22 @@ const PerformanceKra = () => {
     queryKey: ["fetchedDepartments"],
     queryFn: fetchDepartments,
   });
-  const completedEntries = departmentLoading
-    ? []
-    : departmentKra.filter((item) => item.status === "Completed");
+  const { data: completedEntries=[], isLoading: isCompletedLoading } = useQuery({
+    queryKey: ["completedEntries"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/performance/get-completed-tasks?dept=${deptId}&type=KRA`
+        );
+        return response.data;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+  });
+  // const completedEntries = departmentLoading
+  //   ? []
+  //   : departmentKra.filter((item) => item.status === "Completed");
 
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
@@ -227,17 +241,15 @@ const PerformanceKra = () => {
               formatTime
               tableTitle={`COMPLETED - DAILY KRA`}
               checkAll={false}
-              data={completedEntries
-                .filter((item) => item.status === "Completed")
-                .map((item, index) => ({
-                  srno: index + 1,
-                  id: item.id,
-                  taskName: item.taskName,
-                  assignedDate: item.assignedDate,
-                  dueDate: item.dueDate,
-                  status: item.status,
-                  completedBy: item.completedBy,
-                }))}
+              data={completedEntries.map((item, index) => ({
+                srno: index + 1,
+                id: item.id,
+                taskName: item.taskName,
+                assignedDate: item.assignedDate,
+                dueDate: item.dueDate,
+                status: item.status,
+                completedBy: item.completedBy,
+              }))}
               dateColumn={"dueDate"}
               columns={completedColumns}
             />

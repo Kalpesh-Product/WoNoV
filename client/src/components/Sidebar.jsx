@@ -48,11 +48,7 @@ const Sidebar = () => {
       icon: <MdMeetingRoom />,
       route: "meetings",
     },
-    {
-      name: "Assets",
-      icon: <FaBoxesStacked />,
-      route: "assets",
-    },
+
     {
       name: "Tasks",
       icon: <FaTasks />,
@@ -82,6 +78,11 @@ const Sidebar = () => {
     {
       name: "Reports",
       icon: <TbReportSearch />,
+      route: "#",
+    },
+        {
+      name: "Assets",
+      icon: <FaBoxesStacked />,
       route: "#",
     },
     { name: "Chat", icon: <HiOutlineChatAlt2 />, route: "#" },

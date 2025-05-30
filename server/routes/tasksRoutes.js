@@ -16,10 +16,11 @@ const {
   updateTaskStatus,
   getCompletedTasks,
   getMyCompletedTasks,
+  getMyAssignedTasks,
 } = require("../controllers/tasksControllers/tasksControllers");
 
 router.post("/create-tasks", createTasks);
-router.get("/my-tasks", getMyTasks);
+router.get("/my-tasks", getMyTasks); //Query (flag=pending) only required for pending tasks
 router.get("/get-all-tasks", getAllTasks);
 router.get("/get-tasks", getTasks);
 router.get("/get-depts-tasks", getAllDeptTasks);
@@ -29,8 +30,9 @@ router.get("/get-today-tasks", getMyTodayTasks);
 router.get("/get-assigned-tasks", getAssignedTasks);
 router.patch("/update-task/:id", updateTask);
 router.patch("/complete-tasks/", completeTasks);
-router.get("/get-completed-tasks", getCompletedTasks);
-router.get("/get-my-completed-tasks/", getMyCompletedTasks);
+router.get("/get-completed-tasks/:deptId", getCompletedTasks);
+router.get("/get-my-completed-tasks", getMyCompletedTasks);
 router.patch("/delete-task/:id", deleteTask);
+router.get("/get-my-assigned-tasks", getMyAssignedTasks);
 
 module.exports = router;
