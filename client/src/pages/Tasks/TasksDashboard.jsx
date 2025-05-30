@@ -412,7 +412,7 @@ const monthlyTasksData = [
     {
       layout: 6,
       widgets: [
-        <Card route={"KRA"} title={"My Tasks"} icon={<RiPagesLine />} />,
+        <Card route={"/app/tasks/my-tasks"} title={"My Tasks"} icon={<RiPagesLine />} />,
         <Card
           route={"/app/tasks/department-tasks"}
           title={"Department Tasks"}
