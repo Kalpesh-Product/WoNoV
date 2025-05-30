@@ -41,6 +41,6 @@ router.patch("/create-housekeeping-tasks", addHousekeepingTask);
 router.delete("/delete-housekeeping-tasks", deleteHousekeepingTask);
 router.patch("/cancel-meeting/:meetingId", cancelMeeting);
 router.get("/get-available-users", getAvaliableUsers);
-router.patch("/update-meeting-status/:meetingId", updateMeetingStatus);
+router.patch("/update-meeting-status", updateMeetingStatus);
 
 module.exports = router;

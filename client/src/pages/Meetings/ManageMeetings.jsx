@@ -101,7 +101,7 @@ const ManageMeetings = () => {
     },
   });
   const filteredMeetings = meetings
-    .filter((item) => item.meetingStatus === "Upcoming")
+    .filter((item) => item.meetingStatus !== "Completed")
     .map((meeting) => ({
       ...meeting,
       // startTime: humanTime(meeting.startTime),
@@ -112,7 +112,9 @@ const ManageMeetings = () => {
   const transformedMeetings = filteredMeetings.map((meeting, index) => ({
     ...meeting,
     date: meeting.date,
-    client: meeting.client,
+    bookedBy: `${meeting.bookedBy?.firstName || "Unknown"} ${
+      meeting.bookedBy?.lastName || "Unknown"
+    }`,
     startTime: meeting.startTime,
     endTime: meeting.endTime,
     srNo: index + 1,
@@ -168,6 +170,24 @@ const ManageMeetings = () => {
       toast.error(error.message);
     },
   });
+  const { mutate: completeMeeting, isPending: isCompletePending } = useMutation(
+    {
+      mutationFn: async (data) => {
+        const respone = await axios.patch(
+          `/api/meetings/update-meeting-status`,
+          data
+        );
+        queryClient.invalidateQueries({ queryKey: ["meetings"] });
+        return respone.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data.message);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }
+  );
   //------------------------------API--------------------------------//
 
   // Initialize checklists when meetings are loaded
@@ -196,6 +216,21 @@ const ManageMeetings = () => {
     setModalMode(mode);
     setSelectedMeeting(meetingId);
     setDetailsModal(true);
+  };
+
+  const handleOngoing = (mode, meetingId) => {
+    setSelectedMeetingId(meetingId);
+    completeMeeting({
+      meetingId: meetingId,
+      status: "Ongoing",
+    });
+  };
+  const handleCompleted = (mode, meetingId) => {
+    setSelectedMeetingId(meetingId);
+    completeMeeting({
+      meetingId: meetingId,
+      status: "Completed",
+    });
   };
 
   const handleCloseChecklistModal = () => {
@@ -300,7 +335,8 @@ const ManageMeetings = () => {
   //---------------------------------Event handlers----------------------------------------//
 
   const columns = [
-    { field: "srNo", headerName: "Sr No" },
+    { field: "srNo", headerName: "Sr No", sort: "desc" },
+    { field: "bookedBy", headerName: "Booked By" },
     { field: "roomName", headerName: "Room Name" },
     {
       field: "date",
@@ -373,53 +409,64 @@ const ManageMeetings = () => {
         );
       },
     },
-    {
-      field: "action",
-      headerName: "Action",
-      cellRenderer: (params) => {
-        const isDisabled = params.data.housekeepingStatus === "Completed";
+{
+  field: "action",
+  headerName: "Action",
+  pinned: "right",
+  cellRenderer: (params) => {
+    const status = params.data.meetingStatus;
+    const housekeepingStatus = params.data.housekeepingStatus;
 
-        return (
-          <div className="flex gap-2 items-center">
-            <div
-              onClick={() => handleSelectedMeeting("viewDetails", params.data)}
-              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-            >
-              <span className="text-subtitle">
-                <MdOutlineRemoveRedEye />
-              </span>
-            </div>
+    const isUpcoming = status === "Upcoming";
+    const isOngoing = status === "Ongoing";
+    const isCompleted = status === "Completed";
+    const isHousekeepingPending = housekeepingStatus === "Pending";
+    const isHousekeepingCompleted = housekeepingStatus === "Completed";
 
-            {/* ⋮ Three-dot menu - hidden if housekeeping is completed */}
-            {!isDisabled && (
-              <ThreeDotMenu
-                menuItems={[
-                  {
-                    label: "Update Checklist",
-                    onClick: () =>
-                      handleOpenChecklistModal("update", params.data._id),
-                  },
-                  {
-                    label: "Mark As Completed",
-                    onClick: () =>
-                      handleOpenChecklistModal("update", params.data._id),
-                  },
-                  {
-                    label: "Extend Meeting",
-                    onClick: () =>
-                      handleExtendMeetingModal("extend", params.data),
-                  },
-                  {
-                    label: "Cancel",
-                    onClick: () => handleSelectedMeeting("cancel", params.data),
-                  },
-                ]}
-              />
-            )}
-          </div>
-        );
+    const menuItems = [
+      // Show only if not ongoing and housekeeping is not completed
+      !isOngoing && !isHousekeepingCompleted && {
+        label: "Update Checklist",
+        onClick: () => handleOpenChecklistModal("update", params.data._id),
       },
-    },
+      // Show only if not ongoing and housekeeping is not pending
+      !isOngoing && !isHousekeepingPending && {
+        label: "Mark As Ongoing",
+        onClick: () => handleOngoing("ongoing", params.data._id),
+      },
+      // Show only if not upcoming
+      !isUpcoming && {
+        label: "Mark As Completed",
+        onClick: () => handleCompleted("complete", params.data._id),
+      },
+      // Show only if not upcoming
+      !isUpcoming && {
+        label: "Extend Meeting",
+        onClick: () => handleExtendMeetingModal("extend", params.data),
+      },
+      {
+        label: "Cancel",
+        onClick: () => handleSelectedMeeting("cancel", params.data),
+      },
+    ].filter(Boolean); // Remove any false/null values
+
+    return (
+      <div className="flex gap-2 items-center">
+        <div
+          onClick={() => handleSelectedMeeting("viewDetails", params.data)}
+          className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+        >
+          <span className="text-subtitle">
+            <MdOutlineRemoveRedEye />
+          </span>
+        </div>
+
+        <ThreeDotMenu menuItems={menuItems} />
+      </div>
+    );
+  },
+}
+
   ];
 
   return (
@@ -566,6 +613,10 @@ const ManageMeetings = () => {
               title={"Room Name"}
               detail={selectedMeeting?.roomName}
               upperCase
+            />
+            <DetalisFormatted
+              title={"Booked By"}
+              detail={selectedMeeting?.bookedBy}
             />
             <DetalisFormatted
               title={"Client Name"}

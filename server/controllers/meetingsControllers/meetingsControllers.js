@@ -1066,8 +1066,7 @@ const getSingleRoomMeetings = async (req, res, next) => {
 };
 
 const updateMeetingStatus = async (req, res, next) => {
-  const { status } = req.body;
-  const { meetingId } = req.params;
+  const { status, meetingId } = req.body;
   const updatedMeeting = await Meeting.findByIdAndUpdate(
     meetingId,
     { status },
