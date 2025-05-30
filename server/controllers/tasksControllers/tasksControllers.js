@@ -17,7 +17,7 @@ const createTasks = async (req, res, next) => {
       taskName,
       department,
       description,
-      taskType,
+      // taskType,
       // status,
       // priority,
       // assignees,
@@ -32,8 +32,8 @@ const createTasks = async (req, res, next) => {
       !description ||
       !dueDate ||
       !assignedDate ||
-      !dueTime ||
-      !taskType
+      !dueTime
+      // !taskType
     ) {
       throw new CustomError(
         "Missing required fields",
@@ -101,7 +101,7 @@ const createTasks = async (req, res, next) => {
 
     const newTask = new Task({
       taskName,
-      taskType,
+      // taskType,
       department,
       description,
       // status,
@@ -383,14 +383,43 @@ const getMyTasks = async (req, res, next) => {
   try {
     const { user, company } = req;
     const { flag } = req.query;
+    const query = { company, assignedBy: user };
 
-    const query = { company, taskType: "Self" };
-
-    if (flag === "assigned") {
-      query.completedBy = user;
+    if (flag === "pending") {
+      query.status = "Pending";
     }
 
     const tasks = await Task.find(query)
+      .populate("department", "name")
+      .populate("assignedBy", "firstName lastName")
+      .populate("assignedTo", "firstName lastName")
+      .select("-company")
+      .lean();
+
+    const transformedTasks = tasks.map((task) => {
+      return {
+        ...task,
+        dueDate: formatDate(task.dueDate),
+        dueTime: task.dueTime ? task.dueTime : "06:30 PM",
+        assignedDate: formatDate(task.assignedDate),
+      };
+    });
+
+    return res.status(200).json(transformedTasks);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getMyAssignedTasks = async (req, res, next) => {
+  try {
+    const { user, departments, company } = req;
+
+    const tasks = await Task.find({
+      company,
+      assignedBy: { $ne: user },
+      department: { $in: departments },
+    })
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
@@ -453,10 +482,11 @@ const getMyCompletedTasks = async (req, res, next) => {
 
     const tasks = await Task.find({
       company,
-      $or: [
-        { $and: [{ taskType: "Self" }, { status: "Completed" }] },
-        { $and: [{ completedBy: user }] },
-      ],
+      completedBy: user,
+      // $or: [
+      //   { $and: [{ taskType: "Self" }, { status: "Completed" }] },
+      //   { $and: [{ completedBy: user }] },
+      // ],
     })
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
@@ -538,18 +568,28 @@ const getTeamMembersTasks = async (req, res, next) => {
         const tasks = await Task.find({
           company,
           $and: [
-            { assignedTo: { $in: [id] } }, // User must be in assignedTo
+            { completedBy: { $in: [id] } }, // User must be in assignedTo
             { assignedBy: { $ne: id } }, // User must NOT be assignedBy
           ],
         })
-          .populate({
-            path: "assignedTo",
-            select: "email firstName lastName isActive",
-            populate: [
-              { path: "role", select: "roleTitle" },
-              { path: "departments", select: "name" },
-            ],
-          })
+          .populate(
+            {
+              path: "assignedTo",
+              select: "email firstName lastName isActive",
+              populate: [
+                { path: "role", select: "roleTitle" },
+                { path: "departments", select: "name" },
+              ],
+            },
+            {
+              path: "completedBy",
+              select: "email firstName lastName isActive",
+              populate: [
+                { path: "role", select: "roleTitle" },
+                { path: "departments", select: "name" },
+              ],
+            }
+          )
           .populate("assignedBy", "firstName lastName")
           .select("-company")
           .lean();
@@ -557,7 +597,7 @@ const getTeamMembersTasks = async (req, res, next) => {
         // Find the correct user details from the first task
         let userDetails = {};
         if (tasks.length > 0) {
-          const matchedUser = tasks[0].assignedTo.find(
+          const matchedUser = tasks[0].completedBy.find(
             (user) => user._id.toString() === id.toString()
           );
 
@@ -804,4 +844,5 @@ module.exports = {
   deleteTask,
   getCompletedTasks,
   getMyCompletedTasks,
+  getMyAssignedTasks,
 };

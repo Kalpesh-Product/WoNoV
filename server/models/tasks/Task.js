@@ -5,11 +5,11 @@ const taskSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  taskType: {
-    type: String,
-    enum: ["Self", "Department"],
-    required: true,
-  },
+  // taskType: {
+  //   type: String,
+  //   enum: ["Self", "Department"],
+  //   required: true,
+  // },
   company: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Company",
