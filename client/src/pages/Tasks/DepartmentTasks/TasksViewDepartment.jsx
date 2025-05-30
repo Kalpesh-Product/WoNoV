@@ -76,12 +76,12 @@ const TasksViewDepartment = () => {
     mutationKey: ["updateDailyTasks"],
     mutationFn: async (data) => {
       const response = await axios.patch(
-        `/api/performance/update-task-status/${data}`
+        `/api/tasks/update-task-status/${data}`
       );
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedDepartments"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
       toast.success(data.message || "DATA UPDATED");
     },
     onError: (error) => {
@@ -93,18 +93,31 @@ const TasksViewDepartment = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get(
-        `api/performance/get-tasks?dept=${deptId}`
-      );
+      const response = await axios.get(`api/tasks/get-tasks?dept=${deptId}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   };
+  const fetchCompletedTasks = async () => {
+    try {
+      const response = await axios.get(`api/tasks/get-completed-tasks/${deptId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
     queryKey: ["fetchedTasks"],
     queryFn: fetchDepartments,
   });
+
+  const { data: completedTasks = [], isPending: completedTasksFetchPending } =
+    useQuery({
+      queryKey: ["fetchedCompletedTasks"],
+      queryFn: fetchCompletedTasks,
+    });
   const completedEntries = departmentKra.filter(
     (item) => item.status === "Completed"
   );
@@ -207,7 +220,6 @@ const TasksViewDepartment = () => {
         {!departmentLoading ? (
           <WidgetSection padding layout={1}>
             <DateWiseTable
-              formatTime
               checkbox
               buttonTitle={"Add Task"}
               handleSubmit={() => setOpenModal(true)}
@@ -216,11 +228,11 @@ const TasksViewDepartment = () => {
                 .filter((item) => item.status !== "Completed")
                 .map((item, index) => ({
                   srno: index + 1,
-                  id: item.id,
+                  id: item._id,
                   taskName: item.taskName,
                   assignedDate: item.assignedDate,
-                  dueDate: item.dueDate,
                   status: item.status,
+                  assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                 }))}
               dateColumn={"dueDate"}
               columns={departmentColumns}

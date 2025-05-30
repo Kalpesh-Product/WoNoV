@@ -367,9 +367,9 @@ const getTasks = async (req, res, next) => {
       return {
         ...task,
         department: task.name,
-        dueDate: formatDate(task.dueDate),
-        dueTime: task.dueTime ? formatTime(task.dueTime) : "06:30 PM",
-        assignedDate: formatDate(task.assignedDate),
+        dueDate: task.dueDate,
+        dueTime: task.dueTime ? task.dueTime : null,
+        assignedDate: task.assignedDate,
       };
     });
 
