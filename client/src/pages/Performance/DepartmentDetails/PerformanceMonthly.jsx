@@ -7,7 +7,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
-import { Chip, TextField } from "@mui/material";
+import { Chip, CircularProgress, TextField } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import MuiModal from "../../../components/MuiModal";
@@ -30,6 +30,7 @@ const PerformanceMonthly = () => {
     control,
     formState: { errors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       kraName: "",
       startDate: null,
@@ -54,7 +55,7 @@ const PerformanceMonthly = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedDepartments"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
       toast.success(data.message || "KRA Added");
       setOpenModal(false);
     },
@@ -79,8 +80,9 @@ const PerformanceMonthly = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKra"] });
-      toast.success(data.message || "DATA UPDATED");
+      queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
+      queryClient.invalidateQueries({ queryKey: ["completedEntriesKPA"] });
+      toast.success("KPA updated");
     },
     onError: (error) => {
       toast.error(error.message || "Error Updating");
@@ -99,12 +101,22 @@ const PerformanceMonthly = () => {
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-    queryKey: ["fetchedMonthlyKra"],
+    queryKey: ["fetchedMonthlyKPA"],
     queryFn: fetchDepartments,
   });
-  const completedEntries = departmentLoading
-    ? []
-    : departmentKra.filter((item) => item.status === "Completed");
+  const { data: completedEntries, isLoading: isCompletedLoading } = useQuery({
+    queryKey: ["completedEntriesKPA"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/performance/get-completed-tasks?dept=${deptId}&type=KPA`
+        );
+        return response.data;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+  });
   console.log(department);
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
@@ -220,22 +232,28 @@ const PerformanceMonthly = () => {
             columns={departmentColumns}
           />
         </WidgetSection>
-        <WidgetSection padding layout={1}>
-          <MonthWiseTable
-            tableTitle={`COMPLETED - MONTHLY KPA`}
-            data={[
-              ...completedEntries.map((item, index) => ({
-                srno: index + 1,
-                taskName: item.taskName,
-                assignedDate: item.assignedDate,
-                dueDate: item.dueDate,
-                status: item.status,
-              })),
-            ]}
-            dateColumn={"dueDate"}
-            columns={completedColumns}
-          />
-        </WidgetSection>
+        {!isCompletedLoading ? (
+          <WidgetSection padding layout={1}>
+            <MonthWiseTable
+              tableTitle={`COMPLETED - MONTHLY KPA`}
+              data={[
+                ...completedEntries.map((item, index) => ({
+                  srno: index + 1,
+                  taskName: item.taskName,
+                  assignedDate: item.assignedDate,
+                  dueDate: item.dueDate,
+                  status: item.status,
+                })),
+              ]}
+              dateColumn={"dueDate"}
+              columns={completedColumns}
+            />
+          </WidgetSection>
+        ) : (
+          <div className="h-72 flex items-center justify-center">
+            <CircularProgress />
+          </div>
+        )}
       </div>
 
       <MuiModal
@@ -282,13 +300,25 @@ const PerformanceMonthly = () => {
           <Controller
             name="startDate"
             control={control}
-            rules={{ required: "Start date is required" }}
+            rules={{
+              required: "Start date is required",
+              validate: (value) => {
+                if (!value) return true; // already handled by required
+                const today = dayjs().startOf("day");
+                const selected = dayjs(value);
+                if (selected.isBefore(today)) {
+                  return "Start date cannot be in the past.";
+                }
+                return true;
+              },
+            }}
             render={({ field, fieldState }) => (
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
                   {...field}
                   label="Start Date"
                   format="DD-MM-YYYY"
+                  disablePast
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) =>
                     field.onChange(date ? date.toISOString() : null)
@@ -305,6 +335,7 @@ const PerformanceMonthly = () => {
               </LocalizationProvider>
             )}
           />
+
           <Controller
             name="endDate"
             control={control}
