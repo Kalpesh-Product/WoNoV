@@ -165,6 +165,8 @@ const ManageMeetings = () => {
     },
     onSuccess: (data) => {
       toast.success(data.message);
+      setDetailsModal(false)
+      resetExtendMeeting()
     },
     onError: (error) => {
       toast.error(error.message);
