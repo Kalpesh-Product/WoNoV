@@ -47,7 +47,7 @@ const TasksViewDepartment = () => {
 
   //--------------POST REQUEST FOR DAILY KRA-----------------//
   const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
-    mutationKey: ["addDailyKra"],
+    mutationKey: ["addDailyTasks"],
     mutationFn: async (data) => {
       const response = await axios.post("/api/tasks/create-tasks", {
         taskName: data.taskName,
@@ -73,7 +73,7 @@ const TasksViewDepartment = () => {
   };
 
   const { mutate: updateDailyKra, isPending: isUpdatePending } = useMutation({
-    mutationKey: ["updateDailyKra"],
+    mutationKey: ["updateDailyTasks"],
     mutationFn: async (data) => {
       const response = await axios.patch(
         `/api/performance/update-task-status/${data}`
@@ -94,7 +94,7 @@ const TasksViewDepartment = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        `api/performance/get-tasks?dept=${deptId}&type=KRA`
+        `api/performance/get-tasks?dept=${deptId}`
       );
       return response.data;
     } catch (error) {
@@ -102,7 +102,7 @@ const TasksViewDepartment = () => {
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-    queryKey: ["fetchedDepartments"],
+    queryKey: ["fetchedTasks"],
     queryFn: fetchDepartments,
   });
   const completedEntries = departmentKra.filter(
@@ -111,7 +111,6 @@ const TasksViewDepartment = () => {
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
     { headerName: "Task List", field: "taskName", width: 300 },
-    // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "Assigned By", field: "assignedBy", width: 300 },
     { headerName: "Assigned Date", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
