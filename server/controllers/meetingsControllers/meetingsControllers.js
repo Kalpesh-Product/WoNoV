@@ -208,7 +208,7 @@ const addMeetings = async (req, res, next) => {
 
     // Atomically deduct credits using findOneAndUpdate with credit check
     const updateQuery = isClient ? { _id: client } : { _id: bookedBy };
-    const BookingModel = isClient ? CoworkingClient : User;
+    const BookingModel = isClient ? CoworkingMembers : User;
 
     const updatedUser = await BookingModel.findOneAndUpdate(
       {
