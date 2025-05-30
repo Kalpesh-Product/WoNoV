@@ -75,7 +75,7 @@ const PerformanceMonthly = () => {
     mutationKey: ["updateMonthlyKpa"],
     mutationFn: async (data) => {
       const response = await axios.patch(
-        `/api/performance/update-task-status/${data}`
+        `/api/performance/update-task-status/${data}/KPA`
       );
       return response.data;
     },
@@ -120,7 +120,7 @@ const PerformanceMonthly = () => {
   console.log(department);
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
-    { headerName: "KPA List", field: "taskName", flex: 1 },
+    { headerName: "KPA List", field: "taskName", width : 300 },
     // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
     {
@@ -155,6 +155,7 @@ const PerformanceMonthly = () => {
     {
       headerName: "Actions",
       field: "actions",
+      pinned : 'right',
       cellRenderer: (params) => {
         console.log(params.node);
         return (
@@ -175,8 +176,8 @@ const PerformanceMonthly = () => {
   const completedColumns = [
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "KPA List", field: "taskName", flex: 1 },
-    // { headerName: "Assigned Time", field: "assignedDate" },
-    { headerName: "Due Date", field: "dueDate" },
+    { headerName: "Completed Time", field: "completionTime", flex: 1 },
+    { headerName: "Completed Date", field: "completionDate" },
     {
       field: "status",
       headerName: "Status",
@@ -241,12 +242,14 @@ const PerformanceMonthly = () => {
                   srno: index + 1,
                   taskName: item.taskName,
                   assignedDate: item.assignedDate,
-                  dueDate: item.dueDate,
+                  completionDate: humanDate(item.completionDate),
+                  completionTime: humanTime(item.completionDate),
                   status: item.status,
                 })),
               ]}
               dateColumn={"dueDate"}
               columns={completedColumns}
+             
             />
           </WidgetSection>
         ) : (

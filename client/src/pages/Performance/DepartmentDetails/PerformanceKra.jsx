@@ -124,7 +124,7 @@ const PerformanceKra = () => {
     { headerName: "Sr no", field: "srno", width: 100 },
     { headerName: "KRA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
-    { headerName: "DueTime", field: "dueDate" },
+    { headerName: "DueTime", field: "dueTime" },
     {
       field: "status",
       headerName: "Status",
@@ -177,7 +177,7 @@ const PerformanceKra = () => {
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "KRA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
-    { headerName: "DueTime", field: "dueDate" },
+    { headerName: "Completed Time", field: "dueDate" },
     { headerName: "Completed By", field: "completedBy" },
     {
       field: "status",
@@ -227,7 +227,7 @@ const PerformanceKra = () => {
                   id: item.id,
                   taskName: item.taskName,
                   assignedDate: item.assignedDate,
-                  dueDate: item.dueDate,
+                  dueTime: item.dueTime,
                   status: item.status,
                 }))}
               dateColumn={"dueDate"}
