@@ -121,7 +121,6 @@ const addMeetings = async (req, res, next) => {
     }
 
     let internalUsers = [];
-    // let externalUsers = [];
     let users = [];
     let isClient = client ? company.toString() !== client.toString() : false;
 
@@ -201,6 +200,41 @@ const addMeetings = async (req, res, next) => {
       );
     }
 
+    // Calculate meeting duration and credit deduction
+    const durationInMs = endTimeObj - startTimeObj;
+    const durationInHours = durationInMs / (1000 * 60 * 60);
+    const creditPerHour = roomAvailable.perHourCredit || 0;
+    const totalCreditsUsed = durationInHours * creditPerHour;
+
+    // Get the user/client and deduct credits
+    let bookingUser;
+    if (isClient) {
+      bookingUser = await CoworkingClient.findById(client);
+    } else {
+      bookingUser = await User.findById(bookedBy);
+    }
+
+    if (!bookingUser) {
+      throw new CustomError(
+        "Booking user not found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (bookingUser.credits < totalCreditsUsed) {
+      throw new CustomError(
+        "Insufficient credits to book this meeting room",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    bookingUser.credits -= totalCreditsUsed;
+    await bookingUser.save();
+
     const meeting = new Meeting({
       meetingType,
       bookedBy,
@@ -212,19 +246,19 @@ const addMeetings = async (req, res, next) => {
       bookedRoom: roomAvailable._id,
       subject,
       agenda,
+      creditsUsed: totalCreditsUsed,
       client: meetingType === "Internal" ? client : null,
       externalClient: meetingType === "External" ? externalCompany : null,
       company,
       internalParticipants:
         internalParticipants && !isClient ? internalUsers : [],
       clientParticipants: internalParticipants && isClient ? internalUsers : [],
-      externalParticipants: externalParticipants ? externalParticipants : [],
+      externalParticipants: externalParticipants || [],
     });
 
-    Promise.all([
-      await meeting.save(),
-      await Meeting.findByIdAndUpdate(meeting._id, { status: "Ongoing" }),
-      await Room.findByIdAndUpdate(roomAvailable._id, { status: "Occupied" }),
+    await Promise.all([
+      meeting.save(),
+      Room.findByIdAndUpdate(roomAvailable._id, { status: "Occupied" }),
     ]);
 
     await createLog({
