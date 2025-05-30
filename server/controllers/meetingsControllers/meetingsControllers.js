@@ -121,7 +121,6 @@ const addMeetings = async (req, res, next) => {
     }
 
     let internalUsers = [];
-    // let externalUsers = [];
     let users = [];
     let isClient = client ? company.toString() !== client.toString() : false;
 
@@ -201,6 +200,34 @@ const addMeetings = async (req, res, next) => {
       );
     }
 
+    // Calculate meeting duration and credit deduction
+    const durationInMs = endTimeObj - startTimeObj;
+    const durationInHours = durationInMs / (1000 * 60 * 60);
+    const creditPerHour = roomAvailable.perHourCredit || 0;
+    const totalCreditsUsed = durationInHours * creditPerHour;
+
+    // Atomically deduct credits using findOneAndUpdate with credit check
+    const updateQuery = isClient ? { _id: client } : { _id: bookedBy };
+    const BookingModel = isClient ? CoworkingClient : User;
+
+    const updatedUser = await BookingModel.findOneAndUpdate(
+      {
+        ...updateQuery,
+        credits: { $gte: totalCreditsUsed },
+      },
+      { $inc: { credits: -totalCreditsUsed } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      throw new CustomError(
+        "Insufficient credits or booking user not found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const meeting = new Meeting({
       meetingType,
       bookedBy,
@@ -212,19 +239,20 @@ const addMeetings = async (req, res, next) => {
       bookedRoom: roomAvailable._id,
       subject,
       agenda,
+      creditsUsed: totalCreditsUsed,
       client: meetingType === "Internal" ? client : null,
       externalClient: meetingType === "External" ? externalCompany : null,
       company,
+      status: "Upcoming",
       internalParticipants:
         internalParticipants && !isClient ? internalUsers : [],
       clientParticipants: internalParticipants && isClient ? internalUsers : [],
-      externalParticipants: externalParticipants ? externalParticipants : [],
+      externalParticipants: externalParticipants || [],
     });
 
-    Promise.all([
-      await meeting.save(),
-      await Meeting.findByIdAndUpdate(meeting._id, { status: "Ongoing" }),
-      await Room.findByIdAndUpdate(roomAvailable._id, { status: "Occupied" }),
+    await Promise.all([
+      meeting.save(),
+      Room.findByIdAndUpdate(roomAvailable._id, { status: "Occupied" }),
     ]);
 
     await createLog({
@@ -869,7 +897,7 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
-    const meeting = await Meeting.findById(meetingId);
+    const meeting = await Meeting.findById(meetingId).populate("bookedRoom");
     if (!meeting) {
       throw new CustomError(
         "Meeting not found",
@@ -900,7 +928,7 @@ const extendMeeting = async (req, res, next) => {
 
     // Check for conflicting meeting
     const conflictingMeeting = await Meeting.findOne({
-      bookedRoom: meeting.bookedRoom,
+      bookedRoom: meeting.bookedRoom._id,
       startDate: meeting.startDate,
       startTime: { $lt: newEndTimeObj },
       endTime: { $gt: meeting.endTime },
@@ -915,13 +943,52 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
-    // Store the old endTime for logging
-    const oldEndTime = meeting.endTime;
+    // Step 1: Calculate additional duration
+    const oldEndTime = new Date(meeting.endTime);
+    const addedMs = newEndTimeObj - oldEndTime;
+    const addedHours = addedMs / (1000 * 60 * 60);
+
+    const creditPerHour = meeting.bookedRoom.perHourCredit || 0;
+    const addedCredits = addedHours * creditPerHour;
+
+    // Step 2: Deduct credits from the user
+    let bookingUser;
+    const isClient = !!meeting.externalClient;
+
+    if (isClient) {
+      bookingUser = await CoworkingClient.findById(meeting.externalClient);
+    } else {
+      bookingUser = await User.findById(meeting.bookedBy);
+    }
+
+    if (!bookingUser) {
+      throw new CustomError(
+        "Booking user not found for credit deduction",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (bookingUser.credits < addedCredits) {
+      throw new CustomError(
+        "Insufficient credits to extend this meeting",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    bookingUser.credits -= addedCredits;
+    await bookingUser.save();
+
+    // Step 3: Update meeting details
     meeting.endTime = newEndTimeObj;
     meeting.endDate = newEndTimeObj;
+    meeting.creditsUsed = (meeting.creditsUsed || 0) + addedCredits;
     await meeting.save();
 
-    // Log the successful extension
+    // Step 4: Log success
     await createLog({
       path: logPath,
       action: logAction,
@@ -932,7 +999,12 @@ const extendMeeting = async (req, res, next) => {
       company: company,
       sourceKey: logSourceKey,
       sourceId: meeting._id,
-      changes: { meetingId, oldEndTime, newEndTime: newEndTimeObj },
+      changes: {
+        meetingId,
+        oldEndTime,
+        newEndTime: newEndTimeObj,
+        addedCredits,
+      },
     });
 
     return res.status(200).json({
@@ -993,6 +1065,23 @@ const getSingleRoomMeetings = async (req, res, next) => {
   }
 };
 
+const updateMeetingStatus = async (req, res, next) => {
+  const { status } = req.body;
+  const { meetingId } = req.params;
+  const updatedMeeting = await Meeting.findByIdAndUpdate(
+    meetingId,
+    { status },
+    { new: true }
+  );
+
+  if (!updatedMeeting) {
+    return res.status(404).json({ message: "Meeting not found" });
+  }
+  return res
+    .status(200)
+    .json({ message: "Meeting status updated successfully" });
+};
+
 module.exports = {
   addMeetings,
   getMeetings,
@@ -1004,4 +1093,5 @@ module.exports = {
   cancelMeeting,
   getAvaliableUsers,
   getSingleRoomMeetings,
+  updateMeetingStatus,
 };
