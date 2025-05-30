@@ -255,6 +255,29 @@ const addMeetings = async (req, res, next) => {
       Room.findByIdAndUpdate(roomAvailable._id, { status: "Occupied" }),
     ]);
 
+    // const savedMeeting = await meeting.save();
+
+    // if (!savedMeeting) {
+    //   throw new CustomError("Booking failed", logPath, logAction, logSourceKey);
+    // }
+
+    // console.log("roomId", roomAvailable._id);
+    // const updateRoomStatus = Room.findByIdAndUpdate(
+    //   { _id: roomAvailable._id },
+    //   {
+    //     status: "Occupied",
+    //   }
+    // );
+
+    // if (!updateRoomStatus) {
+    //   throw new CustomError(
+    //     "Failed to update room status",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
+
     await createLog({
       path: logPath,
       action: logAction,
@@ -1073,9 +1096,19 @@ const updateMeetingStatus = async (req, res, next) => {
     { status },
     { new: true }
   );
+  const updateRoomStatus = await Room.findByIdAndUpdate(
+    {
+      _id: updatedMeeting.bookedRoom,
+    },
+    { status: "Available" },
+    { new: true }
+  );
 
   if (!updatedMeeting) {
     return res.status(404).json({ message: "Meeting not found" });
+  }
+  if (!updateRoomStatus) {
+    return res.status(404).json({ message: "Failed to update room status" });
   }
   return res
     .status(200)
