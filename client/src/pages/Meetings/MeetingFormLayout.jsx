@@ -62,6 +62,7 @@ const MeetingFormLayout = () => {
       endTime: null,
       subject: "",
       agenda: "",
+      internalBooked: auth.user?._id,
       internalParticipants: [],
       externalParticipants: [],
     },
@@ -208,9 +209,9 @@ const MeetingFormLayout = () => {
         subject: data.subject,
         agenda: data.agenda,
         internalParticipants: data.internalParticipants,
-        bookedBy: data.bookedBy,
+        bookedBy: data.bookedBy || data.internalBooked,
         externalParticipants: data.externalParticipants,
-        externalCompany : data.externalCompany
+        externalCompany: data.externalCompany,
       });
     },
     onSuccess: () => {
@@ -453,15 +454,32 @@ const MeetingFormLayout = () => {
                     />
                   </div>
                 )}
-                <div>
+                <div className="hidden">
+                  <Controller
+                    name="internalBooked"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        size="small"
+                        value={`${auth.user?._id} `}
+                        disabled
+                        label={`${
+                          isReceptionist ? "Receptionist" : "Booked By"
+                        }`}
+                      />
+                    )}
+                  />
+                </div>
                   <TextField
+                    name="internalBooked"
                     fullWidth
                     size="small"
                     value={`${auth.user?.firstName} ${auth.user?.lastName} `}
                     disabled
                     label={`${isReceptionist ? "Receptionist" : "Booked By"}`}
                   />
-                </div>
 
                 {isReceptionist ? (
                   <div className="col-span-2">

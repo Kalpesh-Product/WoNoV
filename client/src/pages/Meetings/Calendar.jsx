@@ -35,24 +35,34 @@ const Calender = () => {
   });
   const [eventFilter, setEventFilter] = useState([
     "upcoming",
-    "Completed",
-    // "cancelled",
+    "completed", // ⬅ change "Completed" to "completed"
   ]);
+
   const meetings = useSelector((state) => state.meetings.data);
-  console.log("Calendar Meetings from redux",meetings)
+  console.log("Calendar Meetings from redux", meetings);
 
   const transformedMeetings = meetings.map((meeting) => {
-    const formattedStart = `${meeting.startTime.split("/").reverse().join("-")}`;
-    const formattedEnd = `${meeting.endTime.split("/").reverse().join("-")}`;
+    const formattedStart = meeting.startTime.split("/").reverse().join("-");
+    const formattedEnd = meeting.endTime.split("/").reverse().join("-");
+
+    const status = meeting.meetingStatus.toLowerCase();
+    const colors = {
+      upcoming: "#3BACFF",
+      completed: "#5EFE1F",
+    };
+
     return {
       id: meeting._id,
       title: meeting.subject,
-      start: `${formattedStart}`,
-      end: `${formattedEnd}`,
+      start: formattedStart,
+      end: formattedEnd,
+      backgroundColor: colors[status] || undefined, // ✅ Add background color here
+      borderColor: colors[status] || undefined,
       extendedProps: { ...meeting },
     };
   });
-    console.log("Calendar Meetings from redux transformed",transformedMeetings)
+
+  console.log("Calendar Meetings from redux transformed", transformedMeetings);
 
   useEffect(() => {
     if (eventFilter.length === 0) {
@@ -62,7 +72,7 @@ const Calender = () => {
         eventFilter.includes(event.extendedProps?.meetingStatus.toLowerCase())
       );
       setFilteredEvents(filtered);
-      console.log("Filtered events",filteredEvents)
+      console.log("Filtered events", filteredEvents);
     }
   }, [eventFilter, meetings]);
 
@@ -86,7 +96,7 @@ const Calender = () => {
 
     const colors = {
       upcoming: "#3BACFF",
-      Completed: "#5EFE1F",
+      completed: "#5EFE1F",
     };
 
     const headerBackground = colors[type] || ""; // Fallback to empty if type doesn't match
@@ -122,10 +132,10 @@ const Calender = () => {
                 <div className="flex justify-start text-content px-2">
                   <FormGroup column>
                     {["upcoming", "Completed"].map((type) => {
+                      const normalizedType = type.toLowerCase(); // ✅ always lowercase for logic
                       const colors = {
                         upcoming: "#3BACFF",
-                        Completed: "#5EFE1F",
-                        // cancelled: "#fffff",
+                        completed: "#5EFE1F",
                       };
                       return (
                         <FormControlLabel
@@ -135,12 +145,14 @@ const Calender = () => {
                               sx={{
                                 fontSize: "0.75rem",
                                 transform: "scale(0.8)",
-                                color: colors[type],
-                                "&.Mui-checked": { color: colors[type] },
+                                color: colors[normalizedType],
+                                "&.Mui-checked": {
+                                  color: colors[normalizedType],
+                                },
                               }}
-                              checked={eventFilter.includes(type)}
+                              checked={eventFilter.includes(normalizedType)}
                               onChange={(e) => {
-                                const selectedType = e.target.value;
+                                const selectedType = normalizedType;
                                 setEventFilter((prevFilter) =>
                                   e.target.checked
                                     ? [...prevFilter, selectedType]
@@ -149,7 +161,7 @@ const Calender = () => {
                                       )
                                 );
                               }}
-                              value={type}
+                              value={normalizedType}
                             />
                           }
                           label={
@@ -173,7 +185,7 @@ const Calender = () => {
                   {todaysEvents.length > 0 ? (
                     todaysEvents.map((event, index) => {
                       const colors = {
-                        upcoming: "#3BACFF",
+                        Upcoming: "#3BACFF",
                         Completed: "#5EFE1F",
                       };
                       return (
@@ -248,7 +260,9 @@ const Calender = () => {
                 />
                 <DetalisFormatted
                   title={"Time"}
-                  detail={`${humanTime(selectedEvent?.start)} - ${humanTime(selectedEvent?.end)}`}
+                  detail={`${humanTime(selectedEvent?.start)} - ${humanTime(
+                    selectedEvent?.end
+                  )}`}
                 />
                 {selectedEvent.extendedProps?.agenda && (
                   <div className="space-y-2">
