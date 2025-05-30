@@ -1,11 +1,20 @@
 import { Tab, Tabs } from "@mui/material";
 import React, { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useTopDepartment } from "../../../hooks/useTopDepartment";
+import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
+import useAuth from "../../../hooks/useAuth";
 
 const DepartmentTasksLayout = () => {
   const location = useLocation();
+  const dispatch = useDispatch();
+  const { auth } = useAuth();
   const navigate = useNavigate();
+   const currentDepartmentId = auth.user?.departments?.[0]?._id;
+  const currentDepartment = auth.user?.departments?.[0]?.name;
+
+
   // Map routes to tabs
   const tabs = [
     { label: "Employee On-Boarding", path: ":/month" },
