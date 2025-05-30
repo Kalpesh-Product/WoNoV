@@ -12,7 +12,6 @@ const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const Visitor = require("../../models/visitor/Visitor");
 const Review = require("../../models/meetings/Reviews");
-const CoworkingClient = require("../../models/sales/CoworkingClient");
 const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 
 const addMeetings = async (req, res, next) => {

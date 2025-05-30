@@ -43,6 +43,10 @@ const coworkingMemberSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
     },
+    credits: {
+      type: Number,
+      default: 10,
+    },
     biometricStatus: {
       type: String,
       enum: ["Active", "Inactive", "Pending"], // customize if needed
