@@ -160,7 +160,7 @@ const PerformanceKra = () => {
             className="p-2"
           >
             <PrimaryButton
-              title={<FaCheck />}
+              title={"Mark As Done"}
               disabled={!params.node.selected}
             />
           </div>

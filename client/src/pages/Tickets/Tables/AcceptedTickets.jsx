@@ -18,12 +18,16 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import { useState } from "react";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import { IoMdClose } from "react-icons/io";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 
 const AcceptedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
   const [esCalateModal, setEscalateModal] = useState(false);
   const [esCalatedTicket, setEscalatedTicket] = useState(null);
+  const [openView, setOpenView] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const {
     handleSubmit: handleSupportTicketSubmit,
@@ -46,6 +50,16 @@ const AcceptedTickets = ({ title, departmentId }) => {
       description: "",
     },
   });
+
+  const handleViewTicket = (ticket) => {
+    setSelectedTicket({
+      ...ticket,
+      selectedDepartment: Array.isArray(ticket.raisedToDepartment)
+        ? ticket.raisedToDepartment
+        : [ticket.raisedToDepartment],
+    });
+    setOpenView(true);
+  };
 
   const { data: departments = [], isPending: isDepartmentsPending } = useQuery({
     queryKey: ["departments"],
@@ -73,7 +87,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
         const hasAssigned = filtered.some(
           (ticket) => ticket.assignees?.length > 0
         );
-        return  filtered;
+        return filtered;
       } catch (error) {
         console.error("Error fetching tickets:", error);
         throw new Error("Failed to fetch tickets");
@@ -205,6 +219,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
                 label: "Escalate",
                 onClick: () => handleEscalateTicket(params.data),
               },
+              { label: "View", onClick: () => handleViewTicket(params.data) }, // 👈 Add this line
             ]}
           />
         </div>
@@ -345,6 +360,42 @@ const AcceptedTickets = ({ title, departmentId }) => {
           </form>
         </div>
       </MuiModal>
+
+      <MuiModal
+  open={openView}
+  onClose={() => setOpenView(false)}
+  title="View Accepted Ticket"
+>
+  {selectedTicket && (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <DetalisFormatted
+        title="Ticket"
+        detail={selectedTicket.ticketTitle}
+      />
+      <DetalisFormatted
+        title="Raised By"
+        detail={selectedTicket.raisedBy}
+      />
+      <DetalisFormatted
+        title="From Department"
+        detail={
+          Array.isArray(selectedTicket.selectedDepartment)
+            ? selectedTicket.selectedDepartment.join(", ")
+            : selectedTicket.selectedDepartment
+        }
+      />
+      <DetalisFormatted
+        title="Status"
+        detail={selectedTicket.status}
+      />
+      <DetalisFormatted
+        title="Description"
+        detail={selectedTicket.description || "N/A"}
+      />
+    </div>
+  )}
+</MuiModal>
+
     </div>
   );
 };
