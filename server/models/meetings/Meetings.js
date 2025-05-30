@@ -30,6 +30,10 @@ const meetingSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    extendTime: {
+      type: Date,
+      required: true,
+    },
     meetingType: {
       type: String,
       enum: ["Internal", "External"],

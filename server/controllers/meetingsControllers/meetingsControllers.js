@@ -441,6 +441,7 @@ const getMeetings = async (req, res, next) => {
         endDate: meeting.endDate,
         startTime: meeting.startTime,
         endTime: meeting.endTime,
+        extendTime: meeting.extendTime,
         credits: meeting.credits,
         duration: formatDuration(meeting.startTime, meeting.endTime),
         meetingStatus: meeting.status,
@@ -982,8 +983,9 @@ const extendMeeting = async (req, res, next) => {
     );
 
     // Step 3: Update meeting details
-    meeting.endTime = newEndTimeObj;
-    meeting.endDate = newEndTimeObj;
+    // meeting.endTime = newEndTimeObj;
+    // meeting.endDate = newEndTimeObj;
+    meeting.extendTime = newEndTimeObj;
     meeting.creditsUsed = (meeting.creditsUsed || 0) + addedCredits;
     await meeting.save();
 
@@ -1019,7 +1021,6 @@ const extendMeeting = async (req, res, next) => {
     }
   }
 };
-
 
 const getSingleRoomMeetings = async (req, res, next) => {
   const { roomId } = req.params;
