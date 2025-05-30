@@ -450,28 +450,6 @@ const getTeamMemberTickets = async (req, res, next) => {
       .select("-company")
       .lean();
 
-    // const transformedDeptTickets = teamMembers.flatMap((member) =>
-    //   tickets
-    //     .filter((ticket) =>
-    //       ticket.assignees.some(
-    //         (assignee) => assignee._id.toString() === member._id.toString()
-    //       )
-    //     )
-    //     .map((ticket) => {
-    //       const name = `${member.firstName} ${member.middleName || ""} ${
-    //         member.lastName
-    //       }`.trim();
-    //       const department = member.departments.map((dept) => dept.name);
-    //       const role = member.role.map((role) => role.roleTitle);
-
-    //       return {
-    //         name,
-    //         department,
-    //         role,
-    //       };
-    //     })
-    // );
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
