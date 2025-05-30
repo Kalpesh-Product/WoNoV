@@ -26,6 +26,7 @@ import { Chip } from "@mui/material";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import dayjs from "dayjs";
+import { useEffect } from "react";
 
 const TasksDashboard = () => {
   const axios = useAxiosPrivate();
@@ -292,6 +293,85 @@ const TasksDashboard = () => {
     ],
   };
 
+  //Overall task completeion graph data
+  const allTasks = [ /* your full task data array here */ ];
+
+const financialMonths = [ 
+  "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
+  "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
+];
+
+function formatMonth(dateStr) {
+  const [day, month, year] = dateStr.split("-");
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthIndex = parseInt(month, 10) - 1;
+  const yearShort = String(year).slice(-2);
+  return `${months[monthIndex]}-${yearShort}`;
+}
+
+const departmentMap = {};
+
+if (!allTasksQuery.isLoading && allTasksQuery.data) {
+  allTasksQuery.data.forEach(task => {
+    const deptName = task.department;
+    const status = task.status;
+    const month = formatMonth(task.assignedDate);
+
+    if (!financialMonths.includes(month)) return;
+
+    if (!departmentMap[deptName]) {
+      departmentMap[deptName] = {
+        department: deptName,
+        tasksAllocated: Array(financialMonths.length).fill(0),
+        tasksCompleted: Array(financialMonths.length).fill(0),
+      };
+    }
+
+    const monthIndex = financialMonths.indexOf(month);
+    departmentMap[deptName].tasksAllocated[monthIndex] += 1;
+    if (status === "Completed") {
+      departmentMap[deptName].tasksCompleted[monthIndex] += 1;
+    }
+  });
+}
+
+const departments = Object.values(departmentMap);
+
+console.log("deptt",departments)
+const totalAllocated = financialMonths.map((_, index) =>
+  departments.reduce((sum, dept) => sum + dept.tasksAllocated[index], 0)
+);
+
+const totalCompleted = financialMonths.map((_, index) =>
+  departments.reduce((sum, dept) => sum + dept.tasksCompleted[index], 0)
+);
+
+// Calculate Pending Tasks
+const totalPending = totalAllocated.map(
+  (allocated, index) => allocated - totalCompleted[index]
+);
+
+// Convert to percentage
+const completionPercentage = totalAllocated.map((allocated, index) =>
+  allocated > 0 ? (totalCompleted[index] / allocated) * 100 : 0
+);
+
+const pendingPercentage = totalAllocated.map((allocated, index) =>
+  allocated > 0 ? (totalPending[index] / allocated) * 100 : 0
+);
+
+const monthlyTasksData = [
+  {
+    name: "Completed",
+    data: completionPercentage,
+  },
+  {
+    name: "Pending",
+    data: pendingPercentage,
+  },
+];
+
   const myTodayMeetingsData = !meetingsQuery.isLoading
     ? meetingsQuery.data.map((meeting, index) => {
         return {
@@ -311,6 +391,7 @@ const TasksDashboard = () => {
       })
     : [];
 
+
   const meetingsWidgets = [
     {
       layout: 1,
@@ -322,7 +403,7 @@ const TasksDashboard = () => {
         >
           <BarGraph
             height={400}
-            data={tasksMonthlyData}
+            data={monthlyTasksData}
             options={tasksMonthlyOptions}
           />
         </WidgetSection>,
