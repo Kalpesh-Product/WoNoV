@@ -210,9 +210,6 @@ const addMeetings = async (req, res, next) => {
     const updateQuery = { _id: bookedBy };
     const BookingModel = isClient ? CoworkingMembers : User;
 
-    console.log(BookingModel);
-    console.log(updateQuery);
-
     const updatedUser = await BookingModel.findOneAndUpdate(
       {
         ...updateQuery,
@@ -233,7 +230,8 @@ const addMeetings = async (req, res, next) => {
 
     const meeting = new Meeting({
       meetingType,
-      bookedBy,
+      bookedBy: !isClient ? bookedBy : null,
+      clientBookedBy: isClient ? bookedBy : null,
       receptionist: user,
       startDate: startDateObj,
       endDate: endDateObj,
@@ -380,6 +378,7 @@ const getMeetings = async (req, res, next) => {
       })
       .populate([
         { path: "bookedBy" },
+        { path: "clientBookedBy", select: "employeeName email" },
         { path: "receptionist", select: "firstName lastName" },
         { path: "client", select: "clientName" },
         { path: "externalClient", select: "companyName pocName mobileNumber" },
@@ -445,6 +444,7 @@ const getMeetings = async (req, res, next) => {
         name: meeting.bookedBy?.name,
         receptionist: receptionist,
         bookedBy: { ...meeting.bookedBy },
+        clientBookedBy: meeting.clientBookedBy,
         department: department.name,
         roomName: meeting.bookedRoom.name,
         bookedBy: meeting.bookedBy,

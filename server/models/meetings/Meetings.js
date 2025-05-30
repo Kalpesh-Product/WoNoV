@@ -6,6 +6,10 @@ const meetingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
     },
+    clientBookedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CoworkingMember",
+    },
     receptionist: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
