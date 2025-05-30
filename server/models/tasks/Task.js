@@ -5,6 +5,11 @@ const taskSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  taskType: {
+    type: String,
+    enum: ["Self", "Department"],
+    required: true,
+  },
   company: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Company",
@@ -19,6 +24,10 @@ const taskSchema = new mongoose.Schema({
       ref: "UserData",
     },
   ],
+  completedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "UserData",
+  },
   description: {
     type: String,
   },
@@ -34,11 +43,11 @@ const taskSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
-  // status: {
-  //   type: String,
-  //   default: "Pending",
-  //   enum: ["InProgress", "Completed", "Pending"],
-  // },
+  status: {
+    type: String,
+    default: "Pending",
+    enum: ["InProgress", "Completed", "Pending"],
+  },
   // priority: {
   //   type: String,
   //   default: "High",

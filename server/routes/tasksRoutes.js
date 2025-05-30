@@ -29,8 +29,8 @@ router.get("/get-today-tasks", getMyTodayTasks);
 router.get("/get-assigned-tasks", getAssignedTasks);
 router.patch("/update-task/:id", updateTask);
 router.patch("/complete-tasks/", completeTasks);
-router.get("/get-completed-tasks", getCompletedTasks);
-router.get("/get-my-completed-tasks/", getMyCompletedTasks);
+router.get("/get-completed-tasks/:deptId", getCompletedTasks);
+router.get("/get-my-completed-tasks", getMyCompletedTasks);
 router.patch("/delete-task/:id", deleteTask);
 
 module.exports = router;

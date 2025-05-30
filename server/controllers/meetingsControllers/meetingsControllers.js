@@ -255,6 +255,29 @@ const addMeetings = async (req, res, next) => {
       Room.findByIdAndUpdate(roomAvailable._id, { status: "Occupied" }),
     ]);
 
+    // const savedMeeting = await meeting.save();
+
+    // if (!savedMeeting) {
+    //   throw new CustomError("Booking failed", logPath, logAction, logSourceKey);
+    // }
+
+    // console.log("roomId", roomAvailable._id);
+    // const updateRoomStatus = Room.findByIdAndUpdate(
+    //   { _id: roomAvailable._id },
+    //   {
+    //     status: "Occupied",
+    //   }
+    // );
+
+    // if (!updateRoomStatus) {
+    //   throw new CustomError(
+    //     "Failed to update room status",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
+
     await createLog({
       path: logPath,
       action: logAction,
@@ -441,6 +464,7 @@ const getMeetings = async (req, res, next) => {
         endDate: meeting.endDate,
         startTime: meeting.startTime,
         endTime: meeting.endTime,
+        extendTime: meeting.extendTime,
         credits: meeting.credits,
         duration: formatDuration(meeting.startTime, meeting.endTime),
         meetingStatus: meeting.status,
@@ -982,8 +1006,9 @@ const extendMeeting = async (req, res, next) => {
     );
 
     // Step 3: Update meeting details
-    meeting.endTime = newEndTimeObj;
-    meeting.endDate = newEndTimeObj;
+    // meeting.endTime = newEndTimeObj;
+    // meeting.endDate = newEndTimeObj;
+    meeting.extendTime = newEndTimeObj;
     meeting.creditsUsed = (meeting.creditsUsed || 0) + addedCredits;
     await meeting.save();
 
@@ -1019,7 +1044,6 @@ const extendMeeting = async (req, res, next) => {
     }
   }
 };
-
 
 const getSingleRoomMeetings = async (req, res, next) => {
   const { roomId } = req.params;
@@ -1072,9 +1096,19 @@ const updateMeetingStatus = async (req, res, next) => {
     { status },
     { new: true }
   );
+  const updateRoomStatus = await Room.findByIdAndUpdate(
+    {
+      _id: updatedMeeting.bookedRoom,
+    },
+    { status: "Available" },
+    { new: true }
+  );
 
   if (!updatedMeeting) {
     return res.status(404).json({ message: "Meeting not found" });
+  }
+  if (!updateRoomStatus) {
+    return res.status(404).json({ message: "Failed to update room status" });
   }
   return res
     .status(200)
