@@ -17,6 +17,7 @@ const createTasks = async (req, res, next) => {
       taskName,
       department,
       description,
+      taskType,
       // status,
       // priority,
       // assignees,
@@ -31,7 +32,8 @@ const createTasks = async (req, res, next) => {
       !description ||
       !dueDate ||
       !assignedDate ||
-      !dueTime
+      !dueTime ||
+      !taskType
     ) {
       throw new CustomError(
         "Missing required fields",
@@ -99,6 +101,7 @@ const createTasks = async (req, res, next) => {
 
     const newTask = new Task({
       taskName,
+      taskType,
       department,
       description,
       // status,
@@ -168,7 +171,7 @@ const updateTaskStatus = async (req, res, next) => {
 
     const updatedTask = await Task.findByIdAndUpdate(
       id,
-      { status: "Completed" },
+      { status: "Completed", completedBy: user },
       { new: true, runValidators: true }
     );
 
@@ -189,6 +192,7 @@ const updateTaskStatus = async (req, res, next) => {
       changes: {
         status: "Completed",
         prevStatus: "Pending",
+        completedBy: user,
       },
     });
 
@@ -311,17 +315,29 @@ const updateTask = async (req, res, next) => {
 const getAllTasks = async (req, res, next) => {
   try {
     const { company } = req;
+    const { dept } = req.query;
 
-    const tasks = await Task.find({
-      company,
-    })
+    const query = { company };
+
+    if (dept) {
+      query.department = dept;
+    }
+
+    const tasks = await Task.find(query)
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
       .populate("department", "name")
       .select("-company")
       .lean();
 
-    return res.status(200).json(tasks);
+    const transformedTasks = tasks.map((task) => {
+      return {
+        ...task,
+        department: task.department.name,
+      };
+    });
+
+    return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);
   }
@@ -350,6 +366,7 @@ const getTasks = async (req, res, next) => {
     const transformedTasks = tasks.map((task) => {
       return {
         ...task,
+        department: task.name,
         dueDate: formatDate(task.dueDate),
         dueTime: task.dueTime ? formatTime(task.dueTime) : "06:30 PM",
         assignedDate: formatDate(task.assignedDate),
@@ -365,11 +382,15 @@ const getTasks = async (req, res, next) => {
 const getMyTasks = async (req, res, next) => {
   try {
     const { user, company } = req;
+    const { flag } = req.query;
 
-    const tasks = await Task.find({
-      company,
-      assignedTo: { $in: [user] },
-    })
+    const query = { company, taskType: "Self" };
+
+    if (flag === "assigned") {
+      query.completedBy = user;
+    }
+
+    const tasks = await Task.find(query)
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
@@ -393,17 +414,12 @@ const getMyTasks = async (req, res, next) => {
 
 const getCompletedTasks = async (req, res, next) => {
   try {
-    const { user, company } = req;
-    const { dept } = req.query;
-    const query = { company };
-
-    if (!dept) {
-      query.raisedToDepartment = dept;
-    }
+    const { company } = req;
+    const { deptId } = req.query;
 
     const tasks = await Task.find({
       company,
-      department: dept,
+      department: deptId,
       status: "Completed",
     })
       .populate("department", "name")
@@ -437,8 +453,10 @@ const getMyCompletedTasks = async (req, res, next) => {
 
     const tasks = await Task.find({
       company,
-      assignedTo: { $in: [user] },
-      status: "Completed",
+      $or: [
+        { $and: [{ taskType: "Self" }, { status: "Completed" }] },
+        { $and: [{ completedBy: user }] },
+      ],
     })
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
@@ -457,7 +475,6 @@ const getMyCompletedTasks = async (req, res, next) => {
         assignedDate: formatDate(task.assignedDate),
       };
     });
-
     return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);
