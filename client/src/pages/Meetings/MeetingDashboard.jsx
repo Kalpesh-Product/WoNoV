@@ -315,6 +315,20 @@ const MeetingDashboard = () => {
     "Mar-25",
   ];
 
+     // const monthMap = new Map()
+  // const calculateBookedHoursPerMonth = meetingsData.map((meeting)=>{
+
+  //   const date = new Date(meeting.startDate)
+  //   const month = date.getMonth()
+  //   const hours = month.duration * 24
+  //   if(!monthMap.has(month)){
+  //     monthMap.set({month:hours})
+  //   }
+
+  // })
+  // console.log("bookedHours",calculateBookedHoursPerMonth)
+
+  // const totalBookableHours = 1980;
   // Example booked hours data per month
   const actualBookedHoursPerMonth = {
     Apr: 1300,
@@ -332,150 +346,250 @@ const MeetingDashboard = () => {
   };
 
   // Calculate percentage utilization
-  const monthNames = [
+//   const monthNames = [
+//   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+//   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+// ];
+
+// const monthMap = new Map();
+
+// meetingsData.forEach((meeting) => {
+//   const date = new Date(meeting.date);  
+//   const monthIndex = date.getMonth(); // 0 to 11
+//   const durationMinutes = parseInt(meeting.duration); // "60m" → 60
+//   const durationHours = durationMinutes / 60;
+
+//   const current = monthMap.get(monthIndex) || 0;
+//   monthMap.set(monthIndex, current + durationHours);
+
+// });
+
+// // Convert Map to object with month names
+// const monthlyBookedHours = {};
+// for (let [monthIndex, hours] of monthMap.entries()) {
+//   const monthName = monthNames[monthIndex];
+//   monthlyBookedHours[monthName] = hours;
+// }
+
+//   const workinghoursPerDay = 10
+//   const workingDays = 24
+//   const totalBookableHours = roomsData.length * workinghoursPerDay * workingDays
+
+//   const data = Object.keys(monthlyBookedHours).map((month) => ({
+//     x: month,
+//     y: (monthlyBookedHours[month] / totalBookableHours) * 100,
+//   }));
+
+
+//   const averageBookingSeries = [{ name: "Booking Utilization", data }];
+
+
+  // const averageBookingOptions = {
+  //   chart: {
+  //     type: "bar",
+  //     toolbar: false,
+  //     fontFamily: "Poppins-Regular",
+  //     events: {
+  //       dataPointSelection: function (event, chartContext, config) {
+  //         const clickedMonthName =
+  //           config.w.config.xaxis.categories[config.dataPointIndex];
+
+  //         const [clickedMonth, clickedYearSuffix] = clickedMonthName.split("-");
+
+  //         const monthMeetings = meetingsData.filter((meeting) => {
+  //           const date = new Date(meeting.date);
+
+  //           const meetingMonthAbbr = date.toLocaleString("default", {
+  //             month: "short",
+  //           });
+  //           const meetingYearSuffix = date.getFullYear().toString().slice(-2);
+
+  //           return (
+  //             meetingMonthAbbr === clickedMonth &&
+  //             meetingYearSuffix === clickedYearSuffix
+  //           );
+  //         });
+
+  //         const month = new Date(monthMeetings[0].date).toLocaleString(
+  //           "default",
+  //           { month: "long" }
+  //         );
+  //         const year = new Date(monthMeetings[0].date).toLocaleString(
+  //           "default",
+  //           { year: "numeric" }
+  //         );
+
+  //         navigate(`/app/meetings/${month}-${year}-meetings`, {
+  //           state: { meetings: monthMeetings },
+  //         });
+  //       },
+  //     },
+  //   },
+  //   xaxis: { categories: BookingMonths },
+  //   yaxis: {
+  //     max: 100,
+  //     title: { text: "Utilization (%)" },
+  //     labels: {
+  //       formatter: function (value) {
+  //         return Math.round(value); // Removes decimals
+  //       },
+  //     },
+  //   },
+  //   dataLabels: {
+  //     enabled: true,
+  //     formatter: function (val) {
+  //       return Math.round(val) + "%"; // Display percentage without decimals
+  //     },
+  //     style: {
+  //       fontSize: "11px",
+  //       colors: ["#ffff"], // White color for visibility inside bars
+  //     },
+  //   },
+  //   plotOptions: {
+  //     bar: {
+  //       dataLabels: {
+  //         position: "top", // Places labels inside the bar
+  //       },
+  //       borderRadius: 5,
+  //       columnWidth: "40%",
+  //     },
+  //   },
+  //   // annotations: {
+  //   //   yaxis: [
+  //   //     {
+  //   //       y: 100,
+  //   //       borderColor: "#ff0000",
+  //   //       borderWidth: 3,
+  //   //       strokeDashArray: 0, // Solid line
+  //   //       label: {
+  //   //         text: "100% Utilization",
+  //   //         position: "center",
+  //   //         offsetX: 10,
+  //   //         offsetY: -10,
+  //   //         style: {
+  //   //           color: "#ff0000",
+  //   //           fontWeight: "bold",
+  //   //         },
+  //   //       },
+  //   //     },
+  //   //   ],
+  //   // },
+  // };
+
+const monthNames = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
+const currentYear = new Date().getFullYear();
+const start = new Date(currentYear, 3); // April 1 of current year
+const end = new Date(currentYear + 1, 3); // March 31 of next year
+
 const monthMap = new Map();
 
 meetingsData.forEach((meeting) => {
-  const date = new Date(meeting.startTime); // or startDate if that's correct
+  const date = new Date(meeting.date);
+  if (date < start || date >= end) return; // Skip meetings outside Apr–Mar
+
   const monthIndex = date.getMonth(); // 0 to 11
+  const year = date.getFullYear().toString().slice(-2); // "24"
+
+  const label = `${monthNames[monthIndex]}-${year}`; // e.g., "Apr-24"
+
   const durationMinutes = parseInt(meeting.duration); // "60m" → 60
   const durationHours = durationMinutes / 60;
 
-  const current = monthMap.get(monthIndex) || 0;
-  monthMap.set(monthIndex, current + durationHours);
+  const current = monthMap.get(label) || 0;
+  monthMap.set(label, current + durationHours);
 });
 
-// Convert Map to object with month names
-const monthlyBookedHours = {};
-for (let [monthIndex, hours] of monthMap.entries()) {
-  const monthName = monthNames[monthIndex];
-  monthlyBookedHours[monthName] = hours;
+// Build full month range from Apr to Mar (12 months)
+const monthBookings = [];
+for (let i = 0; i < 12; i++) {
+  const date = new Date(currentYear, 3 + i); // Start from April
+  const monthLabel = date.toLocaleString("default", { month: "short" }) + "-" +
+                     date.getFullYear().toString().slice(-2);
+  monthBookings.push(monthLabel);
 }
 
+const monthlyBookedHours = {};
+for (let label of monthBookings) {
+  monthlyBookedHours[label] = monthMap.get(label) || 0;
+}
 
+const workinghoursPerDay = 10;
+const workingDays = 24;
+const totalBookableHours = roomsData.length * workinghoursPerDay * workingDays;
 
-  // const monthMap = new Map()
-  // const calculateBookedHoursPerMonth = meetingsData.map((meeting)=>{
+const data = monthBookings.map((month) => ({
+  x: month,
+  y: (monthlyBookedHours[month] / totalBookableHours) * 100,
+}));
 
-  //   const date = new Date(meeting.startDate)
-  //   const month = date.getMonth()
-  //   const hours = month.duration * 24
-  //   if(!monthMap.has(month)){
-  //     monthMap.set({month:hours})
-  //   }
+console.log("month",monthlyBookedHours)
+const averageBookingSeries = [{ name: "Booking Utilization", data }];
 
-  // })
-  // console.log("bookedHours",calculateBookedHoursPerMonth)
+const averageBookingOptions = {
+  chart: {
+    type: "bar",
+    toolbar: false,
+    fontFamily: "Poppins-Regular",
+    events: {
+      dataPointSelection: function (event, chartContext, config) {
+        const clickedMonthName = config.w.config.xaxis.categories[config.dataPointIndex];
+        const [clickedMonth, clickedYearSuffix] = clickedMonthName.split("-");
 
-  // const totalBookableHours = 1980;
-  const workinghoursPerDay = 10
-  const workingDays = 24
-  const totalBookableHours = roomsData.length * workinghoursPerDay * workingDays
+        const monthMeetings = meetingsData.filter((meeting) => {
+          const date = new Date(meeting.date);
+          const meetingMonthAbbr = date.toLocaleString("default", { month: "short" });
+          const meetingYearSuffix = date.getFullYear().toString().slice(-2);
 
-  const data = Object.keys(monthlyBookedHours).map((month) => ({
-    x: month,
-    y: (actualBookedHoursPerMonth[month] / totalBookableHours) * 100,
-  }));
-
-  console.log("hours",data)
-  const averageBookingSeries = [{ name: "Booking Utilization", data }];
-
-
-  const averageBookingOptions = {
-    chart: {
-      type: "bar",
-      toolbar: false,
-      fontFamily: "Poppins-Regular",
-      events: {
-        dataPointSelection: function (event, chartContext, config) {
-          const clickedMonthName =
-            config.w.config.xaxis.categories[config.dataPointIndex];
-
-          const [clickedMonth, clickedYearSuffix] = clickedMonthName.split("-");
-
-          const monthMeetings = meetingsData.filter((meeting) => {
-            const date = new Date(meeting.date);
-
-            const meetingMonthAbbr = date.toLocaleString("default", {
-              month: "short",
-            });
-            const meetingYearSuffix = date.getFullYear().toString().slice(-2);
-
-            return (
-              meetingMonthAbbr === clickedMonth &&
-              meetingYearSuffix === clickedYearSuffix
-            );
-          });
-
-          const month = new Date(monthMeetings[0].date).toLocaleString(
-            "default",
-            { month: "long" }
+          return (
+            meetingMonthAbbr === clickedMonth &&
+            meetingYearSuffix === clickedYearSuffix
           );
-          const year = new Date(monthMeetings[0].date).toLocaleString(
-            "default",
-            { year: "numeric" }
-          );
+        });
 
-          navigate(`/app/meetings/${month}-${year}-meetings`, {
-            state: { meetings: monthMeetings },
-          });
-        },
+        if (monthMeetings.length === 0) return;
+
+        const month = new Date(monthMeetings[0].date).toLocaleString("default", {
+          month: "long",
+        });
+        const year = new Date(monthMeetings[0].date).getFullYear();
+
+        navigate(`/app/meetings/${month}-${year}-meetings`, {
+          state: { meetings: monthMeetings },
+        });
       },
     },
-    xaxis: { categories: BookingMonths },
-    yaxis: {
-      max: 100,
-      title: { text: "Utilization (%)" },
-      labels: {
-        formatter: function (value) {
-          return Math.round(value); // Removes decimals
-        },
-      },
+  },
+  xaxis: { categories: BookingMonths },
+  yaxis: {
+    max: 100,
+    title: { text: "Utilization (%)" },
+    labels: {
+      formatter: (value) => Math.round(value),
     },
-    dataLabels: {
-      enabled: true,
-      formatter: function (val) {
-        return Math.round(val) + "%"; // Display percentage without decimals
-      },
-      style: {
-        fontSize: "11px",
-        colors: ["#ffff"], // White color for visibility inside bars
-      },
+  },
+  dataLabels: {
+    enabled: true,
+    formatter: (val) => Math.round(val) + "%",
+    style: {
+      fontSize: "11px",
+      colors: ["#ffff"],
     },
-    plotOptions: {
-      bar: {
-        dataLabels: {
-          position: "top", // Places labels inside the bar
-        },
-        borderRadius: 5,
-        columnWidth: "40%",
+  },
+  plotOptions: {
+    bar: {
+      dataLabels: {
+        position: "top",
       },
+      borderRadius: 5,
+      columnWidth: "40%",
     },
-    // annotations: {
-    //   yaxis: [
-    //     {
-    //       y: 100,
-    //       borderColor: "#ff0000",
-    //       borderWidth: 3,
-    //       strokeDashArray: 0, // Solid line
-    //       label: {
-    //         text: "100% Utilization",
-    //         position: "center",
-    //         offsetX: 10,
-    //         offsetY: -10,
-    //         style: {
-    //           color: "#ff0000",
-    //           fontWeight: "bold",
-    //         },
-    //       },
-    //     },
-    //   ],
-    // },
-  };
+  },
+};
+
 
   const rooms = [
     "Baga",
