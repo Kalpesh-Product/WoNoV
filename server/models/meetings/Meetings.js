@@ -32,7 +32,6 @@ const meetingSchema = new mongoose.Schema(
     },
     extendTime: {
       type: Date,
-      required: true,
     },
     meetingType: {
       type: String,
