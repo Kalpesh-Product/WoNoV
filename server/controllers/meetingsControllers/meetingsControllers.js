@@ -250,6 +250,7 @@ const addMeetings = async (req, res, next) => {
       client: meetingType === "Internal" ? client : null,
       externalClient: meetingType === "External" ? externalCompany : null,
       company,
+      status: "Upcoming",
       internalParticipants:
         internalParticipants && !isClient ? internalUsers : [],
       clientParticipants: internalParticipants && isClient ? internalUsers : [],
@@ -1071,6 +1072,23 @@ const getSingleRoomMeetings = async (req, res, next) => {
   }
 };
 
+const updateMeetingStatus = async (req, res, next) => {
+  const { status } = req.body;
+  const { meetingId } = req.params;
+  const updatedMeeting = await Meeting.findByIdAndUpdate(
+    meetingId,
+    { status },
+    { new: true }
+  );
+
+  if (!updatedMeeting) {
+    return res.status(404).json({ message: "Meeting not found" });
+  }
+  return res
+    .status(200)
+    .json({ message: "Meeting status updated successfully" });
+};
+
 module.exports = {
   addMeetings,
   getMeetings,
@@ -1082,4 +1100,5 @@ module.exports = {
   cancelMeeting,
   getAvaliableUsers,
   getSingleRoomMeetings,
+  updateMeetingStatus,
 };
