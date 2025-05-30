@@ -1567,17 +1567,17 @@ export const routes = createBrowserRouter([
                   {
                     path: "manage-tickets",
                     element: <ManageTicketLayout />,
-                    children:[
+                    children: [
                       {
-                        path:"",
-                        element : <ManageTicketsHome />,
-                        index : true
+                        path: "",
+                        element: <ManageTicketsHome />,
+                        index: true,
                       },
                       {
-                        path:":department",
-                        element : <ManageTickets />,
-                      }
-                    ]
+                        path: ":department",
+                        element: <ManageTickets />,
+                      },
+                    ],
                   },
                   {
                     path: "ticket-settings",
@@ -1753,13 +1753,13 @@ export const routes = createBrowserRouter([
                     index: true,
                   },
                   {
-                    path: "department-tasks", 
-                    element: <DepartmentTasksLayout />, 
-                    children : [
+                    path: "department-tasks",
+                    element: <DepartmentTasksLayout />,
+                    children: [
                       {
                         path: "",
-                        element : <DepartmentTasks />,
-                        index : true
+                        element: <DepartmentTasks />,
+                        index: true,
                       },
                       {
                         path: ":department",
@@ -1768,7 +1768,7 @@ export const routes = createBrowserRouter([
                           {
                             path: "",
                             element: <TasksViewDepartment />,
-                            index : true
+                            index: true,
                           },
                           {
                             path: "monthly-KPA",
@@ -1780,15 +1780,15 @@ export const routes = createBrowserRouter([
                           },
                         ],
                       },
-                    ]
+                    ],
                   },
                   {
-                    path: "project-list/edit-project", 
-                    element: <ProjectList />, 
+                    path: "project-list/edit-project",
+                    element: <ProjectList />,
                   },
                   {
-                    path: "project-list/edit-project/:id", 
-                    element: <EditProject />, 
+                    path: "project-list/edit-project/:id",
+                    element: <EditProject />,
                   },
                   {
                     path: "KRA",
