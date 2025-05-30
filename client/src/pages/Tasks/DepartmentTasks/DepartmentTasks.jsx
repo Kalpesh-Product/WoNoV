@@ -5,11 +5,23 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
+import { useTopDepartment } from "../../../hooks/useTopDepartment";
+import useAuth from "../../../hooks/useAuth";
 
 const DepartmentTasks = () => {
   const axios = useAxiosPrivate();
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { auth } = useAuth();
+  const currentDepartmentId = auth.user?.departments?.[0]?._id;
+  const currentDepartment = auth.user?.departments?.[0]?.name;
+
+  useTopDepartment({
+    onNotTop: () => {
+      dispatch(setSelectedDepartment(currentDepartmentId));
+      navigate(`/app/tasks/department-tasks/${currentDepartment}`);
+    },
+  });
   const fetchDepartments = async () => {
     try {
       const response = await axios.get("api/performance/get-depts-tasks");
@@ -35,7 +47,7 @@ const DepartmentTasks = () => {
           <span
             role="button"
             onClick={() => {
-              dispatch(setSelectedDepartment(params.data.mongoId))
+              dispatch(setSelectedDepartment(params.data.mongoId));
               navigate(`${params.value}`);
             }}
             className="text-primary font-pregular hover:underline cursor-pointer"
@@ -45,7 +57,7 @@ const DepartmentTasks = () => {
         );
       },
     },
-    { headerName: "Total Current Month's Tasks", field: "dailyKra" ,flex:1},
+    { headerName: "Total Current Month's Tasks", field: "dailyKra", flex: 1 },
     { headerName: "Open Tasks", field: "monthlyKpa" },
     { headerName: "Closed Tasks", field: "annualKpa" },
   ];

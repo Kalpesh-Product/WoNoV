@@ -14,13 +14,7 @@ const DepartmentTasksLayout = () => {
    const currentDepartmentId = auth.user?.departments?.[0]?._id;
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
-    useTopDepartment({
-      onNotTop: () => {
-        dispatch(setSelectedDepartment(currentDepartmentId));
-        navigate(`/app/tasks/department-tasks/${currentDepartment}`);
-  
-      },
-    });
+
   // Map routes to tabs
   const tabs = [
     { label: "Employee On-Boarding", path: ":/month" },

@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import PermissionsTable from "../../components/PermissionsTable"; // Import the table
-import Abrar from "../../assets/abrar.jpeg"
+import Abrar from "../../assets/abrar.jpeg";
 
 const AccessProfile = () => {
   const location = useLocation();
@@ -13,21 +13,26 @@ const AccessProfile = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null); // Track selected department
 
   const handlePermissionUpdate = (updatedPermissions) => {
-    console.log("Updated Permissions:", updatedPermissions);
     // You can send this to an API to update permissions in the backend
   };
 
   const fetchUserPermissions = async () => {
     if (!user?._id) return null;
     try {
-      const response = await axios.get(`/api/access/user-permissions/${user._id}`);
+      const response = await axios.get(
+        `/api/access/user-permissions/${user._id}`
+      );
       return response.data;
     } catch (error) {
       throw new Error(error);
     }
   };
 
-  const { data: accessProfile, isPending, isError } = useQuery({
+  const {
+    data: accessProfile,
+    isPending,
+    isError,
+  } = useQuery({
     queryKey: ["userPermissions", user?._id], // Unique query key for caching
     queryFn: fetchUserPermissions,
     enabled: !!user?._id, // Only run query when user._id is available
@@ -44,7 +49,9 @@ const AccessProfile = () => {
   if (isError) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <p className="text-lg font-semibold text-red-500">Failed to load permissions.</p>
+        <p className="text-lg font-semibold text-red-500">
+          Failed to load permissions.
+        </p>
       </div>
     );
   }
@@ -66,13 +73,12 @@ const AccessProfile = () => {
             >
               {user.email !== "abrar@biznest.co.in" && user.name.charAt(0)}
             </Avatar>
-
           </div>
           <div className="flex flex-col gap-6">
             <span className="text-title flex items-center gap-3">
               {user.name}{" "}
               <Chip
-                label={user.status ? 'Active' : 'InActive'}
+                label={user.status ? "Active" : "InActive"}
                 sx={{
                   backgroundColor: user.status ? "green" : "grey",
                   color: "white",
@@ -83,19 +89,19 @@ const AccessProfile = () => {
           </div>
         </div>
         <div className="flex flex-col gap-4 flex-1">
-          <div className="flex justify-between">
-            <div className="flex flex-col gap-4 justify-start flex-1 text-gray-600">
-              <span className="capitalize">User Name</span>
-              <span className="capitalize">Email</span>
-              <span className="capitalize">Designation</span>
-              <span className="capitalize">Work Location</span>
-            </div>
-            <div className="flex flex-col gap-4 justify-start flex-1 text-gray-500">
-              <span>{user.name}</span>
-              <span>{user.email}</span>
-              <span>{user.designation}</span>
-              <span>{user.workLocation}</span>
-            </div>
+          <div className="flex flex-col gap-4 w-full text-gray-600">
+            {[
+              { label: "User Name", value: user.name },
+              { label: "Email", value: user.email },
+              { label: "Designation", value: user.designation },
+              { label: "Work Location", value: user.workLocation },
+            ].map((item, index) => (
+              <div key={index} className="flex items-start gap-2">
+                <div className="w-40 capitalize">{item.label}</div>
+                <div className="w-2">:</div>
+                <div className="text-gray-500 flex-1">{item.value}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -107,16 +113,21 @@ const AccessProfile = () => {
           {accessProfile.map((department) => (
             <div
               key={department.departmentId}
-              className={`cursor-pointer rounded-md shadow-md ${selectedDepartment?.departmentId === department.departmentId ? "border-default border-primary" : ""
-                }`}
-              onClick={() =>
-                setSelectedDepartment((prev) =>
-                  prev?.departmentId === department.departmentId ? prev : department
-                )
-              }
+              className={`cursor-not-allowed rounded-md shadow-md ${
+                selectedDepartment?.departmentId === department.departmentId
+                  ? "border-default border-primary"
+                  : ""
+              }`}
+              // onClick={() =>
+              //   setSelectedDepartment((prev) =>
+              //     prev?.departmentId === department.departmentId ? prev : department
+              //   )
+              // }
             >
               <div className="p-4">
-                <span className="text-subtitle">{department.departmentName}</span>
+                <span className="text-subtitle">
+                  {department.departmentName}
+                </span>
               </div>
             </div>
           ))}

@@ -356,6 +356,11 @@ const ManageMeetings = () => {
       cellRenderer: (params) => humanTime(params.value),
     },
     {
+      field: "extendTime",
+      headerName: "Extended Time",
+      cellRenderer: (params) => humanTime(params.value) || "-",
+    },
+    {
       field: "meetingStatus",
       headerName: "Meeting Status",
       cellRenderer: (params) => (
