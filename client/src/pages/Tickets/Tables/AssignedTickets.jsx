@@ -1,7 +1,13 @@
-import  { useState } from "react";
+import { useState } from "react";
 import AgTable from "../../../components/AgTable";
 import MuiModal from "../../../components/MuiModal";
-import { Autocomplete, Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
+import {
+  Autocomplete,
+  Chip,
+  CircularProgress,
+  MenuItem,
+  TextField,
+} from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
@@ -10,6 +16,7 @@ import { toast } from "sonner";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
 import { IoMdClose } from "react-icons/io";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 
 const AssignedTickets = ({ title, departmentId }) => {
   const [openModal, setopenModal] = useState(false);
@@ -17,14 +24,17 @@ const AssignedTickets = ({ title, departmentId }) => {
   const [esCalatedTicket, setEscalatedTicket] = useState(null);
   const axios = useAxiosPrivate();
   const [selectedTicketId, setSelectedTicketId] = useState(null);
-
+  const [openView, setOpenView] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
 
   // Fetch Supported Tickets
   const { data: supportedTickets = [], isLoading } = useQuery({
     queryKey: ["assigned-tickets"],
     queryFn: async () => {
       try {
-        const response = await axios.get(`/api/tickets/ticket-filter/assign/${departmentId}`);
+        const response = await axios.get(
+          `/api/tickets/ticket-filter/assign/${departmentId}`
+        );
 
         return response.data;
       } catch (error) {
@@ -32,10 +42,20 @@ const AssignedTickets = ({ title, departmentId }) => {
       }
     },
   });
-  console.log(supportedTickets)
+  console.log(supportedTickets);
   const handleOpenAssignModal = (ticketId) => {
     setSelectedTicketId(ticketId);
     setopenModal(true);
+  };
+
+  const handleViewTicket = (ticket) => {
+    setSelectedTicket({
+      ...ticket,
+      selectedDepartment: Array.isArray(ticket.raisedBy?.departments)
+        ? ticket.raisedBy.departments.map((d) => d.name)
+        : ["N/A"],
+    });
+    setOpenView(true);
   };
 
   // Transform Tickets Data
@@ -44,35 +64,35 @@ const AssignedTickets = ({ title, departmentId }) => {
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => {
-        const supportTicket = {
-          id: ticket._id,
-          srno: index + 1,
-          raisedBy: ticket.raisedBy?.firstName && ticket.raisedBy?.lastName
-          ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`
-          : "Unknown",
-        
-          selectedDepartment:
-          Array.isArray(ticket.raisedBy?.departments) &&
-          ticket.raisedBy.departments.length > 0
-            ? ticket.raisedBy.departments.map((dept) => dept.name)
-            : ["N/A"],
-        
-          ticketTitle: ticket.reason || "No Title",
-          assignees : `${ticket.assignees.map((item)=>item.firstName)[0]}`,
-          tickets:
-            ticket.assignees.length > 0
-              ? "Assigned Ticket"
-              : ticket.ticket?.acceptedBy
+          const supportTicket = {
+            id: ticket._id,
+            srno: index + 1,
+            raisedBy:
+              ticket.raisedBy?.firstName && ticket.raisedBy?.lastName
+                ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`
+                : "Unknown",
+
+            selectedDepartment:
+              Array.isArray(ticket.raisedBy?.departments) &&
+              ticket.raisedBy.departments.length > 0
+                ? ticket.raisedBy.departments.map((dept) => dept.name)
+                : ["N/A"],
+
+            ticketTitle: ticket.reason || "No Title",
+            assignees: `${ticket.assignees.map((item) => item.firstName)[0]}`,
+            tickets:
+              ticket.assignees.length > 0
+                ? "Assigned Ticket"
+                : ticket.ticket?.acceptedBy
                 ? "Accepted Ticket"
                 : "N/A",
-          status: ticket.status || "Pending",
-        };
+            status: ticket.status || "Pending",
+          };
 
-        return supportTicket;
-      });
+          return supportTicket;
+        });
   };
 
-  
   const recievedTicketsColumns = [
     { field: "srno", headerName: "Sr No" },
     { field: "raisedBy", headerName: "Raised By" },
@@ -105,7 +125,7 @@ const AssignedTickets = ({ title, departmentId }) => {
                 color,
               }}
             />
-             <span className="text-small text-borderGray text-center h-full">
+            <span className="text-small text-borderGray text-center h-full">
               {params.data.acceptedBy}
             </span>
           </div>
@@ -116,7 +136,7 @@ const AssignedTickets = ({ title, departmentId }) => {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => {
-        console.log(params.data)
+        console.log(params.data);
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
           "In Progress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
@@ -138,7 +158,6 @@ const AssignedTickets = ({ title, departmentId }) => {
                 color,
               }}
             />
-           
           </div>
         );
       },
@@ -161,8 +180,12 @@ const AssignedTickets = ({ title, departmentId }) => {
               },
               {
                 label: "Escalate",
-                onClick: () => handleEscalateTicket(params.data)
-              }
+                onClick: () => handleEscalateTicket(params.data),
+              },
+              {
+                label: "View",
+                onClick: () => handleViewTicket(params.data),
+              },
             ]}
           />
         </>
@@ -184,7 +207,7 @@ const AssignedTickets = ({ title, departmentId }) => {
     onSuccess: (data) => {
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ["assigned-tickets"] }); // Refetch tickets
-       queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
+      queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
     },
     onError: (err) => {
       toast.error(err.response.data.message || "Failed to close ticket");
@@ -225,7 +248,7 @@ const AssignedTickets = ({ title, departmentId }) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["supported-tickets"] });
-       queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
+      queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
       toast.success(data);
       setopenModal(false); // Close modal on success
       reset(); // Reset form after submission
@@ -277,26 +300,26 @@ const AssignedTickets = ({ title, departmentId }) => {
   });
 
   const { mutate: escalateTicket, isPending: isEscalatePending } = useMutation({
-      mutationKey: ["escalate-ticket"],
-      mutationFn: async (ticketDetails) => {
-        const response = await axios.patch("/api/tickets/escalate-ticket", {
-          ticketId: esCalatedTicket.id,
-          description: ticketDetails.description,
-          departmentIds: ticketDetails.departmentIds,
-        });
-        return response.data;
-      },
-      onSuccess: (data) => {
-        setEscalateModal(false)
-        resetEscalateForm()
-        toast.success(data.message || "Ticket escalated successfully");
-        queryClient.invalidateQueries({ queryKey: ["supported-tickets"] });
-         queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
-      },
-      onError: (error) => {
-        toast.error(error.response.data.message || "Failed to escalate ticket");
-      },
-    });
+    mutationKey: ["escalate-ticket"],
+    mutationFn: async (ticketDetails) => {
+      const response = await axios.patch("/api/tickets/escalate-ticket", {
+        ticketId: esCalatedTicket.id,
+        description: ticketDetails.description,
+        departmentIds: ticketDetails.departmentIds,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setEscalateModal(false);
+      resetEscalateForm();
+      toast.success(data.message || "Ticket escalated successfully");
+      queryClient.invalidateQueries({ queryKey: ["supported-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
+    },
+    onError: (error) => {
+      toast.error(error.response.data.message || "Failed to escalate ticket");
+    },
+  });
 
   const onEscalate = (ticketDetails) => {
     if (!ticketDetails) return;
@@ -311,9 +334,6 @@ const AssignedTickets = ({ title, departmentId }) => {
     setEscalateModal(true);
     setEscalatedTicket(ticketDetails);
   };
-
-
-
 
   return (
     <div className="p-4 border-default border-borderGray rounded-md">
@@ -368,79 +388,111 @@ const AssignedTickets = ({ title, departmentId }) => {
         </form>
       </MuiModal>
 
-            <MuiModal open={esCalateModal} onClose={() => setEscalateModal(false)}>
-              <div>
-                <form
-                  onSubmit={handleEscalateTicketSubmit(onEscalate)}
-                  className="grid grid-cols-1 gap-4"
-                >
-                  <Controller
-                    name="departmentIds"
-                    control={escalateFormControl}
-                    rules={{ required: "Department is required" }}
-                    render={({ field }) => (
-                                <Controller
-                        name="departmentIds"
-                        control={escalateFormControl}
-                        rules={{ required: "Department is required" }}
-                        render={({ field }) => (
-                          <Autocomplete
-                            multiple
-                            options={departments}
-                            getOptionLabel={(dept) => `${dept.department.name}`}
-                            onChange={(_, newValue) =>
-                              field.onChange(newValue.map((dept) => dept.department._id))
-                            }
-                            renderTags={(selected, getTagProps) =>
-                              selected.map((dept, index) => (
-                                <Chip
-                                  key={dept.department._id}
-                                  label={`${dept.department.name}`}
-                                  {...getTagProps({ index })}
-                                  deleteIcon={<IoMdClose />}
-                                />
-                              ))
-                            }
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                label="Select Departments"
-                                size="small"
-                                fullWidth
-                                error={!!escalateTicketErrors.departmentIds}
-                                helperText={escalateTicketErrors.departmentIds?.message}
-                              />
-                            )}
+      <MuiModal open={esCalateModal} onClose={() => setEscalateModal(false)}>
+        <div>
+          <form
+            onSubmit={handleEscalateTicketSubmit(onEscalate)}
+            className="grid grid-cols-1 gap-4"
+          >
+            <Controller
+              name="departmentIds"
+              control={escalateFormControl}
+              rules={{ required: "Department is required" }}
+              render={({ field }) => (
+                <Controller
+                  name="departmentIds"
+                  control={escalateFormControl}
+                  rules={{ required: "Department is required" }}
+                  render={({ field }) => (
+                    <Autocomplete
+                      multiple
+                      options={departments}
+                      getOptionLabel={(dept) => `${dept.department.name}`}
+                      onChange={(_, newValue) =>
+                        field.onChange(
+                          newValue.map((dept) => dept.department._id)
+                        )
+                      }
+                      renderTags={(selected, getTagProps) =>
+                        selected.map((dept, index) => (
+                          <Chip
+                            key={dept.department._id}
+                            label={`${dept.department.name}`}
+                            {...getTagProps({ index })}
+                            deleteIcon={<IoMdClose />}
                           />
-                        )}
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="description"
-                    control={escalateFormControl}
-                    rules={{ required: "Escalation description is required" }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        label={"Description"}
-                        fullWidth
-                        size="small"
-                        multiline
-                        rows={4}
-                        error={!!escalateTicketErrors.description}
-                        helperText={escalateTicketErrors.description?.message}
-                      />
-                    )}
-                  />
-                  <PrimaryButton
-                    title={"Escalate Ticket"}
-                    isLoading={isEscalatePending}
-                    disabled={isEscalatePending}
-                  />
-                </form>
-              </div>
-            </MuiModal>
+                        ))
+                      }
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Select Departments"
+                          size="small"
+                          fullWidth
+                          error={!!escalateTicketErrors.departmentIds}
+                          helperText={
+                            escalateTicketErrors.departmentIds?.message
+                          }
+                        />
+                      )}
+                    />
+                  )}
+                />
+              )}
+            />
+            <Controller
+              name="description"
+              control={escalateFormControl}
+              rules={{ required: "Escalation description is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label={"Description"}
+                  fullWidth
+                  size="small"
+                  multiline
+                  rows={4}
+                  error={!!escalateTicketErrors.description}
+                  helperText={escalateTicketErrors.description?.message}
+                />
+              )}
+            />
+            <PrimaryButton
+              title={"Escalate Ticket"}
+              isLoading={isEscalatePending}
+              disabled={isEscalatePending}
+            />
+          </form>
+        </div>
+      </MuiModal>
+
+      <MuiModal
+        open={openView}
+        onClose={() => setOpenView(false)}
+        title="View Assigned Ticket"
+      >
+        {selectedTicket && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <DetalisFormatted
+              title="Ticket"
+              detail={selectedTicket.ticketTitle || "N/A"}
+            />
+            <DetalisFormatted
+              title="Raised By"
+              detail={selectedTicket.raisedBy?.firstName || "Unknown"}
+            />
+            <DetalisFormatted
+              title="From Department"
+              detail={selectedTicket.selectedDepartment?.join(", ") || "N/A"}
+            />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
+            <DetalisFormatted
+              title="Description"
+              detail={selectedTicket.description || "N/A"}
+            />
+          </div>
+        )}
+      </MuiModal>
     </div>
   );
 };

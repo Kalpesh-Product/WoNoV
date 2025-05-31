@@ -26,6 +26,10 @@ const PerformanceKra = () => {
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const [selectedKra, setSelectedKra] = useState(null);
+  useEffect(() => {
+    console.log("Refreshed",department)
+    queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
+  }, [department]);
 
   const {
     handleSubmit: submitDailyKra,
@@ -52,7 +56,7 @@ const PerformanceKra = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedDepartments"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
       toast.success(data.message || "KRA Added");
       setOpenModal(false);
     },
@@ -68,12 +72,12 @@ const PerformanceKra = () => {
     mutationKey: ["updateDailyKra"],
     mutationFn: async (data) => {
       const response = await axios.patch(
-        `/api/performance/update-task-status/${data}`
+        `/api/performance/update-task-status/${data}/KRA`
       );
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedDepartments"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
       queryClient.invalidateQueries({ queryKey: ["completedEntries"] });
       toast.success(data.message || "DATA UPDATED");
     },
@@ -95,22 +99,23 @@ const PerformanceKra = () => {
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-    queryKey: ["fetchedDepartments"],
+    queryKey: ["fetchedDepartmentsKRA"],
     queryFn: fetchDepartments,
   });
-  const { data: completedEntries=[], isLoading: isCompletedLoading } = useQuery({
-    queryKey: ["completedEntries"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get(
-          `/api/performance/get-completed-tasks?dept=${deptId}&type=KRA`
-        );
-        return response.data;
-      } catch (error) {
-        console.error(error);
-      }
-    },
-  });
+  const { data: completedEntries = [], isLoading: isCompletedLoading } =
+    useQuery({
+      queryKey: ["completedEntries"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            `/api/performance/get-completed-tasks?dept=${deptId}&type=KRA`
+          );
+          return response.data;
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    });
   // const completedEntries = departmentLoading
   //   ? []
   //   : departmentKra.filter((item) => item.status === "Completed");
@@ -119,7 +124,7 @@ const PerformanceKra = () => {
     { headerName: "Sr no", field: "srno", width: 100 },
     { headerName: "KRA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
-    { headerName: "DueTime", field: "dueDate" },
+    { headerName: "DueTime", field: "dueTime" },
     {
       field: "status",
       headerName: "Status",
@@ -160,7 +165,7 @@ const PerformanceKra = () => {
             className="p-2"
           >
             <PrimaryButton
-              title={<FaCheck />}
+              title={"Mark As Done"}
               disabled={!params.node.selected}
             />
           </div>
@@ -172,7 +177,7 @@ const PerformanceKra = () => {
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "KRA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
-    { headerName: "DueTime", field: "dueDate" },
+    { headerName: "Completed Time", field: "dueDate" },
     { headerName: "Completed By", field: "completedBy" },
     {
       field: "status",
@@ -222,7 +227,7 @@ const PerformanceKra = () => {
                   id: item.id,
                   taskName: item.taskName,
                   assignedDate: item.assignedDate,
-                  dueDate: item.dueDate,
+                  dueTime: item.dueTime,
                   status: item.status,
                 }))}
               dateColumn={"dueDate"}

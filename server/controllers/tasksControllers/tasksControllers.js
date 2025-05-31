@@ -399,9 +399,9 @@ const getMyTasks = async (req, res, next) => {
     const transformedTasks = tasks.map((task) => {
       return {
         ...task,
-        dueDate: formatDate(task.dueDate),
-        dueTime: task.dueTime ? task.dueTime : "06:30 PM",
-        assignedDate: formatDate(task.assignedDate),
+        dueDate: task.dueDate,
+        dueTime: task.dueTime ? task.dueTime : null,
+        assignedDate: task.assignedDate,
       };
     });
 
@@ -444,7 +444,7 @@ const getMyAssignedTasks = async (req, res, next) => {
 const getCompletedTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { deptId } = req.query;
+    const { deptId } = req.params;
 
     const tasks = await Task.find({
       company,
@@ -580,15 +580,15 @@ const getTeamMembersTasks = async (req, res, next) => {
                 { path: "role", select: "roleTitle" },
                 { path: "departments", select: "name" },
               ],
-            },
-            {
-              path: "assignedTo",
-              select: "email firstName lastName isActive",
-              populate: [
-                { path: "role", select: "roleTitle" },
-                { path: "departments", select: "name" },
-              ],
             }
+            // {
+            //   path: "assignedTo",
+            //   select: "email firstName lastName isActive",
+            //   populate: [
+            //     { path: "role", select: "roleTitle" },
+            //     { path: "departments", select: "name" },
+            //   ],
+            // }
           )
           .populate("assignedBy", "firstName lastName")
           .select("-company")

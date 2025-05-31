@@ -60,7 +60,7 @@ const TasksViewDepartment = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedDepartments"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
       toast.success(data.message || "KRA Added");
       setOpenModal(false);
     },
@@ -75,6 +75,7 @@ const TasksViewDepartment = () => {
   const { mutate: updateDailyKra, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateDailyTasks"],
     mutationFn: async (data) => {
+      console.log("tasks", data);
       const response = await axios.patch(
         `/api/tasks/update-task-status/${data}`
       );
@@ -101,7 +102,9 @@ const TasksViewDepartment = () => {
   };
   const fetchCompletedTasks = async () => {
     try {
-      const response = await axios.get(`api/tasks/get-completed-tasks/${deptId}`);
+      const response = await axios.get(
+        `api/tasks/get-completed-tasks/${deptId}`
+      );
       return response.data;
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -113,7 +116,7 @@ const TasksViewDepartment = () => {
     queryFn: fetchDepartments,
   });
 
-  const { data: completedTasks = [], isPending: completedTasksFetchPending } =
+  const { data: completedTasks = [], isLoading: completedTasksFetchPending } =
     useQuery({
       queryKey: ["fetchedCompletedTasks"],
       queryFn: fetchCompletedTasks,
@@ -214,6 +217,7 @@ const TasksViewDepartment = () => {
       },
     },
   ];
+
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -249,16 +253,18 @@ const TasksViewDepartment = () => {
             <DateWiseTable
               formatTime
               tableTitle={`COMPLETED TASKS`}
-              data={(completedEntries || [])
-                .filter((item) => item.status !== "Completed")
-                .map((item, index) => ({
-                  srno: index + 1,
-                  id: item.id,
-                  taskName: item.taskName,
-                  assignedDate: item.assignedDate,
-                  dueDate: item.dueDate,
-                  status: item.status,
-                }))}
+              data={
+                completedTasksFetchPending
+                  ? []
+                  : completedTasks.map((item, index) => ({
+                      srno: index + 1,
+                      id: item._id,
+                      taskName: item.taskName,
+                      assignedDate: item.assignedDate,
+                      dueDate: item.dueDate,
+                      status: item.status,
+                    }))
+              }
               dateColumn={"dueDate"}
               columns={completedColumns}
             />
