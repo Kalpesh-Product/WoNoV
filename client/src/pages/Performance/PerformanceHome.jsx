@@ -17,10 +17,10 @@ const PerformanceHome = () => {
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
   useTopDepartment({
+    additionalTopDepartmentIds: ["6798bab9e469e809084e249e"],
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       navigate(`/app/performance/${currentDepartment}`);
-
     },
   });
 

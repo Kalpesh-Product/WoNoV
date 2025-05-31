@@ -4,7 +4,7 @@ import WidgetSection from "../../../components/WidgetSection";
 import MonthWiseTable from "../../../components/Tables/MonthWiseTable";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 import { Chip, CircularProgress, TextField } from "@mui/material";
@@ -18,20 +18,30 @@ import {
 } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaCheck } from "react-icons/fa6";
 import { queryClient } from "../../../main";
 import { toast } from "sonner";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
+import useAuth from "../../../hooks/useAuth";
 
 const DailyTasks = () => {
   const axios = useAxiosPrivate();
+  const dispatch = useDispatch();
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState("");
   const [selectedTask, setSelectedTask] = useState({});
+  const { auth } = useAuth();
+  const currentDepartmentId = auth.user?.departments?.[0]?._id;
   const deptId = useSelector((state) => state.performance.selectedDepartment);
+  useEffect(() => {
+    if (!deptId) {
+      dispatch(setSelectedDepartment(currentDepartmentId));
+    }
+  }, []);
 
   const {
     handleSubmit: submitDailyKra,
@@ -62,13 +72,13 @@ const DailyTasks = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchDepartments"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchMyTask"] });
       toast.success(data.message || "KRA Added");
       setOpenModal(false);
     },
     onError: (error) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchDepartments"] });
-      toast.success("DATA UPDATED");
+      queryClient.invalidateQueries({ queryKey: ["fetchMyTask"] });
+      toast.error(error.message || "Error Adding Tasks");
       setOpenModal(false);
     },
   });
@@ -181,10 +191,11 @@ const DailyTasks = () => {
     {
       field: "actions",
       headerName: "Actions",
-      pinned : 'right',
+      pinned: "right",
       cellRenderer: (params) => (
         <div className="flex gap-2">
           <ThreeDotMenu
+            disabled={!params.node.selected}
             rowId={params.data.id}
             menuItems={[
               {
@@ -238,23 +249,28 @@ const DailyTasks = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer : (params)=>(
-        <div role="button" onClick={()=>{
-          setModalMode("view-completed")
-          setSelectedTask(params.data)
-          setOpenModal(true)
-          }} className="bg-white p-2 rounded-full hover:bg-borderGray w-fit">
+      pinned: "right",
+      cellRenderer: (params) => (
+        <div
+          role="button"
+          onClick={() => {
+            setModalMode("view-completed");
+            setSelectedTask(params.data);
+            setOpenModal(true);
+          }}
+          className="bg-white p-2 rounded-full hover:bg-borderGray w-fit"
+        >
           <MdOutlineRemoveRedEye />
         </div>
-      )
-    }
+      ),
+    },
   ];
   //--------Column configs----------------//
 
   //----------function handlers-------------//
   const handleViewTask = (data) => {
     setModalMode("view");
-    setOpenModal(true)
+    setOpenModal(true);
     setSelectedTask(data);
   };
   //----------function handlers-------------//
@@ -279,9 +295,9 @@ const DailyTasks = () => {
                   id: item._id,
                   taskList: item.taskName,
                   assignedDate: item.assignedDate,
-                  dueDate : item.dueDate,
+                  dueDate: item.dueDate,
                   status: item.status,
-                  dueTime: humanTime(item.dueDate),
+                  dueTime: humanTime(item.dueTime),
                   assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                 })),
             ]}
@@ -455,7 +471,7 @@ const DailyTasks = () => {
               title={"Due Date"}
               detail={humanDate(selectedTask?.dueDate)}
             />
-              <DetalisFormatted
+            <DetalisFormatted
               title={"Due Time"}
               detail={selectedTask?.dueTime}
             />
@@ -463,7 +479,7 @@ const DailyTasks = () => {
               title={"Assigned By"}
               detail={selectedTask?.assignedBy}
             />
-          
+
             <DetalisFormatted title={"Status"} detail={selectedTask?.status} />
           </div>
         )}
@@ -478,7 +494,7 @@ const DailyTasks = () => {
               title={"Due Date"}
               detail={humanDate(selectedTask?.dueDate)}
             />
-              <DetalisFormatted
+            <DetalisFormatted
               title={"Due Time"}
               detail={selectedTask?.dueTime}
             />
@@ -486,7 +502,7 @@ const DailyTasks = () => {
               title={"Assigned By"}
               detail={selectedTask?.assignedBy}
             />
-          
+
             <DetalisFormatted title={"Status"} detail={selectedTask?.status} />
           </div>
         )}
