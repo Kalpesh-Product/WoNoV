@@ -212,7 +212,7 @@ const TasksViewDepartment = () => {
     { headerName: "Assigned Date", field: "assignedDate" },
     { headerName: "Completed Date", field: "completedDate" },
     { headerName: "Completed Time", field: "completedTime" },
-    { headerName: "Due Time", field: "dueTime" },
+    // { headerName: "Due Time", field: "dueTime" },
     { headerName: "Due Date", field: "dueDate" },
     {
       field: "status",
@@ -289,6 +289,7 @@ const TasksViewDepartment = () => {
                       srno: index + 1,
                       id: item._id,
                       taskName: item.taskName,
+                      completedBy: item.completedBy,
                       assignedDate: item.assignedDate,
                       completedDate: humanDate(item.completedDate),
                       completedTime: humanTime(item.completedDate),
@@ -351,12 +352,24 @@ const TasksViewDepartment = () => {
           <Controller
             name="startDate"
             control={control}
-            rules={{ required: "Start date is required" }}
+            rules={{
+              required: "Start date is required",
+              validate: (value) => {
+                if (!value) return true; // already handled by required
+                const today = dayjs().startOf("day");
+                const selected = dayjs(value);
+                if (selected.isBefore(today)) {
+                  return "Start date cannot be in the past.";
+                }
+                return true;
+              },
+            }}
             render={({ field, fieldState }) => (
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
                   {...field}
                   label="Start Date"
+                  disablePast
                   format="DD-MM-YYYY"
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) =>
@@ -377,13 +390,30 @@ const TasksViewDepartment = () => {
           <Controller
             name="endDate"
             control={control}
-            rules={{ required: "End date is required" }}
+            rules={{
+              validate: (value) => {
+                if (!value) return "End date is required";
+                const selected = dayjs(value);
+                const today = dayjs().startOf("day");
+                if (!selected.isValid()) return "Invalid date selected";
+                if (selected.isBefore(today))
+                  return "End date cannot be in the past.";
+                if (
+                  control._formValues.startDate &&
+                  selected.isBefore(dayjs(control._formValues.startDate))
+                ) {
+                  return "End date cannot be before start date.";
+                }
+                return true;
+              },
+            }}
             render={({ field, fieldState }) => (
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
                   {...field}
                   label="End Date"
                   format="DD-MM-YYYY"
+                  disablePast
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) =>
                     field.onChange(date ? date.toISOString() : null)

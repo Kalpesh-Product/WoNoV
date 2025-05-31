@@ -4,18 +4,18 @@ import { Avatar, AvatarGroup, Chip } from "@mui/material";
 
 // Parent Component - Data Preparation
 const financialMonths = [
-  "Apr-24",
-  "May-24",
-  "Jun-24",
-  "Jul-24",
-  "Aug-24",
-  "Sep-24",
-  "Oct-24",
-  "Nov-24",
-  "Dec-24",
-  "Jan-25",
-  "Feb-25",
-  "Mar-25",
+  "Apr-25",
+  "May-25",
+  "Jun-25",
+  "Jul-25",
+  "Aug-25",
+  "Sep-25",
+  "Oct-25",
+  "Nov-25",
+  "Dec-25",
+  "Jan-26",
+  "Feb-26",
+  "Mar-26",
 ];
 
 const departments = [
@@ -472,20 +472,20 @@ const myTodayMeetingsData = [
 // -----------------------Recently Added Tasks Start--------------------//
 
 const recentlyAddedTasksCol = [
-  { id: "id", label: "ID" },
-  { id: "task", label: "Task" },
+  { id: "id", label: "Sr.no" },
+  { id: "taskName", label: "Task" },
   {
-    id: "type",
-    label: "Type",
+    id: "status",
+    label: "Status",
     align: "center",
     renderCell: (row) => (
       <Chip
         sx={{ backgroundColor: "#d1d5db", color: "#1E3D73" }}
-        label={row.type}
+        label={row.status}
       />
     ),
   },
-  { id: "due", label: "Due" },
+  { id: "dueDate", label: "Due" },
 ];
 
 const recentlyAddedTasksData = [

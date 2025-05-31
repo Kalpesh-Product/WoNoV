@@ -126,7 +126,7 @@ const PerformanceMonthly = () => {
     {
       field: "status",
       headerName: "Status",
-      flex:1,
+      flex: 1,
       cellRenderer: (params) => {
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
@@ -167,7 +167,7 @@ const PerformanceMonthly = () => {
           >
             <PrimaryButton
               disabled={!params.node.selected}
-              title={<FaCheck />}
+              title={"Mark As Done"}
             />
           </div>
         );
@@ -348,12 +348,24 @@ const PerformanceMonthly = () => {
           <Controller
             name="endDate"
             control={control}
-            rules={{ required: "End date is required" }}
+            rules={{
+              validate: (value) => {
+                if (!value) return "End date is required";
+                const today = dayjs().startOf("day");
+                const selected = dayjs(value);
+                if (!selected.isValid()) return "Invalid date selected";
+                if (selected.isBefore(today)) {
+                  return "End date cannot be in the past.";
+                }
+                return true;
+              },
+            }}
             render={({ field, fieldState }) => (
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
                   {...field}
                   label="End Date"
+                  disablePast
                   format="DD-MM-YYYY"
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) =>

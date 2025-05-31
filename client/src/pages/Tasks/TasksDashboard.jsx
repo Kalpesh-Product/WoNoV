@@ -44,19 +44,7 @@ const TasksDashboard = () => {
     },
   });
 
-  const allProjectsQuery = useQuery({
-    queryKey: ["allProjectsQuery"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/tasks/get-projects");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
-
-  const { data: taskList=[], isLoading: isTaskListLoading } = useQuery({
+  const { data: taskList = [], isLoading: isTaskListLoading } = useQuery({
     queryKey: ["taskList"],
     queryFn: async () => {
       try {
@@ -67,7 +55,6 @@ const TasksDashboard = () => {
       }
     },
   });
-
 
   //----------------------------------------------------------------------------------------------------------//
 
@@ -97,19 +84,21 @@ const TasksDashboard = () => {
   // ];
 
   const today = dayjs().startOf("day");
-  const recentlyAddedTasksData = allTasksQuery.isLoading
+  const recentlyAddedTasksData = isTaskListLoading
     ? []
-    : allTasksQuery.data
+    : taskList
+
         .filter((task) => dayjs(task.assignedDate).isSame(today, "day"))
         .map((task, index) => ({
           id: index + 1,
           taskName: task.taskName,
-          department: task.department?.name || "N/A",
+          department: task.department || "N/A",
           status: task.status,
           assignedBy: `${task.assignedBy?.firstName || ""} ${
             task.assignedBy?.lastName || ""
           }`,
-          assignedDate: dayjs(task.assignedDate).format("DD MMM YYYY, hh:mm A"),
+          assignedDate: humanDate(task.assignedDate),
+          dueDate : humanDate(task.dueDate)
         }));
 
   const priorityTasks = allTasksQuery.isLoading
@@ -142,10 +131,6 @@ const TasksDashboard = () => {
 
   // Dept wise tsks
   //----------------------------------------------------------------------------------------------------------//
-
-
-
-
 
   //----------------------------------------------------------------------------------------------------------//
 
@@ -295,83 +280,107 @@ const TasksDashboard = () => {
   };
 
   //Overall task completeion graph data
-  const allTasks = [ /* your full task data array here */ ];
+  const allTasks = [
+    /* your full task data array here */
+  ];
 
-const financialMonths = [ 
-  "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
-  "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
-];
+  const financialMonths = [
+    "Apr-24",
+    "May-24",
+    "Jun-24",
+    "Jul-24",
+    "Aug-24",
+    "Sep-24",
+    "Oct-24",
+    "Nov-24",
+    "Dec-24",
+    "Jan-25",
+    "Feb-25",
+    "Mar-25",
+  ];
 
-function formatMonth(dateStr) {
-  const [day, month, year] = dateStr.split("-");
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const monthIndex = parseInt(month, 10) - 1;
-  const yearShort = String(year).slice(-2);
-  return `${months[monthIndex]}-${yearShort}`;
-}
+  function formatMonth(dateStr) {
+    const [day, month, year] = dateStr.split("-");
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const monthIndex = parseInt(month, 10) - 1;
+    const yearShort = String(year).slice(-2);
+    return `${months[monthIndex]}-${yearShort}`;
+  }
 
-const departmentMap = {};
+  const departmentMap = {};
 
-if (!allTasksQuery.isLoading && allTasksQuery.data) {
-  allTasksQuery.data.forEach(task => {
-    const deptName = task.department;
-    const status = task.status;
-    const month = formatMonth(task.assignedDate);
+  if (!allTasksQuery.isLoading && allTasksQuery.data) {
+    allTasksQuery.data.forEach((task) => {
+      const deptName = task.department;
+      const status = task.status;
+      const month = formatMonth(task.assignedDate);
 
-    if (!financialMonths.includes(month)) return;
+      if (!financialMonths.includes(month)) return;
 
-    if (!departmentMap[deptName]) {
-      departmentMap[deptName] = {
-        department: deptName,
-        tasksAllocated: Array(financialMonths.length).fill(0),
-        tasksCompleted: Array(financialMonths.length).fill(0),
-      };
-    }
+      if (!departmentMap[deptName]) {
+        departmentMap[deptName] = {
+          department: deptName,
+          tasksAllocated: Array(financialMonths.length).fill(0),
+          tasksCompleted: Array(financialMonths.length).fill(0),
+        };
+      }
 
-    const monthIndex = financialMonths.indexOf(month);
-    departmentMap[deptName].tasksAllocated[monthIndex] += 1;
-    if (status === "Completed") {
-      departmentMap[deptName].tasksCompleted[monthIndex] += 1;
-    }
-  });
-}
+      const monthIndex = financialMonths.indexOf(month);
+      departmentMap[deptName].tasksAllocated[monthIndex] += 1;
+      if (status === "Completed") {
+        departmentMap[deptName].tasksCompleted[monthIndex] += 1;
+      }
+    });
+  }
 
-const departments = Object.values(departmentMap);
+  const departments = Object.values(departmentMap);
 
-console.log("deptt",departments)
-const totalAllocated = financialMonths.map((_, index) =>
-  departments.reduce((sum, dept) => sum + dept.tasksAllocated[index], 0)
-);
+  console.log("deptt", departments);
+  const totalAllocated = financialMonths.map((_, index) =>
+    departments.reduce((sum, dept) => sum + dept.tasksAllocated[index], 0)
+  );
 
-const totalCompleted = financialMonths.map((_, index) =>
-  departments.reduce((sum, dept) => sum + dept.tasksCompleted[index], 0)
-);
+  const totalCompleted = financialMonths.map((_, index) =>
+    departments.reduce((sum, dept) => sum + dept.tasksCompleted[index], 0)
+  );
 
-// Calculate Pending Tasks
-const totalPending = totalAllocated.map(
-  (allocated, index) => allocated - totalCompleted[index]
-);
+  // Calculate Pending Tasks
+  const totalPending = totalAllocated.map(
+    (allocated, index) => allocated - totalCompleted[index]
+  );
 
-// Convert to percentage
-const completionPercentage = totalAllocated.map((allocated, index) =>
-  allocated > 0 ? (totalCompleted[index] / allocated) * 100 : 0
-);
+  // Convert to percentage
+  const completionPercentage = totalAllocated.map((allocated, index) =>
+    allocated > 0 ? (totalCompleted[index] / allocated) * 100 : 0
+  );
 
-const pendingPercentage = totalAllocated.map((allocated, index) =>
-  allocated > 0 ? (totalPending[index] / allocated) * 100 : 0
-);
+  const pendingPercentage = totalAllocated.map((allocated, index) =>
+    allocated > 0 ? (totalPending[index] / allocated) * 100 : 0
+  );
 
-const monthlyTasksData = [
-  {
-    name: "Completed",
-    data: completionPercentage,
-  },
-  {
-    name: "Pending",
-    data: pendingPercentage,
-  },
-];
+  const monthlyTasksData = [
+    {
+      name: "Completed",
+      data: completionPercentage,
+    },
+    {
+      name: "Pending",
+      data: pendingPercentage,
+    },
+  ];
 
   const myTodayMeetingsData = !meetingsQuery.isLoading
     ? meetingsQuery.data.map((meeting, index) => {
@@ -391,7 +400,6 @@ const monthlyTasksData = [
         };
       })
     : [];
-
 
   const meetingsWidgets = [
     {
@@ -413,7 +421,11 @@ const monthlyTasksData = [
     {
       layout: 6,
       widgets: [
-        <Card route={"/app/tasks/my-tasks"} title={"My Tasks"} icon={<RiPagesLine />} />,
+        <Card
+          route={"/app/tasks/my-tasks"}
+          title={"My Tasks"}
+          icon={<RiPagesLine />}
+        />,
         <Card
           route={"/app/tasks/department-tasks"}
           title={"Department Tasks"}

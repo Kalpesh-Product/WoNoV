@@ -41,7 +41,9 @@ const MonthWiseTable = ({
   }, [monthLabels]);
 
   // Step 3: Selected month state
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(selectedMonthIndexDefault);
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(
+    selectedMonthIndexDefault
+  );
 
   const selectedMonth = monthLabels[selectedMonthIndex];
 
@@ -80,6 +82,11 @@ const MonthWiseTable = ({
         </span>
 
         <div className="flex items-center gap-4">
+          {buttonTitle ? (
+            <div>
+              <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
+            </div>
+          ) : null}
           <div className="flex justify-end items-center">
             <PrimaryButton
               title={<MdNavigateBefore />}
@@ -101,11 +108,6 @@ const MonthWiseTable = ({
               disabled={selectedMonthIndex === monthLabels.length - 1}
             />
           </div>
-          {buttonTitle ? (
-            <div>
-              <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
-            </div>
-          ) : null}
         </div>
       </div>
 

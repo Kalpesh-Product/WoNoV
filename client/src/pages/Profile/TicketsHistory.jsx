@@ -105,7 +105,7 @@ const TicketsHistory = ({ pageTitle }) => {
     <>
       <div className="flex items-center justify-between pb-4">
         <span className="text-title font-pmedium text-primary uppercase">
-          Ticket History
+          My Ticket History
         </span>
       </div>
       <div className=" w-full">
