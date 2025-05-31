@@ -23,6 +23,7 @@ import {
   TimePicker,
 } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 
 const TasksViewDepartment = () => {
   const axios = useAxiosPrivate();
@@ -30,6 +31,9 @@ const TasksViewDepartment = () => {
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
+  const [openMultiModal, setOpenMultiModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState({});
+  const [modalMode, setModalMode] = useState("");
 
   const {
     handleSubmit: submitDailyKra,
@@ -44,7 +48,13 @@ const TasksViewDepartment = () => {
       dueTime: null,
     },
   });
-
+  //----------function handlers-------------//
+  const handleViewTask = (data) => {
+    setModalMode("view");
+    setOpenMultiModal(true);
+    setSelectedTask(data);
+  };
+  //----------function handlers-------------//
   //--------------POST REQUEST FOR DAILY KRA-----------------//
   const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
     mutationKey: ["addDailyTasks"],
@@ -122,12 +132,26 @@ const TasksViewDepartment = () => {
       queryKey: ["fetchedCompletedTasks"],
       queryFn: fetchCompletedTasks,
     });
-  const completedEntries = departmentKra.filter(
-    (item) => item.status === "Completed"
-  );
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
-    { headerName: "Task List", field: "taskName", width: 300 },
+    {
+      headerName: "Task List",
+      field: "taskName",
+      width: 300,
+      cellRenderer: (params) => (
+        <div
+          role="button"
+          onClick={() => {
+            setModalMode("view");
+            setSelectedTask(params.data);
+            setOpenMultiModal(true);
+          }}
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value}
+        </div>
+      ),
+    },
     { headerName: "Assigned By", field: "assignedBy", width: 300 },
     { headerName: "Assigned Date", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
@@ -172,7 +196,7 @@ const TasksViewDepartment = () => {
             className="p-2"
           >
             <PrimaryButton
-              title={<FaCheck />}
+              title={"Mark As Done"}
               disabled={!params.node.selected}
             />
           </div>
@@ -237,8 +261,11 @@ const TasksViewDepartment = () => {
                   srno: index + 1,
                   id: item._id,
                   taskName: item.taskName,
+                  description: item.description,
                   assignedDate: item.assignedDate,
                   status: item.status,
+                  dueDate: item.dueDate,
+                  dueTime: humanTime(item.dueTime),
                   assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                 }))}
               dateColumn={"assignedDate"}
@@ -262,7 +289,7 @@ const TasksViewDepartment = () => {
                       srno: index + 1,
                       id: item._id,
                       taskName: item.taskName,
-                      assignedDate: (item.assignedDate),
+                      assignedDate: item.assignedDate,
                       completedDate: humanDate(item.completedDate),
                       completedTime: humanTime(item.completedDate),
                       status: item.status,
@@ -403,6 +430,70 @@ const TasksViewDepartment = () => {
             disabled={isAddKraPending}
           />
         </form>
+      </MuiModal>
+
+      <MuiModal
+        open={openMultiModal}
+        onClose={() => setOpenMultiModal(false)}
+        title={"Add Task"}
+      >
+        {modalMode === "view" && selectedTask && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <DetalisFormatted
+                title={"Task"}
+                detail={selectedTask?.taskName}
+              />
+            </div>
+            <div className="col-span-2">
+              <DetalisFormatted
+                title={"Description"}
+                detail={selectedTask?.description}
+              />
+            </div>
+            <DetalisFormatted
+              title={"Assigned Date"}
+              detail={humanDate(selectedTask?.assignedDate)}
+            />
+            <DetalisFormatted
+              title={"Due Date"}
+              detail={humanDate(selectedTask?.dueDate)}
+            />
+            <DetalisFormatted
+              title={"Due Time"}
+              detail={selectedTask?.dueTime}
+            />
+            <DetalisFormatted
+              title={"Assigned By"}
+              detail={selectedTask?.assignedBy}
+            />
+
+            <DetalisFormatted title={"Status"} detail={selectedTask?.status} />
+          </div>
+        )}
+        {modalMode === "view-completed" && selectedTask && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <DetalisFormatted title={"Task"} detail={selectedTask?.taskList} />
+            <DetalisFormatted
+              title={"Assigned Date"}
+              detail={humanDate(selectedTask?.assignedDate)}
+            />
+            <DetalisFormatted
+              title={"Due Date"}
+              detail={humanDate(selectedTask?.dueDate)}
+            />
+            <DetalisFormatted
+              title={"Due Time"}
+              detail={selectedTask?.dueTime}
+            />
+            <DetalisFormatted
+              title={"Assigned By"}
+              detail={selectedTask?.assignedBy}
+            />
+
+            <DetalisFormatted title={"Status"} detail={selectedTask?.status} />
+          </div>
+        )}
       </MuiModal>
     </>
   );

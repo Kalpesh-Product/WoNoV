@@ -56,7 +56,7 @@ const TasksDashboard = () => {
     },
   });
 
-  const { data: taskList, isLoading: isTaskListLoading } = useQuery({
+  const { data: taskList=[], isLoading: isTaskListLoading } = useQuery({
     queryKey: ["taskList"],
     queryFn: async () => {
       try {
@@ -67,6 +67,7 @@ const TasksDashboard = () => {
       }
     },
   });
+
 
   //----------------------------------------------------------------------------------------------------------//
 

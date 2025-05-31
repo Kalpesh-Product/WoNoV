@@ -16,8 +16,8 @@ const DateWiseTable = ({
   checkAll,
   formatTime = false, // <-- added default value
 }) => {
-  const [selectedDateIndex, setSelectedDateIndex] = useState(0);
-  const {ref} = useRefWithInitialRerender
+  const { ref } = useRefWithInitialRerender;
+
 
   const dateLabels = useMemo(() => {
     const dateSet = new Set();
@@ -32,6 +32,22 @@ const DateWiseTable = ({
         dayjs(a, "D-MMM-YYYY").toDate() - dayjs(b, "D-MMM-YYYY").toDate()
     );
   }, [data, dateColumn]);
+
+  const today = dayjs().format("D-MMM-YYYY");
+
+const defaultDateIndex = useMemo(() => {
+  if (dateLabels.length === 0) return 0;
+
+  const todayIndex = dateLabels.findIndex((d) => d === today);
+  if (todayIndex !== -1) return todayIndex;
+
+  // Find the closest previous date before today
+  const pastDates = dateLabels.filter((d) => dayjs(d, "D-MMM-YYYY").isBefore(dayjs()));
+  return pastDates.length > 0 ? dateLabels.indexOf(pastDates[pastDates.length - 1]) : 0;
+}, [dateLabels]);
+
+const [selectedDateIndex, setSelectedDateIndex] = useState(defaultDateIndex);
+
 
   const selectedDate = dateLabels[selectedDateIndex];
 
@@ -69,6 +85,11 @@ const DateWiseTable = ({
           {tableTitle}
         </span>
         <div className="flex items-center gap-4">
+          {buttonTitle ? (
+            <div>
+              <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
+            </div>
+          ) : null}
           <div className="flex justify-end items-center">
             <PrimaryButton
               title={<MdNavigateBefore />}
@@ -90,11 +111,6 @@ const DateWiseTable = ({
               disabled={selectedDateIndex === dateLabels.length - 1}
             />
           </div>
-          {buttonTitle ? (
-            <div>
-              <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
-            </div>
-          ) : null}
         </div>
       </div>
 
