@@ -3,6 +3,7 @@ const Visitor = require("../../models/visitor/Visitor");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 const ExternalCompany = require("../../models/meetings/ExternalCompany");
+const UserData = require("../../models/hr/UserData");
 
 const fetchVisitors = async (req, res, next) => {
   const { company } = req;
@@ -332,9 +333,43 @@ const fetchExternalCompanies = async (req, res, next) => {
   }
 };
 
+const fetchTeamMembers = async (req, res, next) => {
+  try {
+    const { company } = req;
+
+    const { dept } = req.query;
+    // Find team members
+    const teamMembers = await UserData.find({
+      departments: { $in: [dept] },
+      isActive: true,
+    })
+      .populate([
+        { path: "role", select: "roleTitle" },
+        { path: "departments", select: "name" },
+      ])
+      .select("firstName middleName lastName email");
+
+    const transformedVisitors = teamMembers.map((member) => {
+      return {
+        name: `${member.firstName} ${member.middleName || ""} ${
+          member.lastName
+        }`.trim(),
+        email: member.email,
+        department: member.departments.map((dept) => dept.name),
+        role: member.role.map((r) => r.roleTitle),
+      };
+    });
+
+    return res.status(200).json(transformedVisitors);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   fetchVisitors,
   addVisitor,
   updateVisitor,
   fetchExternalCompanies,
+  fetchTeamMembers,
 };
