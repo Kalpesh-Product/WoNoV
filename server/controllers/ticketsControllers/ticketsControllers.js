@@ -421,6 +421,7 @@ const getTeamMemberTickets = async (req, res, next) => {
 
     const teamMembers = await UserData.find({
       departments: { $in: departmentIds },
+      isActive: true,
     })
       .populate([
         { path: "role", select: "roleTitle" },
