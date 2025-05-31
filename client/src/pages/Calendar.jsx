@@ -17,6 +17,7 @@ import dayjs from "dayjs";
 import MuiModal from "../components/MuiModal";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import humanDate from "../utils/humanDateForamt";
 
 const Calender = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -133,6 +134,7 @@ const Calender = () => {
       description: "",
     });
   };
+
 
   return (
     <div className="flex w-[70%] md:w-full">
@@ -279,11 +281,14 @@ const Calender = () => {
                     <span className="w-[30%]"> Start Date </span>
                     <span>:</span>
                     <span className="text-content font-pmedium w-full justify-start pl-4">
-                      {new Intl.DateTimeFormat("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      }).format(new Date(selectedEvent.start))}
+                      {humanDate(new Date(selectedEvent?._instance.range.start))}
+                    </span>{" "}
+                  </span>{" "}
+                  <span className="text-content flex  items-center">
+                    <span className="w-[30%]"> End Date </span>
+                    <span>:</span>
+                    <span className="text-content font-pmedium w-full justify-start pl-4">
+                      {humanDate((selectedEvent?._instance.range.end))}
                     </span>{" "}
                   </span>{" "}
                   {selectedEvent.extendedProps.description && (

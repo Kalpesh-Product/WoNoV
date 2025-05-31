@@ -340,8 +340,6 @@ const getKraKpaTasks = async (req, res, next) => {
     //         });
 
     // const allTasks = [...transformedTasks, ...transformedCompletedTasks];
-
-    console.log(transformedTasks.length);
     return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);

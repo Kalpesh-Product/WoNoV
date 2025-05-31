@@ -1104,8 +1104,6 @@ const getSingleRoomMeetings = async (req, res, next) => {
   const { roomId } = req.params;
 
   try {
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
     if (!mongoose.Types.ObjectId.isValid(roomId)) {
       return res.status(400).json({ message: "Invalid roomId provided" });
     }
@@ -1124,21 +1122,8 @@ const getSingleRoomMeetings = async (req, res, next) => {
       ],
     }).populate("bookedRoom", "_id name status description seats");
 
-    const formattedMeetings = meetings.map((meeting) => ({
-      ...meeting._doc,
-      startDate: meeting.startDate.toLocaleString("en-US", {
-        timeZone: timezone,
-      }),
-      endDate: meeting.endDate.toLocaleString("en-US", {
-        timeZone: timezone,
-      }),
-      startTime: meeting.startTime.toLocaleString("en-US", {
-        timeZone: timezone,
-      }),
-      endTime: meeting.endTime.toLocaleString("en-US", { timeZone: timezone }),
-    }));
-
-    res.status(200).json(formattedMeetings);
+    // No date formatting here
+    res.status(200).json(meetings);
   } catch (error) {
     next(error);
   }

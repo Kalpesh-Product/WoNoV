@@ -45,6 +45,8 @@ const FinanceDashboard = () => {
   const testExpense = revenueExpenseData
     .filter((item) => item.expense)
     .flatMap((item) => item.expense);
+  const testIncome = revenueExpenseData.filter((item) => item.income);
+  console.log("Filtered ic :", testIncome);
   const testUnits = revenueExpenseData
     .filter((item) => item.units)
     .flatMap((item) => item.units);
@@ -53,37 +55,33 @@ const FinanceDashboard = () => {
     (sum, item) => (item.actualAmount || 0) + sum,
     0
   );
+const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
+  const incomeSources = item.income || {};
+  console.log(`\n🧾 Entry #${index + 1}:`, Object.keys(incomeSources));
+
+  const incomeValues = Object.values(incomeSources);
+  console.log(`🔍 Raw Arrays:`, incomeValues);
+
+  const allRevenues = incomeValues.flat();
+  console.log(`📦 Flattened Revenues (${allRevenues.length} items):`, allRevenues);
+
+  const sourceTotals = allRevenues.reduce((sum, revenueItem, i) => {
+    const value = revenueItem.taxableAmount ?? revenueItem.revenue ?? 0;
+    console.log(`   ➕ Item #${i + 1}: taxableAmount = ${revenueItem.taxableAmount}, revenue = ${revenueItem.revenue} => Used = ${value}`);
+    return sum + value;
+  }, 0);
+
+  console.log(`✅ Subtotal for Entry #${index + 1}:`, sourceTotals);
+
+  return grandTotal + sourceTotals;
+}, 0);
+
+console.log("\n💰 Total Income (Taxable or Revenue):", totalIncomeAmount);
+
 
   //----------INCOME-EXPENSE GRAPH conversion------------------//
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
   const monthWiseExpenses = {};
-
-  testExpense.forEach((exp) => {
-    const monthKey = dayjs(exp.dueDate).format("MMM-YY"); // e.g., "Apr-24"
-
-    // Skip excluded months
-    if (excludedMonths.includes(monthKey)) return;
-
-    if (!monthWiseExpenses[monthKey]) {
-      monthWiseExpenses[monthKey] = {
-        month: monthKey,
-        actualExpense: 0,
-        projectedExpense: 0,
-        expenses: [],
-      };
-    }
-
-    monthWiseExpenses[monthKey].actualExpense += exp.actualAmount || 0;
-    monthWiseExpenses[monthKey].projectedExpense += exp.projectedAmount || 0;
-    monthWiseExpenses[monthKey].expenses.push(exp);
-  });
-
-  const transformedExpenses = Object.values(monthWiseExpenses);
-
-  const sortedExpenses = transformedExpenses.sort((a, b) =>
-    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
-  );
-
   const yearCategories = {
     "FY 2024-25": [
       "Apr-24",
@@ -114,6 +112,96 @@ const FinanceDashboard = () => {
       "Mar-26",
     ],
   };
+  //-----------------IncomeData---------------//
+  const monthWiseIncome = {};
+
+  // Flatten all income arrays from all sources
+  const incomeSources = revenueExpenseData.flatMap((item) => {
+    const income = item.income || {};
+    return [
+      ...(income.meetingRevenue || []),
+      ...(income.alternateRevenues || []),
+      ...(income.virtualOfficeRevenues || []),
+      ...(income.workationRevenues || []),
+      ...(income.coworkingRevenues || []),
+    ];
+  });
+
+  // Process each income item
+  incomeSources.forEach((income) => {
+    // Pick the most relevant date for grouping by month
+    const rawDate =
+      income.date || income.rentDate || income.invoiceCreationDate;
+    // income.paDueDate ||
+    // income.dueTerm;
+
+    if (!rawDate) return;
+
+    const monthKey = dayjs(rawDate).format("MMM-YY");
+
+    // Skip excluded months
+    if (excludedMonths.includes(monthKey)) return;
+
+    const amount = income.taxableAmount || income.revenue || 0;
+
+    if (!monthWiseIncome[monthKey]) {
+      monthWiseIncome[monthKey] = {
+        month: monthKey,
+        actualIncome: 0,
+        incomes: [],
+      };
+    }
+
+    monthWiseIncome[monthKey].actualIncome += amount;
+    monthWiseIncome[monthKey].incomes.push(income);
+  });
+
+  // Convert to array and sort
+  const transformedIncomes = Object.values(monthWiseIncome).sort((a, b) =>
+    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
+  );
+
+  const incomeMap = {};
+  transformedIncomes.forEach((item) => {
+    incomeMap[item.month] = item.actualIncome;
+  });
+
+  const incomeData = Object.entries(yearCategories).map(
+    ([fiscalYear, months]) => ({
+      name: "Income",
+      group: fiscalYear,
+      data: months.map((month) => incomeMap[month] || 0),
+    })
+  );
+
+  //-----------------IncomeData---------------//
+
+  //------------------Expensedata----------------------//
+  testExpense.forEach((exp) => {
+    const monthKey = dayjs(exp.dueDate).format("MMM-YY"); // e.g., "Apr-24"
+
+    // Skip excluded months
+    if (excludedMonths.includes(monthKey)) return;
+
+    if (!monthWiseExpenses[monthKey]) {
+      monthWiseExpenses[monthKey] = {
+        month: monthKey,
+        actualExpense: 0,
+        projectedExpense: 0,
+        expenses: [],
+      };
+    }
+
+    monthWiseExpenses[monthKey].actualExpense += exp.actualAmount || 0;
+    monthWiseExpenses[monthKey].projectedExpense += exp.projectedAmount || 0;
+    monthWiseExpenses[monthKey].expenses.push(exp);
+  });
+
+  const transformedExpenses = Object.values(monthWiseExpenses);
+
+  const sortedExpenses = transformedExpenses.sort((a, b) =>
+    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
+  );
 
   // Build map of month => actualExpense
   const expenseMap = {};
@@ -129,6 +217,8 @@ const FinanceDashboard = () => {
       data: months.map((month) => expenseMap[month] || 0),
     })
   );
+  //------------------Expensedata----------------------//
+
   const lastMonthRaw = expenseData.filter(
     (item) => item.group === "FY 2024-25"
   );
@@ -139,24 +229,7 @@ const FinanceDashboard = () => {
 
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [
-    {
-      name: "Income",
-      group: "FY 2024-25",
-      data: [
-        1550000, // Apr
-        1620000, // May
-        1750000, // Jun
-        1900000, // Jul
-        2100000, // Aug
-        2250000, // Sep
-        2450000, // Oct
-        2400000, // Nov
-        2300000, // Dec
-        2650000, // Jan
-        2850000, // Feb
-        3100000, // Mar
-      ],
-    },
+    ...incomeData,
     {
       name: "Income",
       group: "FY 2025-26",
@@ -633,7 +706,7 @@ const FinanceDashboard = () => {
           options={incomeExpenseOptions}
           chartId={"bargraph-finance-income"}
           title={"BIZNest FINANCE INCOME V/S EXPENSE"}
-          TitleAmountGreen={`INR 53,29,345`}
+          TitleAmountGreen={`INR ${inrFormat(totalIncomeAmount)} `}
           TitleAmountRed={`INR ${inrFormat(totalExpense)}`}
         />,
       ],

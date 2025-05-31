@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { Suspense, useEffect } from "react";
 import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
@@ -9,15 +9,164 @@ import WidgetSection from "../../../components/WidgetSection";
 import DataCard from "../../../components/DataCard";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import MuiTable from "../../../components/Tables/MuiTable";
-import { Chip } from "@mui/material";
+import { Box, Chip, Skeleton } from "@mui/material";
 import DonutChart from "../../../components/graphs/DonutChart";
 import { useNavigate } from "react-router-dom";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { transformBudgetData } from "../../../utils/transformBudgetData";
+import { useQuery } from "@tanstack/react-query";
 
 const ItDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
+
+   const axios = useAxiosPrivate();
+  const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
+    queryKey: ["maintainance-budget"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798baa8e469e809084e2497
+            `
+        );
+        return response.data?.allBudgets;
+      } catch (error) {
+        throw new Error("Error fetching data");
+      }
+    },
+  });
+
+  const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
+  const totalExpense = hrBarData?.projectedBudget?.reduce(
+    (sum, val) => sum + (val || 0),
+    0
+  );
+
+  const expenseOptions = {
+    chart: {
+      type: "bar",
+      animations: { enabled: false },
+      toolbar: { show: false },
+
+      stacked: true,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+      events: {
+        dataPointSelection: () => {
+          navigate("finance/budget");
+        },
+      },
+    },
+    colors: ["#54C4A7", "#EB5C45"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+        borderRadiusApplication: "none",
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      // formatter: (val) => inrFormat(val),
+      // formatter: (val) => {
+      //   const scaled = val / 100000; // Scale from actual to "xx.xx" format
+      //   return scaled.toFixed(2); // Keep two digits after decimal
+      // },
+      // formatter: (val) => {
+      //   const scaled = Math.round((val / 100000) * 100) / 100;
+      //   return Number.isInteger(scaled) ? scaled.toFixed(0) : scaled.toFixed(2);
+      // },
+
+      // formatter: (val) => {
+      //   return val.toLocaleString("en-IN"); // Formats number with commas (Indian style)
+      // },
+      formatter: (val) => {
+        return Math.round(val).toLocaleString("en-IN");
+      },
+
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+      offsetY: -22,
+    },
+    xaxis: {
+      title: {
+        text: "  ",
+      },
+    },
+    yaxis: {
+      // max: 3000000,
+      title: { text: "Amount In Lakhs (INR)" },
+      labels: {
+        formatter: (val) => `${Math.round(val / 100000)}`,
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
+
+    tooltip: {
+      enabled: false,
+      // y: {
+      //   formatter: (val, { seriesIndex, dataPointIndex }) => {
+      //     const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
+      //     // return `${rawData} Tasks`;
+      //     return `HR Expense: INR ${rawData.toLocaleString("en-IN")}`;
+      //   },
+      // },
+      custom: function ({ series, seriesIndex, dataPointIndex }) {
+        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
+        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
+        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
+        //     </div>`;
+        return `
+            <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
+        
+              <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
+                <div><strong>HR Expense:</strong></div>
+                <div style="width: 10px;"></div>
+             <div style="text-align: left;">INR ${Math.round(
+               rawData
+             ).toLocaleString("en-IN")}</div>
+
+              </div>
+     
+            </div>
+          `;
+      },
+    },
+  };
+
+  const expenseRawSeries = [
+    {
+      name: "Expense",
+      group: "FY 2024-25",
+      data: hrBarData?.utilisedBudget,
+    },
+    {
+      name: "Expense",
+      group: "FY 2025-26",
+      data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    },
+  ];
+
+  const totalUtilised =
+    hrBarData?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+  useEffect(() => {
+    setIsSidebarOpen(true);
+  }, []); // Empty dependency array ensures this runs once on mount
+
 
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -322,49 +471,28 @@ const ItDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection border title={"Budget v/s Achievements"}>
-          <BudgetGraph
-            utilisedData={utilisedData}
-            maxBudget={maxBudget}
-            route={"finance/budget"}
-          />
-          <hr />
-          <WidgetSection layout={3} padding>
-            <DataCard
-              data={"INR " + inrFormat("4000000")}
-              title={"Projected"}
-              route={"/app/dashboard/IT-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            />
-            <DataCard
-              data={"INR " + inrFormat("3500000")}
-              title={"Actual"}
-              route={"/app/dashboard/IT-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            />
-            <DataCard
-              data={"INR " + inrFormat(60000)}
-              title={"Requested"}
-              route={"/app/dashboard/IT-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
+        <Suspense
+          fallback={
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {/* Simulating chart skeleton */}
+              <Skeleton variant="text" width={200} height={30} />
+              <Skeleton variant="rectangular" width="100%" height={300} />
+            </Box>
+          }
+        >
+          <WidgetSection normalCase layout={1} padding>
+            <YearlyGraph
+              data={expenseRawSeries}
+              responsiveResize
+              chartId={"bargraph-hr-expense"}
+              options={expenseOptions}
+              title={"BIZ Nest MAINTENANCE DEPARTMENT EXPENSE"}
+              titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
+                "en-IN"
+              )}`}
             />
           </WidgetSection>
-        </WidgetSection>,
+        </Suspense>,
       ],
     },
     {

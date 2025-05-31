@@ -17,6 +17,7 @@ const {
   getCompletedTasks,
   getMyCompletedTasks,
   getMyAssignedTasks,
+  getTodayDeptTasks,
 } = require("../controllers/tasksControllers/tasksControllers");
 
 router.post("/create-tasks", createTasks);
@@ -27,6 +28,7 @@ router.get("/get-depts-tasks", getAllDeptTasks);
 router.get("/get-team-tasks", getTeamMembersTasks);
 router.patch("/update-task-status/:id", updateTaskStatus);
 router.get("/get-today-tasks", getMyTodayTasks);
+router.get("/get-today-dept-tasks", getTodayDeptTasks);
 router.get("/get-assigned-tasks", getAssignedTasks);
 router.patch("/update-task/:id", updateTask);
 router.patch("/complete-tasks/", completeTasks);

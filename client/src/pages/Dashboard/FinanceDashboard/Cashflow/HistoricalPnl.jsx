@@ -530,11 +530,11 @@ const HistoricalPnl = () => {
   const incomeExpenseData = [
     {
       name: "Income",
-      data: [25174680, 31929380, 31929380], // in ₹
+      data: [25174680, 31929380, 31929380, 42222284], // in ₹
     },
     {
       name: "Expense",
-      data: [24168780, 33899540, 33899540], // in ₹
+      data: [24168780, 33899540, 33899540, 58672272], // in ₹
     },
   ];
 
@@ -601,10 +601,7 @@ const HistoricalPnl = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection
-          border
-          title={"Historical P&L 2019-25"}
-          >
+        <WidgetSection border title={"Historical P&L 2019-25"}>
           <NormalBarGraph
             data={incomeExpenseData}
             options={incomeExpenseOptions}

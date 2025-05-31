@@ -170,8 +170,8 @@ const   MyProfile = ({ handleClose, pageTitle }) => {
   return (
     <div>
       <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary">
-          Profile Settings
+        <span className="text-title font-pmedium text-primary uppercase">
+          My profile
         </span>
         <PrimaryButton
           title={isEditable ? "Cancel" : "Edit"}

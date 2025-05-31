@@ -163,7 +163,7 @@ const Reviews = () => {
   return (
     <>
       <div>
-        <WidgetSection layout={3}>
+        <WidgetSection layout={2}>
           <DataCard
             data={reviews.length}
             title="Total"
@@ -174,7 +174,7 @@ const Reviews = () => {
             title="Average"
             description=" Ratings"
           />
-          <DataCard data="10.0k" title="Total" description="Reviews Count" />
+          {/* <DataCard data="10.0k" title="Total" description="Reviews Count" /> */}
         </WidgetSection>
 
         <div className="p-6">

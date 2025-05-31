@@ -552,7 +552,7 @@ const AdminClientOnboard = () => {
         </div>
 
         {/* Submit Button */}
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-4 ">
           <PrimaryButton
             type="submit"
             title={"Submit"}

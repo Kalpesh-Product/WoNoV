@@ -24,7 +24,9 @@ const MeetingSettings = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient(); // React Query client to refetch rooms
   const [openModal, setOpenModal] = useState(false);
-  const { control, reset, handleSubmit } = useForm();
+  const { control, reset, handleSubmit, watch } = useForm();
+  const watchLocation = watch("location"); // 👈 Add this
+
   const [selectedFile, setSelectedFile] = useState(null);
   const { auth } = useAuth();
   const inputRef = useRef();
@@ -155,27 +157,22 @@ const MeetingSettings = () => {
       handleCloseModal();
       reset(); // Reset form fields
       inputRef.current.value = null;
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to add room.");
-    },
+    }
   });
 
   // Handle form submission
   // Handle form submission
   const onSubmit = async (data) => {
-    // Prepare FormData for multipart request
     const formData = new FormData();
     formData.append("name", data.roomName);
     formData.append("seats", data.seats);
     formData.append("description", data.description);
-    formData.append("location", data.location); // Default location
+    formData.append("location", data.unit); // ✅ Use unit as location like Edit form
 
     if (selectedFile) {
       formData.append("room", selectedFile);
     }
 
-    // Make API request
     createRoomMutation.mutate(formData);
   };
 
@@ -270,12 +267,12 @@ const MeetingSettings = () => {
               <Controller
                 name="roomName"
                 control={control}
-                defaultValue={""}
+                defaultValue=""
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label={"Room Name"}
-                    variant={"outlined"}
+                    label="Room Name"
+                    variant="outlined"
                     size="small"
                     fullWidth
                   />
@@ -284,12 +281,12 @@ const MeetingSettings = () => {
               <Controller
                 name="seats"
                 control={control}
-                defaultValue={""}
+                defaultValue=""
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label={"Seats"}
-                    variant={"outlined"}
+                    label="Seats"
+                    variant="outlined"
                     size="small"
                     fullWidth
                   />
@@ -298,14 +295,14 @@ const MeetingSettings = () => {
               <Controller
                 name="description"
                 control={control}
-                defaultValue={""}
+                defaultValue=""
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label={"Description"}
-                    variant={"outlined"}
+                    label="Description"
                     multiline
                     rows={5}
+                    variant="outlined"
                     fullWidth
                   />
                 )}
@@ -321,7 +318,7 @@ const MeetingSettings = () => {
                       <MenuItem value="">Select Location</MenuItem>
                       {auth.user.company.workLocations.length > 0 ? (
                         auth.user.company.workLocations.map((loc) => (
-                          <MenuItem key={loc._id} value={loc.buildingName}>
+                          <MenuItem key={loc._id} value={loc._id}>
                             {loc.buildingName}
                           </MenuItem>
                         ))
@@ -330,6 +327,38 @@ const MeetingSettings = () => {
                       )}
                     </Select>
                   </FormControl>
+                )}
+              />
+
+              <Controller
+                name="unit"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    select
+                    size="small"
+                    label="Select Unit"
+                    placeholder="ST 701 A"
+                  >
+                    <MenuItem value="" disabled>
+                      Select Unit
+                    </MenuItem>
+                    {isUnitsPending ? (
+                      <MenuItem disabled>
+                        <CircularProgress size={20} />
+                      </MenuItem>
+                    ) : (
+                      unitsData
+                        .filter((item) => item.building?._id === watchLocation)
+                        .map((item) => (
+                          <MenuItem key={item._id} value={item._id}>
+                            {item.unitNo}
+                          </MenuItem>
+                        ))
+                    )}
+                  </TextField>
                 )}
               />
 
@@ -375,6 +404,7 @@ const MeetingSettings = () => {
           </form>
         </div>
       </MuiModal>
+
       <MuiModal
         open={openEditModal}
         onClose={handleCloseEditModal}

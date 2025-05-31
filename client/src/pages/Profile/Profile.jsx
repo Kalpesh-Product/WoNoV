@@ -48,7 +48,7 @@ const Profile = () => {
       <div className="py-4 bg-white">
         {activeTab === 0 && (
           <div className="">
-            <MyProfile pageTitle={"Profile settings"} />
+            <MyProfile pageTitle={"MY PROFILE"} />
           </div>
         )}
         {/* {activeTab === 1 && (

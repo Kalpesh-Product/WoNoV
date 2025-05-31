@@ -168,9 +168,12 @@ const TicketReports = () => {
           <DetalisFormatted
             title={"Assignees"}
             detail={
-              Array.isArray(selectedMeeting?.assignees.length > 0 ? selectedMeeting?.assignees  : "None")
-                ? selectedMeeting.assignees.join(", ")
-                : "None"
+             Array.isArray(selectedMeeting?.assignees) && selectedMeeting.assignees.length > 0
+  ? selectedMeeting.assignees.map(
+      (assignee) =>assignee
+    ).join(", ")
+  : "None"
+
             }
           />
           <DetalisFormatted
@@ -179,7 +182,7 @@ const TicketReports = () => {
           />
           <DetalisFormatted
             title={"Rejected By"}
-            detail={selectedMeeting.rejectedBy || "None"}
+            detail={selectedMeeting?.rejectedBy || "None"}
           />
         </div>
         ) : <CircularProgress />}

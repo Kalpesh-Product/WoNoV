@@ -2,50 +2,41 @@ import AgTable from "../../components/AgTable";
 import { Chip } from "@mui/material";
 import PrimaryButton from "../../components/PrimaryButton";
 import { useState } from "react";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
+import humanTime from "../../utils/humanTime";
+import humanDate from "../../utils/humanDateForamt";
+import MuiModal from "../../components/MuiModal";
+import DetalisFormatted from "../../components/DetalisFormatted";
 
 const VisitorReports = () => {
-  const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedVisitor, setSelectedVisitor] = useState([]);
+  const [selectedVisitor, setSelectedVisitor] = useState(null);
+  const axios = useAxiosPrivate();
+
+  const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
+    queryKey: ["visitor-reports"],
+    queryFn: async () => {
+      const response = await axios.get("/api/visitors/fetch-visitors");
+      return response.data;
+    },
+  });
+
+  const handleDetailsClick = (visitor) => {
+    setSelectedVisitor(visitor);
+    setIsModalOpen(true);
+  };
 
   const meetingReportsColumn = [
     { field: "srNo", headerName: "Sr No" },
     { field: "name", headerName: "Name" },
-    { field: "department", headerName: "Address" },
-    { field: "date", headerName: "Email" },
-    { field: "startTime", headerName: "Phone No" },
-    { field: "endTime", headerName: "Purpose" },
-    { field: "duration", headerName: "To Meet" },
-    { field: "creditsUsed", headerName: "Check In" },
+    { field: "address", headerName: "Address" },
+    { field: "email", headerName: "Email" },
+    { field: "phone", headerName: "Phone No" },
+    { field: "purpose", headerName: "Purpose" },
+    { field: "toMeet", headerName: "To Meet" },
+    { field: "checkIn", headerName: "Check In" },
     { field: "checkOut", headerName: "Check Out" },
-    // {
-    //   field: "status",
-    //   headerName: "Actions",
-    //   cellRenderer: (params) => {
-    //     const statusColorMap = {
-    //       "View Details": { backgroundColor: "#1e3d73", color: "#ffffff" }, // Light blue bg, dark blue font
-    //       Cancelled: { backgroundColor: "#f7e1e1", color: "#a5333e" }, // Light red bg, dark red font
-    //       Upcoming: { backgroundColor: "#fcf7be", color: "#b87e33" },
-    //     };
-
-    //     const { backgroundColor, color } = statusColorMap[params.value] || {
-    //       backgroundColor: "gray",
-    //       color: "white",
-    //     };
-    //     return (
-    //       <>
-    //         <Chip
-    //           label={params.value}
-    //           style={{
-    //             backgroundColor,
-    //             color,
-    //           }}
-    //         />
-    //       </>
-    //     );
-    //   },
-    // },
-
     {
       field: "actions",
       headerName: "Actions",
@@ -53,91 +44,84 @@ const VisitorReports = () => {
         <div className="p-2">
           <PrimaryButton
             title={"View Details"}
-            handleSubmit={() => {
-              handleDetailsClick({ ...params.data });
-            }}
+            handleSubmit={() => handleDetailsClick(params.data)}
           />
         </div>
       ),
     },
   ];
 
-  const handleDetailsClick = (asset) => {
-    setSelectedVisitor(asset);
-    setModalMode("view");
-    setIsModalOpen(true);
-  };
-
-  const rows = [
-    {
-      srNo: 1,
-      name: "Sam",
-      department: "Mapusa",
-      date: "test.email@gmail.com",
-      startTime: "9876543201",
-      endTime: "Client Demo",
-      duration: "Abrar Shaikh",
-      creditsUsed: "09:00 AM",
-      status: "View Details",
-    },
-    {
-      srNo: 2,
-      name: "Alice",
-      department: "Mapusa",
-      date: "test.email@gmail.com",
-      startTime: "9876543201",
-      endTime: "Client Demo",
-      duration: "Abrar Shaikh",
-      creditsUsed: "09:00 AM",
-      status: "View Details",
-    },
-    {
-      srNo: 3,
-      name: "Bob",
-      department: "Mapusa",
-      date: "test.email@gmail.com",
-      startTime: "9876543201",
-      endTime: "Client Demo",
-      duration: "Abrar Shaikh",
-      creditsUsed: "09:00 AM",
-      status: "View Details",
-    },
-    {
-      srNo: 4,
-      name: "Emma",
-      department: "Mapusa",
-      date: "test.email@gmail.com",
-      startTime: "9876543201",
-      endTime: "Client Demo",
-      duration: "Abrar Shaikh",
-      creditsUsed: "09:00 AM",
-      status: "View Details",
-    },
-    {
-      srNo: 5,
-      name: "John",
-      department: "Mapusa",
-      date: "test.email@gmail.com",
-      startTime: "9876543201",
-      endTime: "Client Demo",
-      duration: "Abrar Shaikh",
-      creditsUsed: "09:00 AM",
-      status: "View Details",
-    },
-  ];
+  // Format table rows for AgTable
+  const rows = visitorsData.map((visitor, index) => ({
+    srNo: index + 1,
+    name: `${visitor.firstName || ""} ${visitor.lastName || ""}`,
+    address: visitor.address || "-",
+    email: visitor.email || "-",
+    phone: visitor.phoneNumber || "-",
+    purpose: visitor.purposeOfVisit || "-",
+    toMeet: visitor.toMeet?.firstName || "Kalpesh Naik",
+    checkIn: humanTime(visitor.checkIn),
+    checkOut: humanTime(visitor.checkOut),
+    rawData: visitor, // Pass full object for modal
+  }));
 
   return (
     <div className="flex flex-col gap-8 p-4">
       <div>
         <AgTable
+          exportData
           search={true}
-          searchColumn={"Name"}
-          buttonTitle={"Export"}
+          searchColumn={"name"}
           tableTitle={"Visitor Reports"}
           data={rows}
           columns={meetingReportsColumn}
+          loading={isVisitorsData}
         />
       </div>
+
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Visitor Details"
+      >
+        {selectedVisitor && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <DetalisFormatted title="Name" detail={selectedVisitor.name} />
+            <DetalisFormatted title="Email" detail={selectedVisitor.email} />
+            <DetalisFormatted title="Phone" detail={selectedVisitor.phone} />
+            <DetalisFormatted
+              title="Address"
+              detail={selectedVisitor.address}
+            />
+            <DetalisFormatted title="To Meet" detail={selectedVisitor.toMeet} />
+            <DetalisFormatted
+              title="Purpose"
+              detail={selectedVisitor.purpose}
+            />
+            <DetalisFormatted
+              title="Check In"
+              detail={selectedVisitor.checkIn}
+            />
+            <DetalisFormatted
+              title="Check Out"
+              detail={selectedVisitor.checkOut}
+            />
+            <DetalisFormatted
+              title="Date of Visit"
+              detail={humanDate(selectedVisitor.rawData?.dateOfVisit)}
+            />
+            {selectedVisitor.rawData?.image?.url && (
+              <div className="lg:col-span-2">
+                <img
+                  src={selectedVisitor.rawData.image.url}
+                  alt="Visitor Attachment"
+                  className="max-w-full max-h-96 rounded border"
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </MuiModal>
     </div>
   );
 };

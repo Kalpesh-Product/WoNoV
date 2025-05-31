@@ -13,8 +13,8 @@ const ProfileLayout = () => {
     { label: "Permissions", path: "permissions" },
     { label: "HR", path: "HR" },
     { label: "My Assets", path: "my-assets" },
-    { label: "Meetings", path: "my-meetings" },
-    { label: "Tickets History", path: "tickets-history" },
+    { label: "My Meetings", path: "my-meetings" },
+    { label: "My Tickets History", path: "tickets-history" },
   ];
 
   // Redirect to "first tab" if the current path is "/module/first-page"

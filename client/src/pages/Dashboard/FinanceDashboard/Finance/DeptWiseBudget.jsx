@@ -77,7 +77,7 @@ const DeptWiseBudget = () => {
       departmentId: item.department?._id,
       expanseType: item.expanseType,
       amount: item.actualAmount,
-      projectedAmount: item.projectedAmount.toFixed(2),
+      projectedAmount: item?.projectedAmount?.toFixed(2),
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       status: item.status,
     });

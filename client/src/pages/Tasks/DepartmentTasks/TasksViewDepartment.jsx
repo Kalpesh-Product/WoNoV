@@ -23,6 +23,7 @@ import {
   TimePicker,
 } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 
 const TasksViewDepartment = () => {
   const axios = useAxiosPrivate();
@@ -30,6 +31,9 @@ const TasksViewDepartment = () => {
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
+  const [openMultiModal, setOpenMultiModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState({});
+  const [modalMode, setModalMode] = useState("");
 
   const {
     handleSubmit: submitDailyKra,
@@ -44,7 +48,13 @@ const TasksViewDepartment = () => {
       dueTime: null,
     },
   });
-
+  //----------function handlers-------------//
+  const handleViewTask = (data) => {
+    setModalMode("view");
+    setOpenMultiModal(true);
+    setSelectedTask(data);
+  };
+  //----------function handlers-------------//
   //--------------POST REQUEST FOR DAILY KRA-----------------//
   const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
     mutationKey: ["addDailyTasks"],
@@ -122,12 +132,26 @@ const TasksViewDepartment = () => {
       queryKey: ["fetchedCompletedTasks"],
       queryFn: fetchCompletedTasks,
     });
-  const completedEntries = departmentKra.filter(
-    (item) => item.status === "Completed"
-  );
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
-    { headerName: "Task List", field: "taskName", width: 300 },
+    {
+      headerName: "Task List",
+      field: "taskName",
+      width: 300,
+      cellRenderer: (params) => (
+        <div
+          role="button"
+          onClick={() => {
+            setModalMode("view");
+            setSelectedTask(params.data);
+            setOpenMultiModal(true);
+          }}
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value}
+        </div>
+      ),
+    },
     { headerName: "Assigned By", field: "assignedBy", width: 300 },
     { headerName: "Assigned Date", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
@@ -172,7 +196,7 @@ const TasksViewDepartment = () => {
             className="p-2"
           >
             <PrimaryButton
-              title={<FaCheck />}
+              title={"Mark As Done"}
               disabled={!params.node.selected}
             />
           </div>
@@ -188,7 +212,7 @@ const TasksViewDepartment = () => {
     { headerName: "Assigned Date", field: "assignedDate" },
     { headerName: "Completed Date", field: "completedDate" },
     { headerName: "Completed Time", field: "completedTime" },
-    { headerName: "Due Time", field: "dueTime" },
+    // { headerName: "Due Time", field: "dueTime" },
     { headerName: "Due Date", field: "dueDate" },
     {
       field: "status",
@@ -237,8 +261,11 @@ const TasksViewDepartment = () => {
                   srno: index + 1,
                   id: item._id,
                   taskName: item.taskName,
+                  description: item.description,
                   assignedDate: item.assignedDate,
                   status: item.status,
+                  dueDate: item.dueDate,
+                  dueTime: humanTime(item.dueTime),
                   assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                 }))}
               dateColumn={"assignedDate"}
@@ -254,7 +281,6 @@ const TasksViewDepartment = () => {
         {!departmentLoading ? (
           <WidgetSection padding>
             <DateWiseTable
-              formatTime
               tableTitle={`COMPLETED TASKS`}
               data={
                 completedTasksFetchPending
@@ -263,7 +289,8 @@ const TasksViewDepartment = () => {
                       srno: index + 1,
                       id: item._id,
                       taskName: item.taskName,
-                      assignedDate: (item.assignedDate),
+                      completedBy: item.completedBy,
+                      assignedDate: item.assignedDate,
                       completedDate: humanDate(item.completedDate),
                       completedTime: humanTime(item.completedDate),
                       status: item.status,
@@ -325,12 +352,24 @@ const TasksViewDepartment = () => {
           <Controller
             name="startDate"
             control={control}
-            rules={{ required: "Start date is required" }}
+            rules={{
+              required: "Start date is required",
+              validate: (value) => {
+                if (!value) return true; // already handled by required
+                const today = dayjs().startOf("day");
+                const selected = dayjs(value);
+                if (selected.isBefore(today)) {
+                  return "Start date cannot be in the past.";
+                }
+                return true;
+              },
+            }}
             render={({ field, fieldState }) => (
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
                   {...field}
                   label="Start Date"
+                  disablePast
                   format="DD-MM-YYYY"
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) =>
@@ -351,13 +390,30 @@ const TasksViewDepartment = () => {
           <Controller
             name="endDate"
             control={control}
-            rules={{ required: "End date is required" }}
+            rules={{
+              validate: (value) => {
+                if (!value) return "End date is required";
+                const selected = dayjs(value);
+                const today = dayjs().startOf("day");
+                if (!selected.isValid()) return "Invalid date selected";
+                if (selected.isBefore(today))
+                  return "End date cannot be in the past.";
+                if (
+                  control._formValues.startDate &&
+                  selected.isBefore(dayjs(control._formValues.startDate))
+                ) {
+                  return "End date cannot be before start date.";
+                }
+                return true;
+              },
+            }}
             render={({ field, fieldState }) => (
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
                   {...field}
                   label="End Date"
                   format="DD-MM-YYYY"
+                  disablePast
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) =>
                     field.onChange(date ? date.toISOString() : null)
@@ -404,6 +460,70 @@ const TasksViewDepartment = () => {
             disabled={isAddKraPending}
           />
         </form>
+      </MuiModal>
+
+      <MuiModal
+        open={openMultiModal}
+        onClose={() => setOpenMultiModal(false)}
+        title={"Add Task"}
+      >
+        {modalMode === "view" && selectedTask && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <DetalisFormatted
+                title={"Task"}
+                detail={selectedTask?.taskName}
+              />
+            </div>
+            <div className="col-span-2">
+              <DetalisFormatted
+                title={"Description"}
+                detail={selectedTask?.description}
+              />
+            </div>
+            <DetalisFormatted
+              title={"Assigned Date"}
+              detail={humanDate(selectedTask?.assignedDate)}
+            />
+            <DetalisFormatted
+              title={"Due Date"}
+              detail={humanDate(selectedTask?.dueDate)}
+            />
+            <DetalisFormatted
+              title={"Due Time"}
+              detail={selectedTask?.dueTime}
+            />
+            <DetalisFormatted
+              title={"Assigned By"}
+              detail={selectedTask?.assignedBy}
+            />
+
+            <DetalisFormatted title={"Status"} detail={selectedTask?.status} />
+          </div>
+        )}
+        {modalMode === "view-completed" && selectedTask && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <DetalisFormatted title={"Task"} detail={selectedTask?.taskList} />
+            <DetalisFormatted
+              title={"Assigned Date"}
+              detail={humanDate(selectedTask?.assignedDate)}
+            />
+            <DetalisFormatted
+              title={"Due Date"}
+              detail={humanDate(selectedTask?.dueDate)}
+            />
+            <DetalisFormatted
+              title={"Due Time"}
+              detail={selectedTask?.dueTime}
+            />
+            <DetalisFormatted
+              title={"Assigned By"}
+              detail={selectedTask?.assignedBy}
+            />
+
+            <DetalisFormatted title={"Status"} detail={selectedTask?.status} />
+          </div>
+        )}
       </MuiModal>
     </>
   );

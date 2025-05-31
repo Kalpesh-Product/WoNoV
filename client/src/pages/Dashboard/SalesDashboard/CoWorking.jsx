@@ -19,7 +19,7 @@ import YearlyGraph from "../../../components/graphs/YearlyGraph";
 const CoWorking = () => {
   const axios = useAxiosPrivate();
   const { data: coWorkingData = [], isLoading: isCoWorkingLoading } = useQuery({
-    queryKey: ["workationData"],
+    queryKey: ["coWorkingData"],
     queryFn: async () => {
       try {
         const response = await axios.get(`/api/sales/fetch-coworking-revenues`);
@@ -29,11 +29,28 @@ const CoWorking = () => {
       }
     },
   });
+  const fiscalOrder = [
+    "Apr-24",
+    "May-24",
+    "Jun-24",
+    "Jul-24",
+    "Aug-24",
+    "Sep-24",
+    "Oct-24",
+    "Nov-24",
+    "Dec-24",
+    "Jan-25",
+    "Feb-25",
+    "Mar-25",
+  ];
+  const sortedCoWorkingData = [...coWorkingData].sort(
+    (a, b) => fiscalOrder.indexOf(a.month) - fiscalOrder.indexOf(b.month)
+  );
   const series = [
     {
       name: "Actual Revenue",
       group: "FY 2024-25",
-      data: coWorkingData.map((item) =>
+      data: sortedCoWorkingData.map((item) =>
         item.clients?.reduce((sum, c) => sum + c.revenue, 0)
       ),
     },
@@ -62,7 +79,7 @@ const CoWorking = () => {
       offsetY: -22,
     },
     xaxis: {
-      categories: coWorkingData.map((item) => item.month),
+      categories: sortedCoWorkingData.map((item) => item.month),
     },
     yaxis: {
       title: { text: "Amount In Lakhs (INR)" },

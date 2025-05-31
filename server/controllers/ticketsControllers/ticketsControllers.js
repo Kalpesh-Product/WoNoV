@@ -437,7 +437,7 @@ const getTeamMemberTickets = async (req, res, next) => {
         { path: "role", select: "roleTitle" },
         { path: "departments", select: "name" },
       ])
-      .select("firstName middleName lastName");
+      .select("firstName middleName lastName email");
 
     const teamMemberIds = teamMembers.map((member) => member._id);
 
@@ -494,8 +494,10 @@ const getTeamMemberTickets = async (req, res, next) => {
         name: `${member.firstName} ${member.middleName || ""} ${
           member.lastName
         }`.trim(),
+        _id: member._id,
         department: member.departments.map((dept) => dept.name),
         role: member.role.map((r) => r.roleTitle),
+        email: member.email,
         assignedToday,
         totalassigned,
         totalresolved,
@@ -884,6 +886,7 @@ const ticketData = async (req, res, next) => {
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
         { path: "acceptedBy", select: "firstName lastName email" },
+        { path: "assignees", select: "firstName lastName email" },
         { path: "rejectedBy", select: "firstName lastName email" },
         { path: "company", select: "companyName" },
       ])
