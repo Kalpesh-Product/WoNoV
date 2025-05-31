@@ -135,7 +135,18 @@ const DailyTasks = () => {
   //--------Column configs----------------//
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
-    { headerName: "Task List", field: "taskList", width: 300 },
+    {
+      headerName: "Task List",
+      field: "taskList",
+      width: 300,
+      cellRenderer: (params) => (
+        <div role="button" onClick={() => handleViewTask(params.data)}>
+          <span className="underline text-primary cursor-pointer">
+            {params.value}
+          </span>
+        </div>
+      ),
+    },
     { headerName: "Assigned Date", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
     { headerName: "Due Time", field: "dueTime" },
@@ -168,53 +179,70 @@ const DailyTasks = () => {
         );
       },
     },
-    // {
-    //   headerName: "Actions",
-    //   field: "actions",
-    //   pinned : 'right',
-    //   cellRenderer: (params) => {
-    //     console.log(params.node);
-    //     return (
-    //       <div
-    //         role="button"
-    //         onClick={() => updateMonthlyKpa(params.data.id)}
-    //         className="p-2"
-    //       >
-    //         <PrimaryButton
-    //           disabled={!params.node.selected}
-    //           title={<FaCheck />}
-    //         />
-    //       </div>
-    //     );
-    //   },
-    // },
     {
-      field: "actions",
       headerName: "Actions",
+      field: "actions",
       pinned: "right",
+      cellRenderer: (params) => {
+        console.log(params.node);
+        return (
+          <div
+            role="button"
+            onClick={() => updateMonthlyKpa(params.data.id)}
+            className="p-2"
+          >
+            <PrimaryButton
+              disabled={!params.node.selected}
+              title={"Mark As Done"}
+            />
+          </div>
+        );
+      },
+    },
+    // {
+    //   field: "actions",
+    //   headerName: "Actions",
+    //   pinned: "right",
+    //   cellRenderer: (params) => (
+    //     <div className="flex gap-2">
+    //       <ThreeDotMenu
+    //         disabled={!params.node.selected}
+    //         rowId={params.data.id}
+    //         menuItems={[
+    //           {
+    //             label: "View Details",
+    //             onClick: () => handleViewTask(params.data),
+    //           },
+    //           {
+    //             label: "Mark As Done",
+    //             onClick: () => updateMonthlyKpa(params.data.id),
+    //           },
+    //         ]}
+    //       />
+    //     </div>
+    //   ),
+    // },
+  ];
+  const completedColumns = [
+    { headerName: "Sr no", field: "srno", width : 100, sort: "desc" },
+    {
+      headerName: "Task List",
+      field: "taskList",
+      flex : 1,
       cellRenderer: (params) => (
-        <div className="flex gap-2">
-          <ThreeDotMenu
-            disabled={!params.node.selected}
-            rowId={params.data.id}
-            menuItems={[
-              {
-                label: "View Details",
-                onClick: () => handleViewTask(params.data),
-              },
-              {
-                label: "Mark As Done",
-                onClick: () => updateMonthlyKpa(params.data.id),
-              },
-            ]}
-          />
+        <div
+          role="button"
+          onClick={() => {
+            setModalMode("view-completed");
+            setSelectedTask(params.data);
+            setOpenModal(true);
+          }}
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value}
         </div>
       ),
     },
-  ];
-  const completedColumns = [
-    { headerName: "Sr no", field: "srno", flex: 1, sort: "desc" },
-    { headerName: "Task List", field: "taskList", width: 300 },
     // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
     {
@@ -245,24 +273,6 @@ const DailyTasks = () => {
           </>
         );
       },
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      pinned: "right",
-      cellRenderer: (params) => (
-        <div
-          role="button"
-          onClick={() => {
-            setModalMode("view-completed");
-            setSelectedTask(params.data);
-            setOpenModal(true);
-          }}
-          className="bg-white p-2 rounded-full hover:bg-borderGray w-fit"
-        >
-          <MdOutlineRemoveRedEye />
-        </div>
-      ),
     },
   ];
   //--------Column configs----------------//
