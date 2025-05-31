@@ -618,7 +618,13 @@ const averageBookingOptions = {
   const roomMap = new Map()
   const bookedRoomHours = meetingsData.forEach((room)=>{
 
-    
+    const roomName = room.bookedRoom
+
+    if(!roomMap.get(roomName)){
+      roomMap.set({roomName,hours:0})
+    }
+
+    // if(roomMa)
   })
 
   // Calculate occupancy percentage
