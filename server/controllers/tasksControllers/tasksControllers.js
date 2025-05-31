@@ -427,9 +427,9 @@ const getMyAssignedTasks = async (req, res, next) => {
     const transformedTasks = tasks.map((task) => {
       return {
         ...task,
-        dueDate: formatDate(task.dueDate),
+        dueDate: task.dueDate,
         dueTime: task.dueTime ? task.dueTime : "06:30 PM",
-        assignedDate: formatDate(task.assignedDate),
+        assignedDate: task.assignedDate,
       };
     });
 
@@ -462,9 +462,9 @@ const getCompletedTasks = async (req, res, next) => {
     const transformedTasks = tasks.map((task) => {
       return {
         ...task,
-        dueDate: formatDate(task.dueDate),
+        dueDate: task.dueDate,
         dueTime: task.dueTime ? task.dueTime : "06:30 PM",
-        assignedDate: formatDate(task.assignedDate),
+        assignedDate: task.assignedDate,
       };
     });
 
