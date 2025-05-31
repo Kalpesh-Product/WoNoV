@@ -23,6 +23,7 @@ import MuiModal from "../../components/MuiModal";
 import { queryClient } from "../../main";
 import CustomRating from "../../components/CustomRating";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import humanDate from "../../utils/humanDateForamt";
 
 const BookMeetings = () => {
   // ------------------------------Initializations ------------------------------------//
@@ -340,7 +341,7 @@ const BookMeetings = () => {
                   id: index + 1,
                   meetingId: meeting._id,
                   agenda: meeting.agenda,
-                  date: meeting.date,
+                  date: humanDate(meeting.date),
                   roomName: meeting.roomName,
                   reviews: meeting.reviews,
                   location: meeting.location
