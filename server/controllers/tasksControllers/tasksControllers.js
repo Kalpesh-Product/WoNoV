@@ -169,9 +169,10 @@ const updateTaskStatus = async (req, res, next) => {
       );
     }
 
+    const currDate = new Date();
     const updatedTask = await Task.findByIdAndUpdate(
       id,
-      { status: "Completed", completedBy: user },
+      { status: "Completed", completedBy: user, completedDate: currDate },
       { new: true, runValidators: true }
     );
 
