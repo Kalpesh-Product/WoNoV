@@ -10,7 +10,7 @@ const TaskReportLayout = () => {
   const tabs = [
     { label: "My Task Reports", path: "my-task-reports" },
     { label: "Assigned Task Reports", path: "assigned-task-reports" },
-    { label: "Department Task Reports", path: "department-task-reports" },
+    // { label: "Department Task Reports", path: "department-task-reports" },
   ];
 
   // Redirect to "assets-categories" if the current path is "/assets/categories"

@@ -26,6 +26,10 @@ const PerformanceKra = () => {
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const [selectedKra, setSelectedKra] = useState(null);
+  const isTop =
+    auth.user.departments.map((item) => item._id)[0] ===
+    "67b2cf85b9b6ed5cedeb9a2e";
+  console.log("ISTOP", isTop);
   useEffect(() => {
     console.log("Refreshed", department);
     queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
@@ -123,56 +127,49 @@ const PerformanceKra = () => {
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
     { headerName: "KRA List", field: "taskName", flex: 1 },
-    // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "DueTime", field: "dueTime" },
     {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => {
         const statusColorMap = {
-          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-          InProgress: { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
-          resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-          open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
-          Completed: { backgroundColor: "#16f8062c", color: "#00731b" }, // Light gray bg, dark gray font
+          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
+          InProgress: { backgroundColor: "#ADD8E6", color: "#00008B" },
+          resolved: { backgroundColor: "#90EE90", color: "#006400" },
+          open: { backgroundColor: "#E6E6FA", color: "#4B0082" },
+          Completed: { backgroundColor: "#16f8062c", color: "#00731b" },
         };
 
         const { backgroundColor, color } = statusColorMap[params.value] || {
           backgroundColor: "gray",
           color: "white",
         };
-        return (
-          <>
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-          </>
-        );
+
+        return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-    {
-      headerName: "Actions",
-      field: "actions",
-      cellRenderer: (params) => {
-        return (
-          <div
-            role="button"
-            onClick={() => updateDailyKra(params.data.id)}
-            className="p-2"
-          >
-            <PrimaryButton
-              title={"Mark As Done"}
-              disabled={!params.node.selected}
-            />
-          </div>
-        );
-      },
-    },
+    ...(!isTop
+      ? [
+          {
+            headerName: "Actions",
+            field: "actions",
+            cellRenderer: (params) => (
+              <div
+                role="button"
+                onClick={() => updateDailyKra(params.data.id)}
+                className="p-2"
+              >
+                <PrimaryButton
+                  title={"Mark As Done"}
+                  disabled={!params.node.selected}
+                />
+              </div>
+            ),
+          },
+        ]
+      : []),
   ];
+
   const completedColumns = [
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "KRA List", field: "taskName", flex: 1 },
@@ -216,7 +213,7 @@ const PerformanceKra = () => {
           <WidgetSection padding layout={1}>
             <DateWiseTable
               formatTime
-              checkbox
+              checkbox={!isTop}
               buttonTitle={"Add Daily KRA"}
               handleSubmit={() => setOpenModal(true)}
               tableTitle={`${department} DEPARTMENT - DAILY KRA`}

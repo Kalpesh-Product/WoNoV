@@ -7,14 +7,13 @@ import humanDate from "../../../utils/humanDateForamt";
 import humanTime from "../../../utils/humanTime";
 
 const MyTaskReports = () => {
-
-  const axios = useAxiosPrivate()
-  const { data: taskList=[], isLoading } = useQuery({
+  const axios = useAxiosPrivate();
+  const { data: taskList = [], isLoading } = useQuery({
     queryKey: ["my-tasks"],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/tasks/my-tasks");
-        return response.data
+        return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
       }
@@ -24,11 +23,11 @@ const MyTaskReports = () => {
   const myTaskReportsColumns = [
     { field: "srNo", headerName: "Sr No", width: 50 },
     { field: "taskName", headerName: "Task", width: 250 },
-    { field: "assignedBy", headerName: "Assigned By",width:300},
-    { field: "assignedDate", headerName: "Assigned Date"},
-    { field: "dueDate", headerName: "Due Date"},
-    { field: "completedDate", headerName: "Completed Date"},
-    { field: "completedTime", headerName: "Completed Time"},
+    { field: "assignedBy", headerName: "Assigned By", width: 300 },
+    { field: "assignedDate", headerName: "Assigned Date" },
+    { field: "dueDate", headerName: "Due Date" },
+    { field: "completedDate", headerName: "Completed Date" },
+    { field: "completedTime", headerName: "Completed Time" },
     // {
     //   field: "priority",
     //   headerName: "Priority",
@@ -65,26 +64,30 @@ const MyTaskReports = () => {
     },
   ];
 
-
   return (
     <div className="flex flex-col gap-8">
       <div>
         <AgTable
           search={true}
           tableTitle={"My Task Reports"}
-          data={isLoading? []:[...taskList.map((task, index)=>({
-            srNo : index + 1,
-            taskName:task.taskName,
-            assignedDate : humanDate(task.assignedDate),
-            dueDate : humanDate(task.dueDate),
-            completedDate : humanDate(task.completedDate),
-            completedTime : humanTime(task.completedDate),
-            assignedBy : `${task.assignedBy.firstName} ${task.assignedBy.lastName}`,
-            priority : task.priority,
-            department : task.department?.name,
-      
-            endDate : task.dueDate,
-          }))]}
+          data={
+            isLoading
+              ? []
+              : [
+                  ...taskList.map((task, index) => ({
+                    srNo: index + 1,
+                    taskName: task.taskName,
+                    assignedDate: humanDate(task.assignedDate),
+                    dueDate: humanDate(task.dueDate),
+                    completedDate: humanDate(task.completedDate),
+                    completedTime: humanTime(task.completedDate),
+                    assignedBy: `${task.assignedBy.firstName} ${task.assignedBy.lastName}`,
+                    priority: task.priority,
+                    department: task.department?.name,
+                    endDate: humanDate(task.dueDate),
+                  })),
+                ]
+          }
           columns={myTaskReportsColumns}
         />
       </div>

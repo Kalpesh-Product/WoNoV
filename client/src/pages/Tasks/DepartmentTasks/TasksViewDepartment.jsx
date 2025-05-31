@@ -254,7 +254,6 @@ const TasksViewDepartment = () => {
         {!departmentLoading ? (
           <WidgetSection padding>
             <DateWiseTable
-              formatTime
               tableTitle={`COMPLETED TASKS`}
               data={
                 completedTasksFetchPending
