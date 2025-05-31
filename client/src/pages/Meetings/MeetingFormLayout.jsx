@@ -43,7 +43,6 @@ const MeetingFormLayout = () => {
   const [open, setOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const locationName = searchParams.get("location") || "";
-  const [selectedUsers, setSelectedUsers] = useState([]);
   const meetingRoomName = searchParams.get("meetingRoom") || "";
   const locationState = useLocation();
   const meetingRoomId = locationState.state?.meetingRoomId || "";
@@ -173,27 +172,28 @@ const MeetingFormLayout = () => {
   //-------------------------------API-------------------------------//
 
   // Transform data inside useEffect
+
+const transformEvents = (bookings) => {
+  if (!Array.isArray(bookings)) return;
+
+  const formattedEvents = bookings.map((booking) => ({
+    id: booking._id,
+    title: "Booked",
+    start: new Date(booking.startTime), // ⬅️ already full datetime
+    end: new Date(booking.endTime),     // ⬅️ already full datetime
+    backgroundColor: "#d3d3d3",
+    borderColor: "#a9a9a9",
+    textColor: "#555",
+    editable: false,
+  }));
+
+  setEvents(formattedEvents);
+};
+
+
   useEffect(() => {
     transformEvents(checkAvailability);
   }, [checkAvailability]); // ✅ Now using checkAvailability directly
-
-  const transformEvents = (bookings) => {
-    if (!Array.isArray(bookings)) return;
-
-    const formattedEvents = bookings.map((booking) => ({
-      id: booking._id,
-      title: "Booked",
-      start: new Date(booking.startDate),
-      end: new Date(booking.endDate),
-      backgroundColor: "#d3d3d3",
-      borderColor: "#a9a9a9",
-      textColor: "#555",
-      editable: false,
-    }));
-
-    setEvents(formattedEvents);
-  };
-
   //-------------------------------API POST-------------------------------//
   const { mutate: createMeeting, isPending: isCreateMeeting } = useMutation({
     mutationKey: ["createMeeting"],
@@ -473,14 +473,14 @@ const MeetingFormLayout = () => {
                     )}
                   />
                 </div>
-                  <TextField
-                    name="internalBooked"
-                    fullWidth
-                    size="small"
-                    value={`${auth.user?.firstName} ${auth.user?.lastName} `}
-                    disabled
-                    label={`${isReceptionist ? "Receptionist" : "Booked By"}`}
-                  />
+                <TextField
+                  name="internalBooked"
+                  fullWidth
+                  size="small"
+                  value={`${auth.user?.firstName} ${auth.user?.lastName} `}
+                  disabled
+                  label={`${isReceptionist ? "Receptionist" : "Booked By"}`}
+                />
 
                 {isReceptionist ? (
                   <div className="col-span-2">
