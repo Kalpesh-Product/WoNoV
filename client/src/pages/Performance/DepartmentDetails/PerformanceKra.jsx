@@ -27,7 +27,7 @@ const PerformanceKra = () => {
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const [selectedKra, setSelectedKra] = useState(null);
   useEffect(() => {
-    console.log("Refreshed",department)
+    console.log("Refreshed", department);
     queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
   }, [department]);
 
