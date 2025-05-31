@@ -1,5 +1,3 @@
-import React from "react";
-import AreaGraph from "../../components/graphs/AreaGraph";
 import { RiArchiveDrawerLine, RiPagesLine } from "react-icons/ri";
 import { MdFormatListBulleted } from "react-icons/md";
 import { CgProfile } from "react-icons/cg";
@@ -230,13 +228,12 @@ const VisitorDashboard = () => {
   // Calculate total and gender-specific counts
   const totalUsers = usersQuery.isLoading ? [] : usersQuery.data.length;
 
-  const maleCount = isVisitorsData
-    ? []
-    : visitorsData.filter((user) => user.gender === "Male").length;
-
-  const femaleCount = usersQuery.isLoading
-    ? []
-    : visitorsData.filter((user) => user.gender === "Female").length;
+  const maleCount = visitorsData.filter(
+    (user) => user.gender?.toLowerCase() === "male"
+  ).length;
+  const femaleCount = visitorsData.filter(
+    (user) => user.gender?.toLowerCase() === "female"
+  ).length;
 
   const genderData = [
     {
@@ -313,34 +310,37 @@ const VisitorDashboard = () => {
   //   { label: "Maintenance", value: 96 },
   // ];
 
-  const departmentCountMap = {};
+    const visitorsThisMonth = visitorsData.filter((visitor) =>
+    dayjs(visitor.dateOfVisit).isSame(dayjs(), "month")
+  );
 
-  visitorsData.forEach((visitor) => {
+  const departmentCountMapMonth = {};
+  visitorsThisMonth.forEach((visitor) => {
     const departmentName = visitor.department?.name ?? "Unknown";
-    departmentCountMap[departmentName] =
-      (departmentCountMap[departmentName] || 0) + 1;
+    departmentCountMapMonth[departmentName] =
+      (departmentCountMapMonth[departmentName] || 0) + 1;
   });
 
-  const departmentWiseAssets = Object.entries(departmentCountMap).map(
+  const departmentWiseAssetsMonth = Object.entries(departmentCountMapMonth).map(
     ([label, value]) => ({ label, value })
   );
 
-  const totalDepartmentAssets = departmentWiseAssets.reduce(
+  const totalDepartmentAssetsMonth = departmentWiseAssetsMonth.reduce(
     (sum, dept) => sum + dept.value,
     0
   );
 
-  const departmentPieDataVX = departmentWiseAssets.map((dept) => ({
-    label: `${dept.label} `,
-    value: ((dept.value / totalDepartmentAssets) * 100).toFixed(1),
+  const departmentPieDataMonth = departmentWiseAssetsMonth.map((dept) => ({
+    label: `${dept.label}`,
+    value: ((dept.value / totalDepartmentAssetsMonth) * 100).toFixed(1),
     count: dept.value,
   }));
 
-  const departmentPieOptionsVX = {
+  const departmentPieOptionsMonth = {
     chart: {
       fontFamily: "Poppins-Regular",
     },
-    labels: departmentPieDataVX.map((item) => item.label),
+    labels: departmentPieDataMonth.map((item) => item.label),
     legend: { show: true },
     dataLabels: {
       enabled: true,
@@ -349,16 +349,91 @@ const VisitorDashboard = () => {
     tooltip: {
       y: {
         formatter: (val, { seriesIndex }) => {
-          const count = departmentPieDataVX[seriesIndex].count;
+          const count = departmentPieDataMonth[seriesIndex].count;
           return `${count} visitors (${val}%)`;
         },
       },
     },
-    colors: ["#003f5c", "#2f4b7c", "#665191", "#a05195", "#d45087"], // Different colors for departments
+    colors: ["#003f5c", "#2f4b7c", "#665191", "#a05195", "#d45087"],
   };
+
+  const today = dayjs().startOf("day");
+
+
+  const todaysVisitors = visitorsData.filter((visitor) =>
+    dayjs(visitor.dateOfVisit).isSame(today, "day")
+  );
+
+  const visitorTypeMapToday = {};
+  todaysVisitors.forEach(({ visitorType }) => {
+    if (!visitorType) return;
+    visitorTypeMapToday[visitorType] =
+      (visitorTypeMapToday[visitorType] || 0) + 1;
+  });
+
+  const visitorTypeRawDataToday = Object.entries(visitorTypeMapToday).map(
+    ([label, count]) => ({ label, count })
+  );
+
+  const totalVisitorCategoriesToday = visitorTypeRawDataToday.reduce(
+    (sum, v) => sum + v.count,
+    0
+  );
+
+  const donutVisitorCategoryDataToday = visitorTypeRawDataToday.map((v) =>
+    parseFloat(((v.count / totalVisitorCategoriesToday) * 100).toFixed(1))
+  );
+  const executiveTasksCountToday = visitorTypeRawDataToday.map((v) => v.count);
+  const labelsToday = visitorTypeRawDataToday.map((v) => v.label);
 
   // -----------------------Department Pie Data End--------------------
   //--------------------------------------------//
+
+  const checkedInCount = visitorsData.filter(
+    (v) => v.checkIn && !v.checkOut
+  ).length;
+
+  const checkedOutCount = visitorsData.filter(
+    (v) => v.checkIn && v.checkOut
+  ).length;
+
+  const checkInPieData = [
+    {
+      label: "Checked Out",
+      value: checkedOutCount,
+      color: "#28a745", // green
+    },
+    {
+      label: "Yet To Check Out",
+      value: checkedInCount,
+      color: "#dc3545", // red
+    },
+  ];
+
+  const checkInPieOptions = {
+    chart: {
+      type: "pie",
+      fontFamily: "Poppins-Regular",
+    },
+    labels: ["Checked Out", "Yet To Check Out"],
+    colors: ["#28a745", "#dc3545"],
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => `${val.toFixed(0)}%`,
+    },
+    tooltip: {
+      y: {
+        formatter: (val, { seriesIndex }) => {
+          const label = checkInPieData[seriesIndex].label;
+          const value = checkInPieData[seriesIndex].value;
+          return `${label}: ${value} visitors`;
+        },
+      },
+    },
+    legend: {
+      position: "right",
+    },
+  };
 
   //First pie-chart config data end
   const meetingsWidgets = [
@@ -381,7 +456,7 @@ const VisitorDashboard = () => {
       ],
     },
     {
-      layout: 6,
+      layout: 5,
       widgets: [
         <Card
           route={"/app/visitors/add-visitor"}
@@ -406,11 +481,6 @@ const VisitorDashboard = () => {
         <Card
           route={"/app/visitors/reviews"}
           title={"Reviews"}
-          icon={<RiPagesLine />}
-        />,
-        <Card
-          route={"/app/visitors/settings"}
-          title={"Settings"}
           icon={<RiPagesLine />}
         />,
       ],
@@ -468,10 +538,10 @@ const VisitorDashboard = () => {
         >
           <DonutChart
             centerLabel="Visitors"
-            labels={labels}
+            labels={labelsToday}
             colors={colors}
-            series={donutVisitorCategoryData}
-            tooltipValue={executiveTasksCount}
+            series={donutVisitorCategoryDataToday}
+            tooltipValue={executiveTasksCountToday}
           />
         </WidgetSection>,
         <WidgetSection
@@ -481,8 +551,8 @@ const VisitorDashboard = () => {
           border
         >
           <PieChartMui
-            data={assetAvailabilityDataV}
-            options={assetAvailabilityOptionsV}
+            data={checkInPieData}
+            options={checkInPieOptions}
             width={"100%"}
           />
         </WidgetSection>,
@@ -512,10 +582,9 @@ const VisitorDashboard = () => {
           border
         >
           <PieChartMui
-            data={departmentPieDataVX}
-            options={departmentPieOptionsVX}
+            data={departmentPieDataMonth}
+            options={departmentPieOptionsMonth}
             width={500}
-            // height={600}
           />
         </WidgetSection>,
       ],
