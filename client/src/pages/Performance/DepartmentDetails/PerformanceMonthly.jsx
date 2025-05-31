@@ -82,7 +82,7 @@ const PerformanceMonthly = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
       queryClient.invalidateQueries({ queryKey: ["completedEntriesKPA"] });
-      toast.success("KPA updated");
+      toast.success(data.message || "KPA updated");
     },
     onError: (error) => {
       toast.error(error.message || "Error Updating");
@@ -120,12 +120,13 @@ const PerformanceMonthly = () => {
   console.log(department);
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
-    { headerName: "KPA List", field: "taskName", width : 300 },
+    { headerName: "KPA List", field: "taskName", width: 300 },
     // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
     {
       field: "status",
       headerName: "Status",
+      flex:1,
       cellRenderer: (params) => {
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
@@ -155,7 +156,7 @@ const PerformanceMonthly = () => {
     {
       headerName: "Actions",
       field: "actions",
-      pinned : 'right',
+      pinned: "right",
       cellRenderer: (params) => {
         console.log(params.node);
         return (
@@ -175,7 +176,7 @@ const PerformanceMonthly = () => {
   ];
   const completedColumns = [
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
-    { headerName: "KPA List", field: "taskName", flex: 1 },
+    { headerName: "KPA List", field: "taskName", width: 300 },
     { headerName: "Completed Time", field: "completionTime", flex: 1 },
     { headerName: "Completed Date", field: "completionDate" },
     {
@@ -211,28 +212,34 @@ const PerformanceMonthly = () => {
   return (
     <>
       <div className="flex flex-col gap-4">
-        <WidgetSection padding layout={1}>
-          <MonthWiseTable
-            checkbox
-            tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
-            buttonTitle={"Add Monthly KPA"}
-            handleSubmit={() => setOpenModal(true)}
-            data={[
-              ...departmentKra
-                .filter((item) => item.status !== "Completed")
-                .map((item, index) => ({
-                  srno: index + 1,
-                  id: item.id,
-                  taskName: item.taskName,
-                  assignedDate: item.assignedDate,
-                  dueDate: item.dueDate,
-                  status: item.status,
-                })),
-            ]}
-            dateColumn={"dueDate"}
-            columns={departmentColumns}
-          />
-        </WidgetSection>
+        {!isCompletedLoading && !isUpdatePending ? (
+          <WidgetSection padding layout={1}>
+            <MonthWiseTable
+              checkbox
+              tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
+              buttonTitle={"Add Monthly KPA"}
+              handleSubmit={() => setOpenModal(true)}
+              data={[
+                ...departmentKra
+                  .filter((item) => item.status !== "Completed")
+                  .map((item, index) => ({
+                    srno: index + 1,
+                    id: item.id,
+                    taskName: item.taskName,
+                    assignedDate: item.assignedDate,
+                    dueDate: item.dueDate,
+                    status: item.status,
+                  })),
+              ]}
+              dateColumn={"dueDate"}
+              columns={departmentColumns}
+            />
+          </WidgetSection>
+        ) : (
+          <div className="h-72 flex items-center justify-center">
+            <CircularProgress />
+          </div>
+        )}
         {!isCompletedLoading ? (
           <WidgetSection padding layout={1}>
             <MonthWiseTable
@@ -249,7 +256,6 @@ const PerformanceMonthly = () => {
               ]}
               dateColumn={"dueDate"}
               columns={completedColumns}
-             
             />
           </WidgetSection>
         ) : (
