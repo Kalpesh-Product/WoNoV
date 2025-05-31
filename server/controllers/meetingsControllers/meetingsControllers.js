@@ -500,7 +500,7 @@ const getMyMeetings = async (req, res, next) => {
 
     const meetings = await Meeting.find({
       company,
-      bookedBy: user,
+      $or: [{ bookedBy: user }, { internalParticipants: { $in: [user] } }],
     })
       .populate({
         path: "bookedRoom",
