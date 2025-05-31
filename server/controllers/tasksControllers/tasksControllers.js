@@ -345,18 +345,18 @@ const getAllTasks = async (req, res, next) => {
 
 const getTasks = async (req, res, next) => {
   try {
-    const { company } = req;
-    const { dept, empId } = req.query;
+    const { company, departments } = req;
+    const { empId } = req.query;
     const query = { company };
 
-    if (dept) {
-      query.department = dept;
-    }
     if (empId) {
       query.assignedTo = empId;
     }
 
-    const tasks = await Task.find(query)
+    const tasks = await Task.find({
+      ...query,
+      department: { $in: departments },
+    })
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
