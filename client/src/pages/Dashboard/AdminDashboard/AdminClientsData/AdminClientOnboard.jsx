@@ -170,8 +170,7 @@ const AdminClientOnboard = () => {
               ".MuiOutlinedInput-input": {
                 padding: "5px", // Customize padding inside the input
               },
-            }}
-          >
+            }}>
             <MenuItem value="Coworking">Coworking</MenuItem>
             <MenuItem value="Workation">Workation</MenuItem>
             <MenuItem value="Virtual Office">Virtual Office</MenuItem>
@@ -244,8 +243,7 @@ const AdminClientOnboard = () => {
                     label="Service"
                     error={!!errors.service}
                     helperText={errors.service?.message}
-                    fullWidth
-                  >
+                    fullWidth>
                     <MenuItem value="" disabled>
                       Select a Service
                     </MenuItem>
@@ -256,7 +254,7 @@ const AdminClientOnboard = () => {
                         </MenuItem>
                       ))
                     ) : (
-                      <CircularProgress color="#1E3D73"/>
+                      <CircularProgress color="#1E3D73" />
                     )}
                   </TextField>
                 )}
@@ -272,8 +270,7 @@ const AdminClientOnboard = () => {
                     label="Sector"
                     fullWidth
                     error={!!errors.sector}
-                    helperText={errors.sector?.message}
-                  >
+                    helperText={errors.sector?.message}>
                     <MenuItem value="" disabled>
                       Select a Sector
                     </MenuItem>
@@ -295,8 +292,7 @@ const AdminClientOnboard = () => {
                       field.onChange(e);
                       handleStateSelect(e.target.value);
                     }}
-                    fullWidth
-                  >
+                    fullWidth>
                     <MenuItem value="">Select a State</MenuItem>
                     {states.map((item) => (
                       <MenuItem value={item.isoCode} key={item.isoCode}>
@@ -315,14 +311,12 @@ const AdminClientOnboard = () => {
                     size="small"
                     select
                     label="City"
-                    fullWidth
-                  >
+                    fullWidth>
                     <MenuItem value="">Select a State</MenuItem>
                     {cities.map((item) => (
                       <MenuItem
                         value={item.name}
-                        key={`${item.name}-${item.stateCode}-${item.latitude}`}
-                      >
+                        key={`${item.name}-${item.stateCode}-${item.latitude}`}>
                         {item.name}
                       </MenuItem>
                     ))}
