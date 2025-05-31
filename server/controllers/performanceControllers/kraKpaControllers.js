@@ -239,14 +239,14 @@ const updateTaskStatus = async (req, res, next) => {
 
 const getKraKpaTasks = async (req, res, next) => {
   try {
-    const { company } = req;
-    const { type, dept, duration, empId } = req.query;
+    const { company, departments } = req;
+    const { type, duration } = req.query;
 
     const query = { company };
 
-    if (!dept) {
-      return res.status(400).json({ message: "Missing department ID" });
-    }
+    // if (!dept) {
+    //   return res.status(400).json({ message: "Missing department ID" });
+    // }
     if (!type) {
       return res.status(400).json({ message: "Missing task type" });
     }
@@ -258,12 +258,13 @@ const getKraKpaTasks = async (req, res, next) => {
     const startOfDay = new Date(today.setUTCHours(0, 0, 0, 0));
     const endOfDay = new Date(today.setUTCHours(23, 59, 59, 999));
 
-    query.department = dept;
+    // query.department = dept;
     query.taskType = type;
 
     const tasks = await kraKpaRole
       .find({
         ...query,
+        department: { $in: departments },
         completedDate: {
           $not: {
             $elemMatch: {
@@ -340,6 +341,7 @@ const getKraKpaTasks = async (req, res, next) => {
 
     // const allTasks = [...transformedTasks, ...transformedCompletedTasks];
 
+    console.log(transformedTasks.length);
     return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);
@@ -559,7 +561,12 @@ const getAllKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
 
-    const tasks = await kraKpaTask
+    const pendingTasks = await kraKpaRole.find({ company }).populate(
+      { path: "department", select: "name" }
+      // { path: "assignedBy", select: "firstName middleName lastName" },
+    );
+
+    const completedTasks = await kraKpaTask
       .find({
         company,
       })
@@ -577,26 +584,64 @@ const getAllKpaTasks = async (req, res, next) => {
       .select("-company")
       .lean();
 
-    // console.log(tasks);
+    const transformedPendingTasks = pendingTasks.map((task) => ({
+      ...task,
+      status: "Penidng",
+    }));
+    // completedTasks.forEach((task) => {
+    //   if (task.task.taskType !== "KPA") return;
+    //   const departmentName = task.task.department.name;
+    //   // const assignedBy = `${task.task.assignedBy.firstName} ${
+    //   //   task.task.assignedBy.middleName || ""
+    //   // } ${task.task.assignedBy.lastName}`;
+
+    //   const assignee = `${task.completedBy.firstName}  ${
+    //     task.completedBy.middleName || ""
+    //   } ${task.completedBy.lastName}`;
+
+    //   const transformedTask = {
+    //     taskName: task.task.task,
+    //     // description: task.task.description,
+    //     // assignedBy: assignedBy.trim(),
+    //     assignedTo: assignee.trim(),
+    //     assignedDate: task.task.assignedDate,
+    //     dueDate: task.task.dueDate,
+    //     status: task.status,
+    //   };
+
+    //   if (!transformedByDepartment[departmentName]) {
+    //     transformedByDepartment[departmentName] = {
+    //       department: departmentName,
+    //       total: 0,
+    //       achieved: 0,
+    //       tasks: [],
+    //     };
+    //   }
+
+    //   transformedByDepartment[departmentName].tasks.push(transformedTask);
+    //   transformedByDepartment[departmentName].total += 1;
+
+    //   if (task.status === "Completed") {
+    //     transformedByDepartment[departmentName].achieved += 1;
+    //   }
+    // });
+
+    // const transformedDeptTasks = Object.values(transformedByDepartment);
+
     const transformedByDepartment = {};
 
-    tasks.forEach((task) => {
+    // Step 1: Handle Completed Tasks
+    completedTasks.forEach((task) => {
       if (task.task.taskType !== "KPA") return;
-      console.log("name", task);
-      const departmentName = task.task.department.name;
-      // const assignedBy = `${task.task.assignedBy.firstName} ${
-      //   task.task.assignedBy.middleName || ""
-      // } ${task.task.assignedBy.lastName}`;
 
-      const assignee = `${task.completedBy.firstName}  ${
+      const departmentName = task.task.department.name;
+      const assignee = `${task.completedBy.firstName} ${
         task.completedBy.middleName || ""
-      } ${task.completedBy.lastName}`;
+      } ${task.completedBy.lastName}`.trim();
 
       const transformedTask = {
         taskName: task.task.task,
-        // description: task.task.description,
-        // assignedBy: assignedBy.trim(),
-        assignedTo: assignee.trim(),
+        assignedTo: assignee,
         assignedDate: task.task.assignedDate,
         dueDate: task.task.dueDate,
         status: task.status,
@@ -619,6 +664,34 @@ const getAllKpaTasks = async (req, res, next) => {
       }
     });
 
+    // Step 2: Handle Pending Tasks
+    pendingTasks.forEach((task) => {
+      if (task.taskType !== "KPA") return;
+
+      const departmentName = task.department.name;
+
+      const transformedTask = {
+        taskName: task.task,
+        assignedTo: null, // or "Unassigned", depending on your need
+        assignedDate: task.assignedDate,
+        dueDate: task.dueDate,
+        status: "Pending",
+      };
+
+      if (!transformedByDepartment[departmentName]) {
+        transformedByDepartment[departmentName] = {
+          department: departmentName,
+          total: 0,
+          achieved: 0,
+          tasks: [],
+        };
+      }
+
+      transformedByDepartment[departmentName].tasks.push(transformedTask);
+      transformedByDepartment[departmentName].total += 1;
+    });
+
+    // Step 3: Final Result
     const transformedDeptTasks = Object.values(transformedByDepartment);
 
     return res.status(200).json(transformedDeptTasks);
