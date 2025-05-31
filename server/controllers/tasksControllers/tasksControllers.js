@@ -346,13 +346,9 @@ const getAllTasks = async (req, res, next) => {
 const getTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { dept, empId } = req.query;
+    const { dept } = req.query;
     const query = { company };
 
-    if (empId) {
-      query.assignedTo = empId;
-    }
-    t;
     if (dept) {
       query.department = dept;
     }
@@ -367,13 +363,14 @@ const getTasks = async (req, res, next) => {
     const transformedTasks = tasks.map((task) => {
       return {
         ...task,
-        department: task.name,
+        department: task.department.name,
         dueDate: task.dueDate,
         dueTime: task.dueTime ? task.dueTime : null,
         assignedDate: task.assignedDate,
       };
     });
 
+    console.log("my tasks", transformedTasks.length);
     return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);
