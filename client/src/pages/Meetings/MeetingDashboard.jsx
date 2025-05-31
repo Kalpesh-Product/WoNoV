@@ -624,7 +624,7 @@ const averageBookingOptions = {
       roomMap.set({roomName,hours:0})
     }
 
-    // if(roomMa)
+     
   })
 
   // Calculate occupancy percentage
