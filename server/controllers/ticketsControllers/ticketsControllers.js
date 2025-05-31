@@ -364,11 +364,17 @@ const getTickets = async (req, res, next) => {
 
 const getAllDeptTickets = async (req, res, next) => {
   try {
-    const { company } = req;
+    const { roles, departments, company } = req;
 
     let departmentMap = new Map();
 
-    const tickets = await Tickets.find({ company })
+    const query = { company };
+
+    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
+      query.raisedToDepartment = { $in: departments };
+    }
+
+    const tickets = await Tickets.find(query)
       .populate([{ path: "raisedToDepartment", select: "name" }])
       .select("-company")
       .lean();
@@ -421,6 +427,7 @@ const getTeamMemberTickets = async (req, res, next) => {
 
     const teamMembers = await UserData.find({
       departments: { $in: departmentIds },
+      isActive: true,
     })
       .populate([
         { path: "role", select: "roleTitle" },

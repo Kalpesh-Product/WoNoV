@@ -514,9 +514,16 @@ const getMyMeetings = async (req, res, next) => {
           },
         },
       })
-      .populate("bookedBy", "firstName lastName email")
-      .populate("internalParticipants", "firstName lastName email _id")
-      .populate("externalParticipants", "firstName lastName email");
+      .populate([
+        { path: "bookedBy", selected: "firstName lastName email" },
+        { path: "clientBookedBy", select: "employeeName email" },
+        { path: "receptionist", select: "firstName lastName" },
+        { path: "client", select: "clientName" },
+        { path: "externalClient", select: "companyName pocName mobileNumber" },
+        { path: "internalParticipants", select: "firstName lastName email" },
+        { path: "clientParticipants", select: "employeeName email" },
+        { path: "externalParticipants", select: "firstName lastName email" },
+      ]);
 
     const departments = await User.findById({ _id: user }).select(
       "departments"
@@ -538,10 +545,15 @@ const getMyMeetings = async (req, res, next) => {
       meeting.internalParticipants.map((participant) => participant)
     );
 
+    const clientParticipants = meetings.map((meeting) =>
+      meeting.clientParticipants.map((participant) => participant)
+    );
+
     const transformedMeetings = meetings.map((meeting, index) => {
       let totalParticipants = [];
       if (
         internalParticipants[index].length &&
+        clientParticipants[index].length &&
         meeting.externalParticipants.length
       ) {
         totalParticipants = [
@@ -554,17 +566,55 @@ const getMyMeetings = async (req, res, next) => {
         (review) => review.meeting.toString() === meeting._id.toString()
       );
 
+      const isClient = meeting.client ? true : false;
+
+      const bookedBy = meeting.bookedBy
+        ? [
+            meeting.bookedBy.firstName,
+            meeting.bookedBy.middleName,
+            meeting.bookedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "";
+
+      const receptionist = meeting.receptionist
+        ? [
+            meeting.receptionist.firstName,
+            meeting.receptionist.middleName,
+            meeting.receptionist.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "";
+
       return {
         _id: meeting._id,
-        name: meeting.bookedBy?.name,
+        receptionist: receptionist,
+        bookedBy: bookedBy,
+        clientBookedBy: meeting.clientBookedBy,
         department: department.name,
         roomName: meeting.bookedRoom.name,
         location: meeting.bookedRoom.location,
+        client: isClient
+          ? meeting.client.clientName
+          : meeting.externalClient
+          ? null
+          : "BIZ Nest",
+        externalClient: meeting.externalClient
+          ? meeting.externalClient.companyName
+          : null,
+        pocName: meeting.externalClient ? meeting.externalClient.pocName : "",
+        mobileNumber: meeting.externalClient
+          ? meeting.externalClient.mobileNumber
+          : "",
         meetingType: meeting.meetingType,
-        housekeepingStatus: meeting.bookedRoom.housekeepingStatus,
-        date: formatDate(meeting.startDate),
-        startTime: formatTime(meeting.startTime),
-        endTime: formatTime(meeting.endTime),
+        housekeepingStatus: meeting.houeskeepingStatus,
+        date: meeting.startDate,
+        endDate: meeting.endDate,
+        startTime: meeting.startTime,
+        endTime: meeting.endTime,
+        extendTime: meeting.extendTime,
         credits: meeting.credits,
         duration: formatDuration(meeting.startTime, meeting.endTime),
         meetingStatus: meeting.status,
@@ -577,6 +627,8 @@ const getMyMeetings = async (req, res, next) => {
             ? totalParticipants
             : internalParticipants[index].length > 0
             ? internalParticipants[index]
+            : clientParticipants[index].length > 0
+            ? clientParticipants[index]
             : meeting.externalParticipants,
         reviews: meetingReviews ? meetingReviews : [],
         company: meeting.company,
