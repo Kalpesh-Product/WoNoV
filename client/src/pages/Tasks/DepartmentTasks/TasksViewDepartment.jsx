@@ -186,6 +186,8 @@ const TasksViewDepartment = () => {
     // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "Completed By", field: "completedBy", width: 300 },
     { headerName: "Assigned Date", field: "assignedDate" },
+    { headerName: "Completed Date", field: "completedDate" },
+    { headerName: "Completed Time", field: "completedTime" },
     { headerName: "Due Time", field: "dueTime" },
     { headerName: "Due Date", field: "dueDate" },
     {
@@ -261,8 +263,9 @@ const TasksViewDepartment = () => {
                       srno: index + 1,
                       id: item._id,
                       taskName: item.taskName,
-                      assignedDate: item.assignedDate,
-                      dueDate: item.dueDate,
+                      assignedDate: (item.assignedDate),
+                      completedDate: humanDate(item.completedDate),
+                      completedTime: humanTime(item.completedDate),
                       status: item.status,
                     }))
               }

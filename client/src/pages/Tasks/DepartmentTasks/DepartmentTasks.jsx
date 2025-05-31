@@ -33,7 +33,7 @@ const DepartmentTasks = () => {
   };
   const { data: fetchedDepartments = [], isPending: departmentLoading } =
     useQuery({
-      queryKey: ["fetchedDepartments"],
+      queryKey: ["fetchedDepartmentsTasks"],
       queryFn: fetchDepartments,
     });
 
