@@ -613,7 +613,11 @@ const getAllDeptTasks = async (req, res, next) => {
     let departmentMap = new Map();
     let query = { company };
 
-    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
+    if (
+      !roles.includes("Master Admin") &&
+      !roles.includes("Super Admin") &&
+      !roles.includes("HR Admin")
+    ) {
       query.department = { $in: departments };
     }
 
