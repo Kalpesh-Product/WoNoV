@@ -83,6 +83,7 @@ const TasksViewDepartment = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsTasks"] });
       toast.success(data.message || "DATA UPDATED");
     },
     onError: (error) => {
@@ -238,7 +239,7 @@ const TasksViewDepartment = () => {
                   status: item.status,
                   assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                 }))}
-              dateColumn={"dueDate"}
+              dateColumn={"assignedDate"}
               columns={departmentColumns}
             />
           </WidgetSection>
@@ -265,7 +266,7 @@ const TasksViewDepartment = () => {
                       status: item.status,
                     }))
               }
-              dateColumn={"dueDate"}
+              dateColumn={"assignedDate"}
               columns={completedColumns}
             />
           </WidgetSection>
