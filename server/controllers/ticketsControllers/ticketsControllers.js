@@ -370,7 +370,11 @@ const getAllDeptTickets = async (req, res, next) => {
 
     const query = { company };
 
-    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
+    if (
+      !roles.includes("Master Admin") &&
+      !roles.includes("Super Admin") &&
+      !roles.includes("HR Admin")
+    ) {
       query.raisedToDepartment = { $in: departments };
     }
 

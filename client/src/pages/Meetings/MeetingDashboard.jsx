@@ -615,6 +615,12 @@ const averageBookingOptions = {
     Vatican: 130,
   };
 
+  const roomMap = new Map()
+  const bookedRoomHours = meetingsData.forEach((room)=>{
+
+    
+  })
+
   // Calculate occupancy percentage
   const processedRoomsData = Object.keys(actualBookedHours).map((room) => ({
     x: room,
