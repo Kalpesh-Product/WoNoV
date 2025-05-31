@@ -14,6 +14,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { Skeleton } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import DonutChart from "../../components/graphs/DonutChart";
+import dayjs from "dayjs";
 const WidgetSection = lazy(() => import("../../components/WidgetSection"));
 
 const MeetingDashboard = () => {
@@ -35,6 +36,18 @@ const MeetingDashboard = () => {
       return response.data;
     },
   });
+
+   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
+      queryKey: ["visitors"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/visitors/fetch-visitors");
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response.data.message);
+        }
+      },
+    });
 
   // Function to calculate total duration in hours
   const calculateTotalDurationInHours = (meetings) => {
@@ -107,12 +120,62 @@ const MeetingDashboard = () => {
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
-  const externalGuestsData = [
-    {
-      name: "Guests Visited",
-      data: [45, 32, 60, 75, 80, 55, 90, 20, 50, 40, 70, 85], // Sample guest count per month
-    },
-  ];
+    const fyStart = dayjs("2025-04-01");
+    const fyEnd = dayjs("2026-03-31");
+
+  const months = [];
+    const monthlyVisitorMap = {};
+  
+    for (let i = 0; i < 12; i++) {
+      const month = fyStart.add(i, "month");
+      const label = month.format("MMM-YY"); // e.g., "Apr-25"
+      months.push(label);
+      monthlyVisitorMap[label] = 0;
+    }
+
+      const visitorCategories = Array.isArray(visitorsData)
+    ? visitorsData.map((item) => item.visitorType)
+    : [];
+  console.log("Visitor Categories", visitorCategories);
+
+  const visitorMap = {};
+  visitorsData.forEach(({ visitorType }) => {
+    if (!visitorType) return;
+    visitorMap[visitorType] = (visitorMap[visitorType] || 0) + 1;
+  });
+  const visitorTypeRawData = Object.entries(visitorMap).map(
+    ([type, count]) => ({
+      label: type,
+      count,
+    })
+  );
+  
+    // Populate the map
+    visitorsData.forEach((visitor) => {
+      const visitDate = dayjs(visitor.dateOfVisit);
+      if (
+        visitDate.isAfter(fyStart.subtract(1, "day")) &&
+        visitDate.isBefore(fyEnd.add(1, "day"))
+      ) {
+        const label = visitDate.format("MMM-YY");
+        if (monthlyVisitorMap[label] !== undefined) {
+          monthlyVisitorMap[label]++;
+        }
+      }
+    });
+  
+    const externalGuestsData = [
+      {
+        name: "Visitors",
+        data: months.map((m) => monthlyVisitorMap[m]),
+      },
+    ];
+  // const externalGuestsData = [
+  //   {
+  //     name: "Guests Visited",
+  //     data: [45, 32, 60, 75, 80, 55, 90, 20, 50, 40, 70, 85], // Sample guest count per month
+  //   },
+  // ];
 
   const externalGuestsOptions = {
     chart: {
@@ -123,20 +186,7 @@ const MeetingDashboard = () => {
       },
     },
     xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-24",
-        "Feb-24",
-        "Mar-24",
-      ],
+     categories: months,
       title: {
         text: "",
       },
@@ -526,7 +576,6 @@ const data = monthBookings.map((month) => ({
   y: (monthlyBookedHours[month] / totalBookableHours) * 100,
 }));
 
-console.log("month",monthlyBookedHours)
 const averageBookingSeries = [{ name: "Booking Utilization", data }];
 
 const averageBookingOptions = {
@@ -591,41 +640,52 @@ const averageBookingOptions = {
 };
 
 
-  const rooms = [
-    "Baga",
-    "Arambol",
-    "Sydney",
-    "Zurich",
-    "Hawaii",
-    "Miami",
-    "Madrid",
-    "Vatican",
-  ];
+  // const rooms = [
+  //   "Baga",
+  //   "Arambol",
+  //   "Sydney",
+  //   "Zurich",
+  //   "Hawaii",
+  //   "Miami",
+  //   "Madrid",
+  //   "Vatican",
+  // ];
   const totalBookableRoomHours = 198; // 9 hours per day * 22 days
 
   // Example actual hours booked per room (you can replace these with real data)
-  const actualBookedHours = {
-    Baga: 150,
-    Arambol: 120,
-    Sydney: 180,
-    Zurich: 160,
-    Hawaii: 140,
-    Miami: 170,
-    Madrid: 110,
-    Vatican: 130,
-  };
+  // const actualBookedHours = {
+  //   Baga: 150,
+  //   Arambol: 120,
+  //   Sydney: 180,
+  //   Zurich: 160,
+  //   Hawaii: 140,
+  //   Miami: 170,
+  //   Madrid: 110,
+  //   Vatican: 130,
+  // };
 
-  const roomMap = new Map()
-  const bookedRoomHours = meetingsData.forEach((room)=>{
+  const bookedHours = meetingsData.reduce((acc, room) => {
+  const name = room.roomName;
+  const hours = parseInt(room.duration) / 60 || 0;
 
-    const roomName = room.bookedRoom
+  if (acc[name]) {
+    acc[name] += hours;
+  } else {
+    acc[name] = hours;
+  }
 
-    if(!roomMap.get(roomName)){
-      roomMap.set({roomName,hours:0})
-    }
+  return acc;
+}, {});
 
-     
-  })
+const roomNames = roomsData.map(room => room.name).sort();
+
+const actualBookedHours = {};
+roomNames.forEach(name => {
+  actualBookedHours[name] = bookedHours[name] || 0;
+});
+
+const rooms = roomNames;
+
 
   // Calculate occupancy percentage
   const processedRoomsData = Object.keys(actualBookedHours).map((room) => ({
@@ -707,7 +767,7 @@ function getCurrentWeekDays() {
 
   const weekDays = [];
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     const date = new Date(monday);
     date.setDate(monday.getDate() + i);
     date.setHours(0, 0, 0, 0);
@@ -717,7 +777,7 @@ function getCurrentWeekDays() {
   return weekDays;
 }
 
-// 🕘 Convert Date to Time Slot Label (e.g., 10AM–11AM)
+// Convert Date to Time Slot Label (e.g., 10AM–11AM)
 function getTimeSlotLabel(date) {
   const hour = date.getHours();
   if (hour >= 8 && hour < 20) {
@@ -734,9 +794,10 @@ function getTimeSlotLabel(date) {
   const weekdays = getCurrentWeekDays();  
 
   // Create a [timeSlot][dayIndex] matrix initialized with 0s
-  const matrix = Array(timeSlots.length).fill(null).map(() => Array(5).fill(0));
+  const matrix = Array(timeSlots.length).fill(null).map(() => Array(7).fill(0))
 
   meetingsData.forEach((meeting) => {
+
     const date = new Date(meeting.startTime);
     date.setSeconds(0, 0); // remove milliseconds
 
@@ -764,7 +825,7 @@ function getTimeSlotLabel(date) {
     name: slot,
     data: days.map((day, dayIndex) => ({
       x: day,
-      y: matrix[slotIndex][dayIndex],
+      y: (day !== "Sat" && day !== "Sun") ? matrix[slotIndex][dayIndex] : 0,
     })),
   }));
 
