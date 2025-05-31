@@ -572,10 +572,9 @@ const getMyCompletedTasks = async (req, res, next) => {
   }
 };
 
-const getTodayTasks = async (req, res, next) => {
+const getMyTodayTasks = async (req, res, next) => {
   try {
     const { user, company } = req;
-    const { dept } = req.query;
 
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -960,7 +959,7 @@ module.exports = {
   updateTask,
   updateTaskStatus,
   getMyTasks,
-  getTodayTasks,
+  getMyTodayTasks,
   getAllTasks,
   getTasks,
   getTeamMembersTasks,
