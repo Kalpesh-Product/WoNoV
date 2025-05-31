@@ -10,6 +10,7 @@ export const axiosPrivate = axios.create({
 });
 
 // export const api = axios.create({
+
 //   baseURL: import.meta.env.VITE_PROD_LINK,
 // });
 
