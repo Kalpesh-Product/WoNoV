@@ -371,7 +371,6 @@ const getTasks = async (req, res, next) => {
       };
     });
 
-    console.log("my tasks", transformedTasks.length);
     return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);
@@ -421,16 +420,27 @@ const getMyAssignedTasks = async (req, res, next) => {
     })
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
-      .populate("assignedTo", "firstName lastName")
+      .populate("completedBy", "firstName lastName")
       .select("-company")
       .lean();
 
     const transformedTasks = tasks.map((task) => {
+      const completedBy = task.completedBy
+        ? [
+            task.completedBy.firstName,
+            task.completedBy.middleName,
+            task.completedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "";
+
       return {
         ...task,
         dueDate: task.dueDate,
         dueTime: task.dueTime ? task.dueTime : "06:30 PM",
         assignedDate: task.assignedDate,
+        completedBy,
       };
     });
 
@@ -563,7 +573,7 @@ const getTeamMembersTasks = async (req, res, next) => {
         { path: "role", select: "roleTitle" },
         { path: "departments", select: "name" },
       ])
-      .select("firstName middleName lastName");
+      .select("firstName middleName lastName email");
 
     const tasks = await Task.find({
       company,

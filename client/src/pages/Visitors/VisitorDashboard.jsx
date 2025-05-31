@@ -39,11 +39,6 @@ const VisitorDashboard = () => {
     },
   });
 
-  console.log(
-    "Visitors data : ",
-    visitorsData.map((item) => item.firstName)
-  );
-
   const visitorCategories = Array.isArray(visitorsData)
     ? visitorsData.map((item) => item.visitorType)
     : [];
@@ -61,7 +56,6 @@ const VisitorDashboard = () => {
     })
   );
 
-  console.log("Visitor Type :", visitorTypeRawData);
   //---------------------------------------------------First Graph Data---------------------------------------------------//
   // Define financial year start and end
   const fyStart = dayjs("2025-04-01");
