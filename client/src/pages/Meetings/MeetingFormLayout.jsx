@@ -221,7 +221,8 @@ const MeetingFormLayout = () => {
       navigate("/app/meetings/calendar");
     },
     onError: (error) => {
-      toast.error(error.message || "ERROR");
+      console.log("error",error)
+      toast.error(error.response.data.message || "ERROR");
     },
   });
   //-------------------------------API POST-------------------------------//

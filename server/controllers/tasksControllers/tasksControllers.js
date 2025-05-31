@@ -371,7 +371,6 @@ const getTasks = async (req, res, next) => {
       };
     });
 
-    console.log("my tasks", transformedTasks.length);
     return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);
@@ -421,16 +420,27 @@ const getMyAssignedTasks = async (req, res, next) => {
     })
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
-      .populate("assignedTo", "firstName lastName")
+      .populate("completedBy", "firstName lastName")
       .select("-company")
       .lean();
 
     const transformedTasks = tasks.map((task) => {
+      const completedBy = task.completedBy
+        ? [
+            task.completedBy.firstName,
+            task.completedBy.middleName,
+            task.completedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "";
+
       return {
         ...task,
         dueDate: task.dueDate,
         dueTime: task.dueTime ? task.dueTime : "06:30 PM",
         assignedDate: task.assignedDate,
+        completedBy,
       };
     });
 
@@ -452,7 +462,7 @@ const getCompletedTasks = async (req, res, next) => {
     })
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
-      .populate("assignedTo", "firstName lastName")
+      .populate("completedBy", "firstName lastName")
       .select("-company")
       .lean();
 
@@ -461,11 +471,21 @@ const getCompletedTasks = async (req, res, next) => {
     }
 
     const transformedTasks = tasks.map((task) => {
+      const completedBy = task.completedBy
+        ? [
+            task.completedBy.firstName,
+            task.completedBy.middleName,
+            task.completedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "";
       return {
         ...task,
         dueDate: task.dueDate,
         dueTime: task.dueTime ? task.dueTime : "06:30 PM",
         assignedDate: task.assignedDate,
+        completedBy,
       };
     });
 
@@ -489,7 +509,7 @@ const getMyCompletedTasks = async (req, res, next) => {
     })
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
-      .populate("assignedTo", "firstName lastName")
+      .populate("completedBy", "firstName lastName")
       .select("-company")
       .lean();
 
@@ -497,11 +517,21 @@ const getMyCompletedTasks = async (req, res, next) => {
       return res.status(400).json({ message: "No tasks found" });
     }
     const transformedTasks = tasks.map((task) => {
+      const completedBy = task.completedBy
+        ? [
+            task.completedBy.firstName,
+            task.completedBy.middleName,
+            task.completedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "";
       return {
         ...task,
         dueDate: formatDate(task.dueDate),
         dueTime: task.dueTime ? task.dueTime : "06:30 PM",
         assignedDate: formatDate(task.assignedDate),
+        completedBy,
       };
     });
     return res.status(200).json(transformedTasks);
@@ -510,9 +540,10 @@ const getMyCompletedTasks = async (req, res, next) => {
   }
 };
 
-const getMyTodayTasks = async (req, res, next) => {
+const getTodayTasks = async (req, res, next) => {
   try {
     const { user, company } = req;
+    const { dept } = req.query;
 
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -522,11 +553,12 @@ const getMyTodayTasks = async (req, res, next) => {
 
     const tasks = await Task.find({
       company,
-      assignedTo: { $in: [user] },
       assignedDate: { $gte: startOfDay, $lte: endOfDay },
+      $or: [{ assignedBy: { $in: [user] } }, { completedBy: { $in: [user] } }],
     })
+      .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
-      .populate("assignedTo", "firstName lastName")
+      .populate("completedBy", "firstName lastName")
       .select("-company")
       .lean();
 
@@ -535,12 +567,84 @@ const getMyTodayTasks = async (req, res, next) => {
     }
 
     const transformedTasks = tasks.map((task) => {
+      const completedBy = task.completedBy
+        ? [
+            task.completedBy.firstName,
+            task.completedBy.middleName,
+            task.completedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "";
+
       return {
         ...task,
         task: task.taskName,
-        dueTime: formatTime(task.dueTime),
-        dueDate: formatTime(task.dueDate),
-        assignedDate: formatDate(task.assignedDate),
+        dueTime: task.dueTime,
+        dueDate: task.dueDate,
+        assignedDate: task.assignedDate,
+        department: task.department.name,
+        completedBy,
+      };
+    });
+
+    return res.status(200).json(transformedTasks);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getTodayDeptTasks = async (req, res, next) => {
+  try {
+    const { user, company } = req;
+    const { dept } = req.query;
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    if (dept && !mongoose.Types.ObjectId.isValid(dept)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid department ID provided" });
+    }
+
+    const tasks = await Task.find({
+      company,
+      assignedDate: { $gte: startOfDay, $lte: endOfDay },
+      department: dept,
+    })
+      .populate("department", "name")
+      .populate("assignedBy", "firstName lastName")
+      .populate("completedBy", "firstName lastName")
+      .select("-company")
+      .lean();
+
+    if (!tasks) {
+      return res.status(400).json({ message: "Failed to fetch the tasks" });
+    }
+
+    const transformedTasks = tasks.map((task) => {
+      const completedBy = task.completedBy
+        ? [
+            task.completedBy.firstName,
+            task.completedBy.middleName,
+            task.completedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "";
+
+      return {
+        ...task,
+        task: task.taskName,
+        dueTime: task.dueTime,
+        dueDate: task.dueDate,
+        assignedDate: task.assignedDate,
+        department: task.department.name,
+        completedBy,
       };
     });
 
@@ -563,7 +667,7 @@ const getTeamMembersTasks = async (req, res, next) => {
         { path: "role", select: "roleTitle" },
         { path: "departments", select: "name" },
       ])
-      .select("firstName middleName lastName");
+      .select("firstName middleName lastName email");
 
     const tasks = await Task.find({
       company,
@@ -813,7 +917,7 @@ module.exports = {
   updateTask,
   updateTaskStatus,
   getMyTasks,
-  getMyTodayTasks,
+  getTodayTasks,
   getAllTasks,
   getTasks,
   getTeamMembersTasks,
@@ -824,4 +928,5 @@ module.exports = {
   getCompletedTasks,
   getMyCompletedTasks,
   getMyAssignedTasks,
+  getTodayDeptTasks,
 };

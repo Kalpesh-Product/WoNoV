@@ -3,9 +3,16 @@ import AgTable from "../../../components/AgTable";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { useState } from "react";
+import DetalisFormatted from "../../../components/DetalisFormatted";
+import { CircularProgress } from "@mui/material";
+import MuiModal from "../../../components/MuiModal";
 
 const TeamMember = () => {
   const axios = useAxiosPrivate();
+    const [openModal, setOpenModal] = useState(false);
+    const [selectedMember, setSelectedMember] = useState(null);
   const { data: taskList, isLoading } = useQuery({
     queryKey: ["taskList"],
     queryFn: async () => {
@@ -18,24 +25,40 @@ const TeamMember = () => {
     },
   });
 
+    const handleSelectedMember = (meeting) => {
+    setSelectedMember(meeting);
+    setOpenModal(true);
+  };
+
   const teamMembersColumn = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "name", headerName: "Name", flex: 1 },
     { field: "email", headerName: "Email", flex: 1 },
     { field: "role", headerName: "Role", flex: 1 },
-    { field: "task", headerName: "Task", flex: 1 },
-    { field: "status", headerName: "Status", flex: 1 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-            <BsThreeDotsVertical />
-          </div>
-        </>
-      ),
-    },
+    { field: "tasks", headerName: "Task", flex: 1 },
+    // { field: "status", headerName: "Status", flex: 1 },
+     {
+          field: "action",
+          headerName: "Actions",
+          cellRenderer: (params) => {
+            return (
+              <>
+                <div className="flex gap-2 items-center">
+                  <div
+                    onClick={() => {
+                      handleSelectedMember(params.data);
+                    }}
+                    className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+                  >
+                    <span className="text-subtitle">
+                      <MdOutlineRemoveRedEye />
+                    </span>
+                  </div>
+                </div>
+              </>
+            );
+          },
+        },
   ];
 
   const teamMembersData = [
@@ -147,7 +170,7 @@ const TeamMember = () => {
                     name: task.name,
                     email: task.email,
                     role: task.role,
-                    task: task.tasksCount,
+                    tasks: task.tasks,
                     status: task.status,
                   })),
                 ]
@@ -155,6 +178,34 @@ const TeamMember = () => {
           columns={teamMembersColumn}
         />
       </div>
+       <MuiModal
+              open={openModal}
+              onClose={() => setOpenModal(false)}
+              title={"Team Member Details"}
+            >
+              {!isLoading && selectedMember ? (
+                <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                  <DetalisFormatted
+                    title="Name"
+                    detail={selectedMember?.name}
+                  />
+                  <DetalisFormatted
+                    title="Email"
+                    detail={selectedMember?.email}
+                  />
+                  <DetalisFormatted
+                    title="Role"
+                    detail={selectedMember?.role}
+                  />
+                  <DetalisFormatted
+                    title="Tasks"
+                    detail={selectedMember?.tasks}
+                  />
+                </div>
+              ) : (
+                <CircularProgress />
+              )}
+            </MuiModal>
     </div>
   );
 };
