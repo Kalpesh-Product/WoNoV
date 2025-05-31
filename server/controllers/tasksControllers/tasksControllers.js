@@ -345,18 +345,19 @@ const getAllTasks = async (req, res, next) => {
 
 const getTasks = async (req, res, next) => {
   try {
-    const { company, departments } = req;
-    const { empId } = req.query;
+    const { company } = req;
+    const { dept, empId } = req.query;
     const query = { company };
 
     if (empId) {
       query.assignedTo = empId;
     }
+    t;
+    if (dept) {
+      query.department = dept;
+    }
 
-    const tasks = await Task.find({
-      ...query,
-      department: { $in: departments },
-    })
+    const tasks = await Task.find(dept)
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
@@ -610,10 +611,14 @@ const getTeamMembersTasks = async (req, res, next) => {
 
 const getAllDeptTasks = async (req, res, next) => {
   try {
-    const { company } = req;
+    const { roles, departments, company } = req;
 
     let departmentMap = new Map();
     let query = { company };
+
+    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
+      query.department = { $in: departments };
+    }
 
     const tasks = await Task.find(query)
       .populate([{ path: "department", select: "name" }])

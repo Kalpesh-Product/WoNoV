@@ -239,8 +239,8 @@ const updateTaskStatus = async (req, res, next) => {
 
 const getKraKpaTasks = async (req, res, next) => {
   try {
-    const { company, departments } = req;
-    const { type, duration } = req.query;
+    const { company } = req;
+    const { type, dept, duration } = req.query;
 
     const query = { company };
 
@@ -264,7 +264,7 @@ const getKraKpaTasks = async (req, res, next) => {
     const tasks = await kraKpaRole
       .find({
         ...query,
-        department: { $in: departments },
+        department: dept,
         completedDate: {
           $not: {
             $elemMatch: {
@@ -509,7 +509,7 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
 
 const getAllDeptTasks = async (req, res, next) => {
   try {
-    const { company } = req;
+    const { roles, company, departments } = req;
     const { duration, taskType } = req.query;
 
     let departmentMap = new Map();
@@ -522,8 +522,12 @@ const getAllDeptTasks = async (req, res, next) => {
       query.taskType = taskType;
     }
 
+    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
+      query.department = { $in: departments };
+    }
+
     const tasks = await kraKpaRole
-      .find(query)
+      .find({ ...query })
       .populate([{ path: "department", select: "name" }])
       .select("-company")
       .lean();
