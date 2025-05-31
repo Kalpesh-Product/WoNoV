@@ -17,6 +17,7 @@ const DepartmentTasks = () => {
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
   useTopDepartment({
+    additionalTopUserIds: ["67b83885daad0f7bab2f188b"], //mac
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       navigate(`/app/tasks/department-tasks/${currentDepartment}`);
@@ -24,7 +25,7 @@ const DepartmentTasks = () => {
   });
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get("api/performance/get-depts-tasks");
+      const response = await axios.get("api/tasks/get-depts-tasks");
       return response.data;
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -32,7 +33,7 @@ const DepartmentTasks = () => {
   };
   const { data: fetchedDepartments = [], isPending: departmentLoading } =
     useQuery({
-      queryKey: ["fetchedDepartments"],
+      queryKey: ["fetchedDepartmentsTasks"],
       queryFn: fetchDepartments,
     });
 
@@ -57,9 +58,9 @@ const DepartmentTasks = () => {
         );
       },
     },
-    { headerName: "Total Current Month's Tasks", field: "dailyKra", flex: 1 },
-    { headerName: "Open Tasks", field: "monthlyKpa" },
-    { headerName: "Closed Tasks", field: "annualKpa" },
+    { headerName: "Total Current Month's Tasks", field: "totalTasks", flex: 1 },
+    { headerName: "Open Tasks", field: "pendingTasks" },
+    { headerName: "Closed Tasks", field: "completedTasks" },
   ];
   return (
     <div className="flex flex-col gap-4">
@@ -70,9 +71,9 @@ const DepartmentTasks = () => {
               srNo: index + 1,
               mongoId: item.department?._id,
               department: item.department?.name,
-              dailyKra: item.dailyKRA,
-              monthlyKpa: item.monthlyKPA,
-              annualKpa: item.annualKPA,
+              totalTasks: item.totalTasks,
+              pendingTasks: item.pendingTasks,
+              completedTasks: item.completedTasks,
             })),
           ]}
           columns={departmentColumns}

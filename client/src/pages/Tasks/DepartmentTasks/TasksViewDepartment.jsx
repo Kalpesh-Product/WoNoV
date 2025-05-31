@@ -83,6 +83,7 @@ const TasksViewDepartment = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsTasks"] });
       toast.success(data.message || "DATA UPDATED");
     },
     onError: (error) => {
@@ -185,6 +186,8 @@ const TasksViewDepartment = () => {
     // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "Completed By", field: "completedBy", width: 300 },
     { headerName: "Assigned Date", field: "assignedDate" },
+    { headerName: "Completed Date", field: "completedDate" },
+    { headerName: "Completed Time", field: "completedTime" },
     { headerName: "Due Time", field: "dueTime" },
     { headerName: "Due Date", field: "dueDate" },
     {
@@ -238,7 +241,7 @@ const TasksViewDepartment = () => {
                   status: item.status,
                   assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                 }))}
-              dateColumn={"dueDate"}
+              dateColumn={"assignedDate"}
               columns={departmentColumns}
             />
           </WidgetSection>
@@ -260,12 +263,13 @@ const TasksViewDepartment = () => {
                       srno: index + 1,
                       id: item._id,
                       taskName: item.taskName,
-                      assignedDate: item.assignedDate,
-                      dueDate: item.dueDate,
+                      assignedDate: (item.assignedDate),
+                      completedDate: humanDate(item.completedDate),
+                      completedTime: humanTime(item.completedDate),
                       status: item.status,
                     }))
               }
-              dateColumn={"dueDate"}
+              dateColumn={"assignedDate"}
               columns={completedColumns}
             />
           </WidgetSection>

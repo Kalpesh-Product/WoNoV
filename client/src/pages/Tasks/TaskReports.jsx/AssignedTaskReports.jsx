@@ -61,59 +61,6 @@ const AssignedTaskReports = () => {
     },
   ];
 
-  const assignedTaskReportsData = [
-    {
-      srNo: 1,
-      task: "Develop Authentication Module",
-      project: "HR Management System",
-      assignedBy: "Kalpesh Naik",
-      assignedTo:'Sankalp Kalangutkar',
-      priority: "High",
-      startDate: "2024-02-10",
-      endDate: "2024-02-20",
-    },
-    {
-      srNo: 2,
-      task: "Fix Payment Gateway Issue",
-      project: "E-commerce Platform",
-      assignedBy: "Kalpesh Naik",
-      assignedTo:'Allan Mark Silvera',
-      priority: "Medium",
-      startDate: "2024-02-12",
-      endDate: "2024-02-18",
-    },
-    {
-      srNo: 3,
-      task: "Optimize Database Queries",
-      project: "Inventory Management",
-      assignedBy: "Kalpesh Naik",
-      assignedTo:'Muskan Dodmani',
-      priority: "High",
-      startDate: "2024-02-05",
-      endDate: "2024-02-15",
-    },
-    {
-      srNo: 4,
-      task: "Implement Notification System",
-      project: "Social Media App",
-      assignedBy: "Kalpesh Naik",
-      assignedTo:'Aiwinraj KS',
-      priority: "Low",
-      startDate: "2024-02-08",
-      endDate: "2024-02-22",
-    },
-    {
-      srNo: 5,
-      task: "UI/UX Design for Dashboard",
-      project: "Admin Panel",
-      assignedBy: "Kalpesh Naik",
-      assignedTo:'Aaron Dsouza',
-      priority: "Medium",
-      startDate: "2024-02-14",
-      endDate: "2024-02-25",
-    },
-  ];
-
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -123,7 +70,7 @@ const AssignedTaskReports = () => {
           data={isLoading? []:[...taskList.map((task, index)=>({
             srNo : index + 1,
             task:task.taskName,
-            project : task.project.projectName,
+            // project : task.project.projectName,
             assignedBy : task.assignedBy.firstName,
             assignedTo : task.assignedTo.map((asignee)=> asignee.firstName),
             priority : task.priority,
