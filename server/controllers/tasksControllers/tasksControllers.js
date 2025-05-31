@@ -326,15 +326,25 @@ const getAllTasks = async (req, res, next) => {
 
     const tasks = await Task.find(query)
       .populate("assignedBy", "firstName lastName")
-      .populate("assignedTo", "firstName lastName")
+      .populate("completedBy", "firstName lastName")
       .populate("department", "name")
       .select("-company")
       .lean();
 
     const transformedTasks = tasks.map((task) => {
+      const completedBy = task.completedBy
+        ? [
+            task.completedBy.firstName,
+            task.completedBy.middleName,
+            task.completedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "";
       return {
         ...task,
         department: task.department.name,
+        completedBy,
       };
     });
 
@@ -357,17 +367,28 @@ const getTasks = async (req, res, next) => {
     const tasks = await Task.find(query)
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
-      .populate("assignedTo", "firstName lastName")
+      .populate("completedBy", "firstName lastName")
       .select("-company")
       .lean();
 
     const transformedTasks = tasks.map((task) => {
+      const completedBy = task.completedBy
+        ? [
+            task.completedBy.firstName,
+            task.completedBy.middleName,
+            task.completedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "";
+
       return {
         ...task,
         department: task.department.name,
         dueDate: task.dueDate,
         dueTime: task.dueTime ? task.dueTime : null,
         assignedDate: task.assignedDate,
+        completedBy,
       };
     });
 
@@ -390,16 +411,27 @@ const getMyTasks = async (req, res, next) => {
     const tasks = await Task.find(query)
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
-      .populate("assignedTo", "firstName lastName")
+      .populate("completedBy", "firstName lastName")
       .select("-company")
       .lean();
 
     const transformedTasks = tasks.map((task) => {
+      const completedBy = task.completedBy
+        ? [
+            task.completedBy.firstName,
+            task.completedBy.middleName,
+            task.completedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "";
+
       return {
         ...task,
         dueDate: task.dueDate,
         dueTime: task.dueTime ? task.dueTime : null,
         assignedDate: task.assignedDate,
+        completedBy,
       };
     });
 
@@ -540,10 +572,9 @@ const getMyCompletedTasks = async (req, res, next) => {
   }
 };
 
-const getTodayTasks = async (req, res, next) => {
+const getMyTodayTasks = async (req, res, next) => {
   try {
     const { user, company } = req;
-    const { dept } = req.query;
 
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -764,16 +795,27 @@ const getAssignedTasks = async (req, res, next) => {
 
     const tasks = await Task.find({ company, assignedBy: user })
       .populate("assignedBy", "firstName lastName")
-      .populate("assignedTo", "firstName lastName")
+      .populate("completedBy", "firstName lastName")
       .select("-company")
       .lean();
 
     const transformedTasks = tasks.map((task) => {
+      const completedBy = task.completedBy
+        ? [
+            task.completedBy.firstName,
+            task.completedBy.middleName,
+            task.completedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "";
+
       return {
         ...task,
         dueDate: formatDate(task.dueDate),
         dueTime: task.dueTime ? formatTime(task.dueTime) : null,
         assignedDate: formatDate(task.assignedDate),
+        completedBy,
       };
     });
 
@@ -917,7 +959,7 @@ module.exports = {
   updateTask,
   updateTaskStatus,
   getMyTasks,
-  getTodayTasks,
+  getMyTodayTasks,
   getAllTasks,
   getTasks,
   getTeamMembersTasks,
