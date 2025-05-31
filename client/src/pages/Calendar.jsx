@@ -50,7 +50,7 @@ const Calender = () => {
     const { data: meetings = [], isLoading: isMeetingsLoading } = useQuery({
       queryKey: ["meetings"],
       queryFn: async () => {
-        const response = await axios.get("/api/meetings/get-meetings");
+        const response = await axios.get("/api/meetings/my-meetings");
         return response.data;
       },
     });

@@ -56,6 +56,7 @@ const Row = ({ row, onApprove, onReject }) => {
     );
 
     setTicketIssues(selectedDept?.ticketIssues || []);
+    console.log("TICKET ISSUES",ticketIssues)
   }, [fetchedDepartments, auth.user.departments]);
 
   const {
@@ -84,16 +85,16 @@ const Row = ({ row, onApprove, onReject }) => {
   };
 
   const onSubmit = (data) => {
-    console.log("data ticket:",data)
+    console.log("data ticket:", data);
     onApprove({
       ...data,
       title: row.ticket,
-      ticketId : row._id,
+      ticketId: row._id,
       department: row.department,
       priority: data.priority,
       resolveTime: data.resolveTime,
     });
-    reset()
+    reset();
   };
 
   const handleReject = () => {
@@ -113,6 +114,10 @@ const Row = ({ row, onApprove, onReject }) => {
           {row.raisedBy.departments.map((dept) => dept.name).join(", ")}
         </TableCell>
         <TableCell align="center">{row.ticket}</TableCell>
+
+        {/* ✅ Add this line to display description */}
+        <TableCell align="center">{row.description}</TableCell>
+
         <TableCell align="center">
           <Chip label={row.status} style={statusStyle} />
         </TableCell>
@@ -154,8 +159,11 @@ const Row = ({ row, onApprove, onReject }) => {
                           </MenuItem>
                           {ticketIssues.length > 0 ? (
                             ticketIssues.map((issue) => (
-                              <MenuItem key={issue._id} value={issue.description}>
-                                {issue.description}
+                              <MenuItem
+                                key={issue._id}
+                                value={issue._id}
+                              >
+                                {issue.title}
                               </MenuItem>
                             ))
                           ) : (
@@ -264,6 +272,9 @@ const TicketSettingsNew = () => {
                 Ticket Title
               </TableCell>
               <TableCell align="center" sx={headerCellStyle}>
+                Ticket Description
+              </TableCell>
+              <TableCell align="center" sx={headerCellStyle}>
                 Status
               </TableCell>
               <TableCell align="left" sx={headerCellStyle}>
@@ -275,7 +286,12 @@ const TicketSettingsNew = () => {
             {ticketsData.map((row, index) => (
               <Row
                 key={index}
-                row={{ ...row, srNo: index + 1, department }}
+                row={{
+                  ...row,
+                  srNo: index + 1,
+                  department,
+                  description: row.description,
+                }}
                 onApprove={approveTicketMutation.mutate}
                 onReject={rejectTicketMutation.mutate}
               />
