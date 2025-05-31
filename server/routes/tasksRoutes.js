@@ -22,7 +22,7 @@ const {
 router.post("/create-tasks", createTasks);
 router.get("/my-tasks", getMyTasks); //Query (flag=pending) only required for pending tasks
 router.get("/get-all-tasks", getAllTasks);
-router.get("/get-tasks", getTasks);
+router.get("/get-tasks", getTasks); // dept-wise
 router.get("/get-depts-tasks", getAllDeptTasks);
 router.get("/get-team-tasks", getTeamMembersTasks);
 router.patch("/update-task-status/:id", updateTaskStatus);

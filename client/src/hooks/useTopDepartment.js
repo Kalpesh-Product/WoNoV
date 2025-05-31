@@ -1,25 +1,34 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import useAuth from "../hooks/useAuth"; // adjust path if needed
 
 export function useTopDepartment({
   onNotTop,
-  topDepartmentIds = ["67b2cf85b9b6ed5cedeb9a2e", "6798bab9e469e809084e249e"],
+  additionalTopUserIds = [],
 } = {}) {
   const { auth } = useAuth();
 
-  const currentDepartmentId = auth.user?.departments?.[0]?._id;
-  const currentDepartment = auth.user?.departments?.[0]?.name;
-  const isTop = topDepartmentIds.includes(currentDepartmentId);
+  // Base top-level user ID (always included)
+  const baseTopUserId = "67b83885daad0f7bab2f184f";
+
+  // Combine base ID and additional ones
+  const topUserIds = useMemo(() => {
+    const allIds = new Set([baseTopUserId, ...additionalTopUserIds]);
+    return Array.from(allIds);
+  }, [additionalTopUserIds]);
+
+  const currentUserId = auth.user?._id;
+  const currentUserName = `${auth.user?.firstName || ""} ${auth.user?.lastName || ""}`.trim();
+  const isTop = topUserIds.includes(currentUserId);
 
   useEffect(() => {
-    if (!isTop && currentDepartmentId && currentDepartment) {
-      onNotTop?.(currentDepartmentId, currentDepartment);
+    if (!isTop && currentUserId && currentUserName) {
+      onNotTop?.(currentUserId, currentUserName);
     }
-  }, [currentDepartmentId, currentDepartment, isTop, onNotTop]);
+  }, [currentUserId, currentUserName, isTop, onNotTop]);
 
   return {
     isTop,
-    currentDepartmentId,
-    currentDepartment,
+    currentUserId,
+    currentUserName,
   };
 }

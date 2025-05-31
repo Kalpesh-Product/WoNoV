@@ -17,10 +17,10 @@ const PerformanceHome = () => {
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
   useTopDepartment({
+    additionalTopUserIds: ["67b83885daad0f7bab2f1888","681a10b13fc9dc666ede401c","67b83885daad0f7bab2f188b"], //utkarsha //nigel //mac
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       navigate(`/app/performance/${currentDepartment}`);
-
     },
   });
 

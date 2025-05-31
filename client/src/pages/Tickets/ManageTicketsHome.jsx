@@ -19,7 +19,7 @@ const ManageTicketsHome = () => {
   useTopDepartment({
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
-      navigate(`${currentDepartment}`);
+      navigate(`/app/tickets/manage-tickets/${currentDepartment}`);
     },
   });
 

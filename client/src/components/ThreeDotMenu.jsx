@@ -1,13 +1,15 @@
 import { Popover, IconButton, Button, CircularProgress } from "@mui/material";
 import { useState } from "react";
 // import { PiDotsThreeVerticalBold } from "react-icons/pi";
-import { MdMoreHoriz } from 'react-icons/md'; 
+import { MdMoreHoriz } from "react-icons/md";
 
-const ThreeDotMenu = ({ rowId, menuItems, isLoading }) => {
+const ThreeDotMenu = ({ rowId, menuItems, isLoading, disabled = false }) => {
   const [anchorEl, setAnchorEl] = useState(null);
 
   const handleOpen = (event) => {
-    setAnchorEl(event.currentTarget);
+    if (!disabled) {
+      setAnchorEl(event.currentTarget);
+    }
   };
 
   const handleClose = () => {
@@ -17,8 +19,8 @@ const ThreeDotMenu = ({ rowId, menuItems, isLoading }) => {
   return (
     <div>
       {/* Three-dot menu button */}
-      <IconButton onClick={handleOpen}>
-        <MdMoreHoriz  />
+      <IconButton onClick={handleOpen} disabled={disabled}>
+        <MdMoreHoriz />
       </IconButton>
 
       {/* Popover Dropdown */}
@@ -30,22 +32,28 @@ const ThreeDotMenu = ({ rowId, menuItems, isLoading }) => {
         transformOrigin={{ vertical: "top", horizontal: "left" }}
       >
         <div className="w-full bg-white rounded-xl motion-preset-slide-down-sm">
-          {menuItems.map(({ label, onClick, disabled }, index) => (
-            <div
-              key={index}
-              onClick={() => {
-                if (!disabled) {
-                  onClick();
-                }
-                return;
-              }}
-              className={`${label === "Cancel" ? "bg-red-100 text-red-600" : "bg-white text-primary"}  p-4 py-2 border-b-[1px] border-borderGray cursor-pointer text-content hover:bg-gray-200 ${
-                disabled ? "text-gray-400 cursor-not-allowed" : ""
-              }`}
-            >
-              {isLoading ? <CircularProgress color="#1E3D73" /> : label}
-            </div>
-          ))}
+          {menuItems.map(
+            ({ label, onClick, disabled: itemDisabled }, index) => (
+              <div
+                key={index}
+                onClick={() => {
+                  if (!itemDisabled) {
+                    onClick();
+                    handleClose(); // optionally close after click
+                  }
+                }}
+                className={`${
+                  label === "Cancel"
+                    ? "bg-red-100 text-red-600"
+                    : "bg-white text-primary"
+                }  
+                p-4 py-2 border-b-[1px] border-borderGray cursor-pointer text-content hover:bg-gray-200
+                ${itemDisabled ? "text-gray-400 cursor-not-allowed" : ""}`}
+              >
+                {isLoading ? <CircularProgress size={16} /> : label}
+              </div>
+            )
+          )}
         </div>
       </Popover>
     </div>

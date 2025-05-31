@@ -169,9 +169,10 @@ const updateTaskStatus = async (req, res, next) => {
       );
     }
 
+    const currDate = new Date();
     const updatedTask = await Task.findByIdAndUpdate(
       id,
-      { status: "Completed", completedBy: user },
+      { status: "Completed", completedBy: user, completedDate: currDate },
       { new: true, runValidators: true }
     );
 
@@ -346,14 +347,11 @@ const getAllTasks = async (req, res, next) => {
 const getTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { dept, empId } = req.query;
+    const { dept } = req.query;
     const query = { company };
 
     if (dept) {
       query.department = dept;
-    }
-    if (empId) {
-      query.assignedTo = empId;
     }
 
     const tasks = await Task.find(query)
@@ -366,13 +364,14 @@ const getTasks = async (req, res, next) => {
     const transformedTasks = tasks.map((task) => {
       return {
         ...task,
-        department: task.name,
+        department: task.department.name,
         dueDate: task.dueDate,
         dueTime: task.dueTime ? task.dueTime : null,
         assignedDate: task.assignedDate,
       };
     });
 
+    console.log("my tasks", transformedTasks.length);
     return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);
@@ -429,9 +428,9 @@ const getMyAssignedTasks = async (req, res, next) => {
     const transformedTasks = tasks.map((task) => {
       return {
         ...task,
-        dueDate: formatDate(task.dueDate),
+        dueDate: task.dueDate,
         dueTime: task.dueTime ? task.dueTime : "06:30 PM",
-        assignedDate: formatDate(task.assignedDate),
+        assignedDate: task.assignedDate,
       };
     });
 
@@ -464,9 +463,9 @@ const getCompletedTasks = async (req, res, next) => {
     const transformedTasks = tasks.map((task) => {
       return {
         ...task,
-        dueDate: formatDate(task.dueDate),
+        dueDate: task.dueDate,
         dueTime: task.dueTime ? task.dueTime : "06:30 PM",
-        assignedDate: formatDate(task.assignedDate),
+        assignedDate: task.assignedDate,
       };
     });
 
@@ -558,79 +557,51 @@ const getTeamMembersTasks = async (req, res, next) => {
     // Find team members
     const teamMembers = await User.find({
       departments: { $in: departments },
+      isActive: true,
+    })
+      .populate([
+        { path: "role", select: "roleTitle" },
+        { path: "departments", select: "name" },
+      ])
+      .select("firstName middleName lastName");
+
+    const tasks = await Task.find({
+      company,
+      department: { $in: departments },
+    })
+      .populate([
+        {
+          path: "completedBy",
+          select: "email firstName lastName isActive",
+          populate: [
+            { path: "role", select: "roleTitle" },
+            { path: "departments", select: "name" },
+          ],
+        },
+      ])
+      .populate("assignedBy", "firstName lastName")
+      .select("-company")
+      .lean();
+
+    const transformedTasks = teamMembers.map((member) => {
+      const memberId = member._id.toString();
+
+      const totalTasks = tasks.filter((emp) => {
+        return emp?.completedBy && emp.completedBy._id.toString() === memberId;
+      }).length;
+
+      return {
+        name: `${member.firstName} ${member.middleName || ""} ${
+          member.lastName
+        }`.trim(),
+        email: member.email,
+        department: member.departments.map((dept) => dept.name),
+        role: member.role.map((r) => r.roleTitle),
+        tasks: totalTasks,
+      };
     });
 
-    const teamMemberIds = teamMembers.map((member) => member._id);
-
-    const teamMembersData = await Promise.all(
-      teamMemberIds.map(async (id) => {
-        // Fetch tasks assigned to the team member
-        const tasks = await Task.find({
-          company,
-          $and: [
-            { assignedTo: { $in: [id] } }, // User must be in assignedTo
-            { assignedBy: { $ne: id } }, // User must NOT be assignedBy
-          ],
-        })
-          .populate(
-            {
-              path: "assignedTo",
-              select: "email firstName lastName isActive",
-              populate: [
-                { path: "role", select: "roleTitle" },
-                { path: "departments", select: "name" },
-              ],
-            }
-            // {
-            //   path: "assignedTo",
-            //   select: "email firstName lastName isActive",
-            //   populate: [
-            //     { path: "role", select: "roleTitle" },
-            //     { path: "departments", select: "name" },
-            //   ],
-            // }
-          )
-          .populate("assignedBy", "firstName lastName")
-          .select("-company")
-          .lean();
-
-        // Find the correct user details from the first task
-        let userDetails = {};
-        if (tasks.length > 0) {
-          const matchedUser = tasks[0].assignedTo.find(
-            (user) => user._id.toString() === id.toString()
-          );
-
-          if (matchedUser) {
-            userDetails = {
-              email: matchedUser.email,
-              name: `${matchedUser.firstName} ${matchedUser.lastName}`,
-              role:
-                Array.isArray(matchedUser.role) && matchedUser.role.length
-                  ? matchedUser.role.map((role) => role.roleTitle)
-                  : ["No Role"],
-              departments:
-                matchedUser.departments?.map((dept) => dept.name) || [],
-              status: matchedUser.isActive,
-            };
-          }
-        }
-
-        if (tasks.length > 0) {
-          return {
-            ...userDetails,
-            tasksCount: tasks.length,
-          };
-        }
-
-        return null; // Return null for users with no tasks
-      })
-    );
-
-    // Filter out null elements (users with 0 tasks)
-    const filteredData = teamMembersData.filter((member) => member !== null);
-
-    return res.status(200).json(filteredData);
+    return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);
   }
@@ -638,10 +609,18 @@ const getTeamMembersTasks = async (req, res, next) => {
 
 const getAllDeptTasks = async (req, res, next) => {
   try {
-    const { company } = req;
+    const { roles, departments, company } = req;
 
     let departmentMap = new Map();
     let query = { company };
+
+    if (
+      !roles.includes("Master Admin") &&
+      !roles.includes("Super Adtmin") &&
+      !roles.includes("HR Admin")
+    ) {
+      query.department = { $in: departments };
+    }
 
     const tasks = await Task.find(query)
       .populate([{ path: "department", select: "name" }])
