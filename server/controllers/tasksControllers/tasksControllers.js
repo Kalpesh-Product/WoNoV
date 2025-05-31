@@ -353,7 +353,7 @@ const getTasks = async (req, res, next) => {
       query.department = dept;
     }
 
-    const tasks = await Task.find(dept)
+    const tasks = await Task.find(query)
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
@@ -615,7 +615,7 @@ const getAllDeptTasks = async (req, res, next) => {
 
     if (
       !roles.includes("Master Admin") &&
-      !roles.includes("Super Admin") &&
+      !roles.includes("Super Adtmin") &&
       !roles.includes("HR Admin")
     ) {
       query.department = { $in: departments };
