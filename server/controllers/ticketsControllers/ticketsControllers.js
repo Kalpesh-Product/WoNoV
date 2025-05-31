@@ -884,6 +884,7 @@ const ticketData = async (req, res, next) => {
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
         { path: "acceptedBy", select: "firstName lastName email" },
+        { path: "assignees", select: "firstName lastName email" },
         { path: "rejectedBy", select: "firstName lastName email" },
         { path: "company", select: "companyName" },
       ])
