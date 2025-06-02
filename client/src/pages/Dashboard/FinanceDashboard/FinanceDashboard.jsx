@@ -46,7 +46,6 @@ const FinanceDashboard = () => {
     .filter((item) => item.expense)
     .flatMap((item) => item.expense);
   const testIncome = revenueExpenseData.filter((item) => item.income);
-  console.log("Filtered ic :", testIncome);
   const testUnits = revenueExpenseData
     .filter((item) => item.units)
     .flatMap((item) => item.units);
@@ -57,26 +56,19 @@ const FinanceDashboard = () => {
   );
 const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
   const incomeSources = item.income || {};
-  console.log(`\n🧾 Entry #${index + 1}:`, Object.keys(incomeSources));
 
   const incomeValues = Object.values(incomeSources);
-  console.log(`🔍 Raw Arrays:`, incomeValues);
 
   const allRevenues = incomeValues.flat();
-  console.log(`📦 Flattened Revenues (${allRevenues.length} items):`, allRevenues);
 
   const sourceTotals = allRevenues.reduce((sum, revenueItem, i) => {
     const value = revenueItem.taxableAmount ?? revenueItem.revenue ?? 0;
-    console.log(`   ➕ Item #${i + 1}: taxableAmount = ${revenueItem.taxableAmount}, revenue = ${revenueItem.revenue} => Used = ${value}`);
     return sum + value;
   }, 0);
-
-  console.log(`✅ Subtotal for Entry #${index + 1}:`, sourceTotals);
 
   return grandTotal + sourceTotals;
 }, 0);
 
-console.log("\n💰 Total Income (Taxable or Revenue):", totalIncomeAmount);
 
 
   //----------INCOME-EXPENSE GRAPH conversion------------------//
@@ -230,26 +222,28 @@ console.log("\n💰 Total Income (Taxable or Revenue):", totalIncomeAmount);
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [
     ...incomeData,
-    {
-      name: "Income",
-      group: "FY 2025-26",
-      data: [
-        1650000, // Jan - slight growth
-        1720000, // Feb
-        1850000, // Mar
-        2000000, // Apr
-        2200000, // May
-        2400000, // Jun
-        2600000, // Jul
-        2550000, // Aug
-        2450000, // Sep
-        2800000, // Oct
-        3000000, // Nov
-        3300000, // Dec
-      ],
-    },
+    // {
+    //   name: "Income",
+    //   group: "FY 2025-26",
+    //   data: [
+    //     1650000, // Jan - slight growth
+    //     1720000, // Feb
+    //     1850000, // Mar
+    //     2000000, // Apr
+    //     2200000, // May
+    //     2400000, // Jun
+    //     2600000, // Jul
+    //     2550000, // Aug
+    //     2450000, // Sep
+    //     2800000, // Oct
+    //     3000000, // Nov
+    //     3300000, // Dec
+    //   ],
+    // },
     ...expenseData,
   ];
+
+  console.log("income expense in graph : ",incomeExpenseData)
 
   const incomeExpenseOptions = {
     chart: {
