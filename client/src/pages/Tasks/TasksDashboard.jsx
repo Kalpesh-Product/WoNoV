@@ -106,13 +106,13 @@ const TasksDashboard = () => {
       }
 
       result.series.push({
-        name: "completed",
+        name: "Completed",
         group: fy,
         data: completedData,
       });
 
       result.series.push({
-        name: "remaining",
+        name: "Remaining",
         group: fy,
         data: remainingData,
       });
@@ -135,6 +135,9 @@ const TasksDashboard = () => {
 
   const { series, rawCounts } = normalizeDataByMonth(allTasksQuery.data || []);
   const currentFY = series[0]?.group; // FY 2024-25, etc.
+  const totalTasksForYear = rawCounts[currentFY]
+    ? rawCounts[currentFY].reduce((sum, m) => sum + m.total, 0)
+    : 0;
 
   const taskGraphOptions = {
     chart: {
@@ -150,26 +153,41 @@ const TasksDashboard = () => {
         formatter: (val) => `${val}%`,
       },
     },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => `${val}%`,
+      style: {
+        fontSize: "12px",
+        fontFamily: "Poppins-Regular",
+        colors: ["#ffff"], // Optional: black labels
+      },
+    },
     tooltip: {
       custom: function ({ series, seriesIndex, dataPointIndex, w }) {
         const month = w.globals.labels[dataPointIndex];
-        const counts = rawCounts[currentFY]?.[dataPointIndex] || {
+
+        // Get the FY label from the series definition itself
+        const group = w.config.series[seriesIndex]?.group;
+
+        // Fallback if group is missing or rawCounts isn't ready
+        const counts = rawCounts[group]?.[dataPointIndex] || {
           completed: 0,
           remaining: 0,
           total: 0,
         };
 
         return `
-        <div style="padding: 10px; font-family: Poppins-Regular; font-size: 13px;">
-          <div style="margin : 10px 0"><strong>Month:</strong> ${month}</div>
-          <div><strong>Total Tasks:</strong> ${counts.total}</div>
-          <div><strong>Completed:</strong> ${counts.completed}</div>
-          <hr style="margin : 10px 0" />
-          <div ><strong>Remaining:</strong> ${counts.remaining}</div>
-        </div>
-      `;
+      <div style="padding: 10px; font-family: Poppins-Regular; font-size: 13px;">
+        <div style="margin : 10px 0"><strong>Month:</strong> ${month}</div>
+        <div><strong>Total Tasks:</strong> ${counts.total}</div>
+        <div><strong>Completed:</strong> ${counts.completed}</div>
+        <hr style="margin : 10px 0" />
+        <div><strong>Remaining:</strong> ${counts.remaining}</div>
+      </div>
+    `;
       },
     },
+
     plotOptions: {
       bar: {
         horizontal: false,
@@ -551,13 +569,12 @@ const TasksDashboard = () => {
       widgets: [
         <YearlyGraph
           data={series}
+          currentYear={true}
           responsiveResize
           chartId={"bargraph-hr-expense"}
           options={taskGraphOptions}
           title={"OVERALL AVERAGE TASKS COMPLETION"}
-          // titleAmount={`INR ${Math.round("").toLocaleString(
-          //   "en-IN"
-          // )}`}
+          titleAmount={`TOTAL TASKS : ${totalTasksForYear || 0}`}
         />,
       ],
     },
@@ -639,6 +656,7 @@ const TasksDashboard = () => {
           <PieChartMui
             data={dynamicTasksPieChartData}
             options={dynamicTasksPieChartOptions}
+            height={325}
           />
         </WidgetSection>,
         // <WidgetSection
@@ -655,6 +673,7 @@ const TasksDashboard = () => {
           <PieChartMui
             data={departmentPendingStats}
             options={departmentPendingOptions}
+            height={500}
           />
         </WidgetSection>,
       ],

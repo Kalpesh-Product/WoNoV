@@ -5,15 +5,17 @@ import DataCard from "../../../../components/DataCard";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
-import { useNavigate } from "react-router-dom"; // For programmatic navigation
+import { useNavigate } from "react-router-dom";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import { parseAmount } from "../../../../utils/parseAmount";
+import { CircularProgress } from "@mui/material";
 
 const DeptWiseBudget = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
+
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     queryKey: ["hrFinance"],
     queryFn: async () => {
@@ -28,7 +30,6 @@ const DeptWiseBudget = () => {
     },
   });
 
-  // Your groupedData logic
   const groupedData = hrFinance.reduce((acc, item) => {
     const month = dayjs(item.dueDate).format("MMMM YYYY");
 
@@ -46,11 +47,10 @@ const DeptWiseBudget = () => {
               headerName: "Department",
               flex: 1,
               cellRenderer: (params) => {
-                console.log("PARAMS DATA : ", params);
                 const handleClick = () => {
                   navigate(
                     `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`
-                  ); // Redirect to new page with department as param
+                  );
                 };
                 return (
                   <span
@@ -85,7 +85,6 @@ const DeptWiseBudget = () => {
     return acc;
   }, {});
 
-  // Data array for rendering the Accordion
   const financialData = Object.values(groupedData)
     .map((data, index) => {
       const departmentMap = {};
@@ -128,11 +127,15 @@ const DeptWiseBudget = () => {
           headerName: "Department",
           flex: 1,
           cellRenderer: (params) => {
-            console.log(params)
             const handleClick = () => {
               navigate(
                 `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`,
-                { state: { deptId: params.data?.deptId, deptName : params.value } }
+                {
+                  state: {
+                    deptId: params.data?.deptId,
+                    deptName: params.value,
+                  },
+                }
               );
             };
             return (
@@ -153,7 +156,7 @@ const DeptWiseBudget = () => {
       return {
         ...data,
         projectedAmount: inrFormat(data.projectedAmount),
-        amount: inrFormat(data.amount), // keep as is if already numeric
+        amount: inrFormat(data.amount),
         tableData: {
           ...data.tableData,
           rows: transoformedRows,
@@ -163,25 +166,10 @@ const DeptWiseBudget = () => {
     })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate)));
 
-  console.log("FINANCIAL OUT : ", financialData);
-
-  // BUDGET NEW START
-
-  const [isReady, setIsReady] = useState(false);
-
-  // const [openModal, setOpenModal] = useState(false);
-
   const budgetBar = useMemo(() => {
     if (isHrLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(hrFinance);
   }, [isHrLoading, hrFinance]);
-
-  useEffect(() => {
-    if (!isHrLoading) {
-      const timer = setTimeout(() => setIsReady(true), 1000);
-      return () => clearTimeout(timer); // Cleanup on unmount
-    }
-  }, [isHrLoading]);
 
   const expenseRawSeries = useMemo(() => {
     return [
@@ -202,7 +190,6 @@ const DeptWiseBudget = () => {
     chart: {
       type: "bar",
       toolbar: { show: false },
-
       stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
       events: {
@@ -225,56 +212,51 @@ const DeptWiseBudget = () => {
     },
     dataLabels: {
       enabled: true,
-      formatter: (val) => {
-        return inrFormat(val);
-      },
-
+      formatter: (val) => inrFormat(val),
       style: {
         fontSize: "12px",
         colors: ["#000"],
       },
       offsetY: -22,
     },
-
     yaxis: {
-      // max: 3000000,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
         formatter: (val) => `${Math.round(val / 100000)}`,
       },
     },
-    fill: {
-      opacity: 1,
-    },
-    legend: {
-      show: true,
-      position: "top",
-    },
-
+    fill: { opacity: 1 },
+    legend: { show: true, position: "top" },
     tooltip: {
       enabled: false,
       custom: function ({ series, seriesIndex, dataPointIndex }) {
         const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
         return `
-                  <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
-              
-                    <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
-                      <div><strong>Total Expense:</strong></div>
-                      <div style="width: 10px;"></div>
-                   <div style="text-align: left;">INR ${Math.round(
-                     rawData
-                   ).toLocaleString("en-IN")}</div>
-      
-                    </div>
-           
-                  </div>
-                `;
+          <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
+            <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
+              <div><strong>Total Expense:</strong></div>
+              <div style="width: 10px;"></div>
+              <div style="text-align: left;">INR ${Math.round(
+                rawData
+              ).toLocaleString("en-IN")}</div>
+            </div>
+          </div>
+        `;
       },
     },
   };
 
   const totalUtilised =
     budgetBar?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+
+  // ✅ BLOCK RENDERING UNTIL DATA IS READY
+  if (isHrLoading || !budgetBar || !budgetBar.utilisedBudget) {
+    return (
+      <div className="h-screen flex justify-start items-center">
+        <CircularProgress />
+      </div>
+    ); // Replace with Skeleton if you have one
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -319,6 +301,7 @@ const DeptWiseBudget = () => {
           />
         </WidgetSection>
       </div>
+
       <AllocatedBudget financialData={financialData} noFilter hideTitle />
     </div>
   );

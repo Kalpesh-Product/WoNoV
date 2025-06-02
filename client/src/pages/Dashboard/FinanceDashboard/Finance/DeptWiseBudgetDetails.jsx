@@ -87,7 +87,7 @@ console.log("dEPST",deptName)
       expanseName: item.expanseName,
       department: item.department,
       expanseType: item.expanseType,
-      projectedAmount: item.projectedAmount.toFixed(2),
+      projectedAmount: item.projectedAmount,
       actualAmount: inrFormat(item?.actualAmount || 0), 
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       status: item.status,
@@ -103,7 +103,7 @@ console.log("dEPST",deptName)
         ...row,
         srNo: index + 1,
         projectedAmount: Number(
-          row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")
+          row.projectedAmount
         ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
       }));
       const transformedCols = [
