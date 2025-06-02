@@ -135,7 +135,6 @@ const Calender = () => {
     });
   };
 
-
   return (
     <div className="flex w-[70%] md:w-full">
       {!isMeetingsLoading && !isEventsPending ? (
@@ -213,14 +212,12 @@ const Calender = () => {
                       return (
                         <div
                           key={index}
-                          className="flex gap-2 items-center mb-2"
-                        >
+                          className="flex gap-2 items-center mb-2">
                           <div
                             className="w-3 h-3 rounded-full mr-2"
                             style={{
                               backgroundColor: colors[event.extendedProps.type],
-                            }}
-                          ></div>
+                            }}></div>
                           <div className="flex flex-col">
                             <span className="text-content font-medium">
                               {event.title}
@@ -265,8 +262,7 @@ const Calender = () => {
             open={isDrawerOpen}
             onClose={closeDrawer}
             headerBackground={headerBackground}
-            title="Event Details"
-          >
+            title="Event Details">
             {drawerMode === "view" && selectedEvent && (
               <div>
                 <div className="flex flex-col gap-2">
@@ -281,19 +277,21 @@ const Calender = () => {
                     <span className="w-[30%]"> Start Date </span>
                     <span>:</span>
                     <span className="text-content font-pmedium w-full justify-start pl-4">
-                      {humanDate(new Date(selectedEvent?._instance.range.start))}
+                      {humanDate(
+                        new Date(selectedEvent?._instance.range.start)
+                      )}
                     </span>{" "}
                   </span>{" "}
                   <span className="text-content flex  items-center">
                     <span className="w-[30%]"> End Date </span>
                     <span>:</span>
                     <span className="text-content font-pmedium w-full justify-start pl-4">
-                      {humanDate((selectedEvent?._instance.range.end))}
+                      {humanDate(selectedEvent?._instance.range.end)}
                     </span>{" "}
                   </span>{" "}
                   {selectedEvent.extendedProps.description && (
                     <div>
-                      <span className="text-content flex  items-start">
+                      <span className="text-content flex  items-start ">
                         <span className="w-[30%]"> Description</span>
                         <span>:</span>
 
