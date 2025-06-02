@@ -38,7 +38,9 @@ const RecievedTickets = ({ title, departmentId }) => {
     queryKey: ["tickets"],
     queryFn: async () => {
       try {
-        const response = await axios.get(`/api/tickets/get-tickets/${departmentId}`);
+        const response = await axios.get(
+          `/api/tickets/get-tickets/${departmentId}`
+        );
 
         return response.data;
       } catch (error) {
@@ -69,7 +71,8 @@ const RecievedTickets = ({ title, departmentId }) => {
     mutationKey: ["reject-ticket"],
     mutationFn: async (ticket) => {
       const response = await axios.patch(
-        `/api/tickets/reject-ticket/${ticket.id}`
+        `/api/tickets/reject-ticket/${ticket.id}`,
+        { reason: ticket.specifiedReason }
       );
 
       return response.data.message;
@@ -163,21 +166,25 @@ const RecievedTickets = ({ title, departmentId }) => {
     }));
   };
 
-  const handleRejectSubmit = async () => {
-    if (!rejectionReason.trim()) return;
-
-    try {
-      await axios.post(`/api/tickets/reject/${selectedTicket._id}`, {
-        reason: rejectionReason,
-      });
-
-      setRejectModalOpen(false);
-      setRejectionReason("");
-      setSelectedTicket(null);
-      // refetch or invalidate query if needed
-    } catch (error) {
-      console.error("Rejection failed", error);
+  const handleRejectSubmit = () => {
+    if (!rejectionReason.trim()) {
+      toast.error("Please specify a rejection reason.");
+      return;
     }
+
+    rejectMutate(
+      {
+        id: selectedTicket._id,
+        specifiedReason: rejectionReason,
+      },
+      {
+        onSuccess: () => {
+          setRejectModalOpen(false);
+          setRejectionReason("");
+          setSelectedTicket(null);
+        },
+      }
+    );
   };
 
   // Example usage
@@ -260,7 +267,7 @@ const RecievedTickets = ({ title, departmentId }) => {
                     },
                     {
                       label: "Reject",
-                      onClick: () => rejectMutate(params.data), // opens modal instead
+                      onClick: () => handleRejectClick(params.data), // ✅ open modal
                     },
                   ]
                 : []),
@@ -380,10 +387,15 @@ const RecievedTickets = ({ title, departmentId }) => {
             className="w-full p-2 border rounded resize-none min-h-[100px]"
           />
           <button
+            disabled={!rejectionReason.trim() || rejectPending}
             onClick={handleRejectSubmit}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+            className={`${
+              !rejectionReason.trim() || rejectPending
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-red-600 hover:bg-red-700"
+            } text-white px-4 py-2 rounded transition`}
           >
-            Submit Rejection
+            {rejectPending ? "Submitting..." : "Submit Rejection"}
           </button>
         </div>
       </MuiModal>

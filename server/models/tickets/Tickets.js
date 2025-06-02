@@ -49,9 +49,14 @@ const ticketsSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
     },
-    rejectedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "UserData",
+    reject: {
+      rejectedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserData",
+      },
+      reason: {
+        type: String,
+      },
     },
     resolvedDate: Date,
     company: {

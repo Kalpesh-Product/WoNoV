@@ -180,7 +180,6 @@ const raiseTicket = async (req, res, next) => {
 
     const savedTicket = await newTicket.save();
 
-    console.log("title", ticketTitle);
     // console.log("savedTicket",savedTicket)
     // Log the successful ticket creation
     await createLog({
@@ -688,6 +687,7 @@ const rejectTicket = async (req, res, next) => {
 
   try {
     const { id: ticketId } = req.params;
+    const { reason } = req.body;
 
     if (!ticketId) {
       throw new CustomError(
@@ -717,10 +717,16 @@ const rejectTicket = async (req, res, next) => {
       );
     }
 
-    // Update the ticket by marking it as accepted and setting status to "In Progress"
+    // Update the ticket by marking it as rejected and storing reason
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
-      { rejectedBy: user, status: "Rejected" },
+      {
+        status: "Rejected",
+        reject: {
+          rejectedBy: user,
+          reason: reason,
+        },
+      },
       { new: true }
     );
 
@@ -733,7 +739,7 @@ const rejectTicket = async (req, res, next) => {
       );
     }
 
-    // Log the successful ticket acceptance
+    // Log the successful ticket rejection
     await createLog({
       path: logPath,
       action: logAction,
@@ -744,7 +750,13 @@ const rejectTicket = async (req, res, next) => {
       company: company,
       sourceKey: logSourceKey,
       sourceId: updatedTicket._id,
-      changes: { rejectedBy: user, status: "Closed" },
+      changes: {
+        status: "Rejected",
+        reject: {
+          rejectedBy: user,
+          reason: reason,
+        },
+      },
     });
 
     return res.status(200).json({ message: "Ticket rejected successfully" });
@@ -758,6 +770,7 @@ const rejectTicket = async (req, res, next) => {
     }
   }
 };
+
 
 const assignTicket = async (req, res, next) => {
   const logPath = "tickets/TicketLog";
