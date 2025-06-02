@@ -20,6 +20,11 @@ const DonutChart = ({
   };
   const { chartKey, containerRef } = useResponsiveChart();
 
+ const fullLabels = chartData.labels;
+const truncatedLabels = fullLabels.map(label =>
+  label.length > 7 ? label.slice(0, 7) + "..." : label
+);
+
   const chartOptions = {
     chart: {
       type: "donut",
@@ -38,7 +43,7 @@ const DonutChart = ({
       },
     },
     colors: chartData.colors,
-    labels: chartData.labels,
+    labels: truncatedLabels,
     legend: {
       position: "right",
     },
@@ -48,6 +53,12 @@ const DonutChart = ({
     },
     tooltip: {
       enabled: true,
+        custom: function({ seriesIndex }) {
+    const fullLabel = chartData.labels[seriesIndex]; // ✅ Full label only
+    return `<div style="padding: 8px">
+              <strong>${fullLabel}</strong>
+            </div>`;
+  },
       y: {
         formatter: (val, { seriesIndex }) => `${tooltipValue[seriesIndex]}`,
       },

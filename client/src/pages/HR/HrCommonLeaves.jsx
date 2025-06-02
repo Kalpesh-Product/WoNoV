@@ -128,7 +128,7 @@ const HrCommonLeaves = () => {
                   : leaves.filter((item)=>item.fromDate !== undefined).map((leave, index) => {
                     console.log(leave.fromDate)
                     return({
-                      id: index + 1,
+                      // id: index + 1,
                       fromDate: leave.fromDate,
                       toDate: leave.toDate,
                       leaveType: leave.leaveType,

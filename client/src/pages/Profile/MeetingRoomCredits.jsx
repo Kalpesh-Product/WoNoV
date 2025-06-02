@@ -13,6 +13,8 @@ import MuiModal from "../../components/MuiModal";
 import { queryClient } from "../../main";
 import useAuth from "../../hooks/useAuth";
 import CustomRating from "../../components/CustomRating";
+import humanTime from "../../utils/humanTime"
+import humanDateFormat from "../../utils/humanDateForamt"
 
 const MeetingRoomCredits = ({ pageTitle }) => {
   const [selectedMeeting, setSelectedMeeting] = useState(null);
@@ -82,6 +84,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
   };
 
   const handleViewDetails = (meeting) => {
+    console.log("meetings",meeting)
     setSelectedMeeting(meeting);
     setDetailsModal(true);
   };
@@ -109,7 +112,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
 
         return (
           <div className="p-2 flex items-center gap-2">
-            {meetingReviews.length > 0 ? (
+            {/* {meetingReviews.length > 0 ? (
               "Review added"
             ) : (
               <span
@@ -118,7 +121,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
               >
                 <MdOutlineRateReview size={20} />
               </span>
-            )}
+            )} */}
             <span
               className="text-subtitle cursor-pointer"
               onClick={() => handleViewDetails(params.data)}
