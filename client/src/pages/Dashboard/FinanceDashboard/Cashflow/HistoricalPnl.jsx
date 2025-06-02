@@ -685,9 +685,9 @@ const HistoricalPnl = () => {
                     flex: 1,
                     headerClass: "bold-header",
                   },
-                  {
-                    headerName: "Action",
-                    field: "action",
+                  // {
+                  //   headerName: "Action",
+                  //   field: "action",
                     // cellRenderer: (params) => (
                     //   <div className="p-2 mb-2 flex gap-2">
                     //     <span
@@ -698,7 +698,7 @@ const HistoricalPnl = () => {
                     //     </span>
                     //   </div>
                     // ),
-                  },
+                  // },
                 ]}
                 tableHeight={300}
               />

@@ -41,12 +41,26 @@ const FinanceDashboard = () => {
         }
       },
     });
+   
+  const { data: budgetData = [], isLoading: isBudgetDataLoading } =
+    useQuery({
+      queryKey: ["budgetData"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/budget/company-budget");
+          return response.data?.allBudgets;
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    });
+
+
 
   const testExpense = revenueExpenseData
     .filter((item) => item.expense)
     .flatMap((item) => item.expense);
   const testIncome = revenueExpenseData.filter((item) => item.income);
-  console.log("Filtered ic :", testIncome);
   const testUnits = revenueExpenseData
     .filter((item) => item.units)
     .flatMap((item) => item.units);
@@ -57,26 +71,27 @@ const FinanceDashboard = () => {
   );
 const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
   const incomeSources = item.income || {};
-  console.log(`\n🧾 Entry #${index + 1}:`, Object.keys(incomeSources));
+  // console.log(`\n🧾 Entry #${index + 1}:`, Object.keys(incomeSources));
 
   const incomeValues = Object.values(incomeSources);
-  console.log(`🔍 Raw Arrays:`, incomeValues);
+  // console.log(`🔍 Raw Arrays:`, incomeValues);
 
   const allRevenues = incomeValues.flat();
-  console.log(`📦 Flattened Revenues (${allRevenues.length} items):`, allRevenues);
+  // console.log(`📦 Flattened Revenues (${allRevenues.length} items):`, allRevenues);
+  
 
   const sourceTotals = allRevenues.reduce((sum, revenueItem, i) => {
     const value = revenueItem.taxableAmount ?? revenueItem.revenue ?? 0;
-    console.log(`   ➕ Item #${i + 1}: taxableAmount = ${revenueItem.taxableAmount}, revenue = ${revenueItem.revenue} => Used = ${value}`);
+    // console.log(`   ➕ Item #${i + 1}: taxableAmount = ${revenueItem.taxableAmount}, revenue = ${revenueItem.revenue} => Used = ${value}`);
     return sum + value;
   }, 0);
 
-  console.log(`✅ Subtotal for Entry #${index + 1}:`, sourceTotals);
+  // console.log(`✅ Subtotal for Entry #${index + 1}:`, sourceTotals);
 
   return grandTotal + sourceTotals;
 }, 0);
 
-console.log("\n💰 Total Income (Taxable or Revenue):", totalIncomeAmount);
+// console.log("\n💰 Total Income (Taxable or Revenue):", totalIncomeAmount);
 
 
   //----------INCOME-EXPENSE GRAPH conversion------------------//
@@ -172,6 +187,13 @@ console.log("\n💰 Total Income (Taxable or Revenue):", totalIncomeAmount);
       group: fiscalYear,
       data: months.map((month) => incomeMap[month] || 0),
     })
+  );
+
+    const lastMonthRawIncome = incomeData.filter(
+    (item) => item.group === "FY 2024-25"
+  );
+  const lastMonthDataIncome = lastMonthRawIncome.map(
+    (item) => item.data[item.data.length - 1]
   );
 
   //-----------------IncomeData---------------//
@@ -337,20 +359,20 @@ console.log("\n💰 Total Income (Taxable or Revenue):", totalIncomeAmount);
     descriptionData: [
       {
         title: "March 2025",
-        value: "INR 25,00,000",
+        value: `INR ${inrFormat(lastMonthDataIncome)}`,
         route: "monthly-profit-loss",
       },
       {
         title: "Annual Average",
-        value: "INR 27,00,000",
+        value:  `INR ${inrFormat(totalIncomeAmount / 12)}` ,
         route: "annual-average-profit-loss",
       },
       {
         title: "Overall",
-        value: "INR 3,24,00,000",
+        value: `INR ${inrFormat(totalIncomeAmount)}`,
         route: "overall-profit-loss",
       },
-      { title: "Per Sq. Ft.", value: "810", route: "sqft-wise-data" },
+      { title: "Per Sq. Ft.", value: `INR ${inrFormat(totalIncomeAmount / totalSqft)}`, route: "sqft-wise-data" },
     ],
   };
 
@@ -372,10 +394,10 @@ console.log("\n💰 Total Income (Taxable or Revenue):", totalIncomeAmount);
     cardTitle: "Profit & Loss",
     timePeriod: "FY 2024-25",
     descriptionData: [
-      { title: "March 2025", value: "INR 7,00,000" },
-      { title: "Annual Average", value: "INR 5,00,000" },
-      { title: "Overall", value: "INR 60,00,000" },
-      { title: "Per Sq. Ft.", value: "150" },
+      { title: "March 2025", value: `INR ${inrFormat(  (lastMonthDataIncome - lastMonthData))}`   },
+      { title: "Annual Average", value: `INR ${inrFormat((totalIncomeAmount - totalExpense) / 12)}`  },
+      { title: "Overall", value: `INR ${inrFormat( (totalIncomeAmount - totalExpense))}` },
+      { title: "Per Sq. Ft.", value: `INR ${inrFormat( (totalIncomeAmount - totalExpense) / totalSqft)}` },
     ],
   };
 
@@ -537,12 +559,37 @@ console.log("\n💰 Total Income (Taxable or Revenue):", totalIncomeAmount);
 
   //-----------------------------------------------------Pie Monthly Collections------------------------------------------------------//
   //-----------------------------------------------------Donut Statutory Payments------------------------------------------------------//
-  const statutoryPayments = [
-    { label: "PF", amount: 30000 },
-    { label: "ESIC", amount: 20000 },
-    { label: "TDS", amount: 15000 },
-    { label: "PT", amount: 10000 },
-  ];
+
+  const statutoryPaymentsData = isBudgetDataLoading ? [] : budgetData.filter((budget)=> {
+    
+    return budget.expanseType === "Statutory"
+  })
+ 
+ const statutoryPaymentsMap = new Map();
+
+statutoryPaymentsData.forEach((payment) => {
+  const amount = payment.actualAmount;
+  const label = payment.expanseName;
+
+  if (!statutoryPaymentsMap.has(label)) {
+    statutoryPaymentsMap.set(label, 0);
+  }
+
+  const currentAmount = statutoryPaymentsMap.get(label);
+  statutoryPaymentsMap.set(label, currentAmount + amount);
+});
+
+const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
+  ([label, amount]) => ({ label, amount })
+);
+
+
+  // const statutoryPayments = [
+  //   { label: "PF", amount: 30000 },
+  //   { label: "ESIC", amount: 20000 },
+  //   { label: "TDS", amount: 15000 },
+  //   { label: "PT", amount: 10000 },
+  // ];
 
   const donutStatutorylabels = statutoryPayments.map((item) => item.label);
   const donutStatutorySeries = statutoryPayments.map((item) => item.amount);
@@ -828,6 +875,7 @@ console.log("\n💰 Total Income (Taxable or Revenue):", totalIncomeAmount);
       ],
     },
   ];
+
 
   return (
     <div>
