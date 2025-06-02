@@ -584,6 +584,7 @@ for (let label of monthBookings) {
   monthlyBookedHours[label] = monthMap.get(label) || 0;
 }
 
+const totalBookedHours = Object.values(monthlyBookedHours).reduce((acc, hours) => acc + hours, 0);
 const workinghoursPerDay = 1;
 const workingDays = 5;
 const totalBookableHours = roomsData.length * workinghoursPerDay * workingDays;
@@ -592,6 +593,7 @@ const data = monthBookings.map((month) => ({
   x: month,
   y: (monthlyBookedHours[month] / totalBookableHours) * 100,
 }));
+
 
 const averageBookingSeries = [{ name: "Booking Utilization", data }];
 
@@ -645,6 +647,19 @@ const averageBookingOptions = {
       colors: ["#ffff"],
     },
   },
+  // dataLabels: {
+  // enabled: true,
+  // formatter: function (_, { dataPointIndex, w }) {
+  //   const monthKey = w.config.xaxis.categories[dataPointIndex];
+  //   const booked = monthlyBookedHours[monthKey] || 0;
+  //   const total = 20;
+  //   return `${booked} / ${total} hrs`;
+  // },
+  // style: {
+  //   fontSize: "11px",
+  //   colors: ["#ffff"],
+  // },
+// },
   plotOptions: {
     bar: {
       dataLabels: {
@@ -908,7 +923,6 @@ function getTimeSlotLabel(date) {
 roomsData.forEach((room) => {
   const status = room.housekeepingStatus || "Completed";
 
-  console.log("status",room)
   if (status === "Pending") housekeepingMap.cleaning += 1;
   if (status === "Completed") housekeepingMap.clean += 1;
 });
@@ -930,6 +944,7 @@ const housekeepingStatusSeries = [housekeepingMap.cleaning, housekeepingMap.clea
           <WidgetSection
             layout={1}
             border
+            TitleAmount={`Total booked hours : ${totalBookedHours}`}
             title={"Average Meeting Room utilization"}
             titleLabel={"FY 2024-25"}>
             <BarGraph
