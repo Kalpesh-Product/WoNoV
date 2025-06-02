@@ -91,42 +91,44 @@ const VisitorDashboard = () => {
     },
   ];
 
-  const visitorsChartOptions = {
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
-      fontFamily: "Poppins-Regular",
+const visitorsChartOptions = {
+  chart: {
+    type: "bar",
+    toolbar: { show: false },
+    fontFamily: "Poppins-Regular",
+  },
+  xaxis: {
+    categories: months,
+  },
+  yaxis: {
+    max: 50, // ✅ Add this line
+    title: {
+      text: "No. of Visitors",
     },
-    xaxis: {
-      categories: months,
+    labels: {
+      formatter: (val) => `${Math.round(val)}`,
     },
-    yaxis: {
-      title: {
-        text: "No. of Visitors",
-      },
-      labels: {
-        formatter: (val) => `${Math.round(val)}`,
-      },
-    },
-    plotOptions: {
-      bar: {
-        borderRadius: 4,
-        horizontal: false,
-        columnWidth: "40%",
-        dataLabels: {
-          position: "top", // 👈 Place labels on top of bars
-        },
-      },
-    },
-    dataLabels: {
-      enabled: true,
-      offsetY: -25, // ✅ Add this
-      style: {
-        fontSize: "12px",
-        colors: ["#000"], // Optional: customize label color
+  },
+  plotOptions: {
+    bar: {
+      borderRadius: 4,
+      horizontal: false,
+      columnWidth: "40%",
+      dataLabels: {
+        position: "top",
       },
     },
-  };
+  },
+  dataLabels: {
+    enabled: true,
+    offsetY: -25,
+    style: {
+      fontSize: "12px",
+      colors: ["#000"],
+    },
+  },
+};
+
 
   //---------------------------------------------------First Graph Data---------------------------------------------------//
   //---------------------------------------------------Category Wise Visitors Donut Data---------------------------------------------------//
@@ -140,7 +142,6 @@ const VisitorDashboard = () => {
   const executiveTasksCount = visitorTypeRawData.map(
     (visitor) => visitor.count
   );
-  const labels = visitorTypeRawData.map((visitor) => visitor.label);
   const colors = ["#1E3D73", "#4C66A1", "#637BB8"];
   //---------------------------------------------------Category Wise Visitors Donut Data---------------------------------------------------//
   //---------------------------------------------------Visitors Table Data---------------------------------------------------//
@@ -304,7 +305,7 @@ const VisitorDashboard = () => {
   //   { label: "Maintenance", value: 96 },
   // ];
 
-    const visitorsThisMonth = visitorsData.filter((visitor) =>
+  const visitorsThisMonth = visitorsData.filter((visitor) =>
     dayjs(visitor.dateOfVisit).isSame(dayjs(), "month")
   );
 
@@ -353,7 +354,6 @@ const VisitorDashboard = () => {
 
   const today = dayjs().startOf("day");
 
-
   const todaysVisitors = visitorsData.filter((visitor) =>
     dayjs(visitor.dateOfVisit).isSame(today, "day")
   );
@@ -379,6 +379,18 @@ const VisitorDashboard = () => {
   );
   const executiveTasksCountToday = visitorTypeRawDataToday.map((v) => v.count);
   const labelsToday = visitorTypeRawDataToday.map((v) => v.label);
+
+  const visitorTypeCounts = visitorsData.reduce((acc, curr) => {
+    const type = curr.visitorType || "Unknown";
+    acc[type] = (acc[type] || 0) + 1;
+    return acc;
+  }, {});
+
+  const labels = Object.keys(visitorTypeCounts);
+  const series = Object.values(visitorTypeCounts);
+  const tooltipValue = series.map(
+    (count) => `${count} visitor${count > 1 ? "s" : ""}`
+  );
 
   // -----------------------Department Pie Data End--------------------
   //--------------------------------------------//
@@ -427,6 +439,43 @@ const VisitorDashboard = () => {
     legend: {
       position: "right",
     },
+  };
+
+  const departmentWiseCounts = {};
+
+  visitorsData.forEach((visitor) => {
+    const dept = visitor.department?.name || "Unknown";
+    departmentWiseCounts[dept] = (departmentWiseCounts[dept] || 0) + 1;
+  });
+
+  const pieChartData = Object.entries(departmentWiseCounts).map(
+    ([name, count]) => ({
+      label: name,
+      value: count,
+    })
+  );
+
+  const pieChartOptions = {
+    labels: pieChartData.map((d) => d.label),
+    legend: {
+      position: "right",
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => {
+          return ` ${val} visitor${val > 1 ? "s" : ""}`;
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => `${val.toFixed(0)}%`,
+    },
+    chart: {
+      type: "pie",
+      fontFamily: "Poppins-Regular",
+    },
+    colors: ["#FFB946", "#54C4A7", "#6A5ACD", "#FF4D4F", "#00C49F"], // Extend as needed
   };
 
   //First pie-chart config data end
@@ -494,7 +543,7 @@ const VisitorDashboard = () => {
         />,
         <DataCard
           title={"Total"}
-          data={visitorsData.filter((item) => item.checkIn).length}
+          data={visitorsData.filter((item) => item.checkOut === null).length}
           description={"Yet To Check Out"}
         />,
         <DataCard
@@ -532,10 +581,10 @@ const VisitorDashboard = () => {
         >
           <DonutChart
             centerLabel="Visitors"
-            labels={labelsToday}
-            colors={colors}
-            series={donutVisitorCategoryDataToday}
-            tooltipValue={executiveTasksCountToday}
+            labels={labels}
+            colors={["#54C4A7", "#FFB946", "#FF4D4F", "#6A5ACD"]} // Add more if needed
+            series={series}
+            tooltipValue={tooltipValue}
           />
         </WidgetSection>,
         <WidgetSection
@@ -561,13 +610,19 @@ const VisitorDashboard = () => {
           titleLabel={"This Month"}
           border
         >
-          <PieChartMui
-            percent={true}
-            title={"Visitor Gender Data"}
-            data={genderData}
-            options={genderPieChart}
-            width={438}
-          />
+          {!isVisitorsData ? (
+            <PieChartMui
+              percent={true}
+              title={"Visitor Gender Data"}
+              data={genderData}
+              options={genderPieChart}
+              width={438}
+            />
+          ) : (
+            <div className="h-72 flex justify-center items-center">
+              <CircularProgress />
+            </div>
+          )}
         </WidgetSection>,
         <WidgetSection
           layout={1}
@@ -576,9 +631,10 @@ const VisitorDashboard = () => {
           border
         >
           <PieChartMui
-            data={departmentPieDataMonth}
-            options={departmentPieOptionsMonth}
-            width={500}
+            data={pieChartData}
+            options={pieChartOptions}
+            width={438}
+            height={323}
           />
         </WidgetSection>,
       ],

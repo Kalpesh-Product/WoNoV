@@ -303,6 +303,7 @@ const FinanceBudget = () => {
           title={"Request Budget"}
           padding="px-5 py-2"
           fontSize="text-base"
+          handleSubmit={() => setOpenModal(true)}
         />
       </div>
 

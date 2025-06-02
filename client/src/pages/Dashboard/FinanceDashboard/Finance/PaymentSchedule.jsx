@@ -25,7 +25,31 @@ const PaymentSchedule = () => {
     setSelectedEvent(null);
   };
   const axios = useAxiosPrivate();
- 
+
+  const { data: financePayment = [], isPending: isHrLoading } = useQuery({
+    queryKey: ["financePayment"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`
+        );
+        const budgets = response.data.allBudgets;
+
+        return Array.isArray(budgets)
+          ? budgets.map((item) => ({
+              title: item.expanseName || "Untitled",
+              date: item.dueDate, // Format: YYYY-MM-DD
+              actualAmount: item.actualAmount,
+              projectedAmount: item.projectedAmount,
+              status: item.status === "Approved" ? "paid" : "unpaid",
+            }))
+          : [];
+      } catch (error) {
+        console.error("Error fetching budget:", error);
+        return [];
+      }
+    },
+  });
 
   // Updated dummy data for April 2025
   const dummyData = [
@@ -69,7 +93,7 @@ const PaymentSchedule = () => {
 
   const [statusFilters, setStatusFilters] = useState(["paid", "unpaid"]);
 
-  const events = dummyData.map((payment) => ({
+  const events = financePayment.map((payment) => ({
     title: payment.title,
     start: payment.date,
     backgroundColor: statusColorMap[payment.status],
@@ -196,6 +220,11 @@ const PaymentSchedule = () => {
             eventClick={handleEventClick}
             dayMaxEvents={2}
             eventDisplay="block"
+            eventContent={(meeting) => (
+              <span className="text-[0.65rem] rounded-xl cursor-pointer">
+                {meeting.event.title}
+              </span>
+            )}
           />
         </div>
       </div>

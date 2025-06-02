@@ -18,12 +18,17 @@ import { useState } from "react";
 import { FaCheck } from "react-icons/fa6";
 import { queryClient } from "../../../main";
 import { toast } from "sonner";
+import useAuth from "../../../hooks/useAuth";
 
 const PerformanceMonthly = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
+  const isTop =
+    auth.user.departments.map((item) => item._id)[0] ===
+    "67b2cf85b9b6ed5cedeb9a2e";
 
   const {
     handleSubmit: submitDailyKra,
@@ -117,16 +122,14 @@ const PerformanceMonthly = () => {
       }
     },
   });
-  console.log(department);
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
-    { headerName: "KPA List", field: "taskName", width: 300 },
+    { headerName: "KPA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
     {
       field: "status",
       headerName: "Status",
-      flex: 1,
       cellRenderer: (params) => {
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
@@ -153,26 +156,26 @@ const PerformanceMonthly = () => {
         );
       },
     },
-    {
-      headerName: "Actions",
-      field: "actions",
-      pinned: "right",
-      cellRenderer: (params) => {
-        console.log(params.node);
-        return (
-          <div
-            role="button"
-            onClick={() => updateMonthlyKpa(params.data.id)}
-            className="p-2"
-          >
-            <PrimaryButton
-              disabled={!params.node.selected}
-              title={"Mark As Done"}
-            />
-          </div>
-        );
-      },
-    },
+    ...(!isTop
+      ? [
+          {
+            headerName: "Actions",
+            field: "actions",
+            cellRenderer: (params) => (
+              <div
+                role="button"
+                onClick={() => updateMonthlyKpa(params.data.id)}
+                className="p-2"
+              >
+                <PrimaryButton
+                  disabled={!params.node.selected}
+                  title={"Mark As Done"}
+                />
+              </div>
+            ),
+          },
+        ]
+      : []),
   ];
   const completedColumns = [
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
@@ -215,7 +218,7 @@ const PerformanceMonthly = () => {
         {!isCompletedLoading && !isUpdatePending ? (
           <WidgetSection padding layout={1}>
             <MonthWiseTable
-              checkbox
+              checkbox={!isTop}
               tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
               buttonTitle={"Add Monthly KPA"}
               handleSubmit={() => setOpenModal(true)}

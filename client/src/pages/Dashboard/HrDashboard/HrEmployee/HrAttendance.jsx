@@ -124,7 +124,7 @@ const HrAttendance = () => {
     const finalRows = Object.entries(groupedUsers)
       .map(([userId, userInfo], index) => {
         const row = {
-          srno: index + 1,
+          // srno: index + 1,
           ...userInfo,
         };
 

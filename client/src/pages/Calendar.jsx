@@ -80,18 +80,19 @@ const Calender = () => {
 
   //---------------------------------API------------------------------------------//
 
-  useEffect(() => {
-    const allCombinedEvents = [...events, ...transformedMeetings];
+ useEffect(() => {
+  const allCombinedEvents = [...events, ...transformedMeetings];
 
-    if (eventFilter.length === 0) {
-      setFilteredEvents(allCombinedEvents);
-    } else {
-      const filtered = allCombinedEvents.filter((event) =>
-        eventFilter.includes(event.extendedProps?.type?.toLowerCase())
-      );
-      setFilteredEvents(filtered);
-    }
-  }, [eventFilter, events, meetings]);
+  if (eventFilter.length === 0) {
+    setFilteredEvents([]); // ✅ Show nothing if no filter selected
+  } else {
+    const filtered = allCombinedEvents.filter((event) =>
+      eventFilter.includes(event.extendedProps?.type?.toLowerCase())
+    );
+    setFilteredEvents(filtered);
+  }
+}, [eventFilter, events, meetings]);
+
 
   const getTodaysEvents = () => {
     const today = dayjs().startOf("day");
@@ -108,6 +109,7 @@ const Calender = () => {
   const todaysEvents = getTodaysEvents();
 
   const handleEventClick = (clickInfo) => {
+
     const event = clickInfo.event;
     const type = event.extendedProps?.type.toLowerCase();
 
@@ -262,7 +264,16 @@ const Calender = () => {
             open={isDrawerOpen}
             onClose={closeDrawer}
             headerBackground={headerBackground}
-            title="Event Details">
+            title={selectedEvent?.extendedProps?.type.toLowerCase() === "holiday"
+            ? "Holiday Details"
+            : selectedEvent?.extendedProps?.type.toLowerCase() === "meeting"
+            ? "Meeting Details"
+            : selectedEvent?.extendedProps?.type.toLowerCase() === "event"
+            ? "Event Details"
+            : selectedEvent?.extendedProps?.type.toLowerCase() === "birthday"
+            ? "Birthday Details"
+            : ""}
+          >
             {drawerMode === "view" && selectedEvent && (
               <div>
                 <div className="flex flex-col gap-2">

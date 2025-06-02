@@ -41,6 +41,21 @@ const FinanceDashboard = () => {
         }
       },
     });
+   
+  const { data: budgetData = [], isLoading: isBudgetDataLoading } =
+    useQuery({
+      queryKey: ["budgetData"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/budget/company-budget");
+          return response.data?.allBudgets;
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    });
+
+
 
   const testExpense = revenueExpenseData
     .filter((item) => item.expense)
@@ -164,6 +179,13 @@ const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
       group: fiscalYear,
       data: months.map((month) => incomeMap[month] || 0),
     })
+  );
+
+    const lastMonthRawIncome = incomeData.filter(
+    (item) => item.group === "FY 2024-25"
+  );
+  const lastMonthDataIncome = lastMonthRawIncome.map(
+    (item) => item.data[item.data.length - 1]
   );
 
   //-----------------IncomeData---------------//
@@ -331,20 +353,20 @@ const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
     descriptionData: [
       {
         title: "March 2025",
-        value: "INR 25,00,000",
+        value: `INR ${inrFormat(lastMonthDataIncome)}`,
         route: "monthly-profit-loss",
       },
       {
         title: "Annual Average",
-        value: "INR 27,00,000",
+        value:  `INR ${inrFormat(totalIncomeAmount / 12)}` ,
         route: "annual-average-profit-loss",
       },
       {
         title: "Overall",
-        value: "INR 3,24,00,000",
+        value: `INR ${inrFormat(totalIncomeAmount)}`,
         route: "overall-profit-loss",
       },
-      { title: "Per Sq. Ft.", value: "810", route: "sqft-wise-data" },
+      { title: "Per Sq. Ft.", value: `INR ${inrFormat(totalIncomeAmount / totalSqft)}`, route: "sqft-wise-data" },
     ],
   };
 
@@ -366,10 +388,10 @@ const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
     cardTitle: "Profit & Loss",
     timePeriod: "FY 2024-25",
     descriptionData: [
-      { title: "March 2025", value: "INR 7,00,000" },
-      { title: "Annual Average", value: "INR 5,00,000" },
-      { title: "Overall", value: "INR 60,00,000" },
-      { title: "Per Sq. Ft.", value: "150" },
+      { title: "March 2025", value: `INR ${inrFormat(  (lastMonthDataIncome - lastMonthData))}`   },
+      { title: "Annual Average", value: `INR ${inrFormat((totalIncomeAmount - totalExpense) / 12)}`  },
+      { title: "Overall", value: `INR ${inrFormat( (totalIncomeAmount - totalExpense))}` },
+      { title: "Per Sq. Ft.", value: `INR ${inrFormat( (totalIncomeAmount - totalExpense) / totalSqft)}` },
     ],
   };
 
@@ -531,12 +553,37 @@ const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
 
   //-----------------------------------------------------Pie Monthly Collections------------------------------------------------------//
   //-----------------------------------------------------Donut Statutory Payments------------------------------------------------------//
-  const statutoryPayments = [
-    { label: "PF", amount: 30000 },
-    { label: "ESIC", amount: 20000 },
-    { label: "TDS", amount: 15000 },
-    { label: "PT", amount: 10000 },
-  ];
+
+  const statutoryPaymentsData = isBudgetDataLoading ? [] : budgetData.filter((budget)=> {
+    
+    return budget.expanseType === "Statutory"
+  })
+ 
+ const statutoryPaymentsMap = new Map();
+
+statutoryPaymentsData.forEach((payment) => {
+  const amount = payment.actualAmount;
+  const label = payment.expanseName;
+
+  if (!statutoryPaymentsMap.has(label)) {
+    statutoryPaymentsMap.set(label, 0);
+  }
+
+  const currentAmount = statutoryPaymentsMap.get(label);
+  statutoryPaymentsMap.set(label, currentAmount + amount);
+});
+
+const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
+  ([label, amount]) => ({ label, amount })
+);
+
+
+  // const statutoryPayments = [
+  //   { label: "PF", amount: 30000 },
+  //   { label: "ESIC", amount: 20000 },
+  //   { label: "TDS", amount: 15000 },
+  //   { label: "PT", amount: 10000 },
+  // ];
 
   const donutStatutorylabels = statutoryPayments.map((item) => item.label);
   const donutStatutorySeries = statutoryPayments.map((item) => item.amount);
@@ -822,6 +869,7 @@ const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
       ],
     },
   ];
+
 
   return (
     <div>

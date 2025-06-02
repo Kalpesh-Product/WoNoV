@@ -140,7 +140,7 @@ const AllocatedBudget = ({
       >
         <div className="flex flex-col gap-4 rounded-md ">
           {!hideTitle ? (
-            <div className="flex justify-between items-center py-2">
+            <div className="flex justify-between items-center">
               <span className="text-title font-pmedium text-primary uppercase">
                 Allocated Budget:
               </span>
@@ -154,7 +154,7 @@ const AllocatedBudget = ({
 
           <div className="flex items-center justify-between gap-4">
             <div className="w-1/3">
-              {filteredMonths.length > 0 && !noFilter && (
+              {/* {filteredMonths.length > 0 && !noFilter && (
                 <div>
                   <FormControl fullWidth>
                     <Autocomplete
@@ -181,7 +181,7 @@ const AllocatedBudget = ({
                     />
                   </FormControl>
                 </div>
-              )}
+              )} */}
             </div>
             <div className="flex gap-4 justify-end items-center w-3/4 ">
               <div className="">
@@ -233,11 +233,11 @@ const AllocatedBudget = ({
               </div>
             </div>
           </div>
-          <hr />
+          <hr className="mt-4"/>
 
           {/* AgTable */}
           {monthDataForSelectedType.rows.length > 0 ? (
-            <div className="h-full  mt-4">
+            <div className="h-full">
               <AgTable
                 search
                 data={monthDataForSelectedType.rows}
