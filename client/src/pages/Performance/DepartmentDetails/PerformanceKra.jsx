@@ -30,7 +30,6 @@ const PerformanceKra = () => {
     auth.user.departments.map((item) => item._id)[0] ===
     "67b2cf85b9b6ed5cedeb9a2e";
   useEffect(() => {
-    console.log("Refreshed", department);
     queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
   }, [department]);
 
