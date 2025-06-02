@@ -315,13 +315,12 @@ const updateTask = async (req, res, next) => {
 
 const getAllTasks = async (req, res, next) => {
   try {
-    const { company } = req;
-    const { dept } = req.query;
+    const { company, departments, roles } = req;
 
-    const query = { company };
+    let query = { company };
 
-    if (dept) {
-      query.department = dept;
+    if (!roles.includes("Master Admin") && !roles.includes("Super Adtmin")) {
+      query.department = { $in: departments };
     }
 
     const tasks = await Task.find(query)
