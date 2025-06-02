@@ -45,7 +45,7 @@ const TicketDashboard = () => {
       }
     },
   });
-    console.log()
+    const totalTickets = ticketsData.length || 0
 
   const ticketsFilteredData = {
     openTickets: ticketsData.filter((item) => item.status === "Open").length,
@@ -161,6 +161,7 @@ const TicketDashboard = () => {
           border
           padding
           title={"Annual Tickets Raised"}
+          TitleAmount={`TOTAL TICKETS : ${totalTickets}`}
         >
           {!isLoading ? (
             <AreaGraph responseData={ticketsData} />

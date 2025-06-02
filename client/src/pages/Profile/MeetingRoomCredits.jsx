@@ -67,11 +67,12 @@ const MeetingRoomCredits = ({ pageTitle }) => {
     });
     setOpenModal(false);
   };
+  const totalCredits = 50;
 
     const navigationCards = [
-    { cardTitle: "Total Credits", quantity: "1000", bgcolor:"#0099FF",quantityColor:"#000033" },
-    { cardTitle: "Remaining Credits", quantity: "450", bgcolor:"#66FFCC",quantityColor:"#006600" },
-    { cardTitle: "Rooms Booked", quantity: "15 Bookings", bgcolor:"#FFFFCC",quantityColor:"#FF9900" },
+    { cardTitle: "Total Credits", quantity: totalCredits, bgcolor:"#0099FF",quantityColor:"#000033" },
+    { cardTitle: "Remaining Credits", quantity: (auth.user?.credits), bgcolor:"#66FFCC",quantityColor:"#006600" },
+    { cardTitle: "Meetings Booked", quantity: `${myMeetings.length || 0}`, bgcolor:"#FFFFCC",quantityColor:"#FF9900" },
   ];
 
 
@@ -133,7 +134,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
     <div>
       <div className="flex flex-col gap-4">
         <div>
-          <WidgetSection layout={navigationCards.length}>
+          <WidgetSection padding layout={navigationCards.length}>
             {navigationCards.map((card, index) => (
               <div
                 key={index}

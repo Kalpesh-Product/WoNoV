@@ -80,18 +80,19 @@ const Calender = () => {
 
   //---------------------------------API------------------------------------------//
 
-  useEffect(() => {
-    const allCombinedEvents = [...events, ...transformedMeetings];
+ useEffect(() => {
+  const allCombinedEvents = [...events, ...transformedMeetings];
 
-    if (eventFilter.length === 0) {
-      setFilteredEvents(allCombinedEvents);
-    } else {
-      const filtered = allCombinedEvents.filter((event) =>
-        eventFilter.includes(event.extendedProps?.type?.toLowerCase())
-      );
-      setFilteredEvents(filtered);
-    }
-  }, [eventFilter, events, meetings]);
+  if (eventFilter.length === 0) {
+    setFilteredEvents([]); // ✅ Show nothing if no filter selected
+  } else {
+    const filtered = allCombinedEvents.filter((event) =>
+      eventFilter.includes(event.extendedProps?.type?.toLowerCase())
+    );
+    setFilteredEvents(filtered);
+  }
+}, [eventFilter, events, meetings]);
+
 
   const getTodaysEvents = () => {
     const today = dayjs().startOf("day");
