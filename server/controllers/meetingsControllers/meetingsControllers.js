@@ -251,10 +251,11 @@ const addMeetings = async (req, res, next) => {
       externalParticipants: externalParticipants || [],
     });
 
-    await Promise.all([
-      meeting.save(),
-      Room.findByIdAndUpdate(roomAvailable._id, { status: "Occupied" }),
-    ]);
+    const savedMeeting = await meeting.save();
+    // await Promise.all([
+    //   meeting.save(),
+    //   Room.findByIdAndUpdate(roomAvailable._id, { status: "Occupied" }),
+    // ]);
 
     // const savedMeeting = await meeting.save();
 
@@ -288,7 +289,7 @@ const addMeetings = async (req, res, next) => {
       ip: ip,
       company: company,
       sourceKey: logSourceKey,
-      sourceId: meeting._id,
+      sourceId: savedMeeting._id,
       changes: meeting,
     });
 

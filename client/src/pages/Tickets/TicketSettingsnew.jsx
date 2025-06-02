@@ -56,7 +56,7 @@ const Row = ({ row, onApprove, onReject }) => {
     );
 
     setTicketIssues(selectedDept?.ticketIssues || []);
-    console.log("TICKET ISSUES",ticketIssues)
+    console.log("TICKET ISSUES", ticketIssues);
   }, [fetchedDepartments, auth.user.departments]);
 
   const {
@@ -158,14 +158,13 @@ const Row = ({ row, onApprove, onReject }) => {
                             Select Ticket Title
                           </MenuItem>
                           {ticketIssues.length > 0 ? (
-                            ticketIssues.map((issue) => (
-                              <MenuItem
-                                key={issue._id}
-                                value={issue._id}
-                              >
-                                {issue.title}
-                              </MenuItem>
-                            ))
+                            ticketIssues
+                              .filter((ticket) => ticket.ticket !== "Other")
+                              .map((issue) => (
+                                <MenuItem key={issue._id} value={issue._id}>
+                                  {issue.title}
+                                </MenuItem>
+                              ))
                           ) : (
                             <MenuItem disabled>No Issues Available</MenuItem>
                           )}

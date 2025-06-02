@@ -14,7 +14,7 @@ const ProfileLayout = () => {
     { label: "HR", path: "HR" },
     { label: "My Assets", path: "my-assets" },
     { label: "My Meetings", path: "my-meetings" },
-    { label: "My Tickets History", path: "tickets-history" },
+    { label: "My Ticket History", path: "tickets-history" },
   ];
 
   // Redirect to "first tab" if the current path is "/module/first-page"
