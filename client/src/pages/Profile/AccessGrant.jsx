@@ -145,12 +145,12 @@ const AccessGrant = () => {
           </div>
         </div>
         <div className="flex flex-col gap-4 flex-1">
-          <div className="flex justify-between">
+          <div className="flex gap-2">
             <div className="flex flex-col gap-4 text-gray-600">
-              <span className="capitalize">User Name</span>
-              <span className="capitalize">Email</span>
-              <span className="capitalize">Designation</span>
-              <span className="capitalize">Work Location</span>
+              <span className="capitalize">User Name : </span>
+              <span className="capitalize">Email : </span>
+              <span className="capitalize">Designation : </span>
+              <span className="capitalize">Work Location : </span>
             </div>
             <div className="flex flex-col gap-4 text-gray-500">
               <span>{user.name}</span>

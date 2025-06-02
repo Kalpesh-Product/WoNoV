@@ -136,7 +136,6 @@ const MeetingDashboard = () => {
       const visitorCategories = Array.isArray(visitorsData)
     ? visitorsData.map((item) => item.visitorType)
     : [];
-  console.log("Visitor Categories", visitorCategories);
 
   const visitorMap = {};
   visitorsData.forEach(({ visitorType }) => {
@@ -284,15 +283,33 @@ const MeetingDashboard = () => {
 
   //Room availabilty pie
   // Sample Room Data
+  // const availabilityRooms = [
+  //   { roomID: 1, roomName: "Baga", status: "Available" },
+  //   { roomID: 2, roomName: "Aqua", status: "Unavailable" },
+  //   { roomID: 3, roomName: "Lagoon", status: "Available" },
+  //   { roomID: 4, roomName: "Skyline", status: "Unavailable" },
+  //   { roomID: 5, roomName: "Vista", status: "Available" },
+  //   { roomID: 6, roomName: "Summit", status: "Unavailable" },
+  //   { roomID: 7, roomName: "Horizon", status: "Available" },
+  // ];
+
   const availabilityRooms = [
-    { roomID: 1, roomName: "Baga", status: "Available" },
-    { roomID: 2, roomName: "Aqua", status: "Unavailable" },
-    { roomID: 3, roomName: "Lagoon", status: "Available" },
-    { roomID: 4, roomName: "Skyline", status: "Unavailable" },
-    { roomID: 5, roomName: "Vista", status: "Available" },
-    { roomID: 6, roomName: "Summit", status: "Unavailable" },
-    { roomID: 7, roomName: "Horizon", status: "Available" },
-  ];
+  { roomID: 1, roomName: "Arambol", status: "Available" },
+  { roomID: 2, roomName: "Atlantis", status: "Unavailable" },
+  { roomID: 3, roomName: "Baga", status: "Available" },
+  { roomID: 4, roomName: "Barber", status: "Unavailable" },
+  { roomID: 5, roomName: "Colosseum", status: "Available" },
+  { roomID: 6, roomName: "Hawaii", status: "Unavailable" },
+  { roomID: 7, roomName: "Library", status: "Available" },
+  { roomID: 8, roomName: "Madrid", status: "Unavailable" },
+  { roomID: 9, roomName: "Miami", status: "Available" },
+  { roomID: 10, roomName: "Nicolas", status: "Unavailable" },
+  { roomID: 11, roomName: "San Fransisco", status: "Available" },
+  { roomID: 12, roomName: "Vagator", status: "Unavailable" },
+  { roomID: 13, roomName: "Vatican", status: "Available" },
+  { roomID: 14, roomName: "Zurich", status: "Unavailable" },
+];
+
 
   // 🔹 Process Data for Pie Chart
   const availableRooms = availabilityRooms.filter(
@@ -859,6 +876,45 @@ function getTimeSlotLabel(date) {
     },
   };
 
+
+  //Housekeeping status 
+
+  // const housekeepingMap = new Map()
+
+  // housekeepingMap.set({
+  //   cleaning:0,
+  //   clean:0
+  // })
+
+  // const housekeepingStatus = rooms.map((room)=>{
+
+  //   const status = room.housekeepingStatus || "Pending"
+
+  //   console.log("status",status)
+  //   if(status === "Pending") housekeepingMap.cleaning += 1
+  //   if(status === "Completed") housekeepingMap.clean += 1
+    
+  // })
+
+  // const housekeepingStatusSeries = housekeepingStatus.Object.values
+
+  // console.log("series",housekeepingStatus)
+
+  const housekeepingMap = {
+  cleaning: 0,
+  clean: 0
+};
+
+roomsData.forEach((room) => {
+  const status = room.housekeepingStatus || "Completed";
+
+  console.log("status",room)
+  if (status === "Pending") housekeepingMap.cleaning += 1;
+  if (status === "Completed") housekeepingMap.clean += 1;
+});
+
+const housekeepingStatusSeries = [housekeepingMap.cleaning, housekeepingMap.clean];
+
   const meetingsWidgets = [
     {
       layout: 1,
@@ -1082,7 +1138,7 @@ function getTimeSlotLabel(date) {
             options={RoomOptions}
             customLegend={CustomLegend}
             width={300}
-            height={400}
+            height={300}
           />
         </WidgetSection>,
         <WidgetSection
@@ -1093,11 +1149,11 @@ function getTimeSlotLabel(date) {
           title={"Cleaning & Hygiene Status"}
           height={350}>
           <DonutChart
-            series={[5, 4, 3]}
-            labels={["Dirty", "Cleaning", "Clean"]}
-            colors={["#ff4d4d", "#ffc107", "#28a745"]}
+            series= {housekeepingStatusSeries}
+            labels={["Cleaning", "Clean"]}
+            colors={["#ffc107", "#28a745"]}
             centerLabel={"Meeting Rooms"}
-            tooltipValue={[5, 4, 3]}
+            tooltipValue={housekeepingStatusSeries}
             width={457}
             height={400}
           />

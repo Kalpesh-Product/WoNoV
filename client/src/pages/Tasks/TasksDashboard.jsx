@@ -27,10 +27,99 @@ import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import dayjs from "dayjs";
 import { useEffect } from "react";
+import YearlyGraph from "../../components/graphs/YearlyGraph";
 
 const TasksDashboard = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
+  const monthOrder = [
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+    "January",
+    "February",
+    "March",
+  ];
+
+  //-------------------Tasks graph ---------------------//
+  const normalizeDataByMonth = (tasks) => {
+    const fyBuckets = {};
+
+    for (const task of tasks) {
+      const assignedDate = dayjs(task.assignedDate);
+      const month = assignedDate.month(); // 0–11
+      const year = assignedDate.year();
+
+      const fyStartYear = month >= 3 ? year : year - 1;
+      const fyLabel = `FY ${fyStartYear}-${(fyStartYear + 1)
+        .toString()
+        .slice(2)}`;
+
+      const fyMonthIndex = (month + 9) % 12;
+
+      if (!fyBuckets[fyLabel]) {
+        fyBuckets[fyLabel] = Array(12)
+          .fill(0)
+          .map(() => ({
+            completed: 0,
+            remaining: 0,
+          }));
+      }
+
+      if (task.status === "Completed") {
+        fyBuckets[fyLabel][fyMonthIndex].completed += 1;
+      } else {
+        fyBuckets[fyLabel][fyMonthIndex].remaining += 1;
+      }
+    }
+
+    const result = {
+      series: [],
+      rawCounts: {},
+    };
+
+    for (const [fy, monthlyData] of Object.entries(fyBuckets)) {
+      const completedData = [];
+      const remainingData = [];
+
+      // Save raw counts for tooltip reference
+      result.rawCounts[fy] = monthlyData.map(({ completed, remaining }) => ({
+        completed,
+        remaining,
+        total: completed + remaining,
+      }));
+
+      for (const { completed, remaining } of monthlyData) {
+        const total = completed + remaining;
+        completedData.push(
+          total === 0 ? 0 : Math.round((completed / total) * 100)
+        );
+        remainingData.push(
+          total === 0 ? 0 : Math.round((remaining / total) * 100)
+        );
+      }
+
+      result.series.push({
+        name: "completed",
+        group: fy,
+        data: completedData,
+      });
+
+      result.series.push({
+        name: "remaining",
+        group: fy,
+        data: remainingData,
+      });
+    }
+
+    return result;
+  };
 
   const allTasksQuery = useQuery({
     queryKey: ["allTasks"],
@@ -43,6 +132,61 @@ const TasksDashboard = () => {
       }
     },
   });
+
+  const { series, rawCounts } = normalizeDataByMonth(allTasksQuery.data || []);
+  const currentFY = series[0]?.group; // FY 2024-25, etc.
+
+  const taskGraphOptions = {
+    chart: {
+      type: "bar",
+      stacked: true,
+      fontFamily: "Poppins-Regular",
+      toolbar: { show: false },
+    },
+    colors: ["#00C49F", "#FF4D4F"],
+    yaxis: {
+      max: 100,
+      labels: {
+        formatter: (val) => `${val}%`,
+      },
+    },
+    tooltip: {
+      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+        const month = w.globals.labels[dataPointIndex];
+        const counts = rawCounts[currentFY]?.[dataPointIndex] || {
+          completed: 0,
+          remaining: 0,
+          total: 0,
+        };
+
+        return `
+        <div style="padding: 10px; font-family: Poppins-Regular; font-size: 13px;">
+          <div style="margin : 10px 0"><strong>Month:</strong> ${month}</div>
+          <div><strong>Total Tasks:</strong> ${counts.total}</div>
+          <div><strong>Completed:</strong> ${counts.completed}</div>
+          <hr style="margin : 10px 0" />
+          <div ><strong>Remaining:</strong> ${counts.remaining}</div>
+        </div>
+      `;
+      },
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "50%",
+        borderRadius: 2,
+      },
+    },
+    legend: {
+      position: "top",
+      horizontalAlign: "center",
+    },
+    fill: {
+      opacity: 1,
+    },
+  };
+
+  //-------------------Tasks graph ---------------------//
 
   const { data: taskList = [], isLoading: isTaskListLoading } = useQuery({
     queryKey: ["taskList"],
@@ -98,7 +242,7 @@ const TasksDashboard = () => {
             task.assignedBy?.lastName || ""
           }`,
           assignedDate: humanDate(task.assignedDate),
-          dueDate : humanDate(task.dueDate)
+          dueDate: humanDate(task.dueDate),
         }));
 
   const priorityTasks = allTasksQuery.isLoading
@@ -405,17 +549,16 @@ const TasksDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection
-          layout={1}
-          border
-          title={"Overall Average Tasks Completion"}
-        >
-          <BarGraph
-            height={400}
-            data={monthlyTasksData}
-            options={tasksMonthlyOptions}
-          />
-        </WidgetSection>,
+        <YearlyGraph
+          data={series}
+          responsiveResize
+          chartId={"bargraph-hr-expense"}
+          options={taskGraphOptions}
+          title={"OVERALL AVERAGE TASKS COMPLETION"}
+          // titleAmount={`INR ${Math.round("").toLocaleString(
+          //   "en-IN"
+          // )}`}
+        />,
       ],
     },
     {

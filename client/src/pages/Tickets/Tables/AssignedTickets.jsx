@@ -42,7 +42,7 @@ const AssignedTickets = ({ title, departmentId }) => {
       }
     },
   });
-  console.log(supportedTickets);
+  console.log("Selected Ticket ID : ", selectedTicket);
   const handleOpenAssignModal = (ticketId) => {
     setSelectedTicketId(ticketId);
     setopenModal(true);
@@ -51,9 +51,9 @@ const AssignedTickets = ({ title, departmentId }) => {
   const handleViewTicket = (ticket) => {
     setSelectedTicket({
       ...ticket,
-      selectedDepartment: Array.isArray(ticket.raisedBy?.departments)
-        ? ticket.raisedBy.departments.map((d) => d.name)
-        : ["N/A"],
+      // selectedDepartment: Array.isArray(ticket.raisedBy?.departments)
+      //   ? ticket.raisedBy.departments.map((d) => d.name)
+      //   : ["N/A"],
     });
     setOpenView(true);
   };
@@ -67,6 +67,7 @@ const AssignedTickets = ({ title, departmentId }) => {
           const supportTicket = {
             id: ticket._id,
             srno: index + 1,
+            description: ticket.description,
             raisedBy:
               ticket.raisedBy?.firstName && ticket.raisedBy?.lastName
                 ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`
@@ -171,9 +172,10 @@ const AssignedTickets = ({ title, departmentId }) => {
             rowId={params.data.id}
             menuItems={[
               {
-                label: "Close",
-                onClick: () => closeTicket(params.data.id),
+                label: "View",
+                onClick: () => handleViewTicket(params.data),
               },
+
               {
                 label: "Re-Assign",
                 onClick: () => handleOpenAssignModal(params.data.id),
@@ -183,8 +185,8 @@ const AssignedTickets = ({ title, departmentId }) => {
                 onClick: () => handleEscalateTicket(params.data),
               },
               {
-                label: "View",
-                onClick: () => handleViewTicket(params.data),
+                label: "Close",
+                onClick: () => closeTicket(params.data.id),
               },
             ]}
           />
@@ -478,18 +480,22 @@ const AssignedTickets = ({ title, departmentId }) => {
               detail={selectedTicket.ticketTitle || "N/A"}
             />
             <DetalisFormatted
-              title="Raised By"
-              detail={selectedTicket.raisedBy?.firstName || "Unknown"}
-            />
-            <DetalisFormatted
-              title="From Department"
-              detail={selectedTicket.selectedDepartment?.join(", ") || "N/A"}
-            />
-            <DetalisFormatted title="Status" detail={selectedTicket.status} />
-            <DetalisFormatted
               title="Description"
               detail={selectedTicket.description || "N/A"}
             />
+            <DetalisFormatted
+              title="Raised By"
+              detail={selectedTicket.raisedBy || "Unknown"}
+            />
+            <DetalisFormatted
+              title="From Department"
+              detail={
+                selectedTicket.selectedDepartment
+                  .map((item) => item)
+                  .join(", ") || "N/A"
+              }
+            />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
           </div>
         )}
       </MuiModal>
