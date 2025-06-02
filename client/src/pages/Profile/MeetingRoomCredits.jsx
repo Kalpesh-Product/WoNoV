@@ -10,6 +10,8 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import PrimaryButton from "../../components/PrimaryButton";
 import { Controller } from "react-hook-form";
 import MuiModal from "../../components/MuiModal";
+import humanTime from "../../utils/humanTime"
+import humanDateFormat from "../../utils/humanDateForamt"
 
 const MeetingRoomCredits = ({ pageTitle }) => {
   const [selectedMeeting, setSelectedMeeting] = useState(null);
@@ -34,6 +36,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
   };
 
   const handleViewDetails = (meeting) => {
+    console.log("meetings",meeting)
     setSelectedMeeting(meeting);
     setDetailsModal(true);
   };
@@ -61,7 +64,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
 
         return (
           <div className="p-2 flex items-center gap-2">
-            {meetingReviews.length > 0 ? (
+            {/* {meetingReviews.length > 0 ? (
               "Review added"
             ) : (
               <span
@@ -70,7 +73,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
               >
                 <MdOutlineRateReview size={20} />
               </span>
-            )}
+            )} */}
             <span
               className="text-subtitle cursor-pointer"
               onClick={() => handleViewDetails(params.data)}
@@ -97,7 +100,10 @@ const MeetingRoomCredits = ({ pageTitle }) => {
                       id: index + 1,
                       meetingId: meeting._id,
                       agenda: meeting.agenda,
-                      date: meeting.date,
+                      date: humanDateFormat(meeting.date),
+                      subject: meeting.subject,
+                      startTime: humanTime(meeting.startTime),
+                      endTime: humanTime(meeting.endTime),
                       roomName: meeting.roomName,
                       reviews: meeting.reviews,
                       location: meeting.location
@@ -129,6 +135,9 @@ const MeetingRoomCredits = ({ pageTitle }) => {
         {selectedMeeting ? (
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
             <DetalisFormatted title="Agenda" detail={selectedMeeting?.agenda || "N/A"} />
+            <DetalisFormatted title="Subject" detail={selectedMeeting?.subject || "N/A"} />
+            <DetalisFormatted title="Start Time" detail={selectedMeeting?.startTime || "N/A"} />
+            <DetalisFormatted title="End Time" detail={selectedMeeting?.endTime || "N/A"} />
             <DetalisFormatted title="Date" detail={selectedMeeting?.date || "N/A"} />
             <DetalisFormatted title="Room" detail={selectedMeeting?.roomName || "N/A"} />
             <DetalisFormatted title="Location" detail={selectedMeeting?.location || "N/A"} />
