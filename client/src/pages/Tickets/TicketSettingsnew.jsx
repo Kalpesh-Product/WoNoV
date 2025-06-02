@@ -159,7 +159,7 @@ const Row = ({ row, onApprove, onReject }) => {
                           </MenuItem>
                           {ticketIssues.length > 0 ? (
                             ticketIssues
-                              .filter((ticket) => ticket.ticket !== "Other")
+                              .filter((issue) => issue.title !== "Other")
                               .map((issue) => (
                                 <MenuItem key={issue._id} value={issue._id}>
                                   {issue.title}
