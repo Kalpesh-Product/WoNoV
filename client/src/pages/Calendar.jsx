@@ -108,6 +108,7 @@ const Calender = () => {
   const todaysEvents = getTodaysEvents();
 
   const handleEventClick = (clickInfo) => {
+
     const event = clickInfo.event;
     const type = event.extendedProps?.type.toLowerCase();
 
@@ -134,7 +135,6 @@ const Calender = () => {
       description: "",
     });
   };
-
 
   return (
     <div className="flex w-[70%] md:w-full">
@@ -265,7 +265,15 @@ const Calender = () => {
             open={isDrawerOpen}
             onClose={closeDrawer}
             headerBackground={headerBackground}
-            title="Event Details"
+            title={selectedEvent?.extendedProps?.type.toLowerCase() === "holiday"
+            ? "Holiday Details"
+            : selectedEvent?.extendedProps?.type.toLowerCase() === "meeting"
+            ? "Meeting Details"
+            : selectedEvent?.extendedProps?.type.toLowerCase() === "event"
+            ? "Event Details"
+            : selectedEvent?.extendedProps?.type.toLowerCase() === "birthday"
+            ? "Birthday Details"
+            : ""}
           >
             {drawerMode === "view" && selectedEvent && (
               <div>
