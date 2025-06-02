@@ -21,8 +21,7 @@ function TabPanel(props) {
       hidden={value !== index}
       id={`full-width-tabpanel-${index}`}
       aria-labelledby={`full-width-tab-${index}`}
-      {...other}
-    >
+      {...other}>
       {value === index && (
         <Box sx={{ p: "2px", backgroundColor: "white" }}>
           <Typography>{children}</Typography>
@@ -265,8 +264,7 @@ const Chat = () => {
                   sx={{
                     borderRadius: "8px",
                     backgroundColor: "#f8fafc",
-                  }}
-                >
+                  }}>
                   <MenuItem value="All">Select Priority</MenuItem>
                   <MenuItem value="BIZNest">BIZNest</MenuItem>
                   <MenuItem value="WoNo">WoNo</MenuItem>
@@ -280,8 +278,7 @@ const Chat = () => {
                   placeholder="Search People & Groups"
                   className="w-full  p-2 pl-10 rounded-lg bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-start font-pregular"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                ></input>
+                  onChange={(e) => setSearchQuery(e.target.value)}></input>
               </div>
               {/* tabs for all read and unread msg */}
 
@@ -309,8 +306,7 @@ const Chat = () => {
                     backgroundColor: "white", // Highlight background color for the active tab
                     color: "#1E3D73",
                   },
-                }}
-              >
+                }}>
                 <Tab label="All" />
                 <Tab label="Read" />
                 <Tab label="Unread" />
@@ -336,13 +332,11 @@ const Chat = () => {
                             } else {
                               setActiveContact(contact);
                             }
-                          }}
-                        >
+                          }}>
                           <div
                             className={`flex items-center justify-center w-10 h-10 rounded-full text-white font-semibold mr-3 ${getNodeColor(
                               contact.name
-                            )}`}
-                          >
+                            )}`}>
                             {getInitials(contact.name)}
                           </div>
                           <div className="flex-1 truncate">
@@ -383,8 +377,7 @@ const Chat = () => {
                                     id: `${contact.id}-${idx}`,
                                     name: subGroup,
                                   })
-                                }
-                              >
+                                }>
                                 {subGroup}
                               </li>
                             ))}
@@ -403,8 +396,7 @@ const Chat = () => {
               <div
                 className={`flex items-center justify-center w-10 h-10 rounded-full text-white font-semibold mr-3 ${getNodeColor(
                   activeContact.name
-                )}`}
-              >
+                )}`}>
                 {getInitials(activeContact.name)}
               </div>
               <div>
@@ -424,15 +416,15 @@ const Chat = () => {
                     className={`flex ${
                       msg.fromMe ? "justify-end" : "justify-start"
                     }`}
-                    ref={isLastMessage ? messageEndRef : null}
-                  >
+                    ref={isLastMessage ? messageEndRef : null}>
                     <div
                       className={`w-40 p-3 rounded-lg overflow-hidden ${
                         msg.fromMe ? "bg-blue-200" : "bg-purple-100"
-                      } shadow`}
-                    >
+                      } shadow`}>
                       <p className="text-sm text-gray-700">
-                        <span className="font-pregular text-content">{msg.sender}</span>
+                        <span className="font-pregular text-content">
+                          {msg.sender}
+                        </span>
                         <span className="text-xs text-gray-500 ml-2">
                           {msg.time}
                         </span>
@@ -449,7 +441,7 @@ const Chat = () => {
             <footer className="p-4 border-t flex items-center space-x-2">
               <MdOutlineEmojiEmotions size={20} className="cursor-pointer" />
               <FaPaperclip
-                className="cursor-pointer bg-gray-200"
+                className="cursor-pointer bg-gray-200 "
                 onClick={handleFileSelect}
               />
               <input
@@ -468,8 +460,7 @@ const Chat = () => {
               />
               <button
                 className="p-[0.7rem] bg-blue-500 text-white rounded-full"
-                onClick={handleSendMessage}
-              >
+                onClick={handleSendMessage}>
                 <IoMdSend />
               </button>
             </footer>
