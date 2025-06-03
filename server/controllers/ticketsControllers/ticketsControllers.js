@@ -1303,7 +1303,7 @@ const filterMyTickets = async (req, res, next) => {
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
-        { path: "reject.rejectedBy", select: "firstName middleName lastName" },
+        { path: "reject.rejectedBy", select: "firstName lastName email" },
       ])
       .lean()
       .exec();
