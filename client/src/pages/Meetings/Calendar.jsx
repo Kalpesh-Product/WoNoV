@@ -136,7 +136,7 @@ const Calender = () => {
                 <div className="border-2 border-gray-300  rounded-md">
                   <div className="w-full flex justify-start border-b-default border-borderGray p-2">
                     <span className="text-content font-bold uppercase">
-                      Event Filters
+                      Meeting Filters
                     </span>
                   </div>
                   <div className="flex justify-start text-content px-2">
@@ -224,7 +224,7 @@ const Calender = () => {
                         );
                       })
                     ) : (
-                      <span>No events today.</span>
+                      <span>No meetings today.</span>
                     )}
                   </div>
                 </div>
@@ -260,7 +260,7 @@ const Calender = () => {
           open={isDrawerOpen}
           onClose={closeDrawer}
           headerBackground={headerBackground}
-          title="Event Details"
+          title="Meeting Details"
         >
           {drawerMode === "view" && selectedEvent && (
             <div className="space-y-2">
