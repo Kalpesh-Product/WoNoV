@@ -901,7 +901,7 @@ const ticketData = async (req, res, next) => {
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
-        { path: "acceptedBy", select: "firstName lastName email" },
+        { path: "accept.acceptedBy", select: "firstName lastName email" },
         { path: "assignees", select: "firstName lastName email" },
         { path: "company", select: "companyName" },
         { path: "reject.rejectedBy", select: "firstName lastName email" },
