@@ -497,6 +497,8 @@ const RaiseTicket = () => {
           <DetalisFormatted title="Description" detail={viewTicketDetails?.description} />
           <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
           <DetalisFormatted title="Priority" detail={viewTicketDetails?.priority} />
+          <DetalisFormatted title="Accepted by" detail={viewTicketDetails?.acceptedBy} />
+          <DetalisFormatted title="Accepted at" detail={viewTicketDetails?.acceptedAt} />
            {viewTicketDetails.image && (
               <div className="lg:col-span-2">
                 <img

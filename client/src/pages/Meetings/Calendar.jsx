@@ -74,17 +74,14 @@ const Calender = () => {
         };
       });
 
-  console.log("Calendar Meetings from redux transformed", transformedMeetings);
-
   useEffect(() => {
     if (eventFilter.length === 0) {
-      setFilteredEvents(transformedMeetings);
+      setFilteredEvents([]); // Show nothing when no filters selected
     } else {
       const filtered = transformedMeetings.filter((event) =>
         eventFilter.includes(event.extendedProps?.meetingStatus.toLowerCase())
       );
       setFilteredEvents(filtered);
-      console.log("Filtered events", filteredEvents);
     }
   }, [eventFilter, meetings]);
 
@@ -139,7 +136,7 @@ const Calender = () => {
                 <div className="border-2 border-gray-300  rounded-md">
                   <div className="w-full flex justify-start border-b-default border-borderGray p-2">
                     <span className="text-content font-bold uppercase">
-                      Event Filters
+                      Meeting Filters
                     </span>
                   </div>
                   <div className="flex justify-start text-content px-2">
@@ -227,7 +224,7 @@ const Calender = () => {
                         );
                       })
                     ) : (
-                      <span>No events today.</span>
+                      <span>No meetings today.</span>
                     )}
                   </div>
                 </div>
@@ -263,38 +260,92 @@ const Calender = () => {
           open={isDrawerOpen}
           onClose={closeDrawer}
           headerBackground={headerBackground}
-          title="Event Details"
+          title="Meeting Details"
         >
           {drawerMode === "view" && selectedEvent && (
-            <div>
-              <div className="flex flex-col gap-2">
+            <div className="space-y-2">
+              <DetalisFormatted title="Title" detail={selectedEvent.title} />
+              <DetalisFormatted
+                title="Agenda"
+                detail={selectedEvent.extendedProps.agenda}
+              />
+              <DetalisFormatted
+                title="Date"
+                detail={humanDate(selectedEvent.start)}
+              />
+              <DetalisFormatted
+                title="Time"
+                detail={`${humanTime(selectedEvent.start)} - ${humanTime(
+                  selectedEvent.end
+                )}`}
+              />
+              {selectedEvent.extendedProps.participants?.length > 0 && (
                 <DetalisFormatted
-                  title={"Title"}
-                  detail={selectedEvent.title}
+                  title="Participants"
+                  detail={(selectedEvent.extendedProps.participants
+                    .map((p) => p.name)
+                    .join(", ")) || "N/A"}
                 />
-                <DetalisFormatted
-                  title={"Date"}
-                  detail={humanDate(selectedEvent?.start)}
-                />
-                <DetalisFormatted
-                  title={"Time"}
-                  detail={`${humanTime(selectedEvent?.start)} - ${humanTime(
-                    selectedEvent?.end
-                  )}`}
-                />
-                {selectedEvent.extendedProps?.agenda && (
-                  <div className="space-y-2">
-                    <DetalisFormatted
-                      title={"Agenda"}
-                      detail={selectedEvent.extendedProps.agenda}
-                    />
-                    <DetalisFormatted
-                      title={"Location"}
-                      detail={`${selectedEvent.extendedProps.location?.unitNo} ${selectedEvent.extendedProps.roomName}`}
-                    />
-                  </div>
-                )}
-              </div>
+              )}
+
+              <DetalisFormatted
+                title="Duration"
+                detail={selectedEvent.extendedProps.duration}
+              />
+              <DetalisFormatted
+                title="Status"
+                detail={selectedEvent.extendedProps.meetingStatus}
+              />
+              <DetalisFormatted
+                title="Type"
+                detail={selectedEvent.extendedProps.meetingType}
+              />
+              <DetalisFormatted
+                title="Client"
+                detail={selectedEvent.extendedProps.client}
+              />
+              <DetalisFormatted
+                title="Booked By"
+                detail={selectedEvent.extendedProps.bookedBy}
+              />
+              <DetalisFormatted
+                title="Receptionist"
+                detail={selectedEvent.extendedProps.receptionist}
+              />
+              <DetalisFormatted
+                title="Department"
+                detail={selectedEvent.extendedProps.department}
+              />
+              <DetalisFormatted
+                title="Room"
+                detail={selectedEvent.extendedProps.roomName}
+              />
+              <DetalisFormatted
+                title="Location"
+                detail={`${selectedEvent.extendedProps.location?.unitNo} (${selectedEvent.extendedProps.location?.unitName})`}
+              />
+              <DetalisFormatted
+                title="Building"
+                detail={
+                  selectedEvent.extendedProps.location?.building?.buildingName
+                }
+              />
+              <DetalisFormatted
+                title="Housekeeping Status"
+                detail={selectedEvent.extendedProps.housekeepingStatus}
+              />
+              {selectedEvent.extendedProps.mobileNumber && (
+                <>
+                  <DetalisFormatted
+                    title="Mobile Number"
+                    detail={selectedEvent.extendedProps.mobileNumber || "N/A"}
+                  />
+                  <DetalisFormatted
+                    title="POC Name"
+                    detail={selectedEvent.extendedProps.pocName || "N/A"}
+                  />
+                </>
+              )}
             </div>
           )}
         </MuiModal>

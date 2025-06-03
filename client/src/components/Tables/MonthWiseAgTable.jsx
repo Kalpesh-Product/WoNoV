@@ -59,7 +59,7 @@ const MonthWiseAgTable = ({ financialData, passedColumns, title }) => {
       rows: data.revenue || [],
     };
   }, [filteredMonths, selectedMonthIndex]);
-  console.log("MOnht data : ", monthData)
+
   const monthTotal = monthData.rows
     .map((item) => parseAmount(item.revenue) || item.totalAmount || item.invoiceAmount)
     .reduce((sum, item) => item + sum, 0);
@@ -160,7 +160,7 @@ const MonthWiseAgTable = ({ financialData, passedColumns, title }) => {
         {monthData.rows.length > 0 ? (
           <div className="h-72 overflow-y-auto mt-4 px-4">
             <AgTable
-              data={monthData.rows || []}
+              data={monthData.rows ? monthData.rows.map((item,index)=> ({...item,srNo:index+1})) : []}
               columns={passedColumns ? passedColumns : columns}
               tableHeight={250}
               hideFilter

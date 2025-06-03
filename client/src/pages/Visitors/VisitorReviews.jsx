@@ -164,7 +164,7 @@ const VisitorReviews = () => {
   return (
     <>
       <div>
-        <WidgetSection layout={3}>
+        <WidgetSection layout={2}>
           <DataCard
             data={reviews.length}
             title="Total"
@@ -175,8 +175,7 @@ const VisitorReviews = () => {
             title="Average"
             description=" Ratings"
           />
-          <DataCard data="10.0k" title="Total" description="Reviews Count" />
-        </WidgetSection>
+         </WidgetSection>
 
         <div className="p-6">
           <AgTable

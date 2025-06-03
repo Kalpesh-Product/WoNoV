@@ -19,6 +19,7 @@ import { useState } from "react";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import { IoMdClose } from "react-icons/io";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import humanTime from "../../../utils/humanTime";
 
 const AcceptedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
@@ -179,6 +180,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
 
   const recievedTicketsColumns = [
     { field: "srNo", headerName: "Sr No" },
+    { field: "acceptedBy", headerName: "Accepted By" },
     { field: "raisedBy", headerName: "Raised By" },
     {
       field: "raisedToDepartment",
@@ -210,6 +212,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
           <ThreeDotMenu
             rowId={params.data.id}
             menuItems={[
+               { label: "View", onClick: () => handleViewTicket(params.data) }, // 👈 Add this line
               { label: "Close", onClick: () => mutate(params.data.id) },
               {
                 label: "Support",
@@ -219,7 +222,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
                 label: "Escalate",
                 onClick: () => handleEscalateTicket(params.data),
               },
-              { label: "View", onClick: () => handleViewTicket(params.data) }, // 👈 Add this line
+             
             ]}
           />
         </div>
@@ -251,6 +254,12 @@ const AcceptedTickets = ({ title, departmentId }) => {
                   ticket.raisedBy.departments.map((dept) => dept.name) || "N/A",
                 ticketTitle: ticket?.ticket || "No Title",
                 status: ticket.status || "Pending",
+                 acceptedBy: ticket?.acceptedBy
+                      ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
+                      : "",               
+                acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
+                priority:ticket.priority,
+                image:ticket.image ? ticket.image.url : null
               })),
             ]}
             columns={recievedTicketsColumns}
@@ -392,6 +401,9 @@ const AcceptedTickets = ({ title, departmentId }) => {
         title="Description"
         detail={selectedTicket.description || "N/A"}
       />
+       <DetalisFormatted title="Priority" detail={selectedTicket?.priority} />
+                <DetalisFormatted title="Accepted by" detail={selectedTicket?.acceptedBy} />
+                <DetalisFormatted title="Accepted at" detail={selectedTicket?.acceptedAt} />
     </div>
   )}
 </MuiModal>

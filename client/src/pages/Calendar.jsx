@@ -71,6 +71,7 @@ const Calender = () => {
       type: "meeting", // so it can be filtered
       agenda: meeting.agenda,
       roomName: meeting.roomName,
+      subject: meeting.subject,
       department: meeting.department,
       participants: meeting.participants,
       meetingStatus: meeting.meetingStatus,
@@ -136,6 +137,12 @@ const Calender = () => {
       description: "",
     });
   };
+
+
+  useEffect(()=>{
+
+    console.log("meeting",selectedEvent)
+  },[])
 
   return (
     <div className="flex w-[70%] md:w-full">
@@ -312,6 +319,47 @@ const Calender = () => {
                       </span>{" "}
                     </div>
                   )}
+                  {selectedEvent.extendedProps && (
+                    <>
+                    
+                      <div>
+                      <span className="text-content flex  items-start ">
+                        <span className="w-[30%]"> Subject</span>
+                        <span>:</span>
+
+                        <span className="text-content font-pmedium w-full justify-start pl-4">
+                          {selectedEvent.extendedProps.subject}
+                        </span>
+                      </span>{" "}
+                    </div>
+                     <div>
+                      <span className="text-content flex  items-start ">
+                        <span className="w-[30%]"> Agenda</span>
+                        <span>:</span>
+
+                        <span className="text-content font-pmedium w-full justify-start pl-4">
+                          {selectedEvent.extendedProps.agenda}
+                        </span>
+                      </span>{" "}
+                    </div>
+
+                    {
+                      selectedEvent.extendedProps?.participants && (
+                        <div>
+                      <span className="text-content flex  items-start ">
+                        <span className="w-[30%]">Participants</span>
+                        <span>:</span>
+
+                        <span className="text-content font-pmedium w-full justify-start pl-4">
+                          {selectedEvent.extendedProps.participants.map((item)=>(`${item.firstName} ${item.lastName}`))}
+                        </span>
+                      </span>{" "}
+                    </div>
+                      )
+                    }
+                    </>
+                    
+                                  )}
                 </div>
               </div>
             )}

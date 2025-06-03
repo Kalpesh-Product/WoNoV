@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import MuiModal from "../../../components/MuiModal";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import humanTime from "../../../utils/humanTime";
 
 const ClosedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
@@ -37,7 +38,13 @@ const ClosedTickets = ({ title, departmentId }) => {
         ticketTitle: ticket?.ticket || "No Title",
         status: ticket.status || "Pending",
         description: ticket.description || "-",
-        priority: ticket.priority || "-",
+        acceptedBy: ticket?.acceptedBy
+                      ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
+                      : "",               
+                acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
+                closedAt: ticket.closedAt ? humanTime(ticket.closedAt) : "-",
+                priority:ticket.priority,
+                image:ticket.image ? ticket.image.url : null
       }));
   };
 
@@ -75,6 +82,7 @@ const ClosedTickets = ({ title, departmentId }) => {
         );
       },
     },
+    { field: "closedAt", headerName: "Closed At" },
     {
       field: "actions",
       headerName: "Actions",
@@ -124,6 +132,9 @@ const ClosedTickets = ({ title, departmentId }) => {
           <DetalisFormatted title="Description" detail={viewTicketDetails?.description} />
           <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
           <DetalisFormatted title="Priority" detail={viewTicketDetails?.priority} />
+          <DetalisFormatted title="Accepted by" detail={viewTicketDetails?.acceptedBy} />
+                    <DetalisFormatted title="Accepted at" detail={viewTicketDetails?.acceptedAt} />
+           <DetalisFormatted title="Closed at" detail={viewTicketDetails?.closedAt} />
         </div>
       </MuiModal>
     </div>

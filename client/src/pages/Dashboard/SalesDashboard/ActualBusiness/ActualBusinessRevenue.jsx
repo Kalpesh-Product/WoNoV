@@ -207,7 +207,7 @@ const ActualBusinessRevenue = () => {
               hideFilter
               tableHeight={300}
               columns={[
-                { headerName: "ID", field: "id", width: 100 },
+                { headerName: "Sr No", field: "id", width: 100 },
                 { headerName: "Vertical", field: "vertical", flex: 1 },
                 { headerName: "Revenue (INR)", field: "revenue", width: 400 },
               ]}
