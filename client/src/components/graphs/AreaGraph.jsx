@@ -29,6 +29,28 @@ const AreaGraph = ({ responseData }) => {
       : currentDate.year();
     const fyStart = dayjs(`${fyStartYear}-04-01`);
     const fyEnd = fyStart.add(1, "year").subtract(1, "day");
+    const daysInMonth = currentDate.daysInMonth();
+    const monthlySeriesTemplate = [
+      {
+        name: "Total Tickets",
+        data: Array(daysInMonth).fill(0),
+        color: "#007bff",
+      },
+      {
+        name: "Closed Tickets",
+        data: Array(daysInMonth).fill(0),
+        color: "#28a745",
+      },
+      {
+        name: "Open Tickets",
+        data: Array(daysInMonth).fill(0),
+        color: "#ff4d4d",
+      },
+    ];
+    const monthlyCategories = Array.from(
+      { length: daysInMonth },
+      (_, index) => String(index + 1).padStart(2, "0") // e.g., '01', '02', ...
+    );
 
     const transformed = {
       Yearly: {
@@ -53,20 +75,8 @@ const AreaGraph = ({ responseData }) => {
         ],
       },
       Monthly: {
-        series: [
-          { name: "Total Tickets", data: Array(7).fill(0), color: "#007bff" },
-          { name: "Closed Tickets", data: Array(7).fill(0), color: "#28a745" },
-          { name: "Open Tickets", data: Array(7).fill(0), color: "#ff4d4d" },
-        ],
-        categories: [
-          "Week 1",
-          "Week 2",
-          "Week 3",
-          "Week 4",
-          "Week 5",
-          "Week 6",
-          "Week 7",
-        ],
+        series: monthlySeriesTemplate,
+        categories: monthlyCategories,
       },
       Weekly: {
         series: [
@@ -115,7 +125,7 @@ const AreaGraph = ({ responseData }) => {
         const month = createdAt.month(); // 0-11
         categoryIndex = (month + 12 - 3) % 12; // April is 3 → 0
       } else if (filter === "Monthly") {
-        categoryIndex = Math.min(Math.floor((createdAt.date() - 1) / 7), 6);
+        categoryIndex = createdAt.date() - 1;
       } else if (filter === "Weekly") {
         categoryIndex = (createdAt.day() + 6) % 7; // Mon = 0
       }
@@ -180,7 +190,7 @@ const AreaGraph = ({ responseData }) => {
     },
     legend: {
       position: "top",
-      horizontalAlign: "right",
+      horizontalAlign: "center",
     },
     grid: {
       borderColor: "#f1f1f1",
@@ -193,7 +203,7 @@ const AreaGraph = ({ responseData }) => {
         <h2 className="text-title font-pregular"></h2>
 
         <div className="flex gap-2">
-          {["Yearly", "Monthly"].map((filter) => (
+          {["Yearly", "Monthly", "Weekly"].map((filter) => (
             <button
               key={filter}
               className={`px-4 py-2 text-sm font-medium rounded ${
@@ -230,10 +240,23 @@ const AreaGraph = ({ responseData }) => {
         />
 
         <span className="text-sm font-medium text-gray-700">
-          {timeFilter === "Yearly" && currentDate.format("YYYY")}
+          {timeFilter === "Yearly" &&
+            `FY ${
+              currentDate.month() < 3
+                ? currentDate.year() - 1
+                : currentDate.year()
+            }-${(currentDate.month() < 3
+              ? currentDate.year()
+              : currentDate.year() + 1
+            )
+              .toString()
+              .slice(-2)}`}
+
           {timeFilter === "Monthly" && currentDate.format("MMMM YYYY")}
           {timeFilter === "Weekly" &&
-            `Week of ${currentDate.startOf("week").format("MMM D")}`}
+            `Week ${Math.ceil(currentDate.date() / 7)} - ${currentDate.format(
+              "MMMM"
+            )}`}
         </span>
 
         <SecondaryButton

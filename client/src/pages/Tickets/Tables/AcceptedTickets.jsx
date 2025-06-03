@@ -210,6 +210,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
           <ThreeDotMenu
             rowId={params.data.id}
             menuItems={[
+               { label: "View", onClick: () => handleViewTicket(params.data) }, // 👈 Add this line
               { label: "Close", onClick: () => mutate(params.data.id) },
               {
                 label: "Support",
@@ -219,7 +220,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
                 label: "Escalate",
                 onClick: () => handleEscalateTicket(params.data),
               },
-              { label: "View", onClick: () => handleViewTicket(params.data) }, // 👈 Add this line
+             
             ]}
           />
         </div>

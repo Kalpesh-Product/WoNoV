@@ -117,6 +117,7 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
     : meeting.clientBookedBy?.employeeName || "Unknown",
   startTime: meeting.startTime,
   endTime: meeting.endTime,
+  extendTime : meeting.extendTime,
   srNo: index + 1,
 }));
 
@@ -648,6 +649,13 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
               title={"End Time"}
               detail={humanTime(selectedMeeting?.endTime)}
             />
+            {selectedMeeting.extendTime && (
+
+            <DetalisFormatted
+              title={"Extended Time"}
+              detail={humanTime(selectedMeeting?.extendTime)}
+            />
+            )}
             <div className="col-span-1 ">
               <DetalisFormatted
                 title={"Participants"}

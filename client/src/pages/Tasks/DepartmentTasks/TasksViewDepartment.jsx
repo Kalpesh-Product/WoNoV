@@ -94,6 +94,7 @@ const TasksViewDepartment = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
       queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsTasks"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedCompletedTasks"] });
       toast.success(data.message || "DATA UPDATED");
     },
     onError: (error) => {
@@ -269,6 +270,7 @@ const TasksViewDepartment = () => {
           <WidgetSection padding layout={1}>
             <DateWiseTable
               checkbox
+              key={departmentKra.length}
               buttonTitle={"Add Task"}
               handleSubmit={() => setOpenModal(true)}
               tableTitle={`${department} DEPARTMENT TASKS`}
@@ -299,6 +301,7 @@ const TasksViewDepartment = () => {
           <WidgetSection padding>
             <DateWiseTable
               tableTitle={`COMPLETED TASKS`}
+              key={completedTasks.length}
               data={
                 completedTasksFetchPending
                   ? []
@@ -308,7 +311,7 @@ const TasksViewDepartment = () => {
                       taskName: item.taskName,
                       completedBy: item.completedBy,
                       assignedDate: item.assignedDate,
-                      completedDate: humanDate(item.completedDate),
+                      completedDate: (item.completedDate),
                       completedTime: humanTime(item.completedDate),
                       status: item.status,
                     }))
