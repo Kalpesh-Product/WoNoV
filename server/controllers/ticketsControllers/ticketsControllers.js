@@ -771,7 +771,6 @@ const rejectTicket = async (req, res, next) => {
   }
 };
 
-
 const assignTicket = async (req, res, next) => {
   const logPath = "tickets/TicketLog";
   const logAction = "Assign Ticket";
@@ -901,6 +900,7 @@ const ticketData = async (req, res, next) => {
         { path: "acceptedBy", select: "firstName lastName email" },
         { path: "assignees", select: "firstName lastName email" },
         { path: "company", select: "companyName" },
+        { path: "reject.rejectedBy", select: "firstName lastName email" },
       ])
       .lean()
       .exec();
