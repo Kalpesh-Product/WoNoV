@@ -340,7 +340,7 @@ const DailyTasks = () => {
           </WidgetSection>
         ) : (
           <div className="h-72 flex items-center justify-center">
-            <CircularProgress />
+            <CircularProgress color="black"/>
           </div>
         )}
       </div>
