@@ -209,6 +209,7 @@ const RaiseTicket = () => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned : 'right',
       width: 100,
       cellRenderer: (params) => (
         <div className="p-2 mb-2 flex gap-2">
@@ -453,6 +454,7 @@ const RaiseTicket = () => {
             <AgTable
               key={tickets?.length}
               search
+              dropdownColumns={["status","priority"]}
               data={tickets?.map((ticket, index) => ({
                 id: index + 1,
                 raisedBy: ticket.raisedBy.firstName,

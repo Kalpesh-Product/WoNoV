@@ -79,6 +79,7 @@ const PerformanceMonthly = () => {
   const { mutate: updateMonthlyKpa, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateMonthlyKpa"],
     mutationFn: async (data) => {
+      console.log("Data inside query",data)
       const response = await axios.patch(
         `/api/performance/update-task-status/${data}/KPA`
       );
@@ -164,7 +165,7 @@ const PerformanceMonthly = () => {
             cellRenderer: (params) => (
               <div
                 role="button"
-                onClick={() => updateMonthlyKpa(params.data.id)}
+                onClick={() => updateMonthlyKpa(params.data.mongoId)}
                 className="p-2"
               >
                 <PrimaryButton
@@ -227,7 +228,7 @@ const PerformanceMonthly = () => {
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({
                     srno: index + 1,
-                    id: item.id,
+                    mongoId: item.id,
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
                     dueDate: item.dueDate,
