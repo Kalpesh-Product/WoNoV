@@ -8,6 +8,7 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { CircularProgress } from "@mui/material";
+import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 
 const TotalRevenue = () => {
   const axios = useAxiosPrivate();
@@ -24,6 +25,24 @@ const TotalRevenue = () => {
       }
     },
   });
+
+  const months = [
+  "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
+  "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25"
+];
+
+const financialDataForTable = months.map((monthLabel, i) => {
+  const revenue = isTotalLoading ? [] : totalRevenue.map((category) => ({
+    vertical: category.name,
+    revenue: inrFormat(category.data["2024-25"][i]),
+    percentage: `${100}%`,
+  }));
+
+  return {
+    month: monthLabel,
+    revenue,
+  };
+});
 
   const filteredByYear = totalRevenue.map((item) => ({
     name: item.name,
@@ -129,7 +148,7 @@ const TotalRevenue = () => {
         </WidgetSection>
       )}
 
-      <WidgetSection
+      {/* <WidgetSection
         border
         title={"Annual Monthly Revenue Breakup"}
         padding
@@ -213,9 +232,22 @@ const TotalRevenue = () => {
                 hideFilter
               />
             )}
-          />
+          /> 
+
+         
         </div>
-      </WidgetSection>
+         
+      </WidgetSection> */}
+
+      <MonthWiseAgTable  
+          title={"Annual Monthly Revenue Breakup"} 
+           passedColumns ={ [
+                          { headerName: "Sr No", field: "srNo" ,flex: 1},
+                          { headerName: "Vertical", field: "vertical" ,flex: 1},
+                          { headerName: "Revenue (INR)", field: "revenue",flex: 1 },
+                        ]}
+          financialData={financialDataForTable}
+          />
     </div>
   );
 };

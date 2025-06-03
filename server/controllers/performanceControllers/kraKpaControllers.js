@@ -1,15 +1,15 @@
 const { default: mongoose } = require("mongoose");
 const UserData = require("../../models/hr/UserData");
-const kraKpaRole = require("../../models/performance/kraKpaRole");
-const kraKpaTask = require("../../models/performance/kraKpaTask");
+const kraKpaRole = require("../../models/performances/kraKpaRole");
+const kraKpaTask = require("../../models/performances/kraKpaTask");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 
 const createDeptBasedTask = async (req, res, next) => {
   const { user, ip, company } = req;
-  const logPath = "performance/PerformanceLog";
+  const logPath = "performances/PerformanceLog";
   const logAction = "Create Task";
-  const logSourceKey = "kraKpaRole";
+  const logSourceKey = "kraKpaRoles";
 
   try {
     const { task, taskType, department, dueDate, assignedDate, kpaDuration } =
@@ -142,9 +142,9 @@ const createDeptBasedTask = async (req, res, next) => {
 
 const updateTaskStatus = async (req, res, next) => {
   const { user, ip, company } = req;
-  const logPath = "performance/PerformanceLog";
+  const logPath = "performances/PerformanceLog";
   const logAction = "Update KRA/KPA status";
-  const logSourceKey = "kraKpaTask";
+  const logSourceKey = "kraKpaTasks";
 
   try {
     const { taskId, taskType } = req.params;
