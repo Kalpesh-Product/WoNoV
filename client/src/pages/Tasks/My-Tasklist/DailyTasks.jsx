@@ -224,11 +224,11 @@ const DailyTasks = () => {
     // },
   ];
   const completedColumns = [
-    { headerName: "Sr no", field: "srno", width : 100, sort: "desc" },
+    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskList",
-      flex : 1,
+      flex: 1,
       cellRenderer: (params) => (
         <div
           role="button"
@@ -279,6 +279,7 @@ const DailyTasks = () => {
 
   //----------function handlers-------------//
   const handleViewTask = (data) => {
+    console.log(data);
     setModalMode("view");
     setOpenModal(true);
     setSelectedTask(data);
@@ -328,7 +329,8 @@ const DailyTasks = () => {
                     taskList: item.taskName,
                     assignedDate: item.assignedDate,
                     status: item.status,
-                    dueTime: humanTime(item.dueDate),
+                    dueTime: humanTime(item?.dueDate),
+                    dueDate: humanDate(item?.dueDate),
                     assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                   })),
               ]}
