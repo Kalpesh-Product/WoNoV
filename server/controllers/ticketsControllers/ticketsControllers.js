@@ -771,7 +771,6 @@ const rejectTicket = async (req, res, next) => {
   }
 };
 
-
 const assignTicket = async (req, res, next) => {
   const logPath = "tickets/TicketLog";
   const logAction = "Assign Ticket";
@@ -1295,10 +1294,11 @@ const filterMyTickets = async (req, res, next) => {
 
   try {
     const myTickets = await Ticket.find({ raisedBy: user })
-      .select("raisedBy raisedToDepartment status ticket description")
+      .select("raisedBy raisedToDepartment status ticket description reject")
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
+        { path: "reject.rejectedBy", select: "firstName middleName lastName" },
       ])
       .lean()
       .exec();
