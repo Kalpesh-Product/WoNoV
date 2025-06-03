@@ -103,8 +103,6 @@ import TasksLayout from "../pages/Tasks/TasksLayout";
 import TasksDashboard from "../pages/Tasks/TasksDashboard";
 import MyTaskListLayout from "../pages/Tasks/My-Tasklist/MyTaskListLayout";
 import DailyTasks from "../pages/Tasks/My-Tasklist/DailyTasks";
-import MonthlyTasks from "../pages/Tasks/My-Tasklist/MonthlyTasks";
-import AdditionalTasks from "../pages/Tasks/My-Tasklist/AdditionalTasks";
 import TeamMember from "../pages/Tasks/TeamMembers/TeamMember";
 import ProjectList from "../pages/Tasks/ProjectList/ProjectList";
 import EditProject from "../pages/Tasks/ProjectList/EditProject";

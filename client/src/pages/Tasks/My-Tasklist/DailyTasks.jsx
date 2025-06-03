@@ -281,6 +281,7 @@ const DailyTasks = () => {
 
   //----------function handlers-------------//
   const handleViewTask = (data) => {
+    console.log(data);
     setModalMode("view");
     setOpenModal(true);
     setSelectedTask(data);
@@ -346,7 +347,7 @@ const DailyTasks = () => {
           </WidgetSection>
         ) : (
           <div className="h-72 flex items-center justify-center">
-            <CircularProgress />
+            <CircularProgress color="black"/>
           </div>
         )}
       </div>
