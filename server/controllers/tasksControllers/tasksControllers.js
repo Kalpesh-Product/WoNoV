@@ -361,7 +361,7 @@ const getTasks = async (req, res, next) => {
 
     if (dept) {
       query.department = dept;
-      query.status = "Completed";
+      query.status = "Pending";
     }
 
     const tasks = await Task.find(query)
