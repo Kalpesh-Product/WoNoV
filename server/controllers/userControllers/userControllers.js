@@ -788,7 +788,7 @@ const getAssignees = async (req, res, next) => {
       });
 
     if (!team?.length) {
-      return res.status(400).json([]);
+      return res.status(200).json([]);
     }
 
     const transformAssignees = team.map((assignee) => {
