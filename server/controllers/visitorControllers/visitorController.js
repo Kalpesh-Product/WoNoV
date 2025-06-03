@@ -129,20 +129,6 @@ const addVisitor = async (req, res, next) => {
       );
     }
 
-    const existingIdProof = await Visitor.findOne({
-      "idProof.idNumber": idProof.idNumber,
-      company, // optional: only if idProof is company-specific
-    });
-
-    if (existingIdProof) {
-      throw new CustomError(
-        "A visitor with this ID proof number already exists.",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
     if (
       visitorCompanyId &&
       !mongoose.Types.ObjectId.isValid(visitorCompanyId)
