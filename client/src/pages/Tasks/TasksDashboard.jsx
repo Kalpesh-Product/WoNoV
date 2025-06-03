@@ -149,10 +149,18 @@ const TasksDashboard = () => {
     colors: ["#00C49F", "#FF4D4F"],
     yaxis: {
       max: 100,
+      title: {
+        text: "Overall task completion (%)",
+        style: {
+          fontFamily: "Poppins-Regular",
+          fontSize: "12px",
+        },
+      },
       labels: {
         formatter: (val) => `${val}%`,
       },
     },
+
     dataLabels: {
       enabled: true,
       formatter: (val) => `${val}%`,
