@@ -41,7 +41,6 @@ const visitorSchema = new mongoose.Schema(
       idNumber: {
         type: String,
         required: true,
-        unique: true,
       },
     },
     dateOfVisit: {
