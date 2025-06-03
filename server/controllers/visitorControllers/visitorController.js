@@ -86,155 +86,20 @@ const fetchVisitors = async (req, res, next) => {
   }
 };
 
-const addVisitor = async (req, res, next) => {
-  const logPath = "visitor/VisitorLog";
-  const logAction = "Add Visitor";
-  const logSourceKey = "visitor";
-  const { user, ip, company } = req;
+// Check for existing visitor with the same ID proof number
+const existingIdProof = await Visitor.findOne({
+  "idProof.idNumber": idProof.idNumber,
+  company, // optional: only if idProof is company-specific
+});
 
-  try {
-    const {
-      firstName,
-      middleName,
-      lastName,
-      email,
-      gender,
-      address,
-      phoneNumber,
-      purposeOfVisit,
-      idProof,
-      dateOfVisit,
-      checkIn,
-      checkOut,
-      scheduledTime,
-      toMeet,
-      department,
-      visitorType,
-      visitorCompany,
-      visitorCompanyId,
-    } = req.body;
-
-    //Validate date format
-
-    const visitDate = new Date(dateOfVisit);
-    const clockIn = new Date(checkIn);
-    const clockOut = checkOut ? new Date(checkOut) : null;
-
-    if (isNaN(visitDate.getTime()) || isNaN(clockIn.getTime())) {
-      throw new CustomError(
-        "Invalid date format",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    if (
-      visitorCompanyId &&
-      !mongoose.Types.ObjectId.isValid(visitorCompanyId)
-    ) {
-      throw new CustomError(
-        "Invalid visitor company Id provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    if (visitorType === "Scheduled") {
-      const existingVisitor = await Visitor.findOne({
-        toMeet,
-        dateOfVisit,
-        scheduledTime,
-        visitorType: "Scheduled",
-        company,
-      });
-
-      if (existingVisitor) {
-        throw new CustomError(
-          "A scheduled visitor is already meeting this person at the same time.",
-          logPath,
-          logAction,
-          logSourceKey
-        );
-      }
-    }
-
-    let externalCompany = null;
-    if (visitorCompany) {
-      const newExternalCompany = new ExternalCompany({
-        ...visitorCompany,
-        company,
-      });
-      externalCompany = await newExternalCompany.save();
-    }
-    //Add company chekc after bulk insertion
-    if (visitorCompanyId) {
-      externalCompany = await ExternalCompany.findById({
-        _id: visitorCompanyId,
-      });
-      if (!externalCompany) {
-        throw new CustomError(
-          "Visitor's Company not found",
-          logPath,
-          logAction,
-          logSourceKey
-        );
-      }
-    }
-
-    const newVisitor = new Visitor({
-      firstName,
-      middleName,
-      lastName,
-      email,
-      gender,
-      address,
-      phoneNumber,
-      purposeOfVisit,
-      idProof: {
-        idType: idProof.idType,
-        idNumber: idProof.idNumber,
-      },
-      dateOfVisit: visitDate,
-      checkIn: clockIn,
-      checkOut: clockOut,
-      toMeet,
-      company,
-      department,
-      visitorType,
-    });
-    if (externalCompany) {
-      newVisitor.visitorCompany = externalCompany._id;
-    }
-
-    const savedVisitor = await newVisitor.save();
-
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Visitor added successfully",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: savedVisitor._id,
-      changes: newVisitor,
-    });
-
-    return res.status(201).json({
-      message: "Visitor added successfully",
-      visitor: savedVisitor,
-    });
-  } catch (error) {
-    next(
-      error instanceof CustomError
-        ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-    );
-  }
-};
+if (existingIdProof) {
+  throw new CustomError(
+    "A visitor with this ID proof number already exists.",
+    logPath,
+    logAction,
+    logSourceKey
+  );
+}
 
 const updateVisitor = async (req, res, next) => {
   const logPath = "visitor/VisitorLog";
