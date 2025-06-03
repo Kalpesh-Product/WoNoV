@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import Chart from "react-apexcharts";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import SecondaryButton from "../SecondaryButton";
+import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
 dayjs.extend(utc);
 
@@ -190,47 +192,8 @@ const AreaGraph = ({ responseData }) => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-title font-pregular"></h2>
 
-        {/* <div className="flex items-center gap-2">
-          <button
-            className="text-sm px-2 py-1 border rounded bg-gray-100 hover:bg-gray-200"
-            onClick={() => {
-              if (timeFilter === "Yearly") {
-                setCurrentDate((prev) => prev.subtract(1, "year"));
-              } else if (timeFilter === "Monthly") {
-                setCurrentDate((prev) => prev.subtract(1, "month"));
-              } else if (timeFilter === "Weekly") {
-                setCurrentDate((prev) => prev.subtract(1, "week"));
-              }
-            }}
-          >
-            Prev
-          </button>
-
-          <span className="text-sm font-medium text-gray-700">
-            {timeFilter === "Yearly" && currentDate.format("YYYY")}
-            {timeFilter === "Monthly" && currentDate.format("MMMM YYYY")}
-            {timeFilter === "Weekly" &&
-              `Week of ${currentDate.startOf("week").format("MMM D")}`}
-          </span>
-
-          <button
-            className="text-sm px-2 py-1 border rounded bg-gray-100 hover:bg-gray-200"
-            onClick={() => {
-              if (timeFilter === "Yearly") {
-                setCurrentDate((prev) => prev.add(1, "year"));
-              } else if (timeFilter === "Monthly") {
-                setCurrentDate((prev) => prev.add(1, "month"));
-              } else if (timeFilter === "Weekly") {
-                setCurrentDate((prev) => prev.add(1, "week"));
-              }
-            }}
-          >
-            Next
-          </button>
-        </div> */}
-
         <div className="flex gap-2">
-          {["Yearly", "Monthly", "Weekly"].map((filter) => (
+          {["Yearly", "Monthly"].map((filter) => (
             <button
               key={filter}
               className={`px-4 py-2 text-sm font-medium rounded ${
@@ -238,7 +201,8 @@ const AreaGraph = ({ responseData }) => {
                   ? "bg-primary text-white"
                   : "bg-gray-200 text-black"
               }`}
-              onClick={() => setTimeFilter(filter)}>
+              onClick={() => setTimeFilter(filter)}
+            >
               {filter}
             </button>
           ))}
@@ -250,6 +214,41 @@ const AreaGraph = ({ responseData }) => {
         type="area"
         height={350}
       />
+
+      <div className="flex justify-center w-full items-center gap-2">
+        <SecondaryButton
+          title={<MdNavigateBefore />}
+          handleSubmit={() => {
+            if (timeFilter === "Yearly") {
+              setCurrentDate((prev) => prev.subtract(1, "year"));
+            } else if (timeFilter === "Monthly") {
+              setCurrentDate((prev) => prev.subtract(1, "month"));
+            } else if (timeFilter === "Weekly") {
+              setCurrentDate((prev) => prev.subtract(1, "week"));
+            }
+          }}
+        />
+
+        <span className="text-sm font-medium text-gray-700">
+          {timeFilter === "Yearly" && currentDate.format("YYYY")}
+          {timeFilter === "Monthly" && currentDate.format("MMMM YYYY")}
+          {timeFilter === "Weekly" &&
+            `Week of ${currentDate.startOf("week").format("MMM D")}`}
+        </span>
+
+        <SecondaryButton
+          title={<MdNavigateNext />}
+          handleSubmit={() => {
+            if (timeFilter === "Yearly") {
+              setCurrentDate((prev) => prev.add(1, "year"));
+            } else if (timeFilter === "Monthly") {
+              setCurrentDate((prev) => prev.add(1, "month"));
+            } else if (timeFilter === "Weekly") {
+              setCurrentDate((prev) => prev.add(1, "week"));
+            }
+          }}
+        />
+      </div>
     </div>
   );
 };

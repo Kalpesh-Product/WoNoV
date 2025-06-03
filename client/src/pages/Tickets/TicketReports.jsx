@@ -6,6 +6,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanDate from "../../utils/humanDateForamt";
 import { Chip, CircularProgress } from "@mui/material";
 import MuiModal from "../../components/MuiModal";
+import MonthWiseTable from "../../components/Tables/MonthWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import dayjs from "dayjs";
@@ -96,25 +97,6 @@ const TicketReports = () => {
           <AgTable
             search={true}
             tableTitle={"Ticket Reports"}
-            // data={[
-            //   ...ticketsData
-            //     .filter((item) => item.raisedBy?._id === auth.user?._id)
-            //     .map((item, index) => ({
-            //       id: index + 1,
-            //       ticket: item.ticket || "",
-            //       raisedToDepartment: item.raisedToDepartment?.name || "",
-            //       raisedBy: `${item.raisedBy?.firstName || ""} ${
-            //         item.raisedBy?.lastName || ""
-            //       }`.trim(),
-            //       description: item.description || "",
-            //       status: item.status || "",
-            //       assignees: item.assignees || "",
-            //       company: item.company?.companyName,
-            //       createdAt: humanDate(item.createdAt) || "",
-            //       updatedAt: humanDate(item.updatedAt) || "",
-            //       acceptedBy: `${item.acceptedBy?.firstName || ""} ${item.acceptedBy?.lastName || ""}`,
-            //     })),
-            // ]}
             data={[
               ...ticketsData
                 .map((item, index) => ({
@@ -137,6 +119,9 @@ const TicketReports = () => {
             exportData
             columns={kraColumn}
           />
+          // <MonthWiseTable
+          
+          // />
         ) : (
           <div className="flex justify-center items-center">
             <CircularProgress />
