@@ -9,7 +9,7 @@ const createDeptBasedTask = async (req, res, next) => {
   const { user, ip, company } = req;
   const logPath = "performance/PerformanceLog";
   const logAction = "Create Task";
-  const logSourceKey = "kraKpaRoles";
+  const logSourceKey = "kraKpaRole";
 
   try {
     const { task, taskType, department, dueDate, assignedDate, kpaDuration } =
@@ -144,7 +144,7 @@ const updateTaskStatus = async (req, res, next) => {
   const { user, ip, company } = req;
   const logPath = "performance/PerformanceLog";
   const logAction = "Update KRA/KPA status";
-  const logSourceKey = "kraKpaTasks";
+  const logSourceKey = "kraKpaTask";
 
   try {
     const { taskId, taskType } = req.params;
