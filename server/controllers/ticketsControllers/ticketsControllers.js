@@ -641,7 +641,11 @@ const acceptTicket = async (req, res, next) => {
     // Update the ticket by marking it as accepted and setting status to "In Progress"
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
-      { acceptedBy: user, status: "In Progress" },
+      {
+        "accepted.acceptedBy": user,
+        status: "In Progress",
+        "accepted.acceptedAt": new Date(),
+      },
       { new: true }
     );
     if (!updatedTicket) {
@@ -900,6 +904,7 @@ const ticketData = async (req, res, next) => {
         { path: "acceptedBy", select: "firstName lastName email" },
         { path: "assignees", select: "firstName lastName email" },
         { path: "company", select: "companyName" },
+        { path: "reject.rejectedBy", select: "firstName lastName email" },
       ])
       .lean()
       .exec();
@@ -1151,7 +1156,7 @@ const closeTicket = async (req, res, next) => {
 
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
-      { status: "Closed" },
+      { status: "Closed", closedAt: new Date() },
       { new: true }
     );
     if (!updatedTicket) {
