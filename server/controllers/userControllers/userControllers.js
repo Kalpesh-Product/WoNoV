@@ -788,7 +788,7 @@ const getAssignees = async (req, res, next) => {
       });
 
     if (!team?.length) {
-      return res.status(400).json({ message: "No assigness found" });
+      return res.status(400).json([]);
     }
 
     const transformAssignees = team.map((assignee) => {
