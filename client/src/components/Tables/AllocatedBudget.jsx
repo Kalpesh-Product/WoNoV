@@ -135,7 +135,7 @@ const AllocatedBudget = ({
   return (
     <>
       <WidgetSection
-        title={"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS FY 2024-25"}
+        title={"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"}
         border
       >
         <div className="flex flex-col gap-4 rounded-md ">
