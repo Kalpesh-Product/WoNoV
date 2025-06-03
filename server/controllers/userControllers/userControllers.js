@@ -776,8 +776,10 @@ const getAssignees = async (req, res, next) => {
     const departmentIds = departments.map((dept) => dept._id);
 
     const team = await User.find({
+      _id: { $ne: user },
       company,
       departments: { $in: departmentIds },
+      isActive: true,
     })
       .select("_id firstName lastName")
       .populate({
