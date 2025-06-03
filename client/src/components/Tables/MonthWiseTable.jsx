@@ -81,34 +81,30 @@ const MonthWiseTable = ({
           {tableTitle}
         </span>
 
-        <div className="flex items-center gap-4">
-          {buttonTitle ? (
-            <div>
-              <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
-            </div>
-          ) : null}
-          <div className="flex justify-end items-center">
-            <PrimaryButton
-              title={<MdNavigateBefore />}
-              handleSubmit={() =>
-                setSelectedMonthIndex((prev) => Math.max(prev - 1, 0))
-              }
-              disabled={selectedMonthIndex === 0}
-            />
-            <div className="text-subtitle text-center font-pmedium w-[120px]">
-              {selectedMonth}
-            </div>
-            <PrimaryButton
-              title={<MdNavigateNext />}
-              handleSubmit={() =>
-                setSelectedMonthIndex((prev) =>
-                  Math.min(prev + 1, monthLabels.length - 1)
-                )
-              }
-              disabled={selectedMonthIndex === monthLabels.length - 1}
-            />
-          </div>
-        </div>
+    {monthLabels.length > 0 && (
+  <div className="flex justify-end items-center">
+    <PrimaryButton
+      title={<MdNavigateBefore />}
+      handleSubmit={() =>
+        setSelectedMonthIndex((prev) => Math.max(prev - 1, 0))
+      }
+      disabled={selectedMonthIndex === 0}
+    />
+    <div className="text-subtitle text-center font-pmedium w-[120px]">
+      {selectedMonth}
+    </div>
+    <PrimaryButton
+      title={<MdNavigateNext />}
+      handleSubmit={() =>
+        setSelectedMonthIndex((prev) =>
+          Math.min(prev + 1, monthLabels.length - 1)
+        )
+      }
+      disabled={selectedMonthIndex === monthLabels.length - 1}
+    />
+  </div>
+)}
+
       </div>
 
       <AgTable

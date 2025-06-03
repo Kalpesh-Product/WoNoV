@@ -118,9 +118,6 @@ const PerformanceKra = () => {
         }
       },
     });
-  // const completedEntries = departmentLoading
-  //   ? []
-  //   : departmentKra.filter((item) => item.status === "Completed");
 
   const departmentColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },

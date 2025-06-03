@@ -14,13 +14,12 @@ const MuiModal = ({ open, onClose, title, children, headerBackground }) => {
           className="fixed inset-0 flex items-center justify-center"
         >
           <motion.div
-            drag
+            
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            whileDrag={{ scale: 0.9 }}
+       
             exit={{ scale: 0 }}
-            dragConstraints={modalRef} // Constrain dragging within the modal container
-            dragElastic={0.2} // Adjust elasticity for smoother movement
+   
             className="w-2/5 bg-white shadow-xl rounded-lg outline-none max-h-[90vh] overflow-y-auto"
           >
             {/* Header */}
