@@ -42,7 +42,6 @@ const TicketReports = () => {
     },
   });
 
-  
   const kraColumn = [
     { field: "id", headerName: "Sr No", flex: 1 },
     { field: "ticket", headerName: "Ticket", flex: 1 },
@@ -56,7 +55,8 @@ const TicketReports = () => {
         const statusColorMap = {
           "In Progress": { backgroundColor: "#FFECC5", color: "#CC8400" },
           Closed: { backgroundColor: "#90EE90", color: "#02730a" },
-          Pending: { backgroundColor: "#FFE0DC", color: "#C2410C" },
+          Rejected: { backgroundColor: "#FFE0DC", color: "#C2410C" },
+          Open: { backgroundColor: "#E6E6FA", color: "#4B0082" },
           Escalated: { backgroundColor: "#E6E6FA", color: "#4B0082" },
         };
 
@@ -89,7 +89,6 @@ const TicketReports = () => {
     },
   ];
 
-
   return (
     <div className="flex flex-col gap-8 p-4">
       <div>
@@ -98,31 +97,38 @@ const TicketReports = () => {
             search={true}
             tableTitle={"Ticket Reports"}
             data={[
-              ...ticketsData
-                .map((item, index) => ({
-                  id: index + 1,
-                  ticket: item.ticket || "",
-                  raisedToDepartment: item.raisedToDepartment?.name || "",
-                  raisedBy: `${item.raisedBy?.firstName || ""} ${
-                    item.raisedBy?.lastName || ""
-                  }`.trim(),
-                  description: item.description || "",
-                  status: item.status || "",
-                  assignees: item.assignees?.map((assignee)=> (`${assignee.firstName} ${assignee.lastName}`)) || "",
-                  company: item.company?.companyName,
-                  createdAt:  dayjs(item.createdAt).format("DD-MM-YYYY") || "",
-                  updatedAt: humanDate(item.updatedAt) || "",
-                  acceptedBy: `${item.acceptedBy?.firstName || ""} ${item.acceptedBy?.lastName || ""}`,
-                  rejectedBy: `${item.rejectedBy?.firstName || ""} ${item.rejectedBy?.lastName || ""}`,
-                })),
+              ...ticketsData.map((item, index) => ({
+                id: index + 1,
+                ticket: item.ticket || "",
+                raisedToDepartment: item.raisedToDepartment?.name || "",
+                raisedBy: `${item.raisedBy?.firstName || ""} ${
+                  item.raisedBy?.lastName || ""
+                }`.trim(),
+                description: item.description || "",
+                status: item.status || "",
+                assignees:
+                  item.assignees?.map(
+                    (assignee) => `${assignee.firstName} ${assignee.lastName}`
+                  ) || "",
+                company: item.company?.companyName,
+                createdAt: dayjs(item.createdAt).format("DD-MM-YYYY") || "",
+                updatedAt: humanDate(item.updatedAt) || "",
+                acceptedBy: `${item.acceptedBy?.firstName || ""} ${
+                  item.acceptedBy?.lastName || ""
+                }`,
+                rejectedBy: `${item.reject?.rejectedBy?.firstName || ""} ${
+                  item.reject?.rejectedBy?.lastName || ""
+                }`,
+                reason: item.reject?.reason,
+              })),
             ]}
             exportData
             columns={kraColumn}
           />
-          // <MonthWiseTable
-          
-          // />
         ) : (
+          // <MonthWiseTable
+
+          // />
           <div className="flex justify-center items-center">
             <CircularProgress />
           </div>
@@ -133,44 +139,60 @@ const TicketReports = () => {
         onClose={() => setDetailsModal(false)}
         title={"Ticket Detials"}
       >
-        {(!isLoading && selectedMeeting) ? (
+        {!isLoading && selectedMeeting ? (
+          <div className="w-full grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+            <DetalisFormatted
+              title={"Ticket"}
+              detail={selectedMeeting?.ticket || ""}
+            />
+            <DetalisFormatted
+              title={"Raised To Department"}
+              detail={selectedMeeting?.raisedToDepartment || ""}
+            />
+            <DetalisFormatted
+              title={"Raised By"}
+              detail={`${selectedMeeting?.raisedBy}`}
+            />
+            <DetalisFormatted
+              title={"Description"}
+              detail={selectedMeeting?.description || ""}
+            />
+            <DetalisFormatted
+              title={"Status"}
+              detail={selectedMeeting?.status || ""}
+            />
+            <DetalisFormatted
+              title={"Assignees"}
+              detail={
+                Array.isArray(selectedMeeting?.assignees) &&
+                selectedMeeting.assignees.length > 0
+                  ? selectedMeeting.assignees
+                      .map((assignee) => assignee)
+                      .join(", ")
+                  : "None"
+              }
+            />
+            <DetalisFormatted
+              title={"Accepted By"}
+              detail={selectedMeeting.acceptedBy || "None"}
+            />
 
-        <div className="w-full grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
-          <DetalisFormatted title={"Ticket"} detail={selectedMeeting?.ticket || ""} />
-          <DetalisFormatted
-            title={"Raised To Department"}
-            detail={selectedMeeting?.raisedToDepartment || ""}
-          />
-          <DetalisFormatted
-            title={"Raised By"}
-            detail={`${selectedMeeting?.raisedBy}`}
-          />
-          <DetalisFormatted
-            title={"Description"}
-            detail={selectedMeeting?.description || ""}
-          />
-          <DetalisFormatted title={"Status"} detail={selectedMeeting?.status || ""} />
-          <DetalisFormatted
-            title={"Assignees"}
-            detail={
-             Array.isArray(selectedMeeting?.assignees) && selectedMeeting.assignees.length > 0
-  ? selectedMeeting.assignees.map(
-      (assignee) =>assignee
-    ).join(", ")
-  : "None"
-
-            }
-          />
-          <DetalisFormatted
-            title={"Accepted By"}
-            detail={selectedMeeting.acceptedBy || "None"}
-          />
-          <DetalisFormatted
-            title={"Rejected By"}
-            detail={selectedMeeting?.rejectedBy || "None"}
-          />
-        </div>
-        ) : <CircularProgress />}
+            <DetalisFormatted
+              title={"Rejected By"}
+              detail={selectedMeeting?.rejectedBy || "None"}
+            />
+            {selectedMeeting.reason ? (
+              <DetalisFormatted
+                title={"Reason"}
+                detail={selectedMeeting?.reason || "None"}
+              />
+            ) : (
+              ""
+            )}
+          </div>
+        ) : (
+          <CircularProgress />
+        )}
       </MuiModal>
     </div>
   );
