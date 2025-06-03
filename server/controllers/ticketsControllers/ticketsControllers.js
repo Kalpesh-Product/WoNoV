@@ -642,9 +642,9 @@ const acceptTicket = async (req, res, next) => {
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
       {
-        "accepted.acceptedBy": user,
+        acceptedBy: user,
         status: "In Progress",
-        "accepted.acceptedAt": new Date(),
+        acceptedAt: new Date(),
       },
       { new: true }
     );
@@ -1288,6 +1288,7 @@ const fetchFilteredTickets = async (req, res, next) => {
           .status(404)
           .json({ message: "Provided a valid flag to fetch tickets" });
     }
+
     return res.status(200).json(filteredTickets);
   } catch (error) {
     next(error);
