@@ -642,9 +642,9 @@ const acceptTicket = async (req, res, next) => {
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
       {
-        "accepted.acceptedBy": user,
+        acceptedBy: user,
         status: "In Progress",
-        "accepted.acceptedAt": new Date(),
+        acceptedAt: new Date(),
       },
       { new: true }
     );
@@ -901,7 +901,7 @@ const ticketData = async (req, res, next) => {
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
-        { path: "accepted.acceptedBy", select: "firstName lastName email" },
+        { path: "acceptedBy", select: "firstName lastName email" },
         { path: "assignees", select: "firstName lastName email" },
         { path: "company", select: "companyName" },
         { path: "reject.rejectedBy", select: "firstName lastName email" },
@@ -1288,6 +1288,7 @@ const fetchFilteredTickets = async (req, res, next) => {
           .status(404)
           .json({ message: "Provided a valid flag to fetch tickets" });
     }
+
     return res.status(200).json(filteredTickets);
   } catch (error) {
     next(error);
