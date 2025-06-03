@@ -206,7 +206,24 @@ const TasksViewDepartment = () => {
   ];
   const completedColumns = [
     { headerName: "Sr no", field: "srno", width: 100 },
-    { headerName: "Task List", field: "taskName", width: 300 },
+    {
+      headerName: "Task List",
+      field: "taskName",
+      width: 300,
+      cellRenderer: (params) => (
+        <div
+          role="button"
+          onClick={() => {
+            setModalMode("completed");
+            setSelectedTask(params.data);
+            setOpenMultiModal(true);
+          }}
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value}
+        </div>
+      ),
+    },
     // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "Completed By", field: "completedBy", width: 300 },
     { headerName: "Assigned Date", field: "assignedDate" },
@@ -465,7 +482,13 @@ const TasksViewDepartment = () => {
       <MuiModal
         open={openMultiModal}
         onClose={() => setOpenMultiModal(false)}
-        title={"Add Task"}
+        title={
+          modalMode === "view"
+            ? "View Task"
+            : modalMode === "completed"
+            ? "Completed Tasks"
+            : ""
+        }
       >
         {modalMode === "view" && selectedTask && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -501,24 +524,24 @@ const TasksViewDepartment = () => {
             <DetalisFormatted title={"Status"} detail={selectedTask?.status} />
           </div>
         )}
-        {modalMode === "view-completed" && selectedTask && (
+        {modalMode === "completed" && selectedTask && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <DetalisFormatted title={"Task"} detail={selectedTask?.taskList} />
+            <DetalisFormatted title={"Task"} detail={selectedTask?.taskName} />
             <DetalisFormatted
               title={"Assigned Date"}
               detail={humanDate(selectedTask?.assignedDate)}
             />
             <DetalisFormatted
-              title={"Due Date"}
-              detail={humanDate(selectedTask?.dueDate)}
+              title={"Completed Date"}
+              detail={humanDate(selectedTask?.completedDate)}
             />
             <DetalisFormatted
-              title={"Due Time"}
-              detail={selectedTask?.dueTime}
+              title={"Completed Time"}
+              detail={selectedTask?.completedTime}
             />
             <DetalisFormatted
-              title={"Assigned By"}
-              detail={selectedTask?.assignedBy}
+              title={"Comleted By"}
+              detail={selectedTask?.completedBy}
             />
 
             <DetalisFormatted title={"Status"} detail={selectedTask?.status} />

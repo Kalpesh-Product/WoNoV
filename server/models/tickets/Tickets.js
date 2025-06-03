@@ -46,12 +46,10 @@ const ticketsSchema = new mongoose.Schema(
       },
     ],
     closedAt: Date,
-    accepted: {
-      acceptedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "UserData",
-      },
-      acceptedAt: Date,
+    acceptedAt: Date,
+    acceptedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
     },
     reject: {
       rejectedBy: {

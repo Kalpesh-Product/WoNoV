@@ -19,8 +19,10 @@ const AddVisitor = () => {
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       firstName: "",
       email: "",
@@ -37,6 +39,8 @@ const AddVisitor = () => {
       visitorCompany: "",
     },
   });
+  const selectedIdType = watch("idProof.idType");
+
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -87,8 +91,8 @@ const AddVisitor = () => {
       ));
       reset();
     },
-    onError: (data) => {
-      toast.error(data.message || "Error Adding Visitor");
+    onError: (error) => {
+      toast.error(error.message || "Error Adding Visitor");
     },
   });
   const onSubmit = (data) => {
@@ -345,74 +349,108 @@ const AddVisitor = () => {
               <Controller
                 name="idProof.idNumber"
                 control={control}
-                rules={{ required: "ID Number is required" }}
+                rules={{
+                  required: "ID Number is required",
+                  validate: (value) => {
+                    if (selectedIdType === "aadhar") {
+                      const regex = /^\d{4}-\d{4}-\d{4}$/;
+                      if (!regex.test(value))
+                        return "Aadhar must be in 1234-5678-9012 format";
+                    }
+                    if (selectedIdType === "pan") {
+                      const regex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+                      if (!regex.test(value))
+                        return "PAN must be in format: ABCDE1234F";
+                    }
+                    if (selectedIdType === "drivingLicense") {
+                      const regex = /^[A-Z]{2}[0-9]{2}\s?[0-9]{11}$/;
+                      if (!regex.test(value))
+                        return "DL must be like MH12 12345678901";
+                    }
+                    return true;
+                  },
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     size="small"
                     label="ID Number"
+                    fullWidth
                     error={!!errors.idProof?.idNumber}
                     helperText={errors.idProof?.idNumber?.message}
-                    fullWidth
+                    onChange={(e) => {
+                      let value = e.target.value;
+
+                      if (selectedIdType === "aadhar") {
+                        // Remove non-digit characters first
+                        value = value.replace(/\D/g, "").slice(0, 12);
+
+                        // Auto-insert hyphens after every 4 digits
+                        const parts = value.match(/.{1,4}/g);
+                        if (parts) value = parts.join("-");
+                      }
+
+                      field.onChange(value);
+                    }}
+                    value={field.value}
                   />
                 )}
               />
             </div>
-             <div>
-            <div className="py-4 border-b-default border-borderGray">
-              <span className="text-subtitle font-pmedium">Timings</span>
-            </div>
-            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <Controller
-                  name="dateOfVisit"
-                  control={control}
-                  rules={{ required: "Date of visit is required" }}
-                  render={({ field }) => (
-                    <DatePicker
-                      {...field}
-                      format="DD-MM-YYYY"
-                      label={"Date of Visit"}
-                      value={field.value || null}
-                      onChange={(e) => field.onChange(e)}
-                      slotProps={{
-                        textField: {
-                          fullWidth: true,
-                          size: "small",
-                          error: !!errors.dateOfVisit,
-                          helperText: errors.dateOfVisit?.message,
-                        },
-                      }}
-                    />
-                  )}
-                />
-              </LocalizationProvider>
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <Controller
-                  name="checkIn"
-                  control={control}
-                  rules={{ required: "Check-In time is required" }}
-                  render={({ field }) => (
-                    <TimePicker
-                      {...field}
-                      label={"Check-In Time"}
-                      slotProps={{ textField: { size: "small" } }}
-                      render={(params) => (
-                        <TextField
-                          {...params}
-                          fullWidth
-                          error={!!errors.checkIn}
-                          helperText={errors.checkIn?.message}
-                        />
-                      )}
-                    />
-                  )}
-                />
-              </LocalizationProvider>
+            <div>
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">Timings</span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Controller
+                    name="dateOfVisit"
+                    control={control}
+                    rules={{ required: "Date of visit is required" }}
+                    render={({ field }) => (
+                      <DatePicker
+                        {...field}
+                        format="DD-MM-YYYY"
+                        label={"Date of Visit"}
+                        value={field.value || null}
+                        onChange={(e) => field.onChange(e)}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            size: "small",
+                            error: !!errors.dateOfVisit,
+                            helperText: errors.dateOfVisit?.message,
+                          },
+                        }}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Controller
+                    name="checkIn"
+                    control={control}
+                    rules={{ required: "Check-In time is required" }}
+                    render={({ field }) => (
+                      <TimePicker
+                        {...field}
+                        label={"Check-In Time"}
+                        slotProps={{ textField: { size: "small" } }}
+                        render={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            error={!!errors.checkIn}
+                            helperText={errors.checkIn?.message}
+                          />
+                        )}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
+              </div>
             </div>
           </div>
-          </div>
-         
         </div>
 
         {/* Submit Button */}

@@ -211,28 +211,34 @@ const CheckAvailability = () => {
         : []
     ).entries()
   );
-  const formatUnitDisplay = (unitNo, buildingName) => {
-    const match = unitNo.match(/^(\d+)\(?([A-Za-z]*)\)?$/);
-    if (!match) return `${unitNo} ${buildingName}`;
-    const [_, number, letter] = match;
-    return `${number}${letter ? ` - ${letter}` : ""} ${buildingName}`;
-  };
+const formatUnitDisplay = (unitNo, buildingName) => {
+  if (typeof unitNo !== "string") return `${unitNo || "Unknown"} ${buildingName}`;
+
+  // Match format like "501A", "302", "302(A)", or "ST 501 A"
+  const match = unitNo.match(/(\d+)[\s-]?([A-Za-z]*)$/); // extract trailing number + optional letter
+
+  if (!match) return `${unitNo} ${buildingName}`;
+  const [_, number, letter] = match;
+  return `${number}${letter ? ` - ${letter}` : ""} ${buildingName}`;
+};
+
 
   // Sorting function
-  const sortByUnitNo = (a, b) => {
-    const matchA = a.unitNo.match(/^(\d+)\(?([A-Za-z]*)\)?$/);
-    const matchB = b.unitNo.match(/^(\d+)\(?([A-Za-z]*)\)?$/);
+const sortByUnitNo = (a, b) => {
+  const matchA = typeof a.unitNo === "string" ? a.unitNo.match(/(\d+)[\s-]?([A-Za-z]*)$/) : null;
+  const matchB = typeof b.unitNo === "string" ? b.unitNo.match(/(\d+)[\s-]?([A-Za-z]*)$/) : null;
 
-    const numberA = parseInt(matchA[1], 10);
-    const numberB = parseInt(matchB[1], 10);
-    const letterA = matchA[2] || "";
-    const letterB = matchB[2] || "";
+  if (!matchA || !matchB) return 0;
 
-    if (numberA !== numberB) {
-      return numberA - numberB; // Compare numbers first
-    }
-    return letterA.localeCompare(letterB); // Compare letters if numbers are equal
-  };
+  const numberA = parseInt(matchA[1], 10);
+  const numberB = parseInt(matchB[1], 10);
+  const letterA = matchA[2] || "";
+  const letterB = matchB[2] || "";
+
+  if (numberA !== numberB) return numberA - numberB;
+  return letterA.localeCompare(letterB);
+};
+
 
   const onSubmit = (data) => {
     const { location, floor } = data;

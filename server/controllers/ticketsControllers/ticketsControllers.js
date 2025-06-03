@@ -642,9 +642,9 @@ const acceptTicket = async (req, res, next) => {
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
       {
-        "accepted.acceptedBy": user,
+        acceptedBy: user,
         status: "In Progress",
-        "accepted.acceptedAt": new Date(),
+        acceptedAt: new Date(),
       },
       { new: true }
     );
@@ -1288,6 +1288,7 @@ const fetchFilteredTickets = async (req, res, next) => {
           .status(404)
           .json({ message: "Provided a valid flag to fetch tickets" });
     }
+
     return res.status(200).json(filteredTickets);
   } catch (error) {
     next(error);
@@ -1295,24 +1296,69 @@ const fetchFilteredTickets = async (req, res, next) => {
 };
 
 const filterMyTickets = async (req, res, next) => {
-  const { user } = req;
+  const { user, company } = req;
 
   try {
     const myTickets = await Ticket.find({ raisedBy: user })
-      .select("raisedBy raisedToDepartment status ticket description reject")
+      .select(
+        "raisedBy raisedToDepartment status ticket description reject acceptedAt image"
+      )
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
         { path: "reject.rejectedBy", select: "firstName lastName email" },
+        { path: "acceptedBy", select: "firstName lastName email" },
       ])
       .lean()
       .exec();
 
     if (!myTickets.length) {
-      return res.status(400).json({ message: "No tickets found" });
+      return res.status(200).json([]);
     }
 
-    return res.status(200).json(myTickets);
+    const foundCompany = await Company.findOne({ _id: company })
+      .select("selectedDepartments")
+      .lean()
+      .exec();
+
+    if (!foundCompany) {
+      return res.status(400).josn({ message: "Company not found" });
+    }
+
+    // Extract the ticket priority from the company's selected departments
+    const updatedTickets = myTickets.map((ticket) => {
+      const department = foundCompany.selectedDepartments.find(
+        (dept) =>
+          dept.department.toString() ===
+          ticket.raisedToDepartment?._id.toString()
+      );
+
+      let priority = "Low"; // Default priority
+
+      if (department) {
+        const issue = department.ticketIssues.find(
+          (issue) => issue.title === ticket.ticket
+        );
+
+        priority = issue?.priority || "High";
+      }
+
+      // If the issue is not found, check for "Other" and assign its priority
+      if (!priority || priority === "Low") {
+        const otherIssue = foundCompany.selectedDepartments
+          .flatMap((dept) => dept.ticketIssues)
+          .find((issue) => issue.title === "Other");
+
+        priority = otherIssue?.priority || "Low";
+      }
+
+      return {
+        ...ticket,
+        priority,
+      };
+    });
+
+    return res.status(200).json(updatedTickets);
   } catch (error) {
     next(error);
   }
@@ -1336,6 +1382,7 @@ const filterTodayTickets = async (req, res, next) => {
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
+        { path: "acceptedBy", select: "firstName middleName lastName" },
       ])
       .lean()
       .exec();

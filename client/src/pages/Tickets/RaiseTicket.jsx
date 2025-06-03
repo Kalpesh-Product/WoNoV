@@ -21,6 +21,7 @@ import { MdDelete, MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../components/MuiModal";
 import { queryClient } from "../../main";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import humanTime from "../../utils/humanTime";
 
 const RaiseTicket = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -115,7 +116,7 @@ const RaiseTicket = () => {
   const { data: tickets, isPending: ticketsLoading } = useQuery({
     queryKey: ["my-tickets"],
     queryFn: async function () {
-      const response = await axios.get("/api/tickets/today");
+      const response = await axios.get("/api/tickets/my-tickets");
       return response.data;
     },
   });
@@ -149,6 +150,8 @@ const RaiseTicket = () => {
     { field: "raisedTo", headerName: "To Department", width: 150 },
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     { field: "description", headerName: "Description", width: 300 },
+    { field: "acceptedBy", headerName: "Accepted By", width: 300 },
+    { field: "acceptedAt", headerName: "Accepted Time", width: 300 },
 
     {
       field: "priority",
@@ -223,6 +226,11 @@ const RaiseTicket = () => {
       ),
     },
   ];
+
+  useEffect(()=>{
+
+    console.log("details",viewDetails)
+  },[viewDetails])
 
 
   return (
@@ -357,7 +365,9 @@ const RaiseTicket = () => {
                         const file = e.target.files[0];
                         if (file) {
                           onChange(file);
+                          
                           setPreview(URL.createObjectURL(file)); // Set preview
+                          imageRef.current.value = null;
                         }
                       }}
                     />
@@ -443,7 +453,7 @@ const RaiseTicket = () => {
       </div>
       <div className="rounded-md bg-white p-4 border-2 ">
         <div className="flex flex-row justify-between mb-4">
-          <div className="text-[20px]">My today&apos;s tickets</div>
+          <div className="text-[20px]">My tickets</div>
         </div>
         <div className=" w-full">
           {ticketsLoading ? (
@@ -462,7 +472,12 @@ const RaiseTicket = () => {
                 description: ticket.description,
                 ticketTitle: ticket.ticket,
                 status: ticket.status,
-                priority: ticket.priority,
+                acceptedBy: ticket?.acceptedBy
+                      ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
+                      : "",               
+                acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
+                priority:ticket.priority,
+                image:ticket.image ? ticket.image.url : null
               }))}
               columns={recievedTicketsColumns}
               paginationPageSize={10}
@@ -482,6 +497,15 @@ const RaiseTicket = () => {
           <DetalisFormatted title="Description" detail={viewTicketDetails?.description} />
           <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
           <DetalisFormatted title="Priority" detail={viewTicketDetails?.priority} />
+           {viewTicketDetails.image && (
+              <div className="lg:col-span-2">
+                <img
+                  src={viewTicketDetails.image}
+                  alt="Ticket Attachment"
+                  className="max-w-full max-h-96 rounded border"
+                />
+              </div>
+            )}
         </div>
       </MuiModal>
 

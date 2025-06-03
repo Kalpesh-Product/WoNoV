@@ -15,6 +15,7 @@ const MonthWiseTable = ({
   handleSubmit,
   checkbox,
   checkAll,
+  key
 }) => {
   // Step 1: Get unique months from the date column
   const monthLabels = useMemo(() => {
@@ -87,38 +88,40 @@ const MonthWiseTable = ({
               <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
             </div>
           ) : null}
-          <div className="flex justify-end items-center">
-            <PrimaryButton
-              title={<MdNavigateBefore />}
-              handleSubmit={() =>
-                setSelectedMonthIndex((prev) => Math.max(prev - 1, 0))
-              }
-              disabled={selectedMonthIndex === 0}
-            />
-            <div className="text-subtitle text-center font-pmedium w-[120px]">
-              {selectedMonth}
+          {monthLabels.length > 0 && (
+            <div className="flex justify-end items-center">
+              <PrimaryButton
+                title={<MdNavigateBefore />}
+                handleSubmit={() =>
+                  setSelectedMonthIndex((prev) => Math.max(prev - 1, 0))
+                }
+                disabled={selectedMonthIndex === 0}
+              />
+              <div className="text-subtitle text-center font-pmedium w-[120px]">
+                {selectedMonth}
+              </div>
+              <PrimaryButton
+                title={<MdNavigateNext />}
+                handleSubmit={() =>
+                  setSelectedMonthIndex((prev) =>
+                    Math.min(prev + 1, monthLabels.length - 1)
+                  )
+                }
+                disabled={selectedMonthIndex === monthLabels.length - 1}
+              />
             </div>
-            <PrimaryButton
-              title={<MdNavigateNext />}
-              handleSubmit={() =>
-                setSelectedMonthIndex((prev) =>
-                  Math.min(prev + 1, monthLabels.length - 1)
-                )
-              }
-              disabled={selectedMonthIndex === monthLabels.length - 1}
-            />
-          </div>
+          )}
         </div>
       </div>
 
       <AgTable
+      key={key}
         enableCheckbox={checkbox}
         checkAll={checkAll}
         tableHeight={300}
         columns={formattedColumns}
-        data={filteredData.map((item,index) => ({
+        data={filteredData.map((item) => ({
           ...item,
-          id:index + 1,
           date: humanDate(item.date),
         }))}
         hideFilter={filteredData.length <= 9}

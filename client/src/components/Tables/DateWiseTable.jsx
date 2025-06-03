@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import dayjs from "dayjs";
 import AgTable from "../AgTable";
@@ -14,10 +14,10 @@ const DateWiseTable = ({
   buttonTitle,
   handleSubmit,
   checkAll,
-  formatTime = false, // <-- added default value
+  key,
+  formatTime = false,
 }) => {
   const { ref } = useRefWithInitialRerender;
-
 
   const dateLabels = useMemo(() => {
     const dateSet = new Set();
@@ -35,19 +35,26 @@ const DateWiseTable = ({
 
   const today = dayjs().format("D-MMM-YYYY");
 
-const defaultDateIndex = useMemo(() => {
-  if (dateLabels.length === 0) return 0;
+  const defaultDateIndex = useMemo(() => {
+    if (dateLabels.length === 0) return 0;
 
-  const todayIndex = dateLabels.findIndex((d) => d === today);
-  if (todayIndex !== -1) return todayIndex;
+    const todayIndex = dateLabels.findIndex((d) => d === today);
+    if (todayIndex !== -1) return todayIndex;
 
-  // Find the closest previous date before today
-  const pastDates = dateLabels.filter((d) => dayjs(d, "D-MMM-YYYY").isBefore(dayjs()));
-  return pastDates.length > 0 ? dateLabels.indexOf(pastDates[pastDates.length - 1]) : 0;
-}, [dateLabels]);
+    const pastDates = dateLabels.filter((d) =>
+      dayjs(d, "D-MMM-YYYY").isBefore(dayjs())
+    );
+    return pastDates.length > 0
+      ? dateLabels.indexOf(pastDates[pastDates.length - 1])
+      : 0;
+  }, [dateLabels, today]);
 
-const [selectedDateIndex, setSelectedDateIndex] = useState(defaultDateIndex);
+  const [selectedDateIndex, setSelectedDateIndex] = useState(defaultDateIndex);
 
+  // 🔁 Keep selectedDateIndex in sync when defaultDateIndex changes (e.g., after async data load)
+  useEffect(() => {
+    setSelectedDateIndex(defaultDateIndex);
+  }, [defaultDateIndex]);
 
   const selectedDate = dateLabels[selectedDateIndex];
 
@@ -58,7 +65,6 @@ const [selectedDateIndex, setSelectedDateIndex] = useState(defaultDateIndex);
     });
   }, [data, selectedDate, dateColumn]);
 
-  // ✅ Conditional formatting based on formatTime
   const formattedColumns = useMemo(() => {
     return columns.map((col) => {
       if (col.field?.toLowerCase().includes("date")) {
@@ -85,36 +91,39 @@ const [selectedDateIndex, setSelectedDateIndex] = useState(defaultDateIndex);
           {tableTitle}
         </span>
         <div className="flex items-center gap-4">
-          {buttonTitle ? (
+          {buttonTitle && (
             <div>
               <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
             </div>
-          ) : null}
-          <div className="flex justify-end items-center">
-            <PrimaryButton
-              title={<MdNavigateBefore />}
-              handleSubmit={() =>
-                setSelectedDateIndex((prev) => Math.max(prev - 1, 0))
-              }
-              disabled={selectedDateIndex === 0}
-            />
-            <div className="text-subtitle text-center font-pmedium w-[140px]">
-              {selectedDate}
+          )}
+          {dateLabels.length > 0 && (
+            <div className="flex justify-end items-center">
+              <PrimaryButton
+                title={<MdNavigateBefore />}
+                handleSubmit={() =>
+                  setSelectedDateIndex((prev) => Math.max(prev - 1, 0))
+                }
+                disabled={selectedDateIndex === 0}
+              />
+              <div className="text-subtitle text-center font-pmedium w-[140px]">
+                {selectedDate}
+              </div>
+              <PrimaryButton
+                title={<MdNavigateNext />}
+                handleSubmit={() =>
+                  setSelectedDateIndex((prev) =>
+                    Math.min(prev + 1, dateLabels.length - 1)
+                  )
+                }
+                disabled={selectedDateIndex === dateLabels.length - 1}
+              />
             </div>
-            <PrimaryButton
-              title={<MdNavigateNext />}
-              handleSubmit={() =>
-                setSelectedDateIndex((prev) =>
-                  Math.min(prev + 1, dateLabels.length - 1)
-                )
-              }
-              disabled={selectedDateIndex === dateLabels.length - 1}
-            />
-          </div>
+          )}
         </div>
       </div>
 
       <AgTable
+        key={key}
         tableHeight={350}
         enableCheckbox={checkbox}
         checkAll={checkAll}

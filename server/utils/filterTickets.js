@@ -128,7 +128,7 @@ async function filterAcceptedAssignedTickets(
       $or: [
         {
           $and: [
-            { acceptedBy: { $exists: true } },
+            { acceptedBy: { $exists: true, $ne: null } },
             { raisedToDepartment: { $in: userDepartments } },
             { status: "In Progress" },
           ],
@@ -146,7 +146,7 @@ async function filterAcceptedAssignedTickets(
       $or: [
         {
           $and: [
-            { acceptedBy: { $exists: true } },
+            { acceptedBy: { $exists: true, $ne: null } },
             { raisedToDepartment: { $in: userDepartments } },
             { status: "In Progress" },
           ],
@@ -163,7 +163,10 @@ async function filterAcceptedAssignedTickets(
     Admin: {
       $and: [
         {
-          $or: [{ acceptedBy: user }, { assignees: { $in: [user] } }],
+          $or: [
+            { acceptedBy: { $exists: true, $ne: null } },
+            { assignees: { $in: [user] } },
+          ],
         },
         { status: "In Progress" },
       ],
