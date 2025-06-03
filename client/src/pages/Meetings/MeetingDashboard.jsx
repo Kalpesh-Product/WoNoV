@@ -37,6 +37,14 @@ const MeetingDashboard = () => {
     },
   });
 
+  const { data: holidaysData = [], isLoading:isHolidaysLoading } = useQuery({
+    queryKey: ["holidays"],
+    queryFn: async () => {
+      const response = await axios.get("/api/events/get-holidays");
+      return response.data;
+    },
+  });
+
    const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
       queryKey: ["visitors"],
       queryFn: async () => {
@@ -647,19 +655,6 @@ const averageBookingOptions = {
       colors: ["#ffff"],
     },
   },
-  // dataLabels: {
-  // enabled: true,
-  // formatter: function (_, { dataPointIndex, w }) {
-  //   const monthKey = w.config.xaxis.categories[dataPointIndex];
-  //   const booked = monthlyBookedHours[monthKey] || 0;
-  //   const total = 20;
-  //   return `${booked} / ${total} hrs`;
-  // },
-  // style: {
-  //   fontSize: "11px",
-  //   colors: ["#ffff"],
-  // },
-// },
   plotOptions: {
     bar: {
       dataLabels: {
@@ -669,6 +664,34 @@ const averageBookingOptions = {
       columnWidth: "40%",
     },
   },
+  tooltip: {
+  enabled: true, // or false to disable
+  y: {
+    formatter: function (val) {
+      return `${(val/100)*totalBookableHours} hrs`; // Custom text, like "12 hrs"
+    }
+  },
+  x: {
+    formatter: function (val) {
+      return `Month: ${val}`; // Customizes "May-25"
+    }
+  },
+  //  custom: function({ series, seriesIndex, dataPointIndex, w }) {
+  //   const value = series[seriesIndex][dataPointIndex];
+  //   const monthKey = w.config.xaxis.categories[dataPointIndex];
+  //   const total = totalBookableHours || 0;
+
+  //   return `
+  //     <div class="apexcharts-tooltip-title">Month: ${monthKey}</div>
+  //     <div class="apexcharts-tooltip-series-group">
+  //       <span class="apexcharts-tooltip-marker" style="background-color: #008FFB"></span>
+  //       Booking Utilization: <strong>${value} hrs</strong><br/>
+  //       <span class="apexcharts-tooltip-marker" style="background-color: #00E396"></span>
+  //       Total Bookable Hours: <strong>${total} hrs</strong>
+  //     </div>
+  //   `;
+  // }
+}
 };
 
 

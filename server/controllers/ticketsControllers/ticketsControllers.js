@@ -641,7 +641,11 @@ const acceptTicket = async (req, res, next) => {
     // Update the ticket by marking it as accepted and setting status to "In Progress"
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
-      { acceptedBy: user, status: "In Progress" },
+      {
+        "accepted.acceptedBy": user,
+        status: "In Progress",
+        "accepted.acceptedAt": new Date(),
+      },
       { new: true }
     );
     if (!updatedTicket) {
@@ -1152,7 +1156,7 @@ const closeTicket = async (req, res, next) => {
 
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
-      { status: "Closed" },
+      { status: "Closed", closedAt: new Date() },
       { new: true }
     );
     if (!updatedTicket) {
@@ -1295,10 +1299,11 @@ const filterMyTickets = async (req, res, next) => {
 
   try {
     const myTickets = await Ticket.find({ raisedBy: user })
-      .select("raisedBy raisedToDepartment status ticket description")
+      .select("raisedBy raisedToDepartment status ticket description reject")
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
+        { path: "reject.rejectedBy", select: "firstName lastName email" },
       ])
       .lean()
       .exec();
