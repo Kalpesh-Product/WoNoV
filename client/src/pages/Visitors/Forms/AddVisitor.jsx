@@ -91,8 +91,8 @@ const AddVisitor = () => {
       ));
       reset();
     },
-    onError: (data) => {
-      toast.error(data.message || "Error Adding Visitor");
+    onError: (error) => {
+      toast.error(error.message || "Error Adding Visitor");
     },
   });
   const onSubmit = (data) => {
