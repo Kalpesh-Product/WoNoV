@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import dayjs from "dayjs";
 import AgTable from "../AgTable";
@@ -14,7 +14,8 @@ const DateWiseTable = ({
   buttonTitle,
   handleSubmit,
   checkAll,
-  formatTime = false, // <-- added default value
+  key,
+  formatTime = false,
 }) => {
   const { ref } = useRefWithInitialRerender;
 
@@ -40,16 +41,20 @@ const DateWiseTable = ({
     const todayIndex = dateLabels.findIndex((d) => d === today);
     if (todayIndex !== -1) return todayIndex;
 
-    // Find the closest previous date before today
     const pastDates = dateLabels.filter((d) =>
       dayjs(d, "D-MMM-YYYY").isBefore(dayjs())
     );
     return pastDates.length > 0
       ? dateLabels.indexOf(pastDates[pastDates.length - 1])
       : 0;
-  }, [dateLabels]);
+  }, [dateLabels, today]);
 
   const [selectedDateIndex, setSelectedDateIndex] = useState(defaultDateIndex);
+
+  // 🔁 Keep selectedDateIndex in sync when defaultDateIndex changes (e.g., after async data load)
+  useEffect(() => {
+    setSelectedDateIndex(defaultDateIndex);
+  }, [defaultDateIndex]);
 
   const selectedDate = dateLabels[selectedDateIndex];
 
@@ -60,7 +65,6 @@ const DateWiseTable = ({
     });
   }, [data, selectedDate, dateColumn]);
 
-  // ✅ Conditional formatting based on formatTime
   const formattedColumns = useMemo(() => {
     return columns.map((col) => {
       if (col.field?.toLowerCase().includes("date")) {
@@ -87,11 +91,11 @@ const DateWiseTable = ({
           {tableTitle}
         </span>
         <div className="flex items-center gap-4">
-          {buttonTitle ? (
+          {buttonTitle && (
             <div>
               <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
             </div>
-          ) : null}
+          )}
           {dateLabels.length > 0 && (
             <div className="flex justify-end items-center">
               <PrimaryButton
@@ -119,6 +123,7 @@ const DateWiseTable = ({
       </div>
 
       <AgTable
+        key={key}
         tableHeight={350}
         enableCheckbox={checkbox}
         checkAll={checkAll}
