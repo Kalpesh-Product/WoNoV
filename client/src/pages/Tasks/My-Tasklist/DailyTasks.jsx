@@ -73,7 +73,7 @@ const DailyTasks = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tasks/get-completed-tasks/${deptId}`
+          `/api/tasks/get-my-completed-tasks`
         );
         return response.data;
       } catch (error) {
