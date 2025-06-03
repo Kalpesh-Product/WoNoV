@@ -356,7 +356,9 @@ const RaiseTicket = () => {
                         const file = e.target.files[0];
                         if (file) {
                           onChange(file);
+                          
                           setPreview(URL.createObjectURL(file)); // Set preview
+                          imageRef.current.value = null;
                         }
                       }}
                     />
