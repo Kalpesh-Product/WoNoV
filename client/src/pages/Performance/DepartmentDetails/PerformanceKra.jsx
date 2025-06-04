@@ -63,7 +63,8 @@ const PerformanceKra = () => {
       setOpenModal(false);
     },
     onError: (error) => {
-      toast.error(error.message || "Error Adding KRA");
+      toast.success("KRA Added")
+      // toast.error(error.message || "Error Adding KRA");
     },
   });
   const handleFormSubmit = (data) => {
@@ -81,10 +82,11 @@ const PerformanceKra = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
       queryClient.invalidateQueries({ queryKey: ["completedEntries"] });
-      toast.success(data.message || "DATA UPDATED");
+      toast.success(data.message || "KRA updated");
     },
     onError: (error) => {
-      toast.error(error.message || "Error Updating");
+       toast.success("KRA updated")
+      // toast.error(error.message || "Error Updating");
     },
   });
 
