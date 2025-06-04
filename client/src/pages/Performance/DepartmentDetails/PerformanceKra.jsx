@@ -75,7 +75,7 @@ const PerformanceKra = () => {
     mutationKey: ["updateDailyKra"],
     mutationFn: async (data) => {
       const response = await axios.patch(
-        `/api/performance/update-status/${data}/KRA`
+        `/api/performance/update-statu/${data}/KRA`
       );
       return response.data;
     },
@@ -122,7 +122,7 @@ const PerformanceKra = () => {
     });
 
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100 },
+    { headerName: "Sr no", field: "srno", width: 100,sort:"desc" },
     { headerName: "KRA List", field: "taskName", flex: 1 },
     { headerName: "DueTime", field: "dueTime" },
     {
