@@ -11,6 +11,7 @@ const createDeptBasedTask = async (req, res, next) => {
   const logAction = "Create Task";
   const logSourceKey = "kraKpaRoles";
 
+  console.log("error");
   try {
     const { task, taskType, department, dueDate, assignedDate, kpaDuration } =
       req.body;
@@ -149,22 +150,26 @@ const updateTaskStatus = async (req, res, next) => {
   try {
     const { taskId, taskType } = req.params;
 
+    console.log("Params", taskId);
+    console.log("type", taskType);
     if (!taskId) {
-      throw new CustomError(
-        "Missing required fields",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      // throw new CustomError(
+      //   "Missing required fields",
+      //   logPath,
+      //   logAction,
+      //   logSourceKey
+      // );
+      return res.send(400).status({ message: "Missing required fields" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(taskId)) {
-      throw new CustomError(
-        "Invalid task ID provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      // throw new CustomError(
+      //   "Invalid task ID provided",
+      //   logPath,
+      //   logAction,
+      //   logSourceKey
+      // );
+      return res.send(400).status({ message: "Invalid task ID provided" });
     }
 
     const completionDate = new Date();
@@ -190,14 +195,16 @@ const updateTaskStatus = async (req, res, next) => {
     );
 
     if (!updatedStatus) {
-      throw new CustomError(
-        "Failed to update the status",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      // throw new CustomError(
+      //   "Failed to update the status",
+      //   logPath,
+      //   logAction,
+      //   logSourceKey
+      // );
+      return res.send(400).status({ message: "Failed to update the status" });
     }
 
+    console.log("task");
     const newKraKpaTask = new kraKpaTask({
       task: taskId,
       completedBy: user,
@@ -227,13 +234,14 @@ const updateTaskStatus = async (req, res, next) => {
 
     return res.status(201).json({ message: `${taskType} marked completed` });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
-    }
+    // if (error instanceof CustomError) {
+    //   next(error);
+    // } else {
+    //   next(
+    //     new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+    //   );
+    // }
+    next(error);
   }
 };
 

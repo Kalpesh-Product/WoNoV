@@ -283,7 +283,7 @@ const Calender = () => {
                 <DetalisFormatted
                   title="Participants"
                   detail={(selectedEvent.extendedProps.participants
-                    .map((p) => p.name)
+                    .map((p) => `${p.firstName} ${p.lastName}`)
                     .join(", ")) || "N/A"}
                 />
               )}
@@ -301,7 +301,7 @@ const Calender = () => {
                 detail={selectedEvent.extendedProps.meetingType}
               />
               <DetalisFormatted
-                title="Client"
+                title="Company"
                 detail={selectedEvent.extendedProps.client}
               />
               <DetalisFormatted

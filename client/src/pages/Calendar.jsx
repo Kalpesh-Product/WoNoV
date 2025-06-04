@@ -18,6 +18,7 @@ import MuiModal from "../components/MuiModal";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import humanDate from "../utils/humanDateForamt";
+import humanTime from "../utils/humanTime";
 
 const Calender = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -71,11 +72,19 @@ const Calender = () => {
       type: "meeting", // so it can be filtered
       agenda: meeting.agenda,
       roomName: meeting.roomName,
+      bookedBy: meeting.bookedBy,
+      receptionist: meeting.receptionist,
+      client: meeting.client,
+      meetingType: meeting.meetingType,
+      duration: meeting.duration,
+      startTime: meeting.startTime,
+      endTime: meeting.endTime,
       subject: meeting.subject,
       department: meeting.department,
       participants: meeting.participants,
       meetingStatus: meeting.meetingStatus,
       housekeepingStatus: meeting.housekeepingStatus,
+      location: meeting.location,
     },
   }));
 
@@ -307,6 +316,48 @@ const Calender = () => {
                       {humanDate(selectedEvent?._instance.range.end)}
                     </span>{" "}
                   </span>{" "}
+
+                   {selectedEvent.extendedProps.startTime && (
+                    <div>
+                      <span className="text-content flex  items-start ">
+                        <span className="w-[30%]"> Time</span>
+                        <span>:</span>
+
+                        <span className="text-content font-pmedium w-full justify-start pl-4">
+                          {`${humanTime(selectedEvent.start)} - ${humanTime(
+                  selectedEvent.end
+                )}`}
+                        </span>
+                      </span>{" "}
+                    </div>
+                  )}
+
+                   {selectedEvent.extendedProps.duration && (
+                    <div>
+                      <span className="text-content flex  items-start ">
+                        <span className="w-[30%]">Duration</span>
+                        <span>:</span>
+
+                        <span className="text-content font-pmedium w-full justify-start pl-4">
+                          {selectedEvent.extendedProps.duration}
+                        </span>
+                      </span>{" "}
+                    </div>
+                  )}
+
+                   {selectedEvent.extendedProps.meetingStatus && (
+                    <div>
+                      <span className="text-content flex  items-start ">
+                        <span className="w-[30%]">Status</span>
+                        <span>:</span>
+
+                        <span className="text-content font-pmedium w-full justify-start pl-4">
+                          {selectedEvent.extendedProps.meetingStatus}
+                        </span>
+                      </span>{" "}
+                    </div>
+                  )}
+
                   {selectedEvent.extendedProps.description && (
                     <div>
                       <span className="text-content flex  items-start ">
@@ -319,47 +370,156 @@ const Calender = () => {
                       </span>{" "}
                     </div>
                   )}
-                  {selectedEvent.extendedProps && (
-                    <>
-                    
-                      <div>
-                      <span className="text-content flex  items-start ">
-                        <span className="w-[30%]"> Subject</span>
-                        <span>:</span>
 
-                        <span className="text-content font-pmedium w-full justify-start pl-4">
-                          {selectedEvent.extendedProps.subject}
-                        </span>
-                      </span>{" "}
-                    </div>
-                     <div>
-                      <span className="text-content flex  items-start ">
-                        <span className="w-[30%]"> Agenda</span>
-                        <span>:</span>
+                                  {selectedEvent.extendedProps?.bookedBy && (
+  <div>
+    <span className="text-content flex items-start">
+      <span className="w-[30%]">Booked By</span>
+      <span>:</span>
+      <span className="text-content font-pmedium w-full justify-start pl-4">
+        {selectedEvent.extendedProps.bookedBy}
+      </span>
+    </span>
+  </div>
+)}
 
-                        <span className="text-content font-pmedium w-full justify-start pl-4">
-                          {selectedEvent.extendedProps.agenda}
-                        </span>
-                      </span>{" "}
-                    </div>
+{selectedEvent.extendedProps?.receptionist && (
+  <div>
+    <span className="text-content flex items-start">
+      <span className="w-[30%]">Receptionist</span>
+      <span>:</span>
+      <span className="text-content font-pmedium w-full justify-start pl-4">
+        {selectedEvent.extendedProps.receptionist}
+      </span>
+    </span>
+  </div>
+)}
 
-                    {
-                      selectedEvent.extendedProps?.participants && (
-                        <div>
-                      <span className="text-content flex  items-start ">
-                        <span className="w-[30%]">Participants</span>
-                        <span>:</span>
+{selectedEvent.extendedProps?.agenda && (
+  <div>
+    <span className="text-content flex items-start">
+      <span className="w-[30%]">Agenda</span>
+      <span>:</span>
+      <span className="text-content font-pmedium w-full justify-start pl-4">
+        {selectedEvent.extendedProps.agenda}
+      </span>
+    </span>
+  </div>
+)}
 
-                        <span className="text-content font-pmedium w-full justify-start pl-4">
-                          {selectedEvent.extendedProps.participants.map((item)=>(`${item.firstName} ${item.lastName}`))}
-                        </span>
-                      </span>{" "}
-                    </div>
-                      )
-                    }
-                    </>
-                    
-                                  )}
+{selectedEvent.extendedProps?.client && (
+  <div>
+    <span className="text-content flex items-start">
+      <span className="w-[30%]">Company</span>
+      <span>:</span>
+      <span className="text-content font-pmedium w-full justify-start pl-4">
+        {selectedEvent.extendedProps.client}
+      </span>
+    </span>
+  </div>
+)}
+
+{selectedEvent.extendedProps?.externalClient && (
+  <div>
+    <span className="text-content flex items-start">
+      <span className="w-[30%]">Company</span>
+      <span>:</span>
+      <span className="text-content font-pmedium w-full justify-start pl-4">
+        {selectedEvent.extendedProps.externalClient}
+      </span>
+    </span>
+  </div>
+)}
+
+{selectedEvent.extendedProps?.participants?.length > 0 && (
+  <div>
+    <span className="text-content flex items-start">
+      <span className="w-[30%]">Participants</span>
+      <span>:</span>
+      <span className="text-content font-pmedium w-full justify-start pl-4">
+        {selectedEvent.extendedProps.participants
+          .map((p) => `${p.firstName} ${p.lastName}`)
+          .join(", ")}
+      </span>
+    </span>
+  </div>
+)}
+
+{selectedEvent.extendedProps?.meetingType && (
+  <div>
+    <span className="text-content flex items-start">
+      <span className="w-[30%]">Meeting Type</span>
+      <span>:</span>
+      <span className="text-content font-pmedium w-full justify-start pl-4">
+        {selectedEvent.extendedProps.meetingType}
+      </span>
+    </span>
+  </div>
+)}
+
+{selectedEvent.extendedProps?.department && (
+  <div>
+    <span className="text-content flex items-start">
+      <span className="w-[30%]">Department</span>
+      <span>:</span>
+      <span className="text-content font-pmedium w-full justify-start pl-4">
+        {selectedEvent.extendedProps.department}
+      </span>
+    </span>
+  </div>
+)}
+
+{selectedEvent.extendedProps?.roomName && (
+  <div>
+    <span className="text-content flex items-start">
+      <span className="w-[30%]">Room</span>
+      <span>:</span>
+      <span className="text-content font-pmedium w-full justify-start pl-4">
+        {selectedEvent.extendedProps.roomName}
+      </span>
+    </span>
+  </div>
+)}
+
+{selectedEvent.extendedProps?.location && (
+  <>
+    {selectedEvent.extendedProps.location?.unitNo && selectedEvent.extendedProps.location?.unitName && (
+      <div>
+        <span className="text-content flex items-start">
+          <span className="w-[30%]">Location Status</span>
+          <span>:</span>
+          <span className="text-content font-pmedium w-full justify-start pl-4">
+            {`${selectedEvent.extendedProps.location.unitNo} (${selectedEvent.extendedProps.location.unitName})`}
+          </span>
+        </span>
+      </div>
+    )}
+    {selectedEvent.extendedProps.location?.building?.buildingName && (
+      <div>
+        <span className="text-content flex items-start">
+          <span className="w-[30%]">Building</span>
+          <span>:</span>
+          <span className="text-content font-pmedium w-full justify-start pl-4">
+            {selectedEvent.extendedProps.location.building.buildingName}
+          </span>
+        </span>
+      </div>
+    )}
+  </>
+)}
+
+{selectedEvent.extendedProps?.housekeepingStatus && (
+  <div>
+    <span className="text-content flex items-start">
+      <span className="w-[30%]">Housekeeping Status</span>
+      <span>:</span>
+      <span className="text-content font-pmedium w-full justify-start pl-4">
+        {selectedEvent.extendedProps.housekeepingStatus}
+      </span>
+    </span>
+  </div>
+)}
+
                 </div>
               </div>
             )}
