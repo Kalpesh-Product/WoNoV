@@ -34,6 +34,8 @@ const BookMeetings = () => {
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const locations = auth.user.company.workLocations;
+  const isEmployee = auth.user.company.companyName === "BizNest"
+
   // ------------------------------Initializations ------------------------------------//
 
   // ------------------------------Form Control ------------------------------------//
@@ -146,9 +148,6 @@ const BookMeetings = () => {
     setSelectedMeeting(data);
     setOpenModal(true);
   };
-  useEffect(() => {
-    console.log(selectedMeeting);
-  }, [selectedMeeting]);
 
   const buildings = locations.map((location) => ({
     _id: location._id,

@@ -37,7 +37,6 @@ const ManageMeetings = () => {
   const [newItem, setNewItem] = useState("");
   const [modalMode, setModalMode] = useState("update"); // 'update', or 'view'
   const [selectedMeeting, setSelectedMeeting] = useState(null);
-  useEffect(() => console.log(selectedMeeting), [selectedMeeting]);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
 
@@ -145,7 +144,7 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
 
   const { mutate: cancelMeeting, isPending: isCancelPending } = useMutation({
     mutationFn: async (data) => {
-      console.log(data);
+     
       const respone = await axios.patch(
         `/api/meetings/cancel-meeting/${selectedMeetingId}`,
         data
@@ -161,7 +160,7 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
 
   const { mutate: extendMeeting, isPending: isExtendPending } = useMutation({
     mutationFn: async (data) => {
-      console.log(data);
+    
       const respone = await axios.patch(`/api/meetings/extend-meeting`, data);
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       return respone.data;
@@ -336,10 +335,7 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
 
     housekeepingMutation.mutate(payload);
   };
-  useEffect(()=>{
-
-      console.log("meeting",selectedMeeting)
-  },[selectedMeeting])
+  
 
   //---------------------------------Event handlers----------------------------------------//
 
@@ -401,7 +397,7 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
       field: "participants",
       headerName: "Participants",
       cellRenderer: (params) => {
-          console.log("meeting",params.data)
+      
         const participants = Array.isArray(params.data?.participants)
           ? params.data?.participants
           : [];
@@ -430,9 +426,11 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
   pinned: "right",
   cellRenderer: (params) => {
     const status = params.data.meetingStatus;
+ 
     const housekeepingStatus = params.data.housekeepingStatus;
 
     const isUpcoming = status === "Upcoming";
+    const isCancelled = status === "Cancelled";
     const isOngoing = status === "Ongoing";
     const isCompleted = status === "Completed";
     const isHousekeepingPending = housekeepingStatus === "Pending";
@@ -443,12 +441,12 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
       !isOngoing && !isHousekeepingCompleted && {
         label: "Update Checklist",
         onClick: () => handleOpenChecklistModal("update", params.data._id),
-      },
+       },
       // Show only if not ongoing and housekeeping is not pending
       !isOngoing && !isHousekeepingPending && {
         label: "Mark As Ongoing",
         onClick: () => handleOngoing("ongoing", params.data._id),
-      },
+       },
       // Show only if not upcoming
       !isUpcoming && {
         label: "Mark As Completed",
@@ -459,10 +457,10 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
         label: "Extend Meeting",
         onClick: () => handleExtendMeetingModal("extend", params.data),
       },
-      {
+     !isCancelled  && {
         label: "Cancel",
         onClick: () => handleSelectedMeeting("cancel", params.data),
-      },
+       },
     ].filter(Boolean); // Remove any false/null values
 
     return (
