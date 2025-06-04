@@ -22,14 +22,14 @@ const addTicketIssue = async (req, res, next) => {
         logSourceKey
       );
     }
-    if (!resolveTime) {
-      throw new CustomError(
-        "Resolve time is required",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // if (!resolveTime) {
+    //   throw new CustomError(
+    //     "Resolve time is required",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
 
     // Retrieve the user to get company info
     const foundUser = await User.findOne({ _id: user })
@@ -59,7 +59,7 @@ const addTicketIssue = async (req, res, next) => {
           "selectedDepartments.$.ticketIssues": {
             title,
             priority,
-            resolveTime,
+            // resolveTime,
           },
         },
       },
