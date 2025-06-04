@@ -63,7 +63,7 @@ const PerformanceKra = () => {
       setOpenModal(false);
     },
     onError: (error) => {
-      toast.success("KRA Added")
+      toast.success("KRA Added");
       // toast.error(error.message || "Error Adding KRA");
     },
   });
@@ -75,7 +75,7 @@ const PerformanceKra = () => {
     mutationKey: ["updateDailyKra"],
     mutationFn: async (data) => {
       const response = await axios.patch(
-        `/api/performance/update-statu/${data}/KRA`
+        `/api/performance/update-status/${data}/KRA`
       );
       return response.data;
     },
@@ -85,7 +85,7 @@ const PerformanceKra = () => {
       toast.success(data.message || "KRA updated");
     },
     onError: (error) => {
-       toast.success("KRA updated")
+      toast.success("KRA updated");
       // toast.error(error.message || "Error Updating");
     },
   });
@@ -122,7 +122,7 @@ const PerformanceKra = () => {
     });
 
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100,sort:"desc" },
+    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "KRA List", field: "taskName", flex: 1 },
     { headerName: "DueTime", field: "dueTime" },
     {
@@ -154,8 +154,7 @@ const PerformanceKra = () => {
               <div
                 role="button"
                 onClick={() => updateDailyKra(params.data.id)}
-                className="p-2"
-              >
+                className="p-2">
                 <PrimaryButton
                   title={"Mark As Done"}
                   disabled={!params.node.selected}
@@ -263,12 +262,10 @@ const PerformanceKra = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Daily KRA"}
-      >
+        title={"Add Daily KRA"}>
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
-          className="grid grid-cols-1 lg:grid-cols-1 gap-4"
-        >
+          className="grid grid-cols-1 lg:grid-cols-1 gap-4">
           <Controller
             name="dailyKra"
             control={control}
