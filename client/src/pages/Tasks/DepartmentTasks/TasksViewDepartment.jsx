@@ -134,7 +134,7 @@ const TasksViewDepartment = () => {
       queryFn: fetchCompletedTasks,
     });
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100 },
+    { headerName: "Sr no", field: "srno", width: 100,sort:"desc" },
     {
       headerName: "Task List",
       field: "taskName",
@@ -155,6 +155,7 @@ const TasksViewDepartment = () => {
     },
     { headerName: "Assigned By", field: "assignedBy", width: 300 },
     { headerName: "Assigned Date", field: "assignedDate" },
+    // { headerName: "Assigned Time", field: "createdAt" },
     { headerName: "Due Date", field: "dueDate" },
     { headerName: "Due Time", field: "dueTime" },
     {
@@ -207,7 +208,7 @@ const TasksViewDepartment = () => {
     },
   ];
   const completedColumns = [
-    { headerName: "Sr no", field: "srno", width: 100 },
+    { headerName: "Sr no", field: "srno", width: 100,sort:"desc" },
     {
       headerName: "Task List",
       field: "taskName",

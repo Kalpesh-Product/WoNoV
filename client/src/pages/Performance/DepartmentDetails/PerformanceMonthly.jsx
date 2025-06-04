@@ -92,7 +92,7 @@ const PerformanceMonthly = () => {
     },
     onError: (error) => {
       toast.success("KPA updated");
-      toast.error(error.message || "Error Updating");
+      // toast.error(error.message || "Error Updating");
     },
   });
   //--------------UPDATE REQUEST FOR MONTHLY KPA-----------------//
@@ -125,7 +125,7 @@ const PerformanceMonthly = () => {
     },
   });
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100 },
+    { headerName: "Sr no", field: "srno", width: 100,sort:"desc" },
     { headerName: "KPA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },

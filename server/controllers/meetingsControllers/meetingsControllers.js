@@ -362,10 +362,6 @@ const getMeetings = async (req, res, next) => {
   try {
     const { user, company, roles, departments } = req;
 
-    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
-      // query.raisedToDepartment = { $in: departments };
-    }
-
     const meetings = await Meeting.find({
       company,
     })
@@ -392,24 +388,29 @@ const getMeetings = async (req, res, next) => {
         { path: "externalParticipants", select: "firstName lastName email" },
       ]);
 
-    // const departments = await User.findById({ _id: user }).select(
-    //   "departments"
-    // );
-
     const departmentIds = departments.map((dept) => dept._id);
 
     const department = await Department.find({
       _id: { $in: departmentIds },
     });
 
-    console.log("departments", department);
-    const filteredMeetings = meetings.filter((meeting) => {
-      return (
-        meeting.bookedBy && meeting.bookedBy.departments.includes(department)
-      );
-    });
+    let filteredMeetings = meetings;
+    if (
+      !roles.includes("Master Admin") &&
+      !roles.includes("Super Admin") &&
+      !roles.includes("Administration Admin")
+    ) {
+      filteredMeetings = meetings.filter((meeting) => {
+        if (!meeting.bookedBy || !Array.isArray(meeting.bookedBy.departments))
+          return false;
 
-    console.log("filter", filteredMeetings);
+        const bookedDeptIds = meeting.bookedBy.departments.map((dept) =>
+          dept._id?.toString()
+        );
+
+        return bookedDeptIds.some((deptId) => departmentIds.includes(deptId));
+      });
+    }
 
     const reviews = await Review.find().select(
       "-createdAt -updatedAt -__v -company"
@@ -419,14 +420,14 @@ const getMeetings = async (req, res, next) => {
       return res.status(400).json({ message: "No reviews found" });
     }
 
-    const internalParticipants = meetings.map((meeting) =>
+    const internalParticipants = filteredMeetings.map((meeting) =>
       meeting.internalParticipants.map((participant) => participant)
     );
-    const clientParticipants = meetings.map((meeting) =>
+    const clientParticipants = filteredMeetings.map((meeting) =>
       meeting.clientParticipants.map((participant) => participant)
     );
 
-    const transformedMeetings = meetings.map((meeting, index) => {
+    const transformedMeetings = filteredMeetings.map((meeting, index) => {
       let totalParticipants = [];
       if (
         internalParticipants[index].length &&
@@ -504,7 +505,6 @@ const getMeetings = async (req, res, next) => {
       };
     });
 
-    console.log("meetings", transformedMeetings.length);
     return res.status(200).json(transformedMeetings);
   } catch (error) {
     next(error);
