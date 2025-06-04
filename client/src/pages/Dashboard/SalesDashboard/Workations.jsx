@@ -33,7 +33,7 @@ const Workations = () => {
         month: "short",
       })}-${rentDate.getFullYear().toString().slice(-2)}`;
 
-      const actual = parseFloat(item.totalAmount);
+      const actual = parseFloat(item.taxableAmount);
 
       if (!monthlyMap.has(monthKey)) {
         monthlyMap.set(monthKey, {
