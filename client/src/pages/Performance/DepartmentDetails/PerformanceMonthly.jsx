@@ -61,12 +61,12 @@ const PerformanceMonthly = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
-      toast.success(data.message || "KRA Added");
+      toast.success(data.message || "KPA Added");
       setOpenModal(false);
     },
     onError: (error) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKra"] });
-      toast.success("DATA UPDATED");
+      toast.success("KPA Added");
       setOpenModal(false);
     },
   });
@@ -81,7 +81,7 @@ const PerformanceMonthly = () => {
     mutationFn: async (data) => {
       console.log("Data inside query",data)
       const response = await axios.patch(
-        `/api/performance/update-task-status/${data}/KPA`
+        `/api/performance/update-status/${data}/KPA`
       );
       return response.data;
     },
@@ -91,6 +91,7 @@ const PerformanceMonthly = () => {
       toast.success(data.message || "KPA updated");
     },
     onError: (error) => {
+      toast.success("KPA updated");
       toast.error(error.message || "Error Updating");
     },
   });
@@ -182,7 +183,7 @@ const PerformanceMonthly = () => {
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "KPA List", field: "taskName", width: 300 },
     { headerName: "Completed Time", field: "completionTime", flex: 1 },
-    { headerName: "Completed Date", field: "completionDate" },
+    // { headerName: "Completed Date", field: "completionDate" },
     {
       field: "status",
       headerName: "Status",

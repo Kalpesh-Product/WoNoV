@@ -360,7 +360,11 @@ const getAvaliableUsers = async (req, res, next) => {
 
 const getMeetings = async (req, res, next) => {
   try {
-    const { user, company } = req;
+    const { user, company, roles, departments } = req;
+
+    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
+      // query.raisedToDepartment = { $in: departments };
+    }
 
     const meetings = await Meeting.find({
       company,
@@ -378,7 +382,7 @@ const getMeetings = async (req, res, next) => {
         },
       })
       .populate([
-        { path: "bookedBy" },
+        { path: "bookedBy", select: "departments firstName lastName email" },
         { path: "clientBookedBy", select: "employeeName email" },
         { path: "receptionist", select: "firstName lastName" },
         { path: "client", select: "clientName" },
@@ -388,13 +392,24 @@ const getMeetings = async (req, res, next) => {
         { path: "externalParticipants", select: "firstName lastName email" },
       ]);
 
-    const departments = await User.findById({ _id: user }).select(
-      "departments"
-    );
+    // const departments = await User.findById({ _id: user }).select(
+    //   "departments"
+    // );
 
-    const department = await Department.findById({
-      _id: departments.departments[0],
+    const departmentIds = departments.map((dept) => dept._id);
+
+    const department = await Department.find({
+      _id: { $in: departmentIds },
     });
+
+    console.log("departments", department);
+    const filteredMeetings = meetings.filter((meeting) => {
+      return (
+        meeting.bookedBy && meeting.bookedBy.departments.includes(department)
+      );
+    });
+
+    console.log("filter", filteredMeetings);
 
     const reviews = await Review.find().select(
       "-createdAt -updatedAt -__v -company"
@@ -489,6 +504,7 @@ const getMeetings = async (req, res, next) => {
       };
     });
 
+    console.log("meetings", transformedMeetings.length);
     return res.status(200).json(transformedMeetings);
   } catch (error) {
     next(error);

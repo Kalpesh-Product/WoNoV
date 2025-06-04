@@ -40,6 +40,7 @@ const AddVisitor = () => {
     },
   });
   const selectedIdType = watch("idProof.idType");
+  
 
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const axios = useAxiosPrivate();
@@ -289,11 +290,12 @@ const AddVisitor = () => {
                     select
                   >
                     <MenuItem value="">Select Department</MenuItem>
-                    {uniqueDepartments.map((department) => (
+                    {uniqueDepartments.map((department,index) => (
                       <MenuItem key={department._id} value={department._id}>
                         {department.name}
                       </MenuItem>
                     ))}
+                   
                   </TextField>
                 )}
               />
@@ -320,6 +322,7 @@ const AddVisitor = () => {
                     ) : (
                       <CircularProgress />
                     )}
+                  
                   </TextField>
                 )}
               />

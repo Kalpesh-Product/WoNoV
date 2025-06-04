@@ -371,26 +371,26 @@ async function filterCloseTickets(user, roles, userDepartments, companyId) {
       ],
     },
     Admin: {
-      // $and: [
-      //   { status: "Closed" },
-      //   { raisedToDepartment: { $in: userDepartments } },
-      // ],
-      $or: [
-        {
-          $and: [
-            { status: "Closed" },
-            { raisedToDepartment: { $in: userDepartments } },
-            { acceptedBy: user },
-          ],
-        },
-        {
-          $and: [
-            { status: "Closed" },
-            { assignees: [user] },
-            { raisedToDepartment: { $in: userDepartments } },
-          ],
-        },
+      $and: [
+        { status: "Closed" },
+        { raisedToDepartment: { $in: userDepartments } },
       ],
+      // $or: [
+      //   {
+      //     $and: [
+      //       { status: "Closed" },
+      //       { raisedToDepartment: { $in: userDepartments } },
+      //       { acceptedBy: user },
+      //     ],
+      //   },
+      //   {
+      //     $and: [
+      //       { status: "Closed" },
+      //       { assignees: [user] },
+      //       { raisedToDepartment: { $in: userDepartments } },
+      //     ],
+      //   },
+      // ],
     },
     Employee: {
       $or: [

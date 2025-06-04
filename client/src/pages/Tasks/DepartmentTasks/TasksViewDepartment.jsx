@@ -156,6 +156,7 @@ const TasksViewDepartment = () => {
     { headerName: "Assigned By", field: "assignedBy", width: 300 },
     { headerName: "Assigned Date", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
+    { headerName: "Due Time", field: "dueTime" },
     {
       field: "status",
       headerName: "Status",
@@ -226,12 +227,13 @@ const TasksViewDepartment = () => {
       ),
     },
     // { headerName: "Assigned Time", field: "assignedDate" },
+    // { headerName: "Assigned Date", field: "assignedDate" },
     { headerName: "Completed By", field: "completedBy", width: 300 },
-    { headerName: "Assigned Date", field: "assignedDate" },
-    { headerName: "Completed Date", field: "completedDate" },
+    // { headerName: "Completed Date", field: "completedDate" },
     { headerName: "Completed Time", field: "completedTime" },
     // { headerName: "Due Time", field: "dueTime" },
-    { headerName: "Due Date", field: "dueDate" },
+    // { headerName: "Due Date", field: "dueDate" },
+    // { headerName: "Due Time", field: "dueTime" },
     {
       field: "status",
       headerName: "Status",
@@ -306,12 +308,14 @@ const TasksViewDepartment = () => {
                 completedTasksFetchPending
                   ? []
                   : completedTasks.map((item, index) => ({
-                      srno: index + 1,
+                      
                       id: item._id,
                       taskName: item.taskName,
                       completedBy: item.completedBy,
-                      assignedDate: item.assignedDate,
-                      completedDate: (item.completedDate),
+                       assignedDate: humanDate(item.assignedDate),
+        dueDate: humanDate(item.dueDate),
+        dueTime: humanTime(item.dueTime),
+                      completedDate: humanDate(item.completedDate),
                       completedTime: humanTime(item.completedDate),
                       status: item.status,
                     }))
@@ -532,11 +536,11 @@ const TasksViewDepartment = () => {
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskName} />
             <DetalisFormatted
               title={"Assigned Date"}
-              detail={humanDate(selectedTask?.assignedDate)}
+              detail={selectedTask?.assignedDate}
             />
             <DetalisFormatted
               title={"Completed Date"}
-              detail={humanDate(selectedTask?.completedDate)}
+              detail={selectedTask?.completedDate}
             />
             <DetalisFormatted
               title={"Completed Time"}
@@ -545,6 +549,14 @@ const TasksViewDepartment = () => {
             <DetalisFormatted
               title={"Comleted By"}
               detail={selectedTask?.completedBy}
+            />
+              <DetalisFormatted
+              title={"Due Date"}
+              detail={selectedTask?.dueDate}
+            />
+            <DetalisFormatted
+              title={"Due Time"}
+              detail={selectedTask?.dueTime}
             />
 
             <DetalisFormatted title={"Status"} detail={selectedTask?.status} />

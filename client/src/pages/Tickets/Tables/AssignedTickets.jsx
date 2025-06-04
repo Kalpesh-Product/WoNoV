@@ -79,7 +79,7 @@ const AssignedTickets = ({ title, departmentId }) => {
                 ? ticket.raisedBy.departments.map((dept) => dept.name)
                 : ["N/A"],
 
-            ticketTitle: ticket.reason || "No Title",
+            ticketTitle: ticket.ticket || "No Title",
             assignees: `${ticket.assignees.map((item) => item.firstName)[0]}`,
             tickets:
               ticket.assignees.length > 0
@@ -102,67 +102,95 @@ const AssignedTickets = ({ title, departmentId }) => {
       headerName: "From Department",
       width: 100,
     },
+    { field: "ticketTitle", headerName: "Ticket Title",flex: 1 },
     { field: "assignees", headerName: "Assigned To", width: 300 },
-    // { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
-    {
-      field: "tickets",
-      headerName: "Tickets",
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          "Assigned Ticket": { backgroundColor: "#ffbac2", color: "#ed0520" }, // Light orange bg, dark orange font
-          "Accepted Ticket": { backgroundColor: "#90EE90", color: "#02730a" }, // Light green bg, dark green font
-        };
+    // {
+    //   field: "tickets",
+    //   headerName: "Tickets",
+    //   cellRenderer: (params) => {
+    //     const statusColorMap = {
+    //       "Assigned Ticket": { backgroundColor: "#ffbac2", color: "#ed0520" }, // Light orange bg, dark orange font
+    //       "Accepted Ticket": { backgroundColor: "#90EE90", color: "#02730a" }, // Light green bg, dark green font
+    //     };
 
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return (
-          <div className="flex flex-col gap-1 p-2">
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-            <span className="text-small text-borderGray text-center h-full">
-              {params.data.acceptedBy}
-            </span>
-          </div>
-        );
-      },
-    },
-    {
-      field: "status",
-      headerName: "Status",
-      cellRenderer: (params) => {
-        console.log(params.data);
-        const statusColorMap = {
-          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-          "In Progress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
-          Closed: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+    //     const { backgroundColor, color } = statusColorMap[params.value] || {
+    //       backgroundColor: "gray",
+    //       color: "white",
+    //     };
+    //     return (
+    //       <div className="flex flex-col gap-1 p-2">
+    //         <Chip
+    //           label={params.value}
+    //           style={{
+    //             backgroundColor,
+    //             color,
+    //           }}
+    //         />
+    //         <span className="text-small text-borderGray text-center h-full">
+    //           {params.data?.acceptedBy}
+    //         </span>
+    //       </div>
+    //     );
+    //   },
+    // },
+    // {
+    //   field: "status",
+    //   headerName: "Status",
+    //   cellRenderer: (params) => {
+    //     const statusColorMap = {
+    //       Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+    //       "In Progress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+    //       Closed: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+    //       Open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
+    //       Completed: { backgroundColor: "#D3D3D3", color: "#696969" }, // Light gray bg, dark gray font
+    //     };
+
+    //     const { backgroundColor, color } = statusColorMap[params.value] || {
+    //       backgroundColor: "gray",
+    //       color: "white",
+    //     };
+    //     return (
+    //       <div className="flex flex-col justify-center pt-4">
+    //         <Chip
+    //           label={params.value}
+    //           style={{
+    //             backgroundColor,
+    //             color,
+    //           }}
+    //         />
+    //       </div>
+    //     );
+    //   },
+    // },
+      {
+          field: "status",
+          headerName: "Status",
+          cellRenderer: (params) => {
+           const statusColorMap = {
+           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+          "In Progress": { backgroundColor: "#FFECC5", color: "#CC8400" },// Light orange bg, dark orange font
+         Closed: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
           Open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
           Completed: { backgroundColor: "#D3D3D3", color: "#696969" }, // Light gray bg, dark gray font
         };
-
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return (
-          <div className="flex flex-col justify-center pt-4">
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-          </div>
-        );
-      },
-    },
+    
+            const { backgroundColor, color } = statusColorMap[params.value] || {
+              backgroundColor: "gray",
+              color: "white",
+            };
+            return (
+              <>
+                <Chip
+                  label={params.value}
+                  style={{
+                    backgroundColor,
+                    color,
+                  }}
+                />
+              </>
+            );
+          },
+        },
     {
       field: "actions",
       headerName: "Actions",
