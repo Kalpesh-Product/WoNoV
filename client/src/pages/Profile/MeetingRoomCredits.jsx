@@ -13,8 +13,9 @@ import MuiModal from "../../components/MuiModal";
 import { queryClient } from "../../main";
 import useAuth from "../../hooks/useAuth";
 import CustomRating from "../../components/CustomRating";
-import humanTime from "../../utils/humanTime"
-import humanDateFormat from "../../utils/humanDateForamt"
+import humanTime from "../../utils/humanTime";
+import humanDateFormat from "../../utils/humanDateForamt";
+import humanDate from "../../utils/humanDateForamt";
 
 const MeetingRoomCredits = ({ pageTitle }) => {
   const [selectedMeeting, setSelectedMeeting] = useState(null);
@@ -71,12 +72,26 @@ const MeetingRoomCredits = ({ pageTitle }) => {
   };
   const totalCredits = 50;
 
-    const navigationCards = [
-    { cardTitle: "Total Credits", quantity: totalCredits, bgcolor:"#0099FF",quantityColor:"#000033" },
-    { cardTitle: "Remaining Credits", quantity: (auth.user?.credits), bgcolor:"#66FFCC",quantityColor:"#006600" },
-    { cardTitle: "Meetings Booked", quantity: `${myMeetings.length || 0}`, bgcolor:"#FFFFCC",quantityColor:"#FF9900" },
+  const navigationCards = [
+    {
+      cardTitle: "Total Credits",
+      quantity: totalCredits,
+      bgcolor: "#0099FF",
+      quantityColor: "#000033",
+    },
+    {
+      cardTitle: "Remaining Credits",
+      quantity: auth.user?.credits,
+      bgcolor: "#66FFCC",
+      quantityColor: "#006600",
+    },
+    {
+      cardTitle: "Meetings Booked",
+      quantity: `${myMeetings.length || 0}`,
+      bgcolor: "#FFFFCC",
+      quantityColor: "#FF9900",
+    },
   ];
-
 
   const handleAddReview = (data) => {
     setSelectedMeeting(data);
@@ -84,7 +99,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
   };
 
   const handleViewDetails = (meeting) => {
-    console.log("meetings",meeting)
+    console.log("meetings", meeting);
     setSelectedMeeting(meeting);
     setDetailsModal(true);
   };
@@ -163,7 +178,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
                     id: index + 1,
                     meetingId: meeting._id,
                     agenda: meeting.agenda,
-                    date: meeting.date,
+                    date: humanDate(meeting.date),
                     roomName: meeting.roomName,
                     reviews: meeting.reviews,
                     location: meeting.location
