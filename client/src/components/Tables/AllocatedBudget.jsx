@@ -136,17 +136,18 @@ const AllocatedBudget = ({
     <>
       <WidgetSection
         title={"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"}
+        TitleAmount={`Allocated Budget : INR ${inrFormat(totalProjectedAmountForFY)}`}
         border
       >
         <div className="flex flex-col gap-4 rounded-md ">
           {!hideTitle ? (
             <div className="flex justify-between items-center">
-              <span className="text-title font-pmedium text-primary uppercase">
-                Allocated Budget:
-              </span>
-              <span className="text-title font-pmedium">
+              {/* <span className="text-title font-pmedium text-primary uppercase">
+                Actual Budget:
+              </span> */}
+              {/* <span className="text-title font-pmedium">
                 INR {inrFormat(totalProjectedAmountForFY)}
-              </span>
+              </span> */}
             </div>
           ) : (
             ""
