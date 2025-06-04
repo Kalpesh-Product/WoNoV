@@ -75,7 +75,7 @@ const PerformanceKra = () => {
     mutationKey: ["updateDailyKra"],
     mutationFn: async (data) => {
       const response = await axios.patch(
-        `/api/performance/update-statu/${data}/KRA`
+        `/api/performance/update-status/${data}/KRA`
       );
       return response.data;
     },
