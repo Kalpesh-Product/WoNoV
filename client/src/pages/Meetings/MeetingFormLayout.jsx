@@ -49,6 +49,18 @@ const MeetingFormLayout = () => {
   const [events, setEvents] = useState([]);
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
+    let showExternalType = false
+
+    // console.log("employee",auth.user)
+
+    const roles = auth.user.role.map((role)=> role.roleTitle)
+
+  
+    if(roles.includes("Master Admin") || roles.includes("Super Admin") || roles.includes("Administration Admin") || roles.includes("Administration Employee")){
+    
+      showExternalType = true
+    }
+    
   // Inside your component, add this state
   const [participantCount, setParticipantCount] = useState(1);
 
@@ -355,7 +367,7 @@ const transformEvents = (bookings) => {
                       Select a Meeting Type
                     </MenuItem>
                     <MenuItem value="Internal">Internal</MenuItem>
-                    <MenuItem value="External">External</MenuItem>
+                   {showExternalType && <MenuItem value="External">External</MenuItem>}
                   </TextField>
                 )}
               />

@@ -16,9 +16,11 @@ import {
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import MuiModal from "../../../components/MuiModal";
 import PrimaryButton from "../../../components/PrimaryButton";
+import useAuth from "../../../hooks/useAuth";
 
 const BookMeetingsForm = () => {
   const [open, setOpen] = useState(false);
+  const {auth} = useAuth()
 
   const { control, handleSubmit, watch } = useForm({
     defaultValues: {
