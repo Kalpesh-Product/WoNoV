@@ -182,7 +182,7 @@ const PerformanceMonthly = () => {
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "KPA List", field: "taskName", width: 300 },
     { headerName: "Completed Time", field: "completionTime", flex: 1 },
-    { headerName: "Completed Date", field: "completionDate" },
+    // { headerName: "Completed Date", field: "completionDate" },
     {
       field: "status",
       headerName: "Status",

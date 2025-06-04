@@ -120,8 +120,10 @@ const MonthWiseTable = ({
         checkAll={checkAll}
         tableHeight={300}
         columns={formattedColumns}
-        data={filteredData.map((item) => ({
+        data={filteredData.map((item,index) => ({
           ...item,
+          srNo:index + 1,
+          id:index+1,
           date: humanDate(item.date),
         }))}
         hideFilter={filteredData.length <= 9}

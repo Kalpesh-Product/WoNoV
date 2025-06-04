@@ -244,9 +244,13 @@ const DailyTasks = () => {
         </div>
       ),
     },
-    // { headerName: "Assigned Time", field: "assignedDate" },
-    { headerName: "Department", field: "department" },
+    // { headerName: "Assigned Date", field: "assignedDate" },
+    // { headerName: "Due Date", field: "dueDate" },
+    // { headerName: "Due Time", field: "dueTime" },
+    // { headerName: "Department", field: "department" },
     { headerName: "Completed By", field: "completedBy" },
+    // { headerName: "Completed Date", field: "completedDate" },
+    { headerName: "Completed Time", field: "completedTime" },
     {
       field: "status",
       headerName: "Status",
@@ -281,7 +285,6 @@ const DailyTasks = () => {
 
   //----------function handlers-------------//
   const handleViewTask = (data) => {
-    console.log(data);
     setModalMode("view");
     setOpenModal(true);
     setSelectedTask(data);
@@ -296,13 +299,14 @@ const DailyTasks = () => {
         taskList: item.taskName,
         department: item.department?.name,
         completedBy: item.completedBy,
-        dueDate: item.dueDate,
+        assignedDate: humanDate(item.assignedDate),
+        dueDate: humanDate(item.dueDate),
         dueTime: humanTime(item.dueTime),
-        completedDate: item.completedDate,
+        completedDate: humanDate(item.completedDate),
+        completedTime: humanTime(item.completedDate),
         status: item.status,
       }));
 
-    console.log(completedData)
 
   return (
     <>
@@ -512,12 +516,20 @@ const DailyTasks = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskList} />
             <DetalisFormatted
+              title={"Assigned Date"}
+              detail={selectedTask?.assignedDate}
+            />
+            <DetalisFormatted
               title={"Completed Date"}
-              detail={humanDate(selectedTask?.completedDate)}
+              detail={selectedTask?.completedDate}
+            />
+            <DetalisFormatted
+              title={"Completed Time"}
+              detail={selectedTask?.completedDate}
             />
             <DetalisFormatted
               title={"Due Date"}
-              detail={humanDate(selectedTask?.dueDate)}
+              detail={selectedTask?.dueDate}
             />
             <DetalisFormatted
               title={"Due Time"}
