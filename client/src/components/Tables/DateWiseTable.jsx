@@ -128,7 +128,7 @@ const DateWiseTable = ({
         enableCheckbox={checkbox}
         checkAll={checkAll}
         columns={formattedColumns}
-        data={filteredData.map((item,index)=>({...item,srno: index + 1}))}
+        data={filteredData.map((item, index) => ({ ...item, srno: index + 1 }))}
         hideFilter={filteredData.length <= 9}
         search={filteredData.length >= 10}
       />
