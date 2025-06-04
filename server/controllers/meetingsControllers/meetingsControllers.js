@@ -395,7 +395,11 @@ const getMeetings = async (req, res, next) => {
     });
 
     let filteredMeetings = meetings;
-    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
+    if (
+      !roles.includes("Master Admin") &&
+      !roles.includes("Super Admin") &&
+      !roles.includes("Administration Admin")
+    ) {
       filteredMeetings = meetings.filter((meeting) => {
         if (!meeting.bookedBy || !Array.isArray(meeting.bookedBy.departments))
           return false;
