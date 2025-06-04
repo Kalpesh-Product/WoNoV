@@ -102,9 +102,8 @@ const AssignedTickets = ({ title, departmentId }) => {
       headerName: "From Department",
       width: 100,
     },
-    { field: "ticketTitle", headerName: "Ticket Titel"},
+    { field: "ticketTitle", headerName: "Ticket Title",flex: 1 },
     { field: "assignees", headerName: "Assigned To", width: 300 },
-    // { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
     // {
     //   field: "tickets",
     //   headerName: "Tickets",
