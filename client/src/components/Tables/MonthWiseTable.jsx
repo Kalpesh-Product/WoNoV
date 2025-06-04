@@ -123,7 +123,6 @@ const MonthWiseTable = ({
         data={filteredData.map((item,index) => ({
           ...item,
           srNo:index + 1,
-          id:index+1,
           date: humanDate(item.date),
         }))}
         hideFilter={filteredData.length <= 9}

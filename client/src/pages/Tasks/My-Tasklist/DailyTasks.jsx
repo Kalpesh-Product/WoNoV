@@ -27,6 +27,7 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 import useAuth from "../../../hooks/useAuth";
+import DateWiseTable from "../../../components/Tables/DateWiseTable";
 
 const DailyTasks = () => {
   const axios = useAxiosPrivate();
@@ -116,6 +117,7 @@ const DailyTasks = () => {
   const { mutate: updateMonthlyKpa, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateMyTasks"],
     mutationFn: async (data) => {
+      console.log("mark done",data)
       const response = await axios.patch(
         `/api/tasks/update-task-status/${data}`
       );
@@ -135,7 +137,7 @@ const DailyTasks = () => {
 
   //--------Column configs----------------//
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100 },
+    { headerName: "Sr no", field: "srno", width: 100,sort:"desc" },
     {
       headerName: "Task List",
       field: "taskList",
@@ -149,6 +151,7 @@ const DailyTasks = () => {
       ),
     },
     { headerName: "Assigned Date", field: "assignedDate" },
+    // { headerName: "Assigned Time", field: "createdAt" },
     { headerName: "Due Date", field: "dueDate" },
     { headerName: "Due Time", field: "dueTime" },
     {
@@ -332,6 +335,7 @@ const DailyTasks = () => {
                   dueDate: item.dueDate,
                   status: item.status,
                   dueTime: humanTime(item.dueTime),
+                  // createdAt: humanTime(item.createdAt),
                   assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                 })),
             ]}
@@ -341,7 +345,7 @@ const DailyTasks = () => {
         </WidgetSection>
         {!isCompletedLoading ? (
           <WidgetSection padding layout={1}>
-            <MonthWiseTable
+            <DateWiseTable
               key={completedEntries.length}
               tableTitle={`MY COMPLETED TASKS`}
               data={completedData}
