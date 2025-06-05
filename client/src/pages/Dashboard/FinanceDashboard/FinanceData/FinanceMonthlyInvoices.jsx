@@ -170,63 +170,63 @@ const FinanceMonthlyInvoices = () => {
   //   },
   // });
 
-  const monthlyInvoices = [
-    {
-      srNo: 1,
-      month: "April-24",
-      invoiceNumber: "INV-2024-001",
-      vendor: "FinAudit Consultants",
-      service: "Quarterly Audit",
-      invoiceDate: "2024-04-05",
-      dueDate: "2024-04-20",
-      amount: 45000,
-      status: "Paid",
-    },
-    {
-      srNo: 2,
-      month: "May-24",
-      invoiceNumber: "INV-2024-002",
-      vendor: "ClearTax",
-      service: "GST Filing",
-      invoiceDate: "2024-05-03",
-      dueDate: "2024-05-18",
-      amount: 18000,
-      status: "Unpaid",
-    },
-    {
-      srNo: 3,
-      month: "June-24",
-      invoiceNumber: "INV-2024-003",
-      vendor: "Tally Solutions",
-      service: "Accounting Software License",
-      invoiceDate: "2024-06-01",
-      dueDate: "2024-06-15",
-      amount: 12000,
-      status: "Paid",
-    },
-    {
-      srNo: 4,
-      month: "July-24",
-      invoiceNumber: "INV-2024-004",
-      vendor: "QuickBooks India",
-      service: "Bookkeeping Services",
-      invoiceDate: "2024-07-10",
-      dueDate: "2024-07-25",
-      amount: 30000,
-      status: "Unpaid",
-    },
-    {
-      srNo: 5,
-      month: "August-24",
-      invoiceNumber: "INV-2024-005",
-      vendor: "FinAudit Consultants",
-      service: "Compliance Review",
-      invoiceDate: "2024-08-07",
-      dueDate: "2024-08-22",
-      amount: 25000,
-      status: "Paid",
-    },
-  ];
+  // const monthlyInvoices = [
+  //   {
+  //     srNo: 1,
+  //     month: "April-24",
+  //     invoiceNumber: "INV-2024-001",
+  //     vendor: "FinAudit Consultants",
+  //     service: "Quarterly Audit",
+  //     invoiceDate: "2024-04-05",
+  //     dueDate: "2024-04-20",
+  //     amount: 45000,
+  //     status: "Paid",
+  //   },
+  //   {
+  //     srNo: 2,
+  //     month: "May-24",
+  //     invoiceNumber: "INV-2024-002",
+  //     vendor: "ClearTax",
+  //     service: "GST Filing",
+  //     invoiceDate: "2024-05-03",
+  //     dueDate: "2024-05-18",
+  //     amount: 18000,
+  //     status: "Unpaid",
+  //   },
+  //   {
+  //     srNo: 3,
+  //     month: "June-24",
+  //     invoiceNumber: "INV-2024-003",
+  //     vendor: "Tally Solutions",
+  //     service: "Accounting Software License",
+  //     invoiceDate: "2024-06-01",
+  //     dueDate: "2024-06-15",
+  //     amount: 12000,
+  //     status: "Paid",
+  //   },
+  //   {
+  //     srNo: 4,
+  //     month: "July-24",
+  //     invoiceNumber: "INV-2024-004",
+  //     vendor: "QuickBooks India",
+  //     service: "Bookkeeping Services",
+  //     invoiceDate: "2024-07-10",
+  //     dueDate: "2024-07-25",
+  //     amount: 30000,
+  //     status: "Unpaid",
+  //   },
+  //   {
+  //     srNo: 5,
+  //     month: "August-24",
+  //     invoiceNumber: "INV-2024-005",
+  //     vendor: "FinAudit Consultants",
+  //     service: "Compliance Review",
+  //     invoiceDate: "2024-08-07",
+  //     dueDate: "2024-08-22",
+  //     amount: 25000,
+  //     status: "Paid",
+  //   },
+  // ];
 
   
   const handleDetailsClick = (asset) => {
@@ -255,28 +255,28 @@ const FinanceMonthlyInvoices = () => {
   return (
     <>
       <AgTable
-        key={monthlyInvoices.length}
+        key={0}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"Monthly Invoices"}
         // buttonTitle={"Add Asset"}
         data={ [
-          ...monthlyInvoices.map((invoice, index) => ({
-            srNo: index + 1,
-            month:  `${dayjs(`${invoice.month} 1`, "MMMM D").format("MMM")
-            }-24`,
-            invoiceNumber: invoice.invoiceNumber || "-",
-            vendor: invoice.vendor || "-",
-            service: invoice.service || "-",
-            invoiceDate: invoice.invoiceDate
-              ? dayjs(invoice.invoiceDate).format("DD-MM-YYYY")
-              : "-",
-            dueDate: invoice.dueDate
-              ? dayjs(invoice.dueDate).format("DD-MM-YYYY")
-              : "-",
-            amount: Number(invoice.amount)?.toLocaleString("en-IN") || "0",
-            status: invoice.status || "-",
-          })),
+          // ...monthlyInvoices.map((invoice, index) => ({
+          //   srNo: index + 1,
+          //   month:  `${dayjs(`${invoice.month} 1`, "MMMM D").format("MMM")
+          //   }-24`,
+          //   invoiceNumber: invoice.invoiceNumber || "-",
+          //   vendor: invoice.vendor || "-",
+          //   service: invoice.service || "-",
+          //   invoiceDate: invoice.invoiceDate
+          //     ? dayjs(invoice.invoiceDate).format("DD-MM-YYYY")
+          //     : "-",
+          //   dueDate: invoice.dueDate
+          //     ? dayjs(invoice.dueDate).format("DD-MM-YYYY")
+          //     : "-",
+          //   amount: Number(invoice.amount)?.toLocaleString("en-IN") || "0",
+          //   status: invoice.status || "-",
+          // })),
         ]}
         columns={invoiceColumns}
         handleClick={handleAddAsset}
