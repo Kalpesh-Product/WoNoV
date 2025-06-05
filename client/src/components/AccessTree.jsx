@@ -7,7 +7,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { CircularProgress } from "@mui/material";
 import Abrar from "../assets/abrar.jpeg"
 
-const AccessTree = ({clickState}) => {
+const AccessTree = ({ clickState, autoExpandFirst = false }) => {
   const location = useLocation();
   const [selectedUsers, setSelectedUsers] = useState([]);
   const axios = useAxiosPrivate();
@@ -36,6 +36,12 @@ const AccessTree = ({clickState}) => {
     queryKey: ["hierarchy"],
     queryFn: fetchHierarchy,
   });
+
+    useEffect(() => {
+    if (autoExpandFirst && hierarchy) {
+      setSelectedUsers([hierarchy]);
+    }
+  }, [autoExpandFirst, hierarchy]);
 
   const handleSelectUser = (user, level) => {
     setSelectedUsers((prev) => {
@@ -168,7 +174,7 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel, click = true }) => 
       {user.subordinates && user.subordinates.length > 0 && (
         <p
           onClick={() => handleSelectUser(user)}
-          className="mt-2 text-xs text-gray-500 hover:underline"
+          className="mt-2 text-xs text-primary hover:underline"
         >
           {user.subordinates.length} Subordinate
           {user.subordinates.length > 1 ? "s" : ""}
