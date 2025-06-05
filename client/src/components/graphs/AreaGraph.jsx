@@ -188,10 +188,9 @@ const AreaGraph = ({ responseData }) => {
       shared: true,
       intersect: false,
     },
-    legend: {
-      position: "top",
-      horizontalAlign: "center",
-    },
+   legend: {
+  show: false,  
+},
     grid: {
       borderColor: "#f1f1f1",
     },

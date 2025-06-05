@@ -37,7 +37,7 @@ const Profile = () => {
           },
         }}
       >
-        <Tab label="My Profile" />
+        <Tab label="My zProfile" />
         {/* <Tab label="Change Password" /> */}
         {/* <Tab label="Access Grant" /> */}
         {/* <Tab label="My Assets" /> */}

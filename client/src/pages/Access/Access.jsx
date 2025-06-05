@@ -7,7 +7,7 @@ const Access = () => {
     <>
       <div>
         <div>
-          <AccessTree clickState={true} />
+          <AccessTree clickState={true} autoExpandFirst />
         </div>
       </div>
     </>

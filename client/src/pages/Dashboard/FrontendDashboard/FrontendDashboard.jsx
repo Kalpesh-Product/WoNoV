@@ -1,6 +1,6 @@
 import Card from "../../../components/Card";
-import React, { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import LayerBarGraph from "../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../components/WidgetSection";
 import { MdRebaseEdit } from "react-icons/md";
@@ -16,13 +16,146 @@ import LineGraph from "../../../components/graphs/LineGraph";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
+import { transformBudgetData } from "../../../utils/transformBudgetData";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import { Box, Skeleton } from "@mui/material";
 
 const FrontendDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
+  const [isReady, setIsReady] = useState(false);
+
+  const navigate = useNavigate();
+  const axios = useAxiosPrivate();
 
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
+
+  //--------------------Frontend budget-graph-----------------------//
+  const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+    queryKey: ["frontendBudget"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798ba9de469e809084e2494`
+        );
+        const budgets = response.data.allBudgets;
+        return Array.isArray(budgets) ? budgets : [];
+      } catch (error) {
+        console.error("Error fetching budget:", error);
+        return [];
+      }
+    },
+  });
+
+  const budgetBar = useMemo(() => {
+    if (isHrLoading || !Array.isArray(hrFinance)) return null;
+    return transformBudgetData(isHrLoading ? [] : hrFinance);
+  }, [isHrLoading, hrFinance]);
+
+  useEffect(() => {
+    if (!isHrLoading) {
+      const timer = setTimeout(() => setIsReady(true), 1000);
+      return () => clearTimeout(timer); // Cleanup on unmount
+    }
+  }, [isHrLoading]);
+
+  const expenseRawSeries = useMemo(() => {
+    return [
+      {
+        name: "total",
+        group: "FY 2024-25",
+        data: budgetBar?.utilisedBudget || [],
+      },
+      {
+        name: "total",
+        group: "FY 2025-26",
+        data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      },
+    ];
+  }, [budgetBar]);
+
+  const expenseOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+
+      stacked: true,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+      events: {
+        dataPointSelection: () => {
+          navigate("finance/budget");
+        },
+      },
+    },
+    colors: ["#54C4A7", "#EB5C45"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+        borderRadiusApplication: "none",
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => {
+        const formatted = inrFormat(val.toFixed(0));
+        return formatted;
+      },
+
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+      offsetY: -22,
+    },
+
+    yaxis: {
+      // max: 3000000,
+      title: { text: "Amount In Lakhs (INR)" },
+      labels: {
+        formatter: (val) => `${Math.round(val / 100000)}`,
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
+
+    tooltip: {
+      enabled: false,
+      custom: function ({ series, seriesIndex, dataPointIndex }) {
+        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
+        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
+        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
+        //     </div>`;
+        return `
+              <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
+          
+                <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
+                  <div><strong>Frontend Expense:</strong></div>
+                  <div style="width: 10px;"></div>
+               <div style="text-align: left;">INR ${Math.round(
+                 rawData
+               ).toLocaleString("en-IN")}</div>
+  
+                </div>
+       
+              </div>
+            `;
+      },
+    },
+  };
+  //--------------------Frontend budget-graph-----------------------//
 
   const utilisedData = [
     125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
@@ -268,6 +401,9 @@ const FrontendDashboard = () => {
     },
   };
 
+    const totalUtilised =
+    budgetBar?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+
   const techWidgets = [
     {
       layout: 1,
@@ -324,55 +460,24 @@ const FrontendDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection
-          layout={1}
-          border
-          title={"Budget v/s Achievements"}
-          titleLabel={"FY 2024-25"}
+        <Suspense
+          fallback={
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {/* Simulating chart skeleton */}
+              <Skeleton variant="text" width={200} height={30} />
+              <Skeleton variant="rectangular" width="100%" height={300} />
+            </Box>
+          }
         >
-          {/* <LayerBarGraph data={data} options={options} /> */}
-          <BudgetGraph
-            utilisedData={utilisedData}
-            maxBudget={maxBudget}
-            route={"finance/budget"}
+          <YearlyGraph
+            data={expenseRawSeries}
+            options={expenseOptions}
+            title={"BIZ Nest TECH DEPARTMENT EXPENSE"}
+            titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
+              "en-IN"
+            )}`}
           />
-          <hr />
-          <WidgetSection layout={3} padding>
-            <DataCard
-              data={`INR ${inrFormat(40000)}`}
-              title={"Projected"}
-              route={"/app/dashboard/frontend-dashboard/finance"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            />
-            <DataCard
-              data={`INR ${inrFormat(35000)}`}
-              title={"Actual"}
-              route={"/app/dashboard/frontend-dashboard/finance"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            />
-            <DataCard
-              data={`INR ${inrFormat(6000)}`}
-              title={"Requested"}
-              route={"/app/dashboard/frontend-dashboard/finance"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            />
-          </WidgetSection>
-        </WidgetSection>,
+        </Suspense>,
       ],
     },
 

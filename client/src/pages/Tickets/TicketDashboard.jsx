@@ -20,13 +20,12 @@ const TicketDashboard = () => {
 
   const roles = auth.user.role.map((role)=>  role.roleTitle )
   const depts = auth.user.departments.map((dept)=>  dept.name )
-  console.log("depts",depts)
 
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
     queryFn: async () => {
       try {
-        const response = await axios.get(`/api/tickets/department-tickets/${auth.user?.departments.map((item)=>item._id)[0]}`);
+        const response = await axios.get(`/api/tickets/get-all-tickets`);
 
         return response.data;
       } catch (error) {
@@ -74,7 +73,6 @@ const TicketDashboard = () => {
   const avg = ((ticketsData.filter((item) => item.status === "Closed")
       .length / ticketsData.length)*100).toFixed(0)
 
-  console.log("tickets",avg)
 
   let masterDepartments = []
 
@@ -184,7 +182,7 @@ const TicketDashboard = () => {
           layout={1}
           border
           padding
-          title={"Annual Tickets Raised"}
+          title={"Overall Department Raised Tickets"}
           TitleAmount={`TOTAL TICKETS : ${totalTickets}`}
         >
           {!isLoading ? (

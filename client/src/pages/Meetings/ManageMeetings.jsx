@@ -37,7 +37,6 @@ const ManageMeetings = () => {
   const [newItem, setNewItem] = useState("");
   const [modalMode, setModalMode] = useState("update"); // 'update', or 'view'
   const [selectedMeeting, setSelectedMeeting] = useState(null);
-  useEffect(() => console.log(selectedMeeting), [selectedMeeting]);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
 
@@ -109,19 +108,17 @@ const ManageMeetings = () => {
       date: meeting.date,
     }));
 
-const transformedMeetings = filteredMeetings.map((meeting, index) => ({
-  ...meeting,
-  date: meeting.date,
-  bookedBy: meeting.bookedBy
-    ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
-    : meeting.clientBookedBy?.employeeName || "Unknown",
-  startTime: meeting.startTime,
-  endTime: meeting.endTime,
-  extendTime : meeting.extendTime,
-  srNo: index + 1,
-}));
-
-
+  const transformedMeetings = filteredMeetings.map((meeting, index) => ({
+    ...meeting,
+    date: meeting.date,
+    bookedBy: meeting.bookedBy
+      ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
+      : meeting.clientBookedBy?.employeeName || "Unknown",
+    startTime: meeting.startTime,
+    endTime: meeting.endTime,
+    extendTime: meeting.extendTime,
+    srNo: index + 1,
+  }));
 
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
@@ -145,7 +142,6 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
 
   const { mutate: cancelMeeting, isPending: isCancelPending } = useMutation({
     mutationFn: async (data) => {
-      console.log(data);
       const respone = await axios.patch(
         `/api/meetings/cancel-meeting/${selectedMeetingId}`,
         data
@@ -161,15 +157,14 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
 
   const { mutate: extendMeeting, isPending: isExtendPending } = useMutation({
     mutationFn: async (data) => {
-      console.log(data);
       const respone = await axios.patch(`/api/meetings/extend-meeting`, data);
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       return respone.data;
     },
     onSuccess: (data) => {
       toast.success(data.message);
-      setDetailsModal(false)
-      resetExtendMeeting()
+      setDetailsModal(false);
+      resetExtendMeeting();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -336,10 +331,6 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
 
     housekeepingMutation.mutate(payload);
   };
-  useEffect(()=>{
-
-      console.log("meeting",selectedMeeting)
-  },[selectedMeeting])
 
   //---------------------------------Event handlers----------------------------------------//
 
@@ -401,7 +392,6 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
       field: "participants",
       headerName: "Participants",
       cellRenderer: (params) => {
-          console.log("meeting",params.data)
         const participants = Array.isArray(params.data?.participants)
           ? params.data?.participants
           : [];
@@ -424,64 +414,63 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
         );
       },
     },
-{
-  field: "action",
-  headerName: "Action",
-  pinned: "right",
-  cellRenderer: (params) => {
-    const status = params.data.meetingStatus;
-    const housekeepingStatus = params.data.housekeepingStatus;
+    {
+      field: "action",
+      headerName: "Action",
+      pinned: "right",
+      cellRenderer: (params) => {
+        const status = params.data.meetingStatus;
+        const housekeepingStatus = params.data.housekeepingStatus;
 
-    const isUpcoming = status === "Upcoming";
-    const isOngoing = status === "Ongoing";
-    const isCompleted = status === "Completed";
-    const isHousekeepingPending = housekeepingStatus === "Pending";
-    const isHousekeepingCompleted = housekeepingStatus === "Completed";
+        const isUpcoming = status === "Upcoming";
+        const isCancelled = status === "Cancelled";
+        const isOngoing = status === "Ongoing";
+        const isCompleted = status === "Completed";
+        const isHousekeepingPending = housekeepingStatus === "Pending";
+        const isHousekeepingCompleted = housekeepingStatus === "Completed";
 
-    const menuItems = [
-      // Show only if not ongoing and housekeeping is not completed
-      !isOngoing && !isHousekeepingCompleted && {
-        label: "Update Checklist",
-        onClick: () => handleOpenChecklistModal("update", params.data._id),
-      },
-      // Show only if not ongoing and housekeeping is not pending
-      !isOngoing && !isHousekeepingPending && {
-        label: "Mark As Ongoing",
-        onClick: () => handleOngoing("ongoing", params.data._id),
-      },
-      // Show only if not upcoming
-      !isUpcoming && {
-        label: "Mark As Completed",
-        onClick: () => handleCompleted("complete", params.data._id),
-      },
-      // Show only if not upcoming
-      !isUpcoming && {
-        label: "Extend Meeting",
-        onClick: () => handleExtendMeetingModal("extend", params.data),
-      },
-      {
-        label: "Cancel",
-        onClick: () => handleSelectedMeeting("cancel", params.data),
-      },
-    ].filter(Boolean); // Remove any false/null values
+        const menuItems = [
+          !isOngoing &&
+            !isHousekeepingCompleted && {
+              label: "Update Checklist",
+              onClick: () =>
+                handleOpenChecklistModal("update", params.data._id),
+            },
+          !isOngoing &&
+            !isHousekeepingPending && {
+              label: "Mark As Ongoing",
+              onClick: () => handleOngoing("ongoing", params.data._id),
+            },
+          !isUpcoming && {
+            label: "Mark As Completed",
+            onClick: () => handleCompleted("complete", params.data._id),
+          },
+          !isUpcoming && {
+            label: "Extend Meeting",
+            onClick: () => handleExtendMeetingModal("extend", params.data),
+          },
+          !isCancelled && {
+            label: "Cancel",
+            onClick: () => handleSelectedMeeting("cancel", params.data),
+          },
+        ].filter(Boolean);
 
-    return (
-      <div className="flex gap-2 items-center">
-        <div
-          onClick={() => handleSelectedMeeting("viewDetails", params.data)}
-          className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-        >
-          <span className="text-subtitle">
-            <MdOutlineRemoveRedEye />
-          </span>
-        </div>
+        return (
+          <div className="flex gap-2 items-center">
+            <div
+              onClick={() => handleSelectedMeeting("viewDetails", params.data)}
+              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+            >
+              <span className="text-subtitle">
+                <MdOutlineRemoveRedEye />
+              </span>
+            </div>
 
-        <ThreeDotMenu menuItems={menuItems} />
-      </div>
-    );
-  },
-}
-
+            {!isCancelled && <ThreeDotMenu menuItems={menuItems} />}
+          </div>
+        );
+      },
+    },
   ];
 
   return (
@@ -631,7 +620,9 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
             />
             <DetalisFormatted
               title={"Booked By"}
-              detail={selectedMeeting?.bookedBy || selectedMeeting?.clientBookedBy}
+              detail={
+                selectedMeeting?.bookedBy || selectedMeeting?.clientBookedBy
+              }
             />
             <DetalisFormatted
               title={"Client Name"}
@@ -650,11 +641,10 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
               detail={humanTime(selectedMeeting?.endTime)}
             />
             {selectedMeeting.extendTime && (
-
-            <DetalisFormatted
-              title={"Extended Time"}
-              detail={humanTime(selectedMeeting?.extendTime)}
-            />
+              <DetalisFormatted
+                title={"Extended Time"}
+                detail={humanTime(selectedMeeting?.extendTime)}
+              />
             )}
             <div className="col-span-1 ">
               <DetalisFormatted

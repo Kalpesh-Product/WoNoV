@@ -112,7 +112,10 @@ const AccessGrant = () => {
 
 
   return (
-    <div className="bg-white p-4">
+    <div className="bg-white">
+         <div className="flex items-center justify-between pb-4">
+        <span className="text-title font-pmedium text-primary uppercase">My permissions</span>
+      </div>
       {/* User Info */}
       <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-md">
         <div className="flex gap-6 items-center">
