@@ -426,7 +426,6 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
   pinned: "right",
   cellRenderer: (params) => {
     const status = params.data.meetingStatus;
- 
     const housekeepingStatus = params.data.housekeepingStatus;
 
     const isUpcoming = status === "Upcoming";
@@ -437,31 +436,27 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
     const isHousekeepingCompleted = housekeepingStatus === "Completed";
 
     const menuItems = [
-      // Show only if not ongoing and housekeeping is not completed
       !isOngoing && !isHousekeepingCompleted && {
         label: "Update Checklist",
         onClick: () => handleOpenChecklistModal("update", params.data._id),
-       },
-      // Show only if not ongoing and housekeeping is not pending
+      },
       !isOngoing && !isHousekeepingPending && {
         label: "Mark As Ongoing",
         onClick: () => handleOngoing("ongoing", params.data._id),
-       },
-      // Show only if not upcoming
+      },
       !isUpcoming && {
         label: "Mark As Completed",
         onClick: () => handleCompleted("complete", params.data._id),
       },
-      // Show only if not upcoming
       !isUpcoming && {
         label: "Extend Meeting",
         onClick: () => handleExtendMeetingModal("extend", params.data),
       },
-     !isCancelled  && {
+      !isCancelled && {
         label: "Cancel",
         onClick: () => handleSelectedMeeting("cancel", params.data),
-       },
-    ].filter(Boolean); // Remove any false/null values
+      },
+    ].filter(Boolean);
 
     return (
       <div className="flex gap-2 items-center">
@@ -474,11 +469,12 @@ const transformedMeetings = filteredMeetings.map((meeting, index) => ({
           </span>
         </div>
 
-        <ThreeDotMenu menuItems={menuItems} />
+        {!isCancelled && <ThreeDotMenu menuItems={menuItems} />}
       </div>
     );
   },
 }
+
 
   ];
 
