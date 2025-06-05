@@ -13,10 +13,6 @@ const AccessTree = ({ clickState, autoExpandFirst = false }) => {
   const axios = useAxiosPrivate();
   const currentPath = location.pathname;
 
-  useEffect(() => {
-    console.log("Selected Users Stack: ", selectedUsers);
-  }, [selectedUsers]);
-
   const fetchHierarchy = async () => {
     try {
       const response = await axios.get("/api/company/company-hierarchy");
@@ -105,13 +101,14 @@ const AccessTree = ({ clickState, autoExpandFirst = false }) => {
           key={user.empId}
           className="w-full mt-6 p-4 border-t border-gray-300 rounded-lg">
           <div className="flex items-center mb-10">
-            <div className="w-[10%]">
-              <PrimaryButton title={"Back"} handleSubmit={handleBack} />
-            </div>
+           
             <div className="w-full text-center">
               <span className="text-subtitle font-semibold mr-20">
                 Subordinates of {user.name}
               </span>
+            </div>
+             <div className="w-[10%]">
+              <PrimaryButton title={"Close"} handleSubmit={handleBack} />
             </div>
           </div>
 
@@ -145,13 +142,13 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel, click = true }) => 
 
   return (
     <div
-      className={`bg-white flex flex-col shadow-md border border-gray-300 rounded-lg p-4 pt-0 px-0 text-center cursor-pointer relative w-60 transition ${
+      className={`bg-white flex flex-col shadow-md border border-gray-300 rounded-lg p-4 pt-0 px-0 text-center  relative w-60 transition ${
         isTopLevel ? "border-2 border-primary" : ""
       }`}
     >
       <div
         onClick={() => {click ? navigate("permissions", { state: { user } }) : ''} }
-        className="bg-primary text-white p-2 pt-4 rounded-t-md"
+        className="bg-primary text-white p-2 pt-4 rounded-t-md cursor-pointer"
       >
         <div className="w-full flex flex-col justify-center">
           <div className="absolute -top-7 left-[6rem] flex items-center justify-center text-black font-semibold border-default border-primary rounded-full w-12 h-12 bg-red-50 overflow-hidden">
@@ -174,7 +171,7 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel, click = true }) => 
       {user.subordinates && user.subordinates.length > 0 && (
         <p
           onClick={() => handleSelectUser(user)}
-          className="mt-2 text-xs text-primary hover:underline"
+          className="mt-2 text-xs text-primary hover:underline cursor-pointer"
         >
           {user.subordinates.length} Subordinate
           {user.subordinates.length > 1 ? "s" : ""}
