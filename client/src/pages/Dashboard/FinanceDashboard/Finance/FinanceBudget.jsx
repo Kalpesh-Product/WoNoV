@@ -259,8 +259,8 @@ const FinanceBudget = () => {
       />
 
       <div>
-        <WidgetSection layout={3} padding>
-          <DataCard
+        <WidgetSection layout={2} padding>
+          {/* <DataCard
             data={"INR 50,00,000"}
             title={"Projected"}
             description={`Current Month: ${new Date().toLocaleString(
@@ -269,9 +269,9 @@ const FinanceBudget = () => {
                 month: "short",
               }
             )}-25`}
-          />
+          /> */}
           <DataCard
-            data={"INR 45,00,000"}
+            data={"N/A"}
             title={"Actual"}
             description={`Current Month: ${new Date().toLocaleString(
               "default",
@@ -281,7 +281,7 @@ const FinanceBudget = () => {
             )}-25`}
           />
           <DataCard
-            data={"INR 12,000"}
+            data={"N/A"}
             title={"Requested"}
             description={`Current Month: ${new Date().toLocaleString(
               "default",

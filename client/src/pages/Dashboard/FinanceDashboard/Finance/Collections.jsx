@@ -1,15 +1,15 @@
 import React, { useState, useMemo } from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import BarGraph from "../../../../components/graphs/BarGraph";
-import AgTable from "../../../../components/AgTable";
-import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import DataCard from "../../../../components/DataCard";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import YearWiseTable from "../../../../components/Tables/YearWiseTable";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import humanDate from "../../../../utils/humanDateForamt";
 
 const Collections = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -17,80 +17,49 @@ const Collections = () => {
   const axios = useAxiosPrivate();
 
   const { data: coWorkingData = [], isLoading: isCoWorkingLoading } = useQuery({
-    queryKey: ["coWorkingData"],
+    queryKey: ["collections-data"],
     queryFn: async () => {
-      try {
-        const response = await axios.get(`/api/sales/fetch-coworking-revenues`);
-        return Array.isArray(response.data) ? response.data : [];
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+      const response = await axios.get(`/api/sales/fetch-coworking-revenues`);
+      return Array.isArray(response.data) ? response.data : [];
     },
   });
-
-  const kraColumn = [
-    { field: "srNo", headerName: "Sr No", flex: 1 },
-    { field: "client", headerName: "Client", flex: 1 },
-    { field: "amount", headerName: "Amount (INR)", flex: 1 },
-    { field: "status", headerName: "Status", flex: 1 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <div className="p-2 mb-2 flex gap-2">
-          <span
-            className="text-subtitle cursor-pointer"
-            onClick={() => handleViewModal(params.data)}
-          >
-            <MdOutlineRemoveRedEye />
-          </span>
-        </div>
-      ),
-    },
-  ];
 
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
     setViewModalOpen(true);
   };
 
-  const sortByMonth = (data) => {
+  const kraColumn = [
+    { field: "srno", headerName: "Sr No", width: 100 },
+    {
+      field: "clientName",
+      headerName: "Client",
+      flex: 1,
+      cellRenderer: (params) => (
+        <span
+          className="text-primary underline cursor-pointer"
+          onClick={() => handleViewModal(params.data)}
+        >
+          {params.value}
+        </span>
+      ),
+    },
+    {
+      field: "revenue",
+      headerName: "Revenue",
+      flex: 1,
+      cellRenderer: (params) => `${inrFormat(params.value)}`,
+    },
+    { field: "rentStatus", headerName: "Status", flex: 1 },
+  ];
+
+  const sortedData = useMemo(() => {
     const parseMonth = (str) =>
       new Date(`01-${str.replace("-", "-20")}`).getTime();
-    return [...data].sort((a, b) => parseMonth(a.month) - parseMonth(b.month));
-  };
-
-  const sortedData = useMemo(() => sortByMonth(coWorkingData), [coWorkingData]);
-
-  const financialData = useMemo(() => {
-    return sortedData.map((monthEntry) => {
-      const rows = (monthEntry.clients || []).map((client, index) => ({
-        srNo: index + 1,
-        client: client.clientName,
-        amount: client.revenue,
-        status: client.rentStatus || "Paid",
-        date: client.pastDueDate
-          ? new Date(client.pastDueDate)
-              .toLocaleDateString("en-GB")
-              .replace(/\//g, "-")
-          : "NA",
-      }));
-
-      const totalAmount = rows.reduce(
-        (acc, curr) => acc + (curr.amount || 0),
-        0
-      );
-
-      return {
-        month: monthEntry.month,
-        totalAmount: Math.round(totalAmount),
-        tableData: {
-          columns: kraColumn,
-          rows,
-        },
-      };
-    });
-  }, [sortedData]);
+    return [...coWorkingData].sort(
+      (a, b) => parseMonth(a.month) - parseMonth(b.month)
+    );
+  }, [coWorkingData]);
 
   const barGraphData = useMemo(() => {
     const paid = [];
@@ -99,9 +68,13 @@ const Collections = () => {
     sortedData.forEach((entry) => {
       let paidClients = 0;
       let unpaidClients = 0;
+
       entry.clients?.forEach((c) => {
-        if (c.rentStatus === "Paid") paidClients++;
-        else unpaidClients++;
+        if (c.rentStatus === "Unpaid") {
+          unpaidClients++;
+        } else {
+          paidClients++;
+        }
       });
 
       const total = paidClients + unpaidClients || 1;
@@ -163,12 +136,21 @@ const Collections = () => {
     `;
       },
     },
-
     colors: ["#54C4A7", "#EB5C45"],
   };
 
-  const grandTotal = financialData.reduce(
-    (acc, item) => acc + item.totalAmount,
+  const flatClientData = useMemo(() => {
+    return coWorkingData.flatMap((monthObj) =>
+      monthObj.clients.map((client, index) => ({
+        srno: index + 1,
+        ...client,
+        date: client.rentDate,
+      }))
+    );
+  }, [coWorkingData]);
+
+  const grandTotal = flatClientData.reduce(
+    (acc, client) => acc + (client.revenue || 0),
     0
   );
 
@@ -189,12 +171,12 @@ const Collections = () => {
         <WidgetSection layout={2}>
           <DataCard
             title={"Paid"}
-            description={`Current Month: ${sortedData[0]?.month || "N/A"}`}
+            // description={`Current Month: ${sortedData[0]?.month || "N/A"}`}
             data={`${barGraphData[0]?.data?.[0] || 0}%`}
           />
           <DataCard
             title={"Unpaid"}
-            description={`Current Month: ${sortedData[0]?.month || "N/A"}`}
+            // description={`Current Month: ${sortedData[0]?.month || "N/A"}`}
             data={`${barGraphData[1]?.data?.[0] || 0}%`}
           />
         </WidgetSection>
@@ -207,31 +189,11 @@ const Collections = () => {
         TitleAmount={`INR ${inrFormat(grandTotal)}`}
         className="bg-white rounded-md shadow-sm"
       >
-        <CollapsibleTable
-          columns={[
-            { field: "month", headerName: "Month" },
-            { field: "totalAmount", headerName: "Total Amount (INR)" },
-          ]}
-          data={financialData.map((data, index) => ({
-            id: index,
-            month: data.month,
-            totalAmount: `INR ${data.totalAmount.toLocaleString("en-IN")}`,
-            tableData: data.tableData,
-          }))}
-          renderExpandedRow={(row) => {
-            if (!row?.tableData?.rows || !Array.isArray(row.tableData.rows)) {
-              return <div>No table data available</div>;
-            }
-
-            return (
-              <AgTable
-                search
-                data={row.tableData.rows}
-                columns={row.tableData.columns}
-                tableHeight={250}
-              />
-            );
-          }}
+        <YearWiseTable
+          data={flatClientData}
+          columns={kraColumn}
+          dateColumn="date"
+          handleSubmit={() => console.log("Export triggered")}
         />
       </WidgetSection>
 
@@ -242,17 +204,46 @@ const Collections = () => {
           title="Collection Details"
         >
           <div className="space-y-3">
-            <DetalisFormatted title="Client" detail={viewDetails.client} />
             <DetalisFormatted
-              title="Amount Paid"
-              detail={`INR ${Number(
-                viewDetails.amount?.toString().replace(/,/g, "")
-              ).toLocaleString("en-IN")}`}
+              title="Client Name"
+              detail={viewDetails.clientName}
             />
-            <DetalisFormatted title="Payment Date" detail={viewDetails.date} />
+            <DetalisFormatted title="Channel" detail={viewDetails.channel} />
             <DetalisFormatted
-              title="Payment Status"
-              detail={viewDetails.status}
+              title="No. of Desks"
+              detail={viewDetails.noOfDesks}
+            />
+            <DetalisFormatted
+              title="Desk Rate"
+              detail={`INR ${inrFormat(viewDetails.deskRate)}`}
+            />
+            <DetalisFormatted
+              title="Revenue"
+              detail={`INR ${inrFormat(viewDetails.revenue)}`}
+            />
+            <DetalisFormatted
+              title="Total Term"
+              detail={`${viewDetails.totalTerm} months`}
+            />
+            <DetalisFormatted
+              title="Rent Date"
+              detail={humanDate(viewDetails.rentDate)}
+            />
+            <DetalisFormatted
+              title="Rent Status"
+              detail={viewDetails.rentStatus}
+            />
+            <DetalisFormatted
+              title="Past Due Date"
+              detail={humanDate(viewDetails.pastDueDate)}
+            />
+            <DetalisFormatted
+              title="Annual Increment"
+              detail={`${viewDetails.annualIncrement}%`}
+            />
+            <DetalisFormatted
+              title="Next Increment Date"
+              detail={humanDate(viewDetails.nextIncrementDate)}
             />
           </div>
         </MuiModal>

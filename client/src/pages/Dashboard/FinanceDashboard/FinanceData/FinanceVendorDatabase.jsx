@@ -101,23 +101,24 @@ const FinanceVendorDatabase = () => {
   });
 
   const vendorColumns = [
-  { field: "id", headerName: "Sr No" },
-  { field: "vendorName", headerName: "Vendor Name" },
-  { field: "companyName", headerName: "Company Name" },
-  { field: "onboardingDate", headerName: "Onboarding Date" },
-  { field: "emailId", headerName: "Email Id" },
-  { field: "mobileNo", headerName: "Mobile No" },
+    { field: "id", headerName: "Sr No" },
+    { field: "vendorName", headerName: "Vendor Name" },
+    { field: "companyName", headerName: "Company Name" },
+    { field: "onboardingDate", headerName: "Onboarding Date" },
+    { field: "emailId", headerName: "Email Id" },
+    { field: "mobileNo", headerName: "Mobile No" },
     {
       field: "actions",
       headerName: "Actions",
-      pinned : "right",
+      pinned: "right",
       cellRenderer: (params) => (
         <>
           <div className="flex gap-2 items-center">
-            <div
-              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-            >
-              <span className="text-subtitle cursor-pointer" onClick={() => handleViewModal(params.data)}>
+            <div className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
+              <span
+                className="text-subtitle cursor-pointer"
+                onClick={() => handleViewModal(params.data)}
+              >
                 <MdOutlineRemoveRedEye />
               </span>
             </div>
@@ -127,168 +128,168 @@ const FinanceVendorDatabase = () => {
     },
   ];
 
-  const vendorData = [
-  {
-    vendorName: "Apex Supplies",
-    companyName: "Apex Pvt Ltd",
-    onboardingDate: "15-04-2024",
-    emailId: "contact@apex.com",
-    mobileNo: "9876543210",
-    address: "12 Green Street",
-    country: "India",
-    state: "Maharashtra",
-    city: "Mumbai",
-    pinCode: "400001",
-    pan: "ABCDE1234F",
-    gstin: "27ABCDE1234F1Z5",
-    partyType: "Domestic",
-    vendorStatus: "Active"
-  },
-  {
-    vendorName: "Global Traders",
-    companyName: "Global Exports Ltd",
-    onboardingDate: "20-05-2024",
-    emailId: "sales@globalexports.com",
-    mobileNo: "9812345678",
-    address: "88 Maple Avenue",
-    country: "India",
-    state: "Delhi",
-    city: "New Delhi",
-    pinCode: "110001",
-    pan: "FGHIJ5678K",
-    gstin: "07FGHIJ5678K1Z2",
-    partyType: "International",
-    vendorStatus: "Active"
-  },
-  {
-    vendorName: "TechnoGears",
-    companyName: "TechnoGears Inc.",
-    onboardingDate: "10-06-2024",
-    emailId: "info@technogears.com",
-    mobileNo: "9823456789",
-    address: "2nd Cross, Silicon Valley",
-    country: "India",
-    state: "Karnataka",
-    city: "Bangalore",
-    pinCode: "560001",
-    pan: "KLMNO2345P",
-    gstin: "29KLMNO2345P1Z6",
-    partyType: "Domestic",
-    vendorStatus: "Active"
-  },
-  {
-    vendorName: "Elite Textiles",
-    companyName: "Elite Fashion Corp.",
-    onboardingDate: "05-07-2024",
-    emailId: "elite@fashioncorp.com",
-    mobileNo: "9845671234",
-    address: "Main Street, Textile Market",
-    country: "India",
-    state: "Tamil Nadu",
-    city: "Chennai",
-    pinCode: "600001",
-    pan: "PQRST6789U",
-    gstin: "33PQRST6789U1Z3",
-    partyType: "Domestic",
-    vendorStatus: "Inactive"
-  },
-  {
-    vendorName: "Fusion Logistics",
-    companyName: "Fusion Movers Ltd",
-    onboardingDate: "18-08-2024",
-    emailId: "logistics@fusion.com",
-    mobileNo: "9911223344",
-    address: "Sector 45, Industrial Area",
-    country: "India",
-    state: "Haryana",
-    city: "Gurgaon",
-    pinCode: "122001",
-    pan: "LMNOP9876Q",
-    gstin: "06LMNOP9876Q1Z7",
-    partyType: "Domestic",
-    vendorStatus: "Active"
-  },
-  {
-    vendorName: "Bright Chemicals",
-    companyName: "Bright Labs",
-    onboardingDate: "30-09-2024",
-    emailId: "bright@chem.com",
-    mobileNo: "9887766554",
-    address: "Plot 12, Pharma Zone",
-    country: "India",
-    state: "Gujarat",
-    city: "Ahmedabad",
-    pinCode: "380001",
-    pan: "QRSTU1234V",
-    gstin: "24QRSTU1234V1Z1",
-    partyType: "Domestic",
-    vendorStatus: "Active"
-  },
-  {
-    vendorName: "NextWave Solutions",
-    companyName: "NextWave Tech",
-    onboardingDate: "11-11-2024",
-    emailId: "support@nextwave.com",
-    mobileNo: "9900112233",
-    address: "Tech Park, Block 9",
-    country: "India",
-    state: "Telangana",
-    city: "Hyderabad",
-    pinCode: "500001",
-    pan: "UVWXY3456Z",
-    gstin: "36UVWXY3456Z1Z4",
-    partyType: "International",
-    vendorStatus: "Active"
-  },
-  {
-    vendorName: "Core Metalworks",
-    companyName: "Core Industries",
-    onboardingDate: "03-01-2025",
-    emailId: "contact@coreindustries.com",
-    mobileNo: "9877600001",
-    address: "Industrial Layout, Phase II",
-    country: "India",
-    state: "Punjab",
-    city: "Ludhiana",
-    pinCode: "141001",
-    pan: "ABCDL6789K",
-    gstin: "03ABCDL6789K1Z0",
-    partyType: "Domestic",
-    vendorStatus: "Inactive"
-  },
-  {
-    vendorName: "Ocean Foods",
-    companyName: "Oceanic Agro",
-    onboardingDate: "15-02-2025",
-    emailId: "hello@oceanicagro.com",
-    mobileNo: "9765432109",
-    address: "Coastal Road",
-    country: "India",
-    state: "Kerala",
-    city: "Kochi",
-    pinCode: "682001",
-    pan: "JKLMN3456L",
-    gstin: "32JKLMN3456L1Z8",
-    partyType: "Domestic",
-    vendorStatus: "Active"
-  },
-  {
-    vendorName: "Urban Prints",
-    companyName: "Urban Publishing",
-    onboardingDate: "20-03-2025",
-    emailId: "info@urbanprints.com",
-    mobileNo: "9856712345",
-    address: "Print Hub, City Center",
-    country: "India",
-    state: "West Bengal",
-    city: "Kolkata",
-    pinCode: "700001",
-    pan: "NOPQR7890M",
-    gstin: "19NOPQR7890M1Z9",
-    partyType: "International",
-    vendorStatus: "Inactive"
-  }
-];
+  //   const vendorData = [
+  //   {
+  //     vendorName: "Apex Supplies",
+  //     companyName: "Apex Pvt Ltd",
+  //     onboardingDate: "15-04-2024",
+  //     emailId: "contact@apex.com",
+  //     mobileNo: "9876543210",
+  //     address: "12 Green Street",
+  //     country: "India",
+  //     state: "Maharashtra",
+  //     city: "Mumbai",
+  //     pinCode: "400001",
+  //     pan: "ABCDE1234F",
+  //     gstin: "27ABCDE1234F1Z5",
+  //     partyType: "Domestic",
+  //     vendorStatus: "Active"
+  //   },
+  //   {
+  //     vendorName: "Global Traders",
+  //     companyName: "Global Exports Ltd",
+  //     onboardingDate: "20-05-2024",
+  //     emailId: "sales@globalexports.com",
+  //     mobileNo: "9812345678",
+  //     address: "88 Maple Avenue",
+  //     country: "India",
+  //     state: "Delhi",
+  //     city: "New Delhi",
+  //     pinCode: "110001",
+  //     pan: "FGHIJ5678K",
+  //     gstin: "07FGHIJ5678K1Z2",
+  //     partyType: "International",
+  //     vendorStatus: "Active"
+  //   },
+  //   {
+  //     vendorName: "TechnoGears",
+  //     companyName: "TechnoGears Inc.",
+  //     onboardingDate: "10-06-2024",
+  //     emailId: "info@technogears.com",
+  //     mobileNo: "9823456789",
+  //     address: "2nd Cross, Silicon Valley",
+  //     country: "India",
+  //     state: "Karnataka",
+  //     city: "Bangalore",
+  //     pinCode: "560001",
+  //     pan: "KLMNO2345P",
+  //     gstin: "29KLMNO2345P1Z6",
+  //     partyType: "Domestic",
+  //     vendorStatus: "Active"
+  //   },
+  //   {
+  //     vendorName: "Elite Textiles",
+  //     companyName: "Elite Fashion Corp.",
+  //     onboardingDate: "05-07-2024",
+  //     emailId: "elite@fashioncorp.com",
+  //     mobileNo: "9845671234",
+  //     address: "Main Street, Textile Market",
+  //     country: "India",
+  //     state: "Tamil Nadu",
+  //     city: "Chennai",
+  //     pinCode: "600001",
+  //     pan: "PQRST6789U",
+  //     gstin: "33PQRST6789U1Z3",
+  //     partyType: "Domestic",
+  //     vendorStatus: "Inactive"
+  //   },
+  //   {
+  //     vendorName: "Fusion Logistics",
+  //     companyName: "Fusion Movers Ltd",
+  //     onboardingDate: "18-08-2024",
+  //     emailId: "logistics@fusion.com",
+  //     mobileNo: "9911223344",
+  //     address: "Sector 45, Industrial Area",
+  //     country: "India",
+  //     state: "Haryana",
+  //     city: "Gurgaon",
+  //     pinCode: "122001",
+  //     pan: "LMNOP9876Q",
+  //     gstin: "06LMNOP9876Q1Z7",
+  //     partyType: "Domestic",
+  //     vendorStatus: "Active"
+  //   },
+  //   {
+  //     vendorName: "Bright Chemicals",
+  //     companyName: "Bright Labs",
+  //     onboardingDate: "30-09-2024",
+  //     emailId: "bright@chem.com",
+  //     mobileNo: "9887766554",
+  //     address: "Plot 12, Pharma Zone",
+  //     country: "India",
+  //     state: "Gujarat",
+  //     city: "Ahmedabad",
+  //     pinCode: "380001",
+  //     pan: "QRSTU1234V",
+  //     gstin: "24QRSTU1234V1Z1",
+  //     partyType: "Domestic",
+  //     vendorStatus: "Active"
+  //   },
+  //   {
+  //     vendorName: "NextWave Solutions",
+  //     companyName: "NextWave Tech",
+  //     onboardingDate: "11-11-2024",
+  //     emailId: "support@nextwave.com",
+  //     mobileNo: "9900112233",
+  //     address: "Tech Park, Block 9",
+  //     country: "India",
+  //     state: "Telangana",
+  //     city: "Hyderabad",
+  //     pinCode: "500001",
+  //     pan: "UVWXY3456Z",
+  //     gstin: "36UVWXY3456Z1Z4",
+  //     partyType: "International",
+  //     vendorStatus: "Active"
+  //   },
+  //   {
+  //     vendorName: "Core Metalworks",
+  //     companyName: "Core Industries",
+  //     onboardingDate: "03-01-2025",
+  //     emailId: "contact@coreindustries.com",
+  //     mobileNo: "9877600001",
+  //     address: "Industrial Layout, Phase II",
+  //     country: "India",
+  //     state: "Punjab",
+  //     city: "Ludhiana",
+  //     pinCode: "141001",
+  //     pan: "ABCDL6789K",
+  //     gstin: "03ABCDL6789K1Z0",
+  //     partyType: "Domestic",
+  //     vendorStatus: "Inactive"
+  //   },
+  //   {
+  //     vendorName: "Ocean Foods",
+  //     companyName: "Oceanic Agro",
+  //     onboardingDate: "15-02-2025",
+  //     emailId: "hello@oceanicagro.com",
+  //     mobileNo: "9765432109",
+  //     address: "Coastal Road",
+  //     country: "India",
+  //     state: "Kerala",
+  //     city: "Kochi",
+  //     pinCode: "682001",
+  //     pan: "JKLMN3456L",
+  //     gstin: "32JKLMN3456L1Z8",
+  //     partyType: "Domestic",
+  //     vendorStatus: "Active"
+  //   },
+  //   {
+  //     vendorName: "Urban Prints",
+  //     companyName: "Urban Publishing",
+  //     onboardingDate: "20-03-2025",
+  //     emailId: "info@urbanprints.com",
+  //     mobileNo: "9856712345",
+  //     address: "Print Hub, City Center",
+  //     country: "India",
+  //     state: "West Bengal",
+  //     city: "Kolkata",
+  //     pinCode: "700001",
+  //     pan: "NOPQR7890M",
+  //     gstin: "19NOPQR7890M1Z9",
+  //     partyType: "International",
+  //     vendorStatus: "Inactive"
+  //   }
+  // ];
 
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
@@ -316,17 +317,19 @@ const FinanceVendorDatabase = () => {
   return (
     <>
       <AgTable
-        key={vendorData.length}
+        key={0}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"Vendor Database"}
         buttonTitle={"Add Vendor"}
-        data={[
-          ...vendorData.map((item, index) => ({
-            id: index + 1,
-            ...item
-          })),
-        ]}
+        data={
+          [
+            // ...vendorData.map((item, index) => ({
+            //   id: index + 1,
+            //   ...item
+            // })),
+          ]
+        }
         columns={vendorColumns}
         handleClick={handleAddAsset}
       />
@@ -338,25 +341,38 @@ const FinanceVendorDatabase = () => {
           title="Vendor Detail"
         >
           <div className="space-y-3">
-            <DetalisFormatted title="Vendor Name" detail={viewDetails.vendorName} />
-            <DetalisFormatted title="Company Name" detail={viewDetails.companyName} />
-            <DetalisFormatted title="Onboarding Date" detail={viewDetails.onboardingDate} />
+            <DetalisFormatted
+              title="Vendor Name"
+              detail={viewDetails.vendorName}
+            />
+            <DetalisFormatted
+              title="Company Name"
+              detail={viewDetails.companyName}
+            />
+            <DetalisFormatted
+              title="Onboarding Date"
+              detail={viewDetails.onboardingDate}
+            />
             <DetalisFormatted title="Email" detail={viewDetails.emailId} />
             <DetalisFormatted title="Mobile No" detail={viewDetails.mobileNo} />
-<DetalisFormatted title="Address" detail={viewDetails.address} />
-<DetalisFormatted title="Country" detail={viewDetails.country} />
-<DetalisFormatted title="State" detail={viewDetails.state} />
-<DetalisFormatted title="City" detail={viewDetails.city} />
-<DetalisFormatted title="Pin Code" detail={viewDetails.pinCode} />
-<DetalisFormatted title="PAN" detail={viewDetails.pan} />
-<DetalisFormatted title="GSTIN" detail={viewDetails.gstin} />
-<DetalisFormatted title="Party Type" detail={viewDetails.partyType} />
-<DetalisFormatted title="Vendor Status" detail={viewDetails.vendorStatus} />
-
+            <DetalisFormatted title="Address" detail={viewDetails.address} />
+            <DetalisFormatted title="Country" detail={viewDetails.country} />
+            <DetalisFormatted title="State" detail={viewDetails.state} />
+            <DetalisFormatted title="City" detail={viewDetails.city} />
+            <DetalisFormatted title="Pin Code" detail={viewDetails.pinCode} />
+            <DetalisFormatted title="PAN" detail={viewDetails.pan} />
+            <DetalisFormatted title="GSTIN" detail={viewDetails.gstin} />
+            <DetalisFormatted
+              title="Party Type"
+              detail={viewDetails.partyType}
+            />
+            <DetalisFormatted
+              title="Vendor Status"
+              detail={viewDetails.vendorStatus}
+            />
           </div>
         </MuiModal>
       )}
-
 
       <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
         {modalMode === "add" && (
@@ -371,10 +387,12 @@ const FinanceVendorDatabase = () => {
                     render={({ field }) => (
                       <div
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${errors.assetImage
+                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
+                          errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                          } `}>
+                        } `}
+                      >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -384,7 +402,8 @@ const FinanceVendorDatabase = () => {
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}>
+                          }}
+                        >
                           <Button
                             variant="outlined"
                             component="label"
@@ -399,7 +418,8 @@ const FinanceVendorDatabase = () => {
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}>
+                            }}
+                          >
                             Select Image
                             <input
                               type="file"
@@ -425,7 +445,8 @@ const FinanceVendorDatabase = () => {
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}>
+                            }}
+                          >
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -442,7 +463,8 @@ const FinanceVendorDatabase = () => {
                       {...field}
                       label="Asset Type"
                       helperText={!!errors.assetType?.message}
-                      select>
+                      select
+                    >
                       <MenuItem value="">Select an Asset Type</MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
@@ -462,7 +484,8 @@ const FinanceVendorDatabase = () => {
                       {...field}
                       select
                       label="Department"
-                      size="small">
+                      size="small"
+                    >
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -483,7 +506,8 @@ const FinanceVendorDatabase = () => {
                       fullWidth
                       select
                       label="Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -503,7 +527,8 @@ const FinanceVendorDatabase = () => {
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}

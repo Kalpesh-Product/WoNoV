@@ -295,7 +295,7 @@ const MeetingFormLayout = () => {
               minute: "2-digit",
               meridiem: "lowercase",
             }}
-            allDayText="Full Day"
+            allDayText=""
             select={handleDateClick}
             selectAllow={({ start }) => {
               const now = new Date();
@@ -332,23 +332,23 @@ const MeetingFormLayout = () => {
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col w-full gap-4"
         >
-          <div className="w-full flex justify-between items-center">
-            <span className="text-content">
-              Selected Date : {humanDate(startDate)}
-            </span>
-            <span className="text-content">
-              End Date : {humanDate(endDate)}
-            </span>
-          </div>
           <div className="grid grid-cols-2 gap-8 px-2 pb-4 mb-4 border-b-default border-borderGray">
-            <div className="flex items-center justify-between">
-              <span className="text-content">Location</span>
-              <span className="text-content text-gray-500">{locationName}</span>
+            <div className="w-fit flex gap-8 items-center">
+              <span className="text-content">
+                Selected Date : {humanDate(startDate)}
+              </span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-content">Selected Room</span>
-              <span className="text-content text-gray-500">
-                {meetingRoomName}
+            <div className="w-fit flex gap-8 items-center">
+              <span className="text-content">
+                End Date : {humanDate(endDate)}
+              </span>
+            </div>
+            <div className="w-fit flex gap-8 items-center">
+              <span className="text-content">Location : {locationName}</span>
+            </div>
+            <div className="w-fit flex gap-8 items-center">
+              <span className="text-content">
+                Selected Room : {meetingRoomName}
               </span>
             </div>
           </div>

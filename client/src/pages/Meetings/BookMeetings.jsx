@@ -34,7 +34,7 @@ const BookMeetings = () => {
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const locations = auth.user.company.workLocations;
-  const isEmployee = auth.user.company.companyName === "BizNest"
+  const isEmployee = auth.user.company.companyName === "BizNest";
 
   // ------------------------------Initializations ------------------------------------//
 
@@ -297,18 +297,17 @@ const BookMeetings = () => {
                     .sort((a, b) => a.seats - b.seats)
                     .map((room) => (
                       <MenuItem key={room._id} value={room._id}>
-                        <div className="flex  items-center gap-6 w-80">
-                          <div className="flex text-content gap-2 items-center  rounded-full ">
+                        <div className="flex  items-center gap-2 w-80">
+                          <div className="flex text-content gap-1 items-center  rounded-full ">
                             <span>{String(room.seats).padStart(2, "0")}</span>
                             Seater
+                          </div>
+                          <div>
+                            <span>{room.location?.unitNo}</span>
                           </div>
                           -
                           <div className="flex items-center w-fit justify-between">
                             <span className="uppercase">{room.name}</span>
-                          </div>
-                          -
-                          <div>
-                            <span>{room.location?.unitNo}</span>
                           </div>
                           {/* <div>
                             <div

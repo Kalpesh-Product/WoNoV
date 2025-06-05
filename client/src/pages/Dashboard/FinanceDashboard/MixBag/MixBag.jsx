@@ -11,7 +11,7 @@ const MixBag = () => {
   const routes = [
     {
       title: "Directors & Company KYC",
-      route: "/app/dashboard/finance-dashboard/mix-bag/directors-company-KYC",
+      route: "/app/dashboard/finance-dashboard/mix-bag/company-KYC",
     },
     {
       title: "Compliance Documents",
