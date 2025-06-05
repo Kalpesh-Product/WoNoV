@@ -168,6 +168,7 @@ async function filterAcceptedAssignedTickets(
             { assignees: { $in: [user] } },
           ],
         },
+        { raisedToDepartment: { $in: userDepartments } },
         { status: "In Progress" },
       ],
     },
