@@ -26,9 +26,15 @@ const PerformanceMonthly = () => {
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
+
+    const departmentAccess = ["67b2cf85b9b6ed5cedeb9a2e","6798bab9e469e809084e249e"]
+
   const isTop =
-    auth.user.departments.map((item) => item._id)[0] ===
-    "67b2cf85b9b6ed5cedeb9a2e";
+    auth.user.departments.some((item) =>{ 
+      return departmentAccess.includes(item._id.toString())})
+  
+  const isHr =  department === "HR"
+  const showCheckBox = !isTop || isHr
 
   const {
     handleSubmit: submitDailyKra,
@@ -220,7 +226,7 @@ const PerformanceMonthly = () => {
         {!isCompletedLoading && !isUpdatePending ? (
           <WidgetSection padding layout={1}>
             <MonthWiseTable
-              checkbox={!isTop}
+              checkbox={showCheckBox}
               tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
               buttonTitle={"Add Monthly KPA"}
               handleSubmit={() => setOpenModal(true)}
@@ -251,7 +257,7 @@ const PerformanceMonthly = () => {
               tableTitle={`COMPLETED - MONTHLY KPA`}
               data={[
                 ...completedEntries.map((item, index) => ({
-                  srno: index + 1,
+                   
                   taskName: item.taskName,
                   assignedDate: item.assignedDate,
                   completionDate: humanDate(item.completionDate),
