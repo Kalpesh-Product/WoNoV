@@ -136,7 +136,7 @@ const AllocatedBudget = ({
     <>
       <WidgetSection
         title={"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"}
-        TitleAmount={`Allocated Budget : INR ${inrFormat(totalProjectedAmountForFY)}`}
+        TitleAmount={`INR ${inrFormat(totalProjectedAmountForFY)}`}
         border
       >
         <div className="flex flex-col gap-4 rounded-md ">

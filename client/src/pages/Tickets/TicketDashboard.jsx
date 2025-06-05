@@ -74,7 +74,6 @@ const TicketDashboard = () => {
   const avg = ((ticketsData.filter((item) => item.status === "Closed")
       .length / ticketsData.length)*100).toFixed(0)
 
-  console.log("tickets",avg)
 
   let masterDepartments = []
 
@@ -141,6 +140,7 @@ const TicketDashboard = () => {
   const priorityCountMap = {};
 
   lastMonthTickets.forEach((item) => {
+    console.log("item",item)
     const priority = item.priority.toLowerCase();
     if (priority) {
       priorityCountMap[priority] = (priorityCountMap[priority] || 0) + 1;
