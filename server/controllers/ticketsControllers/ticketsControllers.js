@@ -508,25 +508,6 @@ const getAllTickets = async (req, res, next) => {
   try {
     const { user, roles, departments, company } = req;
 
-    // const loggedInUser = await User.findOne({ _id: user })
-    //   .populate({ path: "role", select: "roleTitle" })
-    //   .lean()
-    //   .exec();
-
-    // if (!loggedInUser || !loggedInUser.departments) {
-    //   return res.sendStatus(403);
-    // }
-
-    // Fetch the company document to get selectedDepartments and ticketIssues
-    // const company = await Company.findOne({company})
-    //   .select("selectedDepartments")
-    //   .lean()
-    //   .exec();
-
-    // if (!company) {
-    //   return res.status(400).json({ message: "Company not found" });
-    // }
-
     const query = { company };
     const departmentIds = departments.map(
       (dept) => new mongoose.Types.ObjectId(dept._id)
@@ -574,7 +555,7 @@ const getAllTickets = async (req, res, next) => {
 
       foundCompany.selectedDepartments.forEach((dept) => {
         dept.ticketIssues.forEach((issue) => {
-          if (issue.title === ticket.ticket) {
+          if (issue.title.toLowerCase() === ticket.ticket.toLowerCase()) {
             updatedTicket.priority = issue.priority;
           }
         });
