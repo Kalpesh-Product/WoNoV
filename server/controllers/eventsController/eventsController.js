@@ -85,17 +85,13 @@ const getAllEvents = async (req, res, next) => {
 
     let query = { company };
 
-    if (thisMonth) {
-      // Ensure thisMonth is in format "YYYY-MM"
-      const [year, month] = thisMonth.split("-").map(Number);
-      if (!year || !month) {
-        return res
-          .status(400)
-          .json({ message: "Invalid month format. Use YYYY-MM." });
-      }
+    if (thisMonth === 'true') {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth(); // 0-indexed
 
-      const startOfMonth = new Date(year, month - 1, 1);
-      const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999); // Last day of month
+      const startOfMonth = new Date(year, month, 1);
+      const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
 
       query.start = { $gte: startOfMonth, $lte: endOfMonth };
     }
@@ -136,6 +132,7 @@ const getAllEvents = async (req, res, next) => {
     next(error);
   }
 };
+
 
 const getNormalEvents = async (req, res, next) => {
   try {
