@@ -1,31 +1,60 @@
-import { CircularProgress } from "@mui/material";
-import { useLocation } from "react-router-dom";
+import React from "react";
+import { useLocation, useParams } from "react-router-dom";
+import AgTable from "../../../../components/AgTable";
 
 const DirectorData = () => {
   const location = useLocation();
-  const title = location.state.title;
-  const files = location.state.files;
+  const { id } = useParams();
+  const files = location.state?.files || [];
+  const name = location.state?.name || "N/A";
+
+  
+
+const fileRows = files.map((file, index) => ({
+  srno: index + 1,
+  label: file.label,
+  link: file.link,
+  uploadedDate: file.uploadedDate,
+  lastModified: file.lastModified,
+}));
+
+
+const columns = [
+  { field: "srno", headerName: "Sr No", width: 100 },
+  { field: "label", headerName: "Document", flex: 1 },
+  {
+    field: "uploadedDate",
+    headerName: "Uploaded Date",
+    flex: 1,
+    cellRenderer: (params) => new Date(params.value).toLocaleDateString("en-GB"),
+  },
+  {
+    field: "lastModified",
+    headerName: "Last Modified",
+    flex: 1,
+    cellRenderer: (params) => new Date(params.value).toLocaleDateString("en-GB"),
+  },
+  {
+    field: "link",
+    headerName: "View Link",
+    flex: 1,
+    cellRenderer: (params) => (
+   <span className="text-primary underline cursor-pointer">View</span>
+    ),
+  },
+];
+
+
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <span className="text-title font-pmedium text-primary uppercase">{title}</span>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {files ? (
-          files.map((item) => (
-            <div key={item.id}>
-              <div className="h-80 flex flex-col rounded-xl border-default border-borderGray">
-                <div className="h-[80%] flex items-center justify-center border-b-default border-black">
-                  Preview here
-                </div>
-                <div className="h-[20%] flex items-center justify-start p-4">
-                  <span>{item.label}</span>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <CircularProgress />
-        )}
-      </div>
+    <div className="p-4 space-y-4">
+      <AgTable
+        columns={columns}
+        data={fileRows}
+        tableTitle={`KYC Documents of ${name}`}
+        tableHeight={300}
+        hideFilter
+        search={files.length >= 10}
+      />
     </div>
   );
 };
