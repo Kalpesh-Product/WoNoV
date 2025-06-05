@@ -122,7 +122,7 @@ const PerformanceKra = () => {
     });
 
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "Sr no", field: "srno", width: 100},
     { headerName: "KRA List", field: "taskName", flex: 1 },
     { headerName: "DueTime", field: "dueTime" },
     {
