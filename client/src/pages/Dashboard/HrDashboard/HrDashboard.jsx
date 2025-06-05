@@ -475,7 +475,7 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
     queryKey: ["holidayEvents"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/events/all-events");
+        const response = await axios.get("/api/events/all-events?thisMonth=true");
         const filteredEvents = response.data.filter(
           (event) => event.extendedProps.type !== "birthday"
         );
