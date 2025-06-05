@@ -248,7 +248,10 @@ const AcceptedTickets = ({ title, departmentId }) => {
               ...acceptedTickets.map((ticket, index) => ({
                 srNo: index + 1,
                 id: ticket._id,
-                raisedBy: ticket.raisedBy?.firstName || "Unknown",
+                 raisedBy: ticket.raisedBy
+                ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`
+                : "Unknown",
+
                 description: ticket.description,
                 raisedToDepartment:
                   ticket.raisedBy.departments.map((dept) => dept.name) || "N/A",
@@ -256,7 +259,8 @@ const AcceptedTickets = ({ title, departmentId }) => {
                 status: ticket.status || "Pending",
                  acceptedBy: ticket?.acceptedBy
                       ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
-                      : "",               
+                      : `${ticket.assignees.map((item) => `${item.firstName} ${item.lastName}`)[0]}`,  
+                       assignees: `${ticket.assignees.map((item) => item.firstName)[0]}`,             
                 acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
                 priority:ticket.priority,
                 image:ticket.image ? ticket.image.url : null
@@ -404,6 +408,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
        <DetalisFormatted title="Priority" detail={selectedTicket?.priority} />
                 <DetalisFormatted title="Accepted by" detail={selectedTicket?.acceptedBy} />
                 <DetalisFormatted title="Accepted at" detail={selectedTicket?.acceptedAt} />
+                 {/* <DetalisFormatted title="Assigned to" detail={selectedTicket?.assignees} /> */}
     </div>
   )}
 </MuiModal>

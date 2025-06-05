@@ -42,7 +42,7 @@ const AssignedTickets = ({ title, departmentId }) => {
       }
     },
   });
-  console.log("Selected Ticket ID : ", selectedTicket);
+  
   const handleOpenAssignModal = (ticketId) => {
     setSelectedTicketId(ticketId);
     setopenModal(true);
