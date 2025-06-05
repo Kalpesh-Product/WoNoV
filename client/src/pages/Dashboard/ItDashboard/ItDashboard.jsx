@@ -25,7 +25,7 @@ const ItDashboard = () => {
 
    const axios = useAxiosPrivate();
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
-    queryKey: ["maintainance-budget"],
+    queryKey: ["it-budget"],
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -486,7 +486,7 @@ const ItDashboard = () => {
               responsiveResize
               chartId={"bargraph-hr-expense"}
               options={expenseOptions}
-              title={"BIZ Nest MAINTENANCE DEPARTMENT EXPENSE"}
+              title={"BIZ Nest IT DEPARTMENT EXPENSE"}
               titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
                 "en-IN"
               )}`}
