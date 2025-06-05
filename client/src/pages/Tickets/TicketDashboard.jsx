@@ -20,7 +20,6 @@ const TicketDashboard = () => {
 
   const roles = auth.user.role.map((role)=>  role.roleTitle )
   const depts = auth.user.departments.map((dept)=>  dept.name )
-  console.log("depts",depts)
 
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
