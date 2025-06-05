@@ -920,7 +920,7 @@ const ticketData = async (req, res, next) => {
 
       foundCompany.selectedDepartments.forEach((dept) => {
         dept.ticketIssues.forEach((issue) => {
-          if (issue.title === ticket.ticket) {
+          if (issue.title.toLowerCase() === ticket.ticket.toLowerCase()) {
             updatedTicket.priority = issue.priority;
           }
         });
