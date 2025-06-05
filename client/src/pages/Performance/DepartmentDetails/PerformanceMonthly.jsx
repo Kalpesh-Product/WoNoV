@@ -40,6 +40,7 @@ const PerformanceMonthly = () => {
     handleSubmit: submitDailyKra,
     control,
     formState: { errors },
+    reset
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -68,6 +69,7 @@ const PerformanceMonthly = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
       toast.success(data.message || "KPA Added");
+      reset()
       setOpenModal(false);
     },
     onError: (error) => {

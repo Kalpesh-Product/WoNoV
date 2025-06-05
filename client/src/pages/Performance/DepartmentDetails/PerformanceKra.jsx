@@ -45,6 +45,7 @@ const PerformanceKra = () => {
     handleSubmit: submitDailyKra,
     control,
     formState: { errors },
+    reset
   } = useForm({
     defaultValues: {
       dailyKra: "",
@@ -68,6 +69,7 @@ const PerformanceKra = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
       toast.success(data.message || "KRA Added");
+      reset()
       setOpenModal(false);
     },
     onError: (error) => {

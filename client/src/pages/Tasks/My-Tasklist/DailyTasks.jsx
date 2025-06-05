@@ -315,7 +315,7 @@ const DailyTasks = () => {
     <>
       <div className="flex flex-col gap-4">
         <WidgetSection padding layout={1}>
-          <MonthWiseTable
+          <DateWiseTable
             key={departmentKra.length}
             checkbox
             tableTitle={`MY TASKS`}
