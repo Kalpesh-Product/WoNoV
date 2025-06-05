@@ -800,7 +800,7 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
         </WidgetSection>,
         <WidgetSection title={`Customer Collections - ${monthYear} `} border>
           <PieChartMui
-            data={pieMonthlyCollectionData}
+            data={[]}
             options={pieMonthlyCollectionOptions}
             width={500}
             height={350}
@@ -855,12 +855,13 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
           key={executiveTimings.length}
           Title={`This Weeks Payouts - ${monthYear} `}
           rows={[
-            ...executiveTimings.map((timing, index) => ({
-              id: index + 1,
-              paymentName: timing.paymentName,
-              department: timing.department,
-              amount: timing.amount,
-            })),
+            // ...executiveTimings.map((timing, index) => ({
+            //   id: index + 1,
+            //   paymentName: timing.paymentName,
+            //   department: timing.department,
+            //   amount: timing.amount,
+            // })),
+            []
           ]}
           columns={executiveTimingsColumns}
           scroll

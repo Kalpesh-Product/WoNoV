@@ -69,7 +69,6 @@ const FinanceAssetList = () => {
     },
   });
 
-
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
     mutationFn: async (data) => {
@@ -107,11 +106,11 @@ const FinanceAssetList = () => {
     { field: "assetName", headerName: "Asset Name" },
     { field: "category", headerName: "Category" },
     { field: "tangibleIntangibleAsset", headerName: "Classification" },
-{ field: "brandName", headerName: "Brand" },
-{ field: "totalPrice", headerName: "Price (INR)" },
-{ field: "quantity", headerName: "Quantity" },
-{ field: "purchaseDate", headerName: "Purchase Date" }, 
-{ field: "warrantyInMonths", headerName: "Warranty (Months)" },
+    { field: "brandName", headerName: "Brand" },
+    { field: "totalPrice", headerName: "Price (INR)" },
+    { field: "quantity", headerName: "Quantity" },
+    { field: "purchaseDate", headerName: "Purchase Date" },
+    { field: "warrantyInMonths", headerName: "Warranty (Months)" },
 
     {
       field: "actions",
@@ -119,11 +118,11 @@ const FinanceAssetList = () => {
       cellRenderer: (params) => (
         <>
           <div className="flex gap-2 items-center">
-            <div
-
-              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-            >
-              <span className="text-subtitle cursor-pointer" onClick={() => handleViewModal(params.data)}>
+            <div className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
+              <span
+                className="text-subtitle cursor-pointer"
+                onClick={() => handleViewModal(params.data)}
+              >
                 <MdOutlineRemoveRedEye />
               </span>
             </div>
@@ -183,220 +182,219 @@ const FinanceAssetList = () => {
   //     vendor: { name: "Microsoft India" },
   //   },
   // ];
-  
-const assetsList = [
-  {
-    "assetName": "Laser Invoice Printer",
-    "assetType": "Physical",
-    "tangibleIntangibleAsset": "Tangible",
-    "vendorName": "HP",
-    "category": "Hardware",
-    "subCategory": "Printing",
-    "purchaseDate": "2024-03-15",
-    "quantity": 3,
-    "pricePerUnit": 15000,
-    "totalPrice": 45000,
-    "warrantyInMonths": 24,
-    "assetImage": "url_to_invoice_printer_image",
-    "brandName": "HP",
-    "department": "Finance",
-    "status": "Active",
-    "assignedLocation": "Finance Wing - Ground Floor",
-    "assignedUnit": "Accounts Payable",
-    "assignedTo": "EMP101",
-    "assignedDate": "2024-03-18"
-  },
-  {
-    "assetName": "Financial Analysis Software",
-    "assetType": "Digital",
-    "tangibleIntangibleAsset": "Intangible",
-    "vendorName": "Zoho",
-    "category": "Software",
-    "subCategory": "Analysis",
-    "purchaseDate": "2024-06-01",
-    "quantity": 10,
-    "pricePerUnit": 5000,
-    "totalPrice": 50000,
-    "warrantyInMonths": 36,
-    "assetImage": "url_to_software_screenshot",
-    "brandName": "Zoho Analytics",
-    "department": "Finance",
-    "status": "Active",
-    "assignedLocation": "Finance Department - 2nd Floor",
-    "assignedUnit": "Financial Planning",
-    "assignedTo": "EMP108",
-    "assignedDate": "2024-06-02"
-  },
-  {
-    "assetName": "Budgeting LED Monitor",
-    "assetType": "Physical",
-    "tangibleIntangibleAsset": "Tangible",
-    "vendorName": "Dell",
-    "category": "Hardware",
-    "subCategory": "Display",
-    "purchaseDate": "2023-11-20",
-    "quantity": 5,
-    "pricePerUnit": 12000,
-    "totalPrice": 60000,
-    "warrantyInMonths": 36,
-    "assetImage": "url_to_monitor_image",
-    "brandName": "Dell",
-    "department": "Finance",
-    "status": "Active",
-    "assignedLocation": "Accounts Block",
-    "assignedUnit": "Budget Control",
-    "assignedTo": "EMP110",
-    "assignedDate": "2023-11-25"
-  },
-  {
-    "assetName": "Accounting ERP License",
-    "assetType": "Digital",
-    "tangibleIntangibleAsset": "Intangible",
-    "vendorName": "SAP",
-    "category": "Software",
-    "subCategory": "Accounting",
-    "purchaseDate": "2023-09-01",
-    "quantity": 8,
-    "pricePerUnit": 25000,
-    "totalPrice": 200000,
-    "warrantyInMonths": 48,
-    "assetImage": "url_to_erp_dashboard",
-    "brandName": "SAP Business One",
-    "department": "Finance",
-    "status": "Active",
-    "assignedLocation": "Main Building",
-    "assignedUnit": "Accounts Receivable",
-    "assignedTo": "EMP113",
-    "assignedDate": "2023-09-03"
-  },
-  {
-    "assetName": "Laptop for Budget Forecasting",
-    "assetType": "Physical",
-    "tangibleIntangibleAsset": "Tangible",
-    "vendorName": "Lenovo",
-    "category": "Hardware",
-    "subCategory": "Laptop",
-    "purchaseDate": "2024-02-01",
-    "quantity": 2,
-    "pricePerUnit": 65000,
-    "totalPrice": 130000,
-    "warrantyInMonths": 24,
-    "assetImage": "url_to_laptop_image",
-    "brandName": "Lenovo ThinkPad",
-    "department": "Finance",
-    "status": "Active",
-    "assignedLocation": "Finance HQ",
-    "assignedUnit": "Budget Planning",
-    "assignedTo": "EMP120",
-    "assignedDate": "2024-02-03"
-  },
-  {
-    "assetName": "High-Speed Document Scanner",
-    "assetType": "Physical",
-    "tangibleIntangibleAsset": "Tangible",
-    "vendorName": "Canon",
-    "category": "Hardware",
-    "subCategory": "Scanner",
-    "purchaseDate": "2023-08-10",
-    "quantity": 2,
-    "pricePerUnit": 18000,
-    "totalPrice": 36000,
-    "warrantyInMonths": 36,
-    "assetImage": "url_to_scanner_image",
-    "brandName": "Canon DR-C240",
-    "department": "Finance",
-    "status": "Active",
-    "assignedLocation": "Document Room",
-    "assignedUnit": "Audit Support",
-    "assignedTo": "EMP125",
-    "assignedDate": "2023-08-15"
-  },
-  {
-    "assetName": "Excel Macro Automation Tool",
-    "assetType": "Digital",
-    "tangibleIntangibleAsset": "Intangible",
-    "vendorName": "MacroSoft",
-    "category": "Software",
-    "subCategory": "Productivity",
-    "purchaseDate": "2024-05-01",
-    "quantity": 20,
-    "pricePerUnit": 1200,
-    "totalPrice": 24000,
-    "warrantyInMonths": 12,
-    "assetImage": "url_to_macro_tool_image",
-    "brandName": "MacroSoft Tools",
-    "department": "Finance",
-    "status": "Active",
-    "assignedLocation": "Finance Floor",
-    "assignedUnit": "Data Entry & Reconciliation",
-    "assignedTo": "EMP130",
-    "assignedDate": "2024-05-01"
-  },
-  {
-    "assetName": "Data Backup External HDDs",
-    "assetType": "Physical",
-    "tangibleIntangibleAsset": "Tangible",
-    "vendorName": "Seagate",
-    "category": "Hardware",
-    "subCategory": "Storage",
-    "purchaseDate": "2024-01-12",
-    "quantity": 4,
-    "pricePerUnit": 5500,
-    "totalPrice": 22000,
-    "warrantyInMonths": 24,
-    "assetImage": "url_to_hdd_image",
-    "brandName": "Seagate Expansion",
-    "department": "Finance",
-    "status": "Active",
-    "assignedLocation": "Vault Room",
-    "assignedUnit": "Records & Compliance",
-    "assignedTo": "EMP134",
-    "assignedDate": "2024-01-15"
-  },
-  {
-    "assetName": "Cloud Bookkeeping Subscription",
-    "assetType": "Digital",
-    "tangibleIntangibleAsset": "Intangible",
-    "vendorName": "QuickBooks",
-    "category": "Software",
-    "subCategory": "Bookkeeping",
-    "purchaseDate": "2024-04-10",
-    "quantity": 1,
-    "pricePerUnit": 35000,
-    "totalPrice": 35000,
-    "warrantyInMonths": 12,
-    "assetImage": "url_to_quickbooks_image",
-    "brandName": "QuickBooks Online",
-    "department": "Finance",
-    "status": "Active",
-    "assignedLocation": "Online",
-    "assignedUnit": "Expense Tracking",
-    "assignedTo": "EMP138",
-    "assignedDate": "2024-04-12"
-  },
-  {
-    "assetName": "Online Tax Filing Suite",
-    "assetType": "Digital",
-    "tangibleIntangibleAsset": "Intangible",
-    "vendorName": "ClearTax",
-    "category": "Software",
-    "subCategory": "Tax Filing",
-    "purchaseDate": "2024-07-01",
-    "quantity": 5,
-    "pricePerUnit": 4000,
-    "totalPrice": 20000,
-    "warrantyInMonths": 12,
-    "assetImage": "url_to_cleartax_image",
-    "brandName": "ClearTax Pro",
-    "department": "Finance",
-    "status": "Active",
-    "assignedLocation": "Virtual Workspace",
-    "assignedUnit": "Taxation",
-    "assignedTo": "EMP140",
-    "assignedDate": "2024-07-02"
-  }
 
-]
+  // const assetsList = [
+  //   {
+  //     assetName: "Laser Invoice Printer",
+  //     assetType: "Physical",
+  //     tangibleIntangibleAsset: "Tangible",
+  //     vendorName: "HP",
+  //     category: "Hardware",
+  //     subCategory: "Printing",
+  //     purchaseDate: "2024-03-15",
+  //     quantity: 3,
+  //     pricePerUnit: 15000,
+  //     totalPrice: 45000,
+  //     warrantyInMonths: 24,
+  //     assetImage: "url_to_invoice_printer_image",
+  //     brandName: "HP",
+  //     department: "Finance",
+  //     status: "Active",
+  //     assignedLocation: "Finance Wing - Ground Floor",
+  //     assignedUnit: "Accounts Payable",
+  //     assignedTo: "EMP101",
+  //     assignedDate: "2024-03-18",
+  //   },
+  //   {
+  //     assetName: "Financial Analysis Software",
+  //     assetType: "Digital",
+  //     tangibleIntangibleAsset: "Intangible",
+  //     vendorName: "Zoho",
+  //     category: "Software",
+  //     subCategory: "Analysis",
+  //     purchaseDate: "2024-06-01",
+  //     quantity: 10,
+  //     pricePerUnit: 5000,
+  //     totalPrice: 50000,
+  //     warrantyInMonths: 36,
+  //     assetImage: "url_to_software_screenshot",
+  //     brandName: "Zoho Analytics",
+  //     department: "Finance",
+  //     status: "Active",
+  //     assignedLocation: "Finance Department - 2nd Floor",
+  //     assignedUnit: "Financial Planning",
+  //     assignedTo: "EMP108",
+  //     assignedDate: "2024-06-02",
+  //   },
+  //   {
+  //     assetName: "Budgeting LED Monitor",
+  //     assetType: "Physical",
+  //     tangibleIntangibleAsset: "Tangible",
+  //     vendorName: "Dell",
+  //     category: "Hardware",
+  //     subCategory: "Display",
+  //     purchaseDate: "2023-11-20",
+  //     quantity: 5,
+  //     pricePerUnit: 12000,
+  //     totalPrice: 60000,
+  //     warrantyInMonths: 36,
+  //     assetImage: "url_to_monitor_image",
+  //     brandName: "Dell",
+  //     department: "Finance",
+  //     status: "Active",
+  //     assignedLocation: "Accounts Block",
+  //     assignedUnit: "Budget Control",
+  //     assignedTo: "EMP110",
+  //     assignedDate: "2023-11-25",
+  //   },
+  //   {
+  //     assetName: "Accounting ERP License",
+  //     assetType: "Digital",
+  //     tangibleIntangibleAsset: "Intangible",
+  //     vendorName: "SAP",
+  //     category: "Software",
+  //     subCategory: "Accounting",
+  //     purchaseDate: "2023-09-01",
+  //     quantity: 8,
+  //     pricePerUnit: 25000,
+  //     totalPrice: 200000,
+  //     warrantyInMonths: 48,
+  //     assetImage: "url_to_erp_dashboard",
+  //     brandName: "SAP Business One",
+  //     department: "Finance",
+  //     status: "Active",
+  //     assignedLocation: "Main Building",
+  //     assignedUnit: "Accounts Receivable",
+  //     assignedTo: "EMP113",
+  //     assignedDate: "2023-09-03",
+  //   },
+  //   {
+  //     assetName: "Laptop for Budget Forecasting",
+  //     assetType: "Physical",
+  //     tangibleIntangibleAsset: "Tangible",
+  //     vendorName: "Lenovo",
+  //     category: "Hardware",
+  //     subCategory: "Laptop",
+  //     purchaseDate: "2024-02-01",
+  //     quantity: 2,
+  //     pricePerUnit: 65000,
+  //     totalPrice: 130000,
+  //     warrantyInMonths: 24,
+  //     assetImage: "url_to_laptop_image",
+  //     brandName: "Lenovo ThinkPad",
+  //     department: "Finance",
+  //     status: "Active",
+  //     assignedLocation: "Finance HQ",
+  //     assignedUnit: "Budget Planning",
+  //     assignedTo: "EMP120",
+  //     assignedDate: "2024-02-03",
+  //   },
+  //   {
+  //     assetName: "High-Speed Document Scanner",
+  //     assetType: "Physical",
+  //     tangibleIntangibleAsset: "Tangible",
+  //     vendorName: "Canon",
+  //     category: "Hardware",
+  //     subCategory: "Scanner",
+  //     purchaseDate: "2023-08-10",
+  //     quantity: 2,
+  //     pricePerUnit: 18000,
+  //     totalPrice: 36000,
+  //     warrantyInMonths: 36,
+  //     assetImage: "url_to_scanner_image",
+  //     brandName: "Canon DR-C240",
+  //     department: "Finance",
+  //     status: "Active",
+  //     assignedLocation: "Document Room",
+  //     assignedUnit: "Audit Support",
+  //     assignedTo: "EMP125",
+  //     assignedDate: "2023-08-15",
+  //   },
+  //   {
+  //     assetName: "Excel Macro Automation Tool",
+  //     assetType: "Digital",
+  //     tangibleIntangibleAsset: "Intangible",
+  //     vendorName: "MacroSoft",
+  //     category: "Software",
+  //     subCategory: "Productivity",
+  //     purchaseDate: "2024-05-01",
+  //     quantity: 20,
+  //     pricePerUnit: 1200,
+  //     totalPrice: 24000,
+  //     warrantyInMonths: 12,
+  //     assetImage: "url_to_macro_tool_image",
+  //     brandName: "MacroSoft Tools",
+  //     department: "Finance",
+  //     status: "Active",
+  //     assignedLocation: "Finance Floor",
+  //     assignedUnit: "Data Entry & Reconciliation",
+  //     assignedTo: "EMP130",
+  //     assignedDate: "2024-05-01",
+  //   },
+  //   {
+  //     assetName: "Data Backup External HDDs",
+  //     assetType: "Physical",
+  //     tangibleIntangibleAsset: "Tangible",
+  //     vendorName: "Seagate",
+  //     category: "Hardware",
+  //     subCategory: "Storage",
+  //     purchaseDate: "2024-01-12",
+  //     quantity: 4,
+  //     pricePerUnit: 5500,
+  //     totalPrice: 22000,
+  //     warrantyInMonths: 24,
+  //     assetImage: "url_to_hdd_image",
+  //     brandName: "Seagate Expansion",
+  //     department: "Finance",
+  //     status: "Active",
+  //     assignedLocation: "Vault Room",
+  //     assignedUnit: "Records & Compliance",
+  //     assignedTo: "EMP134",
+  //     assignedDate: "2024-01-15",
+  //   },
+  //   {
+  //     assetName: "Cloud Bookkeeping Subscription",
+  //     assetType: "Digital",
+  //     tangibleIntangibleAsset: "Intangible",
+  //     vendorName: "QuickBooks",
+  //     category: "Software",
+  //     subCategory: "Bookkeeping",
+  //     purchaseDate: "2024-04-10",
+  //     quantity: 1,
+  //     pricePerUnit: 35000,
+  //     totalPrice: 35000,
+  //     warrantyInMonths: 12,
+  //     assetImage: "url_to_quickbooks_image",
+  //     brandName: "QuickBooks Online",
+  //     department: "Finance",
+  //     status: "Active",
+  //     assignedLocation: "Online",
+  //     assignedUnit: "Expense Tracking",
+  //     assignedTo: "EMP138",
+  //     assignedDate: "2024-04-12",
+  //   },
+  //   {
+  //     assetName: "Online Tax Filing Suite",
+  //     assetType: "Digital",
+  //     tangibleIntangibleAsset: "Intangible",
+  //     vendorName: "ClearTax",
+  //     category: "Software",
+  //     subCategory: "Tax Filing",
+  //     purchaseDate: "2024-07-01",
+  //     quantity: 5,
+  //     pricePerUnit: 4000,
+  //     totalPrice: 20000,
+  //     warrantyInMonths: 12,
+  //     assetImage: "url_to_cleartax_image",
+  //     brandName: "ClearTax Pro",
+  //     department: "Finance",
+  //     status: "Active",
+  //     assignedLocation: "Virtual Workspace",
+  //     assignedUnit: "Taxation",
+  //     assignedTo: "EMP140",
+  //     assignedDate: "2024-07-02",
+  //   },
+  // ];
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -424,25 +422,13 @@ const assetsList = [
   return (
     <>
       <AgTable
-        key={assetsList.length}
+        key={0}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"Asset List"}
         buttonTitle={"Add Asset"}
         data={[
-          ...assetsList.map((asset, index) => ({
-            id: index + 1,
-            // // department: asset.department.name,
-            // category: asset.name,
-            // classification : asset.classification,
-            // brand: asset.brand,
-            totalPrice: Number(asset.totalPrice.toLocaleString("en-IN").replace(/,/g, "")).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-            // quantity: asset.quantity,
-            // purchaseDate: dayjs(asset.purchaseDate).format("DD-MM-YYYY"),
-            // warranty: asset.warranty,
-            // vendorName: asset.vendor.name,
-            ...asset
-          })),
+         
         ]}
         columns={assetColumns}
         handleClick={handleAddAsset}
@@ -459,17 +445,24 @@ const assetsList = [
             <DetalisFormatted title="Brand" detail={viewDetails.brand} />
             <DetalisFormatted
               title="Price"
-              detail={`INR ${Number(viewDetails.price?.toString().replace(/,/g, "")).toLocaleString("en-IN", {
+              detail={`INR ${Number(
+                viewDetails.price?.toString().replace(/,/g, "")
+              ).toLocaleString("en-IN", {
                 maximumFractionDigits: 0,
               })}`}
             />
             <DetalisFormatted title="Quantity" detail={viewDetails.quantity} />
-            <DetalisFormatted title="Purchase Date" detail={viewDetails.purchaseDate} />
-            <DetalisFormatted title="Warranty (Months)" detail={viewDetails.warranty} />
+            <DetalisFormatted
+              title="Purchase Date"
+              detail={viewDetails.purchaseDate}
+            />
+            <DetalisFormatted
+              title="Warranty (Months)"
+              detail={viewDetails.warranty}
+            />
           </div>
         </MuiModal>
       )}
-
 
       <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
         {modalMode === "add" && (
@@ -484,10 +477,12 @@ const assetsList = [
                     render={({ field }) => (
                       <div
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${errors.assetImage
+                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
+                          errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                          } `}>
+                        } `}
+                      >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -497,7 +492,8 @@ const assetsList = [
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}>
+                          }}
+                        >
                           <Button
                             variant="outlined"
                             component="label"
@@ -512,7 +508,8 @@ const assetsList = [
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}>
+                            }}
+                          >
                             Select Image
                             <input
                               type="file"
@@ -538,7 +535,8 @@ const assetsList = [
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}>
+                            }}
+                          >
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -555,7 +553,8 @@ const assetsList = [
                       {...field}
                       label="Asset Type"
                       helperText={!!errors.assetType?.message}
-                      select>
+                      select
+                    >
                       <MenuItem value="">Select an Asset Type</MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
@@ -575,7 +574,8 @@ const assetsList = [
                       {...field}
                       select
                       label="Department"
-                      size="small">
+                      size="small"
+                    >
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -596,7 +596,8 @@ const assetsList = [
                       fullWidth
                       select
                       label="Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -616,7 +617,8 @@ const assetsList = [
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}
