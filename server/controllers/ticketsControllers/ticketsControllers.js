@@ -180,7 +180,6 @@ const raiseTicket = async (req, res, next) => {
 
     const savedTicket = await newTicket.save();
 
-    // console.log("savedTicket",savedTicket)
     // Log the successful ticket creation
     await createLog({
       path: logPath,
@@ -507,30 +506,37 @@ const getTeamMemberTickets = async (req, res, next) => {
 
 const getAllTickets = async (req, res, next) => {
   try {
-    const { user } = req;
+    const { user, roles, departments, company } = req;
 
-    const loggedInUser = await User.findOne({ _id: user })
-      .populate({ path: "role", select: "roleTitle" })
-      .lean()
-      .exec();
+    // const loggedInUser = await User.findOne({ _id: user })
+    //   .populate({ path: "role", select: "roleTitle" })
+    //   .lean()
+    //   .exec();
 
-    if (!loggedInUser || !loggedInUser.departments) {
-      return res.sendStatus(403);
-    }
+    // if (!loggedInUser || !loggedInUser.departments) {
+    //   return res.sendStatus(403);
+    // }
 
     // Fetch the company document to get selectedDepartments and ticketIssues
-    const company = await Company.findOne({ _id: loggedInUser.company })
-      .select("selectedDepartments")
-      .lean()
-      .exec();
+    // const company = await Company.findOne({company})
+    //   .select("selectedDepartments")
+    //   .lean()
+    //   .exec();
 
-    if (!company) {
-      return res.status(400).json({ message: "Company not found" });
+    // if (!company) {
+    //   return res.status(400).json({ message: "Company not found" });
+    // }
+
+    const query = { company };
+    const departmentIds = departments.map(
+      (dept) => new mongoose.Types.ObjectId(dept._id)
+    );
+
+    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
+      query.raisedToDepartment = { $in: departmentIds };
     }
 
-    matchingTickets = await Tickets.find({
-      company: loggedInUser.company,
-    })
+    matchingTickets = await Tickets.find(query)
       .populate([
         {
           path: "raisedBy",
@@ -891,14 +897,17 @@ const ticketData = async (req, res, next) => {
     }
 
     // Check if user has Master Admin role
-    const isMasterAdmin = roles?.includes("Master Admin");
+    // const isMasterAdmin = roles?.includes("Master Admin");
 
-    const query = {
+    // const query = {
+    //   company,
+    //   ...(isMasterAdmin ? {} : { raisedToDepartment: { $in: [departmentId] } }),
+    // };
+
+    const tickets = await Ticket.find({
       company,
-      ...(isMasterAdmin ? {} : { raisedToDepartment: { $in: [departmentId] } }),
-    };
-
-    const tickets = await Ticket.find(query)
+      raisedToDepartment: { $in: [departmentId] },
+    })
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },

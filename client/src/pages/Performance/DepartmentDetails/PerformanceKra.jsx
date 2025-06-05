@@ -18,6 +18,7 @@ import { queryClient } from "../../../main";
 import { FaCheck } from "react-icons/fa6";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import { InsertEmoticonTwoTone } from "@mui/icons-material";
 
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
@@ -26,9 +27,16 @@ const PerformanceKra = () => {
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const [selectedKra, setSelectedKra] = useState(null);
+
+  const departmentAccess = ["67b2cf85b9b6ed5cedeb9a2e","6798bab9e469e809084e249e"]
+ 
   const isTop =
-    auth.user.departments.map((item) => item._id)[0] ===
-    "67b2cf85b9b6ed5cedeb9a2e";
+    auth.user.departments.some((item) =>{ 
+      return departmentAccess.includes(item._id.toString())})
+  
+  const isHr =  department === "HR"
+  const showCheckBox = !isTop || isHr
+ 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
   }, [department]);
@@ -122,7 +130,7 @@ const PerformanceKra = () => {
     });
 
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "Sr no", field: "srno", width: 100},
     { headerName: "KRA List", field: "taskName", flex: 1 },
     { headerName: "DueTime", field: "dueTime" },
     {
@@ -209,7 +217,7 @@ const PerformanceKra = () => {
           <WidgetSection padding layout={1}>
             <DateWiseTable
               formatTime
-              checkbox={!isTop}
+              checkbox={showCheckBox}
               buttonTitle={"Add Daily KRA"}
               handleSubmit={() => setOpenModal(true)}
               tableTitle={`${department} DEPARTMENT - DAILY KRA`}
