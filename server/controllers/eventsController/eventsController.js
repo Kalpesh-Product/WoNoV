@@ -81,40 +81,55 @@ const createEvent = async (req, res, next) => {
 const getAllEvents = async (req, res, next) => {
   try {
     const { company } = req.userData;
+    const { thisMonth } = req.query;
 
-    company;
-    const events = await Event.find({ company: company });
+    let query = { company };
+
+    if (thisMonth) {
+      // Ensure thisMonth is in format "YYYY-MM"
+      const [year, month] = thisMonth.split("-").map(Number);
+      if (!year || !month) {
+        return res
+          .status(400)
+          .json({ message: "Invalid month format. Use YYYY-MM." });
+      }
+
+      const startOfMonth = new Date(year, month - 1, 1);
+      const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999); // Last day of month
+
+      query.start = { $gte: startOfMonth, $lte: endOfMonth };
+    }
+
+    const events = await Event.find(query);
 
     if (!events || events.length === 0) {
       return res.status(204).json({ message: "No events found" });
     }
 
-    const eventsData = events.map((event) => {
-      return {
-        id: event._id,
-        title: event.title,
-        start: event.start,
-        end: event.end,
-        allDay: event.allDay,
-        description: event.description,
-        active: event.active,
-        backgroundColor:
-          event.type === "Holiday"
-            ? "#4caf50"
-            : event.type === "Meeting"
-            ? "purple"
-            : event.type === "Task"
-            ? "yellow"
-            : event.type === "Event"
-            ? "blue"
-            : event.type === "Birthday"
-            ? "#ff9800"
-            : "",
-        extendedProps: {
-          type: event.type,
-        },
-      };
-    });
+    const eventsData = events.map((event) => ({
+      id: event._id,
+      title: event.title,
+      start: event.start,
+      end: event.end,
+      allDay: event.allDay,
+      description: event.description,
+      active: event.active,
+      backgroundColor:
+        event.type === "Holiday"
+          ? "#4caf50"
+          : event.type === "Meeting"
+          ? "purple"
+          : event.type === "Task"
+          ? "yellow"
+          : event.type === "Event"
+          ? "blue"
+          : event.type === "Birthday"
+          ? "#ff9800"
+          : "",
+      extendedProps: {
+        type: event.type,
+      },
+    }));
 
     res.status(200).json(eventsData);
   } catch (error) {
