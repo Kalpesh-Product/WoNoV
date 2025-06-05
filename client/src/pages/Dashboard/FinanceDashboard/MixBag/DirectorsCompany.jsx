@@ -116,8 +116,8 @@ const DirectorsCompany = () => {
           onClick={() =>
             navigate(
               location.pathname.includes("mix-bag")
-                ? `/app/dashboard/finance-dashboard/mix-bag/directors-company-KYC/${params.data.id}`
-                : `/app/directors-company-KYC/${params.data.id}`,
+                ? `/app/dashboard/finance-dashboard/mix-bag/company-KYC/${params.data.id}`
+                : `/app/company-KYC/${params.data.id}`,
               {
                 state: {
                   files: params.data.files,
