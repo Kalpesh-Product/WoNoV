@@ -48,10 +48,10 @@ const SupportTickets = ({ title, departmentId }) => {
   };
 
   const handleViewTicket = (ticket) => {
-    const raw = ticket.ticket || {};
-    console.log("raw",raw.raisedBy)
+    const raw = ticket || {};
+    console.log("raw",raw)
     setSelectedTicket({
-      ticketTitle: ticket.reason || "No Title",
+      ticketTitle: ticket.ticketTitle || "No Title",
       raisedBy:
         raw.raisedBy ?raw.raisedBy
           : "Unknown",
