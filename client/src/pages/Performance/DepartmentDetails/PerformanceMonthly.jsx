@@ -40,6 +40,7 @@ const PerformanceMonthly = () => {
     handleSubmit: submitDailyKra,
     control,
     formState: { errors },
+    reset
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -68,6 +69,7 @@ const PerformanceMonthly = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
       toast.success(data.message || "KPA Added");
+      reset()
       setOpenModal(false);
     },
     onError: (error) => {
@@ -230,6 +232,7 @@ const PerformanceMonthly = () => {
               tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
               buttonTitle={"Add Monthly KPA"}
               handleSubmit={() => setOpenModal(true)}
+              key={departmentKra.length}
               data={[
                 ...departmentKra
                   .filter((item) => item.status !== "Completed")
@@ -255,6 +258,7 @@ const PerformanceMonthly = () => {
           <WidgetSection padding layout={1}>
             <MonthWiseTable
               tableTitle={`COMPLETED - MONTHLY KPA`}
+              key={completedEntries.length}
               data={[
                 ...completedEntries.map((item, index) => ({
                    

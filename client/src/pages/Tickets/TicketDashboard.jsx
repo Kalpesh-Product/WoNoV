@@ -25,7 +25,6 @@ const TicketDashboard = () => {
     queryKey: ["tickets-data"],
     queryFn: async () => {
       try {
-        // const response = await axios.get(`/api/tickets/department-tickets/${auth.user?.departments.map((item)=>item._id)[0]}`);
         const response = await axios.get(`/api/tickets/get-all-tickets`);
 
         return response.data;
@@ -183,7 +182,7 @@ const TicketDashboard = () => {
           layout={1}
           border
           padding
-          title={"Annual Tickets Raised"}
+          title={"Overall Department Raised Tickets"}
           TitleAmount={`TOTAL TICKETS : ${totalTickets}`}
         >
           {!isLoading ? (

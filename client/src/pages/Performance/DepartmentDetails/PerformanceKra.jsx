@@ -45,6 +45,7 @@ const PerformanceKra = () => {
     handleSubmit: submitDailyKra,
     control,
     formState: { errors },
+    reset
   } = useForm({
     defaultValues: {
       dailyKra: "",
@@ -68,6 +69,7 @@ const PerformanceKra = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
       toast.success(data.message || "KRA Added");
+      reset()
       setOpenModal(false);
     },
     onError: (error) => {
@@ -217,6 +219,7 @@ const PerformanceKra = () => {
           <WidgetSection padding layout={1}>
             <DateWiseTable
               formatTime
+              key={departmentKra.length}
               checkbox={showCheckBox}
               buttonTitle={"Add Daily KRA"}
               handleSubmit={() => setOpenModal(true)}
@@ -247,6 +250,7 @@ const PerformanceKra = () => {
               formatTime
               tableTitle={`COMPLETED - DAILY KRA`}
               checkAll={false}
+              key={completedEntries.length}
               data={completedEntries.map((item, index) => ({
                 srno: index + 1,
                 id: item.id,

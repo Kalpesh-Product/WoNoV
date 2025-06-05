@@ -40,7 +40,7 @@ const AddVisitor = () => {
     },
   });
   const selectedIdType = watch("idProof.idType");
-  
+  const visitorType = watch("visitorType");
 
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const axios = useAxiosPrivate();
@@ -72,7 +72,11 @@ const AddVisitor = () => {
   const { mutate: addVisitor, isPending: isMutateVisitor } = useMutation({
     mutationKey: ["addVisitor"],
     mutationFn: async (data) => {
-      const response = await axios.post("/api/visitors/add-visitor", data);
+      const response = await axios.post("/api/visitors/add-visitor", {
+        ...data,
+        department: selectedDepartment === "na" ? null : selectedDepartment,
+        toMeet: selectedDepartment === "na" ? null : data.toMeet,
+      });
       return response.data;
     },
     onSuccess: (data) => {
@@ -290,24 +294,30 @@ const AddVisitor = () => {
                     select
                   >
                     <MenuItem value="">Select Department</MenuItem>
-                    {uniqueDepartments.map((department,index) => (
+
+                    {/* Conditionally add "N/A" option if visitor type is "Meeting" */}
+                    {visitorType === "Meeting" && (
+                      <MenuItem value="na">N/A</MenuItem>
+                    )}
+
+                    {uniqueDepartments.map((department) => (
                       <MenuItem key={department._id} value={department._id}>
                         {department.name}
                       </MenuItem>
                     ))}
-                   
                   </TextField>
                 )}
               />
+
               <Controller
                 name="toMeet"
                 control={control}
-                rules={{ required: "This field is required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     select
                     size="small"
+                    disabled={selectedDepartment === "na"}
                     fullWidth
                     label={"Select Person"}
                   >
@@ -322,7 +332,6 @@ const AddVisitor = () => {
                     ) : (
                       <CircularProgress />
                     )}
-                  
                   </TextField>
                 )}
               />

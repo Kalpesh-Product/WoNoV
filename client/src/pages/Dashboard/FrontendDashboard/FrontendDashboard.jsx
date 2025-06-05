@@ -1,5 +1,5 @@
 import Card from "../../../components/Card";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import LayerBarGraph from "../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../components/WidgetSection";
@@ -19,6 +19,8 @@ import { useSidebar } from "../../../context/SideBarContext";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import { Box, Skeleton } from "@mui/material";
 
 const FrontendDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -399,6 +401,9 @@ const FrontendDashboard = () => {
     },
   };
 
+    const totalUtilised =
+    budgetBar?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+
   const techWidgets = [
     {
       layout: 1,
@@ -455,55 +460,24 @@ const FrontendDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection
-          layout={1}
-          border
-          title={"Budget v/s Achievements"}
-          titleLabel={"FY 2024-25"}
+        <Suspense
+          fallback={
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {/* Simulating chart skeleton */}
+              <Skeleton variant="text" width={200} height={30} />
+              <Skeleton variant="rectangular" width="100%" height={300} />
+            </Box>
+          }
         >
-          {/* <LayerBarGraph data={data} options={options} /> */}
-          <BudgetGraph
-            utilisedData={utilisedData}
-            maxBudget={maxBudget}
-            route={"finance/budget"}
+          <YearlyGraph
+            data={expenseRawSeries}
+            options={expenseOptions}
+            title={"BIZ Nest TECH DEPARTMENT EXPENSE"}
+            titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
+              "en-IN"
+            )}`}
           />
-          <hr />
-          <WidgetSection layout={3} padding>
-            <DataCard
-              data={`INR ${inrFormat(40000)}`}
-              title={"Projected"}
-              route={"/app/dashboard/frontend-dashboard/finance"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            />
-            <DataCard
-              data={`INR ${inrFormat(35000)}`}
-              title={"Actual"}
-              route={"/app/dashboard/frontend-dashboard/finance"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            />
-            <DataCard
-              data={`INR ${inrFormat(6000)}`}
-              title={"Requested"}
-              route={"/app/dashboard/frontend-dashboard/finance"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            />
-          </WidgetSection>
-        </WidgetSection>,
+        </Suspense>,
       ],
     },
 
