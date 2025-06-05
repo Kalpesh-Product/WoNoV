@@ -99,7 +99,7 @@ const getAllEvents = async (req, res, next) => {
     const events = await Event.find(query);
 
     if (!events || events.length === 0) {
-      return res.status(204).json({ message: "No events found" });
+      return res.status(200).json([]);
     }
 
     const eventsData = events.map((event) => ({
