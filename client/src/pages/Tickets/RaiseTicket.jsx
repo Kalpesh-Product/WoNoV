@@ -483,10 +483,10 @@ const RaiseTicket = () => {
                 status: ticket.status,
                 acceptedBy: ticket?.acceptedBy
                   ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
-                  : "",
+                  : "None",
                 acceptedAt: ticket.acceptedAt
                   ? humanTime(ticket.acceptedAt)
-                  : "-",
+                  : "None",
                 priority: ticket.priority,
                 image: ticket.image ? ticket.image.url : null,
               }))}

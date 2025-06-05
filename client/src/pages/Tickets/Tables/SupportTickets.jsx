@@ -49,11 +49,11 @@ const SupportTickets = ({ title, departmentId }) => {
 
   const handleViewTicket = (ticket) => {
     const raw = ticket.ticket || {};
+    console.log("raw",raw.raisedBy)
     setSelectedTicket({
       ticketTitle: ticket.reason || "No Title",
       raisedBy:
-        raw.raisedBy?.firstName && raw.raisedBy?.lastName
-          ? `${raw.raisedBy.firstName} ${raw.raisedBy.lastName}`
+        raw.raisedBy ?raw.raisedBy
           : "Unknown",
       selectedDepartment:
         Array.isArray(raw.raisedBy?.departments) &&
