@@ -58,11 +58,6 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
       toolbar: false,
       stacked: true, // ✅ Stacked bars for better comparison
       fontFamily: "Poppins-Regular",
-      events: {
-        dataPointSelection: () => {
-          navigate("/app/dashboard/sales-dashboard/unique-clients");
-        },
-      },
     },
     xaxis: {
       categories: financialYearMonths,
