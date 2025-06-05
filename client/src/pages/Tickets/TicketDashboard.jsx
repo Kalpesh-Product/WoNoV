@@ -139,7 +139,6 @@ const TicketDashboard = () => {
   const priorityCountMap = {};
 
   lastMonthTickets.forEach((item) => {
-    console.log("item",item)
     const priority = item.priority.toLowerCase();
     if (priority) {
       priorityCountMap[priority] = (priorityCountMap[priority] || 0) + 1;
