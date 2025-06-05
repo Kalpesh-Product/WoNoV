@@ -31,7 +31,7 @@ const FrontendBudget = () => {
 
   const [openModal, setOpenModal] = useState(false);
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
-    queryKey: ["hrFinance"],
+    queryKey: ["frontendBudget"],
     queryFn: async () => {
       try {
         const response = await axios.get(

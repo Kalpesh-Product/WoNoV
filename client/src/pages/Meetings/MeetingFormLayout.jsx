@@ -49,18 +49,21 @@ const MeetingFormLayout = () => {
   const [events, setEvents] = useState([]);
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
-    let showExternalType = false
+  let showExternalType = false;
 
-    // console.log("employee",auth.user)
+  // console.log("employee",auth.user)
 
-    const roles = auth.user.role.map((role)=> role.roleTitle)
+  const roles = auth.user.role.map((role) => role.roleTitle);
 
-  
-    if(roles.includes("Master Admin") || roles.includes("Super Admin") || roles.includes("Administration Admin") || roles.includes("Administration Employee")){
-    
-      showExternalType = true
-    }
-    
+  if (
+    roles.includes("Master Admin") ||
+    roles.includes("Super Admin") ||
+    roles.includes("Administration Admin") ||
+    roles.includes("Administration Employee")
+  ) {
+    showExternalType = true;
+  }
+
   // Inside your component, add this state
   const [participantCount, setParticipantCount] = useState(1);
 
@@ -185,23 +188,22 @@ const MeetingFormLayout = () => {
 
   // Transform data inside useEffect
 
-const transformEvents = (bookings) => {
-  if (!Array.isArray(bookings)) return;
+  const transformEvents = (bookings) => {
+    if (!Array.isArray(bookings)) return;
 
-  const formattedEvents = bookings.map((booking) => ({
-    id: booking._id,
-    title: "Booked",
-    start: new Date(booking.startTime), // ⬅️ already full datetime
-    end: new Date(booking.endTime),     // ⬅️ already full datetime
-    backgroundColor: "#d3d3d3",
-    borderColor: "#a9a9a9",
-    textColor: "#555",
-    editable: false,
-  }));
+    const formattedEvents = bookings.map((booking) => ({
+      id: booking._id,
+      title: "Booked",
+      start: new Date(booking.startTime), // ⬅️ already full datetime
+      end: new Date(booking.endTime), // ⬅️ already full datetime
+      backgroundColor: "#d3d3d3",
+      borderColor: "#a9a9a9",
+      textColor: "#555",
+      editable: false,
+    }));
 
-  setEvents(formattedEvents);
-};
-
+    setEvents(formattedEvents);
+  };
 
   useEffect(() => {
     transformEvents(checkAvailability);
@@ -233,7 +235,7 @@ const transformEvents = (bookings) => {
       navigate("/app/meetings/calendar");
     },
     onError: (error) => {
-      console.log("error",error)
+      console.log("error", error);
       toast.error(error.response.data.message || "ERROR");
     },
   });
@@ -361,13 +363,16 @@ const transformEvents = (bookings) => {
                     label="Meeting Type"
                     select
                     fullWidth
+                    disabled={!showExternalType}
                     size="small"
                   >
                     <MenuItem value="" disabled>
                       Select a Meeting Type
                     </MenuItem>
                     <MenuItem value="Internal">Internal</MenuItem>
-                   {showExternalType && <MenuItem value="External">External</MenuItem>}
+                    {showExternalType && (
+                      <MenuItem value="External">External</MenuItem>
+                    )}
                   </TextField>
                 )}
               />

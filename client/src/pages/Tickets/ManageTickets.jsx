@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import WidgetSection from "../../components/WidgetSection";
 import TicketCard from "../../components/TicketCard";
-import { Tab, Tabs } from "@mui/material";
+import { CircularProgress, Tab, Tabs } from "@mui/material";
 import RecievedTickets from "./Tables/RecievedTickets";
 import AcceptedTickets from "./Tables/AcceptedTickets";
 import SupportTickets from "./Tables/SupportTickets";
@@ -20,6 +20,7 @@ const ManageTickets = () => {
   const selectedDepartment = useSelector(
     (state) => state.performance.selectedDepartment
   );
+  console.log("Selected department : ",selectedDepartment)
 
   const ticketLabel =
     auth.user.designation === "Founder & CEO" ||
@@ -43,6 +44,7 @@ const ManageTickets = () => {
 
   const ticketsFilteredData = {
     openTickets: ticketsData.filter((item) => item.status === "Open").length,
+    recievedTickets: ticketsData.filter((item) => item.status !== "Escalated").length,
     closedTickets: ticketsData.filter((item) => item.status === "Closed")
       .length,
     pendingTickets: ticketsData.filter((item) => item.status === "Pending")
@@ -50,41 +52,48 @@ const ManageTickets = () => {
     acceptedTickets: ticketsData
       .filter((item) => item.acceptedBy?._id === auth.user?._id)
       .filter((item) => item.status === "In Progress").length,
+    inProgressTickets: ticketsData.filter(
+      (item) => item.status === "In Progress"
+    ).length,
     assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0)
       .length,
     escalatedTickets: ticketsData.filter((item) => item.status === "Escalated")
       .length,
   };
 
+  console.log("Tickets data : ",ticketsFilteredData)
 
   const widgets = [
     {
       layout: 2,
-      widgets: [
+      widgets: [       
         <WidgetSection
           key="department"
           border
           layout={3}
-          title={"Department Pending Tickets"}
+          title={"Department recieved Tickets :"}
           titleDataColor={"red"}
-          TitleAmount={ticketsFilteredData.openTickets}
+          TitleAmount={String(ticketsFilteredData.recievedTickets).padStart(
+            2,
+            "0"
+          )}
         >
           <TicketCard
-            title={"Recieved Tickets"}
+            title={"Open"}
             titleColor={"#1E3D73"}
-            data={ticketsData.length}
-            fontColor={"#1E3D73"}
+            data={ticketsFilteredData.openTickets}
+            fontColor={"#E83F25"}
             fontFamily={"Poppins-Bold"}
           />
           <TicketCard
-            title={"Open Tickets"}
+            title={"In-Progress"}
             titleColor={"#1E3D73"}
-            data={ticketsFilteredData.openTickets}
+            data={ticketsFilteredData.inProgressTickets}
             fontColor={"#FFBF42"}
             fontFamily={"Poppins-Bold"}
           />
           <TicketCard
-            title={"Closed Tickets"}
+            title={"Closed"}
             titleColor={"#1E3D73"}
             data={ticketsFilteredData.closedTickets}
             fontColor={"#52CE71"}
@@ -95,9 +104,12 @@ const ManageTickets = () => {
           key="personal"
           border
           layout={3}
-          title={"Personal Pending Tickets"}
+          title={"Personal Pending Tickets :"}
           titleDataColor={"black"}
-          TitleAmount={"0"}
+              TitleAmount={String(ticketsFilteredData.acceptedTickets).padStart(
+            2,
+            "0"
+          )}
         >
           <TicketCard
             title={"Accepted Tickets"}
@@ -130,12 +142,22 @@ const ManageTickets = () => {
     {
       label: "Recieved Tickets",
       subLabel: "Department",
-      component: <RecievedTickets departmentId={selectedDepartment} title="Department Ticket Received" />,
+      component: (
+        <RecievedTickets
+          departmentId={selectedDepartment}
+          title="Department Ticket Received"
+        />
+      ),
     },
     {
       label: "Accepted Tickets",
       subLabel: ticketLabel,
-      component: <AcceptedTickets departmentId={selectedDepartment} title="Accepted & Assigned Tickets" />,
+      component: (
+        <AcceptedTickets
+          departmentId={selectedDepartment}
+          title="Accepted & Assigned Tickets"
+        />
+      ),
     },
   ];
 
@@ -143,7 +165,12 @@ const ManageTickets = () => {
     tabItems.push({
       label: "Assigned Tickets",
       subLabel: ticketLabel,
-      component: <AssignedTickets departmentId={selectedDepartment} title="Assigned Tickets" />,
+      component: (
+        <AssignedTickets
+          departmentId={selectedDepartment}
+          title="Assigned Tickets"
+        />
+      ),
     });
   }
 
@@ -151,23 +178,40 @@ const ManageTickets = () => {
     {
       label: "Support Tickets",
       subLabel: ticketLabel,
-      component: <SupportTickets departmentId={selectedDepartment} title="Support Tickets" />,
+      component: (
+        <SupportTickets
+          departmentId={selectedDepartment}
+          title="Support Tickets"
+        />
+      ),
     },
     {
       label: "Escalated Tickets",
       subLabel: ticketLabel,
-      component: <EscalatedTickets departmentId={selectedDepartment} title="Escalated Tickets" />,
+      component: (
+        <EscalatedTickets
+          departmentId={selectedDepartment}
+          title="Escalated Tickets"
+        />
+      ),
     },
     {
       label: "Closed Tickets",
       subLabel: ticketLabel,
-      component: <ClosedTickets departmentId={selectedDepartment} title="Closed / Resolved Tickets" />,
+      component: (
+        <ClosedTickets
+          departmentId={selectedDepartment}
+          title="Closed / Resolved Tickets"
+        />
+      ),
     }
   );
 
   return (
     <div>
       {/* Widgets */}
+      {!isLoading ? (
+
       <div>
         {widgets.map((widget, index) => (
           <div key={index}>
@@ -177,6 +221,11 @@ const ManageTickets = () => {
           </div>
         ))}
       </div>
+      ) : (
+        <div className="h-72 flex justify-center items-center">
+          <CircularProgress />
+        </div>
+      ) }
 
       {/* Tabs */}
       <div className="p-4">

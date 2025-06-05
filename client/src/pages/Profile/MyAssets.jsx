@@ -16,41 +16,6 @@ const MyAssets = ({ pageTitle }) => {
     { field: "purchaseDate", headerName: "Purchase Date", flex: 1 },
     { field: "warranty", headerName: "Warranty (Months)", flex: 1 },
   ];
-  const rows = [
-    {
-      id: "1",
-      department: "IT",
-      assetNumber: "1203",
-      category: "XYZ",
-      brandName: "ababa",
-      price: "1000",
-      quantity: "12",
-      purchaseDate: "24/03/200",
-      warranty: "2",
-    },
-    {
-      id: "1",
-      department: "IT",
-      assetNumber: "1203",
-      category: "XYZ",
-      brandName: "ababab",
-      price: "1000",
-      quantity: "12",
-      purchaseDate: "24/03/200",
-      warranty: "2",
-    },
-    {
-      id: "1",
-      department: "IT",
-      assetNumber: "1203",
-      category: "XYZ",
-      brandName: "ababab",
-      price: "1000",
-      quantity: "12",
-      purchaseDate: "24/03/200",
-      warranty: "2",
-    },
-  ];
 
   
   return (
@@ -60,7 +25,7 @@ const MyAssets = ({ pageTitle }) => {
       </div>
 
       <div className=" w-full">
-        <AgTable data={[]} columns={laptopColumns} paginationPageSize={10} />
+        <AgTable data={[]} columns={laptopColumns} paginationPageSize={10} search/>
       </div>
     </>
   );
