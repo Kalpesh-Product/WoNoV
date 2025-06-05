@@ -295,7 +295,7 @@ const MeetingFormLayout = () => {
               minute: "2-digit",
               meridiem: "lowercase",
             }}
-            allDayText="Full Day"
+            allDayText=""
             select={handleDateClick}
             selectAllow={({ start }) => {
               const now = new Date();
