@@ -39,19 +39,19 @@ const HrDashboard = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const navigate = useNavigate();
-  const accessibleModules = new Set();
+  // const accessibleModules = new Set();
 
-  auth.user.permissions?.deptWisePermissions?.forEach((department) => {
-    department.modules.forEach((module) => {
-      const hasViewPermission = module.submodules.some((submodule) =>
-        submodule.actions.includes("View")
-      );
+  // auth.user.permissions?.deptWisePermissions?.forEach((department) => {
+  //   department.modules.forEach((module) => {
+  //     const hasViewPermission = module.submodules.some((submodule) =>
+  //       submodule.actions.includes("View")
+  //     );
 
-      if (hasViewPermission) {
-        accessibleModules.add(module.moduleName);
-      }
-    });
-  });
+  //     if (hasViewPermission) {
+  //       accessibleModules.add(module.moduleName);
+  //     }
+  //   });
+  // });
 
   const usersQuery = useQuery({
     queryKey: ["users"],
@@ -757,7 +757,7 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
           route: "settings/bulk-upload",
         },
       ]
-        .filter((widget) => accessibleModules.has(widget.title)) // ✅ Filter widgets
+        // .filter((widget) => accessibleModules.has(widget.title)) // ✅ Filter widgets
         .map((widget, index) => (
           <Card
             key={index}
