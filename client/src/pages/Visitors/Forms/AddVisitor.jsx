@@ -74,7 +74,8 @@ const AddVisitor = () => {
     mutationFn: async (data) => {
       const response = await axios.post("/api/visitors/add-visitor", {
         ...data,
-        visitorType: visitorType === "na" ? null : visitorType,
+        department: selectedDepartment === "na" ? null : selectedDepartment,
+        toMeet: selectedDepartment === "na" ? null : data.toMeet,
       });
       return response.data;
     },
