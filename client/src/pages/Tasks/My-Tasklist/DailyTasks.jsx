@@ -73,9 +73,7 @@ const DailyTasks = () => {
     queryKey: ["completedTasks"],
     queryFn: async () => {
       try {
-        const response = await axios.get(
-          `/api/tasks/get-my-completed-tasks`
-        );
+        const response = await axios.get(`/api/tasks/get-my-completed-tasks`);
         return response.data;
       } catch (error) {
         console.error(error);
@@ -117,7 +115,7 @@ const DailyTasks = () => {
   const { mutate: updateMonthlyKpa, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateMyTasks"],
     mutationFn: async (data) => {
-      console.log("mark done",data)
+      console.log("mark done", data);
       const response = await axios.patch(
         `/api/tasks/update-task-status/${data}`
       );
@@ -137,7 +135,7 @@ const DailyTasks = () => {
 
   //--------Column configs----------------//
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100,sort:"desc" },
+    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskList",
@@ -193,8 +191,7 @@ const DailyTasks = () => {
           <div
             role="button"
             onClick={() => updateMonthlyKpa(params.data.id)}
-            className="p-2"
-          >
+            className="p-2">
             <PrimaryButton
               disabled={!params.node.selected}
               title={"Mark As Done"}
@@ -241,8 +238,7 @@ const DailyTasks = () => {
             setSelectedTask(params.data);
             setOpenModal(true);
           }}
-          className="text-primary underline cursor-pointer"
-        >
+          className="text-primary underline cursor-pointer">
           {params.value}
         </div>
       ),
@@ -310,7 +306,6 @@ const DailyTasks = () => {
         status: item.status,
       }));
 
-
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -355,7 +350,7 @@ const DailyTasks = () => {
           </WidgetSection>
         ) : (
           <div className="h-72 flex items-center justify-center">
-            <CircularProgress color="black"/>
+            <CircularProgress color="black" />
           </div>
         )}
       </div>
@@ -365,17 +360,15 @@ const DailyTasks = () => {
         onClose={() => setOpenModal(false)}
         title={
           modalMode === "add-task"
-            ? "Add Task"
+            ? "Add My Task"
             : modalMode === "view"
             ? "Completed task"
             : "View Task"
-        }
-      >
+        }>
         {modalMode === "add-task" && (
           <form
             onSubmit={submitDailyKra(handleFormSubmit)}
-            className="grid grid-cols-1 lg:grid-cols-1 gap-4"
-          >
+            className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <Controller
               name="taskName"
               control={control}

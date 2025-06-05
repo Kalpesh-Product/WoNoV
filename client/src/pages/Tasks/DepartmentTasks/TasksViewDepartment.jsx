@@ -134,7 +134,7 @@ const TasksViewDepartment = () => {
       queryFn: fetchCompletedTasks,
     });
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100,sort:"desc" },
+    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskName",
@@ -147,8 +147,7 @@ const TasksViewDepartment = () => {
             setSelectedTask(params.data);
             setOpenMultiModal(true);
           }}
-          className="text-primary underline cursor-pointer"
-        >
+          className="text-primary underline cursor-pointer">
           {params.value}
         </div>
       ),
@@ -196,8 +195,7 @@ const TasksViewDepartment = () => {
           <div
             role="button"
             onClick={() => updateDailyKra(params.data.id)}
-            className="p-2"
-          >
+            className="p-2">
             <PrimaryButton
               title={"Mark As Done"}
               disabled={!params.node.selected}
@@ -208,7 +206,7 @@ const TasksViewDepartment = () => {
     },
   ];
   const completedColumns = [
-    { headerName: "Sr no", field: "srno", width: 100,sort:"desc" },
+    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskName",
@@ -221,8 +219,7 @@ const TasksViewDepartment = () => {
             setSelectedTask(params.data);
             setOpenMultiModal(true);
           }}
-          className="text-primary underline cursor-pointer"
-        >
+          className="text-primary underline cursor-pointer">
           {params.value}
         </div>
       ),
@@ -309,13 +306,12 @@ const TasksViewDepartment = () => {
                 completedTasksFetchPending
                   ? []
                   : completedTasks.map((item, index) => ({
-                      
                       id: item._id,
                       taskName: item.taskName,
                       completedBy: item.completedBy,
-                       assignedDate: humanDate(item.assignedDate),
-        dueDate: humanDate(item.dueDate),
-        dueTime: humanTime(item.dueTime),
+                      assignedDate: humanDate(item.assignedDate),
+                      dueDate: humanDate(item.dueDate),
+                      dueTime: humanTime(item.dueTime),
                       completedDate: humanDate(item.completedDate),
                       completedTime: humanTime(item.completedDate),
                       status: item.status,
@@ -335,12 +331,10 @@ const TasksViewDepartment = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Task"}
-      >
+        title={"Add Department Task"}>
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
-          className="grid grid-cols-1 lg:grid-cols-1 gap-4"
-        >
+          className="grid grid-cols-1 lg:grid-cols-1 gap-4">
           <Controller
             name="taskName"
             control={control}
@@ -496,8 +490,7 @@ const TasksViewDepartment = () => {
             : modalMode === "completed"
             ? "Completed Tasks"
             : ""
-        }
-      >
+        }>
         {modalMode === "view" && selectedTask && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="col-span-2">
@@ -551,7 +544,7 @@ const TasksViewDepartment = () => {
               title={"Comleted By"}
               detail={selectedTask?.completedBy}
             />
-              <DetalisFormatted
+            <DetalisFormatted
               title={"Due Date"}
               detail={selectedTask?.dueDate}
             />
