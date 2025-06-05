@@ -183,7 +183,7 @@ const PerformanceMonthly = () => {
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "KPA List", field: "taskName", width: 300 },
     { headerName: "Completed Time", field: "completionTime", flex: 1 },
-    // { headerName: "Completed Date", field: "completionDate" },
+    { headerName: "Completed By", field: "completedBy" },
     {
       field: "status",
       headerName: "Status",
@@ -256,7 +256,8 @@ const PerformanceMonthly = () => {
                   assignedDate: item.assignedDate,
                   completionDate: humanDate(item.completionDate),
                   completionTime: humanTime(item.completionDate),
-                  status: item.status,
+                  completedBy: item.completedBy, 
+                   status: item.status,
                 })),
               ]}
               dateColumn={"dueDate"}
