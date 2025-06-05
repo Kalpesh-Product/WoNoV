@@ -331,7 +331,7 @@ const TasksViewDepartment = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Task"}>
+        title={"Add Department Task"}>
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
           className="grid grid-cols-1 lg:grid-cols-1 gap-4">
