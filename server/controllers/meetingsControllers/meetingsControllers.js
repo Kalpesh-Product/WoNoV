@@ -396,8 +396,6 @@ const getMeetings = async (req, res, next) => {
 
     let filteredMeetings = meetings;
     if (
-      !roles.includes("Master Admin") &&
-      !roles.includes("Super Admin") &&
       !roles.includes("Administration Admin") &&
       !roles.includes("Administration Employee")
     ) {
@@ -518,8 +516,6 @@ const getMyMeetings = async (req, res, next) => {
 
     let meetings = [];
     if (
-      !roles.includes("Master Admin") &&
-      !roles.includes("Super Admin") &&
       !roles.includes("Administration Admin") &&
       !roles.includes("Administration Employee")
     ) {
