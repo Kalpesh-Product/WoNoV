@@ -890,10 +890,15 @@ const ticketData = async (req, res, next) => {
         .json({ message: "Invalid department ID provided" });
     }
 
-    const tickets = await Ticket.find({
+    // Check if user has Master Admin role
+    const isMasterAdmin = roles?.includes("Master Admin");
+
+    const query = {
       company,
-      raisedToDepartment: { $in: [departmentId] },
-    })
+      ...(isMasterAdmin ? {} : { raisedToDepartment: { $in: [departmentId] } }),
+    };
+
+    const tickets = await Ticket.find(query)
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
@@ -911,7 +916,7 @@ const ticketData = async (req, res, next) => {
       .exec();
 
     if (!foundCompany) {
-      return res.status(400).josn({ message: "Company not found" });
+      return res.status(400).json({ message: "Company not found" }); // fixed typo "josn" -> "json"
     }
 
     // Extract the ticket priority from the company's selected departments
