@@ -114,8 +114,7 @@ const addVisitor = async (req, res, next) => {
       visitorCompanyId,
     } = req.body;
 
-    //Validate date format
-
+    // Validate date format
     const visitDate = new Date(dateOfVisit);
     const clockIn = new Date(checkIn);
     const clockOut = checkOut ? new Date(checkOut) : null;
@@ -161,6 +160,8 @@ const addVisitor = async (req, res, next) => {
     }
 
     let externalCompany = null;
+
+    // Save new external company if provided in request
     if (visitorCompany) {
       const newExternalCompany = new ExternalCompany({
         ...visitorCompany,
@@ -168,7 +169,8 @@ const addVisitor = async (req, res, next) => {
       });
       externalCompany = await newExternalCompany.save();
     }
-    //Add company chekc after bulk insertion
+
+    // Lookup existing external company if ID provided
     if (visitorCompanyId) {
       externalCompany = await ExternalCompany.findById({
         _id: visitorCompanyId,
@@ -182,6 +184,12 @@ const addVisitor = async (req, res, next) => {
         );
       }
     }
+
+    // Handle empty department and clear toMeet if department is empty
+    const isDepartmentEmpty =
+      department === null ||
+      department === undefined ||
+      (typeof department === "string" && department.trim() === "");
 
     const newVisitor = new Visitor({
       firstName,
@@ -199,11 +207,12 @@ const addVisitor = async (req, res, next) => {
       dateOfVisit: visitDate,
       checkIn: clockIn,
       checkOut: clockOut,
-      toMeet,
+      toMeet: isDepartmentEmpty ? null : toMeet,
       company,
-      department,
+      department: isDepartmentEmpty ? null : department,
       visitorType,
     });
+
     if (externalCompany) {
       newVisitor.visitorCompany = externalCompany._id;
     }

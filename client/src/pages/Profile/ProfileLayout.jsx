@@ -8,13 +8,13 @@ const ProfileLayout = () => {
 
   // Map routes to tabs
   const tabs = [
-    { label: "My Profile", path: "my-profile" },
+    { label: "Profile", path: "my-profile" },
     { label: "Change Password", path: "change-password" },
     { label: "Permissions", path: "permissions" },
     { label: "HR", path: "HR" },
-    { label: "My Assets", path: "my-assets" },
-    { label: "My Meetings", path: "my-meetings" },
-    { label: "My Ticket History", path: "tickets-history" },
+    { label: "Assets", path: "my-assets" },
+    { label: "Meetings", path: "my-meetings" },
+    { label: "Ticket History", path: "tickets-history" },
   ];
 
   // Redirect to "first tab" if the current path is "/module/first-page"
