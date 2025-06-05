@@ -184,7 +184,7 @@ const TicketDashboard = () => {
           layout={1}
           border
           padding
-          title={"Annual Tickets Raised"}
+          title={"Overall Department Raised Tickets"}
           TitleAmount={`TOTAL TICKETS : ${totalTickets}`}
         >
           {!isLoading ? (
