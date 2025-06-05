@@ -25,7 +25,8 @@ const TicketDashboard = () => {
     queryKey: ["tickets-data"],
     queryFn: async () => {
       try {
-        const response = await axios.get(`/api/tickets/department-tickets/${auth.user?.departments.map((item)=>item._id)[0]}`);
+        // const response = await axios.get(`/api/tickets/department-tickets/${auth.user?.departments.map((item)=>item._id)[0]}`);
+        const response = await axios.get(`/api/tickets/get-all-tickets`);
 
         return response.data;
       } catch (error) {
