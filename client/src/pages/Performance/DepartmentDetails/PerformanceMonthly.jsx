@@ -230,6 +230,7 @@ const PerformanceMonthly = () => {
               tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
               buttonTitle={"Add Monthly KPA"}
               handleSubmit={() => setOpenModal(true)}
+              key={departmentKra.length}
               data={[
                 ...departmentKra
                   .filter((item) => item.status !== "Completed")
@@ -255,6 +256,7 @@ const PerformanceMonthly = () => {
           <WidgetSection padding layout={1}>
             <MonthWiseTable
               tableTitle={`COMPLETED - MONTHLY KPA`}
+              key={completedEntries.length}
               data={[
                 ...completedEntries.map((item, index) => ({
                    
