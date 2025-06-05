@@ -888,8 +888,6 @@ const ticketData = async (req, res, next) => {
     const { company, departments, roles } = req;
     const { departmentId } = req.params;
 
-    console.log(departments, roles);
-
     if (!mongoose.Types.ObjectId.isValid(departmentId)) {
       return res
         .status(400)
