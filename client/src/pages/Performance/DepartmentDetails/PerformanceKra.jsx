@@ -28,15 +28,18 @@ const PerformanceKra = () => {
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const [selectedKra, setSelectedKra] = useState(null);
 
-  const departmentAccess = ["67b2cf85b9b6ed5cedeb9a2e","6798bab9e469e809084e249e"]
- 
-  const isTop =
-    auth.user.departments.some((item) =>{ 
-      return departmentAccess.includes(item._id.toString())})
-  
-  const isHr =  department === "HR"
-  const showCheckBox = !isTop || isHr
- 
+  const departmentAccess = [
+    "67b2cf85b9b6ed5cedeb9a2e",
+    "6798bab9e469e809084e249e",
+  ];
+
+  const isTop = auth.user.departments.some((item) => {
+    return departmentAccess.includes(item._id.toString());
+  });
+
+  const isHr = department === "HR";
+  const showCheckBox = !isTop || isHr;
+
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
   }, [department]);
@@ -45,7 +48,7 @@ const PerformanceKra = () => {
     handleSubmit: submitDailyKra,
     control,
     formState: { errors },
-    reset
+    reset,
   } = useForm({
     defaultValues: {
       dailyKra: "",
@@ -70,7 +73,7 @@ const PerformanceKra = () => {
       queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
       queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA"] });
       toast.success(data.message || "KRA Added");
-      reset()
+      reset();
       setOpenModal(false);
     },
     onError: (error) => {
@@ -91,6 +94,8 @@ const PerformanceKra = () => {
       return response.data;
     },
     onSuccess: (data) => {
+      queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA"] });
+      queryClient.refetchQueries({ queryKey: ["completedEntries"] });
       queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
       queryClient.invalidateQueries({ queryKey: ["completedEntries"] });
       toast.success(data.message || "KRA updated");
@@ -133,7 +138,7 @@ const PerformanceKra = () => {
     });
 
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100},
+    { headerName: "Sr no", field: "srno", width: 100 },
     { headerName: "KRA List", field: "taskName", flex: 1 },
     { headerName: "DueTime", field: "dueTime" },
     {
@@ -165,7 +170,8 @@ const PerformanceKra = () => {
               <div
                 role="button"
                 onClick={() => updateDailyKra(params.data.id)}
-                className="p-2">
+                className="p-2"
+              >
                 <PrimaryButton
                   title={"Mark As Done"}
                   disabled={!params.node.selected}
@@ -275,10 +281,12 @@ const PerformanceKra = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Daily KRA"}>
+        title={"Add Daily KRA"}
+      >
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
-          className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+          className="grid grid-cols-1 lg:grid-cols-1 gap-4"
+        >
           <Controller
             name="dailyKra"
             control={control}
