@@ -18,7 +18,7 @@ const StatutoryPayments = () => {
   const [viewDetails, setViewDetails] = useState(null);
   const axios = useAxiosPrivate();
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
-    queryKey: ["hrFinance"],
+    queryKey: ["financeBudget"],
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -176,7 +176,7 @@ const StatutoryPayments = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection titleLabel={"FY 2024-25"} border>
+      <WidgetSection border title={"Statutory Payments FY 2024-25"}>
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
       {/* <YearlyGraph title={"Statutory Payments".toUpperCase()} /> */}

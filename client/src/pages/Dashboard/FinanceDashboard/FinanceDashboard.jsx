@@ -41,21 +41,34 @@ const FinanceDashboard = () => {
         }
       },
     });
-   
-  const { data: budgetData = [], isLoading: isBudgetDataLoading } =
-    useQuery({
-      queryKey: ["budgetData"],
-      queryFn: async () => {
-        try {
-          const response = await axios.get("/api/budget/company-budget");
-          return response.data?.allBudgets;
-        } catch (error) {
-          console.error(error);
-        }
-      },
-    });
 
+  const { data: budgetData = [], isLoading: isBudgetDataLoading } = useQuery({
+    queryKey: ["budgetData"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/budget/company-budget");
+        return response.data?.allBudgets;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+  });
 
+  const march2025Payments = isBudgetDataLoading
+    ? []
+    : budgetData.filter((item) => {
+        const due = new Date(item.dueDate);
+        return due.getFullYear() === 2025 && due.getMonth() === 2; // Month is 0-indexed: 2 = March
+      });
+
+  const financeBudgetsRaw = isBudgetDataLoading
+    ? []
+    : budgetData.filter(
+        (item) => item.department?._id === "6798bab0e469e809084e249a"
+      );
+  const financeBudgets = financeBudgetsRaw.filter(
+    (item) => item.expanseType === "Statutory Payments"
+  );
 
   const testExpense = revenueExpenseData
     .filter((item) => item.expense)
@@ -69,22 +82,20 @@ const FinanceDashboard = () => {
     (sum, item) => (item.actualAmount || 0) + sum,
     0
   );
-const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
-  const incomeSources = item.income || {};
+  const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
+    const incomeSources = item.income || {};
 
-  const incomeValues = Object.values(incomeSources);
+    const incomeValues = Object.values(incomeSources);
 
-  const allRevenues = incomeValues.flat();
+    const allRevenues = incomeValues.flat();
 
-  const sourceTotals = allRevenues.reduce((sum, revenueItem, i) => {
-    const value = revenueItem.taxableAmount ?? revenueItem.revenue ?? 0;
-    return sum + value;
+    const sourceTotals = allRevenues.reduce((sum, revenueItem, i) => {
+      const value = revenueItem.taxableAmount ?? revenueItem.revenue ?? 0;
+      return sum + value;
+    }, 0);
+
+    return grandTotal + sourceTotals;
   }, 0);
-
-  return grandTotal + sourceTotals;
-}, 0);
-
-
 
   //----------INCOME-EXPENSE GRAPH conversion------------------//
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
@@ -181,7 +192,7 @@ const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
     })
   );
 
-    const lastMonthRawIncome = incomeData.filter(
+  const lastMonthRawIncome = incomeData.filter(
     (item) => item.group === "FY 2024-25"
   );
   const lastMonthDataIncome = lastMonthRawIncome.map(
@@ -264,8 +275,6 @@ const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
     // },
     ...expenseData,
   ];
-
-  console.log("income expense in graph : ",incomeExpenseData)
 
   const incomeExpenseOptions = {
     chart: {
@@ -358,7 +367,7 @@ const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
       },
       {
         title: "Annual Average",
-        value:  `INR ${inrFormat(totalIncomeAmount / 12)}` ,
+        value: `INR ${inrFormat(totalIncomeAmount / 12)}`,
         route: "annual-average-profit-loss",
       },
       {
@@ -366,7 +375,11 @@ const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
         value: `INR ${inrFormat(totalIncomeAmount)}`,
         route: "overall-profit-loss",
       },
-      { title: "Per Sq. Ft.", value: `INR ${inrFormat(totalIncomeAmount / totalSqft)}`, route: "sqft-wise-data" },
+      {
+        title: "Per Sq. Ft.",
+        value: `INR ${inrFormat(totalIncomeAmount / totalSqft)}`,
+        route: "sqft-wise-data",
+      },
     ],
   };
 
@@ -388,10 +401,24 @@ const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
     cardTitle: "Profit & Loss",
     timePeriod: "FY 2024-25",
     descriptionData: [
-      { title: "March 2025", value: `INR ${inrFormat(  (lastMonthDataIncome - lastMonthData))}`   },
-      { title: "Annual Average", value: `INR ${inrFormat((totalIncomeAmount - totalExpense) / 12)}`  },
-      { title: "Overall", value: `INR ${inrFormat( (totalIncomeAmount - totalExpense))}` },
-      { title: "Per Sq. Ft.", value: `INR ${inrFormat( (totalIncomeAmount - totalExpense) / totalSqft)}` },
+      {
+        title: "March 2025",
+        value: `INR ${inrFormat(lastMonthDataIncome - lastMonthData)}`,
+      },
+      {
+        title: "Annual Average",
+        value: `INR ${inrFormat((totalIncomeAmount - totalExpense) / 12)}`,
+      },
+      {
+        title: "Overall",
+        value: `INR ${inrFormat(totalIncomeAmount - totalExpense)}`,
+      },
+      {
+        title: "Per Sq. Ft.",
+        value: `INR ${inrFormat(
+          (totalIncomeAmount - totalExpense) / totalSqft
+        )}`,
+      },
     ],
   };
 
@@ -447,6 +474,7 @@ const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
     labels: pieMonthlyPayoutData.map((item) => item.label),
     legend: {
       show: true,
+      position: "right",
     },
     dataLabels: {
       formatter: (val) => `${val.toFixed(1)}%`,
@@ -455,128 +483,153 @@ const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
       },
     },
     tooltip: {
-      custom: function ({ seriesIndex }) {
-        const category = pieMonthlyPayoutData[seriesIndex];
-
-        if (!category || !category.clients) return "";
-
-        const rows = category.clients
-          .map(
-            (client) =>
-              `<div style="display: flex; justify-content: space-between;">
-                <span>${client.clientName}</span>
-                <span>INR ${client.amount.toLocaleString()}</span>
-              </div>`
-          )
-          .join("");
-
-        return `
-          <div style="padding: 8px; font-size: 13px;">
-            <strong>${category.label} Clients:</strong>
-            <div style="margin-top: 4px;">${rows}</div>
-          </div>
-        `;
+      y: {
+        formatter: function (value, { seriesIndex }) {
+          const category = pieMonthlyPayoutData[seriesIndex];
+          return `INR  ${category?.value?.toLocaleString("en-IN") || 0}`;
+        },
       },
     },
   };
 
   //-----------------------------------------------------Pie Monthly Payout------------------------------------------------------//
   //-----------------------------------------------------Pie Monthly Collections------------------------------------------------------//
-  const clientCollections = [
-    { clientName: "Axis", amount: 15000, status: "collected" },
-    { clientName: "HDFC", amount: 30000, status: "collected" },
-    { clientName: "ICICI", amount: 10000, status: "pending" },
-    { clientName: "Kotak", amount: 25000, status: "collected" },
-    { clientName: "SBI", amount: 8000, status: "pending" },
+  // 1. Safe data access from the array structure
+  const incomeEntry = Array.isArray(revenueExpenseData)
+    ? revenueExpenseData.find((entry) => entry.income)
+    : null;
+
+  const income = incomeEntry?.income;
+
+  // 2. Calculation function (unchanged but included for completeness)
+  const calculatePaidVsUnpaid = (income = {}) => {
+    const revenueSources = [
+      income.meetingRevenue || [],
+      income.alternateRevenues || [],
+      income.virtualOfficeRevenues || [],
+      income.workationRevenues || [],
+      income.coworkingRevenues || [],
+    ];
+
+    let paid = 0;
+    let unpaid = 0;
+
+    revenueSources.forEach((source) => {
+      source.forEach((item) => {
+        const amount = item.revenue || item.taxableAmount || 0;
+
+        if (item.status === "paid") {
+          paid += amount;
+        } else {
+          unpaid += amount;
+        }
+      });
+    });
+
+    return { paid, unpaid };
+  };
+
+  // 3. Safely calculate paid and unpaid values
+  const { paid, unpaid } = income
+    ? calculatePaidVsUnpaid(income)
+    : { paid: 0, unpaid: 0 };
+
+  // 4. Prepare pie chart data
+  const pieChartData = [
+    { label: "Collected", value: paid },
+    { label: "Due", value: unpaid },
   ];
 
-  const collectedClients = clientCollections.filter(
-    (c) => c.status === "collected"
-  );
-  const pendingClients = clientCollections.filter(
-    (c) => c.status === "pending"
-  );
-
-  const pieMonthlyCollectionData = [
-    {
-      label: "Collected",
-      value: collectedClients.reduce((sum, c) => sum + c.amount, 0),
-      clients: collectedClients,
-    },
-    {
-      label: "Pending",
-      value: pendingClients.reduce((sum, c) => sum + c.amount, 0),
-      clients: pendingClients,
-    },
-  ];
-
-  const pieMonthlyCollectionOptions = {
+  const pieChartOptions = {
     chart: {
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#2196F3", "#FF9800"], // Blue for collected, orange for pending
-    labels: pieMonthlyCollectionData.map((item) => item.label),
+    labels: ["Collected", "Due"],
+    colors: ["#2196F3", "#FF9800"],
     legend: {
-      show: true,
+      position: "right",
     },
     dataLabels: {
-      formatter: (val) => `${val.toFixed(1)}%`,
-      style: {
-        fontSize: "14px",
+      formatter: function (val) {
+        return `${val.toFixed(0)}%`;
       },
     },
     tooltip: {
-      custom: function ({ seriesIndex }) {
-        const category = pieMonthlyCollectionData[seriesIndex];
-
-        if (!category || !category.clients) return "";
-
-        const rows = category.clients
-          .map(
-            (client) =>
-              `<div style="display: flex; justify-content: space-between;">
-              <span>${client.clientName}</span>
-              <span>INR ${client.amount.toLocaleString()}</span>
-            </div>`
-          )
-          .join("");
-
-        return `
-        <div style="padding: 8px; font-size: 13px;">
-          <strong>${category.label} Clients:</strong>
-          <div style="margin-top: 4px;">${rows}</div>
-        </div>
-      `;
+      y: {
+        formatter: function (value) {
+          return `INR ${inrFormat(value.toFixed(0))}`;
+        },
       },
     },
   };
 
+  // const pieMonthlyCollectionOptions = {
+  //   chart: {
+  //     fontFamily: "Poppins-Regular",
+  //   },
+  //   colors: ["#2196F3", "#FF9800"], // Blue for collected, orange for pending
+  //   labels: pieMonthlyCollectionData.map((item) => item.label),
+  //   legend: {
+  //     show: true,
+  //   },
+  //   dataLabels: {
+  //     formatter: (val) => `${val.toFixed(1)}%`,
+  //     style: {
+  //       fontSize: "14px",
+  //     },
+  //   },
+  //   tooltip: {
+  //     custom: function ({ seriesIndex }) {
+  //       const category = pieMonthlyCollectionData[seriesIndex];
+
+  //       if (!category || !category.clients) return "";
+
+  //       const rows = category.clients
+  //         .map(
+  //           (client) =>
+  //             `<div style="display: flex; justify-content: space-between;">
+  //             <span>${client.clientName}</span>
+  //             <span>INR ${client.amount.toLocaleString()}</span>
+  //           </div>`
+  //         )
+  //         .join("");
+
+  //       return `
+  //       <div style="padding: 8px; font-size: 13px;">
+  //         <strong>${category.label} Clients:</strong>
+  //         <div style="margin-top: 4px;">${rows}</div>
+  //       </div>
+  //     `;
+  //     },
+  //   },
+  // };
+
   //-----------------------------------------------------Pie Monthly Collections------------------------------------------------------//
   //-----------------------------------------------------Donut Statutory Payments------------------------------------------------------//
 
-  const statutoryPaymentsData = isBudgetDataLoading ? [] : budgetData.filter((budget)=> {
-    
-    return budget.expanseType === "Statutory"
-  })
- 
- const statutoryPaymentsMap = new Map();
+  const statutoryPaymentsData = isBudgetDataLoading
+    ? []
+    : budgetData.filter((budget) => {
+        return budget.expanseType === "Statutory";
+      });
 
-statutoryPaymentsData.forEach((payment) => {
-  const amount = payment.actualAmount;
-  const label = payment.expanseName;
+  const statutoryPaymentsMap = new Map();
 
-  if (!statutoryPaymentsMap.has(label)) {
-    statutoryPaymentsMap.set(label, 0);
-  }
+  statutoryPaymentsData.forEach((payment) => {
+    const amount = payment.actualAmount;
+    const label = payment.expanseName;
 
-  const currentAmount = statutoryPaymentsMap.get(label);
-  statutoryPaymentsMap.set(label, currentAmount + amount);
-});
+    if (!statutoryPaymentsMap.has(label)) {
+      statutoryPaymentsMap.set(label, 0);
+    }
 
-const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
-  ([label, amount]) => ({ label, amount })
-);
+    const currentAmount = statutoryPaymentsMap.get(label);
+    statutoryPaymentsMap.set(label, currentAmount + amount);
+  });
 
+  const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
+    ([label, amount]) => ({ label, amount })
+  );
 
   // const statutoryPayments = [
   //   { label: "PF", amount: 30000 },
@@ -585,12 +638,23 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
   //   { label: "PT", amount: 10000 },
   // ];
 
-  const donutStatutorylabels = statutoryPayments.map((item) => item.label);
-  const donutStatutorySeries = statutoryPayments.map((item) => item.amount);
-  const donutStatutoryTooltipValue = statutoryPayments.map(
-    (item) => `INR ${item.amount.toLocaleString()}`
+  const approvedPayments = financeBudgets.filter(
+    (item) => item.status === "Approved"
   );
-  const donutStatutoryColors = ["#4CAF50", "#2196F3", "#FFC107", "#FF5722"]; // Custom color palette
+  const pendingPayments = financeBudgets.filter(
+    (item) => item.status !== "Approved"
+  );
+
+  const statutoryDonutSeries = [
+    approvedPayments.reduce((sum, item) => sum + item.actualAmount, 0),
+    pendingPayments.reduce((sum, item) => sum + item.actualAmount, 0),
+  ];
+
+  const statutoryDonutLabels = ["Approved", "Pending"];
+  const statutoryDonutColors = ["#4CAF50", "#FF9800"];
+  const statutoryTooltipValues = statutoryDonutSeries.map(
+    (amount, i) => `${statutoryDonutLabels[i]}: ₹ ${amount}`
+  );
   //-----------------------------------------------------Donut Statutory Payments------------------------------------------------------//
   //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
   const rentalPayments = sortedExpenses.map((monthData) => {
@@ -686,11 +750,34 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
     },
   ];
 
-  const executiveTimingsColumns = [
-    { id: "id", label: "Sr No", align: "left" },
-    { id: "paymentName", label: "Payment Name", align: "left" },
-    { id: "department", label: "Department", align: "left" },
-    { id: "amount", label: "Amount (INR)", align: "left" },
+  const marchPaymentColumns = [
+    { id: "expanseName", label: "Expense Name", width: 200 },
+    { id: "expanseType", label: "Type", width: 150 },
+    {
+      id: "actualAmount",
+      label: "Actual Amount (INR)",
+      width: 150,
+      renderCell: (row) => `${row.actualAmount.toLocaleString("en-IN")}`,
+    },
+    { id: "status", label: "Status", width: 120 },
+    {
+      id: "dueDate",
+      label: "Due Date",
+      width: 130,
+      renderCell: (row) => dayjs(row.dueDate).format("DD MMM YYYY"),
+    },
+    {
+      id: "department",
+      label: "Department",
+      width: 140,
+      renderCell: (row) => row.department?.name || "-",
+    },
+    {
+      id: "unit",
+      label: "Unit No",
+      width: 100,
+      renderCell: (row) => row.unit?.unitNo || "-",
+    },
   ];
 
   const now = new Date();
@@ -762,12 +849,13 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
           />
         </WidgetSection>,
         <WidgetSection title={`Customer Collections MAR-25 `} border>
-          <PieChartMui
+          {/* <PieChartMui
             data={[]}
             options={pieMonthlyCollectionOptions}
             width={500}
             height={350}
-          />
+          /> */}
+          <PieChartMui data={pieChartData} options={pieChartOptions} />
         </WidgetSection>,
       ],
     },
@@ -776,11 +864,11 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
       widgets: [
         <WidgetSection title={`Statutory Payments Due MAR-25`} border>
           <DonutChart
-            centerLabel="Payments Due"
-            labels={donutStatutorylabels}
-            colors={donutStatutoryColors}
-            series={donutStatutorySeries}
-            tooltipValue={donutStatutoryTooltipValue}
+            centerLabel="Statutory"
+            labels={statutoryDonutLabels}
+            colors={statutoryDonutColors}
+            series={statutoryDonutSeries}
+            tooltipValue={statutoryTooltipValues}
             isMonetary={true}
           />
         </WidgetSection>,
@@ -805,30 +893,23 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
         //   rowsToDisplay={4}
         //   Title={`KPA - ${monthYear} `}
         //   rows={[
-           
+
         //   ]}
         //   columns={priorityTasksColumns}
         // />,
         <MuiTable
-          key={executiveTimings.length}
-          Title={` Payouts MAR-25 `}
-          rows={[
-            // ...executiveTimings.map((timing, index) => ({
-            //   id: index + 1,
-            //   paymentName: timing.paymentName,
-            //   department: timing.department,
-            //   amount: timing.amount,
-            // })),
-            []
-          ]}
-          columns={executiveTimingsColumns}
-          scroll
-          rowsToDisplay={4}
+          Title="Payouts Mar-25"
+          columns={marchPaymentColumns}
+          rows={march2025Payments}
+          rowKey="_id"
+          scroll={true}
+          rowsToDisplay={march2025Payments.length
+
+          }
         />,
       ],
     },
   ];
-
 
   return (
     <div>
