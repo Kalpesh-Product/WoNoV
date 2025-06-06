@@ -216,7 +216,7 @@ const MonthlyProfitLoss = () => {
       widgets: [
         <WidgetSection border titleLabel={"FY 2024-25"} title={"Income v/s Expenses"}>
           <BarGraph
-            data={incomeExpenseData}
+            data={[]}
             options={incomeExpenseOptions}
           />
         </WidgetSection>,
@@ -233,9 +233,9 @@ const MonthlyProfitLoss = () => {
       ))}
 
       <div>
-        <WidgetSection border TitleAmount={`INR ${totalPnL.toLocaleString()}`} titleLabel={"FY 2024-25"} title={`Total Monthly P&L`}>
+        <WidgetSection border TitleAmount={``} titleLabel={"FY 2024-25"} title={`Total Monthly P&L`}>
           <AgTable
-            data={monthlyProfitLossData}
+            data={[]}
             columns={monthlyProfitLossColumns}
             search={true}
           />

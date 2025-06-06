@@ -280,19 +280,7 @@ const ItAssetList = () => {
         tableTitle={"Asset List"}
         buttonTitle={"Add Asset"}
         data={[
-          ...[...(assetsList || []), ...dummyAssets].map((asset, index) => ({
-            id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price: Number(
-              asset.price.toLocaleString("en-IN").replace(/,/g, "")
-            ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-            quantity: asset.quantity,
-            purchaseDate: dayjs(new Date(asset.purchaseDate)).format("DD-MM-YYYY"),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
-          })),
+         
         ]}
         columns={assetColumns}
         handleClick={handleAddAsset}

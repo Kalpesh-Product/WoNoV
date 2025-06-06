@@ -217,13 +217,13 @@ const FrontendLeads = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.revenue.toLocaleString()} Leads
+                    {/* {domain.revenue.toLocaleString()} Leads */}
                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 <AgTable
-                  data={domain.clients}
+                  data={[]}
                   hideFilter
                   columns={[
                     { header: "Sr. No.", field: "srNo", flex: 0.5 },

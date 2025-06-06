@@ -87,7 +87,7 @@ const LandlordPayments = () => {
   return (
     <div className="flex flex-col gap-8">
       <WidgetSection titleLabel={"FY 2024-25"} title={"Landlord Payments".toUpperCase()} border>
-        <BarGraph data={barGraphData} options={barGraphOptions} />
+        <BarGraph data={[]} options={barGraphOptions} />
       </WidgetSection>
 
        <FilterUnits/>

@@ -530,25 +530,25 @@ const ItDashboard = () => {
       layout: 3,
       widgets: [
         <DataCard
-          data={"05"}
+          data={""}
           title={"Offices"}
           description={"Under Management"}
           route={"IT-offices"}
         />,
         <DataCard
           route={"/app/tasks"}
-          data={"58"}
+          data={""}
           title={"Total"}
           description={"Due Tasks This Month"}
         />,
         <DataCard
-          data={"INR 500"}
+          data={""}
           title={"Total"}
           description={"Internet Expense per sq.ft"}
           route={"per-sq-ft-internet-expense"}
         />,
         <DataCard
-          data={"INR 350"}
+          data={""}
           title={"Total"}
           description={"Expense per sq.ft"}
           route={"per-sq-ft-expense"}
@@ -556,11 +556,11 @@ const ItDashboard = () => {
         <DataCard
           route={"IT-expenses"}
           title={"Average"}
-          data={"INR " + inrFormat("600000")}
+          data={""}
           description={"Monthly Expense"}
         />,
         <DataCard
-          data={"INR " + inrFormat("8000000")}
+          data={""}
           title={"Average"}
           description={"Yearly Expense"}
         />,
@@ -570,14 +570,14 @@ const ItDashboard = () => {
       layout: 2,
       widgets: [
         <WidgetSection border title={"Unit Wise Due Tasks"}>
-          <PieChartMui data={unitWisePieData} options={unitPieChartOptions} />
+          <PieChartMui data={[]} options={[]} />
         </WidgetSection>,
         <WidgetSection border title={"Executive Wise Due Tasks"}>
           <DonutChart
             centerLabel="Tasks"
-            labels={labels}
+            labels={[]}
             colors={colors}
-            series={pieExecutiveData}
+            series={[]}
             tooltipValue={executiveTasksCount}
             width={500}
           />
@@ -589,12 +589,12 @@ const ItDashboard = () => {
       widgets: [
         <WidgetSection border title={"Unit Wise IT Expenses"}>
           <PieChartMui
-            data={pieUnitWiseExpenseData}
-            options={pieUnitWiseExpenseOptions}
+            data={[]}
+            options={[]}
           />
         </WidgetSection>,
         <WidgetSection border title={"Biometrics Gender Data"}>
-          <PieChartMui data={pieGenderData} options={pieGenderOptions} />
+          <PieChartMui data={[]} options={[]} />
         </WidgetSection>,
       ],
     },
@@ -604,15 +604,15 @@ const ItDashboard = () => {
       widgets: [
         <WidgetSection border title={"Client-Wise Complaints"}>
           <PieChartMui
-            data={pieComplaintsData}
-            options={pieComplaintsOptions}
+            data={[]}
+            options={[]}
           />
         </WidgetSection>,
         <WidgetSection border title={"Type Of IT Complaints"}>
           <DonutChart
             centerLabel={``}
-            labels={complaintTypeLabels}
-            series={donutComplaintTypeData}
+            labels={[]}
+            series={[]}
             tooltipValue={complaintCounts}
           />
         </WidgetSection>,
@@ -627,12 +627,7 @@ const ItDashboard = () => {
           rowsToDisplay={4}
           Title={"Top 10 High Priority Due Tasks"}
           rows={[
-            ...priorityTasks.map((task, index) => ({
-              id: index + 1,
-              taskName: task.taskName,
-              type: task.type,
-              endTime: task.endTime,
-            })),
+           
           ]}
           columns={priorityTasksColumns}
         />,
@@ -640,14 +635,7 @@ const ItDashboard = () => {
           key={executiveTimings.length}
           Title={"Weekly Executive Shift Timing"}
           rows={[
-            ...executiveTimings.map((timing, index) => ({
-              id: index + 1,
-              name: timing.name,
-              building: timing.building,
-              unitNo: timing.unitNo,
-              startTime: timing.startTime,
-              endTime: timing.endTime,
-            })),
+            
           ]}
           columns={executiveTimingsColumns}
           scroll
