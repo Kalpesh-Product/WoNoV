@@ -293,6 +293,7 @@ const RecievedTickets = ({ title, departmentId }) => {
           <AgTable
             key={rows.length}
             data={rows ? rows : []}
+            hideFilterA
             tableHeight={350}
             columns={recievedTicketsColumns}
           />

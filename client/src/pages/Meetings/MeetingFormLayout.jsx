@@ -331,21 +331,18 @@ const MeetingFormLayout = () => {
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col w-full gap-4">
-          <div className="grid grid-cols-2 gap-8 px-2 pb-4 mb-4 border-b-default border-borderGray">
-            <div className="w-fit flex gap-8 items-center">
+            <div className="w-full flex gap-8 justify-center items-center">
               <span className="text-content">
-                Selected Date : {humanDate(startDate)}
+                 Date : {humanDate(startDate)}
               </span>
             </div>
-            <div className="w-fit flex gap-8 items-center">
-              <span className="text-content">
-                End Date : {humanDate(endDate)}
-              </span>
-            </div>
+          <div className="grid grid-cols-2 gap-8 px-2 pb-4 mb-4 border-b-default border-black">
+            
+            
             <div className="w-fit flex gap-8 items-center">
               <span className="text-content">Location : {locationName}</span>
             </div>
-            <div className="w-fit flex gap-8 items-center">
+            <div className="w-full flex gap-8 items-center justify-end">
               <span className="text-content">
                 Selected Room : {meetingRoomName}
               </span>

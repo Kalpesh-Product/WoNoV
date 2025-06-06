@@ -245,6 +245,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
         {!isLoading ? (
           <AgTable
             key={acceptedTickets.length}
+            hideFilter
             data={[
               ...acceptedTickets.map((ticket, index) => ({
                 srNo: index + 1,
