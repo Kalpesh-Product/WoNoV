@@ -162,19 +162,23 @@ const getMembersByUnit = async (req, res, next) => {
     const members = await CoworkingMembers.find({
       unit: unitId,
       company,
-    }).populate([
-      {
-        path: "client",
-        select: "clientName cabinDesks openDesks isActive",
-      },
-      {
-        path: "unit",
-        select: "unitName unitNo openDesks cabinDesks clearImage occupiedImage",
-      },
-    ]);
+    })
+      .populate([
+        {
+          path: "client",
+          select: "clientName cabinDesks openDesks isActive",
+        },
+        {
+          path: "unit",
+          select:
+            "unitName unitNo openDesks cabinDesks clearImage occupiedImage",
+        },
+      ])
+      .lean()
+      .exec();
 
-    if (!members) {
-      return res.status(400).json({ message: "No Member found" });
+    if (!members || members.length === 0) {
+      return res.status(200).json({ members: [], message: "No members found" });
     }
 
     const clientMap = new Map();
