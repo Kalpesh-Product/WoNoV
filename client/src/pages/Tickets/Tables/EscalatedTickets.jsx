@@ -9,6 +9,8 @@ import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { useState } from "react";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import humanDate from "./../../../utils/humanDateForamt";
+
 const EscalatedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
   const [openView, setOpenView] = useState(false);
@@ -18,7 +20,9 @@ const EscalatedTickets = ({ title, departmentId }) => {
   const { data: escalatedTickets = [], isLoading } = useQuery({
     queryKey: ["escalate-tickets"],
     queryFn: async () => {
-      const response = await axios.get(`/api/tickets/ticket-filter/escalate/${departmentId}`);
+      const response = await axios.get(
+        `/api/tickets/ticket-filter/escalate/${departmentId}`
+      );
 
       return response.data;
     },
@@ -204,8 +208,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
           <div
             role="button"
             onClick={() => handleViewTicket(params.data)}
-            className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
-          >
+            className="p-2 rounded-full hover:bg-borderGray cursor-pointer">
             <MdOutlineRemoveRedEye />
           </div>
         </div>
@@ -223,21 +226,49 @@ const EscalatedTickets = ({ title, departmentId }) => {
         <MuiModal
           open={openView}
           onClose={() => setOpenView(false)}
-          title="View Escalated Ticket"
-        >
+          title="View Escalated Ticket">
           {selectedTicket && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
               <DetalisFormatted
                 title="Ticket"
-                detail={selectedTicket.ticketTitle}
+                detail={selectedTicket.ticketTitle || "N/A"}
+              />
+              <DetalisFormatted
+                title="Description"
+                detail={selectedTicket.description || "N/A"}
               />
               <DetalisFormatted
                 title="Raised By"
-                detail={selectedTicket.raisedBy}
+                detail={selectedTicket.raisedBy || "Unknown"}
+              />
+              <DetalisFormatted
+                title="Raised At"
+                detail={humanDate(new Date(selectedTicket.raisedDate))}
               />
               <DetalisFormatted
                 title="From Department"
-                detail={selectedTicket.selectedDepartment?.join(", ") || "N/A"}
+                detail={
+                  selectedTicket.selectedDepartment
+                    .map((item) => item)
+                    .join(", ") || "N/A"
+                }
+              />
+              <DetalisFormatted
+                title="Raised To Department"
+                detail={selectedTicket.raisedToDepartment || "N/A"}
+              />
+              <DetalisFormatted title="Status" detail={selectedTicket.status} />
+              <DetalisFormatted
+                title="Priority"
+                detail={selectedTicket?.priority || "N/A"}
+              />
+              <DetalisFormatted
+                title="Accepted by"
+                detail={selectedTicket?.acceptedBy || "N/A"}
+              />
+              <DetalisFormatted
+                title="Accepted at"
+                detail={selectedTicket?.acceptedAt || "N/A"}
               />
               <DetalisFormatted
                 title="Escalated To"

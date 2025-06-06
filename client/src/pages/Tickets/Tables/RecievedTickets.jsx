@@ -162,7 +162,7 @@ const RecievedTickets = ({ title, departmentId }) => {
       raisedToDepartment: ticket.raisedToDepartment?.name || "N/A",
       status: ticket.status || "Pending",
       raisedDate: ticket.createdAt,
-      priority : ticket.priority || "Low",
+      priority: ticket.priority || "Low",
       image: ticket.image?.url,
     }));
   };
@@ -245,8 +245,7 @@ const RecievedTickets = ({ title, departmentId }) => {
           <div
             role="button"
             onClick={() => handleViewTicket(params.data)}
-            className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
-          >
+            className="p-2 rounded-full hover:bg-borderGray cursor-pointer">
             <MdOutlineRemoveRedEye />
           </div>
           <ThreeDotMenu
@@ -302,15 +301,14 @@ const RecievedTickets = ({ title, departmentId }) => {
       <MuiModal
         open={openView}
         onClose={() => setOpenView(false)}
-        title={"View Ticket"}
-      >
+        title={"View Ticket"}>
         {selectedTicket && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
               title="Ticket"
               detail={selectedTicket.ticketTitle}
             />
-               <DetalisFormatted
+            <DetalisFormatted
               title="Description"
               detail={selectedTicket.description}
             />
@@ -318,12 +316,10 @@ const RecievedTickets = ({ title, departmentId }) => {
               title="Raised By"
               detail={`${selectedTicket.raisedBy}`}
             />
-             <DetalisFormatted
+            <DetalisFormatted
               title="Raised At"
               detail={humanDate(new Date(selectedTicket.raisedDate))}
             />
-              <DetalisFormatted title="Status" detail={selectedTicket.status} />
-              <DetalisFormatted title="Priority" detail={selectedTicket.priority} />
             <DetalisFormatted
               title="From Department"
               detail={selectedTicket.fromDepartment || "N/A"}
@@ -332,8 +328,12 @@ const RecievedTickets = ({ title, departmentId }) => {
               title="Raised To Department"
               detail={selectedTicket.raisedToDepartment || "N/A"}
             />
-         
-           
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
+            <DetalisFormatted
+              title="Priority"
+              detail={selectedTicket.priority}
+            />
+
             {selectedTicket.image && (
               <div className="lg:col-span-2">
                 <img
@@ -382,8 +382,7 @@ const RecievedTickets = ({ title, departmentId }) => {
         open={rejectModalOpen}
         setOpen={setRejectModalOpen}
         title="Reject Ticket"
-        onClose={() => setRejectModalOpen(false)}
-      >
+        onClose={() => setRejectModalOpen(false)}>
         <div className="flex flex-col gap-4">
           <textarea
             placeholder="Please mention the reason for rejection..."
@@ -398,8 +397,7 @@ const RecievedTickets = ({ title, departmentId }) => {
               !rejectionReason.trim() || rejectPending
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-red-600 hover:bg-red-700"
-            } text-white px-4 py-2 rounded transition`}
-          >
+            } text-white px-4 py-2 rounded transition`}>
             {rejectPending ? "Submitting..." : "Submit Rejection"}
           </button>
         </div>
