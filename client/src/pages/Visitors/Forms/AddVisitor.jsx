@@ -40,11 +40,11 @@ const AddVisitor = () => {
       clientCompany: "",
       visitorType: "",
       visitorCompany: "",
-      paymentAmount:"",
-      paymentStatus:""
+      paymentAmount: "",
+      paymentStatus: "",
     },
   });
-  
+
   const selectedCompany = watch("clientCompany");
   const selectedIdType = watch("idProof.idType");
   const visitorType = watch("visitorType");
@@ -76,19 +76,21 @@ const AddVisitor = () => {
     },
   });
 
-
-  const { data: clientMembers = [], isLoading: clientMembersIsLoading } = useQuery({
-  queryKey: ["clientMembers", selectedCompany],
-  queryFn: async () => {
-    try {
-      const response = await axios.get(`/api/sales/co-working-client-members?clientId=${selectedCompany}`);
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response.data.message);
-    }
-  },
-  enabled: !!selectedCompany, // <-- Runs only if selectedCompany has a truthy value
-});
+  const { data: clientMembers = [], isLoading: clientMembersIsLoading } =
+    useQuery({
+      queryKey: ["clientMembers", selectedCompany],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            `/api/sales/co-working-client-members?clientId=${selectedCompany}`
+          );
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response.data.message);
+        }
+      },
+      enabled: !!selectedCompany, // <-- Runs only if selectedCompany has a truthy value
+    });
 
   //---------------------------------------Data processing----------------------------------------------------//
   const departmentMap = new Map();
@@ -119,13 +121,6 @@ const AddVisitor = () => {
           <span className="text-content font-pmedium">
             {data.message || "Visitor Added Successfully"}
           </span>
-          {/* <PrimaryButton
-            title={"Book a Meeting"}
-            handleSubmit={() => {
-              toast.dismiss(t);
-              navigate("/app/meetings/book-meeting");
-            }}
-          /> */}
         </div>
       ));
       reset();
@@ -135,7 +130,23 @@ const AddVisitor = () => {
     },
   });
   const onSubmit = (data) => {
-    addVisitor(data);
+    const isBiznest = data.clientCompany === "6799f0cd6a01edbe1bc3fcea";
+
+    const payload = {
+      ...data,
+      department: isBiznest
+        ? data.department === "na"
+          ? null
+          : data.department
+        : null,
+      toMeet: isBiznest
+        ? data.department === "na"
+          ? null
+          : data.toMeet
+        : data.toMeet || null, // allow client member ID
+    };
+
+    addVisitor(payload);
   };
 
   const handleReset = () => {
@@ -144,7 +155,7 @@ const AddVisitor = () => {
 
   return (
     <div className=" p-4">
-      <form onSubmit={handleSubmit(onSubmit)} className="">
+      <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             {/* Section: Basic Information */}
@@ -311,10 +322,9 @@ const AddVisitor = () => {
               <span className="text-subtitle font-pmedium">To Meet</span>
             </div>
             <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-             <Controller
+              <Controller
                 name="clientCompany"
                 control={control}
-                // rules={{ required: "Company is required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -323,15 +333,18 @@ const AddVisitor = () => {
                     fullWidth
                     onChange={(e) => {
                       field.onChange(e);
-                      setSelectedDepartment(e.target.value);
+                      // ❌ Remove this line
+                      // setSelectedDepartment(e.target.value);
+                      setSelectedDepartment(""); // Reset department when company changes
                     }}
                     select
                   >
-
-                    <MenuItem value="" disabled>Select Company</MenuItem>
+                    <MenuItem value="" disabled>
+                      Select Company
+                    </MenuItem>
                     <MenuItem value="6799f0cd6a01edbe1bc3fcea">
-                            BizNest
-                          </MenuItem>
+                      BIZNest
+                    </MenuItem>
                     {clientCompanies.map((client) => (
                       <MenuItem key={client._id} value={client._id}>
                         {client.clientName}
@@ -350,8 +363,8 @@ const AddVisitor = () => {
                     {...field}
                     size="small"
                     label={"Select Department"}
-                    disabled={!!selectedCompany}
                     fullWidth
+                    disabled={selectedCompany !== "6799f0cd6a01edbe1bc3fcea"} // Enable only if BIZNest is selected
                     onChange={(e) => {
                       field.onChange(e);
                       setSelectedDepartment(e.target.value);
@@ -377,39 +390,57 @@ const AddVisitor = () => {
               <Controller
                 name="toMeet"
                 control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    select
-                    size="small"
-                    disabled={selectedDepartment === "na"}
-                    fullWidth
-                    label={"Select Person"}
-                  >
-                    <MenuItem value="">Select the person to meet</MenuItem>
-                    {selectedCompany ? !clientMembersIsLoading  ? 
-                    (
-                      clientMembers.map((employee) => (
-                        <MenuItem
-                          key={employee._id}
-                          value={employee._id}
-                        >{`${employee.employeeName}`}</MenuItem>
-                      ))
-                    ) : (
-                      <CircularProgress />
-                    )
-                    :!isLoading ? (
-                      departmentEmployees.map((employee) => (
-                        <MenuItem
-                          key={employee._id}
-                          value={employee._id}
-                        >{`${employee.firstName} ${employee.lastName}`}</MenuItem>
-                      ))
-                    ) : (
-                      <CircularProgress />
-                    )}
-                  </TextField>
-                )}
+                render={({ field }) => {
+                  const isBiznest =
+                    selectedCompany === "6799f0cd6a01edbe1bc3fcea";
+                  const showClientMembers = selectedCompany && !isBiznest;
+                  const showBiznestEmployees =
+                    isBiznest &&
+                    selectedDepartment &&
+                    selectedDepartment !== "na";
+
+                  return (
+                    <TextField
+                      {...field}
+                      select
+                      size="small"
+                      fullWidth
+                      disabled={
+                        (!showClientMembers && !showBiznestEmployees) ||
+                        (isBiznest && selectedDepartment === "na")
+                      }
+                      label={"Select Person"}
+                    >
+                      <MenuItem value="">Select the person to meet</MenuItem>
+
+                      {/* Show client members if a non-BIZNest company is selected */}
+                      {showClientMembers && !clientMembersIsLoading ? (
+                        clientMembers.map((member) => (
+                          <MenuItem key={member._id} value={member._id}>
+                            {member.employeeName}
+                          </MenuItem>
+                        ))
+                      ) : showClientMembers && clientMembersIsLoading ? (
+                        <MenuItem disabled>
+                          <CircularProgress size={20} />
+                        </MenuItem>
+                      ) : null}
+
+                      {/* Show BIZNest employees from selected department */}
+                      {showBiznestEmployees && !isLoading ? (
+                        departmentEmployees.map((emp) => (
+                          <MenuItem key={emp._id} value={emp._id}>
+                            {emp.firstName} {emp.lastName}
+                          </MenuItem>
+                        ))
+                      ) : showBiznestEmployees && isLoading ? (
+                        <MenuItem disabled>
+                          <CircularProgress size={20} />
+                        </MenuItem>
+                      ) : null}
+                    </TextField>
+                  );
+                }}
               />
             </div>
 
@@ -417,7 +448,7 @@ const AddVisitor = () => {
               <span className="text-subtitle font-pmedium">Verfication</span>
             </div>
             <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-               <Controller
+              <Controller
                 name="idProof.idType"
                 control={control}
                 rules={{ required: "Id Type is required" }}
@@ -492,7 +523,7 @@ const AddVisitor = () => {
               />
             </div>
 
- <div className="py-4 border-b-default border-borderGray">
+            <div className="py-4 border-b-default border-borderGray">
               <span className="text-subtitle font-pmedium">Payment</span>
             </div>
             <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
@@ -519,7 +550,7 @@ const AddVisitor = () => {
                   />
                 )}
               />
-               <Controller
+              <Controller
                 name="paymentStatus"
                 control={control}
                 // rules={{ required: "Payment status is required" }}
