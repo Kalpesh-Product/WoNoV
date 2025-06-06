@@ -173,7 +173,7 @@ const Projections = () => {
         <WidgetSection padding>
           <YearlyGraph
             options={incomeExpenseOptions}
-            data={incomeExpenseData}
+            data={[]}
             title={"PROJECTIONS"}
             currentYear
           />
@@ -198,7 +198,7 @@ const Projections = () => {
           TitleAmount={`INR ${totalPnL.toLocaleString()}`}
         >
           <AgTable
-            data={monthlyProfitLossData}
+            data={[]}
             columns={monthlyProfitLossColumns}
             search={true}
           />
