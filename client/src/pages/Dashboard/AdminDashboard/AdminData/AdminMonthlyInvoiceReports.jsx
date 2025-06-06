@@ -233,6 +233,7 @@ const AdminMonthlyInvoiceReports = () => {
     ];
 
 
+  // const invoiceData = []
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
