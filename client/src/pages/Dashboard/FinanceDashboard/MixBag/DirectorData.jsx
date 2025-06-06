@@ -49,7 +49,7 @@ const columns = [
     <div className="p-4 space-y-4">
       <AgTable
         columns={columns}
-        data={fileRows}
+        data={[]}
         tableTitle={`KYC Documents of ${name}`}
         tableHeight={300}
         hideFilter

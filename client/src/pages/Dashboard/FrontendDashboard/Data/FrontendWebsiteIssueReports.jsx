@@ -171,7 +171,7 @@ const FrontendWebsiteIssueReports = () => {
           search={true}
           searchColumn={"clientName"}
           tableTitle={"Website Issue Reports"}
-          data={rows}
+          data={[]}
           columns={websiteIssueReportsColumn}
         />
       </div>

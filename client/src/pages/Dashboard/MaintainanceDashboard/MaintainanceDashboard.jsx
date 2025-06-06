@@ -704,19 +704,19 @@ const MaintainanceDashboard = () => {
         <DataCard
           route={"maintenance-offices"}
           title={"Total"}
-          data={"11"}
+          data={""}
           description={"Offices Under Maintenance"}
         />,
         <DataCard
           route={"/app/tasks"}
           title={"Total"}
-          data={"38"}
+          data={""}
           description={"Monthly Due Tasks"}
         />,
         <DataCard
           route={"maintenance-expenses"}
           title={"Average"}
-          data={`INR ${inrFormat("61000")}`}
+          data={""}
           description={"Monthly Expense"}
         />,
       ],
@@ -727,19 +727,19 @@ const MaintainanceDashboard = () => {
         <DataCard
           route={"per-sq-ft-expense"}
           title={"Total"}
-          data={"INR 350"}
+          data={""}
           description={"Expense Per Sq. Ft."}
         />,
         <DataCard
           route={"maintenance-assets"}
           title={"Total"}
-          data={"250"}
+          data={""}
           description={"Assets Under Management"}
         />,
         <DataCard
           route={"annual-expenses"}
           title={"Free"}
-          data={"INR 200"}
+          data={""}
           description={"Yearly Expense"}
         />,
       ],
@@ -750,16 +750,16 @@ const MaintainanceDashboard = () => {
       widgets: [
         <WidgetSection border title={"Category Wise Maintenance"}>
           <PieChartMui
-            data={pieCategoryWiseMaintenanceData}
-            options={pieCategoryWiseMaintenanceOptions}
+            data={[]}
+            options={[]}
           />
         </WidgetSection>,
         <WidgetSection border title={"Due Maintenance"}>
           <DonutChart
             centerLabel="Due Tasks"
-            labels={labelsMaintenance}
+            labels={[]}
             colors={colorsMaintenance}
-            series={pieDueMaintenanceData}
+            series={[]}
             tooltipValue={dueMaintenanceCount}
           />
         </WidgetSection>,
@@ -771,14 +771,14 @@ const MaintainanceDashboard = () => {
       widgets: [
         <WidgetSection border title={"Unit Wise Maintenance"}>
           <PieChartMui
-            data={pieComplaintsData}
-            options={pieComplaintsOptions}
+            data={[]}
+            options={[]}
           />
         </WidgetSection>,
         <WidgetSection border title={"Maintenance Execution Channel"}>
           <PieChartMui
-            data={pieExecutionChannelData}
-            options={pieExecutionChannelOptions}
+            data={[]}
+            options={[]}
           />
         </WidgetSection>,
       ],
@@ -788,14 +788,14 @@ const MaintainanceDashboard = () => {
       widgets: [
         <WidgetSection border title={"Average Monthly Due Maintenance"}>
           <PieChartMui
-            data={pieMonthlyDueTasksData}
-            options={pieMonthlyDueTasksOptions}
+            data={[]}
+            options={[]}
           />
         </WidgetSection>,
         <WidgetSection border title={"Average Yearly Due Maintenance"}>
           <PieChartMui
-            data={pieYearlyDueTasksData}
-            options={pieYearlyDueTasksOptions}
+            data={[]}
+            options={[]}
           />
         </WidgetSection>,
       ],
@@ -809,12 +809,7 @@ const MaintainanceDashboard = () => {
           rowsToDisplay={4}
           Title={"Top 10 High Priority Due Tasks"}
           rows={[
-            ...priorityTasks.map((task, index) => ({
-              id: index + 1,
-              taskName: task.taskName,
-              type: task.type,
-              endTime: task.endTime,
-            })),
+           
           ]}
           columns={priorityTasksColumns}
         />,
@@ -822,14 +817,7 @@ const MaintainanceDashboard = () => {
           key={executiveTimings.length}
           Title={"Weekly Executive Shift Timing"}
           rows={[
-            ...executiveTimings.map((timing, index) => ({
-              srNo: index + 1,
-              name: timing.name,
-              building: timing.building,
-              unitNo: timing.unitNo,
-              startTime: timing.startTime,
-              endTime: timing.endTime,
-            })),
+          
           ]}
           columns={executiveTimingsColumns}
           scroll

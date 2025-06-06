@@ -119,13 +119,7 @@ const ItAnnualExpenses = () => {
         searchColumn={"Asset Number"}
         tableTitle={"Annual Expenses"}
         data={[
-          ...expenseData.map((expense, index) => ({
-            id: index + 1,
-            category: expense.category,
-            expenseName: expense.expenseName,
-            date: expense.date,
-            amount: inrFormat(expense.amount),
-          })),
+         
         ]}
         columns={expenseColumns}
       />

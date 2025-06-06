@@ -282,17 +282,7 @@ const ItInventory = () => {
         tableTitle={"List Of Inventory"}
         buttonTitle={"Add Inventory"}
         data={[
-          ...assetsList.map((asset, index) => ({
-            id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price: inrFormat(asset.price),
-            quantity: asset.quantity,
-            purchaseDate: dayjs(asset.purchaseDate).format("DD-MM-YYYY"),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
-          })),
+          
         ]}
         columns={assetColumns}
         handleClick={handleAddAsset}

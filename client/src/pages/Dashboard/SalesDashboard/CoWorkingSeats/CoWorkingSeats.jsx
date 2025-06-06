@@ -76,24 +76,32 @@ const CoWorkingSeats = () => {
         const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
         const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
+        // Check if client is active in this month (even if started in a previous year)
         if (clientStart <= monthEnd && clientEnd >= monthStart) {
           if (!monthMap[key]) {
             monthMap[key] = {
               month: key,
               booked: 0,
-              clients: [],
+              clientsMap: new Map(),
             };
           }
 
-          monthMap[key].booked += totalDesks;
+          const monthData = monthMap[key];
 
-          monthMap[key].clients.push({
-            location: client.unit?.building?.buildingName,
-            floor: client.unit?.unitName,
-            totalSeats: unitSeats,
-            booked: totalDesks,
-            available: Math.max(unitSeats - totalDesks, 0),
-          });
+          const unitKey = client.unit?.unitNo; // ✅ use unitNo as key
+          if (!unitKey) return;
+
+          if (!monthData.clientsMap.has(unitKey + client._id)) {
+            monthData.clientsMap.set(unitKey + client._id, {
+              location: client.unit?.building?.buildingName,
+              floor: unitKey, // 👈 Display correct unitNo
+              totalSeats: unitSeats,
+              booked: totalDesks,
+            });
+          }
+
+          const unitEntry = monthData.clientsMap.get(unitId);
+          // unitEntry.booked += totalDesks;
         }
       });
     });
@@ -103,13 +111,31 @@ const CoWorkingSeats = () => {
       0
     );
 
-    const monthlySeatData = monthsInFY.map(({ key }) => ({
-      ...monthMap[key],
-      month: key,
-      booked: monthMap[key]?.booked || 0,
-      total: totalSeats,
-      clients: monthMap[key]?.clients || [],
-    }));
+    const monthlySeatData = monthsInFY.map(({ key }) => {
+      const month = monthMap[key];
+      if (!month) {
+        return {
+          month: key,
+          booked: 0,
+          total: totalSeats,
+          clients: [],
+        };
+      }
+
+      const clients = Array.from(month.clientsMap.values()).map((client) => ({
+        ...client,
+        available: Math.max(client.totalSeats - client.booked, 0),
+      }));
+
+      const totalBooked = clients.reduce((sum, c) => sum + c.booked, 0);
+
+      return {
+        month: key,
+        booked: totalBooked,
+        total: totalSeats,
+        clients,
+      };
+    });
 
     return { totalSeats, occupiedSeats, monthlySeatData };
   }, [clientsData]);
@@ -243,7 +269,8 @@ const CoWorkingSeats = () => {
               columns={[
                 { headerName: "Sr No", field: "id", width: 100 },
                 { headerName: "Location", field: "location" },
-                { headerName: "Floor", field: "floor" },
+                { headerName: "Unit No", field: "floor" }, // ✅ Correct label
+
                 { headerName: "Total Seats", field: "totalSeats" },
                 { headerName: "Booked Seats", field: "booked" },
                 { headerName: "Available Seats", field: "available" },

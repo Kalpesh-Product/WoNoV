@@ -414,7 +414,7 @@ const FrontendDashboard = () => {
           title={"Site Visitors"}
           titleLabel={"FY 2024-25"}
         >
-          <BarGraph data={siteVisitorsData} options={siteVisitorOptions} />
+          <BarGraph data={[]} options={siteVisitorOptions} />
         </WidgetSection>,
       ],
     },
@@ -442,16 +442,16 @@ const FrontendDashboard = () => {
         <WidgetSection layout={1} border title={"Nation-wise site Visitors"}>
           <PieChartMui
             percent={true} // Enable percentage display
-            data={nationWiseData} // Pass processed data
-            options={nationWisePieChart}
+            data={[]} // Pass processed data
+            options={[]}
             width={500}
           />
         </WidgetSection>,
         <WidgetSection layout={1} border title={"State-wise site Visitors"}>
           <PieChartMui
             percent={true} // Enable percentage display
-            data={goaDistrictData} // Pass processed data
-            options={goaDistrictPieChart}
+            data={[]} // Pass processed data
+            options={[]}
             width={500}
           />
         </WidgetSection>,
@@ -485,7 +485,7 @@ const FrontendDashboard = () => {
       layout: 1,
       widgets: [
         <WidgetSection layout={1} title={"Website Issues Raised"} border>
-          <LineGraph options={websiteIssuesOptions} data={websiteIssuesData} />
+          <LineGraph options={websiteIssuesOptions} data={[]} />
         </WidgetSection>,
       ],
     },

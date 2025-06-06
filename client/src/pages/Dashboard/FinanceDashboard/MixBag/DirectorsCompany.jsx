@@ -139,7 +139,7 @@ const DirectorsCompany = () => {
     <div className="p-4">
       <AgTable
         columns={columns}
-        data={tableData}
+        data={[]}
         tableTitle={"COMPANY KYC"}
         tableHeight={400}
         hideFilter
