@@ -33,12 +33,19 @@ const AddVisitor = () => {
       idProof: { idType: "", idNumber: "" },
       dateOfVisit: null,
       checkIn: null,
+      checkOut: null,
       toMeet: "",
       department: "",
+      clientToMeet: "",
+      clientCompany: "",
       visitorType: "",
       visitorCompany: "",
+      paymentAmount:"",
+      paymentStatus:""
     },
   });
+  
+  const selectedCompany = watch("clientCompany");
   const selectedIdType = watch("idProof.idType");
   const visitorType = watch("visitorType");
 
@@ -58,7 +65,7 @@ const AddVisitor = () => {
   });
 
   const { data: clientCompanies = [], clientCompaniesIsLoading } = useQuery({
-    queryKey: ["employees"],
+    queryKey: ["clientCompanies"],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/sales/co-working-clients");
@@ -69,17 +76,20 @@ const AddVisitor = () => {
     },
   });
 
-  //  const { data: clientMembers = [], clientMembersIsLoading } = useQuery({
-  //   queryKey: ["employees"],
-  //   queryFn: async () => {
-  //     try {
-  //       const response = await axios.get(`/api/sales/co-working-members?client=${client}`);
-  //       return response.data;
-  //     } catch (error) {
-  //       throw new Error(error.response.data.message);
-  //     }
-  //   },
-  // });
+
+  const { data: clientMembers = [], isLoading: clientMembersIsLoading } = useQuery({
+  queryKey: ["clientMembers", selectedCompany],
+  queryFn: async () => {
+    try {
+      const response = await axios.get(`/api/sales/co-working-client-members?clientId=${selectedCompany}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response.data.message);
+    }
+  },
+  enabled: !!selectedCompany, // <-- Runs only if selectedCompany has a truthy value
+});
+
   //---------------------------------------Data processing----------------------------------------------------//
   const departmentMap = new Map();
   employees.forEach((employee) => {
@@ -301,6 +311,36 @@ const AddVisitor = () => {
               <span className="text-subtitle font-pmedium">To Meet</span>
             </div>
             <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+             <Controller
+                name="clientCompany"
+                control={control}
+                // rules={{ required: "Company is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label={"Select Company"}
+                    fullWidth
+                    onChange={(e) => {
+                      field.onChange(e);
+                      setSelectedDepartment(e.target.value);
+                    }}
+                    select
+                  >
+
+                    <MenuItem value="" disabled>Select Company</MenuItem>
+                    <MenuItem value="6799f0cd6a01edbe1bc3fcea">
+                            BizNest
+                          </MenuItem>
+                    {clientCompanies.map((client) => (
+                      <MenuItem key={client._id} value={client._id}>
+                        {client.clientName}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+
               <Controller
                 name="department"
                 control={control}
@@ -310,6 +350,7 @@ const AddVisitor = () => {
                     {...field}
                     size="small"
                     label={"Select Department"}
+                    disabled={!!selectedCompany}
                     fullWidth
                     onChange={(e) => {
                       field.onChange(e);
@@ -346,7 +387,18 @@ const AddVisitor = () => {
                     label={"Select Person"}
                   >
                     <MenuItem value="">Select the person to meet</MenuItem>
-                    {!isLoading ? (
+                    {selectedCompany ? !clientMembersIsLoading  ? 
+                    (
+                      clientMembers.map((employee) => (
+                        <MenuItem
+                          key={employee._id}
+                          value={employee._id}
+                        >{`${employee.employeeName}`}</MenuItem>
+                      ))
+                    ) : (
+                      <CircularProgress />
+                    )
+                    :!isLoading ? (
                       departmentEmployees.map((employee) => (
                         <MenuItem
                           key={employee._id}
@@ -359,7 +411,13 @@ const AddVisitor = () => {
                   </TextField>
                 )}
               />
-              <Controller
+            </div>
+
+            <div className="py-4 border-b-default border-borderGray">
+              <span className="text-subtitle font-pmedium">Verfication</span>
+            </div>
+            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+               <Controller
                 name="idProof.idType"
                 control={control}
                 rules={{ required: "Id Type is required" }}
@@ -433,12 +491,66 @@ const AddVisitor = () => {
                 )}
               />
             </div>
+
+ <div className="py-4 border-b-default border-borderGray">
+              <span className="text-subtitle font-pmedium">Payment</span>
+            </div>
+            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+              <Controller
+                name="paymentAmount"
+                control={control}
+                // rules={{
+                //   required: "Payment amount is required",
+                // }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    disabled
+                    label="Payment Amount"
+                    fullWidth
+                    error={!!errors.paymentAmount}
+                    helperText={errors.paymentAmount?.message}
+                    onChange={(e) => {
+                      let value = e.target.value;
+                      field.onChange(value);
+                    }}
+                    value={field.value}
+                  />
+                )}
+              />
+               <Controller
+                name="paymentStatus"
+                control={control}
+                // rules={{ required: "Payment status is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Payment Status"
+                    disabled
+                    select
+                    error={!!errors.paymentStatus}
+                    helperText={errors.paymentStatus?.message}
+                    fullWidth
+                  >
+                    <MenuItem value="" disabled>
+                      Select Payment Status
+                    </MenuItem>
+                    <MenuItem value="paid">Paid</MenuItem>
+                    <MenuItem value="unpaid">Unpaid</MenuItem>
+                    {/* <MenuItem value="drivingLicense">Driving License</MenuItem> */}
+                  </TextField>
+                )}
+              />
+            </div>
+
             <div>
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">Timings</span>
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <Controller
                     name="dateOfVisit"
                     control={control}
@@ -461,7 +573,7 @@ const AddVisitor = () => {
                       />
                     )}
                   />
-                </LocalizationProvider>
+                </LocalizationProvider> */}
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <Controller
                     name="checkIn"
@@ -478,6 +590,28 @@ const AddVisitor = () => {
                             fullWidth
                             error={!!errors.checkIn}
                             helperText={errors.checkIn?.message}
+                          />
+                        )}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Controller
+                    name="checkOut"
+                    control={control}
+                    rules={{ required: "Check-Out time is required" }}
+                    render={({ field }) => (
+                      <TimePicker
+                        {...field}
+                        label={"Check-Out Time"}
+                        slotProps={{ textField: { size: "small" } }}
+                        render={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            error={!!errors.checkOut}
+                            helperText={errors.checkOut?.message}
                           />
                         )}
                       />
