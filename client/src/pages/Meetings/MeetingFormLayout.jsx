@@ -277,6 +277,7 @@ const MeetingFormLayout = () => {
           </div>
         ) : (
           <FullCalendar
+            allDaySlot={false} // 🔴 This removes the "All-day" tab in timeGrid views
             key={events.length}
             headerToolbar={{
               left: "prev title next",
@@ -326,12 +327,10 @@ const MeetingFormLayout = () => {
       <MuiModal
         open={open}
         onClose={() => setOpen(false)}
-        title={`${meetingType} Meeting`}
-      >
+        title={`${meetingType} Meeting`}>
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col w-full gap-4"
-        >
+          className="flex flex-col w-full gap-4">
           <div className="grid grid-cols-2 gap-8 px-2 pb-4 mb-4 border-b-default border-borderGray">
             <div className="w-fit flex gap-8 items-center">
               <span className="text-content">
@@ -364,8 +363,7 @@ const MeetingFormLayout = () => {
                     select
                     fullWidth
                     disabled={!showExternalType}
-                    size="small"
-                  >
+                    size="small">
                     <MenuItem value="" disabled>
                       Select a Meeting Type
                     </MenuItem>
@@ -444,8 +442,7 @@ const MeetingFormLayout = () => {
                           label="Company"
                           select
                           size="small"
-                          fullWidth
-                        >
+                          fullWidth>
                           <MenuItem value="" disabled>
                             Select a company
                           </MenuItem>
@@ -598,8 +595,7 @@ const MeetingFormLayout = () => {
                         select
                         label="Select External Company"
                         size="small"
-                        fullWidth
-                      >
+                        fullWidth>
                         <MenuItem value="" disabled>
                           Select a company
                         </MenuItem>
@@ -608,8 +604,7 @@ const MeetingFormLayout = () => {
                           .map((user) => (
                             <MenuItem
                               key={user._id}
-                              value={user.visitorCompany?._id}
-                            >
+                              value={user.visitorCompany?._id}>
                               {user.visitorCompany?.companyName ?? ""}
                             </MenuItem>
                           ))}
