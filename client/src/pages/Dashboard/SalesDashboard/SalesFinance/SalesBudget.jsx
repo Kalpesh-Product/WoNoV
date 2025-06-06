@@ -32,7 +32,7 @@ const SalesBudget = () => {
 
   const [openModal, setOpenModal] = useState(false);
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
-    queryKey: ["hrFinance"],
+    queryKey: ["salesBudget"],
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -81,11 +81,6 @@ const SalesBudget = () => {
 
       stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
-      events: {
-        dataPointSelection: () => {
-          navigate("finance/budget");
-        },
-      },
     },
     colors: ["#54C4A7", "#EB5C45"],
     plotOptions: {
@@ -146,7 +141,7 @@ const SalesBudget = () => {
     },
 
     tooltip: {
-      enabled: true,
+      enabled: false,
       custom: function ({ series, seriesIndex, dataPointIndex }) {
         const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
         // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
@@ -286,43 +281,6 @@ const SalesBudget = () => {
               )}`}
             />
           </Suspense>
-        </div>
-        <div>
-          <WidgetSection layout={2} padding>
-            {/* <DataCard
-              data={"INR " + inrFormat("2000000")}
-              title={"Projected"}
-              route={"/app/dashboard/hr-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            /> */}
-            <DataCard
-              data={"N/A"}
-              title={"Actual"}
-              route={"/app/dashboard/hr-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            />
-            <DataCard
-              data={"N/A"}
-              title={"Requested"}
-              route={"/app/dashboard/hr-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            />
-          </WidgetSection>
         </div>
 
         <div className="flex justify-end">
