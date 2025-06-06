@@ -731,6 +731,8 @@ const AdminElectricityExpenses = () => {
       ]
     }
   ]
+
+  // const electricityData = []
   
   const { auth } = useAuth();
   const axios = useAxiosPrivate();

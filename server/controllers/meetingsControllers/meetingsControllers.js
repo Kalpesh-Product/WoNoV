@@ -13,6 +13,10 @@ const CustomError = require("../../utils/customErrorlogs");
 const Visitor = require("../../models/visitor/Visitor");
 const Review = require("../../models/meetings/Reviews");
 const CoworkingMembers = require("../../models/sales/CoworkingMembers");
+const UserData = require("../../models/hr/UserData");
+const Company = require("../../models/hr/Company");
+const CoworkingClient = require("../../models/sales/CoworkingClient");
+const ExternalCompany = require("../../models/meetings/ExternalCompany");
 
 const addMeetings = async (req, res, next) => {
   const logPath = "meetings/MeetingLog";
@@ -1209,6 +1213,90 @@ const updateMeetingStatus = async (req, res, next) => {
     .json({ message: "Meeting status updated successfully" });
 };
 
+const getAllCompanies = async (req, res, next) => {
+  const { company } = req;
+
+  //Fetching all the companies
+  const foundCompany = await Company.find({ _id: company }).select(
+    "companyName"
+  );
+  const coworkingCompanies = await CoworkingClient.find({ company }).select(
+    "clientName"
+  );
+  const visitorCompanies = await ExternalCompany.find().select("companyName");
+
+  if (!foundCompany) {
+    return res.status(404).json({ message: "No company found" });
+  }
+
+  if (!coworkingCompanies) {
+    return res.status(404).json({ message: "No coworking company found" });
+  }
+
+  if (!visitorCompanies) {
+    return res.status(404).json({ message: "No visitor company found" });
+  }
+
+  //Fetching all the members
+
+  const companyEmployees = await UserData.find({ company })
+    .populate([{ path: "company", select: "companyName" }])
+    .select("firstName middleName lastName email")
+    .lean()
+    .exec();
+
+  const coworkingMembers = await CoworkingMembers.find({ company })
+    .populate([{ path: "client", select: "clientName email" }])
+    .select("employeeName email")
+    .lean()
+    .exec();
+
+  const visitorMembers = await Visitor.find({ company })
+    .select("firstName middleName lastName email visitorCompany")
+    .lean()
+    .exec();
+
+  //Adding members to each company data
+
+  const companyWithMembers = foundCompany.map((client) => {
+    return {
+      ...client._doc,
+      members: companyEmployees.filter(
+        (member) => member?.company._id.toString() === client?._id.toString()
+      ),
+    };
+  });
+
+  const coworkingWithMembers = coworkingCompanies.map((client) => {
+    return {
+      ...client._doc,
+      members: coworkingMembers.filter(
+        (member) => member?.client._id.toString() === client?._id.toString()
+      ),
+    };
+  });
+
+  const visitorWithMembers = visitorCompanies.map((client) => {
+    return {
+      ...client._doc,
+      members: visitorMembers.filter((member) => {
+        return (
+          member?.visitorCompany &&
+          member?.visitorCompany === client.companyName
+        );
+      }),
+    };
+  });
+
+  const allCompanies = [
+    ...companyWithMembers,
+    ...coworkingWithMembers,
+    ...visitorWithMembers,
+  ];
+
+  return res.status(200).json(allCompanies);
+};
+
 module.exports = {
   addMeetings,
   getMeetings,
@@ -1219,6 +1307,7 @@ module.exports = {
   getMeetingsByTypes,
   cancelMeeting,
   getAvaliableUsers,
+  getAllCompanies,
   getSingleRoomMeetings,
   updateMeetingStatus,
 };
