@@ -268,7 +268,6 @@ const Calender = () => {
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
                 events={filteredEvents}
-                allDaySlot={false} // 🔴 This removes the "All-day" tab in timeGrid views
               />
             </div>
           </div>
