@@ -245,6 +245,8 @@ const AdminVendorDatabase = () => {
   ];
 
 
+  // const vendorsList = []
+  
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
     setModalMode("view");

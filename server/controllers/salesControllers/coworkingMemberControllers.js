@@ -102,16 +102,16 @@ const createMember = async (req, res, next) => {
 
 const getAllMembers = async (req, res, next) => {
   try {
-    const { client, service } = req.query;
+    const { client } = req.query;
 
     if (!client) {
       return res.status(400).json({ message: "Client ID is missing" });
     }
 
-    if (!service) {
-      //service is a string
-      return res.status(400).json({ message: "Service is missing" });
-    }
+    // if (!service) {
+    //   //service is a string
+    //   return res.status(400).json({ message: "Service is missing" });
+    // }
 
     if (!mongoose.Types.ObjectId.isValid(client)) {
       return res.status(400).json({ message: "Invalid client ID provided" });

@@ -56,6 +56,30 @@ const AddVisitor = () => {
       }
     },
   });
+
+  const { data: clientCompanies = [], clientCompaniesIsLoading } = useQuery({
+    queryKey: ["employees"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/co-working-clients");
+        return response.data;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
+
+  //  const { data: clientMembers = [], clientMembersIsLoading } = useQuery({
+  //   queryKey: ["employees"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get(`/api/sales/co-working-members?client=${client}`);
+  //       return response.data;
+  //     } catch (error) {
+  //       throw new Error(error.response.data.message);
+  //     }
+  //   },
+  // });
   //---------------------------------------Data processing----------------------------------------------------//
   const departmentMap = new Map();
   employees.forEach((employee) => {
