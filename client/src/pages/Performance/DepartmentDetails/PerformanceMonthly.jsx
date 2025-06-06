@@ -96,10 +96,10 @@ const PerformanceMonthly = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
-      queryClient.invalidateQueries({ queryKey: ["completedEntriesKPA"] });
       queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
       queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
+      queryClient.invalidateQueries({ queryKey: ["completedEntriesKPA"] });
       toast.success(data.message || "KPA updated");
     },
     onError: (error) => {

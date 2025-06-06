@@ -94,10 +94,10 @@ const PerformanceKra = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
-      queryClient.invalidateQueries({ queryKey: ["completedEntries"] });
       queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA"] });
       queryClient.refetchQueries({ queryKey: ["completedEntries"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
+      queryClient.invalidateQueries({ queryKey: ["completedEntries"] });
       toast.success(data.message || "KRA updated");
     },
     onError: (error) => {
