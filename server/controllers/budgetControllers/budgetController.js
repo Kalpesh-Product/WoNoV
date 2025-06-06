@@ -134,7 +134,10 @@ const fetchBudget = async (req, res, next) => {
     }
 
     const allBudgets = await Budget.find(query)
-      .populate([{ path: "department", select: "name" }])
+      .populate([
+        { path: "department", select: "name" },
+        { path: "unit", populate: { path: "building", model: "Building" } },
+      ])
       .lean()
       .exec();
 
