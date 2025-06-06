@@ -45,7 +45,7 @@ const FinanceBudget = () => {
     },
   });
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
-    queryKey: ["hrFinance"],
+    queryKey: ["financeBudget"],
     queryFn: async () => {
       try {
         const response = await axios.get(

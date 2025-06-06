@@ -118,17 +118,13 @@ const AllocatedBudget = ({
     noFilter,
   ]);
 
-  const totalProjectedAmountForFY = useMemo(() => {
-    return filteredMonths.reduce((sum, month) => {
-      return (
-        sum +
-        allTypes.reduce((typeSum, type) => {
-          const data = groupedData[type]?.[month];
-          return typeSum + (data?.projectedAmount || 0);
-        }, 0)
-      );
-    }, 0);
-  }, [filteredMonths, groupedData, allTypes]);
+const totalProjectedAmountForFY = useMemo(() => {
+  return filteredMonths.reduce((sum, month) => {
+    const data = groupedData["All"]?.[month];
+    return sum + (data?.projectedAmount || 0);
+  }, 0);
+}, [filteredMonths, groupedData]);
+
 
   if (isLoading) return <CircularProgress />;
 
