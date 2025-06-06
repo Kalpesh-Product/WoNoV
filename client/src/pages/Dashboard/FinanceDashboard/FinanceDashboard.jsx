@@ -638,43 +638,6 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
 
   //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
   //-----------------------------------------------------Table Priority Tasks------------------------------------------------------//
-
-  const priorityTasks = [
-    { taskName: "GST Filing Report", type: "Daily", endTime: "12:00 PM" },
-    {
-      taskName: "Collection Report",
-      type: "Daily",
-      endTime: "03:00 PM",
-    },
-    { taskName: "Tally Update", type: "Monthly", endTime: "10:00 AM" },
-    { taskName: "TDS Query Update", type: "Daily", endTime: "02:30 PM" },
-    { taskName: "Audit Report Update", type: "Daily", endTime: "08:00 AM" },
-    { taskName: "Check Approvals", type: "Daily", endTime: "09:00 AM" },
-    {
-      taskName: "Check Statutory Payments",
-      type: "Daily",
-      endTime: "03:00 PM",
-    },
-  ];
-
-  const priorityTasksColumns = [
-    { id: "id", label: "Sr No", align: "left" },
-    { id: "taskName", label: "Task Name", align: "left" },
-    {
-      id: "type",
-      label: "Type",
-      renderCell: (data) => {
-        return (
-          <>
-            <Chip sx={{ color: "#1E3D73" }} label={data.type} />
-          </>
-        );
-      },
-      align: "left",
-    },
-    { id: "endTime", label: "End Time", align: "left" },
-  ];
-
   const executiveTimings = [
     {
       paymentName: "ChatGPT Pro",
@@ -790,7 +753,7 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
     {
       layout: 2,
       widgets: [
-        <WidgetSection title={`Payouts ${selectedMonthData?.month} `} border>
+        <WidgetSection title={`Payouts MAR-25 `} border>
           <PieChartMui
             data={pieMonthlyPayoutData}
             options={pieMonthlyPayoutOptions}
@@ -798,7 +761,7 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
             height={350}
           />
         </WidgetSection>,
-        <WidgetSection title={`Customer Collections - ${monthYear} `} border>
+        <WidgetSection title={`Customer Collections MAR-25 `} border>
           <PieChartMui
             data={[]}
             options={pieMonthlyCollectionOptions}
@@ -811,7 +774,7 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
     {
       layout: 2,
       widgets: [
-        <WidgetSection title={`Statutory Payments Due - ${monthYear}`} border>
+        <WidgetSection title={`Statutory Payments Due MAR-25`} border>
           <DonutChart
             centerLabel="Payments Due"
             labels={donutStatutorylabels}
@@ -821,7 +784,7 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
             isMonetary={true}
           />
         </WidgetSection>,
-        <WidgetSection title={`Rental Payments Due - ${monthYear}`} border>
+        <WidgetSection title={`Rental Payments Due MAR-25`} border>
           <DonutChart
             centerLabel="Rental Status"
             labels={donutRentalLabels}
@@ -834,21 +797,21 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
       ],
     },
     {
-      layout: 2,
+      layout: 1,
       widgets: [
-        <MuiTable
-          key={priorityTasks.length}
-          scroll
-          rowsToDisplay={4}
-          Title={`KPA - ${monthYear} `}
-          rows={[
+        // <MuiTable
+        //   key={priorityTasks.length}
+        //   scroll
+        //   rowsToDisplay={4}
+        //   Title={`KPA - ${monthYear} `}
+        //   rows={[
            
-          ]}
-          columns={priorityTasksColumns}
-        />,
+        //   ]}
+        //   columns={priorityTasksColumns}
+        // />,
         <MuiTable
           key={executiveTimings.length}
-          Title={`This Weeks Payouts - ${monthYear} `}
+          Title={` Payouts MAR-25 `}
           rows={[
             // ...executiveTimings.map((timing, index) => ({
             //   id: index + 1,
