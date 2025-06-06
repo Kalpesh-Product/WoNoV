@@ -67,6 +67,7 @@ const PerformanceMonthly = () => {
       return response.data;
     },
     onSuccess: (data) => {
+      queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
       queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
       toast.success(data.message || "KPA Added");
       reset()
@@ -74,6 +75,7 @@ const PerformanceMonthly = () => {
     },
     onError: (error) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKra"] });
+      queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
       toast.success("KPA Added");
       setOpenModal(false);
     },
