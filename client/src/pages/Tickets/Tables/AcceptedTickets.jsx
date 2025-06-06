@@ -21,6 +21,8 @@ import { IoMdClose } from "react-icons/io";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanTime from "../../../utils/humanTime";
 
+import humanDate from "./../../../utils/humanDateForamt";
+
 const AcceptedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
@@ -212,7 +214,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
           <ThreeDotMenu
             rowId={params.data.id}
             menuItems={[
-               { label: "View", onClick: () => handleViewTicket(params.data) }, // 👈 Add this line
+              { label: "View", onClick: () => handleViewTicket(params.data) }, // 👈 Add this line
               { label: "Close", onClick: () => mutate(params.data.id) },
               {
                 label: "Support",
@@ -222,7 +224,6 @@ const AcceptedTickets = ({ title, departmentId }) => {
                 label: "Escalate",
                 onClick: () => handleEscalateTicket(params.data),
               },
-             
             ]}
           />
         </div>
@@ -244,26 +245,35 @@ const AcceptedTickets = ({ title, departmentId }) => {
         {!isLoading ? (
           <AgTable
             key={acceptedTickets.length}
+            hideFilter
             data={[
               ...acceptedTickets.map((ticket, index) => ({
                 srNo: index + 1,
                 id: ticket._id,
-                 raisedBy: ticket.raisedBy
-                ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`
-                : "Unknown",
+                raisedBy: ticket.raisedBy
+                  ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`
+                  : "Unknown",
 
                 description: ticket.description,
                 raisedToDepartment:
                   ticket.raisedBy.departments.map((dept) => dept.name) || "N/A",
                 ticketTitle: ticket?.ticket || "No Title",
                 status: ticket.status || "Pending",
-                 acceptedBy: ticket?.acceptedBy
-                      ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
-                      : `${ticket.assignees.map((item) => `${item.firstName} ${item.lastName}`)[0]}`,  
-                       assignees: `${ticket.assignees.map((item) => item.firstName)[0]}`,             
-                acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
-                priority:ticket.priority,
-                image:ticket.image ? ticket.image.url : null
+                acceptedBy: ticket?.acceptedBy
+                  ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
+                  : `${
+                      ticket.assignees.map(
+                        (item) => `${item.firstName} ${item.lastName}`
+                      )[0]
+                    }`,
+                assignees: `${
+                  ticket.assignees.map((item) => item.firstName)[0]
+                }`,
+                acceptedAt: ticket.acceptedAt
+                  ? humanTime(ticket.acceptedAt)
+                  : "-",
+                priority: ticket.priority,
+                image: ticket.image ? ticket.image.url : null,
               })),
             ]}
             columns={recievedTicketsColumns}
@@ -276,12 +286,10 @@ const AcceptedTickets = ({ title, departmentId }) => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Support Ticket"}
-      >
+        title={"Support Ticket"}>
         <form
           onSubmit={handleSupportTicketSubmit(onSubmit)}
-          className="flex flex-col gap-4"
-        >
+          className="flex flex-col gap-4">
           <Controller
             name="reason"
             control={supportTicketControl}
@@ -310,8 +318,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
         <div>
           <form
             onSubmit={handleEscalateTicketSubmit(onEscalate)}
-            className="grid grid-cols-1 gap-4"
-          >
+            className="grid grid-cols-1 gap-4">
             <Controller
               name="departmentIds"
               control={escalateFormControl}
@@ -375,44 +382,56 @@ const AcceptedTickets = ({ title, departmentId }) => {
       </MuiModal>
 
       <MuiModal
-  open={openView}
-  onClose={() => setOpenView(false)}
-  title="View Accepted Ticket"
->
-  {selectedTicket && (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <DetalisFormatted
-        title="Ticket"
-        detail={selectedTicket.ticketTitle}
-      />
-      <DetalisFormatted
-        title="Raised By"
-        detail={selectedTicket.raisedBy}
-      />
-      <DetalisFormatted
-        title="From Department"
-        detail={
-          Array.isArray(selectedTicket.selectedDepartment)
-            ? selectedTicket.selectedDepartment.join(", ")
-            : selectedTicket.selectedDepartment
-        }
-      />
-      <DetalisFormatted
-        title="Status"
-        detail={selectedTicket.status}
-      />
-      <DetalisFormatted
-        title="Description"
-        detail={selectedTicket.description || "N/A"}
-      />
-       <DetalisFormatted title="Priority" detail={selectedTicket?.priority} />
-                <DetalisFormatted title="Accepted by" detail={selectedTicket?.acceptedBy} />
-                <DetalisFormatted title="Accepted at" detail={selectedTicket?.acceptedAt} />
-                 {/* <DetalisFormatted title="Assigned to" detail={selectedTicket?.assignees} /> */}
-    </div>
-  )}
-</MuiModal>
-
+        open={openView}
+        onClose={() => setOpenView(false)}
+        title="View Accepted Ticket">
+        {selectedTicket && (
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+            <DetalisFormatted
+              title="Ticket"
+              detail={selectedTicket.ticketTitle}
+            />
+            <DetalisFormatted
+              title="Description"
+              detail={selectedTicket.description || "N/A"}
+            />
+            <DetalisFormatted
+              title="Raised By"
+              detail={selectedTicket.raisedBy}
+            />
+            <DetalisFormatted
+              title="Raised At"
+              detail={humanDate(new Date(selectedTicket.raisedDate))}
+            />
+            <DetalisFormatted
+              title="From Department"
+              detail={
+                Array.isArray(selectedTicket.selectedDepartment)
+                  ? selectedTicket.selectedDepartment.join(", ")
+                  : selectedTicket.selectedDepartment
+              }
+            />
+            <DetalisFormatted
+              title="Raised To Department"
+              detail={selectedTicket.raisedToDepartment || "N/A"}
+            />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
+            <DetalisFormatted
+              title="Priority"
+              detail={selectedTicket?.priority}
+            />
+            <DetalisFormatted
+              title="Accepted by"
+              detail={selectedTicket?.acceptedBy}
+            />
+            <DetalisFormatted
+              title="Accepted at"
+              detail={selectedTicket?.acceptedAt}
+            />
+            {/* <DetalisFormatted title="Assigned to" detail={selectedTicket?.assignees} /> */}
+          </div>
+        )}
+      </MuiModal>
     </div>
   );
 };

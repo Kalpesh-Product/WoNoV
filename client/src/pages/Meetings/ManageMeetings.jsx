@@ -459,8 +459,7 @@ const ManageMeetings = () => {
           <div className="flex gap-2 items-center">
             <div
               onClick={() => handleSelectedMeeting("viewDetails", params.data)}
-              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-            >
+              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
               <span className="text-subtitle">
                 <MdOutlineRemoveRedEye />
               </span>
@@ -491,8 +490,7 @@ const ManageMeetings = () => {
       <MuiModal
         open={checklistModalOpen}
         onClose={handleCloseChecklistModal}
-        title={"Checklist"}
-      >
+        title={"Checklist"}>
         <Box
           sx={{
             maxHeight: "80vh",
@@ -501,8 +499,7 @@ const ManageMeetings = () => {
             overflow: "hidden",
             justifyContent: "start",
             alignItems: "start",
-          }}
-        >
+          }}>
           {/* Scrollable Checklist Section */}
           <div className="h-[60vh] overflow-y-auto w-full">
             <span className="text-subtitle text-primary font-pmedium">
@@ -549,8 +546,7 @@ const ManageMeetings = () => {
                             {modalMode === "update" && (
                               <IconButton
                                 onClick={() => handleRemoveChecklistItem(index)}
-                                color="error"
-                              >
+                                color="error">
                                 <Delete />
                               </IconButton>
                             )}
@@ -589,8 +585,7 @@ const ManageMeetings = () => {
               <Button
                 variant="contained"
                 disabled={isSubmitDisabled()}
-                onClick={handleSubmitChecklist}
-              >
+                onClick={handleSubmitChecklist}>
                 Submit
               </Button>
             </div>
@@ -609,19 +604,52 @@ const ManageMeetings = () => {
             : ""
         }
         open={detailsModal}
-        onClose={() => setDetailsModal(false)}
-      >
+        onClose={() => setDetailsModal(false)}>
         {modalMode === "viewDetails" && (
-          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4 w-full">
+            <div className="font-bold">Basic Info</div>
             <DetalisFormatted
-              title={"Room Name"}
-              detail={selectedMeeting?.roomName}
-              upperCase
+              title="Title"
+              detail={selectedMeeting?.title || "Title"}
             />
             <DetalisFormatted
+              title="Agenda"
+              detail={selectedMeeting.agenda || "N/A"}
+            />
+            <DetalisFormatted
+              title="Date"
+              detail={humanDate(selectedMeeting?.date)}
+            />
+            <DetalisFormatted
+              title="Time"
+              detail={`${humanTime(selectedMeeting.startTime)} - ${humanTime(
+                selectedMeeting.endTime
+              )}`}
+            />
+            <DetalisFormatted
+              title="Duration"
+              detail={selectedMeeting.duration || "N/A"}
+            />
+            <DetalisFormatted
+              title="Status"
+              detail={selectedMeeting.meetingStatus || "N/A"}
+            />
+            <DetalisFormatted
+              title="Type"
+              detail={selectedMeeting.meetingType || "N/A"}
+            />
+            <DetalisFormatted
+              title="Company"
+              detail={selectedMeeting.client || "N/A"}
+            />
+            {/* fffff */}
+
+            {/* <DetalisFormatted
               title={"Booked By"}
               detail={
-                selectedMeeting?.bookedBy || selectedMeeting?.clientBookedBy
+                selectedMeeting?.bookedBy ||
+                selectedMeeting?.clientBookedBy ||
+                "N/A"
               }
             />
             <DetalisFormatted
@@ -645,8 +673,10 @@ const ManageMeetings = () => {
                 title={"Extended Time"}
                 detail={humanTime(selectedMeeting?.extendTime)}
               />
-            )}
-            <div className="col-span-1 ">
+            )} */}
+            <br />
+            <div className="font-bold">People Involved</div>
+            {/* <div className="col-span-1 ">
               <DetalisFormatted
                 title={"Participants"}
                 detail={selectedMeeting?.participants.map((item) => (
@@ -656,11 +686,61 @@ const ManageMeetings = () => {
                 ))}
               />
             </div>
-            <div></div>
             <DetalisFormatted
               title={"House Keeping Status"}
               detail={selectedMeeting?.housekeepingStatus}
+            /> */}
+
+            {/* dddd */}
+
+            {selectedMeeting.participants?.length > 0 && (
+              <DetalisFormatted
+                title="Participants"
+                detail={
+                  selectedMeeting.participants
+                    .map((p) => `${p.firstName} ${p.lastName}`)
+                    .join(", ") || "N/A"
+                }
+              />
+            )}
+
+            <DetalisFormatted
+              title="Booked By"
+              detail={selectedMeeting.bookedBy}
             />
+            <DetalisFormatted
+              title="Receptionist"
+              // detail={selectedMeeting.receptionist}
+              detail={`N/A`}
+            />
+            <DetalisFormatted
+              title="Department"
+              detail={selectedMeeting.department || "Top Management"}
+            />
+
+            <br />
+            <div className="font-bold">Venue Details</div>
+            {/* <DetalisFormatted
+              title={"Room Name"}
+              detail={selectedMeeting?.roomName}
+              upperCase
+            /> */}
+
+            {/* vvvv */}
+            <DetalisFormatted title="Room" detail={selectedMeeting.roomName} />
+            <DetalisFormatted
+              title="Location"
+              detail={`${selectedMeeting.location?.unitNo} (${selectedMeeting.location?.unitName})`}
+            />
+            <DetalisFormatted
+              title="Building"
+              detail={selectedMeeting.location?.building?.buildingName}
+            />
+            <DetalisFormatted
+              title="Housekeeping Status"
+              detail={selectedMeeting.housekeepingStatus}
+            />
+
             {/* <DetalisFormatted
               title={"Department"}
               detail={selectedMeeting?.department}
@@ -678,8 +758,7 @@ const ManageMeetings = () => {
                 });
                 resetCancelMeeting();
                 setDetailsModal(false);
-              })}
-            >
+              })}>
               <Controller
                 name="reason"
                 control={cancelMeetingControl}
@@ -718,8 +797,7 @@ const ManageMeetings = () => {
                   meetingId: selectedMeeting?._id,
                   newEndTime: data.newEndTime,
                 });
-              })}
-            >
+              })}>
               <div className="flex flex-col gap-4">
                 <span className="text-content">Meeting Details</span>
                 <hr />

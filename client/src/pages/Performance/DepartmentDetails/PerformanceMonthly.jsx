@@ -170,26 +170,27 @@ const PerformanceMonthly = () => {
         );
       },
     },
-    ...(!isTop
-      ? [
-          {
-            headerName: "Actions",
-            field: "actions",
-            cellRenderer: (params) => (
-              <div
-                role="button"
-                onClick={() => updateMonthlyKpa(params.data.mongoId)}
-                className="p-2"
-              >
-                <PrimaryButton
-                  disabled={!params.node.selected}
-                  title={"Mark As Done"}
-                />
-              </div>
-            ),
-          },
-        ]
-      : []),
+    ...((!isTop || isHr)
+  ? [
+      {
+        headerName: "Actions",
+        field: "actions",
+        cellRenderer: (params) => (
+          <div
+            role="button"
+            onClick={() => updateMonthlyKpa(params.data.id)}
+            className="p-2"
+          >
+            <PrimaryButton
+              title={"Mark As Done"}
+              disabled={!params.node.selected}
+            />
+          </div>
+        ),
+      },
+    ]
+  : [])
+,
   ];
   const completedColumns = [
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },

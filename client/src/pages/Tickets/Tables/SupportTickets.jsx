@@ -18,6 +18,8 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import { IoMdClose } from "react-icons/io";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 
+import humanDate from "./../../../utils/humanDateForamt";
+
 const SupportTickets = ({ title, departmentId }) => {
   const [openModal, setopenModal] = useState(false);
   const [esCalateModal, setEscalateModal] = useState(false);
@@ -49,12 +51,10 @@ const SupportTickets = ({ title, departmentId }) => {
 
   const handleViewTicket = (ticket) => {
     const raw = ticket || {};
-    console.log("raw",raw)
+    console.log("raw", raw);
     setSelectedTicket({
       ticketTitle: ticket.ticketTitle || "No Title",
-      raisedBy:
-        raw.raisedBy ?raw.raisedBy
-          : "Unknown",
+      raisedBy: raw.raisedBy ? raw.raisedBy : "Unknown",
       selectedDepartment:
         Array.isArray(raw.raisedBy?.departments) &&
         raw.raisedBy.departments.length > 0
@@ -364,8 +364,7 @@ const SupportTickets = ({ title, departmentId }) => {
       <MuiModal
         open={openModal}
         onClose={() => setopenModal(false)}
-        title="Assign Tickets"
-      >
+        title="Assign Tickets">
         <form onSubmit={handleSubmit(onSubmit)}>
           <ul>
             {!isSubOrdinates ? (
@@ -400,8 +399,7 @@ const SupportTickets = ({ title, departmentId }) => {
         <div>
           <form
             onSubmit={handleEscalateTicketSubmit(onEscalate)}
-            className="grid grid-cols-1 gap-4"
-          >
+            className="grid grid-cols-1 gap-4">
             <Controller
               name="departmentIds"
               control={escalateFormControl}
@@ -477,26 +475,49 @@ const SupportTickets = ({ title, departmentId }) => {
       <MuiModal
         open={openView}
         onClose={() => setOpenView(false)}
-        title="View Support Ticket"
-      >
+        title="View Support Ticket">
         {selectedTicket && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
               title="Ticket"
-              detail={selectedTicket.ticketTitle}
+              detail={selectedTicket.ticketTitle || "N/A"}
             />
-            <DetalisFormatted
-              title="Raised By"
-              detail={selectedTicket.raisedBy}
-            />
-            <DetalisFormatted
-              title="From Department"
-              detail={selectedTicket.selectedDepartment.join(", ")}
-            />
-            <DetalisFormatted title="Status" detail={selectedTicket.status} />
             <DetalisFormatted
               title="Description"
               detail={selectedTicket.description || "N/A"}
+            />
+            <DetalisFormatted
+              title="Raised By"
+              detail={selectedTicket.raisedBy || "Unknown"}
+            />
+            <DetalisFormatted
+              title="Raised At"
+              detail={humanDate(new Date(selectedTicket.raisedDate))}
+            />
+            <DetalisFormatted
+              title="From Department"
+              detail={
+                selectedTicket.selectedDepartment
+                  .map((item) => item)
+                  .join(", ") || "N/A"
+              }
+            />
+            <DetalisFormatted
+              title="Raised To Department"
+              detail={selectedTicket.raisedToDepartment || "N/A"}
+            />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
+            <DetalisFormatted
+              title="Priority"
+              detail={selectedTicket?.priority || "N/A"}
+            />
+            <DetalisFormatted
+              title="Accepted by"
+              detail={selectedTicket?.acceptedBy || "N/A"}
+            />
+            <DetalisFormatted
+              title="Accepted at"
+              detail={selectedTicket?.acceptedAt || "N/A"}
             />
           </div>
         )}

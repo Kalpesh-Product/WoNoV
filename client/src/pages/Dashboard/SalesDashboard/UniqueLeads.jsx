@@ -23,6 +23,8 @@ import MuiModal from "../../../components/MuiModal";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 import { MdOutlineRemove, MdOutlineRemoveRedEye } from "react-icons/md";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 
 const UniqueLeads = () => {
   const dispatch = useDispatch();
@@ -230,107 +232,124 @@ const UniqueLeads = () => {
         <NormalBarGraph data={graphData} options={graphOptions} height={400} />
       </WidgetSection>
 
-      <WidgetSection border title={"Unique Leads details"} TitleAmount={`Total Leads : ${totalLeads}`}>
+      <WidgetSection
+        border
+        title={"Unique Leads details"}
+        TitleAmount={`Total Leads : ${totalLeads}`}
+      >
         <div>
-          {viewType === "month" ? (
-            <CollapsibleTable
-              columns={[
-                { field: "name", headerName: "Domain Name" },
-                { field: "leads", headerName: "Leads" },
-              ]}
-              data={selectedMonthData?.domains.map((domain, index) => ({
-                id: index,
-                name: domain.name,
-                leads: domain.clients?.length || 0,
-                clients: domain.clients.map((client, clientIndex) => ({
-                  ...client,
-                  id: clientIndex + 1,
-                })),
-              }))} // Mapping data directly here in the data prop
-              renderExpandedRow={(row) => {
-                if (!row?.clients || !Array.isArray(row.clients)) {
-                  return <div>No client details available</div>; // Fallback message if no data
-                }
-
-                return (
-                  <AgTable
-                    data={row.clients}
-                    exportData
-                    columns={[
-                      { field: "id", headerName: "ID", flex: 1 },
-                      { field: "client", headerName: "Client Name", flex: 1 },
-                      {
-                        field: "representative",
-                        headerName: "Representative",
-                        flex: 1,
-                      },
-                      { field: "callDate", headerName: "Call Date", flex: 1 },
-                      { field: "status", headerName: "Status", flex: 1 },
-                      {
-                        field: "actions",
-                        headerName: "Actions",
-                        cellRenderer: (params) => (
-                          <div className="flex items-center gap-4 py-2">
-                            <span className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
-                              <MdOutlineRemoveRedEye />
-                            </span>
-                          </div>
-                        ),
-                      },
-                    ]}
-                    tableHeight={500}
-                    hideFilter
-                  />
-                );
-              }}
-            />
-          ) : (
-            <CollapsibleTable
-              columns={[
-                { field: "name", headerName: "Domain Name" },
-                { field: "leads", headerName: "Leads" },
-              ]}
-              data={Object.entries(yearlyRevenueData).map(
-                ([domainName, data], index) => ({
-                  id: index,
-                  name: domainName,
-                  leads: data.clients?.length || 0,
-                  clients: data.clients.map((client, clientIndex) => ({
-                    ...client,
-                    id: clientIndex + 1,
-                  })),
-                })
-              )} // Mapping data directly here in the data prop for yearly data
-              renderExpandedRow={(row) => {
-                if (!row?.clients || !Array.isArray(row.clients)) {
-                  return <div>No client details available</div>; // Fallback message if no data
-                }
-
-                return (
-                  <AgTable
-                    data={row.clients}
-                    exportData
-                    columns={[
-                      { field: "client", headerName: "Client Name", flex: 1 },
-                      {
-                        field: "representative",
-                        headerName: "Representative",
-                        flex: 1,
-                      },
-                      { field: "callDate", headerName: "Call Date", flex: 1 },
-                      { field: "status", headerName: "Status", flex: 1 },
-                    ]}
-                    tableHeight={300}
-                  />
-                );
-              }}
-            />
-          )}
+          <YearWiseTable
+            data={leadsData.map((item) => ({
+              _id: item._id,
+              dateOfContact: item.dateOfContact,
+              companyName: item.companyName,
+              pocName: item.pocName,
+              contactNumber: item.contactNumber,
+              emailAddress: item.emailAddress,
+              leadStatus: item.leadStatus,
+              sector: item.sector,
+              serviceName: item.serviceCategory?.serviceName || "—",
+              clientBudget: item.clientBudget,
+              startDate: item.startDate,
+              remarksComments: item.remarksComments,
+            }))}
+            columns={[
+              { headerName: "Sr. No", field: "srno", width: 100 },
+              { headerName: "Date of Contact", field: "dateOfContact" },
+              {
+                headerName: "Company Name",
+                field: "companyName",
+                flex: 1,
+                cellRenderer: (params) => {
+                  return (
+                    <span
+                      className="text-primary cursor-pointer underline"
+                      role="button"
+                      onClick={() => {
+                        setSelectedLead(params.data);
+                        setModalOpen(true);
+                      }}
+                    >
+                      {params.value}
+                    </span>
+                  );
+                },
+              },
+              { headerName: "POC Name", field: "pocName" },
+              { headerName: "Contact Number", field: "contactNumber" },
+              // { headerName: "Email", field: "emailAddress" },
+              { headerName: "Lead Status", field: "leadStatus" },
+              // { headerName: "Sector", field: "sector" },
+              // { headerName: "Service", field: "serviceName" },
+              // { headerName: "Client Budget", field: "clientBudget" },
+              // { headerName: "Start Date", field: "startDate" },
+              // { headerName: "Remarks", field: "remarksComments" },
+            ]}
+            dateColumn="dateOfContact"
+            initialMonth={selectedMonth} 
+            key="leads-table"
+          />
         </div>
       </WidgetSection>
-
-      <MuiModal open={modalOpen} onClose={() => setModalOpen(false)}>
-        <span>{selectedLead}</span>
+      <MuiModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={"Lead details"}
+      >
+        <div className="flex flex-col gap-2">
+          {selectedLead ? (
+            <>
+              <DetalisFormatted
+                title="Company Name"
+                detail={selectedLead.companyName}
+                upperCase
+              />
+              <DetalisFormatted
+                title="POC Name"
+                detail={selectedLead.pocName}
+              />
+              <DetalisFormatted
+                title="Designation"
+                detail={selectedLead.designation || "—"}
+              />
+              <DetalisFormatted
+                title="Contact Number"
+                detail={selectedLead.contactNumber}
+              />
+              <DetalisFormatted
+                title="Email"
+                detail={selectedLead.emailAddress}
+              />
+              <DetalisFormatted
+                title="Lead Status"
+                detail={selectedLead.leadStatus}
+              />
+              <DetalisFormatted title="Sector" detail={selectedLead.sector} />
+              <DetalisFormatted
+                title="Service"
+                detail={selectedLead.serviceName}
+              />
+              <DetalisFormatted
+                title="Client Budget"
+                detail={`INR ${selectedLead.clientBudget}`}
+              />
+              <DetalisFormatted
+                title="Date of Contact"
+                detail={humanDate(selectedLead.dateOfContact)}
+              />
+              <DetalisFormatted
+                title="Last Follow-up Date"
+                detail={humanDate(selectedLead.lastFollowUpDate)}
+              />
+              <DetalisFormatted
+                title="Remarks"
+                detail={selectedLead.remarksComments || "—"}
+              />
+            </>
+          ) : (
+            <div>No lead selected.</div>
+          )}
+        </div>
       </MuiModal>
     </div>
   );

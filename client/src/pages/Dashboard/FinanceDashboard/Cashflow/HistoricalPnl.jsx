@@ -135,7 +135,7 @@ const HistoricalPnl = () => {
       <WidgetSection title={"Historical P&L Details"} border>
         <AgTable
           columns={[
-             { field: "srNo", headerName: "Sr No" },
+             { field: "srNo", headerName: "Sr No", sort : "desc" },
             { field: "name", headerName: "Financial Year", flex: 1 },
             { field: "totalIncome", headerName: "Total Income (INR)" },
             { field: "totalExpense", headerName: "Total Expense (INR)" },
@@ -144,6 +144,7 @@ const HistoricalPnl = () => {
               headerName: "Total Profit / Loss (INR)",
             },
           ]}
+          hideFilter
           data={historicalTableData}
         />
       </WidgetSection>

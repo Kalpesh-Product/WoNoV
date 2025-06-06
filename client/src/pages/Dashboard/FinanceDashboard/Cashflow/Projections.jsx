@@ -124,8 +124,7 @@ const Projections = () => {
         <div className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all mb-2 inline-flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewModal(params.data)}
-          >
+            onClick={() => handleViewModal(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -195,13 +194,9 @@ const Projections = () => {
           border
           title={`Total Monthly P&L`}
           titleLabel={"FY 2024-25"}
-          TitleAmount={`INR ${totalPnL.toLocaleString()}`}
-        >
-          <AgTable
-            data={[]}
-            columns={monthlyProfitLossColumns}
-            search={true}
-          />
+          // TitleAmount={`INR ${totalPnL.toLocaleString()}`}
+          TitleAmount={`INR 0`}>
+          <AgTable data={[]} columns={monthlyProfitLossColumns} search={true} />
         </WidgetSection>
       </div>
 
@@ -209,8 +204,7 @@ const Projections = () => {
         <MuiModal
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
-          title="Monthly P&L Detail"
-        >
+          title="Monthly P&L Detail">
           <div className="space-y-3">
             <DetalisFormatted title="Month" detail={viewDetails.month} />
             <DetalisFormatted

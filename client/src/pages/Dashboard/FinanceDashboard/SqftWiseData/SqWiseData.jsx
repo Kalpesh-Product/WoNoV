@@ -173,7 +173,7 @@ const SqWiseData = () => {
       widgets: [
         <WidgetSection border titleLabel={"FY 2024-25"} title={"Budget v/s Achievements"}>
           <BarGraph
-            data={incomeExpenseData}
+            data={[]}
             options={incomeExpenseOptions}
 
           />
@@ -198,9 +198,9 @@ const SqWiseData = () => {
 
       <div>
         <WidgetSection border titleLabel={"FY 2024-25"} title={"Total Monthly P&L"}
-          TitleAmount={`INR ${inrFormat(totalPnL)}`}>
+          TitleAmount={``}>
           <AgTable
-            data={formatMonthlyProfitLoss}
+            data={[]}
             columns={monthlyProfitLossColumns}
             search={true}
           />

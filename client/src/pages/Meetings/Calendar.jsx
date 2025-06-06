@@ -201,15 +201,13 @@ const Calender = () => {
                         return (
                           <div
                             key={index}
-                            className="flex gap-2 items-center mb-2"
-                          >
+                            className="flex gap-2 items-center mb-2">
                             <div
                               className="w-3 h-3 rounded-full mr-2"
                               style={{
                                 backgroundColor:
                                   colors[event.extendedProps.meetingStatus],
-                              }}
-                            ></div>
+                              }}></div>
                             <div className="flex flex-col">
                               <span className="text-content font-medium">
                                 {event.title}
@@ -260,10 +258,10 @@ const Calender = () => {
           open={isDrawerOpen}
           onClose={closeDrawer}
           headerBackground={headerBackground}
-          title="Meeting Details"
-        >
+          title="Meeting Details">
           {drawerMode === "view" && selectedEvent && (
             <div className="space-y-2">
+              <div className="font-bold">Basic Info</div>
               <DetalisFormatted title="Title" detail={selectedEvent.title} />
               <DetalisFormatted
                 title="Agenda"
@@ -279,15 +277,6 @@ const Calender = () => {
                   selectedEvent.end
                 )}`}
               />
-              {selectedEvent.extendedProps.participants?.length > 0 && (
-                <DetalisFormatted
-                  title="Participants"
-                  detail={(selectedEvent.extendedProps.participants
-                    .map((p) => `${p.firstName} ${p.lastName}`)
-                    .join(", ")) || "N/A"}
-                />
-              )}
-
               <DetalisFormatted
                 title="Duration"
                 detail={selectedEvent.extendedProps.duration}
@@ -304,18 +293,35 @@ const Calender = () => {
                 title="Company"
                 detail={selectedEvent.extendedProps.client}
               />
+              <br />
+              <div className="font-bold">People Involved</div>
+              {selectedEvent.extendedProps.participants?.length > 0 && (
+                <DetalisFormatted
+                  title="Participants"
+                  detail={
+                    selectedEvent.extendedProps.participants
+                      .map((p) => `${p.firstName} ${p.lastName}`)
+                      .join(", ") || "N/A"
+                  }
+                />
+              )}
+
               <DetalisFormatted
                 title="Booked By"
                 detail={selectedEvent.extendedProps.bookedBy}
               />
               <DetalisFormatted
                 title="Receptionist"
-                detail={selectedEvent.extendedProps.receptionist}
+                // detail={selectedEvent.extendedProps.receptionist}
+                detail={`N/A`}
               />
               <DetalisFormatted
                 title="Department"
                 detail={selectedEvent.extendedProps.department}
               />
+
+              <br />
+              <div className="font-bold">Venue Details</div>
               <DetalisFormatted
                 title="Room"
                 detail={selectedEvent.extendedProps.roomName}

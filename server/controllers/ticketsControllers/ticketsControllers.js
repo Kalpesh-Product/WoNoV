@@ -298,7 +298,7 @@ const getTickets = async (req, res, next) => {
     if (!foundDepartment) {
       return res.status(400).json({ message: "Department not found" });
     }
-    // Fetch the company document to get selectedDepartments and ticketIssues
+
     const foundCompany = await Company.findOne({ _id: company })
       .select("selectedDepartments")
       .lean()
@@ -308,9 +308,7 @@ const getTickets = async (req, res, next) => {
       return res.status(400).json({ message: "Company not found" });
     }
 
-    let matchingTickets;
-
-    matchingTickets = await Tickets.find({
+    let matchingTickets = await Tickets.find({
       $or: [
         { raisedToDepartment: { $in: departmentId } },
         { escalatedTo: { $in: departmentId } },
@@ -338,23 +336,39 @@ const getTickets = async (req, res, next) => {
       return res.status(200).json(matchingTickets);
     }
 
-    // Attach ticket issueId title from Company.selectedDepartments.ticketIssues
-    // const ticketsWithIssueTitle = matchingTickets.map((ticket) => {
-    //   const department = foundCompany.selectedDepartments.find(
-    //     (dept) =>
-    //       dept.department.toString() === ticket.raisedToDepartment.toString()
-    //   );
+    // 🎯 Add priority logic here
+    const ticketsWithPriority = matchingTickets.map((ticket) => {
+      const department = foundCompany.selectedDepartments.find(
+        (dept) =>
+          dept.department.toString() ===
+          ticket.raisedToDepartment?._id.toString()
+      );
 
-    //   const ticketIssue = department?.ticketIssues.find(
-    //     (issueId) => issueId._id.toString() === ticket.ticket.toString()
-    //   );
-    //   return {
-    //     ...ticket,
-    //     ticketIssueTitle: ticketIssue ? ticketIssue.title : "Issue not found",
-    //   };
-    // });
+      let priority = "Low"; // Default
 
-    return res.status(200).json(matchingTickets);
+      if (department) {
+        const issue = department.ticketIssues.find(
+          (issue) => issue.title === ticket.ticket
+        );
+        priority = issue?.priority || "High";
+      }
+
+      // If still "Low" or no match, look for "Other"
+      if (!priority || priority === "Low") {
+        const otherIssue = foundCompany.selectedDepartments
+          .flatMap((dept) => dept.ticketIssues)
+          .find((issue) => issue.title === "Other");
+
+        priority = otherIssue?.priority || "Low";
+      }
+
+      return {
+        ...ticket,
+        priority,
+      };
+    });
+
+    return res.status(200).json(ticketsWithPriority);
   } catch (error) {
     next(error);
   }

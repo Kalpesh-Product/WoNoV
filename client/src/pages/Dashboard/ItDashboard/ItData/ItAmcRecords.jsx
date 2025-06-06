@@ -284,19 +284,7 @@ const ItAmcRecords = () => {
         tableTitle={"AMC Records"}
         buttonTitle={"Add Record"}
         data={[
-          ...assetsList.map((asset, index) => ({
-            srNo: index + 1,
-            assetName: asset.name,
-            department: asset.department?.name || "N/A",
-            category: asset.category?.categoryName || "N/A", // assumes category is an object
-            subCategory: asset.subCategory?.categoryName || "N/A", // if using subCategory
-            brand: asset.brand,
-            price: Number(asset.price).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-            quantity: asset.quantity,
-            purchaseDate: dayjs(new Date(asset.purchaseDate)).format("DD-MM-YYYY"),
-            warranty: asset.warranty,
-            vendorName: asset.vendor?.name || "N/A",
-          })),
+          
         ]}
 
         columns={assetColumns}

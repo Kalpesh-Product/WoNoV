@@ -210,7 +210,7 @@ const AverageProfitLoss = () => {
         <WidgetSection border title={"Income v/s Expenses"}
           titleLabel={"FY 2024-25"}>
           <BarGraph
-            data={incomeExpenseData}
+            data={[]}
             options={incomeExpenseOptions}
 
           />
@@ -236,7 +236,7 @@ const AverageProfitLoss = () => {
       <div>
         <WidgetSection border titleLabel={"FY 2024-25"} title={"Total Monthly P&L"}>
           <AgTable
-            data={monthlyProfitLossData}
+            data={[]}
             columns={monthlyProfitLossColumns}
             search={true}
           />

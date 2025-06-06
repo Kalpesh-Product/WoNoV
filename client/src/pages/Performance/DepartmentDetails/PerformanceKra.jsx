@@ -161,26 +161,27 @@ const PerformanceKra = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-    ...(!isTop
-      ? [
-          {
-            headerName: "Actions",
-            field: "actions",
-            cellRenderer: (params) => (
-              <div
-                role="button"
-                onClick={() => updateDailyKra(params.data.id)}
-                className="p-2"
-              >
-                <PrimaryButton
-                  title={"Mark As Done"}
-                  disabled={!params.node.selected}
-                />
-              </div>
-            ),
-          },
-        ]
-      : []),
+   ...((!isTop || isHr)
+  ? [
+      {
+        headerName: "Actions",
+        field: "actions",
+        cellRenderer: (params) => (
+          <div
+            role="button"
+            onClick={() => updateDailyKra(params.data.id)}
+            className="p-2"
+          >
+            <PrimaryButton
+              title={"Mark As Done"}
+              disabled={!params.node.selected}
+            />
+          </div>
+        ),
+      },
+    ]
+  : [])
+,
   ];
 
   const completedColumns = [

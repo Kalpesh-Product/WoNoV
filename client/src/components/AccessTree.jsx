@@ -13,16 +13,41 @@ const AccessTree = ({ clickState, autoExpandFirst = false }) => {
   const axios = useAxiosPrivate();
   const currentPath = location.pathname;
 
-  const fetchHierarchy = async () => {
-    try {
-      const response = await axios.get("/api/company/company-hierarchy");
+  const filterHierarchy = (node) => {
+  if (!node) return null;
 
-      return response.data.generateHierarchy;
-    } catch (error) {
-      toast.error(error.message);
-      throw new Error(error);
-    }
-  };
+  const filteredSubordinates = (node.subordinates || [])
+    .map(filterHierarchy)
+    .filter(Boolean);
+
+  const isAllowed = allowedUserIds.includes(node._id);
+
+  if (isAllowed || filteredSubordinates.length > 0) {
+    return {
+      ...node,
+      subordinates: filteredSubordinates,
+    };
+  }
+
+  return null;
+};
+
+
+ const fetchHierarchy = async () => {
+  try {
+    const response = await axios.get("/api/company/company-hierarchy");
+
+    const rawHierarchy = response.data.generateHierarchy;
+    const filtered = filterHierarchy(rawHierarchy);
+
+    return filtered;
+  } catch (error) {
+    toast.error(error.message);
+    throw new Error(error);
+  }
+};
+
+  
 
   const {
     data: hierarchy,
@@ -32,6 +57,18 @@ const AccessTree = ({ clickState, autoExpandFirst = false }) => {
     queryKey: ["hierarchy"],
     queryFn: fetchHierarchy,
   });
+
+  const allowedUserIds = [
+  "67b83885daad0f7bab2f184f", // Abrar
+  "67b83885daad0f7bab2f1852", // Kashif
+  "681a10b13fc9dc666ede401c", // Nigel
+  "67b83885daad0f7bab2f1864", // Kalpesh
+  "68400714c51ffdef8b5e7e04", // Sanjay
+  "67f761c45e8224c532f8fa80", // Rajesh
+  "67b83885daad0f7bab2f188b", // Mac
+  "67b83885daad0f7bab2f1870", // Nehal
+];
+
 
     useEffect(() => {
     if (autoExpandFirst && hierarchy) {
@@ -168,7 +205,7 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel, click = true }) => 
       </span>
       <span className="text-small text-primary">{user.email}</span>
 
-      {user.subordinates && user.subordinates.length > 0 && (
+      {/* {user.subordinates && user.subordinates.length > 0 && (
         <p
           onClick={() => handleSelectUser(user)}
           className="mt-2 text-xs text-primary hover:underline cursor-pointer"
@@ -176,7 +213,7 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel, click = true }) => 
           {user.subordinates.length} Subordinate
           {user.subordinates.length > 1 ? "s" : ""}
         </p>
-      )}
+      )} */}
     </div>
   );
 };

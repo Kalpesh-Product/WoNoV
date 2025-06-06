@@ -269,17 +269,7 @@ const ItVendorReports = () => {
         searchColumn={"name"}
         tableTitle={"Vendor Database"}
         buttonTitle={"Add Vendor"}
-        data={vendorsList.map((vendor, index) => ({
-          id: index + 1,
-          name: vendor.name,
-          contactPerson: vendor.contactPerson,
-          phone: vendor.phone,
-          email: vendor.email,
-          address: vendor.address,
-          gstNumber: vendor.gstNumber,
-          services: vendor.services.join(", "),
-          rating: vendor.rating,
-        }))}
+        data={[]}
         columns={vendorColumns}
         handleClick={handleAddAsset}
       />
