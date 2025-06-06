@@ -60,10 +60,9 @@ const StatutoryPayments = () => {
   };
 
   const statutoryRaw = hrFinance.filter(
-    (item) => item.expanseType === "Statutory"
+    (item) => item.expanseType === "Statutory Payments"
   );
   const statutoryFormatted = transformToCollectionData(statutoryRaw);
-  console.log("STATSADAS : ", statutoryRaw);
 
   const collectionData = [
     { month: "Apr-24", paid: 80, unpaid: 20 },
