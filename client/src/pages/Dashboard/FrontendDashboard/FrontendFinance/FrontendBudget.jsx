@@ -80,11 +80,6 @@ const FrontendBudget = () => {
 
       stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
-      events: {
-        dataPointSelection: () => {
-          navigate("finance/budget");
-        },
-      },
     },
     colors: ["#54C4A7", "#EB5C45"],
     plotOptions: {
@@ -271,43 +266,6 @@ const FrontendBudget = () => {
               )}`}
             />
           </Suspense>
-        </div>
-        <div>
-          <WidgetSection layout={2} padding>
-            {/* <DataCard
-              data={"INR " + inrFormat("2000000")}
-              title={"Projected"}
-              route={"/app/dashboard/hr-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            /> */}
-            <DataCard
-              data={("N/A")}
-              title={"Actual"}
-              route={"/app/dashboard/hr-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            />
-            <DataCard
-              data={"INR " + inrFormat(0)}
-              title={"Requested"}
-              route={"/app/dashboard/hr-dashboard/finance/budget"}
-              description={`Current Month: ${new Date().toLocaleString(
-                "default",
-                {
-                  month: "short",
-                }
-              )}-25`}
-            />
-          </WidgetSection>
         </div>
 
         <div className="flex justify-end">

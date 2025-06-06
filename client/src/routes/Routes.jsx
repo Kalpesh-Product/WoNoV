@@ -561,6 +561,14 @@ export const routes = createBrowserRouter([
                             element: <ViewTemplate />,
                           },
                           {
+                            path: "finance-monthly-vouchers",
+                            element: <FinanceMonthlyVouchers />,
+                          },
+                          {
+                            path: "finance-monthly-vouchers/:id",
+                            element: <FinanceViewVoucher />,
+                          },
+                          {
                             path: "voucher-creation",
                             element: <VoucherCreation />,
                           },

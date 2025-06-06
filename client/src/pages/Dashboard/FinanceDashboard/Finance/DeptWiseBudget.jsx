@@ -262,41 +262,6 @@ const DeptWiseBudget = () => {
         titleAmount={`INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`}
       />
 
-      <div>
-        <WidgetSection layout={3} padding>
-          <DataCard
-            data={"INR 50,00,000"}
-            title={"Projected"}
-            description={`Current Month: ${new Date().toLocaleString(
-              "default",
-              {
-                month: "short",
-              }
-            )}-25`}
-          />
-          <DataCard
-            data={"INR 45,00,000"}
-            title={"Actual"}
-            description={`Current Month: ${new Date().toLocaleString(
-              "default",
-              {
-                month: "short",
-              }
-            )}-25`}
-          />
-          <DataCard
-            data={"INR 7,000"}
-            title={"Requested"}
-            description={`Current Month: ${new Date().toLocaleString(
-              "default",
-              {
-                month: "short",
-              }
-            )}-25`}
-          />
-        </WidgetSection>
-      </div>
-
       <AllocatedBudget financialData={financialData} noFilter hideTitle />
     </div>
   );

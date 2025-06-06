@@ -68,6 +68,7 @@ const PerformanceKra = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
+      queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA"] });
       toast.success(data.message || "KRA Added");
       reset()
       setOpenModal(false);

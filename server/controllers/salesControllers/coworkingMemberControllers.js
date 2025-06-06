@@ -102,16 +102,16 @@ const createMember = async (req, res, next) => {
 
 const getAllMembers = async (req, res, next) => {
   try {
-    const { client, service } = req.query;
+    const { client } = req.query;
 
     if (!client) {
       return res.status(400).json({ message: "Client ID is missing" });
     }
 
-    if (!service) {
-      //service is a string
-      return res.status(400).json({ message: "Service is missing" });
-    }
+    // if (!service) {
+    //   //service is a string
+    //   return res.status(400).json({ message: "Service is missing" });
+    // }
 
     if (!mongoose.Types.ObjectId.isValid(client)) {
       return res.status(400).json({ message: "Invalid client ID provided" });
@@ -162,19 +162,23 @@ const getMembersByUnit = async (req, res, next) => {
     const members = await CoworkingMembers.find({
       unit: unitId,
       company,
-    }).populate([
-      {
-        path: "client",
-        select: "clientName cabinDesks openDesks isActive",
-      },
-      {
-        path: "unit",
-        select: "unitName unitNo openDesks cabinDesks clearImage occupiedImage",
-      },
-    ]);
+    })
+      .populate([
+        {
+          path: "client",
+          select: "clientName cabinDesks openDesks isActive",
+        },
+        {
+          path: "unit",
+          select:
+            "unitName unitNo openDesks cabinDesks clearImage occupiedImage",
+        },
+      ])
+      .lean()
+      .exec();
 
-    if (!members) {
-      return res.status(400).json({ message: "No Member found" });
+    if (!members || members.length === 0) {
+      return res.status(200).json({ members: [], message: "No members found" });
     }
 
     const clientMap = new Map();
@@ -252,6 +256,34 @@ const getMemberById = async (req, res) => {
   }
 };
 
+const getMemberByClient = async (req, res) => {
+  try {
+    const { clientId } = req.query;
+
+    if (!clientId) {
+      return res.status(400).json({ message: "clientId ID is missing" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      return res.status(400).json({ message: "Invalid client ID provided" });
+    }
+
+    const member = await CoworkingMembers.find({
+      client: clientId,
+    })
+      .populate("client", "clientName service")
+      .select("employeeName email");
+
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    res.status(200).json(member);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateMember = async (req, res, next) => {
   try {
     const { memberId, data } = req.body;
@@ -284,6 +316,7 @@ module.exports = {
   createMember,
   getAllMembers,
   getMemberById,
+  getMemberByClient,
   updateMember,
   getMembersByUnit,
 };

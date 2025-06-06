@@ -35,36 +35,52 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedModule, setExpandedModule] = useState(0);
+    const { auth } = useAuth();
+
+  const allowedVisitorDeptIds = [
+  "6798bae6e469e809084e24a4",
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494"
+];
+
+const userDeptIds = auth?.user?.departments?.map((d) => d._id) || [];
+
+const canAccessVisitors = userDeptIds.some((id) =>
+  allowedVisitorDeptIds.includes(id)
+);
 
   // Menu items array (without DASHBOARD)
-  const menuItems = [
-    {
-      name: "Tickets",
-      icon: <TiTicket />,
-      route: "tickets",
-    },
-    {
-      name: "Meetings",
-      icon: <MdMeetingRoom />,
-      route: "meetings",
-    },
-
-    {
-      name: "Tasks",
-      icon: <FaTasks />,
-      route: "tasks",
-    },
-    {
-      name: "Performance",
-      icon: <FaTasks />,
-      route: "performance",
-    },
-    {
-      name: "Visitors",
-      icon: <VscPersonAdd />,
-      route: "visitors",
-    },
-  ];
+ const menuItems = [
+  {
+    name: "Tickets",
+    icon: <TiTicket />,
+    route: "tickets",
+  },
+  {
+    name: "Meetings",
+    icon: <MdMeetingRoom />,
+    route: "meetings",
+  },
+  {
+    name: "Tasks",
+    icon: <FaTasks />,
+    route: "tasks",
+  },
+  {
+    name: "Performance",
+    icon: <FaTasks />,
+    route: "performance",
+  },
+  ...(canAccessVisitors
+    ? [
+        {
+          name: "Visitors",
+          icon: <VscPersonAdd />,
+          route: "visitors",
+        },
+      ]
+    : []),
+];
   const generalItems = [
     { name: "Calendar", icon: <FaRegCalendarAlt />, route: "calendar" },
     { name: "Access", icon: <SiAuthelia />, route: "access" },
@@ -92,7 +108,7 @@ const Sidebar = () => {
       route: "#",
     },
   ];
-  const { auth } = useAuth();
+
 
   const defaultModules = [
     {
@@ -185,7 +201,6 @@ const Sidebar = () => {
   // If none match, return the original defaultModules
   const finalModules = hasAnySubmenus ? filteredModules : defaultModules;
 
-console.log("FILTERED MODUELS : ", finalModules);
 
 
   const handleMenuOpen = (item) => {

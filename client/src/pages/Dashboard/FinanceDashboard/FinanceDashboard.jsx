@@ -842,12 +842,7 @@ const statutoryPayments = Array.from(statutoryPaymentsMap.entries()).map(
           rowsToDisplay={4}
           Title={`KPA - ${monthYear} `}
           rows={[
-            ...priorityTasks.map((task, index) => ({
-              id: index + 1,
-              taskName: task.taskName,
-              type: task.type,
-              endTime: task.endTime,
-            })),
+           
           ]}
           columns={priorityTasksColumns}
         />,

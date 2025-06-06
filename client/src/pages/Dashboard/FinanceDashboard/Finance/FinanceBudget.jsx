@@ -258,41 +258,6 @@ const FinanceBudget = () => {
         titleAmount={`INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`}
       />
 
-      <div>
-        <WidgetSection layout={2} padding>
-          {/* <DataCard
-            data={"INR 50,00,000"}
-            title={"Projected"}
-            description={`Current Month: ${new Date().toLocaleString(
-              "default",
-              {
-                month: "short",
-              }
-            )}-25`}
-          /> */}
-          <DataCard
-            data={"N/A"}
-            title={"Actual"}
-            description={`Current Month: ${new Date().toLocaleString(
-              "default",
-              {
-                month: "short",
-              }
-            )}-25`}
-          />
-          <DataCard
-            data={"N/A"}
-            title={"Requested"}
-            description={`Current Month: ${new Date().toLocaleString(
-              "default",
-              {
-                month: "short",
-              }
-            )}-25`}
-          />
-        </WidgetSection>
-      </div>
-
       <div className="flex justify-end">
         <PrimaryButton
           title={"Request Budget"}

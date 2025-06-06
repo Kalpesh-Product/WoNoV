@@ -31,7 +31,7 @@ const Maintenance = () => {
 
   const [openModal, setOpenModal] = useState(false);
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
-    queryKey: ["hrFinance"],
+    queryKey: ["maintainanceBudget"],
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -80,11 +80,6 @@ const Maintenance = () => {
 
       stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
-      events: {
-        dataPointSelection: () => {
-          navigate("finance/budget");
-        },
-      },
     },
     colors: ["#54C4A7", "#EB5C45"],
     plotOptions: {
