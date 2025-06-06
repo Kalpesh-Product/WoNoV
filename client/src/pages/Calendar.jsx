@@ -441,7 +441,8 @@ const Calender = () => {
                         <span className="w-[30%]">Receptionist</span>
                         <span>:</span>
                         <span className="text-content   w-full justify-start pl-4">
-                          {selectedEvent.extendedProps.receptionist}
+                          {/* {selectedEvent.extendedProps.receptionist} */}
+                          N/A
                         </span>
                       </span>
                     </div>
