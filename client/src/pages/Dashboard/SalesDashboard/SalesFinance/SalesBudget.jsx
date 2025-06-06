@@ -217,7 +217,7 @@ const SalesBudget = () => {
           department: item?.department,
           expanseType: item?.expanseType,
           projectedAmount: Number(item?.projectedAmount).toFixed(2),
-          actualAmount: Number(item?.actualAmount || 0).toFixed(2), // ✅ Add this
+          actualAmount: inrFormat(Number(item?.actualAmount || 0).toFixed(0)), // ✅ Add this
           dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
           status: item.status,
         });

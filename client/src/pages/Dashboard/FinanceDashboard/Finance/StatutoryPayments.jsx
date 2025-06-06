@@ -9,6 +9,7 @@ import dayjs from "dayjs";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
+import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import humanDate from "../../../../utils/humanDateForamt";
 import { inrFormat } from "../../../../utils/currencyFormat";
 
@@ -132,7 +133,7 @@ const StatutoryPayments = () => {
   };
   //--------------------------------------------------------TableData----------------------------------------------------//
   const kraColumn = [
-    { field: "srNo", headerName: "Sr No", width : 100 },
+    { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "expanseName", headerName: "Client", flex: 1 },
     { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
     { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
@@ -141,78 +142,30 @@ const StatutoryPayments = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-            <span
-              className="text-subtitle cursor-pointer"
-              onClick={() => handleViewModal(params.data)}
-            >
-              <MdOutlineRemoveRedEye />
-            </span>
-          </div>
-        </>
-      ),
-    },
-  ];
-
-  const rows = [
-    {
-      srNo: 1,
-      client: "GST",
-      status: "Paid",
-      amount: "18,000",
-      due: "2024-04-15",
-      date: "10-04-2025",
-    },
-    {
-      srNo: 2,
-      client: "TDS",
-      status: "Paid",
-      amount: "12,500",
-      due: "2024-04-15",
-      date: "11-04-2025",
-    },
-    {
-      srNo: 3,
-      client: "Income Tax",
-      status: "Paid",
-      amount: "22,750",
-      due: "2024-04-18",
-      date: "12-04-2025",
-    },
-    {
-      srNo: 4,
-      client: "Professional Tax",
-      status: "Paid",
-      amount: "6,000",
-      due: "2024-04-14",
-      date: "13-04-2025",
-    },
-    {
-      srNo: 5,
-      client: "ROC Filing",
-      status: "Paid",
-      amount: "14,200",
-      due: "2024-04-16",
-      date: "14-04-2025",
-    },
-    {
-      srNo: 6,
-      client: "Advance Tax",
-      status: "Paid",
-      amount: "30,000",
-      due: "2024-04-12",
-      date: "15-04-2025",
+      cellRenderer: (params) => {
+        console.log("Data : ", params.data);
+        return (
+          <>
+            <div className="p-2 mb-2 flex gap-2">
+              <span
+                className="text-subtitle cursor-pointer"
+                onClick={() => handleViewModal(params.data)}
+              >
+                <MdOutlineRemoveRedEye />
+              </span>
+            </div>
+          </>
+        );
+      },
     },
   ];
 
   const formattedRows = statutoryRaw.map((row, index) => ({
     ...row,
     srNo: index + 1,
-    projectedAmount : inrFormat(row.projectedAmount),
-    actualAmount : inrFormat(row.actualAmount),
-    dueDate: dayjs(new Date(row.dueDate)).format("DD-MM-YYYY"),
+    projectedAmount: inrFormat(row.projectedAmount),
+    actualAmount: inrFormat(row.actualAmount),
+    dueDate: row.dueDate,
   }));
 
   const handleViewModal = (rowData) => {
@@ -228,14 +181,13 @@ const StatutoryPayments = () => {
       </WidgetSection>
       {/* <YearlyGraph title={"Statutory Payments".toUpperCase()} /> */}
 
-      <div>
-        <AgTable
+      <WidgetSection title={"Statutory Payments FY 2024-25"} border>
+        <YearWiseTable
           data={formattedRows}
+          dateColumn={"dueDate"}
           columns={kraColumn}
-          search
-          tableTitle={"Statutory Payments FY 2024-25"}
         />
-      </div>
+      </WidgetSection>
       {viewDetails && (
         <MuiModal
           open={viewModalOpen}
@@ -243,14 +195,42 @@ const StatutoryPayments = () => {
           title="Statutory Payment Detail"
         >
           <div className="space-y-3">
-            <DetalisFormatted title="Client" detail={viewDetails.client} />
             <DetalisFormatted
-              title="Amount Paid"
-              detail={`INR ${Number(
-                viewDetails.amount.replace(/,/g, "")
-              ).toLocaleString("en-IN")}`}
+              title="Expense Name"
+              detail={viewDetails.expanseName}
             />
-            <DetalisFormatted title="Due Date" detail={viewDetails.due} />
+            <DetalisFormatted
+              title="Expense Type"
+              detail={viewDetails.expanseType}
+            />
+            <DetalisFormatted
+              title="Department"
+              detail={viewDetails.department?.name || "-"}
+            />
+            <DetalisFormatted
+              title="Projected Amount"
+              detail={`INR ${viewDetails.projectedAmount}`}
+            />
+            <DetalisFormatted
+              title="Actual Amount Paid"
+              detail={`INR ${viewDetails.actualAmount}`}
+            />
+            <DetalisFormatted
+              title="Due Date"
+              detail={
+                viewDetails.dueDate
+                  ? humanDate(viewDetails.dueDate)
+                  : "-"
+              }
+            />
+            <DetalisFormatted
+              title="Payment Date"
+              detail={viewDetails.date || "-"}
+            />
+            <DetalisFormatted
+              title="Extra Budget?"
+              detail={viewDetails.isExtraBudget ? "Yes" : "No"}
+            />
             <DetalisFormatted
               title="Payment Status"
               detail={viewDetails.status}
