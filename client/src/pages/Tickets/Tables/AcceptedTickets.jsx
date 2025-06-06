@@ -21,6 +21,8 @@ import { IoMdClose } from "react-icons/io";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanTime from "../../../utils/humanTime";
 
+import humanDate from "./../../../utils/humanDateForamt";
+
 const AcceptedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
@@ -283,12 +285,10 @@ const AcceptedTickets = ({ title, departmentId }) => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Support Ticket"}
-      >
+        title={"Support Ticket"}>
         <form
           onSubmit={handleSupportTicketSubmit(onSubmit)}
-          className="flex flex-col gap-4"
-        >
+          className="flex flex-col gap-4">
           <Controller
             name="reason"
             control={supportTicketControl}
@@ -317,8 +317,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
         <div>
           <form
             onSubmit={handleEscalateTicketSubmit(onEscalate)}
-            className="grid grid-cols-1 gap-4"
-          >
+            className="grid grid-cols-1 gap-4">
             <Controller
               name="departmentIds"
               control={escalateFormControl}
@@ -384,8 +383,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
       <MuiModal
         open={openView}
         onClose={() => setOpenView(false)}
-        title="View Accepted Ticket"
-      >
+        title="View Accepted Ticket">
         {selectedTicket && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
@@ -393,8 +391,16 @@ const AcceptedTickets = ({ title, departmentId }) => {
               detail={selectedTicket.ticketTitle}
             />
             <DetalisFormatted
+              title="Description"
+              detail={selectedTicket.description || "N/A"}
+            />
+            <DetalisFormatted
               title="Raised By"
               detail={selectedTicket.raisedBy}
+            />
+            <DetalisFormatted
+              title="Raised At"
+              detail={humanDate(new Date(selectedTicket.raisedDate))}
             />
             <DetalisFormatted
               title="From Department"
@@ -404,11 +410,11 @@ const AcceptedTickets = ({ title, departmentId }) => {
                   : selectedTicket.selectedDepartment
               }
             />
-            <DetalisFormatted title="Status" detail={selectedTicket.status} />
             <DetalisFormatted
-              title="Description"
-              detail={selectedTicket.description || "N/A"}
+              title="Raised To Department"
+              detail={selectedTicket.raisedToDepartment || "N/A"}
             />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
             <DetalisFormatted
               title="Priority"
               detail={selectedTicket?.priority}

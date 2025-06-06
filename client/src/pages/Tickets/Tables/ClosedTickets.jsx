@@ -7,6 +7,7 @@ import MuiModal from "../../../components/MuiModal";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanTime from "../../../utils/humanTime";
+import humanDate from "../../../utils/humanDateForamt";
 
 const ClosedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
@@ -16,7 +17,9 @@ const ClosedTickets = ({ title, departmentId }) => {
   const { data, isLoading } = useQuery({
     queryKey: ["closed-tickets"],
     queryFn: async () => {
-      const response = await axios.get(`/api/tickets/ticket-filter/close/${departmentId}`);
+      const response = await axios.get(
+        `/api/tickets/ticket-filter/close/${departmentId}`
+      );
       return response.data || [];
     },
     initialData: [],
@@ -31,21 +34,21 @@ const ClosedTickets = ({ title, departmentId }) => {
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => ({
-        srNo: index + 1,
-        id: ticket._id,
-        raisedBy: ticket.raisedBy?.firstName || "Unknown",
-        fromDepartment: ticket.raisedToDepartment?.name || "N/A",
-        ticketTitle: ticket?.ticket || "No Title",
-        status: ticket.status || "Pending",
-        description: ticket.description || "-",
-        acceptedBy: ticket?.acceptedBy
-                      ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
-                      : "",               
-                acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
-                closedAt: ticket.closedAt ? humanTime(ticket.closedAt) : "-",
-                priority:ticket.priority,
-                image:ticket.image ? ticket.image.url : null
-      }));
+          srNo: index + 1,
+          id: ticket._id,
+          raisedBy: ticket.raisedBy?.firstName || "Unknown",
+          fromDepartment: ticket.raisedToDepartment?.name || "N/A",
+          ticketTitle: ticket?.ticket || "No Title",
+          status: ticket.status || "Pending",
+          description: ticket.description || "-",
+          acceptedBy: ticket?.acceptedBy
+            ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
+            : "",
+          acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
+          closedAt: ticket.closedAt ? humanTime(ticket.closedAt) : "-",
+          priority: ticket.priority,
+          image: ticket.image ? ticket.image.url : null,
+        }));
   };
 
   const rows = isLoading ? [] : transformTicketsData(data);
@@ -90,8 +93,7 @@ const ClosedTickets = ({ title, departmentId }) => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewTicketDetails(params.data)}
-          >
+            onClick={() => handleViewTicketDetails(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -123,18 +125,49 @@ const ClosedTickets = ({ title, departmentId }) => {
       <MuiModal
         open={openModal && viewTicketDetails}
         onClose={() => setOpenModal(false)}
-        title={"View Ticket Details"}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-          <DetalisFormatted title="Raised By" detail={viewTicketDetails?.raisedBy} />
-          <DetalisFormatted title="From Department" detail={viewTicketDetails?.fromDepartment} />
-          <DetalisFormatted title="Ticket Title" detail={viewTicketDetails?.ticketTitle} />
-          <DetalisFormatted title="Description" detail={viewTicketDetails?.description} />
+        title={"View Ticket Details"}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+          <DetalisFormatted
+            title="Ticket Title"
+            detail={viewTicketDetails?.ticketTitle}
+          />
+          <DetalisFormatted
+            title="Description"
+            detail={viewTicketDetails?.description}
+          />
+          <DetalisFormatted
+            title="Raised By"
+            detail={viewTicketDetails?.raisedBy}
+          />
+          <DetalisFormatted
+            title="Raised At"
+            detail={humanDate(new Date(viewTicketDetails.raisedDate))}
+          />
+          <DetalisFormatted
+            title="From Department"
+            detail={viewTicketDetails?.fromDepartment}
+          />
+          <DetalisFormatted
+            title="Raised To Department"
+            detail={viewTicketDetails.raisedToDepartment || "N/A"}
+          />
           <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
-          <DetalisFormatted title="Priority" detail={viewTicketDetails?.priority} />
-          <DetalisFormatted title="Accepted by" detail={viewTicketDetails?.acceptedBy} />
-                    <DetalisFormatted title="Accepted at" detail={viewTicketDetails?.acceptedAt} />
-           <DetalisFormatted title="Closed at" detail={viewTicketDetails?.closedAt} />
+          <DetalisFormatted
+            title="Priority"
+            detail={viewTicketDetails?.priority}
+          />
+          <DetalisFormatted
+            title="Accepted by"
+            detail={viewTicketDetails?.acceptedBy}
+          />
+          <DetalisFormatted
+            title="Accepted at"
+            detail={viewTicketDetails?.acceptedAt}
+          />
+          <DetalisFormatted
+            title="Closed at"
+            detail={viewTicketDetails?.closedAt}
+          />
         </div>
       </MuiModal>
     </div>
