@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import dayjs from "dayjs";
 import AgTable from "../AgTable";
@@ -22,11 +22,10 @@ const YearWiseTable = ({
   checkbox,
   checkAll,
   key,
+  initialMonth, // ✅ NEW PROP
 }) => {
-  // Group data by FY
   const fiscalMap = useMemo(() => {
     const map = new Map();
-
     data.forEach((item) => {
       const date = dayjs(item[dateColumn]);
       if (!date.isValid()) return;
@@ -40,7 +39,6 @@ const YearWiseTable = ({
       if (!monthMap.has(month)) monthMap.set(month, []);
       monthMap.get(month).push(item);
     });
-
     return map;
   }, [data, dateColumn]);
 
@@ -49,7 +47,6 @@ const YearWiseTable = ({
   const [selectedFYIndex, setSelectedFYIndex] = useState(
     fiscalYears.findIndex((fy) => fy === getFiscalYear(new Date()))
   );
-
   const selectedFY = fiscalYears[selectedFYIndex] || fiscalYears[0];
 
   const monthsInFY = useMemo(() => {
@@ -60,6 +57,18 @@ const YearWiseTable = ({
   }, [fiscalMap, selectedFY]);
 
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
+
+  // ✅ Sync selectedMonthIndex with initialMonth prop
+  useEffect(() => {
+    if (initialMonth && monthsInFY.length > 0) {
+      const matchedIndex = monthsInFY.findIndex((monthStr) => {
+        return dayjs(monthStr, "MMM-YYYY").format("MMMM") === initialMonth;
+      });
+      if (matchedIndex !== -1) {
+        setSelectedMonthIndex(matchedIndex);
+      }
+    }
+  }, [initialMonth, monthsInFY]);
 
   const selectedMonth = monthsInFY[selectedMonthIndex] || "";
 
@@ -96,7 +105,8 @@ const YearWiseTable = ({
           {buttonTitle && (
             <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
           )}
-                 {/* Month Switcher */}
+
+          {/* Month Switcher */}
           <div className="flex items-center gap-2">
             <PrimaryButton
               title={<MdNavigateBefore />}
@@ -118,6 +128,7 @@ const YearWiseTable = ({
               disabled={selectedMonthIndex === monthsInFY.length - 1}
             />
           </div>
+
           {/* FY Switcher */}
           <div className="flex items-center gap-2">
             <PrimaryButton
@@ -140,8 +151,6 @@ const YearWiseTable = ({
               disabled={selectedFYIndex === fiscalYears.length - 1}
             />
           </div>
-
-   
         </div>
       </div>
 

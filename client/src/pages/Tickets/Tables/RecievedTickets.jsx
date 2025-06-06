@@ -162,6 +162,7 @@ const RecievedTickets = ({ title, departmentId }) => {
       raisedToDepartment: ticket.raisedToDepartment?.name || "N/A",
       status: ticket.status || "Pending",
       raisedDate: ticket.createdAt,
+      priority : ticket.priority || "Low",
       image: ticket.image?.url,
     }));
   };
@@ -304,15 +305,25 @@ const RecievedTickets = ({ title, departmentId }) => {
         title={"View Ticket"}
       >
         {selectedTicket && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
               title="Ticket"
               detail={selectedTicket.ticketTitle}
+            />
+               <DetalisFormatted
+              title="Description"
+              detail={selectedTicket.description}
             />
             <DetalisFormatted
               title="Raised By"
               detail={`${selectedTicket.raisedBy}`}
             />
+             <DetalisFormatted
+              title="Raised At"
+              detail={humanDate(new Date(selectedTicket.raisedDate))}
+            />
+              <DetalisFormatted title="Status" detail={selectedTicket.status} />
+              <DetalisFormatted title="Priority" detail={selectedTicket.priority} />
             <DetalisFormatted
               title="From Department"
               detail={selectedTicket.fromDepartment || "N/A"}
@@ -321,15 +332,8 @@ const RecievedTickets = ({ title, departmentId }) => {
               title="Raised To Department"
               detail={selectedTicket.raisedToDepartment || "N/A"}
             />
-            <DetalisFormatted title="Status" detail={selectedTicket.status} />
-            <DetalisFormatted
-              title="Description"
-              detail={selectedTicket.description}
-            />
-            <DetalisFormatted
-              title="Created At"
-              detail={humanDate(new Date(selectedTicket.raisedDate))}
-            />
+         
+           
             {selectedTicket.image && (
               <div className="lg:col-span-2">
                 <img
