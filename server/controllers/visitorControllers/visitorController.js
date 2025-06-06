@@ -187,15 +187,26 @@ const addVisitor = async (req, res, next) => {
       }
     }
 
-    const foundClientMember = await CoworkingMember.findById(clientToMeet);
+    let foundClientMember = null;
+    if (clientToMeet) {
+      if (!mongoose.Types.ObjectId.isValid(clientToMeet)) {
+        throw new CustomError(
+          "Invalid client member Id provided",
+          logPath,
+          logAction,
+          logSourceKey
+        );
+      }
 
-    if (!foundClientMember) {
-      throw new CustomError(
-        "No client member found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      foundClientMember = await CoworkingMember.findById(clientToMeet);
+      if (!foundClientMember) {
+        throw new CustomError(
+          "No client member found",
+          logPath,
+          logAction,
+          logSourceKey
+        );
+      }
     }
 
     let externalCompany = null;
