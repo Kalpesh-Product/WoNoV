@@ -50,11 +50,21 @@ const getIncomeAndExpanse = async (req, res, next) => {
       },
       {
         income: {
-          meetingRevenue: [...meetingRevenue],
-          alternateRevenues: [...alternateRevenues],
-          virtualOfficeRevenues: [...virtualOfficeRevenues],
-          workationRevenues: [...workationRevenues],
-          coworkingRevenues: [...coworkingRevenues],
+          meetingRevenue: [
+            ...meetingRevenue.map((m) => ({ ...m, status: "paid" })),
+          ],
+          alternateRevenues: [
+            ...alternateRevenues.map((m) => ({ ...m, status: "paid" })),
+          ],
+          virtualOfficeRevenues: [
+            ...virtualOfficeRevenues.map((m) => ({ ...m, status: "paid" })),
+          ],
+          workationRevenues: [
+            ...workationRevenues.map((m) => ({ ...m, status: "paid" })),
+          ],
+          coworkingRevenues: [
+            ...coworkingRevenues.map((m) => ({ ...m, status: "paid" })),
+          ],
         },
       },
       {

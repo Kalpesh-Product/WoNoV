@@ -219,17 +219,7 @@ const AdminInventory = () => {
         tableTitle={"List Of Inventory"}
         buttonTitle={"Add Inventory"}
         data={[
-          ...mixedInventory.map((asset, index) => ({
-            id: index + 1,
-            department: asset.department,
-            category: asset.category,
-            brand: asset.brand,
-            price: inrFormat(asset.price),
-            quantity: asset.quantity,
-            purchaseDate: humanDateForamt(asset.purchaseDate),
-            warranty: asset.warranty,
-            vendorName: asset.vendorName,
-          })),
+          
         ]}
         columns={assetColumns}
         handleClick={handleAddAsset}

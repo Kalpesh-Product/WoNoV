@@ -143,15 +143,11 @@ const createDeptBasedTask = async (req, res, next) => {
 
 const updateTaskStatus = async (req, res, next) => {
   const { user, ip, company } = req;
-  const logPath = "performances/PerformanceLog";
-  const logAction = "Update KRA/KPA status";
-  const logSourceKey = "kraKpaTasks";
+
 
   try {
     const { taskId, taskType } = req.params;
 
-    console.log("Params", taskId);
-    console.log("type", taskType);
     if (!taskId) {
       // throw new CustomError(
       //   "Missing required fields",
@@ -204,7 +200,6 @@ const updateTaskStatus = async (req, res, next) => {
       return res.send(400).status({ message: "Failed to update the status" });
     }
 
-    console.log("task");
     const newKraKpaTask = new kraKpaTask({
       task: taskId,
       completedBy: user,
@@ -215,22 +210,22 @@ const updateTaskStatus = async (req, res, next) => {
 
     const savedNewKraKpaTask = await newKraKpaTask.save();
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: `${taskType}  marked completed`,
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: savedNewKraKpaTask._id,
-      changes: {
-        status: "Completed",
-        prevStatus: "Pending",
-        completionDate,
-      },
-    });
+    // await createLog({
+    //   path: logPath,
+    //   action: logAction,
+    //   remarks: `${taskType}  marked completed`,
+    //   status: "Success",
+    //   user: user,
+    //   ip: ip,
+    //   company: company,
+    //   sourceKey: logSourceKey,
+    //   sourceId: savedNewKraKpaTask._id,
+    //   changes: {
+    //     status: "Completed",
+    //     prevStatus: "Pending",
+    //     completionDate,
+    //   },
+    // });
 
     return res.status(201).json({ message: `${taskType} marked completed` });
   } catch (error) {
