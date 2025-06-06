@@ -61,6 +61,14 @@ const fetchVisitors = async (req, res, next) => {
             path: "toMeet",
             select: "firstName lastName email",
           },
+          {
+            path: "clientToMeet",
+            select: "employeeName email",
+          },
+          {
+            path: "clientCompany",
+            select: "clientName email",
+          },
         ]);
         break;
 
@@ -77,6 +85,14 @@ const fetchVisitors = async (req, res, next) => {
           {
             path: "visitorCompany",
             select: "companyName pocName",
+          },
+          {
+            path: "clientToMeet",
+            select: "employeeName email",
+          },
+          {
+            path: "clientCompany",
+            select: "clientName email",
           },
         ]);
     }
@@ -104,7 +120,7 @@ const addVisitor = async (req, res, next) => {
       phoneNumber,
       purposeOfVisit,
       idProof,
-      dateOfVisit,
+      // dateOfVisit,
       checkIn,
       checkOut,
       scheduledTime,
@@ -118,18 +134,18 @@ const addVisitor = async (req, res, next) => {
     } = req.body;
 
     // Validate date format
-    const visitDate = new Date(dateOfVisit);
+    const visitDate = new Date();
     const clockIn = new Date(checkIn);
     const clockOut = checkOut ? new Date(checkOut) : null;
 
-    if (isNaN(visitDate.getTime()) || isNaN(clockIn.getTime())) {
-      throw new CustomError(
-        "Invalid date format",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // if (isNaN(visitDate.getTime()) || isNaN(clockIn.getTime())) {
+    //   throw new CustomError(
+    //     "Invalid date format",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
 
     if (
       visitorCompanyId &&

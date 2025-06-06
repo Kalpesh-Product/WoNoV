@@ -63,7 +63,7 @@ const visitorSchema = new mongoose.Schema(
     },
     clientToMeet: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "CoworkingMembers",
+      ref: "CoworkingMember",
     },
     clientCompany: {
       type: mongoose.Schema.Types.ObjectId,

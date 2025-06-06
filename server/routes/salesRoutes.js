@@ -51,6 +51,7 @@ const {
 } = require("../controllers/salesControllers/workationRevenueController");
 const {
   getMembersByUnit,
+  getMemberByClient,
 } = require("../controllers/salesControllers/coworkingMemberControllers");
 const {
   getVirtualOfficeRevenue,
@@ -64,6 +65,7 @@ router.post("/onboard-co-working-client", createCoworkingClient);
 router.get("/co-working-clients", getCoworkingClients);
 router.patch("/update-co-working-clients", updateCoworkingClient);
 router.get("/co-working-members", getMembersByUnit);
+router.get("/co-working-client-members", getMemberByClient);
 router.post(
   "/upload-client-unit-image",
   upload.single("unitImage"),

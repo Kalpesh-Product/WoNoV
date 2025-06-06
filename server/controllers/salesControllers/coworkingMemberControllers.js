@@ -252,6 +252,34 @@ const getMemberById = async (req, res) => {
   }
 };
 
+const getMemberByClient = async (req, res) => {
+  try {
+    const { clientId } = req.query;
+
+    if (!clientId) {
+      return res.status(400).json({ message: "clientId ID is missing" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      return res.status(400).json({ message: "Invalid client ID provided" });
+    }
+
+    const member = await CoworkingMembers.find({
+      client: clientId,
+    })
+      .populate("client", "clientName service")
+      .select("employeeName email");
+
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    res.status(200).json(member);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateMember = async (req, res, next) => {
   try {
     const { memberId, data } = req.body;
@@ -284,6 +312,7 @@ module.exports = {
   createMember,
   getAllMembers,
   getMemberById,
+  getMemberByClient,
   updateMember,
   getMembersByUnit,
 };
