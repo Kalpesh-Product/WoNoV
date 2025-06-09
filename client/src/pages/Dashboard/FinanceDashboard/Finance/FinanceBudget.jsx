@@ -27,7 +27,12 @@ import {
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { toast } from "sonner";
-import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
@@ -36,21 +41,20 @@ import useAuth from "../../../../hooks/useAuth";
 
 const FinanceBudget = () => {
   const axios = useAxiosPrivate();
-  const {auth} = useAuth()
-   const location = useLocation();
+  const { auth } = useAuth();
+  const location = useLocation();
 
-   //Identify department from breadcrumb
- const pathName = location.pathname
+  //Identify department from breadcrumb
+  const pathName = location.pathname;
   const pathSegments = location.pathname.split("/").filter(Boolean);
- const dashboardSegment = pathSegments.find(segment => segment.endsWith("-dashboard"));
+  const dashboardSegment = pathSegments.find((segment) =>
+    segment.endsWith("-dashboard")
+  );
   const section = dashboardSegment?.split("-")[0];
 
-  const departmentId = auth.user.departments.find((dept)=>
-  {
-    return dept.name.toLowerCase() === section 
-  }
-    )
-
+  const departmentId = auth.user.departments.find((dept) => {
+    return dept.name.toLowerCase() === section;
+  });
 
   const [openModal, setOpenModal] = useState(false);
   const { control, handleSubmit, reset } = useForm({
@@ -78,12 +82,15 @@ const FinanceBudget = () => {
     },
   });
 
-  const { mutate: requestBudget, isPending: requestBudgetPending } = useMutation({
+  const { mutate: requestBudget, isPending: requestBudgetPending } =
+    useMutation({
       mutationFn: async (data) => {
-        const response = await axios.patch(`/api/budget/request-budget/6798bab0e469e809084e249a`, {
-          ...data,
-          
-        });
+        const response = await axios.patch(
+          `/api/budget/request-budget/6798bab0e469e809084e249a`,
+          {
+            ...data,
+          }
+        );
         return response.data;
       },
       onSuccess: function (data) {
@@ -95,8 +102,6 @@ const FinanceBudget = () => {
         toast.error(error.response.data.message);
       },
     });
-
-
 
   // Transform data into the required format
   const groupedData = hrFinance.reduce((acc, item) => {
@@ -130,7 +135,7 @@ const FinanceBudget = () => {
       department: item.department,
       expanseType: item.expanseType,
       projectedAmount: item?.projectedAmount?.toFixed(2),
-      actualAmount: inrFormat(item?.actualAmount || 0), 
+      actualAmount: inrFormat(item?.actualAmount || 0),
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       status: item.status,
     });
@@ -149,7 +154,7 @@ const FinanceBudget = () => {
         ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
       }));
       const transformedCols = [
-        { field: "srNo", headerName: "SR NO", flex: 1 },
+        { field: "srNo", headerName: "SR NO", width : 100 },
         ...data.tableData.columns,
       ];
 
@@ -167,7 +172,7 @@ const FinanceBudget = () => {
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
   const onSubmit = (data) => {
-    requestBudget(data)
+    requestBudget(data);
     setOpenModal(false);
     reset();
   };
@@ -177,7 +182,6 @@ const FinanceBudget = () => {
   const [isReady, setIsReady] = useState(false);
 
   // const [openModal, setOpenModal] = useState(false);
-
 
   const budgetBar = useMemo(() => {
     if (isHrLoading || !Array.isArray(hrFinance)) return null;
@@ -243,7 +247,7 @@ const FinanceBudget = () => {
       // max: 3000000,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => `${(val / 100000)}`,
+        formatter: (val) => `${val / 100000}`,
       },
     },
     fill: {

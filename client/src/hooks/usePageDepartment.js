@@ -17,6 +17,8 @@ const usePageDepartment = () => {
     section = "tech";
   }
 
+  console.log("SECTION FROM HOOK", section)
+
   const department = auth?.user?.departments?.find((dept) =>
     dept.name.toLowerCase().includes(section)
   );
