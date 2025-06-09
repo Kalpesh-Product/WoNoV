@@ -6,6 +6,7 @@ const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const { createLog } = require("../../utils/moduleLogs");
 const Unit = require("../../models/locations/Unit");
+const { default: mongoose } = require("mongoose");
 
 const requestBudget = async (req, res, next) => {
   const logPath = "/budget/BudgetLog";
@@ -131,6 +132,34 @@ const fetchBudget = async (req, res, next) => {
     const query = { company: foundUser.company };
     if (departmentId) {
       query.department = departmentId;
+    }
+
+    const allBudgets = await Budget.find(query)
+      .populate([
+        { path: "department", select: "name" },
+        { path: "unit", populate: { path: "building", model: "Building" } },
+      ])
+      .lean()
+      .exec();
+
+    res.status(200).json({ allBudgets });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const fetchLandlordPayments = async (req, res, next) => {
+  try {
+    const { unitId } = req.query;
+    const { user, company } = req;
+    const query = { company, expanseType: "Monthly Rent" };
+
+    if (unitId && !mongoose.Types.ObjectId.isValid(unitId)) {
+      return res.status(400).json({ message: "Invalid unit Id provided" });
+    }
+
+    if (unitId) {
+      query.unit = unitId;
     }
 
     const allBudgets = await Budget.find(query)
@@ -388,5 +417,6 @@ module.exports = {
   approveBudget,
   rejectBudget,
   fetchBudget,
+  fetchLandlordPayments,
   bulkInsertBudgets,
 };

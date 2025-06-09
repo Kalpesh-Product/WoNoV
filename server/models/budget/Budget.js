@@ -20,7 +20,7 @@ const budgetSchema = new mongoose.Schema({
   expanseType: {
     type: String,
     required: true,
-    enum: ["Internal", "External"],
+    // enum: ["Internal", "External"],
   },
   projectedAmount: {
     type: Number,
