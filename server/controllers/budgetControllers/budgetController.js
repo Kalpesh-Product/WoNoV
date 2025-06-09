@@ -21,18 +21,20 @@ const requestBudget = async (req, res, next) => {
       dueDate,
       expanseType,
       paymentType,
-      isExtraBudget,
       unitId,
+      invoiceAttached,
+      preApproved,
+      emergencyApproval,
+      budgetApproval,
+      l1Approval,
+      invoiceDate,
+      reimbursementDate,
+      srNo,
+      particulars,
     } = req.body;
     const { departmentId } = req.params;
 
-    if (
-      !projectedAmount ||
-      !expanseName ||
-      !dueDate ||
-      !expanseType ||
-      !paymentType
-    ) {
+    if (!projectedAmount || !expanseName || !dueDate || !expanseType) {
       throw new CustomError(
         "Invalid budget data",
         logPath,
@@ -40,6 +42,12 @@ const requestBudget = async (req, res, next) => {
         logSourceKey
       );
     }
+
+    const parsedDueDate = new Date(dueDate);
+    const parsedInvoiceDate = invoiceDate ? new Date(invoiceDate) : null;
+    const parsedReimbursementDate = reimbursementDate
+      ? new Date(reimbursementDate)
+      : null;
 
     const foundUser = await User.findOne({ _id: user })
       .select("company")
@@ -80,12 +88,20 @@ const requestBudget = async (req, res, next) => {
       projectedAmount,
       department: departmentId,
       company: companyDoc._id,
-      dueDate: dueDate,
+      dueDate: parsedDueDate,
+      invoiceDate: parsedInvoiceDate,
+      reimbursementDate: parsedReimbursementDate,
       expanseType,
       paymentType,
       unit: unitId,
-      isExtraBudget: isExtraBudget || false, // Default to false
       status: "Pending",
+      invoiceAttached,
+      preApproved,
+      emergencyApproval,
+      budgetApproval,
+      l1Approval,
+      srNo,
+      particulars,
     });
 
     await newBudgetRequest.save();
@@ -106,7 +122,7 @@ const requestBudget = async (req, res, next) => {
         dueDate,
         expanseType,
         paymentType,
-        isExtraBudget,
+        isExtraBudget: false,
       },
     });
 
