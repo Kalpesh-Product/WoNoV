@@ -21,17 +21,33 @@ import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 import { toast } from "sonner";
 import Yearlygraph from "../../../../components/graphs/YearlyGraph";
 import { inrFormat } from "../../../../utils/currencyFormat";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
+import useAuth from "../../../../hooks/useAuth";
 
 const AdminBudget = () => {
   const axios = useAxiosPrivate();
   const [isReady, setIsReady] = useState(false);
 
+    const {auth} = useAuth()
+       const location = useLocation();
+  
+     //Identify department from breadcrumb
+   const pathName = location.pathname
+    const pathSegments = location.pathname.split("/").filter(Boolean);
+   const dashboardSegment = pathSegments.find(segment => segment.endsWith("-dashboard"));
+    const section = dashboardSegment?.split("-")[0];
+  
+    const departmentId = auth.user.departments.find((dept)=>
+    {
+      return dept.name.toLowerCase().includes(section) 
+    }
+      )
+
   const [openModal, setOpenModal] = useState(false);
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
-    queryKey: ["hrFinance"],
+    queryKey: ["adminBudget"],
     queryFn: async () => {
       try {
         const response = await axios.get(

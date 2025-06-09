@@ -13,7 +13,7 @@ import { MdTrendingUp } from "react-icons/md";
 import { BsCheckCircleFill } from "react-icons/bs";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import BudgetGraph from "../../../../components/graphs/BudgetGraph";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
@@ -27,19 +27,37 @@ import {
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
+import useAuth from "../../../../hooks/useAuth";
 
 const FinanceBudget = () => {
   const axios = useAxiosPrivate();
+  const {auth} = useAuth()
+   const location = useLocation();
+
+   //Identify department from breadcrumb
+ const pathName = location.pathname
+  const pathSegments = location.pathname.split("/").filter(Boolean);
+ const dashboardSegment = pathSegments.find(segment => segment.endsWith("-dashboard"));
+  const section = dashboardSegment?.split("-")[0];
+
+  const departmentId = auth.user.departments.find((dept)=>
+  {
+    return dept.name.toLowerCase() === section 
+  }
+    )
+
+
   const [openModal, setOpenModal] = useState(false);
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       expanseName: "",
       expanseType: "",
+      paymentType: "",
       projectedAmount: null,
       dueDate: "",
     },
@@ -60,6 +78,23 @@ const FinanceBudget = () => {
     },
   });
 
+  const { mutate: requestBudget, isPending: requestBudgetPending } = useMutation({
+      mutationFn: async (data) => {
+        const response = await axios.patch(`/api/budget/request-budget/6798bab0e469e809084e249a`, {
+          ...data,
+          
+        });
+        return response.data;
+      },
+      onSuccess: function (data) {
+        setOpenModal(false);
+        toast.success(data.message);
+        reset();
+      },
+      onError: function (error) {
+        toast.error(error.response.data.message);
+      },
+    });
 
 
 
@@ -132,8 +167,8 @@ const FinanceBudget = () => {
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
   const onSubmit = (data) => {
+    requestBudget(data)
     setOpenModal(false);
-    toast.success("Budget Requested succesfully");
     reset();
   };
 
@@ -309,6 +344,24 @@ const FinanceBudget = () => {
             )}
           />
 
+          {/* Payment Type */}
+          <Controller
+            name="paymentType"
+            control={control}
+            rules={{ required: "Payment type is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Payment Type
+                  </MenuItem>
+                  <MenuItem value="One Time">One Time</MenuItem>
+                  <MenuItem value="Recurring">Recurring</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+
           {/* Amount */}
           <Controller
             name="projectedAmount"
@@ -329,34 +382,6 @@ const FinanceBudget = () => {
                 error={!!fieldState.error}
                 helperText={fieldState.error?.message}
               />
-            )}
-          />
-
-          {/* Due Date */}
-          <Controller
-            name="dueDate"
-            control={control}
-            rules={{ required: "Due date is required" }}
-            render={({ field, fieldState }) => (
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  {...field}
-                  label="Due Date"
-                  format="DD-MM-YYYY"
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(date) =>
-                    field.onChange(date ? date.toISOString() : null)
-                  }
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      size: "small",
-                      error: !!fieldState.error,
-                      helperText: fieldState.error?.message,
-                    },
-                  }}
-                />
-              </LocalizationProvider>
             )}
           />
 

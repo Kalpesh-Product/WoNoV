@@ -6,11 +6,15 @@ import { IoIosArrowDown } from "react-icons/io";
 import DataCard from "../../../../components/DataCard";
 import FilterUnits from "./FilterUnits";
 import { useState } from "react";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 
  
 
 const LandlordPayments = () => {
+
 
   const collectionData = [
     { month: "Apr-24", paid: 80, unpaid: 20 },
@@ -80,10 +84,6 @@ const LandlordPayments = () => {
     colors: ["#54C4A7", "#EB5C45"], // Green for paid, red for unpaid
   };
 
- 
-
-
-
   return (
     <div className="flex flex-col gap-8">
       <WidgetSection titleLabel={"FY 2024-25"} title={"Landlord Payments".toUpperCase()} border>
@@ -93,7 +93,7 @@ const LandlordPayments = () => {
        <FilterUnits/>
 
       {/* <WidgetSection title="Unit Wise Landlord Payments" border>
-        {units.map((unit, index) => (
+        {landlordPaymentsLoading ? [] : landlordPayments.allBudgets.map((unit, index) => (
           <Accordion key={index} className="py-4">
             <AccordionSummary
               expandIcon={<IoIosArrowDown />}
@@ -132,6 +132,7 @@ const LandlordPayments = () => {
           </Accordion>
         ))}
       </WidgetSection> */}
+      
     </div>
   );
 };
