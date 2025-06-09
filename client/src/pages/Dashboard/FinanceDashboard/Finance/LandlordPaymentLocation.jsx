@@ -1,13 +1,22 @@
 import { useState } from "react";
 import AgTable from "../../../../components/AgTable";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
+import WidgetSection from "../../../../components/WidgetSection";
+import MonthWiseTable from "../../../../components/Tables/MonthWiseTable";
+import humanDate from "../../../../utils/humanDateForamt";
+import { inrFormat } from "../../../../utils/currencyFormat";
 
 const LandlordPaymentLocation = () => {
+  const axios = useAxiosPrivate();
   const [searchParams] = useSearchParams();
-  const [viewModalOpen, setViewModalOpen] = useState(false);
+    const location = useLocation();
+    const { unitId} = location.state || {};
+   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
   const building = searchParams.get("location");
   const rawUnit = searchParams.get("floor");
@@ -21,6 +30,21 @@ const LandlordPaymentLocation = () => {
       return `${words[0][0]}${words[words.length - 1][0]}`;
     })()
     : "";
+
+   const {
+    data: landlordPayments = [],
+    isLoading: landlordPaymentsLoading,
+    error: landlordPaymentsError,
+  } = useQuery({
+    queryKey: ["landlordPayments"],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/budget/landlord-payments?unit=${unit}`
+      );
+      
+      return response.data;
+    },
+  });
 
   const unitData = [
     {
@@ -1414,6 +1438,66 @@ const LandlordPaymentLocation = () => {
     },
   ];
 
+   const paymentColumns = [
+          {
+            field: "srno",
+            headerName: "Sr No",
+            width: 100,
+            flex: 1,
+          },
+          // {
+          //   field: "month",
+          //   headerName: "Month",
+          //   width: 120,
+          //   flex: 1,
+          // },
+          {
+            field: "expanseName",
+            headerName: "Expanse Name",
+            width: 120,
+            flex: 1,
+          },
+          {
+            field: "projectedAmount",
+            headerName: "Projected Amount (INR)",
+            width: 120,
+            flex: 1,
+          },
+          {
+            field: "actualAmount",
+            headerName: "Actual Amount (INR)",
+            width: 120,
+            flex: 1,
+          },
+          {
+            field: "dueDate",
+            headerName: "Due Date",
+            width: 120,
+            flex: 1,
+          },
+            {
+            field: "status",
+            headerName: "Status",
+            width: 120,
+            flex: 1,
+          },
+          {
+            field: "actions",
+            headerName: "Actions",
+            cellRenderer: (params) => (
+              <>
+                <div className="p-2 mb-2 flex gap-2">
+                  <span
+                    className="text-subtitle cursor-pointer"
+                    onClick={() => handleViewModal(params.data)}>
+                    <MdOutlineRemoveRedEye />
+                  </span>
+                </div>
+              </>
+            ),
+          },
+        ]
+
   const removeParanthesis = (unit) => {
     const newunit = unit?.replace(/[()]/g, "");
     return newunit;
@@ -1430,28 +1514,46 @@ const LandlordPaymentLocation = () => {
 
   return (
     <div className="p-4">
-      <AgTable
-        key={unitData.length}
-        search={true}
-        tableTitle={`Landlord Payments (${buildingInitials}- ${unit})`}
-        data={[...rows].reverse()}
-        columns={columns}
-      />
+
+      <WidgetSection layout={1} title={`Landlord Payments (${buildingInitials}- ${unit})`} border>
+            <MonthWiseTable
+            dateColumn={"dueDate"}
+              data={
+                !landlordPaymentsLoading
+                  ? landlordPayments.allBudgets?.map((payment, index) => (
+                    {...payment,
+                      projectedAmount: inrFormat(payment.projectedAmount),
+                      actualAmount: inrFormat(payment.actualAmount),
+                    }
+                  ))
+                  : []
+              }
+              columns={paymentColumns}
+              
+            />
+          </WidgetSection>
 
       {viewDetails && (
         <MuiModal
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
-          title="Landlord Payment Detail"
+          title="Landlord Payment Details"
         >
           <div className="space-y-3">
             <DetalisFormatted title="Month" detail={viewDetails.month} />
-            <DetalisFormatted title="Landlord" detail={viewDetails.landlordName} />
-            <DetalisFormatted title="Status" detail={viewDetails.status} />
+            <DetalisFormatted title="Expanse Name" detail={viewDetails.expanseName} />
+            <DetalisFormatted title="Department" detail={viewDetails.department.name} />
             <DetalisFormatted
-              title="Amount"
-              detail={`INR ${Number(1500000).toLocaleString("en-IN")}`}
+              title="Projected Amount"
+              detail={`INR ${ viewDetails.projectedAmount }`}
             />
+            <DetalisFormatted
+              title="Actual Amount"
+              detail={`INR ${viewDetails.actualAmount}`}
+            />
+             <DetalisFormatted title="Due Date" detail={humanDate(viewDetails.dueDate)} />
+             <DetalisFormatted title="Status" detail={viewDetails.status} />
+             <DetalisFormatted title="Extra Budget" detail={viewDetails.isExtraBudget ? "Yes" : "No"} />
           </div>
         </MuiModal>
       )}

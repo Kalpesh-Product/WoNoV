@@ -150,16 +150,19 @@ const fetchBudget = async (req, res, next) => {
 
 const fetchLandlordPayments = async (req, res, next) => {
   try {
-    const { unitId } = req.query;
+    const { unit } = req.query;
     const { user, company } = req;
     const query = { company, expanseType: "Monthly Rent" };
 
-    if (unitId && !mongoose.Types.ObjectId.isValid(unitId)) {
-      return res.status(400).json({ message: "Invalid unit Id provided" });
-    }
+    let foundUnit;
 
-    if (unitId) {
-      query.unit = unitId;
+    if (unit) {
+      const foundUnit = await Unit.findOne({ unitNo: unit });
+
+      if (!foundUnit) {
+        return res.status(400).json({ message: "No unit found" });
+      }
+      query.unit = foundUnit._id;
     }
 
     const allBudgets = await Budget.find(query)
