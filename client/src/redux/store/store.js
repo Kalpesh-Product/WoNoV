@@ -8,6 +8,7 @@ import meetingsReducer from "../slices/meetingSlice";
 import salesReducer from "../slices/salesSlice";
 import hrReducer from "../slices/hrSlice"
 import performanceReducer from "../slices/performanceSlice"
+import financeReducer from "../slices/financeSlice"
 
 const persistConfig = {
   key: "root",
@@ -27,7 +28,8 @@ const rootreducer = combineReducers({
   client: clientReducer,
   sales: salesReducer,
   hr: hrReducer,
-  performance : performanceReducer
+  performance : performanceReducer,
+  finance : financeReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootreducer);

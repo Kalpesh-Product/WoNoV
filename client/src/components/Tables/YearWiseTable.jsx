@@ -42,7 +42,10 @@ const YearWiseTable = ({
     return map;
   }, [data, dateColumn]);
 
-  const fiscalYears = useMemo(() => Array.from(fiscalMap.keys()).sort(), [fiscalMap]);
+  const fiscalYears = useMemo(
+    () => Array.from(fiscalMap.keys()).sort(),
+    [fiscalMap]
+  );
 
   const [selectedFYIndex, setSelectedFYIndex] = useState(
     fiscalYears.findIndex((fy) => fy === getFiscalYear(new Date()))
@@ -106,51 +109,55 @@ const YearWiseTable = ({
             <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
           )}
 
-          {/* Month Switcher */}
-          <div className="flex items-center gap-2">
-            <PrimaryButton
-              title={<MdNavigateBefore />}
-              handleSubmit={() =>
-                setSelectedMonthIndex((prev) => Math.max(prev - 1, 0))
-              }
-              disabled={selectedMonthIndex === 0}
-            />
-            <div className="text-subtitle text-center font-pmedium w-[100px]">
-              {selectedMonth}
-            </div>
-            <PrimaryButton
-              title={<MdNavigateNext />}
-              handleSubmit={() =>
-                setSelectedMonthIndex((prev) =>
-                  Math.min(prev + 1, monthsInFY.length - 1)
-                )
-              }
-              disabled={selectedMonthIndex === monthsInFY.length - 1}
-            />
-          </div>
+          {filteredData.length > 0 && (
+            <>
+              {/* Month Switcher */}
+              <div className="flex items-center gap-2">
+                <PrimaryButton
+                  title={<MdNavigateBefore />}
+                  handleSubmit={() =>
+                    setSelectedMonthIndex((prev) => Math.max(prev - 1, 0))
+                  }
+                  disabled={selectedMonthIndex === 0}
+                />
+                <div className="text-subtitle text-center font-pmedium w-[100px]">
+                  {selectedMonth}
+                </div>
+                <PrimaryButton
+                  title={<MdNavigateNext />}
+                  handleSubmit={() =>
+                    setSelectedMonthIndex((prev) =>
+                      Math.min(prev + 1, monthsInFY.length - 1)
+                    )
+                  }
+                  disabled={selectedMonthIndex === monthsInFY.length - 1}
+                />
+              </div>
 
-          {/* FY Switcher */}
-          <div className="flex items-center gap-2">
-            <PrimaryButton
-              title={<MdNavigateBefore />}
-              handleSubmit={() =>
-                setSelectedFYIndex((prev) => Math.max(prev - 1, 0))
-              }
-              disabled={selectedFYIndex === 0}
-            />
-            <div className="text-subtitle text-center font-pmedium w-fit">
-              {selectedFY}
-            </div>
-            <PrimaryButton
-              title={<MdNavigateNext />}
-              handleSubmit={() =>
-                setSelectedFYIndex((prev) =>
-                  Math.min(prev + 1, fiscalYears.length - 1)
-                )
-              }
-              disabled={selectedFYIndex === fiscalYears.length - 1}
-            />
-          </div>
+              {/* FY Switcher */}
+              <div className="flex items-center gap-2">
+                <PrimaryButton
+                  title={<MdNavigateBefore />}
+                  handleSubmit={() =>
+                    setSelectedFYIndex((prev) => Math.max(prev - 1, 0))
+                  }
+                  disabled={selectedFYIndex === 0}
+                />
+                <div className="text-subtitle text-center font-pmedium w-fit">
+                  {selectedFY}
+                </div>
+                <PrimaryButton
+                  title={<MdNavigateNext />}
+                  handleSubmit={() =>
+                    setSelectedFYIndex((prev) =>
+                      Math.min(prev + 1, fiscalYears.length - 1)
+                    )
+                  }
+                  disabled={selectedFYIndex === fiscalYears.length - 1}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
