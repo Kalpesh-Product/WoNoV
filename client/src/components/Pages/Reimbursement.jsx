@@ -4,8 +4,8 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { TextField, MenuItem, Box, IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import PrimaryButton from "../../../../components/PrimaryButton";
-import MuiModal from "../../../../components/MuiModal";
+import PrimaryButton from "../PrimaryButton";
+import MuiModal from "../MuiModal";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
@@ -22,7 +22,7 @@ const paymentModes = [
   "ETC",
 ];
 
-const VoucherForm = () => {
+const Reimbursement = () => {
   const formRef = useRef(null);
   const [openPreview, setOpenPreview] = useState(false);
 
@@ -68,10 +68,10 @@ const VoucherForm = () => {
       <div className="w-full space-y-4">
         <div className="flex justify-between items-center">
           <span className="text-title text-primary font-pbold mb-4 uppercase">
-            Voucher Form
+            Reimbursement Form
           </span>
           <PrimaryButton
-            title="Preview Voucher"
+            title="Preview"
             externalStyles={"w-1/4"}
             handleSubmit={() => setOpenPreview(true)}
           />
@@ -128,6 +128,25 @@ const VoucherForm = () => {
               )}
             />
           </div>
+               <div className="flex flex-col justify-center items-center">
+            {/* UI-only List of Added Particulars */}
+
+            <PrimaryButton
+              title="Add"
+              externalStyles={"w-1/4"}
+              handleSubmit={() => {
+                const { newParticular, newAmount } = watch();
+                if (newParticular && newAmount) {
+                  append({
+                    particular: newParticular,
+                    amount: parseFloat(newAmount),
+                  });
+                  setValue("newParticular", "");
+                  setValue("newAmount", "");
+                }
+              }}
+            />
+          </div>
           {fields.length > 0 && (
             <div className="mt-4 border border-gray-300 rounded p-3 bg-gray-50">
               <p className="text-sm font-semibold text-gray-800 mb-2">
@@ -165,42 +184,24 @@ const VoucherForm = () => {
             </div>
           )}
 
-          <div className="flex flex-col justify-center items-center">
-            {/* UI-only List of Added Particulars */}
-
-            <PrimaryButton
-              title="Add"
-              externalStyles={"w-1/4"}
-              handleSubmit={() => {
-                const { newParticular, newAmount } = watch();
-                if (newParticular && newAmount) {
-                  append({
-                    particular: newParticular,
-                    amount: parseFloat(newAmount),
-                  });
-                  setValue("newParticular", "");
-                  setValue("newAmount", "");
-                }
-              }}
-            />
-          </div>
+     
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {[
             {
               name: "invoiceAttached",
-              label: "Invoice Attached (Tick)",
+              label: "Invoice Attached ",
               values: options,
             },
             {
               name: "preApproved",
-              label: "Pre Approved in Budget (Tick)",
+              label: "Pre Approved in Budget ",
               values: options,
             },
             {
               name: "emergencyApproval",
-              label: "Emergency Approval (Tick)",
+              label: "Emergency Approval ",
               values: options,
             },
             {
@@ -361,13 +362,13 @@ const VoucherForm = () => {
               <tbody>
                 <tr>
                   <td className={cellClasses}>
-                    Original Invoice is Attached with Voucher (Tick)
+                    Original Invoice is Attached with Voucher 
                   </td>
                   <td className={cellClasses}>{values.invoiceAttached}</td>
                 </tr>
                 <tr>
                   <td className={cellClasses}>
-                    Expenses is Pre Approved in Budget (Tick)
+                    Expenses is Pre Approved in Budget 
                   </td>
                   <td className={cellClasses}>{values.preApproved}</td>
                 </tr>
@@ -401,14 +402,14 @@ const VoucherForm = () => {
               <tbody>
                 <tr>
                   <td className={cellClasses}>
-                    Expenses is Approved in Budget or other Approval (Tick)
+                    Expenses is Approved in Budget or other Approval 
                   </td>
                   <td className={cellClasses}>{values.emergencyApproval}</td>
                 </tr>
                 <tr>
                   <td className={cellClasses + " font-semibold"}>
                     If expenses is not Approved/Emergency Expenses (NEED
-                    APPROVAL OF L1 Authority) (Tick)
+                    APPROVAL OF L1 Authority) 
                   </td>
                   <td className={cellClasses}>{values.budgetApproval}</td>
                 </tr>
@@ -466,7 +467,7 @@ const VoucherForm = () => {
             <table className={tableClasses}>
               <tbody>
                 <tr>
-                  <td className={cellClasses}>Mode of Payment (Tick)</td>
+                  <td className={cellClasses}>Mode of Payment </td>
                   <td className={cellClasses}>{values.modeOfPayment}</td>
                 </tr>
                 <tr>
@@ -520,4 +521,4 @@ const VoucherForm = () => {
   );
 };
 
-export default VoucherForm;
+export default Reimbursement;

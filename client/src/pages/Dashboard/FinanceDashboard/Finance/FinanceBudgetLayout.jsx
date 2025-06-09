@@ -9,8 +9,9 @@ const FinanceBudgetLayout = () => {
   // Map routes to tabs
   const tabs = [
     { label: "Budget", path: "budget" },
-    { label: "Dept. Wise Budget", path: "dept-wise-budget" },
+    { label: "Reimbursement", path: "reimbursement" },
     { label: "Payment Schedule", path: "payment-schedule" },
+    { label: "Dept. Wise Budget", path: "dept-wise-budget" },
     { label: "Collections", path: "collections" },
     { label: "Statutory Payments", path: "statutory-payments" },
     { label: "Landlord Payments", path: "landlord-payments" },

@@ -328,6 +328,7 @@ import TasksDepartmentLayout from "../pages/Tasks/DepartmentTasks/TasksDepartmen
 import TasksViewDepartment from "../pages/Tasks/DepartmentTasks/TasksViewDepartment";
 import ManageTicketLayout from "../pages/Tickets/Tables/ManageTicketLayout";
 import ManageTicketsHome from "../pages/Tickets/ManageTicketsHome";
+import Reimbursement from "../components/Pages/Reimbursement";
 
 export const routes = createBrowserRouter([
   {
@@ -585,6 +586,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "budget",
                             element: <FinanceBudget />,
+                          },
+                          {
+                            path: "reimbursement",
+                            element: <Reimbursement />,
                           },
                           {
                             path: "dept-wise-budget",
