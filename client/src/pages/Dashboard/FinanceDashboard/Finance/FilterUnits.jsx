@@ -54,20 +54,6 @@ const CheckAvailability = () => {
   return unit._id
 }, [selectedUnit, selectedLocation, units]);
 
-  // const {
-  //   data: landlordPayments = [],
-  //   isLoading: landlordPaymentsLoading,
-  //   error: landlordPaymentsError,
-  // } = useQuery({
-  //   queryKey: ["landlordPayments"],
-  //   queryFn: async () => {
-  //     const response = await axios.get(
-  //       `/api/budget/landlord-payments?${selectedUnitId}`
-  //     );
-      
-  //     return response.data;
-  //   },
-  // });
 
   const uniqueBuildings = Array.from(
     new Map(
