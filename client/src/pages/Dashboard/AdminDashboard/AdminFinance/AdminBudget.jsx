@@ -30,20 +30,20 @@ const AdminBudget = () => {
   const axios = useAxiosPrivate();
   const [isReady, setIsReady] = useState(false);
 
-    const {auth} = useAuth()
-       const location = useLocation();
-  
-     //Identify department from breadcrumb
-   const pathName = location.pathname
-    const pathSegments = location.pathname.split("/").filter(Boolean);
-   const dashboardSegment = pathSegments.find(segment => segment.endsWith("-dashboard"));
-    const section = dashboardSegment?.split("-")[0];
-  
-    const departmentId = auth.user.departments.find((dept)=>
-    {
-      return dept.name.toLowerCase().includes(section) 
-    }
-      )
+  const { auth } = useAuth();
+  const location = useLocation();
+
+  //Identify department from breadcrumb
+  const pathName = location.pathname;
+  const pathSegments = location.pathname.split("/").filter(Boolean);
+  const dashboardSegment = pathSegments.find((segment) =>
+    segment.endsWith("-dashboard")
+  );
+  const section = dashboardSegment?.split("-")[0];
+
+  const departmentId = auth.user.departments.find((dept) => {
+    return dept.name.toLowerCase().includes(section);
+  });
 
   const [openModal, setOpenModal] = useState(false);
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
@@ -421,4 +421,4 @@ const AdminBudget = () => {
 };
 
 export default AdminBudget;
-// 
+//

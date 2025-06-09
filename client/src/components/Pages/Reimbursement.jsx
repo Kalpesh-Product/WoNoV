@@ -6,6 +6,7 @@ import { TextField, MenuItem, Box, IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import PrimaryButton from "../PrimaryButton";
 import MuiModal from "../MuiModal";
+import usePageDepartment from "../../hooks/usePageDepartment";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
@@ -25,6 +26,9 @@ const paymentModes = [
 const Reimbursement = () => {
   const formRef = useRef(null);
   const [openPreview, setOpenPreview] = useState(false);
+  const department = usePageDepartment()
+
+  console.log("dep :",department)
 
   const { control, watch, setValue } = useForm({
     defaultValues: {
@@ -128,7 +132,7 @@ const Reimbursement = () => {
               )}
             />
           </div>
-               <div className="flex flex-col justify-center items-center">
+          <div className="flex flex-col justify-center items-center">
             {/* UI-only List of Added Particulars */}
 
             <PrimaryButton
@@ -183,8 +187,6 @@ const Reimbursement = () => {
               </p>
             </div>
           )}
-
-     
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -362,13 +364,13 @@ const Reimbursement = () => {
               <tbody>
                 <tr>
                   <td className={cellClasses}>
-                    Original Invoice is Attached with Voucher 
+                    Original Invoice is Attached with Voucher
                   </td>
                   <td className={cellClasses}>{values.invoiceAttached}</td>
                 </tr>
                 <tr>
                   <td className={cellClasses}>
-                    Expenses is Pre Approved in Budget 
+                    Expenses is Pre Approved in Budget
                   </td>
                   <td className={cellClasses}>{values.preApproved}</td>
                 </tr>
@@ -402,14 +404,14 @@ const Reimbursement = () => {
               <tbody>
                 <tr>
                   <td className={cellClasses}>
-                    Expenses is Approved in Budget or other Approval 
+                    Expenses is Approved in Budget or other Approval
                   </td>
                   <td className={cellClasses}>{values.emergencyApproval}</td>
                 </tr>
                 <tr>
                   <td className={cellClasses + " font-semibold"}>
                     If expenses is not Approved/Emergency Expenses (NEED
-                    APPROVAL OF L1 Authority) 
+                    APPROVAL OF L1 Authority)
                   </td>
                   <td className={cellClasses}>{values.budgetApproval}</td>
                 </tr>
