@@ -9,18 +9,19 @@ const budgetSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Department",
   },
-  requestor: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-  },
   expanseName: {
     type: String,
     required: true,
   },
   expanseType: {
     type: String,
-    required: true,
-    enum: ["Internal", "External"],
+    // required: true,
+    // enum: ["Internal", "External"],
+  },
+  paymentType: {
+    type: String,
+    // required: true,
+    enum: ["One Time", "Recurring"],
   },
   projectedAmount: {
     type: Number,
@@ -54,10 +55,50 @@ const budgetSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  typeOfBudget: {
+  // typeOfBudget: {
+  //   type: String,
+  //   required: true,
+  // },
+  invoiceAttached: {
     type: String,
-    required: true,
+    default: false,
   },
+  preApproved: {
+    type: String,
+    default: false,
+  },
+  emergencyApproval: {
+    type: String,
+    default: false,
+  },
+  budgetApproval: {
+    type: String,
+    default: false,
+  },
+  l1Approval: {
+    type: String,
+    default: false,
+  },
+  invoiceDate: {
+    type: Date, //Invoice received date
+  },
+  reimbursementDate: {
+    //Reimbursement request date
+    type: Date,
+  },
+  srNo: {
+    type: String,
+  },
+  particulars: [
+    {
+      particularName: {
+        type: String,
+      },
+      particularAmount: {
+        type: Number,
+      },
+    },
+  ],
 });
 
 const Budget = mongoose.model("Budget", budgetSchema);

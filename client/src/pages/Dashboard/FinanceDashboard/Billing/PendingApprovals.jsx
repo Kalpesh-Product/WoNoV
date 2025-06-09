@@ -36,6 +36,7 @@ const kraColumn = [
     { field: "department", headerName: "Department", flex: 1 },
     { field: "date", headerName: "Date", flex: 1 },
     { field: "amount", headerName: "Amount (INR)", flex: 1 },
+    { field: "paymentType", headerName: "Payment Type ", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",

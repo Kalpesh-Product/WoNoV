@@ -18,9 +18,15 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
+import { useDispatch } from "react-redux";
+import {
+  setTotalExpense,
+  setTotalIncome,
+} from "../../../redux/slices/financeSlice";
 
 const FinanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -96,6 +102,9 @@ const FinanceDashboard = () => {
 
     return grandTotal + sourceTotals;
   }, 0);
+
+  dispatch(setTotalExpense(isRevenueExpenseLoading ? 0 : totalExpense));
+  dispatch(setTotalIncome(isRevenueExpenseLoading ? 0 : totalIncomeAmount));
 
   //----------INCOME-EXPENSE GRAPH conversion------------------//
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
@@ -903,9 +912,7 @@ const FinanceDashboard = () => {
           rows={march2025Payments}
           rowKey="_id"
           scroll={true}
-          rowsToDisplay={march2025Payments.length
-
-          }
+          rowsToDisplay={march2025Payments.length}
         />,
       ],
     },

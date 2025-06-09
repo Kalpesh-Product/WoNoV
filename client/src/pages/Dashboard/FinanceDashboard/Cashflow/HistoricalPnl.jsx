@@ -5,9 +5,12 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
+import { useSelector } from "react-redux";
 
 const HistoricalPnl = () => {
   const axios = useAxiosPrivate();
+  const { totalIncome, totalExpense } = useSelector((state) => state.finance);
+
   const { data: revenueData = [], isPending: isRevenuePending } = useQuery({
     queryKey: ["revenueData"],
     queryFn: async () => {
@@ -22,14 +25,19 @@ const HistoricalPnl = () => {
   });
 
   //-----------------------------------------------------Graph------------------------------------------------------//
+  // Base data for first 3 years
+  const baseIncomeData = [25174680, 31929380, 31929380];
+  const baseExpenseData = [24168780, 33899540, 33899540];
+
+  // Replace last year with Redux values (default to 0 if not available)
   const incomeExpenseData = [
     {
       name: "Income",
-      data: [25174680, 31929380, 31929380, 42092284], // in ₹
+      data: [...baseIncomeData, totalIncome || 0],
     },
     {
       name: "Expense",
-      data: [24168780, 33899540, 33899540, 57194237], // in ₹
+      data: [...baseExpenseData, totalExpense || 0],
     },
   ];
 
@@ -78,7 +86,10 @@ const HistoricalPnl = () => {
     },
     yaxis: {
       title: {
-        text: "Amount (INR)",
+        text: "Amount In Crores (INR)",
+      },
+      labels: {
+        formatter: (val) => `${Math.round(val / 10000000)}`,
       },
     },
     fill: {
@@ -135,7 +146,7 @@ const HistoricalPnl = () => {
       <WidgetSection title={"Historical P&L Details"} border>
         <AgTable
           columns={[
-             { field: "srNo", headerName: "Sr No", sort : "desc" },
+            { field: "srNo", headerName: "Sr No", sort: "desc" },
             { field: "name", headerName: "Financial Year", flex: 1 },
             { field: "totalIncome", headerName: "Total Income (INR)" },
             { field: "totalExpense", headerName: "Total Expense (INR)" },

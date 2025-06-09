@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
   FormControl,
   InputLabel,
@@ -10,7 +10,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 const CheckAvailability = () => {
   const navigate = useNavigate();
@@ -24,6 +24,7 @@ const CheckAvailability = () => {
   });
 
   const selectedLocation = watch("location");
+  const selectedUnit = watch("floor");
 
   // Fetch Work Locations
 
@@ -42,6 +43,18 @@ const CheckAvailability = () => {
     },
   });
 
+    const selectedUnitId = useMemo(() => {
+  if (!selectedUnit || !selectedLocation) return null;
+
+  const unit = units.find(
+    (unit) =>
+      unit.unitNo === selectedUnit &&
+      unit.building.buildingName === selectedLocation
+  );
+  return unit._id
+}, [selectedUnit, selectedLocation, units]);
+
+
   const uniqueBuildings = Array.from(
     new Map(
         units.length > 0 ? units.map((loc) => [
@@ -58,9 +71,19 @@ const CheckAvailability = () => {
   const onSubmit = (data) => {
     const { location, floor } = data;
     navigate(
-      `/app/dashboard/finance-dashboard/finance/landlord-payments-unit?location=${location}&floor=${floor}`
+      `/app/dashboard/finance-dashboard/finance/landlord-payments-unit?location=${location}&floor=${floor}`,
+       {
+    state: {
+      unitId: selectedUnitId,
+    },
+  }
     );
   };
+
+  useEffect(()=>{
+
+    console.log("unit",selectedUnitId)
+  },[selectedUnit])
 
   return (
     <div className="border-default border-borderGray p-4 rounded-md text-center">

@@ -217,7 +217,8 @@ const RaiseTicket = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewTicketDetails(params.data)}>
+            onClick={() => handleViewTicketDetails(params.data)}
+          >
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -254,7 +255,8 @@ const RaiseTicket = () => {
                       onChange={(e) => {
                         field.onChange(e.target.value);
                         handleDepartmentSelect(e.target.value);
-                      }}>
+                      }}
+                    >
                       <MenuItem value="" disabled>
                         Select Department
                       </MenuItem>
@@ -275,7 +277,8 @@ const RaiseTicket = () => {
                           .map((dept) => (
                             <MenuItem
                               key={dept.department._id}
-                              value={dept.department._id}>
+                              value={dept.department._id}
+                            >
                               {dept.department.name}
                             </MenuItem>
                           ))
@@ -304,7 +307,8 @@ const RaiseTicket = () => {
                       label="Issue"
                       helperText={errors.ticketTitle?.message}
                       error={!!errors.ticketTitle}
-                      disabled={!watchFields.department}>
+                      disabled={!watchFields.department}
+                    >
                       <MenuItem value="">Select Ticket Title</MenuItem>
                       {ticketIssues.length > 0 ? (
                         ticketIssues.map((issue) => (
@@ -399,7 +403,8 @@ const RaiseTicket = () => {
                           <IconButton
                             color="primary"
                             component="label"
-                            htmlFor="image-upload">
+                            htmlFor="image-upload"
+                          >
                             <LuImageUp />
                           </IconButton>
                         ),
@@ -411,13 +416,15 @@ const RaiseTicket = () => {
                       <>
                         <span
                           className="underline text-primary text-content cursor-pointer"
-                          onClick={() => setOpenModal(true)}>
+                          onClick={() => setOpenModal(true)}
+                        >
                           Preview
                         </span>
                         <MuiModal
                           open={openModal}
                           onClose={() => setOpenModal(false)}
-                          title={"Preview File"}>
+                          title={"Preview File"}
+                        >
                           <div>
                             <div className="flex flex-col">
                               <IconButton
@@ -425,7 +432,8 @@ const RaiseTicket = () => {
                                 onClick={() => {
                                   onChange(null);
                                   setPreview(null);
-                                }}>
+                                }}
+                              >
                                 <MdDelete />
                               </IconButton>
                               <div className="p-2 border-default border-borderGray rounded-md">
@@ -499,7 +507,8 @@ const RaiseTicket = () => {
       <MuiModal
         open={viewDetails && viewTicketDetails}
         onClose={() => setViewDetails(false)}
-        title={"View Ticket Details"}>
+        title={"View Ticket Details"}
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
           <DetalisFormatted
             title="Raised By"

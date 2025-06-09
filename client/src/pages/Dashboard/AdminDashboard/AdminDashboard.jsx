@@ -17,7 +17,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import TreemapGraph from "../../../components/graphs/TreemapGraph";
 import { LuHardDriveUpload } from "react-icons/lu";
 import { CgWebsite } from "react-icons/cg";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { useSidebar } from "../../../context/SideBarContext";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -25,10 +25,13 @@ import { useQuery } from "@tanstack/react-query";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
 import { Box, Skeleton } from "@mui/material";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import useAuth from "../../../hooks/useAuth";
 dayjs.extend(customParseFormat);
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
+
+
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
     queryKey: ["maintainance-budget"],
     queryFn: async () => {

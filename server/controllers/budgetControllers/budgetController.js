@@ -6,6 +6,7 @@ const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const { createLog } = require("../../utils/moduleLogs");
 const Unit = require("../../models/locations/Unit");
+const { default: mongoose } = require("mongoose");
 
 const requestBudget = async (req, res, next) => {
   const logPath = "/budget/BudgetLog";
@@ -17,14 +18,23 @@ const requestBudget = async (req, res, next) => {
     const {
       projectedAmount,
       expanseName,
-      month,
-      typeOfBudget,
-      isExtraBudget,
+      dueDate,
+      expanseType,
+      paymentType,
       unitId,
+      invoiceAttached,
+      preApproved,
+      emergencyApproval,
+      budgetApproval,
+      l1Approval,
+      invoiceDate,
+      reimbursementDate,
+      srNo,
+      particulars,
     } = req.body;
     const { departmentId } = req.params;
 
-    if (!projectedAmount || !expanseName || !month || !typeOfBudget) {
+    if (!projectedAmount || !expanseName || !dueDate || !expanseType) {
       throw new CustomError(
         "Invalid budget data",
         logPath,
@@ -32,6 +42,12 @@ const requestBudget = async (req, res, next) => {
         logSourceKey
       );
     }
+
+    const parsedDueDate = new Date(dueDate);
+    const parsedInvoiceDate = invoiceDate ? new Date(invoiceDate) : null;
+    const parsedReimbursementDate = reimbursementDate
+      ? new Date(reimbursementDate)
+      : null;
 
     const foundUser = await User.findOne({ _id: user })
       .select("company")
@@ -72,11 +88,20 @@ const requestBudget = async (req, res, next) => {
       projectedAmount,
       department: departmentId,
       company: companyDoc._id,
-      month,
-      typeOfBudget,
+      dueDate: parsedDueDate,
+      invoiceDate: parsedInvoiceDate,
+      reimbursementDate: parsedReimbursementDate,
+      expanseType,
+      paymentType,
       unit: unitId,
-      isExtraBudget: isExtraBudget || false, // Default to false
       status: "Pending",
+      invoiceAttached,
+      preApproved,
+      emergencyApproval,
+      budgetApproval,
+      l1Approval,
+      srNo,
+      particulars,
     });
 
     await newBudgetRequest.save();
@@ -93,11 +118,11 @@ const requestBudget = async (req, res, next) => {
       sourceId: newBudgetRequest._id,
       changes: {
         projectedAmount,
-        actualAmount,
         expanseName,
-        month,
-        typeOfBudget,
-        isExtraBudget,
+        dueDate,
+        expanseType,
+        paymentType,
+        isExtraBudget: false,
       },
     });
 
@@ -131,6 +156,37 @@ const fetchBudget = async (req, res, next) => {
     const query = { company: foundUser.company };
     if (departmentId) {
       query.department = departmentId;
+    }
+
+    const allBudgets = await Budget.find(query)
+      .populate([
+        { path: "department", select: "name" },
+        { path: "unit", populate: { path: "building", model: "Building" } },
+      ])
+      .lean()
+      .exec();
+
+    res.status(200).json({ allBudgets });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const fetchLandlordPayments = async (req, res, next) => {
+  try {
+    const { unit } = req.query;
+    const { user, company } = req;
+    const query = { company, expanseType: "Monthly Rent" };
+
+    let foundUnit;
+
+    if (unit) {
+      const foundUnit = await Unit.findOne({ unitNo: unit });
+
+      if (!foundUnit) {
+        return res.status(400).json({ message: "No unit found" });
+      }
+      query.unit = foundUnit._id;
     }
 
     const allBudgets = await Budget.find(query)
@@ -388,5 +444,6 @@ module.exports = {
   approveBudget,
   rejectBudget,
   fetchBudget,
+  fetchLandlordPayments,
   bulkInsertBudgets,
 };
