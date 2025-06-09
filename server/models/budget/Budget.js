@@ -9,10 +9,6 @@ const budgetSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Department",
   },
-  requestor: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-  },
   expanseName: {
     type: String,
     required: true,
@@ -21,6 +17,11 @@ const budgetSchema = new mongoose.Schema({
     type: String,
     required: true,
     // enum: ["Internal", "External"],
+  },
+  paymentType: {
+    type: String,
+    required: true,
+    enum: ["One Time", "Recurring"],
   },
   projectedAmount: {
     type: Number,
@@ -56,7 +57,7 @@ const budgetSchema = new mongoose.Schema({
   },
   typeOfBudget: {
     type: String,
-    required: true,
+    // required: true,
   },
 });
 

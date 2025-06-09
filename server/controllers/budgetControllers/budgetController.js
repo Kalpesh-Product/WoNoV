@@ -18,14 +18,21 @@ const requestBudget = async (req, res, next) => {
     const {
       projectedAmount,
       expanseName,
-      month,
-      typeOfBudget,
+      dueDate,
+      expanseType,
+      paymentType,
       isExtraBudget,
       unitId,
     } = req.body;
     const { departmentId } = req.params;
 
-    if (!projectedAmount || !expanseName || !month || !typeOfBudget) {
+    if (
+      !projectedAmount ||
+      !expanseName ||
+      !dueDate ||
+      !expanseType ||
+      !paymentType
+    ) {
       throw new CustomError(
         "Invalid budget data",
         logPath,
@@ -73,8 +80,9 @@ const requestBudget = async (req, res, next) => {
       projectedAmount,
       department: departmentId,
       company: companyDoc._id,
-      month,
-      typeOfBudget,
+      dueDate: dueDate,
+      expanseType,
+      paymentType,
       unit: unitId,
       isExtraBudget: isExtraBudget || false, // Default to false
       status: "Pending",
@@ -94,10 +102,10 @@ const requestBudget = async (req, res, next) => {
       sourceId: newBudgetRequest._id,
       changes: {
         projectedAmount,
-        actualAmount,
         expanseName,
-        month,
-        typeOfBudget,
+        dueDate,
+        expanseType,
+        paymentType,
         isExtraBudget,
       },
     });
