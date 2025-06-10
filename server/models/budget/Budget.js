@@ -73,27 +73,24 @@ const budgetSchema = new mongoose.Schema({
     },
   },
   invoiceAttached: {
-    type: String,
+    type: Boolean,
     default: false,
   },
   preApproved: {
-    type: String,
+    type: Boolean,
     default: false,
   },
   emergencyApproval: {
-    type: String,
+    type: Boolean,
     default: false,
   },
   budgetApproval: {
-    type: String,
+    type: Boolean,
     default: false,
   },
   l1Approval: {
-    type: String,
+    type: Boolean,
     default: false,
-  },
-  invoiceDate: {
-    type: Date, //Invoice received date
   },
   reimbursementDate: {
     //Reimbursement request date

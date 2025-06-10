@@ -27,7 +27,6 @@ const requestBudget = async (req, res, next) => {
       expanseType,
       paymentType,
       unitId,
-      invoiceAttached,
       preApproved,
       emergencyApproval,
       budgetApproval,
@@ -101,7 +100,6 @@ const requestBudget = async (req, res, next) => {
       paymentType,
       unit: unitId,
       status: "Pending",
-      invoiceAttached,
       preApproved,
       emergencyApproval,
       budgetApproval,
@@ -164,7 +162,7 @@ const fetchBudget = async (req, res, next) => {
       query.department = departmentId;
     }
 
-    const allBudgets = await Budget.find(query)
+    const budgets = await Budget.find(query)
       .populate([
         { path: "department", select: "name" },
         { path: "unit", populate: { path: "building", model: "Building" } },
@@ -172,19 +170,22 @@ const fetchBudget = async (req, res, next) => {
       .lean()
       .exec();
 
-    // const transformBudgets = allBudgets.map((budget) => {
-    //   const particularsTotalAmount = 0;
-    //   if (budget.particulars.length > 0) {
-    //     particularsTotalAmount = particulars.reduce(
-    //       (acc, curr) => acc + curr.particularAmount,
-    //       0
-    //     );
-    //   }
-    //   return {
-    //     ...budget,
-    //     particularsTotalAmount,
-    //   };
-    // });
+    const allBudgets = budgets.map((budget) => {
+      let particularsTotalAmount = 0;
+      if (budget?.particulars && budget.particulars.length > 0) {
+        particularsTotalAmount = budget.particulars.reduce(
+          (acc, curr) => acc + curr.particularAmount,
+          0
+        );
+        return {
+          ...budget,
+          projectedAmount: particularsTotalAmount,
+        };
+      }
+      return {
+        ...budget,
+      };
+    });
 
     res.status(200).json({ allBudgets });
   } catch (error) {
@@ -230,18 +231,7 @@ const approveBudget = async (req, res, next) => {
 
   try {
     const { budgetId } = req.params;
-    console.log("budget id:", budgetId);
     const { user, ip, company } = req;
-
-    const foundUser = await User.findOne({ _id: user })
-      .select("company")
-      .populate([{ path: "company", select: "companyName" }])
-      .lean()
-      .exec();
-
-    if (!foundUser) {
-      throw new CustomError("No user found", logPath, logAction, logSourceKey);
-    }
 
     const approvedBudget = await Budget.findByIdAndUpdate(
       { _id: budgetId },
@@ -289,16 +279,6 @@ const rejectBudget = async (req, res, next) => {
   try {
     const { budgetId } = req.params;
     const { user, ip, company } = req;
-
-    const foundUser = await User.findOne({ _id: user })
-      .select("company")
-      .populate([{ path: "company", select: "companyName" }])
-      .lean()
-      .exec();
-
-    if (!foundUser) {
-      throw new CustomError("No user found", logPath, logAction, logSourceKey);
-    }
 
     const rejectedBudget = await Budget.findByIdAndUpdate(
       { _id: budgetId },
