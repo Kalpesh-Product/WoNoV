@@ -31,8 +31,6 @@ const requestBudget = async (req, res, next) => {
       emergencyApproval,
       budgetApproval,
       l1Approval,
-      invoiceDate,
-      reimbursementDate,
       srNo,
       particulars,
     } = req.body;
@@ -49,10 +47,8 @@ const requestBudget = async (req, res, next) => {
 
     const parsedDueDate =
       expanseType !== "Reimbursement" ? new Date(dueDate) : new Date();
-    const parsedInvoiceDate = invoiceDate ? new Date(invoiceDate) : null;
-    const parsedReimbursementDate = reimbursementDate
-      ? new Date(reimbursementDate)
-      : null;
+    const parsedReimbursementDate =
+      expanseType === "Reimbursement" ? new Date() : null;
 
     const foundUser = await User.findOne({ _id: user })
       .select("company")
@@ -94,7 +90,6 @@ const requestBudget = async (req, res, next) => {
       department: departmentId,
       company: companyDoc._id,
       dueDate: parsedDueDate,
-      invoiceDate: parsedInvoiceDate,
       reimbursementDate: parsedReimbursementDate,
       expanseType,
       paymentType,

@@ -1,7 +1,26 @@
 import React from "react";
 import AgTable from "../../../../components/AgTable";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
 
 const JobApplicationList = () => {
+const axios = useAxiosPrivate()
+
+  // const {
+  //   data:jobApplications,
+  //   isPending: isJobApplicationPending,
+  //   error,
+  // } = useQuery({
+  //   queryKey: ["jobApplications"],
+  //   queryFn: async function () {
+  //     const response = await axios.get(
+  //       "/api/company/get-job-applications"
+  //     );
+  //     return response.data;
+  //   },
+  // });
+
+
   const leavesColumn = [
     { field: "srno", headerName: "SR No",width:100},
     { field: "dateofbirth", headerName: "Date" },
