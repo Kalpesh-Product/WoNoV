@@ -357,7 +357,7 @@ const uploadInvoice = async (req, res, next) => {
   const logPath = "budget/BudgetLog";
   const logAction = "Upload Invoice";
   const logSourceKey = "budget";
-  const { invoiceName, departmentName } = req.body;
+  const { departmentName } = req.body;
   const file = req.file;
   const { user, ip, company } = req;
   const { budgetId } = req.params;
