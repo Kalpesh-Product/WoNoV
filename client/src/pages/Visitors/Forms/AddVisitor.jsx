@@ -333,9 +333,7 @@ const AddVisitor = () => {
                     fullWidth
                     onChange={(e) => {
                       field.onChange(e);
-                      // ❌ Remove this line
-                      // setSelectedDepartment(e.target.value);
-                      setSelectedDepartment(""); // Reset department when company changes
+                      setSelectedDepartment(""); 
                     }}
                     select
                   >
@@ -364,7 +362,7 @@ const AddVisitor = () => {
                     size="small"
                     label={"Select Department"}
                     fullWidth
-                    disabled={selectedCompany !== "6799f0cd6a01edbe1bc3fcea"} // Enable only if BIZNest is selected
+                    disabled={selectedCompany !== "6799f0cd6a01edbe1bc3fcea"} 
                     onChange={(e) => {
                       field.onChange(e);
                       setSelectedDepartment(e.target.value);

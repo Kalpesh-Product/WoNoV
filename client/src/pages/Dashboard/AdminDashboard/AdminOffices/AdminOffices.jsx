@@ -498,7 +498,7 @@ const AdminOffices = () => {
 
       {/* Bar Graph Component */}
       <WidgetSection layout={1} title={"Admin Offices"} border>
-        <BarGraph data={graphData} options={options} height={400} />
+        <BarGraph data={[]} options={[]} height={400} />
       </WidgetSection>
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
@@ -525,7 +525,7 @@ const AdminOffices = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    INR {domain.revenue.toLocaleString()}
+                    {/* INR {domain.revenue.toLocaleString()} */}
                   </span>
                 </div>
               </AccordionSummary>
@@ -556,7 +556,7 @@ const AdminOffices = () => {
                 </div>
                 {/* Details End */}
                 <AgTable
-                  data={domain.clients}
+                  data={[]}
                   hideFilter
                   columns={[
                     {

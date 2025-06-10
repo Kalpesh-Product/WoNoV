@@ -248,16 +248,7 @@ const MaintenanceVendorReports = () => {
         tableTitle={"Vendor Database"}
         buttonTitle={"Add Vendor"}
         data={[
-          ...vendorData.map((item, index) => ({
-            id: index + 1,
-            vendorName: item.vendorName,
-            contactPerson: item.contactPerson,
-            email: item.email,
-            phone: item.phone,
-            company: item.company,
-            address: item.address,
-            gstNumber: item.gstNumber,
-          })),
+          
         ]}
         columns={vendorColumns}
         handleClick={handleAddAsset}

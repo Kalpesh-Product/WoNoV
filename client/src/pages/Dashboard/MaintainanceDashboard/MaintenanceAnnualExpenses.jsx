@@ -222,18 +222,7 @@ const MaintenanceAnnualExpenses = () => {
         tableTitle={"Annual Expenses"}
         buttonTitle={"Add Expense"}
         data={[
-          ...annualExpenses.map((asset, index) => ({
-            id: index + 1,
-            category: asset.category,
-            expenseName: asset.expenseName,
-            amount: Number(asset.amount.replace(/,/g, "")).toLocaleString(
-              "en-IN",
-              {
-                maximumFractionDigits: 0,
-              }
-            ),
-            date: dayjs(asset.date).format("DD-MM-YYYY"),
-          })),
+          
         ]}
         columns={assetColumns}
         handleClick={handleAddAsset}

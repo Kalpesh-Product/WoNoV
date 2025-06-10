@@ -39,6 +39,12 @@ const {
   createDepartment,
 } = require("../controllers/companyControllers/departmentControllers");
 
+const {
+  bulkInsertJobApplications,
+  createJobApplication,
+  getJobApplications,
+} = require("../controllers/companyControllers/jobApplicationsController");
+
 router.post("/create-company", addCompany);
 router.get("/get-companies", getCompanies);
 router.get("/company-hierarchy", getHierarchy);
@@ -56,6 +62,14 @@ router.post("/update-active-status/:field", updateActiveStatus);
 router.post("/add-company-logo", upload.single("logo"), addCompanyLogo);
 router.get("/get-company-logo", getCompanyLogo);
 router.post("/add-shift", addShift);
+router.post(
+  "/bulk-insert-job-applications",
+  upload.single("job-applications"),
+  bulkInsertJobApplications
+);
+
+router.post("/add-job-application", createJobApplication);
+router.get("/get-job-applications", getJobApplications);
 
 router.post(
   "/upload-company-document",
