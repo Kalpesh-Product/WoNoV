@@ -164,7 +164,7 @@ const fetchBudget = async (req, res, next) => {
       query.department = departmentId;
     }
 
-    const allBudgets = await Budget.find(query)
+    const budgets = await Budget.find(query)
       .populate([
         { path: "department", select: "name" },
         { path: "unit", populate: { path: "building", model: "Building" } },
@@ -172,7 +172,7 @@ const fetchBudget = async (req, res, next) => {
       .lean()
       .exec();
 
-    const transformBudgets = allBudgets.map((budget) => {
+    const allBudgets = budgets.map((budget) => {
       let particularsTotalAmount = 0;
       if (budget?.particulars && budget.particulars.length > 0) {
         particularsTotalAmount = budget.particulars.reduce(
@@ -189,7 +189,7 @@ const fetchBudget = async (req, res, next) => {
       };
     });
 
-    res.status(200).json({ transformBudgets });
+    res.status(200).json({ allBudgets });
   } catch (error) {
     next(error);
   }
