@@ -21,6 +21,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import humanDate from "../../utils/humanDateForamt";
+import { toast } from "sonner";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
@@ -120,7 +121,7 @@ const Reimbursement = () => {
     values.particulars = fields;
 
     console.log("Final Form Submission Data:", values);
-    submitRequest(values)
+    submitRequest(values);
 
     // You can now send it to your API
     // Example:
@@ -130,10 +131,19 @@ const Reimbursement = () => {
   const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
     mutationKey: ["reimbursement"],
     mutationFn: async (data) => {
-      const response = await axios.post(`/api/budget/request-budget/${department._id}`, data);
+      const response = await axios.post(
+        `/api/budget/request-budget/${department._id}`,
+        data
+      );
+      return response.data;
     },
-    onSuccess: (data) => {},
-    onError: (error) => {},
+    onSuccess: (data) => {
+      toast.success(data.message);
+      setOpenPreview(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
 
   const exportToPDF = async () => {
@@ -653,7 +663,12 @@ const Reimbursement = () => {
             </div>
           </div>
           <div className="mt-4 text-right flex gap-4 items-center justify-center">
-            <PrimaryButton title="Upload" handleSubmit={onUpload} />
+            <PrimaryButton
+              title="Upload"
+              handleSubmit={onUpload}
+              disabled={isSubmitRequest}
+              isLoading={isSubmitRequest}
+            />
 
             <PrimaryButton title="Export to PDF" handleSubmit={exportToPDF} />
           </div>
