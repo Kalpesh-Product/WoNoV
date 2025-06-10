@@ -169,7 +169,7 @@ const VendorOnboard = () => {
       <div className="h-[65vh] overflow-y-auto">
         <div className="py-4">
           <span className="text-title text-primary font-pmedium">
-            Vendor Onboarding Form
+            VENDOR ONBOARDING FORM
           </span>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="">
@@ -192,6 +192,38 @@ const VendorOnboard = () => {
                       {...field}
                       size="small"
                       label="Vendor Name"
+                      fullWidth
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
+                />
+                <Controller
+                  name="email"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Email is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Email"
+                      fullWidth
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
+                />
+                <Controller
+                  name="mobileNo"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Mobile No is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Mobile No"
                       fullWidth
                       error={!!error}
                       helperText={error?.message}
@@ -264,6 +296,23 @@ const VendorOnboard = () => {
                         </MenuItem>
                       ))}
                     </Select>
+                  )}
+                />
+
+                 <Controller
+                  name="city"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "City is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="City"
+                      fullWidth
+                      error={!!error}
+                      helperText={error?.message}
+                    />
                   )}
                 />
 
