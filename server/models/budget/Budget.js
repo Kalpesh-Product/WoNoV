@@ -25,7 +25,6 @@ const budgetSchema = new mongoose.Schema({
   },
   projectedAmount: {
     type: Number,
-    required: true,
   },
   actualAmount: {
     type: Number,
