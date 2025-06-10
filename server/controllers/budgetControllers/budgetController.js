@@ -233,18 +233,7 @@ const approveBudget = async (req, res, next) => {
 
   try {
     const { budgetId } = req.params;
-    console.log("budget id:", budgetId);
     const { user, ip, company } = req;
-
-    const foundUser = await User.findOne({ _id: user })
-      .select("company")
-      .populate([{ path: "company", select: "companyName" }])
-      .lean()
-      .exec();
-
-    if (!foundUser) {
-      throw new CustomError("No user found", logPath, logAction, logSourceKey);
-    }
 
     const approvedBudget = await Budget.findByIdAndUpdate(
       { _id: budgetId },
@@ -292,16 +281,6 @@ const rejectBudget = async (req, res, next) => {
   try {
     const { budgetId } = req.params;
     const { user, ip, company } = req;
-
-    const foundUser = await User.findOne({ _id: user })
-      .select("company")
-      .populate([{ path: "company", select: "companyName" }])
-      .lean()
-      .exec();
-
-    if (!foundUser) {
-      throw new CustomError("No user found", logPath, logAction, logSourceKey);
-    }
 
     const rejectedBudget = await Budget.findByIdAndUpdate(
       { _id: budgetId },
