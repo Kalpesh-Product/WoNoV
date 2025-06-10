@@ -231,19 +231,7 @@ const MaintenanceMonthlyInvoice = () => {
         tableTitle={"Monthly Invoice Reports"}
         buttonTitle={"Add Invoice"}
         data={[
-          ...monthlyInvoiceData.map((item, index) => ({
-            id: index + 1,
-            invoiceNumber: item.invoiceNumber,
-            vendor: item.vendor,
-            amount: Number(item.amount).toLocaleString("en-IN", {
-              maximumFractionDigits: 0,
-            }),
-            invoiceDate: dayjs(item.invoiceDate, "DD-MM-YYYY").format(
-              "DD-MM-YYYY"
-            ),
-            dueDate: dayjs(item.dueDate, "DD-MM-YYYY").format("DD-MM-YYYY"),
-            status: item.status,
-          })),
+         
         ]}
         columns={invoiceColumns}
         handleClick={handleAddAsset}

@@ -665,7 +665,7 @@ const AdminExecutiveExpenses = () => {
 
       {/* Bar Graph Component */}
       <WidgetSection layout={1} title={"Executive Expense"} border>
-        <BarGraph data={graphData} options={options} height={400} />
+        <BarGraph data={[]} options={[]} height={400} />
       </WidgetSection>
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
@@ -692,13 +692,13 @@ const AdminExecutiveExpenses = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    INR {domain.revenue.toLocaleString()}
+                    {/* INR {domain.revenue.toLocaleString()} */}
                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 <AgTable
-                  data={domain.clients}
+                  data={[]}
                   hideFilter
                   columns={[
                     { headerName: "Sr No", field: "srNo", flex: 1 },
@@ -728,7 +728,7 @@ const AdminExecutiveExpenses = () => {
                       Total Expense for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                      INR {domain.revenue.toLocaleString()}
+                      {/* INR {domain.revenue.toLocaleString()} */}
                     </span>{" "}
                   </div>
                 </div>

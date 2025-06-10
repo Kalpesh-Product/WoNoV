@@ -439,7 +439,7 @@ const ItPerSqExpense = () => {
 
       {/* Bar Graph Component */}
       <WidgetSection layout={1} title={"Expense Per Sq Ft"} border>
-        <BarGraph data={graphData} options={options} height={400} />
+        <BarGraph data={[]} options={[]} height={400} />
       </WidgetSection>
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
@@ -469,28 +469,16 @@ const ItPerSqExpense = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    {domain.totalSqFt}
+                    {/* {domain.totalSqFt} */}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    INR {domain.revenue.toLocaleString()}
+                    {/* INR {domain.revenue.toLocaleString()} */}
                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 <AgTable
-                  data={domain.clients.map((client, index) => ({
-                    ...client,
-                    srNo: index + 1,
-                    registerDate: dayjs(client.registerDate).format(
-                      "DD-MM-YYYY"
-                    ),
-                    actualRevenue: inrFormat(client.actualRevenue),
-                    expensePerSqFt: inrFormat(
-                      Math.round(
-                        (client.actualRevenue / domain.totalSqFt) * 2
-                      ) / 2
-                    ),
-                  }))}
+                  data={[]}
                   hideFilter
                   columns={[
                     { headerName: "Sr No", field: "srNo", flex: 1 },
@@ -525,7 +513,7 @@ const ItPerSqExpense = () => {
                       Total Expense for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                      INR {domain.revenue.toLocaleString()}
+                      {/* INR {domain.revenue.toLocaleString()} */}
                     </span>{" "}
                   </div>
                 </div>
