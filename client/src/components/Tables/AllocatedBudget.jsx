@@ -195,7 +195,7 @@ const AllocatedBudget = ({
         headerName: "Actions",
         pinned: "right",
         cellRenderer: (params) => {
-          const isAttached = params.data.invoiceAttached === "true";
+          const isAttached = params.data.invoiceAttached === true;
           return (
             <div className="p-2">
               {!isAttached ? (
@@ -366,7 +366,7 @@ const AllocatedBudget = ({
             )}
           />
           <div className="text-right">
-            <PrimaryButton title="Submit" type="submit" />
+            <PrimaryButton title="Submit" type="submit" isLoading={isUploadPending} disabled={isUploadPending}/>
           </div>
         </form>
       </MuiModal>

@@ -42,6 +42,7 @@ const Reimbursement = () => {
   const formRef = useRef(null);
   const [openPreview, setOpenPreview] = useState(false);
   const department = usePageDepartment();
+  console.log("department value : ", department)
   const axios = useAxiosPrivate();
   const { control, watch, setValue, handleSubmit, getValues } = useForm({
     defaultValues: {
@@ -51,21 +52,46 @@ const Reimbursement = () => {
       expanseType: "Reimbursement",
       unitId: "",
       location: "",
-      invoiceAttached: "No",
-      preApproved: "No",
-      emergencyApproval: "No",
-      budgetApproval: "No",
-      l1Approval: "No",
+      invoiceAttached: false,
+      preApproved: false,
+      emergencyApproval: false,
+      budgetApproval: false,
+      l1Approval: false,
       reimbursementDate: null,
       particulars: [],
       invoiceNo: "",
     },
   });
+  const { data: departmentBudget = [], isPending: isDepartmentLoading } =
+    useQuery({
+      queryKey: ["departmentBudget"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            `/api/budget/company-budget?departmentId=${department._id}`
+          );
+          const budgets = response.data.allBudgets;
+          return Array.isArray(budgets) ? budgets : [];
+        } catch (error) {
+          console.error("Error fetching budget:", error);
+          return [];
+        }
+      },
+    });
+  const reimbursedBudget = isDepartmentLoading
+    ? []
+    : departmentBudget.filter((item) => item.expanseType === "Reimbursement")
+        .length;
+
   useEffect(() => {
-    if (department?._id) {
-      setValue("department", department._id);
+    if (department?.name && reimbursedBudget >= 0) {
+      const prefix = department.name.slice(0, 3).toUpperCase();
+      const number = String(reimbursedBudget + 1).padStart(3, "0");
+      const generatedSNo = `${prefix}-${number}`;
+      setValue("sNo", generatedSNo);
     }
-  }, [department, setValue]);
+  }, [department?.name, reimbursedBudget, setValue]);
+
   const selectedLocation = watch("location");
   const selectedUnit = watch("unitId");
 
@@ -252,6 +278,24 @@ const Reimbursement = () => {
               label="Department"
               value={department?.name || ""}
             />
+            {["sNo"].map((fieldName) => (
+              <Controller
+                key={fieldName}
+                name={fieldName}
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    disabled
+                    label={fieldName
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (str) => str.toUpperCase())}
+                    {...field}
+                  />
+                )}
+              />
+            ))}
 
             <Controller
               name="reimbursementDate"
@@ -291,23 +335,6 @@ const Reimbursement = () => {
             />
 
             {/* Render the rest of the fields */}
-            {["sNo"].map((fieldName) => (
-              <Controller
-                key={fieldName}
-                name={fieldName}
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label={fieldName
-                      .replace(/([A-Z])/g, " $1")
-                      .replace(/^./, (str) => str.toUpperCase())}
-                    {...field}
-                  />
-                )}
-              />
-            ))}
 
             <Controller
               name="expanseName"
@@ -462,9 +489,10 @@ const Reimbursement = () => {
                   fullWidth
                   size="small"
                   label={label}
-                  {...field}
+                  value={field.value ? "Yes" : "No"}
+                  onChange={(e) => field.onChange(e.target.value === "Yes")}
                 >
-                  {values.map((opt) => (
+                  {["Yes", "No"].map((opt) => (
                     <MenuItem key={opt} value={opt}>
                       {opt}
                     </MenuItem>
@@ -474,34 +502,6 @@ const Reimbursement = () => {
             />
           ))}
         </div>
-
-        {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {[
-            "invoiceDate",
-            "invoiceNo",
-            "deliveryDate",
-            "chequeNo",
-            "chequeDate",
-            "amount",
-            "expectedDate",
-          ].map((fieldName) => (
-            <Controller
-              key={fieldName}
-              name={fieldName}
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  fullWidth
-                  size="small"
-                  label={fieldName
-                    .replace(/([A-Z])/g, " $1")
-                    .replace(/^./, (str) => str.toUpperCase())}
-                  {...field}
-                />
-              )}
-            />
-          ))}
-        </div> */}
       </div>
 
       <MuiModal open={openPreview} onClose={() => setOpenPreview(false)}>
@@ -602,13 +602,17 @@ const Reimbursement = () => {
                   <td className={cellClasses}>
                     Original Invoice is Attached with Voucher
                   </td>
-                  <td className={cellClasses}>{values.invoiceAttached}</td>
+                  <td className={cellClasses}>
+                    {values.invoiceAttached ? "Yes" : "No"}
+                  </td>
                 </tr>
                 <tr>
                   <td className={cellClasses}>
                     Expenses is Pre Approved in Budget
                   </td>
-                  <td className={cellClasses}>{values.preApproved}</td>
+                  <td className={cellClasses}>
+                    {values.preApproved ? "Yes" : "No"}
+                  </td>
                 </tr>
                 <tr>
                   <td className={cellClasses}>Date of Invoice Received</td>
@@ -642,14 +646,18 @@ const Reimbursement = () => {
                   <td className={cellClasses}>
                     Expenses is Approved in Budget or other Approval
                   </td>
-                  <td className={cellClasses}>{values.emergencyApproval}</td>
+                  <td className={cellClasses}>
+                    {values.emergencyApproval ? "Yes" : "No"}
+                  </td>
                 </tr>
                 <tr>
                   <td className={cellClasses + " font-semibold"}>
                     If expenses is not Approved/Emergency Expenses (NEED
                     APPROVAL OF L1 Authority)
                   </td>
-                  <td className={cellClasses}>{values.budgetApproval}</td>
+                  <td className={cellClasses}>
+                    {values.budgetApproval ? "Yes" : "No"}
+                  </td>
                 </tr>
               </tbody>
             </table>
