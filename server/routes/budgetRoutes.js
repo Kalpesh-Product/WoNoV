@@ -9,9 +9,11 @@ const {
   rejectBudget,
   fetchLandlordPayments,
   uploadInvoice,
+  fetchPendingApprovals,
 } = require("../controllers/budgetControllers/budgetController");
 
 router.post("/request-budget/:departmentId", requestBudget);
+router.get("/pending-approvals", fetchPendingApprovals);
 router.patch("/approve-budget/:budgetId", approveBudget);
 router.patch("/reject-budget/:budgetId", rejectBudget);
 router.patch(

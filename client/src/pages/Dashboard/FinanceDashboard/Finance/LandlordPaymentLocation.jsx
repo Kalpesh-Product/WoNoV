@@ -1540,7 +1540,6 @@ const LandlordPaymentLocation = () => {
           title="Landlord Payment Details"
         >
           <div className="space-y-3">
-            <DetalisFormatted title="Month" detail={viewDetails.month} />
             <DetalisFormatted title="Expanse Name" detail={viewDetails.expanseName} />
             <DetalisFormatted title="Department" detail={viewDetails.department.name} />
             <DetalisFormatted
