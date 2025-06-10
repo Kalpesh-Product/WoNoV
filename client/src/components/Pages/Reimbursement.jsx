@@ -120,6 +120,7 @@ const Reimbursement = () => {
     values.particulars = fields;
 
     console.log("Final Form Submission Data:", values);
+    submitRequest(values)
 
     // You can now send it to your API
     // Example:
@@ -128,7 +129,9 @@ const Reimbursement = () => {
 
   const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
     mutationKey: ["reimbursement"],
-    mutationFn: async (data) => {},
+    mutationFn: async (data) => {
+      const response = await axios.post(`/api/budget/request-budget/${department._id}`, data);
+    },
     onSuccess: (data) => {},
     onError: (error) => {},
   });
