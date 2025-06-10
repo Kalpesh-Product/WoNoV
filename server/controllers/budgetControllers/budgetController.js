@@ -193,6 +193,41 @@ const fetchBudget = async (req, res, next) => {
   }
 };
 
+const fetchPendingApprovals = async (req, res, next) => {
+  try {
+    const { company } = req;
+
+    const budgets = await Budget.find({ company, status: "Pending" })
+      .populate([
+        { path: "department", select: "name" },
+        { path: "unit", populate: { path: "building", model: "Building" } },
+      ])
+      .lean()
+      .exec();
+
+    const allBudgets = budgets.map((budget) => {
+      let particularsTotalAmount = 0;
+      if (budget?.particulars && budget.particulars.length > 0) {
+        particularsTotalAmount = budget.particulars.reduce(
+          (acc, curr) => acc + curr.particularAmount,
+          0
+        );
+        return {
+          ...budget,
+          projectedAmount: particularsTotalAmount,
+        };
+      }
+      return {
+        ...budget,
+      };
+    });
+
+    res.status(200).json({ allBudgets });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const fetchLandlordPayments = async (req, res, next) => {
   try {
     const { unit } = req.query;
@@ -592,4 +627,5 @@ module.exports = {
   fetchLandlordPayments,
   bulkInsertBudgets,
   uploadInvoice,
+  fetchPendingApprovals,
 };
