@@ -172,21 +172,24 @@ const fetchBudget = async (req, res, next) => {
       .lean()
       .exec();
 
-    // const transformBudgets = allBudgets.map((budget) => {
-    //   const particularsTotalAmount = 0;
-    //   if (budget.particulars.length > 0) {
-    //     particularsTotalAmount = particulars.reduce(
-    //       (acc, curr) => acc + curr.particularAmount,
-    //       0
-    //     );
-    //   }
-    //   return {
-    //     ...budget,
-    //     particularsTotalAmount,
-    //   };
-    // });
+    const transformBudgets = allBudgets.map((budget) => {
+      let particularsTotalAmount = 0;
+      if (budget?.particulars && budget.particulars.length > 0) {
+        particularsTotalAmount = budget.particulars.reduce(
+          (acc, curr) => acc + curr.particularAmount,
+          0
+        );
+        return {
+          ...budget,
+          projectedAmount: particularsTotalAmount,
+        };
+      }
+      return {
+        ...budget,
+      };
+    });
 
-    res.status(200).json({ allBudgets });
+    res.status(200).json({ transformBudgets });
   } catch (error) {
     next(error);
   }
