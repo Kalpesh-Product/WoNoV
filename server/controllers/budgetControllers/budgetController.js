@@ -375,7 +375,6 @@ const uploadInvoice = async (req, res, next) => {
     }
 
     if (foundBudget.invoice && foundBudget.invoice.id) {
-      console.log("Invoice exists", foundBudget.invoice.id);
       await handleFileDelete(foundBudget.invoice.id);
     }
 
