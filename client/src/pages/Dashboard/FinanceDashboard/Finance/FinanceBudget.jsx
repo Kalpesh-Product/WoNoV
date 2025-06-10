@@ -167,6 +167,7 @@ const FinanceBudget = () => {
       actualAmount: inrFormat(item?.actualAmount || 0),
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       status: item.status,
+      invoiceAttached : item.invoiceAttached
     });
 
     return acc;
