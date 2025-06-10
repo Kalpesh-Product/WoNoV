@@ -167,13 +167,11 @@ const getJobApplications = async (req, res, next) => {
   try {
     const companyId = req.company;
 
-    const applications = await JobApplicationSchema.find({
-      companyData: companyId,
-    })
+    const applications = await JobApplicationSchema.find()
       .sort({ createdAt: -1 })
       .exec();
 
-    res.status(200).json({ applications });
+    return res.status(200).json(applications);
   } catch (error) {
     next(error);
   }

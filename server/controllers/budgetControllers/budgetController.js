@@ -38,7 +38,7 @@ const requestBudget = async (req, res, next) => {
 
     if (!expanseName || !expanseType || !unitId) {
       throw new CustomError(
-        "Invalid budget data",
+        "Missing required fields",
         logPath,
         logAction,
         logSourceKey
