@@ -7,6 +7,11 @@ const csvParser = require("csv-parser");
 const { createLog } = require("../../utils/moduleLogs");
 const Unit = require("../../models/locations/Unit");
 const { default: mongoose } = require("mongoose");
+const { PDFDocument } = require("pdf-lib");
+const {
+  handleDocumentUpload,
+  handleFileDelete,
+} = require("../../config/cloudinaryConfig");
 
 const requestBudget = async (req, res, next) => {
   const logPath = "/budget/BudgetLog";
@@ -34,7 +39,7 @@ const requestBudget = async (req, res, next) => {
     } = req.body;
     const { departmentId } = req.params;
 
-    if (!projectedAmount || !expanseName || !dueDate || !expanseType) {
+    if (!projectedAmount || !expanseName || !expanseType || !unitId) {
       throw new CustomError(
         "Invalid budget data",
         logPath,
@@ -43,7 +48,8 @@ const requestBudget = async (req, res, next) => {
       );
     }
 
-    const parsedDueDate = new Date(dueDate);
+    const parsedDueDate =
+      expanseType !== "Reimbursement" ? new Date(dueDate) : new Date();
     const parsedInvoiceDate = invoiceDate ? new Date(invoiceDate) : null;
     const parsedReimbursementDate = reimbursementDate
       ? new Date(reimbursementDate)
@@ -165,6 +171,16 @@ const fetchBudget = async (req, res, next) => {
       ])
       .lean()
       .exec();
+
+    // const transformbudgets = allBudgets.map((budget)=>{
+    //   const particularsTotalAmount = 0
+    //   if(budget.particulars.length > 0){
+    //     particularsTotalAmount =
+    //   }
+    //   return {
+    //     ...budget
+    //   }
+    // })
 
     res.status(200).json({ allBudgets });
   } catch (error) {
@@ -318,6 +334,152 @@ const rejectBudget = async (req, res, next) => {
   }
 };
 
+const uploadInvoice = async (req, res, next) => {
+  const logPath = "budget/BudgetLog";
+  const logAction = "Upload Invoice";
+  const logSourceKey = "budget";
+  const { invoiceName, departmentName } = req.body;
+  const file = req.file;
+  const { user, ip, company } = req;
+  const { budgetId } = req.params;
+
+  try {
+    const allowedMimeTypes = [
+      "application/pdf",
+      "application/msword", // .doc
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+    ];
+
+    if (!mongoose.Types.ObjectId.isValid(budgetId)) {
+      throw new CustomError(
+        "Invalid budget Id provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new CustomError(
+        "Invalid file type. Allowed types: PDF, DOC, DOCX",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const foundCompany = await Company.findById({ _id: company });
+
+    if (!foundCompany) {
+      throw new CustomError(
+        "Company not found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const foundBudget = await Budget.findById({ _id: budgetId });
+
+    if (!foundBudget) {
+      throw new CustomError(
+        "No such budget found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (foundBudget.invoice && foundBudget.invoice.id) {
+      console.log("Invoice exists", foundBudget.invoice.id);
+      await handleFileDelete(foundBudget.invoice.id);
+    }
+
+    let processedBuffer = file.buffer;
+    const originalFilename = file.originalname;
+
+    // Process PDF: set document title
+    if (file.mimetype === "application/pdf") {
+      const pdfDoc = await PDFDocument.load(file.buffer);
+      pdfDoc.setTitle(
+        file.originalname ? file.originalname.split(".")[0] : "Untitled"
+      );
+      processedBuffer = await pdfDoc.save();
+    }
+
+    const response = await handleDocumentUpload(
+      processedBuffer,
+      `${foundCompany.companyName}/departments/${departmentName}/budget/invoice`,
+      originalFilename
+    );
+
+    if (!response.public_id) {
+      throw new CustomError(
+        "Failed to upload document",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const updatedBudget = await Budget.findOneAndUpdate(
+      {
+        _id: budgetId,
+      },
+      {
+        $set: {
+          invoice: {
+            name: invoiceName,
+            link: response.secure_url,
+            id: response.public_id,
+            date: new Date(),
+          },
+        },
+        invoiceAttached: true,
+      },
+      { new: true }
+    ).exec();
+
+    if (!updatedBudget) {
+      throw new CustomError(
+        "Failed to update company document field",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: `Invoice uploaded successfully for ${departmentName} department`,
+      status: "Success",
+      user: user,
+      ip: ip,
+      company: company,
+      sourceKey: logSourceKey,
+      sourceId: updatedBudget._id,
+      changes: {
+        invoiceName: invoiceName,
+        invoiceLink: response.secure_url,
+        invoiceId: response.public_id,
+      },
+    });
+
+    return res.status(200).json({
+      message: `Invoice uploaded successfully for ${departmentName} department`,
+    });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
+  }
+};
+
 const bulkInsertBudgets = async (req, res, next) => {
   try {
     const logPath = "BulkInsertLogs";
@@ -446,4 +608,5 @@ module.exports = {
   fetchBudget,
   fetchLandlordPayments,
   bulkInsertBudgets,
+  uploadInvoice,
 };
