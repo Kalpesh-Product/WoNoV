@@ -123,7 +123,7 @@ const requestBudget = async (req, res, next) => {
       sourceKey: logSourceKey,
       sourceId: newBudgetRequest._id,
       changes: {
-        projectedAmount,
+        projectedAmount: projectedAmount ? projectedAmount : 0,
         expanseName,
         dueDate,
         expanseType,
