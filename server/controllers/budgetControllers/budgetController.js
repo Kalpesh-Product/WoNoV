@@ -39,7 +39,7 @@ const requestBudget = async (req, res, next) => {
     } = req.body;
     const { departmentId } = req.params;
 
-    if (!projectedAmount || !expanseName || !expanseType || !unitId) {
+    if (!expanseName || !expanseType || !unitId) {
       throw new CustomError(
         "Invalid budget data",
         logPath,
@@ -91,7 +91,7 @@ const requestBudget = async (req, res, next) => {
 
     const newBudgetRequest = new Budget({
       expanseName,
-      projectedAmount,
+      projectedAmount: projectedAmount ? projectedAmount : 0,
       department: departmentId,
       company: companyDoc._id,
       dueDate: parsedDueDate,
@@ -172,15 +172,15 @@ const fetchBudget = async (req, res, next) => {
       .lean()
       .exec();
 
-    // const transformbudgets = allBudgets.map((budget)=>{
-    //   const particularsTotalAmount = 0
-    //   if(budget.particulars.length > 0){
-    //     particularsTotalAmount =
-    //   }
-    //   return {
-    //     ...budget
-    //   }
-    // })
+    const transformbudgets = allBudgets.map((budget) => {
+      const particularsTotalAmount = 0;
+      if (budget.particulars.length > 0) {
+        particularsTotalAmount += budget.particulars.particularAmount;
+      }
+      return {
+        ...budget,
+      };
+    });
 
     res.status(200).json({ allBudgets });
   } catch (error) {
