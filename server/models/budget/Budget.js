@@ -68,6 +68,9 @@ const budgetSchema = new mongoose.Schema({
     id: {
       type: String,
     },
+    invoiceNo: {
+      type: String,
+    },
     date: {
       type: Date,
     },
@@ -116,9 +119,6 @@ const budgetSchema = new mongoose.Schema({
     fSrNo: {
       type: String,
     },
-    invoiceNo: {
-      type: String,
-    },
     // debitEntries: [
     //   {
     //     particulars: { type: String, required: true },
@@ -133,8 +133,8 @@ const budgetSchema = new mongoose.Schema({
     // ],
     particulars: [
       {
-        particular: { type: String },
-        amount: { type: Number },
+        particularName: { type: String },
+        particularAmount: { type: Number },
       },
     ],
     modeOfPayment: {
@@ -146,14 +146,11 @@ const budgetSchema = new mongoose.Schema({
     // chequeOrUTRDate: Date,
 
     // Dates and other string inputs
-    invoiceDate: Date,
-    invoiceNo: String,
-    deliveryDate: Date,
     chequeNo: String,
     chequeDate: Date,
     // Advance payment section
     amount: Number,
-    expectedDate: Date,
+    expectedDateInvoice: Date,
     approvedAt: {
       type: Date,
     },

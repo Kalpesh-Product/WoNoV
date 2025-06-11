@@ -46,7 +46,6 @@ const requestBudget = async (req, res, next) => {
         logSourceKey
       );
     }
-    console.log("srNo", srNo);
 
     if (!mongoose.Types.ObjectId.isValid(departmentId)) {
       throw new CustomError(
@@ -358,38 +357,23 @@ const approveFinanceBudget = async (req, res, next) => {
     const {
       fSrNo,
       budgetId,
-      invoiceAttached,
-      preApproved,
-      emergencyApproval,
-      budgetApproval,
-      l1Approval,
       modeOfPayment,
-      invoiceDate,
-      invoiceNo,
-      deliveryDate,
       chequeNo,
       chequeDate,
       amount,
-      expectedDate,
+      expectedDateInvoice,
       particulars,
     } = req.body;
 
     const requiredFields = {
       fSrNo,
       particulars,
-      invoiceAttached,
-      preApproved,
-      emergencyApproval,
-      budgetApproval,
-      l1Approval,
       modeOfPayment,
-      invoiceDate,
-      invoiceNo,
-      deliveryDate,
       chequeNo,
       chequeDate,
       amount,
-      expectedDate,
+      expectedDateInvoice,
+      particulars,
     };
 
     // Validate missing fields
@@ -426,18 +410,11 @@ const approveFinanceBudget = async (req, res, next) => {
     }
 
     // Update approval fields
-    budget.invoiceAttached = invoiceAttached;
-    budget.preApproved = preApproved;
-    budget.emergencyApproval = emergencyApproval;
-    budget.budgetApproval = budgetApproval;
-    budget.l1Approval = l1Approval;
+
     budget.status = "Approved";
 
     budget.finance = {
       fSrNo, // optional if you have it
-      invoiceNo,
-      invoiceDate,
-      deliveryDate,
       chequeNo,
       chequeDate,
       amount,
@@ -459,19 +436,14 @@ const approveFinanceBudget = async (req, res, next) => {
       sourceKey: logSourceKey,
       sourceId: budget._id,
       changes: {
-        invoiceAttached,
-        preApproved,
-        emergencyApproval,
-        budgetApproval,
-        l1Approval,
-        modeOfPayment,
-        invoiceDate,
-        invoiceNo,
-        deliveryDate,
+        fSrNo,
         chequeNo,
         chequeDate,
         amount,
         expectedDate,
+        modeOfPayment,
+        particulars,
+        approvedAt: new Date(),
         status: "Approved",
       },
     });
