@@ -166,8 +166,7 @@ const addVisitor = async (req, res, next) => {
     if (visitorType === "Scheduled") {
       const existingVisitor = await Visitor.findOne({
         toMeet,
-        dateOfVisit,
-        scheduledTime,
+        dateOfVisit: visitDate,
         visitorType: "Scheduled",
         company,
       });

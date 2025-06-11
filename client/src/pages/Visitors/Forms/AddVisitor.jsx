@@ -1,18 +1,15 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { TextField, Select, MenuItem, CircularProgress } from "@mui/material";
+import { TextField, MenuItem, CircularProgress } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
-import {
-  DatePicker,
-  LocalizationProvider,
-  TimePicker,
-} from "@mui/x-date-pickers";
+import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
 
 const AddVisitor = () => {
   const {
@@ -134,6 +131,7 @@ const AddVisitor = () => {
 
     const payload = {
       ...data,
+      visitorFlag: "Visitor",
       department: isBiznest
         ? data.department === "na"
           ? null
@@ -337,7 +335,14 @@ const AddVisitor = () => {
               <Controller
                 name="department"
                 control={control}
-                rules={{ required: "Department is required" }}
+                rules={{
+                  validate: (value) => {
+                    if (selectedCompany === "6799f0cd6a01edbe1bc3fcea") {
+                      return value ? true : "Department is required";
+                    }
+                    return true;
+                  },
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -350,14 +355,13 @@ const AddVisitor = () => {
                       setSelectedDepartment(e.target.value);
                     }}
                     select
+                    error={!!errors.department}
+                    helperText={errors.department?.message}
                   >
                     <MenuItem value="">Select Department</MenuItem>
-
-                    {/* Conditionally add "N/A" option if visitor type is "Meeting" */}
                     {visitorType === "Meeting" && (
                       <MenuItem value="na">N/A</MenuItem>
                     )}
-
                     {uniqueDepartments.map((department) => (
                       <MenuItem key={department._id} value={department._id}>
                         {department.name}
@@ -479,20 +483,14 @@ const AddVisitor = () => {
                   <Controller
                     name="checkOut"
                     control={control}
-                    rules={{ required: "Check-Out time is required" }}
                     render={({ field }) => (
                       <TimePicker
                         {...field}
                         label={"Check-Out Time"}
+                        value={field.value || null}
+                        onChange={(val) => field.onChange(val)}
                         slotProps={{ textField: { size: "small" } }}
-                        render={(params) => (
-                          <TextField
-                            {...params}
-                            fullWidth
-                            error={!!errors.checkOut}
-                            helperText={errors.checkOut?.message}
-                          />
-                        )}
+                        render={(params) => <TextField {...params} fullWidth />}
                       />
                     )}
                   />
