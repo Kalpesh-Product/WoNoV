@@ -145,12 +145,17 @@ const AllocatedBudget = ({
     noFilter,
   ]);
 
+  // const totalProjectedAmountForFY = useMemo(() => {
+  //   return filteredMonths.reduce((sum, month) => {
+  //     const data = groupedData["All"]?.[month];
+  //     return sum + (data?.projectedAmount || 0);
+  //   }, 0);
+  // }, [filteredMonths, groupedData]);
+
   const totalProjectedAmountForFY = useMemo(() => {
-    return filteredMonths.reduce((sum, month) => {
-      const data = groupedData["All"]?.[month];
-      return sum + (data?.projectedAmount || 0);
-    }, 0);
-  }, [filteredMonths, groupedData]);
+    const data = groupedData["All"]?.[filteredMonths[selectedMonthIndex]];
+    return data?.projectedAmount || 0;
+  }, [filteredMonths, selectedMonthIndex, groupedData]);
 
   const enhancedColumns = useMemo(() => {
     return [
