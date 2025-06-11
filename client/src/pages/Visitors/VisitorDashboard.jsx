@@ -10,11 +10,6 @@ import BarGraph from "../../components/graphs/BarGraph";
 import PieChartMui from "../../components/graphs/PieChartMui";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import {
-  assetAvailabilityDataV,
-  assetAvailabilityOptionsV,
-} from "./VisitorsData/VisitorsData";
-import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -499,11 +494,16 @@ const visitorsChartOptions = {
       ],
     },
     {
-      layout: 5,
+      layout: 6,
       widgets: [
         <Card
           route={"/app/visitors/add-visitor"}
           title={"Add Visitor"}
+          icon={<RiPagesLine />}
+        />,
+        <Card
+          route={"/app/visitors/add-client"}
+          title={"Add Client"}
           icon={<RiPagesLine />}
         />,
         <Card

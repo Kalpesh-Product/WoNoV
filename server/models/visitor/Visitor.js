@@ -21,9 +21,14 @@ const visitorSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    address: {
+    city: {
       type: String,
-      required: true,
+    },
+    state: {
+      type: String,
+    },
+    sector: {
+      type: String,
     },
     phoneNumber: {
       type: String,
@@ -36,11 +41,9 @@ const visitorSchema = new mongoose.Schema(
     idProof: {
       idType: {
         type: String,
-        required: true,
       },
       idNumber: {
         type: String,
-        required: true,
       },
     },
     dateOfVisit: {
@@ -59,15 +62,18 @@ const visitorSchema = new mongoose.Schema(
     },
     toMeet: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "UserData",
+      ref: "UserData", //Add Visitor form
     },
     clientToMeet: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "CoworkingMember",
+      ref: "CoworkingMember", //Add Visitor form
+    },
+    visitorFlag: {
+      type: String,
+      enum: ["Visitor", "Client"],
     },
     clientCompany: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "CoworkingClient",
+      type: String, //Add Client form
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,
@@ -84,7 +90,7 @@ const visitorSchema = new mongoose.Schema(
     },
     visitorCompany: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "ExternalCompany",
+      ref: "CoworkingClient", //Add Visitor form
     },
     building: {
       type: mongoose.Schema.Types.ObjectId,
