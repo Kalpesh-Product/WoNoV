@@ -177,13 +177,18 @@ const AllocatedBudget = ({
     selectedTab,
     noFilter,
   ]);
-  console.log("Month Data : ", monthDataForSelectedType);
+
+  // const totalProjectedAmountForFY = useMemo(() => {
+  //   return filteredMonths.reduce((sum, month) => {
+  //     const data = groupedData["All"]?.[month];
+  //     return sum + (data?.projectedAmount || 0);
+  //   }, 0);
+  // }, [filteredMonths, groupedData]);
+
   const totalProjectedAmountForFY = useMemo(() => {
-    return filteredMonths.reduce((sum, month) => {
-      const data = groupedData["All"]?.[month];
-      return sum + (data?.projectedAmount || 0);
-    }, 0);
-  }, [filteredMonths, groupedData]);
+    const data = groupedData["All"]?.[filteredMonths[selectedMonthIndex]];
+    return data?.projectedAmount || 0;
+  }, [filteredMonths, selectedMonthIndex, groupedData]);
 
   const enhancedColumns = useMemo(() => {
     return [
@@ -232,8 +237,7 @@ const AllocatedBudget = ({
       <WidgetSection
         title={"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"}
         TitleAmount={`INR ${inrFormat(totalProjectedAmountForFY)}`}
-        border
-      >
+        border>
         <div className="flex flex-col gap-4 rounded-md ">
           {!hideTitle ? (
             <div className="flex justify-between items-center">
@@ -279,7 +283,7 @@ const AllocatedBudget = ({
                 </div>
               )} */}
             </div>
-            <div className="flex gap-4 justify-end items-center w-3/4 ">
+            <div className="flex gap-4 justify-start items-center w-full ">
               <div className="">
                 {/* Month Switcher */}
                 {filteredMonths.length > 0 && (

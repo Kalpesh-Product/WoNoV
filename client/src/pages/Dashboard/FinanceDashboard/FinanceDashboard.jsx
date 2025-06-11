@@ -262,10 +262,7 @@ const FinanceDashboard = () => {
   //----------INCOME-EXPENSE GRAPH conversion------------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
-  const incomeExpenseData = [
-    ...incomeData,
-    ...expenseData,
-  ];
+  const incomeExpenseData = [...incomeData, ...expenseData];
 
   const incomeExpenseOptions = {
     chart: {
@@ -378,12 +375,25 @@ const FinanceDashboard = () => {
     cardTitle: "Expense",
     timePeriod: "FY 2024-25",
     descriptionData: [
-      { title: "March 2025", value: `INR ${inrFormat(lastMonthData)}` },
-      { title: "Annual Average", value: `INR ${inrFormat(totalExpense / 12)}` },
-      { title: "Overall", value: `INR ${inrFormat(totalExpense)}` },
+      {
+        title: "March 2025",
+        value: `INR ${inrFormat(lastMonthData)}`,
+        route: "monthly-profit-loss",
+      },
+      {
+        title: "Annual Average",
+        value: `INR ${inrFormat(totalExpense / 12)}`,
+        route: "annual-average-profit-loss",
+      },
+      {
+        title: "Overall",
+        value: `INR ${inrFormat(totalExpense)}`,
+        route: "overall-profit-loss",
+      },
       {
         title: "Per Sq. Ft.",
         value: `INR ${inrFormat(totalExpense / totalSqft)}`,
+        route: "sqft-wise-data",
       },
     ],
   };
@@ -395,20 +405,24 @@ const FinanceDashboard = () => {
       {
         title: "March 2025",
         value: `INR ${inrFormat(lastMonthDataIncome - lastMonthData)}`,
+        route: "monthly-profit-loss",
       },
       {
         title: "Annual Average",
         value: `INR ${inrFormat((totalIncomeAmount - totalExpense) / 12)}`,
+        route: "annual-average-profit-loss",
       },
       {
         title: "Overall",
         value: `INR ${inrFormat(totalIncomeAmount - totalExpense)}`,
+        route: "overall-profit-loss",
       },
       {
         title: "Per Sq. Ft.",
         value: `INR ${inrFormat(
           (totalIncomeAmount - totalExpense) / totalSqft
         )}`,
+        route: "sqft-wise-data",
       },
     ],
   };

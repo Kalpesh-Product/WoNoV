@@ -330,6 +330,7 @@ import ManageTicketLayout from "../pages/Tickets/Tables/ManageTicketLayout";
 import ManageTicketsHome from "../pages/Tickets/ManageTicketsHome";
 import Reimbursement from "../components/Pages/Reimbursement";
 import AddClient from "../pages/Visitors/Forms/AddClient";
+import IncomeDetails from "../pages/Dashboard/FinanceDashboard/IncomeDetails/IncomeDetails";
 
 export const routes = createBrowserRouter([
   {
@@ -543,13 +544,26 @@ export const routes = createBrowserRouter([
                         element: <MonthlyProfitLoss />,
                       },
                       {
+                        path: "monthly-profit-loss/income-details",
+                        element: <IncomeDetails />,
+                      },
+                      {
                         path: "annual-average-profit-loss",
                         element: <AverageProfitLoss />,
+                      },
+                      {
+                        path: "annual-average-profit-loss/income-details",
+                        element: <IncomeDetails />,
                       },
                       {
                         path: "overall-profit-loss",
                         element: <OverallProfitLoss />,
                       },
+                      {
+                        path: "overall-profit-loss/income-details",
+                        element: <IncomeDetails />,
+                      },
+
                       {
                         path: "sqft-wise-data",
                         element: <SqWiseData />,
@@ -559,12 +573,8 @@ export const routes = createBrowserRouter([
                         element: <BillingsLayout />,
                         children: [
                           {
-                            path: "invoice-creation",
+                            path: "invoice",
                             element: <InvoiceCreation />,
-                          },
-                          {
-                            path: "invoice-creation/:id",
-                            element: <ViewTemplate />,
                           },
                           {
                             path: "finance-monthly-vouchers",
@@ -575,7 +585,7 @@ export const routes = createBrowserRouter([
                             element: <FinanceViewVoucher />,
                           },
                           {
-                            path: "voucher-creation",
+                            path: "voucher",
                             element: <VoucherCreation />,
                           },
                           {
@@ -660,7 +670,7 @@ export const routes = createBrowserRouter([
                             path: "payment-schedule",
                             element: <AdminPayment />,
                           },
-                              {
+                          {
                             path: "reimbursement",
                             element: <Reimbursement />,
                           },

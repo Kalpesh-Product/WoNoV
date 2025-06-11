@@ -1,51 +1,97 @@
 import WidgetSection from "../../../../components/WidgetSection";
-import BarGraph from "../../../../components/graphs/BarGraph";
-import AgTable from "../../../../components/AgTable";
-import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
-import DataCard from "../../../../components/DataCard";
+import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import FilterUnits from "./FilterUnits";
 import { useState } from "react";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-
-
- 
+import dayjs from "dayjs";
 
 const LandlordPayments = () => {
+  const axios = useAxiosPrivate();
 
-
-  const collectionData = [
-    { month: "Apr-24", paid: 80, unpaid: 20 },
-    { month: "May-24", paid: 90, unpaid: 10 },
-    { month: "Jun-24", paid: 75, unpaid: 25 },
-    { month: "Jul-24", paid: 95, unpaid: 5 },
-    { month: "Aug-24", paid: 85, unpaid: 15 },
-    { month: "Sep-24", paid: 70, unpaid: 30 },
-    { month: "Oct-24", paid: 60, unpaid: 40 },
-    { month: "Nov-24", paid: 88, unpaid: 12 },
-    { month: "Dec-24", paid: 92, unpaid: 8 },
-    { month: "Jan-25", paid: 76, unpaid: 24 },
-    { month: "Feb-25", paid: 89, unpaid: 11 },
-    { month: "Mar-25", paid: 100, unpaid: 0 },
-  ];
-
-  const barGraphData = [
-    {
-      name: "Paid",
-      data: collectionData.map((item) => item.paid),
+  const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+    queryKey: ["allBudgets"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`
+        );
+        const budgets = response.data.allBudgets;
+        return Array.isArray(budgets) ? budgets : [];
+      } catch (error) {
+        console.error("Error fetching budget:", error);
+        return [];
+      }
     },
-    {
-      name: "Unpaid",
-      data: collectionData.map((item) => item.unpaid),
-    },
-  ];
+  });
+
+  const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
+  const yearCategories = {
+    "FY 2024-25": [
+      "Apr-24",
+      "May-24",
+      "Jun-24",
+      "Jul-24",
+      "Aug-24",
+      "Sep-24",
+      "Oct-24",
+      "Nov-24",
+      "Dec-24",
+      "Jan-25",
+      "Feb-25",
+      "Mar-25",
+    ],
+    "FY 2025-26": [
+      "Apr-25",
+      "May-25",
+      "Jun-25",
+      "Jul-25",
+      "Aug-25",
+      "Sep-25",
+      "Oct-25",
+      "Nov-25",
+      "Dec-25",
+      "Jan-26",
+      "Feb-26",
+      "Mar-26",
+    ],
+  };
+
+  // Filter for Monthly Rent
+  const landLordData = hrFinance.filter(
+    (item) => item.expanseType === "Monthly Rent"
+  );
+
+  // Group by month
+  const monthlyRentMap = {};
+  landLordData.forEach((item) => {
+    if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+
+    const monthKey = dayjs(item.dueDate).format("MMM-YY");
+    if (excludedMonths.includes(monthKey)) return;
+
+    monthlyRentMap[monthKey] =
+      (monthlyRentMap[monthKey] || 0) + (item.actualAmount || 0);
+  });
+
+  // Structure for YearlyGraph
+  const graphData = Object.entries(yearCategories).map(
+    ([fiscalYear, months]) => ({
+      name: "Monthly Rent",
+      group: fiscalYear,
+      data: months.map((month) => monthlyRentMap[month] || 0),
+    })
+  );
+
+  const totalRent = landLordData.reduce(
+    (sum, item) => sum + (item.actualAmount || 0),
+    0
+  );
 
   const barGraphOptions = {
     chart: {
+      id: "landlord-rent-bar",
       type: "bar",
-      stacked: true,
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
@@ -53,24 +99,21 @@ const LandlordPayments = () => {
       bar: {
         horizontal: false,
         borderRadius: 4,
-        columnWidth: "40%",
+        columnWidth: "60%",
       },
     },
     dataLabels: {
-      enabled: true,
-      formatter: (val) => `${val}%`,
+      enabled: false,
     },
     xaxis: {
-      categories: collectionData.map((item) => item.month),
-
+      categories: [], // Will be injected by YearlyGraph
     },
     yaxis: {
-      max: 100,
       labels: {
-        formatter: (val) => `${val}%`,
+        formatter: (val) => `${Math.round(val / 100000)}`,
       },
       title: {
-        text: "Client Collection %",
+        text: "Amount in INR (Lakhs)",
       },
     },
     legend: {
@@ -78,61 +121,23 @@ const LandlordPayments = () => {
     },
     tooltip: {
       y: {
-        formatter: (val) => `${val}%`,
+        formatter: (val) => `INR ${val.toLocaleString("en-IN")}`,
       },
     },
-    colors: ["#54C4A7", "#EB5C45"], // Green for paid, red for unpaid
+    colors: ["#4E6AF3"], // Blue for rent
   };
 
   return (
-    <div className="flex flex-col gap-8">
-      <WidgetSection titleLabel={"FY 2024-25"} title={"Landlord Payments".toUpperCase()} border>
-        <BarGraph data={[]} options={barGraphOptions} />
-      </WidgetSection>
+    <div className="flex flex-col gap-4">
+      <YearlyGraph
+        title="LANDLORD MONTHLY RENT"
+        chartId="landlord-rent-bar"
+        data={graphData}
+        options={barGraphOptions}
+        TitleAmountGreen={`Total INR ${totalRent.toLocaleString("en-IN")}`}
+      />
 
-       <FilterUnits/>
-
-      {/* <WidgetSection title="Unit Wise Landlord Payments" border>
-        {landlordPaymentsLoading ? [] : landlordPayments.allBudgets.map((unit, index) => (
-          <Accordion key={index} className="py-4">
-            <AccordionSummary
-              expandIcon={<IoIosArrowDown />}
-              aria-controls={`panel-${index}-content`}
-              id={`panel-${index}-header`}
-              className="border-b-[1px] border-borderGray"
-            >
-              <div className="flex justify-between items-center w-full px-4">
-                <span className="text-subtitle font-pmedium">
-                  {unit.unitNo}
-                </span>
-                <span className="text-subtitle font-pmedium">
-                  {(() => {
-                    const total = unit.tableData.rows.reduce((acc, row) => {
-                      const amount = parseInt(
-                        row.total.replace(/[INR ,]/g, ""),
-                        10
-                      );
-                      return acc + (isNaN(amount) ? 0 : amount);
-                    }, 0);
-
-                    return "INR " + total.toLocaleString("en-IN")
-                       
-                  })()}
-                </span>
-              </div>
-            </AccordionSummary>
-            <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
-              <AgTable
-                search
-                data={unit.tableData.rows}
-                columns={unit.tableData.columns}
-                tableHeight={250}
-              />
-            </AccordionDetails>
-          </Accordion>
-        ))}
-      </WidgetSection> */}
-      
+      <FilterUnits />
     </div>
   );
 };

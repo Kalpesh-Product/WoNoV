@@ -13,7 +13,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
-import { toast } from "sonner"
+import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
 import { LuImageUp } from "react-icons/lu";
 
@@ -42,7 +42,6 @@ const VoucherCreation = () => {
     setViewVoucherModal(false);
     reset();
   };
-
 
   const templateData = [
     {
@@ -85,7 +84,10 @@ const VoucherCreation = () => {
       cellRenderer: (params) => (
         <>
           <div className="flex gap-2">
-            <span onClick={() => toast.success("email sent successfully")} className="text-primary hover:underline text-content cursor-pointer">
+            <span
+              onClick={() => toast.success("email sent successfully")}
+              className="text-primary hover:underline text-content cursor-pointer"
+            >
               Send Email
             </span>
           </div>
@@ -141,38 +143,17 @@ const VoucherCreation = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-between items-center mb-6">
-        <span className=" text-primary text-title font-pmedium uppercase">Templates</span>
-        <PrimaryButton title={"Add Voucher"} handleSubmit={() => { setViewVoucherModal(true) }} />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {templateData.map((template, index) => (
-          <div
-            key={index}
-            onClick={() => navigate(`${template.id}`)}
-            className="bg-white shadow-md rounded-lg overflow-hidden border">
-            <div className="h-48">
-              <img
-                src={template.imgSrc}
-                alt="Template Image"
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div className="p-4">
-              <h2 className="widgetTitle font-semibold font-pregular">
-                {template.title}
-              </h2>
-              <p className="text-content text-gray-500 font-pregular">
-                {template.date}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
       <div>
-        <AgTable data={rows} columns={invoiceCreationColumns} search tableTitle={"Invoice Creation"} />
+        <AgTable
+          data={rows}
+          columns={invoiceCreationColumns}
+          search
+          tableTitle={"Voucher"}
+          buttonTitle={"Add Voucher"}
+          handleClick={() => {
+            setViewVoucherModal(true);
+          }}
+        />
       </div>
 
       {viewModal && viewDetails && (
@@ -185,91 +166,96 @@ const VoucherCreation = () => {
           title="Invoice Detail"
         >
           <div className="space-y-3">
-            <DetalisFormatted title="Invoice Name" detail={viewDetails.invoiceName} />
+            <DetalisFormatted
+              title="Invoice Name"
+              detail={viewDetails.invoiceName}
+            />
             <DetalisFormatted title="KRAs" detail={viewDetails.date} />
           </div>
         </MuiModal>
       )}
 
-      {viewAddVoucherModal && <MuiModal
-        open={viewAddVoucherModal}
-        onClose={() => setViewVoucherModal(false)}
-        title="Add New Voucher"
-        primaryAction={{
-          label: "Submit",
-          onClick: handleSubmit(onSubmitTemplate),
-        }}
-      >
-        <form className="flex flex-col gap-4 mt-2">
-          {/* Title Field */}
-          <Controller
-            name="title"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                label="Template Title"
-                fullWidth
-                {...field}
-              />
-            )}
-          />
+      {viewAddVoucherModal && (
+        <MuiModal
+          open={viewAddVoucherModal}
+          onClose={() => setViewVoucherModal(false)}
+          title="Add New Voucher"
+          primaryAction={{
+            label: "Submit",
+            onClick: handleSubmit(onSubmitTemplate),
+          }}
+        >
+          <form className="flex flex-col gap-4 mt-2">
+            {/* Title Field */}
+            <Controller
+              name="title"
+              control={control}
+              render={({ field }) => (
+                <TextField label="Template Title" fullWidth {...field} />
+              )}
+            />
 
-          {/* File Upload */}
-          <Controller
-            name="file"
-            control={control}
-            render={({ field: { onChange, value } }) => (
-              <>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept=".png,.jpg,.jpeg,.pdf"
-                  hidden
-                  onChange={(e) => onChange(e.target.files[0])}
+            {/* File Upload */}
+            <Controller
+              name="file"
+              control={control}
+              render={({ field: { onChange, value } }) => (
+                <>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.pdf"
+                    hidden
+                    onChange={(e) => onChange(e.target.files[0])}
+                  />
+                  <TextField
+                    size="small"
+                    variant="outlined"
+                    fullWidth
+                    label="Upload Image"
+                    value={value ? value.name : ""}
+                    placeholder="Choose a file..."
+                    InputProps={{
+                      readOnly: true,
+                      endAdornment: (
+                        <IconButton
+                          color="primary"
+                          component="label"
+                          htmlFor="image-upload"
+                        >
+                          <LuImageUp />
+                        </IconButton>
+                      ),
+                    }}
+                  />
+                </>
+              )}
+            />
+
+            {/* Date Picker */}
+            <Controller
+              name="date"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  label="Template Date"
+                  {...field}
+                  value={field.value || dayjs()}
+                  onChange={(date) => field.onChange(date)}
+                  slotProps={{ textField: { fullWidth: true } }}
                 />
-                <TextField
-                  size="small"
-                  variant="outlined"
-                  fullWidth
-                  label="Upload Image"
-                  value={value ? value.name : ""}
-                  placeholder="Choose a file..."
-                  InputProps={{
-                    readOnly: true,
-                    endAdornment: (
-                      <IconButton color="primary" component="label" htmlFor="image-upload">
-                        <LuImageUp />
-                      </IconButton>
-                    ),
-                  }}
-                />
-              </>
-            )}
-          />
-
-
-
-          {/* Date Picker */}
-          <Controller
-            name="date"
-            control={control}
-            render={({ field }) => (
-              <DatePicker
-                label="Template Date"
-                {...field}
-                value={field.value || dayjs()}
-                onChange={(date) => field.onChange(date)}
-                slotProps={{ textField: { fullWidth: true } }}
-              />
-            )}
-          />
-          <PrimaryButton title="Add Voucher" handleSubmit={() => {
-            toast.success("Added Voucher successfully")
-            setViewVoucherModal(false)
-          }} />
-        </form>
-      </MuiModal>
-      }
+              )}
+            />
+            <PrimaryButton
+              title="Add Voucher"
+              handleSubmit={() => {
+                toast.success("Added Voucher successfully");
+                setViewVoucherModal(false);
+              }}
+            />
+          </form>
+        </MuiModal>
+      )}
     </div>
   );
 };
