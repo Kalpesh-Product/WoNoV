@@ -17,11 +17,12 @@ import usePageDepartment from "../../../../hooks/usePageDepartment";
 import { MdDelete } from "react-icons/md";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs from "dayjs";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import humanDate from "../../../../utils/humanDateForamt";
 import { toast } from "sonner";
+import { useSelector } from "react-redux";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
@@ -40,28 +41,24 @@ const paymentModes = [
 
 const ReviewRequest = () => {
   const formRef = useRef(null);
+  const voucherDetails = useSelector((state) => state.finance.voucherDetails);
+  console.log("Voucher REdux" , voucherDetails)
   const [openPreview, setOpenPreview] = useState(false);
   const department = usePageDepartment();
   const axios = useAxiosPrivate();
   const { control, watch, setValue, getValues, reset } = useForm({
     defaultValues: {
-      department: "",
-      srNo: "001",
-      expanseName: "",
-      expanseType: "Reimbursement",
-      unitId: "",
-      location: "",
-      invoiceAttached: false,
-      preApproved: false,
-      emergencyApproval: false,
-      budgetApproval: false,
-      l1Approval: false,
-      reimbursementDate: null,
+      fSrNo : '',
+      budgetId : '',
+      modeOfPayment: "",
+      chequeNo: "",
+      chequeDate: null,
+      amount: 0,
+      expectedDateInvoice: null,
       particulars: [],
-      invoiceNo: "",
-      gstIn: "",
     },
   });
+
   const { data: departmentBudget = [], isPending: isDepartmentLoading } =
     useQuery({
       queryKey: ["departmentBudget"],
@@ -89,8 +86,9 @@ const ReviewRequest = () => {
       const number = String(reimbursedBudget + 1).padStart(3, "0");
       const generatedSNo = `${prefix}-${number}`;
       setValue("srNo", generatedSNo);
+      setValue("budgetId",voucherDetails._id)
     }
-  }, [department?.name, reimbursedBudget, setValue]);
+  }, [department?.name, reimbursedBudget, setValue, voucherDetails]);
 
   const selectedLocation = watch("location");
   const selectedUnit = watch("unitId");
@@ -181,110 +179,28 @@ const ReviewRequest = () => {
       <div className="w-full space-y-4">
         <div className="flex justify-between items-center">
           <span className="text-title text-primary font-pbold mb-4 uppercase">
-            Reimbursement Form
+            FINANCE AREA
           </span>
         </div>
 
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Controller
-              name="location"
+              name="financeSno"
               control={control}
+              defaultValue=""
               render={({ field }) => (
                 <TextField
+                  label="Finance Sno"
                   size="small"
-                  select
+                  type="number"
+                  fullWidth
                   {...field}
-                  label="Select Location"
-                >
-                  <MenuItem value="" disabled>
-                    Select Building
-                  </MenuItem>
-                  {locationsLoading ? (
-                    <MenuItem disabled>
-                      <CircularProgress size={20} />
-                    </MenuItem>
-                  ) : locationsError ? (
-                    <MenuItem disabled>Error fetching units</MenuItem>
-                  ) : (
-                    uniqueBuildings.map(([id, name]) => (
-                      <MenuItem key={id} value={name}>
-                        {name}
-                      </MenuItem>
-                    ))
-                  )}
-                </TextField>
+                />
               )}
             />
-
             <Controller
-              name="unitId"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  select
-                  size="small"
-                  label="Select Unit"
-                  disabled={!selectedLocation}
-                  {...field} // ✅ handles value and onChange
-                >
-                  <MenuItem value="">Select Unit</MenuItem>
-                  {locationsLoading ? (
-                    <MenuItem disabled>
-                      <CircularProgress size={20} />
-                    </MenuItem>
-                  ) : (
-                    units
-                      .filter(
-                        (unit) =>
-                          unit.building?.buildingName === selectedLocation
-                      )
-                      .map((unit) => (
-                        <MenuItem key={unit._id} value={unit._id}>
-                          {unit.unitNo}
-                        </MenuItem>
-                      ))
-                  )}
-                </TextField>
-              )}
-            />
-
-            {/* Hidden field to store department ID */}
-            <Controller
-              name="department"
-              control={control}
-              render={({ field }) => <input type="hidden" {...field} />}
-            />
-
-            {/* Display department name separately */}
-            <TextField
-              fullWidth
-              size="small"
-              disabled
-              label="Department"
-              value={department?.name || ""}
-            />
-            {["srNo"].map((fieldName) => (
-              <Controller
-                key={fieldName}
-                name={fieldName}
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    fullWidth
-                    size="small"
-                    disabled
-                    label={fieldName
-                      .replace(/([A-Z])/g, " $1")
-                      .replace(/^./, (str) => str.toUpperCase())}
-                    {...field}
-                  />
-                )}
-              />
-            ))}
-
-            <Controller
-              name="reimbursementDate"
+              name="fDate"
               control={control}
               rules={{
                 required: "Date is required",
@@ -302,7 +218,7 @@ const ReviewRequest = () => {
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
                     {...field}
-                    label="Reimbursement Date"
+                    label="Finance Date"
                     format="DD-MM-YYYY"
                     disablePast
                     value={field.value ? dayjs(field.value) : null}
@@ -319,23 +235,7 @@ const ReviewRequest = () => {
                 </LocalizationProvider>
               )}
             />
-
-            {/* Render the rest of the fields */}
-
-            <Controller
-              name="expanseName"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  size="small"
-                  label="Expense Name"
-                />
-              )}
-            />
           </div>
-
           <span className="text-subtitle font-pmedium">Add Particulars</span>
           <div className="flex gap-2">
             <Controller
@@ -366,8 +266,6 @@ const ReviewRequest = () => {
               )}
             />
             <div className="flex flex-col justify-center items-center">
-              {/* UI-only List of Added Particulars */}
-
               <PrimaryButton
                 title="Add"
                 externalStyles={"w-1/4"}
@@ -414,7 +312,6 @@ const ReviewRequest = () => {
                 ))}
               </ul>
 
-              {/* Total Section */}
               <div className="flex justify-between border-t border-gray-300 pt-2 mt-2 text-xs font-semibold text-gray-700">
                 <span>Total</span>
                 <span>
@@ -438,38 +335,11 @@ const ReviewRequest = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Controller
-            name="gstIn"
-            control={control}
-            render={({ field }) => (
-              <TextField label="GSTIN" size="small" fullWidth {...field} />
-            )}
-          />
           {[
             {
-              name: "invoiceAttached",
-              label: "Invoice Attached ",
-              values: options,
-            },
-            {
-              name: "preApproved",
-              label: "Pre Approved in Budget ",
-              values: options,
-            },
-            {
-              name: "emergencyApproval",
-              label: "Emergency Approval ",
-              values: options,
-            },
-            {
-              name: "budgetApproval",
-              label: "Budget Approval (Finance)",
-              values: options,
-            },
-            {
-              name: "l1Approval",
-              label: "L1 Authority Approval",
-              values: options,
+              name: "modeOfPayment",
+              label: "Mode of Payment",
+              values: paymentModes,
             },
           ].map(({ name, label, values }) => (
             <Controller
@@ -482,10 +352,9 @@ const ReviewRequest = () => {
                   fullWidth
                   size="small"
                   label={label}
-                  value={field.value ? "Yes" : "No"}
-                  onChange={(e) => field.onChange(e.target.value === "Yes")}
+                  {...field}
                 >
-                  {["Yes", "No"].map((opt) => (
+                  {values.map((opt) => (
                     <MenuItem key={opt} value={opt}>
                       {opt}
                     </MenuItem>
@@ -494,7 +363,99 @@ const ReviewRequest = () => {
               )}
             />
           ))}
+
+          {["chequeNo", "amount"].map((fieldName) => (
+            <Controller
+              key={fieldName}
+              name={fieldName}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  fullWidth
+                  size="small"
+                  label={fieldName
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/^./, (str) => str.toUpperCase())}
+                  {...field}
+                />
+              )}
+            />
+          ))}
+
+          <Controller
+            name="chequeDate"
+            control={control}
+            rules={{
+              required: "Date is required",
+              validate: (value) => {
+                if (!value) return true; // already handled by required
+                const today = dayjs().startOf("day");
+                const selected = dayjs(value);
+                if (selected.isBefore(today)) {
+                  return "Date cannot be in the past.";
+                }
+                return true;
+              },
+            }}
+            render={({ field, fieldState }) => (
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  {...field}
+                  label="Cheque Date"
+                  format="DD-MM-YYYY"
+                  disablePast
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) =>
+                    field.onChange(date ? date.toISOString() : null)
+                  }
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      size: "small",
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            )}
+          />
+          <Controller
+            name="expectedDate"
+            control={control}
+            rules={{
+              required: "Date is required",
+              validate: (value) => {
+                if (!value) return true; // already handled by required
+                const today = dayjs().startOf("day");
+                const selected = dayjs(value);
+                if (selected.isBefore(today)) {
+                  return "Date cannot be in the past.";
+                }
+                return true;
+              },
+            }}
+            render={({ field, fieldState }) => (
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  {...field}
+                  label="Expected Inovice Date"
+                  format="DD-MM-YYYY"
+                  disablePast
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) =>
+                    field.onChange(date ? date.toISOString() : null)
+                  }
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      size: "small",
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            )}
+          />
         </div>
+
         <div className="place-items-center">
           <PrimaryButton
             title="Preview"
@@ -505,7 +466,7 @@ const ReviewRequest = () => {
       </div>
 
       <MuiModal open={openPreview} onClose={() => setOpenPreview(false)}>
-        <Box className="absolute top-1/2 left-1/2 bg-white p-4 rounded shadow max-h-screen overflow-y-auto w-[53%] -translate-x-1/2 -translate-y-1/2">
+        <Box className="absolute top-1/2 left-1/2 bg-white p-4 rounded shadow max-h-screen overflow-y-auto w-[77%] -translate-x-1/2 -translate-y-1/2">
           <div className="flex justify-between items-center mb-2">
             <span className="text-title text-primary font-pbold uppercase">
               Preview
@@ -517,7 +478,7 @@ const ReviewRequest = () => {
           <div
             className="flex-1 p-4 border"
             ref={formRef}
-            style={{ width: "794px" }} // A4 width in pixels
+            style={{ width: "100%" }} // A4 width in pixels
           >
             <div className="text-center font-bold text-lg">
               MUSTARO TECHNOSERVE PRIVATE LIMITED
@@ -539,19 +500,19 @@ const ReviewRequest = () => {
 
             {/* Department Info */}
             <div className="text-center text-sm mt-2">
-              DEPARTMENT - {department?.name}
+              DEPARTMENT - {voucherDetails?.department}
             </div>
             <div className="flex w-full justify-end items-end flex-col gap-2 text-sm my-2">
               <div className="flex gap-2 items-end">
                 <p>S.No.</p>
                 <span className="w-28 border-b-default border-black py-1">
-                  {values.sNo}
+                  {voucherDetails?.srNo}
                 </span>
               </div>
               <div className="flex gap-2 items-end">
                 <p>Date</p>
                 <span className="w-28 border-b-default border-black py-1">
-                  {humanDate(values.reimbursementDate)}
+                  {voucherDetails?.reimbursementDate}
                 </span>
               </div>
             </div>
@@ -570,7 +531,7 @@ const ReviewRequest = () => {
                 </tr>
               </thead>
               <tbody>
-                {values.particulars?.map((item, idx) => (
+                {voucherDetails?.particulars?.map((item, idx) => (
                   <tr key={idx}>
                     <td className={cellClasses} colSpan={6}>
                       {item.particularName}
@@ -585,7 +546,7 @@ const ReviewRequest = () => {
                     Total
                   </td>
                   <td className={cellClasses + " font-bold"} colSpan={2}>
-                    {values.particulars
+                    {voucherDetails?.particulars
                       ?.reduce(
                         (sum, item) => sum + Number(item.particularAmount || 0),
                         0
@@ -603,7 +564,7 @@ const ReviewRequest = () => {
                     Original Invoice is Attached with Voucher
                   </td>
                   <td className={cellClasses}>
-                    {values.invoiceAttached ? "Yes" : "No"}
+                    {voucherDetails?.invoiceAttached ? "Yes" : "No"}
                   </td>
                 </tr>
                 <tr>
@@ -611,16 +572,16 @@ const ReviewRequest = () => {
                     Expenses is Pre Approved in Budget
                   </td>
                   <td className={cellClasses}>
-                    {values.preApproved ? "Yes" : "No"}
+                    {voucherDetails?.preApproved ? "Yes" : "No"}
                   </td>
                 </tr>
                 <tr>
                   <td className={cellClasses}>Date of Invoice Received</td>
-                  <td className={cellClasses}>{values.invoiceDate}</td>
+                  <td className={cellClasses}>{voucherDetails?.invoiceDate}</td>
                 </tr>
                 <tr>
                   <td className={cellClasses}>Invoice No</td>
-                  <td className={cellClasses}>{values.invoiceNo}</td>
+                  <td className={cellClasses}>{voucherDetails?.invoiceNo}</td>
                 </tr>
                 <tr>
                   <td className={cellClasses + " font-semibold"}>
@@ -647,7 +608,7 @@ const ReviewRequest = () => {
                     Expenses is Approved in Budget or other Approval
                   </td>
                   <td className={cellClasses}>
-                    {values.emergencyApproval ? "Yes" : "No"}
+                    {voucherDetails?.emergencyApproval ? "Yes" : "No"}
                   </td>
                 </tr>
                 <tr>
@@ -656,7 +617,7 @@ const ReviewRequest = () => {
                     APPROVAL OF L1 Authority)
                   </td>
                   <td className={cellClasses}>
-                    {values.budgetApproval ? "Yes" : "No"}
+                    {voucherDetails?.budgetApproval ? "Yes" : "No"}
                   </td>
                 </tr>
               </tbody>
@@ -669,7 +630,120 @@ const ReviewRequest = () => {
               </div>
               <div>(Signature) & Dept. Stamp</div>
             </div>
+
+            {/* FINANCE AREA */}
+
+            {/* Finance Area */}
+            <hr className="border border-black mb-1" />
+            <div className="text-center font-bold text-sm mb-1">
+              Finance Area
+            </div>
+            <div className="flex w-full justify-end items-end flex-col gap-2 text-sm my-2">
+              <div className="flex gap-2 items-end">
+                <p>S.No.</p>
+                <span className="w-28 border-b-default border-black pb-2">
+                  {values.financeSno}
+                </span>
+              </div>
+              <div className="flex gap-2 items-end">
+                <p>Date</p>
+                <span className="w-28 border-b-default border-black pb-2">
+                  {humanDate(values.fDate)}
+                </span>
+              </div>
+            </div>
+
+            <div className="text-center font-bold text-base mb-2">VOUCHER</div>
+            <table className={tableClasses}>
+              <thead>
+                <tr>
+                  <td className={cellClasses} colSpan={2}>
+                    PARTICULARS
+                  </td>
+                  <td className={cellClasses}>INR</td>
+                  {/* <td className={cellClasses}>INR</td> */}
+                </tr>
+              </thead>
+              <tbody>
+                {values?.particulars?.map((item, idx) => (
+                  <tr key={idx}>
+                    <td className={cellClasses} colSpan={2}>
+                      {item.particularName}
+                    </td>
+                    <td className={cellClasses} colSpan={1}>
+                      {item.particularAmount}
+                    </td>
+                  </tr>
+                ))}
+                <tr>
+                  <td className={cellClasses + " font-bold"} colSpan={2}>
+                    Total
+                  </td>
+                  <td className={cellClasses + " font-bold"} colSpan={1}>
+                    {values?.particulars
+                      ?.reduce(
+                        (sum, item) => sum + Number(item.particularAmount || 0),
+                        0
+                      )
+                      .toFixed(0)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <table className={tableClasses}>
+              <tbody>
+                <tr>
+                  <td className={cellClasses}>Mode of Payment (Tick)</td>
+                  <td className={cellClasses}>{values.modeOfPayment}</td>
+                </tr>
+                <tr>
+                  <td className={cellClasses}>Cheque No / UTR No</td>
+                  <td className={cellClasses}>{values.chequeNo}</td>
+                </tr>
+                <tr>
+                  <td className={cellClasses}>Cheque / UTR Date</td>
+                  <td className={cellClasses}>
+                    {humanDate(values.chequeDate)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div className="text-center font-medium text-sm mb-6">
+              Payment Term (IF PAYMENT MADE IN ADVANCE)
+            </div>
+            <table className={tableClasses}>
+              <tbody>
+                <tr>
+                  <td className={cellClasses}>Amount (Rs)</td>
+                  <td className={cellClasses}>{values.amount}</td>
+                </tr>
+                <tr>
+                  <td className={cellClasses}>
+                    Expected Date of receipt of Invoice
+                  </td>
+                  <td className={cellClasses}>
+                    {humanDate(values.expectedDate)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div className="flex justify-between text-xs mt-20">
+              <div className="text-center">
+                (Accounts executive)
+                <br />
+                (Signature)
+              </div>
+              <div className="text-center">
+                (Finance Manager)
+                <br />
+                (Signature) & Stamp
+              </div>
+            </div>
           </div>
+
           <div className="mt-4 text-right flex gap-4 items-center justify-center">
             <PrimaryButton
               title="Submit"
