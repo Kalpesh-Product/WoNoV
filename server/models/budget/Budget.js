@@ -72,6 +72,9 @@ const budgetSchema = new mongoose.Schema({
       type: Date,
     },
   },
+  gstIn: {
+    type: String,
+  },
   invoiceAttached: {
     type: Boolean,
     default: false,
