@@ -182,8 +182,7 @@ const AllocatedBudget = ({
       <WidgetSection
         title={"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"}
         TitleAmount={`INR ${inrFormat(totalProjectedAmountForFY)}`}
-        border
-      >
+        border>
         <div className="flex flex-col gap-4 rounded-md ">
           {!hideTitle ? (
             <div className="flex justify-between items-center">
@@ -229,7 +228,7 @@ const AllocatedBudget = ({
                 </div>
               )} */}
             </div>
-            <div className="flex gap-4 justify-end items-center w-3/4 ">
+            <div className="flex gap-4 justify-start items-center w-full ">
               <div className="">
                 {/* Month Switcher */}
                 {filteredMonths.length > 0 && (
@@ -303,8 +302,7 @@ const AllocatedBudget = ({
       <MuiModal
         open={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
-        title="Upload Invoice"
-      >
+        title="Upload Invoice">
         <form onSubmit={handleSubmit(onUpload)} className="space-y-4">
           <Controller
             name="invoiceImage"
