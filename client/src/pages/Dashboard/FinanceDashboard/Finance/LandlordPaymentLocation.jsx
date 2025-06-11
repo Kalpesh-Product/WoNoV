@@ -20,35 +20,29 @@ const LandlordPaymentLocation = () => {
   const location = useLocation();
   const { unitId } = location.state || {};
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const location = useLocation();
-  const { unitId } = location.state || {};
-  const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
-  const building = searchParams.get("location");
-  const rawUnit = searchParams.get("floor");
-  const unit = rawUnit?.replace(/[()]/g, "");
-  const buildingInitials = building
-    ? (() => {
-        const words = building.split(" ");
-        if (words[0] === "Sunteck") {
-          return "ST";
-        }
-        return `${words[0][0]}${words[words.length - 1][0]}`;
-      })()
-    : "";
+  const [selectedMonth, setSelectedMonth] = useState(null);
+
+  const building = searchParams.get("location") || "";
+  const rawUnit = searchParams.get("floor") || "";
+  const unit = rawUnit?.replace(/[()]/g, "") || "Unknown Unit";
 
   const {
-    data: landlordPayments = [],
+    data: landlordPayments = {},
     isLoading: landlordPaymentsLoading,
     isError: landlordPaymentsError,
   } = useQuery({
     queryKey: ["landlordPayments", unit],
     queryFn: async () => {
-      const response = await axios.get(
-        `/api/budget/landlord-payments?unit=${unit}`
-      );
-
-      return response.data;
+      try {
+        const response = await axios.get(
+          `/api/budget/landlord-payments?unit=${unit}`
+        );
+        return response.data || {};
+      } catch (error) {
+        console.error("Error fetching landlord payments:", error);
+        return {};
+      }
     },
   });
 
@@ -172,73 +166,26 @@ const LandlordPaymentLocation = () => {
   };
 
   const paymentColumns = [
-    {
-      field: "srno",
-      headerName: "Sr No",
-      width: 100,
-      flex: 1,
-    },
-    // {
-    //   field: "month",
-    //   headerName: "Month",
-    //   width: 120,
-    //   flex: 1,
-    // },
-    {
-      field: "expanseName",
-      headerName: "Expanse Name",
-      width: 120,
-      flex: 1,
-    },
-    {
-      field: "projectedAmount",
-      headerName: "Projected Amount (INR)",
-      width: 120,
-      flex: 1,
-    },
-    {
-      field: "actualAmount",
-      headerName: "Actual Amount (INR)",
-      width: 120,
-      flex: 1,
-    },
-    {
-      field: "dueDate",
-      headerName: "Due Date",
-      width: 120,
-      flex: 1,
-    },
-    {
-      field: "status",
-      headerName: "Status",
-      width: 120,
-      flex: 1,
-    },
+    { field: "srno", headerName: "Sr No", width: 100, flex: 1 },
+    { field: "expanseName", headerName: "Expanse Name", flex: 1 },
+    { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
+    { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
+    { field: "dueDate", headerName: "Due Date", flex: 1 },
+    { field: "status", headerName: "Status", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-            <span
-              className="text-subtitle cursor-pointer"
-              onClick={() => handleViewModal(params.data)}>
-              <MdOutlineRemoveRedEye />
-            </span>
-          </div>
-        </>
+        <div className="p-2 mb-2 flex gap-2">
+          <span
+            className="text-subtitle cursor-pointer"
+            onClick={() => handleViewModal(params.data)}>
+            <MdOutlineRemoveRedEye />
+          </span>
+        </div>
       ),
     },
   ];
-
-  const removeParanthesis = (unit) => {
-    const newunit = unit?.replace(/[()]/g, "");
-    return newunit;
-  };
-
-  const unitEntry = unitData.find((u) => removeParanthesis(u.unitNo) === unit);
-  const columns = unitEntry?.tableData?.columns || [];
-  const rows = unitEntry?.tableData?.rows || [];
 
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
@@ -246,25 +193,47 @@ const LandlordPaymentLocation = () => {
   };
 
   return (
-    <div className="p-4">
-      <WidgetSection
-        layout={1}
-        title={`Landlord Payments (${buildingInitials}- ${unit})`}
-        border>
-        <MonthWiseTable
-          dateColumn={"dueDate"}
-          data={
-            !landlordPaymentsLoading
-              ? landlordPayments.allBudgets?.map((payment, index) => ({
-                  ...payment,
-                  projectedAmount: inrFormat(payment.projectedAmount),
-                  actualAmount: inrFormat(payment.actualAmount),
-                }))
-              : []
-          }
-          columns={paymentColumns}
-        />
-      </WidgetSection>
+    <div className="flex flex-col gap-4">
+      {landlordPaymentsError ? (
+        <div className="text-red-500 text-center mb-6">
+          Failed to fetch landlord payments.
+        </div>
+      ) : landlordPaymentsLoading ? (
+        <div className="text-gray-500 text-center mb-6">
+          Loading landlord payments...
+        </div>
+      ) : payments.length === 0 ? (
+        <div className="text-gray-500 text-center mb-6">
+          No landlord payment data found for this unit.
+        </div>
+      ) : (
+        <>
+          <YearlyGraph
+            title={`(${unit}) RENT DETAILS `}
+            chartId="unit-wise-rent"
+            data={graphData}
+            options={barGraphOptions}
+            titleAmount={`INR ${inrFormat(totalUnitRent)}`}
+          />
+
+          <WidgetSection
+            layout={1}
+            title={`Landlord Payments (${unit})`}
+            TitleAmount={`INR ${inrFormat(currentMonthTotal)}`}
+            border>
+            <MonthWiseTable
+              dateColumn={"dueDate"}
+              data={payments.map((payment, index) => ({
+                ...payment,
+                projectedAmount: inrFormat(payment.projectedAmount),
+                actualAmount: inrFormat(payment.actualAmount),
+              }))}
+              columns={paymentColumns}
+              onMonthChange={setSelectedMonth} // 👈 get the month from table
+            />
+          </WidgetSection>
+        </>
+      )}
 
       {viewDetails && (
         <MuiModal
@@ -278,7 +247,7 @@ const LandlordPaymentLocation = () => {
             />
             <DetalisFormatted
               title="Department"
-              detail={viewDetails.department.name}
+              detail={viewDetails.department?.name || "—"}
             />
             <DetalisFormatted
               title="Projected Amount"

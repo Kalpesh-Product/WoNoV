@@ -184,7 +184,7 @@ const Reimbursement = () => {
         <div className="w-full space-y-4">
           <div className="flex justify-between items-center">
             <span className="text-title text-primary font-pbold mb-4 uppercase">
-              {department.name} Department - Voucher Form
+              {/* {department.name} Department - Voucher Form */}
             </span>
           </div>
 
@@ -198,8 +198,7 @@ const Reimbursement = () => {
                     size="small"
                     select
                     {...field}
-                    label="Select Location"
-                  >
+                    label="Select Location">
                     <MenuItem value="" disabled>
                       Select Building
                     </MenuItem>
@@ -399,8 +398,7 @@ const Reimbursement = () => {
                   {fields.map((item, index) => (
                     <li
                       key={index}
-                      className="flex justify-between items-center border-b py-1"
-                    >
+                      className="flex justify-between items-center border-b py-1">
                       <div className="flex flex-col">
                         <span>{item.particularName}</span>
                         <span className="font-medium text-gray-600">
@@ -411,8 +409,7 @@ const Reimbursement = () => {
                         type="button"
                         onClick={() => remove(index)}
                         className="text-red-500 hover:text-red-700"
-                        title="Delete"
-                      >
+                        title="Delete">
                         <MdDelete size={20} />
                       </button>
                     </li>
@@ -488,8 +485,7 @@ const Reimbursement = () => {
                     size="small"
                     label={label}
                     value={field.value ? "Yes" : "No"}
-                    onChange={(e) => field.onChange(e.target.value === "Yes")}
-                  >
+                    onChange={(e) => field.onChange(e.target.value === "Yes")}>
                     {["Yes", "No"].map((opt) => (
                       <MenuItem key={opt} value={opt}>
                         {opt}
@@ -509,7 +505,6 @@ const Reimbursement = () => {
           </div>
         </div>
       </PageFrame>
-
 
       <MuiModal open={openPreview} onClose={() => setOpenPreview(false)}>
         <Box className="absolute top-1/2 left-1/2 bg-white p-4 rounded shadow max-h-screen overflow-y-auto w-[53%] -translate-x-1/2 -translate-y-1/2">
