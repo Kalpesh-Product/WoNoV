@@ -42,7 +42,7 @@ const Reimbursement = () => {
   const formRef = useRef(null);
   const [openPreview, setOpenPreview] = useState(false);
   const department = usePageDepartment();
-  console.log("department value : ", department)
+  console.log("department value : ", department);
   const axios = useAxiosPrivate();
   const { control, watch, setValue, getValues, reset } = useForm({
     defaultValues: {
@@ -60,6 +60,7 @@ const Reimbursement = () => {
       reimbursementDate: null,
       particulars: [],
       invoiceNo: "",
+      gstIn: "",
     },
   });
   const { data: departmentBudget = [], isPending: isDepartmentLoading } =
@@ -88,7 +89,7 @@ const Reimbursement = () => {
       const prefix = department.name.slice(0, 3).toUpperCase();
       const number = String(reimbursedBudget + 1).padStart(3, "0");
       const generatedSNo = `${prefix}-${number}`;
-      setValue("sNo", generatedSNo);
+      setValue("srNo", generatedSNo);
     }
   }, [department?.name, reimbursedBudget, setValue]);
 
@@ -146,7 +147,7 @@ const Reimbursement = () => {
   const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
     mutationKey: ["reimbursement"],
     mutationFn: async (data) => {
-      console.log("Data ;", data)
+      console.log("Data ;", data);
       const response = await axios.post(
         `/api/budget/request-budget/${department._id}`,
         data
@@ -156,7 +157,7 @@ const Reimbursement = () => {
     onSuccess: (data) => {
       toast.success(data.message);
       setOpenPreview(false);
-      reset()
+      reset();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -183,11 +184,6 @@ const Reimbursement = () => {
           <span className="text-title text-primary font-pbold mb-4 uppercase">
             Reimbursement Form
           </span>
-          <PrimaryButton
-            title="Preview"
-            externalStyles={"w-1/4"}
-            handleSubmit={() => setOpenPreview(true)}
-          />
         </div>
 
         <div className="flex flex-col gap-4">
@@ -370,25 +366,25 @@ const Reimbursement = () => {
                 />
               )}
             />
-          </div>
-          <div className="flex flex-col justify-center items-center">
-            {/* UI-only List of Added Particulars */}
+            <div className="flex flex-col justify-center items-center">
+              {/* UI-only List of Added Particulars */}
 
-            <PrimaryButton
-              title="Add"
-              externalStyles={"w-1/4"}
-              handleSubmit={() => {
-                const { particularName, particularAmount } = watch();
-                if (particularName && particularAmount) {
-                  append({
-                    particularName: particularName,
-                    particularAmount: parseFloat(particularAmount),
-                  });
-                  setValue("particularName", "");
-                  setValue("particularAmount", "");
-                }
-              }}
-            />
+              <PrimaryButton
+                title="Add"
+                externalStyles={"w-1/4"}
+                handleSubmit={() => {
+                  const { particularName, particularAmount } = watch();
+                  if (particularName && particularAmount) {
+                    append({
+                      particularName: particularName,
+                      particularAmount: parseFloat(particularAmount),
+                    });
+                    setValue("particularName", "");
+                    setValue("particularAmount", "");
+                  }
+                }}
+              />
+            </div>
           </div>
           {fields.length > 0 && (
             <div className="mt-4 border border-gray-300 rounded p-3 bg-gray-50">
@@ -443,6 +439,13 @@ const Reimbursement = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Controller
+            name="gstIn"
+            control={control}
+            render={({ field }) => (
+              <TextField label="GSTIN" size="small" fullWidth {...field} />
+            )}
+          />
           {[
             {
               name: "invoiceAttached",
@@ -492,6 +495,13 @@ const Reimbursement = () => {
               )}
             />
           ))}
+        </div>
+        <div className="place-items-center">
+          <PrimaryButton
+            title="Preview"
+            externalStyles={"w-1/4"}
+            handleSubmit={() => setOpenPreview(true)}
+          />
         </div>
       </div>
 
