@@ -16,7 +16,7 @@ const {
 router.post("/request-budget/:departmentId", requestBudget);
 router.get("/pending-approvals", fetchPendingApprovals);
 // router.patch("/approve-budget/:budgetId", approveBudget);
-router.patch("/approve-budget", approveFinanceBudget);
+router.patch("/approve-budget", upload.single("invoice"), approveFinanceBudget);
 router.patch("/reject-budget/:budgetId", rejectBudget);
 router.patch(
   "/upload-budget-invoice/:budgetId",

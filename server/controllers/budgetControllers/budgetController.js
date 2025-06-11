@@ -33,6 +33,7 @@ const requestBudget = async (req, res, next) => {
       l1Approval,
       srNo,
       particulars,
+      gstIn,
     } = req.body;
     const { departmentId } = req.params;
 
@@ -101,6 +102,7 @@ const requestBudget = async (req, res, next) => {
       l1Approval,
       srNo,
       particulars,
+      gstIn: gstIn ? gstIn : "",
     });
 
     await newBudgetRequest.save();
