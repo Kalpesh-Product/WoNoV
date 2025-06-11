@@ -301,6 +301,146 @@ const approveBudget = async (req, res, next) => {
   }
 };
 
+const approveFinanceBudget = async (req, res, next) => {
+  const logPath = "/budget/BudgetLog";
+  const logAction = "Approve Budget";
+  const logSourceKey = "budget";
+  const { user, ip, company } = req;
+
+  try {
+    const {
+      fSrNo,
+      budgetId,
+      invoiceAttached,
+      preApproved,
+      emergencyApproval,
+      budgetApproval,
+      l1Approval,
+      modeOfPayment,
+      invoiceDate,
+      invoiceNo,
+      deliveryDate,
+      chequeNo,
+      chequeDate,
+      amount,
+      expectedDate,
+      particulars,
+    } = req.body;
+
+    const requiredFields = {
+      fSrNo,
+      particulars,
+      invoiceAttached,
+      preApproved,
+      emergencyApproval,
+      budgetApproval,
+      l1Approval,
+      modeOfPayment,
+      invoiceDate,
+      invoiceNo,
+      deliveryDate,
+      chequeNo,
+      chequeDate,
+      amount,
+      expectedDate,
+    };
+
+    // Validate missing fields
+    const missingFields = Object.entries(requiredFields)
+      .filter(([_, value]) => value === undefined || value === "")
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+      throw new CustomError(
+        `Missing required fields: ${missingFields.join(", ")}`,
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const budget = await Budget.findById({ _id: budgetId });
+    if (!budget) {
+      throw new CustomError(
+        "Budget not found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (budget.status === "Approved") {
+      throw new CustomError(
+        "Budget already approved",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    // Update approval fields
+    budget.invoiceAttached = invoiceAttached;
+    budget.preApproved = preApproved;
+    budget.emergencyApproval = emergencyApproval;
+    budget.budgetApproval = budgetApproval;
+    budget.l1Approval = l1Approval;
+    budget.status = "Approved";
+
+    budget.finance = {
+      fSrNo, // optional if you have it
+      invoiceNo,
+      invoiceDate,
+      deliveryDate,
+      chequeNo,
+      chequeDate,
+      amount,
+      expectedDate,
+      modeOfPayment,
+      particulars, // if available
+      approvedAt: new Date(),
+    };
+    await budget.save();
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: `Budget approved`,
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: budget._id,
+      changes: {
+        invoiceAttached,
+        preApproved,
+        emergencyApproval,
+        budgetApproval,
+        l1Approval,
+        modeOfPayment,
+        invoiceDate,
+        invoiceNo,
+        deliveryDate,
+        chequeNo,
+        chequeDate,
+        amount,
+        expectedDate,
+        status: "Approved",
+      },
+    });
+
+    return res.status(200).json({
+      message: "Budget approved",
+    });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+    );
+  }
+};
+
 const rejectBudget = async (req, res, next) => {
   const logPath = "budget/BudgetLog";
   const logAction = "Reject Budget";
@@ -623,4 +763,5 @@ module.exports = {
   bulkInsertBudgets,
   uploadInvoice,
   fetchPendingApprovals,
+  approveFinanceBudget,
 };
