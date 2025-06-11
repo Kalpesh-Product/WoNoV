@@ -6,7 +6,7 @@ import SecondaryButton from "../../../../components/SecondaryButton";
 import AgTable from "../../../../components/AgTable";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Country, State } from "country-state-city";
+import { Country, State, City } from "country-state-city";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import useAuth from "../../../../hooks/useAuth";
@@ -21,7 +21,10 @@ const VendorOnboard = () => {
   const { control, handleSubmit, reset } = useForm();
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState("");
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
 
@@ -33,6 +36,14 @@ const VendorOnboard = () => {
   const handleCountryChange = (countryCode) => {
     setSelectedCountry(countryCode);
     setStates(State.getStatesOfCountry(countryCode));
+  };
+  const handleStateChange = (state) => {
+    setSelectedCountry(state);
+    setCities(City.getCitiesOfState(state));
+  };
+  const handleCityChange = (city) => {
+    setSelectedCity(city);
+    // setStates(City.getCitiesOfState(state));
   };
 
   const { mutate: vendorDetails, isPending } = useMutation({
@@ -154,8 +165,6 @@ const VendorOnboard = () => {
         status: vendor.status,
       })) || [];
 
-
-  console.log("VENDOR DETALS : ", rows)
   const onSubmit = (data) => {
     vendorDetails(data);
   };
@@ -163,6 +172,10 @@ const VendorOnboard = () => {
   const handleReset = () => {
     reset();
   };
+
+  useEffect(()=>{
+    console.log("state",selectedState)
+  },[,selectedCountry,selectedState])
 
   return (
     <div className="flex flex-col gap-8">
@@ -285,6 +298,10 @@ const VendorOnboard = () => {
                       {...field}
                       fullWidth
                       displayEmpty
+                        onChange={(e) => {
+                        field.onChange(e);
+                        handleStateChange(e.target.value);
+                      }}
                       size="small"
                       disabled={!selectedCountry}
                       error={!!error}
@@ -299,20 +316,32 @@ const VendorOnboard = () => {
                   )}
                 />
 
-                 <Controller
+                <Controller
                   name="city"
                   control={control}
                   defaultValue=""
                   rules={{ required: "City is required" }}
                   render={({ field, fieldState: { error } }) => (
-                    <TextField
+                    <Select
                       {...field}
-                      size="small"
-                      label="City"
                       fullWidth
+                      displayEmpty
+                        onChange={(e) => {
+                        field.onChange(e);
+                        console.log("city",e.target.value)
+                        handleCityChange(e.target.value);
+                      }}
+                      size="small"
+                      disabled={!selectedState}
                       error={!!error}
-                      helperText={error?.message}
-                    />
+                    >
+                      <MenuItem value="">Select City</MenuItem>
+                      {cities.map((city) => (
+                        <MenuItem key={city.isoCode} value={city.name}>
+                          {city.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
                   )}
                 />
 
@@ -340,7 +369,7 @@ const VendorOnboard = () => {
                 />
 
                 <Controller
-                  name="panItNo"
+                  name="panIdNo"
                   control={control}
                   defaultValue=""
                   rules={{
@@ -361,45 +390,6 @@ const VendorOnboard = () => {
                   )}
                 />
 
-                <Controller
-                  name="gstUin"
-                  control={control}
-                  defaultValue=""
-                  rules={{
-                    pattern: {
-                      value:
-                        /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/,
-                      message: "Invalid GST UIN",
-                    },
-                  }}
-                  render={({ field, fieldState: { error } }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="GST UIN"
-                      fullWidth
-                      error={!!error}
-                      helperText={error?.message}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="registrationType"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Registration Type is required" }}
-                  render={({ field, fieldState: { error } }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Registration Type"
-                      fullWidth
-                      error={!!error}
-                      helperText={error?.message}
-                    />
-                  )}
-                />
               </div>
             </div>
             <div>
@@ -410,7 +400,7 @@ const VendorOnboard = () => {
                 </span>
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                <Controller
+                {/* <Controller
                   name="assesseeOfOtherTerritory"
                   control={control}
                   defaultValue=""
@@ -430,8 +420,8 @@ const VendorOnboard = () => {
                       <MenuItem value={false}>No</MenuItem>
                     </Select>
                   )}
-                />
-
+                /> */}
+{/* 
                 <Controller
                   name="isEcommerceOperator"
                   control={control}
@@ -452,9 +442,9 @@ const VendorOnboard = () => {
                       <MenuItem value={false}>No</MenuItem>
                     </Select>
                   )}
-                />
+                /> */}
 
-                <Controller
+                {/* <Controller
                   name="isDeemedExporter"
                   control={control}
                   defaultValue=""
@@ -474,7 +464,7 @@ const VendorOnboard = () => {
                       <MenuItem value={false}>No</MenuItem>
                     </Select>
                   )}
-                />
+                /> */}
 
                 <Controller
                   name="partyType"
@@ -496,21 +486,21 @@ const VendorOnboard = () => {
                 />
 
                 <Controller
-                  name="gstinUin"
+                  name="gstIn"
                   control={control}
                   defaultValue=""
                   rules={{
                     pattern: {
                       value:
                         /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/,
-                      message: "Invalid GSTIN UIN",
+                      message: "Invalid GST IN",
                     },
                   }}
                   render={({ field, fieldState: { error } }) => (
                     <TextField
                       {...field}
                       size="small"
-                      label="GST IN UIN"
+                      label="GST IN"
                       fullWidth
                       error={!!error}
                       helperText={error?.message}
@@ -518,29 +508,71 @@ const VendorOnboard = () => {
                   )}
                 />
 
-                <Controller
-                  name="isTransporter"
+                
+              </div>
+                {/* Section: Bank Information */}
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">
+                  Bank Information
+                </span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+            
+                    <Controller
+                  name="bankName"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "This field is required" }}
+                  rules={{ required: "Bank Name is required" }}
                   render={({ field, fieldState: { error } }) => (
-                    <Select
-                      fullWidth
-                      size="small"
+                    <TextField
                       {...field}
-                      displayEmpty
+                      size="small"
+                      label="Bank Name"
+                      fullWidth
                       error={!!error}
-                    >
-                      <MenuItem disabled value="">
-                        Is Transporter
-                      </MenuItem>
-                      <MenuItem value={true}>Yes</MenuItem>
-                      <MenuItem value={false}>No</MenuItem>
-                    </Select>
+                      helperText={error?.message}
+                    />
                   )}
                 />
+                    <Controller
+                  name="accountNo"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Account Number is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Account Number"
+                      fullWidth
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
+                />
+                    <Controller
+                  name="ifscCode"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "IFSC Code is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="IFSC Code"
+                      fullWidth
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
+                />
+                
               </div>
             </div>
+
+            
+            
+            
           </div>
 
           {/* Submit Button */}
@@ -595,22 +627,6 @@ const VendorOnboard = () => {
             <DetalisFormatted
               title="Party Type"
               detail={selectedVendor?.partyType}
-            />
-            <DetalisFormatted
-              title="Assessee Of Other Territory"
-              detail={selectedVendor?.assesseeOfOtherTerritory ? "Yes" : "No"}
-            />
-            <DetalisFormatted
-              title="Ecommerce Operator"
-              detail={selectedVendor?.isEcommerceOperator ? "Yes" : "No"}
-            />
-            <DetalisFormatted
-              title="Deemed Exporter"
-              detail={selectedVendor?.isDeemedExporter ? "Yes" : "No"}
-            />
-            <DetalisFormatted
-              title="Transporter"
-              detail={selectedVendor?.isTransporter ? "Yes" : "No"}
             />
             <DetalisFormatted title="Status" detail={selectedVendor?.status} />
           </>
