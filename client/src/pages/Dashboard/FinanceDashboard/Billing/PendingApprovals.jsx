@@ -14,8 +14,10 @@ import { toast } from "sonner";
 import { queryClient } from "../../../../main";
 import { IoCloseCircleOutline } from "react-icons/io5";
 import CloseIcon from "@mui/icons-material/Close";
+import { useNavigate } from "react-router-dom";
 
 const PendingApprovals = () => {
+  const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
   const [selectedBudget, setSelectedBudget] = useState([]);
@@ -81,6 +83,8 @@ const PendingApprovals = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => {
+        const srNumber = params.data?.sNo || "UNKNOWN";
+        console.log("PARAMS DATA :", srNumber)
         return (
           <>
             {isRejectPending ? (
@@ -103,8 +107,7 @@ const PendingApprovals = () => {
                     label: "Review",
                     onClick: () => {
                       setSelectedBudget(params.data);
-                      setModalType("review");
-                      setModalOpen(true);
+                      navigate(`/app/dashboard/finance-dashboard/billing/pending-approvals/review-request`)
                     },
                   },
                   {
@@ -132,6 +135,7 @@ const PendingApprovals = () => {
           tableTitle={"Pending Approvals"}
           data={pendingApprovals.map((item, index) => ({
             ...item,
+            sNo: item.srNo,
             srno: index + 1,
             department: item.department?.name,
             reimbursementDate: humanDate(item.reimbursementDate),

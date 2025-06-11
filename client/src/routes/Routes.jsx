@@ -331,6 +331,7 @@ import ManageTicketsHome from "../pages/Tickets/ManageTicketsHome";
 import Reimbursement from "../components/Pages/Reimbursement";
 import AddClient from "../pages/Visitors/Forms/AddClient";
 import IncomeDetails from "../pages/Dashboard/FinanceDashboard/IncomeDetails/IncomeDetails";
+import ReviewRequest from "../pages/Dashboard/FinanceDashboard/Billing/ReviewRequest";
 
 export const routes = createBrowserRouter([
   {
@@ -591,6 +592,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "pending-approvals",
                             element: <PendingApprovals />,
+                          },
+                          {
+                            path: "pending-approvals/review-request",
+                            element: <ReviewRequest />,
                           },
                         ],
                       },
