@@ -38,12 +38,12 @@ const VendorOnboard = () => {
     setStates(State.getStatesOfCountry(countryCode));
   };
   const handleStateChange = (state) => {
-    setSelectedCountry(state);
+    setSelectedState(state);
     setCities(City.getCitiesOfState(state));
   };
   const handleCityChange = (city) => {
     setSelectedCity(city);
-    // setStates(City.getCitiesOfState(state));
+    // setCities(City.getCitiesOfState(city));
   };
 
   const { mutate: vendorDetails, isPending } = useMutation({
@@ -174,6 +174,7 @@ const VendorOnboard = () => {
   };
 
   useEffect(()=>{
+    console.log("country",selectedCountry)
     console.log("state",selectedState)
   },[selectedCountry,selectedState])
 
