@@ -186,7 +186,7 @@ const HrReports = ({ title, buttonTitle, rowSelection }) => {
       <div>
         <AgTable
           columns={holdiayEvents}
-          data={rows}
+          data={[]}
           tableTitle={"Reports"}
           buttonTitle={"Export"}
           rowSelection="multiple"
