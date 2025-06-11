@@ -16,7 +16,7 @@ const BillingsLayout = () => {
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
   useEffect(() => {
     if (location.pathname === "/app/dashboard/finance-dashboard/billing") {
-      navigate("/app/dashboard/finance-dashboard/billing/invoice-creation", {
+      navigate("/app/dashboard/finance-dashboard/billing/invoice", {
         replace: true,
       });
     }
