@@ -98,7 +98,7 @@ const JobApplicationList = () => {
         search={true}
         searchColumn={"Job Position"}
         tableTitle={"Job Applications"}
-        data={rows}
+        data={[]}
         columns={leavesColumn}
       />
     </div>
