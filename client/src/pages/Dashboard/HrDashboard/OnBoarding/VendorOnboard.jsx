@@ -175,7 +175,7 @@ const VendorOnboard = () => {
 
   useEffect(()=>{
     console.log("state",selectedState)
-  },[,selectedCountry,selectedState])
+  },[selectedCountry,selectedState])
 
   return (
     <div className="flex flex-col gap-8">
