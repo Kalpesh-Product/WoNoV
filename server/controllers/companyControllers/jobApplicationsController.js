@@ -3,6 +3,7 @@ const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
 const Company = require("../../models/hr/Company");
 const csvParser = require("csv-parser");
 const { Readable } = require("stream");
+const JobApplicationSchema = require("../../models/hr/JobApplications");
 
 const bulkInsertJobApplications = async (req, res, next) => {
   try {
@@ -166,11 +167,11 @@ const getJobApplications = async (req, res, next) => {
   try {
     const companyId = req.company;
 
-    const applications = await JobApplication.find({ companyData: companyId })
+    const applications = await JobApplicationSchema.find()
       .sort({ createdAt: -1 })
       .exec();
 
-    res.status(200).json({ applications });
+    return res.status(200).json(applications);
   } catch (error) {
     next(error);
   }

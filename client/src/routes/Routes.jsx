@@ -428,6 +428,10 @@ export const routes = createBrowserRouter([
                             path: "payment-schedule",
                             element: <FrontendPayment />,
                           },
+                          {
+                            path: "reimbursement",
+                            element: <Reimbursement />,
+                          },
                         ],
                       },
                     ],
@@ -656,6 +660,10 @@ export const routes = createBrowserRouter([
                             path: "payment-schedule",
                             element: <AdminPayment />,
                           },
+                              {
+                            path: "reimbursement",
+                            element: <Reimbursement />,
+                          },
                         ],
                       },
                       {
@@ -835,6 +843,10 @@ export const routes = createBrowserRouter([
                             path: "payment-schedule",
                             element: <MaintenancePayment />,
                           },
+                          {
+                            path: "reimbursement",
+                            element: <Reimbursement />,
+                          },
                         ],
                       },
                       {
@@ -952,6 +964,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "payment-schedule",
                             element: <ItPayment />,
+                          },
+                          {
+                            path: "reimbursement",
+                            element: <Reimbursement />,
                           },
                         ],
                       },
@@ -1075,6 +1091,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "payment-schedule",
                             element: <SalesPayment />,
+                          },
+                          {
+                            path: "reimbursement",
+                            element: <Reimbursement />,
                           },
                         ],
                       },
@@ -1434,6 +1454,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "payment-schedule",
                             element: <HrPayment />,
+                          },
+                          {
+                            path: "reimbursement",
+                            element: <Reimbursement />,
                           },
                           {
                             path: "payroll",

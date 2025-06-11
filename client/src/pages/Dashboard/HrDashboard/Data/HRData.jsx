@@ -8,7 +8,6 @@ const Data = () => {
 
   const tabs = [
     { label: "Job Application List", path: "job-application-list" },
-    { label: "Reports", path: "reports" },
     { label: "Vendor", path: "vendor" },
   ];
 

@@ -7,6 +7,11 @@ const csvParser = require("csv-parser");
 const { createLog } = require("../../utils/moduleLogs");
 const Unit = require("../../models/locations/Unit");
 const { default: mongoose } = require("mongoose");
+const { PDFDocument } = require("pdf-lib");
+const {
+  handleDocumentUpload,
+  handleFileDelete,
+} = require("../../config/cloudinaryConfig");
 
 const requestBudget = async (req, res, next) => {
   const logPath = "/budget/BudgetLog";
@@ -22,32 +27,28 @@ const requestBudget = async (req, res, next) => {
       expanseType,
       paymentType,
       unitId,
-      invoiceAttached,
       preApproved,
       emergencyApproval,
       budgetApproval,
       l1Approval,
-      invoiceDate,
-      reimbursementDate,
       srNo,
       particulars,
     } = req.body;
     const { departmentId } = req.params;
 
-    if (!projectedAmount || !expanseName || !dueDate || !expanseType) {
+    if (!expanseName || !expanseType || !unitId) {
       throw new CustomError(
-        "Invalid budget data",
+        "Missing required fields",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
-    const parsedDueDate = new Date(dueDate);
-    const parsedInvoiceDate = invoiceDate ? new Date(invoiceDate) : null;
-    const parsedReimbursementDate = reimbursementDate
-      ? new Date(reimbursementDate)
-      : null;
+    const parsedDueDate =
+      expanseType !== "Reimbursement" ? new Date(dueDate) : new Date();
+    const parsedReimbursementDate =
+      expanseType === "Reimbursement" ? new Date() : null;
 
     const foundUser = await User.findOne({ _id: user })
       .select("company")
@@ -85,17 +86,15 @@ const requestBudget = async (req, res, next) => {
 
     const newBudgetRequest = new Budget({
       expanseName,
-      projectedAmount,
+      projectedAmount: projectedAmount ? projectedAmount : 0,
       department: departmentId,
       company: companyDoc._id,
       dueDate: parsedDueDate,
-      invoiceDate: parsedInvoiceDate,
       reimbursementDate: parsedReimbursementDate,
       expanseType,
       paymentType,
       unit: unitId,
       status: "Pending",
-      invoiceAttached,
       preApproved,
       emergencyApproval,
       budgetApproval,
@@ -117,7 +116,7 @@ const requestBudget = async (req, res, next) => {
       sourceKey: logSourceKey,
       sourceId: newBudgetRequest._id,
       changes: {
-        projectedAmount,
+        projectedAmount: projectedAmount ? projectedAmount : 0,
         expanseName,
         dueDate,
         expanseType,
@@ -158,13 +157,65 @@ const fetchBudget = async (req, res, next) => {
       query.department = departmentId;
     }
 
-    const allBudgets = await Budget.find(query)
+    const budgets = await Budget.find(query)
       .populate([
         { path: "department", select: "name" },
         { path: "unit", populate: { path: "building", model: "Building" } },
       ])
       .lean()
       .exec();
+
+    const allBudgets = budgets.map((budget) => {
+      let particularsTotalAmount = 0;
+      if (budget?.particulars && budget.particulars.length > 0) {
+        particularsTotalAmount = budget.particulars.reduce(
+          (acc, curr) => acc + curr.particularAmount,
+          0
+        );
+        return {
+          ...budget,
+          projectedAmount: particularsTotalAmount,
+        };
+      }
+      return {
+        ...budget,
+      };
+    });
+
+    res.status(200).json({ allBudgets });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const fetchPendingApprovals = async (req, res, next) => {
+  try {
+    const { company } = req;
+
+    const budgets = await Budget.find({ company, status: "Pending" })
+      .populate([
+        { path: "department", select: "name" },
+        { path: "unit", populate: { path: "building", model: "Building" } },
+      ])
+      .lean()
+      .exec();
+
+    const allBudgets = budgets.map((budget) => {
+      let particularsTotalAmount = 0;
+      if (budget?.particulars && budget.particulars.length > 0) {
+        particularsTotalAmount = budget.particulars.reduce(
+          (acc, curr) => acc + curr.particularAmount,
+          0
+        );
+        return {
+          ...budget,
+          projectedAmount: particularsTotalAmount,
+        };
+      }
+      return {
+        ...budget,
+      };
+    });
 
     res.status(200).json({ allBudgets });
   } catch (error) {
@@ -210,18 +261,7 @@ const approveBudget = async (req, res, next) => {
 
   try {
     const { budgetId } = req.params;
-    console.log("budget id:", budgetId);
     const { user, ip, company } = req;
-
-    const foundUser = await User.findOne({ _id: user })
-      .select("company")
-      .populate([{ path: "company", select: "companyName" }])
-      .lean()
-      .exec();
-
-    if (!foundUser) {
-      throw new CustomError("No user found", logPath, logAction, logSourceKey);
-    }
 
     const approvedBudget = await Budget.findByIdAndUpdate(
       { _id: budgetId },
@@ -261,6 +301,146 @@ const approveBudget = async (req, res, next) => {
   }
 };
 
+const approveFinanceBudget = async (req, res, next) => {
+  const logPath = "/budget/BudgetLog";
+  const logAction = "Approve Budget";
+  const logSourceKey = "budget";
+  const { user, ip, company } = req;
+
+  try {
+    const {
+      fSrNo,
+      budgetId,
+      invoiceAttached,
+      preApproved,
+      emergencyApproval,
+      budgetApproval,
+      l1Approval,
+      modeOfPayment,
+      invoiceDate,
+      invoiceNo,
+      deliveryDate,
+      chequeNo,
+      chequeDate,
+      amount,
+      expectedDate,
+      particulars,
+    } = req.body;
+
+    const requiredFields = {
+      fSrNo,
+      particulars,
+      invoiceAttached,
+      preApproved,
+      emergencyApproval,
+      budgetApproval,
+      l1Approval,
+      modeOfPayment,
+      invoiceDate,
+      invoiceNo,
+      deliveryDate,
+      chequeNo,
+      chequeDate,
+      amount,
+      expectedDate,
+    };
+
+    // Validate missing fields
+    const missingFields = Object.entries(requiredFields)
+      .filter(([_, value]) => value === undefined || value === "")
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+      throw new CustomError(
+        `Missing required fields: ${missingFields.join(", ")}`,
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const budget = await Budget.findById({ _id: budgetId });
+    if (!budget) {
+      throw new CustomError(
+        "Budget not found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (budget.status === "Approved") {
+      throw new CustomError(
+        "Budget already approved",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    // Update approval fields
+    budget.invoiceAttached = invoiceAttached;
+    budget.preApproved = preApproved;
+    budget.emergencyApproval = emergencyApproval;
+    budget.budgetApproval = budgetApproval;
+    budget.l1Approval = l1Approval;
+    budget.status = "Approved";
+
+    budget.finance = {
+      fSrNo, // optional if you have it
+      invoiceNo,
+      invoiceDate,
+      deliveryDate,
+      chequeNo,
+      chequeDate,
+      amount,
+      expectedDate,
+      modeOfPayment,
+      particulars, // if available
+      approvedAt: new Date(),
+    };
+    await budget.save();
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: `Budget approved`,
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: budget._id,
+      changes: {
+        invoiceAttached,
+        preApproved,
+        emergencyApproval,
+        budgetApproval,
+        l1Approval,
+        modeOfPayment,
+        invoiceDate,
+        invoiceNo,
+        deliveryDate,
+        chequeNo,
+        chequeDate,
+        amount,
+        expectedDate,
+        status: "Approved",
+      },
+    });
+
+    return res.status(200).json({
+      message: "Budget approved",
+    });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+    );
+  }
+};
+
 const rejectBudget = async (req, res, next) => {
   const logPath = "budget/BudgetLog";
   const logAction = "Reject Budget";
@@ -269,16 +449,6 @@ const rejectBudget = async (req, res, next) => {
   try {
     const { budgetId } = req.params;
     const { user, ip, company } = req;
-
-    const foundUser = await User.findOne({ _id: user })
-      .select("company")
-      .populate([{ path: "company", select: "companyName" }])
-      .lean()
-      .exec();
-
-    if (!foundUser) {
-      throw new CustomError("No user found", logPath, logAction, logSourceKey);
-    }
 
     const rejectedBudget = await Budget.findByIdAndUpdate(
       { _id: budgetId },
@@ -315,6 +485,151 @@ const rejectBudget = async (req, res, next) => {
         ? error
         : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
     );
+  }
+};
+
+const uploadInvoice = async (req, res, next) => {
+  const logPath = "budget/BudgetLog";
+  const logAction = "Upload Invoice";
+  const logSourceKey = "budget";
+  const { departmentName } = req.body;
+  const file = req.file;
+  const { user, ip, company } = req;
+  const { budgetId } = req.params;
+
+  try {
+    const allowedMimeTypes = [
+      "application/pdf",
+      "application/msword", // .doc
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+    ];
+
+    if (!mongoose.Types.ObjectId.isValid(budgetId)) {
+      throw new CustomError(
+        "Invalid budget Id provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new CustomError(
+        "Invalid file type. Allowed types: PDF, DOC, DOCX",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const foundCompany = await Company.findById({ _id: company });
+
+    if (!foundCompany) {
+      throw new CustomError(
+        "Company not found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const foundBudget = await Budget.findById({ _id: budgetId });
+
+    if (!foundBudget) {
+      throw new CustomError(
+        "No such budget found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (foundBudget.invoice && foundBudget.invoice.id) {
+      await handleFileDelete(foundBudget.invoice.id);
+    }
+
+    let processedBuffer = file.buffer;
+    const originalFilename = file.originalname;
+
+    // Process PDF: set document title
+    if (file.mimetype === "application/pdf") {
+      const pdfDoc = await PDFDocument.load(file.buffer);
+      pdfDoc.setTitle(
+        file.originalname ? file.originalname.split(".")[0] : "Untitled"
+      );
+      processedBuffer = await pdfDoc.save();
+    }
+
+    const response = await handleDocumentUpload(
+      processedBuffer,
+      `${foundCompany.companyName}/departments/${departmentName}/budget/invoice`,
+      originalFilename
+    );
+
+    if (!response.public_id) {
+      throw new CustomError(
+        "Failed to upload document",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const updatedBudget = await Budget.findOneAndUpdate(
+      {
+        _id: budgetId,
+      },
+      {
+        $set: {
+          invoice: {
+            name: invoiceName,
+            link: response.secure_url,
+            id: response.public_id,
+            date: new Date(),
+          },
+        },
+        invoiceAttached: true,
+      },
+      { new: true }
+    ).exec();
+
+    if (!updatedBudget) {
+      throw new CustomError(
+        "Failed to update company document field",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: `Invoice uploaded successfully for ${departmentName} department`,
+      status: "Success",
+      user: user,
+      ip: ip,
+      company: company,
+      sourceKey: logSourceKey,
+      sourceId: updatedBudget._id,
+      changes: {
+        invoiceName: invoiceName,
+        invoiceLink: response.secure_url,
+        invoiceId: response.public_id,
+      },
+    });
+
+    return res.status(200).json({
+      message: `Invoice uploaded successfully for ${departmentName} department`,
+    });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
   }
 };
 
@@ -446,4 +761,7 @@ module.exports = {
   fetchBudget,
   fetchLandlordPayments,
   bulkInsertBudgets,
+  uploadInvoice,
+  fetchPendingApprovals,
+  approveFinanceBudget,
 };
