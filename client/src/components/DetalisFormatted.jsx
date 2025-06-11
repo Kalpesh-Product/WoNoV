@@ -4,6 +4,7 @@ const DetalisFormatted = ({ title, detail, gap, upperCase = false }) => {
       <span className={`text-content flex items-start w-full`}>
         <span className={`${gap ? gap : "w-[50%]"}`}>{title}</span>
         <span>:</span>
+        
         <span
           className={`${
             upperCase ? "uppercase" : ""

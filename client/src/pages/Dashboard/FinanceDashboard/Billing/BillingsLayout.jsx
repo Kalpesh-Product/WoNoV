@@ -8,8 +8,8 @@ const BillingsLayout = () => {
 
   // Map routes to tabs
   const tabs = [
-    { label: "Invoice Creation", path: "invoice-creation" },
-    { label: "Voucher Creation", path: "voucher-creation" },
+    { label: "Invoice", path: "invoice" },
+    { label: "Voucher", path: "voucher" },
     { label: "Pending Approvals", path: "pending-approvals" },
   ];
 

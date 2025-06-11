@@ -262,28 +262,7 @@ const FinanceDashboard = () => {
   //----------INCOME-EXPENSE GRAPH conversion------------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
-  const incomeExpenseData = [
-    ...incomeData,
-    // {
-    //   name: "Income",
-    //   group: "FY 2025-26",
-    //   data: [
-    //     1650000, // Jan - slight growth
-    //     1720000, // Feb
-    //     1850000, // Mar
-    //     2000000, // Apr
-    //     2200000, // May
-    //     2400000, // Jun
-    //     2600000, // Jul
-    //     2550000, // Aug
-    //     2450000, // Sep
-    //     2800000, // Oct
-    //     3000000, // Nov
-    //     3300000, // Dec
-    //   ],
-    // },
-    ...expenseData,
-  ];
+  const incomeExpenseData = [...incomeData, ...expenseData];
 
   const incomeExpenseOptions = {
     chart: {
@@ -396,12 +375,25 @@ const FinanceDashboard = () => {
     cardTitle: "Expense",
     timePeriod: "FY 2024-25",
     descriptionData: [
-      { title: "March 2025", value: `INR ${inrFormat(lastMonthData)}` },
-      { title: "Annual Average", value: `INR ${inrFormat(totalExpense / 12)}` },
-      { title: "Overall", value: `INR ${inrFormat(totalExpense)}` },
+      {
+        title: "March 2025",
+        value: `INR ${inrFormat(lastMonthData)}`,
+        route: "monthly-profit-loss",
+      },
+      {
+        title: "Annual Average",
+        value: `INR ${inrFormat(totalExpense / 12)}`,
+        route: "annual-average-profit-loss",
+      },
+      {
+        title: "Overall",
+        value: `INR ${inrFormat(totalExpense)}`,
+        route: "overall-profit-loss",
+      },
       {
         title: "Per Sq. Ft.",
         value: `INR ${inrFormat(totalExpense / totalSqft)}`,
+        route: "sqft-wise-data",
       },
     ],
   };
@@ -413,20 +405,24 @@ const FinanceDashboard = () => {
       {
         title: "March 2025",
         value: `INR ${inrFormat(lastMonthDataIncome - lastMonthData)}`,
+        route: "monthly-profit-loss",
       },
       {
         title: "Annual Average",
         value: `INR ${inrFormat((totalIncomeAmount - totalExpense) / 12)}`,
+        route: "annual-average-profit-loss",
       },
       {
         title: "Overall",
         value: `INR ${inrFormat(totalIncomeAmount - totalExpense)}`,
+        route: "overall-profit-loss",
       },
       {
         title: "Per Sq. Ft.",
         value: `INR ${inrFormat(
           (totalIncomeAmount - totalExpense) / totalSqft
         )}`,
+        route: "sqft-wise-data",
       },
     ],
   };

@@ -8,12 +8,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import {
-  FormControl,
-  MenuItem,
-  Select,
-  TextField,
-} from "@mui/material";
+import { FormControl, MenuItem, Select, TextField } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { toast } from "sonner";
@@ -24,7 +19,7 @@ import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 
 const DeptWiseBudgetDetails = () => {
   const axios = useAxiosPrivate();
-  const location = useLocation()
+  const location = useLocation();
   const [openModal, setOpenModal] = useState(false);
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -36,7 +31,7 @@ const DeptWiseBudgetDetails = () => {
   });
   const deptId = location.state?.deptId;
   const deptName = location.state?.deptName;
-console.log("dEPST",deptName)
+  console.log("dEPST", deptName);
   const { data: departmentBudget = [], isPending: isBudgetLoading } = useQuery({
     queryKey: ["departmentBudget"],
     queryFn: async () => {
@@ -52,9 +47,6 @@ console.log("dEPST",deptName)
       }
     },
   });
-
-
-
 
   // Transform data into the required format
   const groupedData = departmentBudget.reduce((acc, item) => {
@@ -88,7 +80,7 @@ console.log("dEPST",deptName)
       department: item.department,
       expanseType: item.expanseType,
       projectedAmount: item.projectedAmount,
-      actualAmount: inrFormat(item?.actualAmount || 0), 
+      actualAmount: inrFormat(item?.actualAmount || 0),
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       status: item.status,
     });
@@ -102,9 +94,9 @@ console.log("dEPST",deptName)
       const transoformedRows = data.tableData.rows.map((row, index) => ({
         ...row,
         srNo: index + 1,
-        projectedAmount: Number(
-          row.projectedAmount
-        ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+        projectedAmount: Number(row.projectedAmount).toLocaleString("en-IN", {
+          maximumFractionDigits: 0,
+        }),
       }));
       const transformedCols = [
         { field: "srNo", headerName: "SR NO", flex: 1 },
@@ -135,7 +127,6 @@ console.log("dEPST",deptName)
   const [isReady, setIsReady] = useState(false);
 
   // const [openModal, setOpenModal] = useState(false);
-
 
   const budgetBar = useMemo(() => {
     if (isBudgetLoading || !Array.isArray(departmentBudget)) return null;
@@ -206,7 +197,7 @@ console.log("dEPST",deptName)
       // max: 3000000,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => `${(val / 100000)}`,
+        formatter: (val) => `${val / 100000}`,
       },
     },
     fill: {
@@ -256,7 +247,7 @@ console.log("dEPST",deptName)
         titleAmount={`INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`}
       />
 
-      <div>
+      {/* <div>
         <WidgetSection layout={3} padding>
           <DataCard
             data={"INR 50,00,000"}
@@ -297,14 +288,13 @@ console.log("dEPST",deptName)
           padding="px-5 py-2"
           fontSize="text-base"
         />
-      </div>
+      </div> */}
 
       <AllocatedBudget financialData={financialData} />
       <MuiModal
         title="Request Budget"
         open={openModal}
-        onClose={() => setOpenModal(false)}
-      >
+        onClose={() => setOpenModal(false)}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Expense Name */}
           <Controller

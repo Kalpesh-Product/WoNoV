@@ -266,17 +266,7 @@ const AdminMonthlyInvoiceReports = () => {
         tableTitle={"Monthly Invoice Reports"}
         buttonTitle={"Add Invoice"}
         data={[
-          ...invoiceData.map((asset, index) => ({
-            id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price: inrFormat(asset.price),
-            quantity: asset.quantity,
-            purchaseDate: dayjs(new Date(asset.purchaseDate)).format("DD-MM-YYYY"),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
-          })),
+          
         ]}
         columns={invoiceColumns}
         handleClick={handleAddAsset}

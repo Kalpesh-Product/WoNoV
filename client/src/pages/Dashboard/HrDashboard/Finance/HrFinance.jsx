@@ -9,6 +9,7 @@ const HrFinance = () => {
   // Map routes to tabs
   const tabs = [
     { label: "Budget", path: "budget" },
+    { label: "Reimbursement", path: "reimbursement" },
     { label: "Payment Schedule", path: "payment-schedule" },
     { label: "Payroll", path: "payroll" },
   ];

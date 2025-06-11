@@ -139,39 +139,16 @@ const InvoiceCreation = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-between items-center mb-6">
-        <span className="text-primary text-title font-pmedium uppercase">Templates</span>
-        <PrimaryButton title={"Add Template"} handleSubmit={() => setViewAddTemplateModal(true)} />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {templateData.map((template, index) => (
-          <div
-            key={index}
-            onClick={() => navigate(`${template.id}`)}
-            className="bg-white shadow-md rounded-lg overflow-hidden border cursor-pointer"
-          >
-            <div className="h-48">
-              <img
-                src={template.imgSrc}
-                alt="Template"
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div className="p-4">
-              <h2 className="widgetTitle font-semibold font-pregular">{template.title}</h2>
-              <p className="text-content text-gray-500 font-pregular">{template.date}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
       <div>
         <AgTable
           data={rows}
           columns={invoiceCreationColumns}
           search
-          tableTitle={"Invoice Creation"}
+          tableTitle={"Invoice"}
+          buttonTitle={"Add Invoice"}
+          handleClick={() => {
+            setViewAddTemplateModal(true);
+          }}
         />
       </div>
 
@@ -186,7 +163,10 @@ const InvoiceCreation = () => {
           title="Invoice Detail"
         >
           <div className="space-y-3">
-            <DetalisFormatted title="Invoice Name" detail={viewDetails.invoiceName} />
+            <DetalisFormatted
+              title="Invoice Name"
+              detail={viewDetails.invoiceName}
+            />
             <DetalisFormatted title="KRAs" detail={viewDetails.date} />
           </div>
         </MuiModal>
@@ -209,11 +189,7 @@ const InvoiceCreation = () => {
               name="title"
               control={control}
               render={({ field }) => (
-                <TextField
-                  label="Template Title"
-                  fullWidth
-                  {...field}
-                />
+                <TextField label="Template Title" fullWidth {...field} />
               )}
             />
 
@@ -240,7 +216,11 @@ const InvoiceCreation = () => {
                     InputProps={{
                       readOnly: true,
                       endAdornment: (
-                        <IconButton color="primary" component="label" htmlFor="image-upload">
+                        <IconButton
+                          color="primary"
+                          component="label"
+                          htmlFor="image-upload"
+                        >
                           <LuImageUp />
                         </IconButton>
                       ),
@@ -264,10 +244,13 @@ const InvoiceCreation = () => {
                 />
               )}
             />
-            <PrimaryButton title="Add Template" handleSubmit={() => {
-              toast.success("Added template successfully")
-              setViewAddTemplateModal(false)
-            }} />
+            <PrimaryButton
+              title="Add Template"
+              handleSubmit={() => {
+                toast.success("Added template successfully");
+                setViewAddTemplateModal(false);
+              }}
+            />
           </form>
         </MuiModal>
       )}

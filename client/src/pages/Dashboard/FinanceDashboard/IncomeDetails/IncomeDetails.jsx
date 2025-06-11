@@ -1,13 +1,13 @@
-import BarGraph from "../../../components/graphs/BarGraph";
-import WidgetSection from "../../../components/WidgetSection";
-import { inrFormat } from "../../../utils/currencyFormat";
-import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import BarGraph from "../../../../components/graphs/BarGraph";
+import WidgetSection from "../../../../components/WidgetSection";
+import { inrFormat } from "../../../../utils/currencyFormat";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { CircularProgress } from "@mui/material";
-import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
+import MonthWiseAgTable from "../../../../components/Tables/MonthWiseAgTable";
 
-const TotalRevenue = () => {
+const IncomeDetails = () => {
   const axios = useAxiosPrivate();
   const [selectedYear, setSelectedYear] = useState("2024-25");
 
@@ -39,24 +39,13 @@ const TotalRevenue = () => {
   ];
 
   const financialDataForTable = months.map((monthLabel, i) => {
-    // const revenue = isTotalLoading
-    //   ? []
-    //   : totalRevenue.map((category) => ({
-    //       vertical: category.name,
-    //       revenue: inrFormat(category.data["2024-25"][i]),
-    //       percentage: `${100}%`,
-    //     }));
-
     const revenue = isTotalLoading
       ? []
-      : totalRevenue.map((category) => {
-          const value = category.data?.["2024-25"]?.[i] ?? 0;
-          return {
-            vertical: category.name,
-            revenue: inrFormat(value),
-            percentage: "100%",
-          };
-        });
+      : totalRevenue.map((category) => ({
+          vertical: category.name,
+          revenue: inrFormat(category.data["2024-25"][i]),
+          percentage: `${100}%`,
+        }));
 
     return {
       month: monthLabel,
@@ -152,7 +141,7 @@ const TotalRevenue = () => {
   }, 0);
 
   return (
-    <div className="flex flex-col gap-4 ">
+    <div className="flex flex-col gap-4 p-4">
       {isTotalLoading ? (
         <div className="flex h-72 justify-center items-center">
           <CircularProgress />
@@ -162,7 +151,8 @@ const TotalRevenue = () => {
           layout={1}
           title={"Annual Monthly Mix Revenues FY 2024-25"}
           border
-          TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}>
+          TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}
+        >
           <BarGraph height={400} data={normalizedData} options={options} />
         </WidgetSection>
       )}
@@ -272,4 +262,4 @@ const TotalRevenue = () => {
   );
 };
 
-export default TotalRevenue;
+export default IncomeDetails;
