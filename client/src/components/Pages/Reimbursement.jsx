@@ -47,7 +47,7 @@ const Reimbursement = () => {
   const { control, watch, setValue, getValues, reset } = useForm({
     defaultValues: {
       department: "",
-      sNo: "001",
+      srNo: "001",
       expanseName: "",
       expanseType: "Reimbursement",
       unitId: "",
@@ -130,10 +130,6 @@ const Reimbursement = () => {
     ).entries()
   );
 
-  useEffect(() => {
-    console.log("unit", selectedUnitId);
-  }, [selectedUnit]);
-
   const { fields, append, remove } = useFieldArray({
     control,
     name: "particulars",
@@ -150,6 +146,7 @@ const Reimbursement = () => {
   const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
     mutationKey: ["reimbursement"],
     mutationFn: async (data) => {
+      console.log("Data ;", data)
       const response = await axios.post(
         `/api/budget/request-budget/${department._id}`,
         data
@@ -272,7 +269,7 @@ const Reimbursement = () => {
               label="Department"
               value={department?.name || ""}
             />
-            {["sNo"].map((fieldName) => (
+            {["srNo"].map((fieldName) => (
               <Controller
                 key={fieldName}
                 name={fieldName}
