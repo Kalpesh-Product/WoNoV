@@ -5,18 +5,19 @@ import { useState } from "react";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
+import { inrFormat } from "../../../../utils/currencyFormat";
 
 const LandlordPayments = () => {
   const axios = useAxiosPrivate();
 
-  const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+  const { data: hrFinance = [], isPending: isHrLoading, isError } = useQuery({
     queryKey: ["allBudgets"],
     queryFn: async () => {
       try {
         const response = await axios.get(
           `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`
         );
-        const budgets = response.data.allBudgets;
+        const budgets = response.data?.allBudgets;
         return Array.isArray(budgets) ? budgets : [];
       } catch (error) {
         console.error("Error fetching budget:", error);
@@ -28,65 +29,50 @@ const LandlordPayments = () => {
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
   const yearCategories = {
     "FY 2024-25": [
-      "Apr-24",
-      "May-24",
-      "Jun-24",
-      "Jul-24",
-      "Aug-24",
-      "Sep-24",
-      "Oct-24",
-      "Nov-24",
-      "Dec-24",
-      "Jan-25",
-      "Feb-25",
-      "Mar-25",
+      "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
+      "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25",
     ],
     "FY 2025-26": [
-      "Apr-25",
-      "May-25",
-      "Jun-25",
-      "Jul-25",
-      "Aug-25",
-      "Sep-25",
-      "Oct-25",
-      "Nov-25",
-      "Dec-25",
-      "Jan-26",
-      "Feb-26",
-      "Mar-26",
+      "Apr-25", "May-25", "Jun-25", "Jul-25", "Aug-25", "Sep-25",
+      "Oct-25", "Nov-25", "Dec-25", "Jan-26", "Feb-26", "Mar-26",
     ],
   };
 
-  // Filter for Monthly Rent
-  const landLordData = hrFinance.filter(
-    (item) => item.expanseType === "Monthly Rent"
-  );
+  // Default values to avoid rendering issues
+  let graphData = [];
+  let totalRent = 0;
 
-  // Group by month
-  const monthlyRentMap = {};
-  landLordData.forEach((item) => {
-    if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+  if (Array.isArray(hrFinance) && hrFinance.length > 0) {
+    const landLordData = hrFinance.filter(
+      (item) => item.expanseType === "Monthly Rent"
+    );
 
-    const monthKey = dayjs(item.dueDate).format("MMM-YY");
-    if (excludedMonths.includes(monthKey)) return;
+    // Group by month
+    const monthlyRentMap = {};
+    landLordData.forEach((item) => {
+      if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
 
-    monthlyRentMap[monthKey] =
-      (monthlyRentMap[monthKey] || 0) + (item.actualAmount || 0);
-  });
+      const monthKey = dayjs(item.dueDate).format("MMM-YY");
+      if (excludedMonths.includes(monthKey)) return;
 
-  // Structure for YearlyGraph
-  const graphData = Object.entries(yearCategories).map(
-    ([fiscalYear, months]) => ({
-      name: "Monthly Rent",
-      group: fiscalYear,
-      data: months.map((month) => monthlyRentMap[month] || 0),
-    })
-  );
+      monthlyRentMap[monthKey] =
+        (monthlyRentMap[monthKey] || 0) + (item.actualAmount || 0);
+    });
 
-  const totalRent = landLordData.reduce(
-    (sum, item) => sum + (item.actualAmount || 0),
-    0
-  );
+    // Build graph data per fiscal year
+    graphData = Object.entries(yearCategories).map(
+      ([fiscalYear, months]) => ({
+        name: "Monthly Rent",
+        group: fiscalYear,
+        data: months.map((month) => monthlyRentMap[month] || 0),
+      })
+    );
+
+    totalRent = landLordData.reduce(
+      (sum, item) => sum + (item.actualAmount || 0),
+      0
+    );
+  }
 
   const barGraphOptions = {
     chart: {
@@ -99,14 +85,23 @@ const LandlordPayments = () => {
       bar: {
         horizontal: false,
         borderRadius: 4,
-        columnWidth: "60%",
+        columnWidth: "40%",
+        dataLabels: {
+          position: "top",
+        },
       },
     },
     dataLabels: {
-      enabled: false,
+      enabled: true,
+      formatter: (val) => inrFormat(val),
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+      offsetY: -24,
     },
     xaxis: {
-      categories: [], // Will be injected by YearlyGraph
+      categories: [], // Injected via YearlyGraph
     },
     yaxis: {
       labels: {
@@ -124,18 +119,40 @@ const LandlordPayments = () => {
         formatter: (val) => `INR ${val.toLocaleString("en-IN")}`,
       },
     },
-    colors: ["#4E6AF3"], // Blue for rent
+    colors: ["#54C4A7"],
+    noData: {
+      text: "No data available",
+      align: "center",
+      verticalAlign: "middle",
+      style: {
+        color: "#888",
+        fontSize: "14px",
+        fontFamily: "Poppins-Regular",
+      },
+    },
   };
 
   return (
     <div className="flex flex-col gap-4">
-      <YearlyGraph
-        title="LANDLORD MONTHLY RENT"
-        chartId="landlord-rent-bar"
-        data={graphData}
-        options={barGraphOptions}
-        TitleAmountGreen={`Total INR ${totalRent.toLocaleString("en-IN")}`}
-      />
+      {isError ? (
+        <div className="text-red-500 text-center">Failed to load landlord payments.</div>
+      ) : isHrLoading ? (
+        <div className="text-center text-gray-500">Loading landlord payments...</div>
+      ) : graphData.length === 0 || graphData.every((g) => g.data.every((val) => val === 0)) ? (
+        <WidgetSection title="LANDLORD MONTHLY RENT" border>
+          <div className="text-center text-gray-500 py-8">
+            No rent payment data available.
+          </div>
+        </WidgetSection>
+      ) : (
+        <YearlyGraph
+          title="LANDLORD MONTHLY RENT"
+          chartId="landlord-rent-bar"
+          data={graphData}
+          options={barGraphOptions}
+          titleAmount={`INR ${inrFormat(totalRent)}`}
+        />
+      )}
 
       <FilterUnits />
     </div>
