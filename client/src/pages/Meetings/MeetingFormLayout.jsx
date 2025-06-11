@@ -327,18 +327,16 @@ const MeetingFormLayout = () => {
       <MuiModal
         open={open}
         onClose={() => setOpen(false)}
-        title={`${meetingType} Meeting`}>
+        title={`${meetingType} Meeting`}
+      >
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col w-full gap-4">
-            <div className="w-full flex gap-8 justify-center items-center">
-              <span className="text-content">
-                 Date : {humanDate(startDate)}
-              </span>
-            </div>
+          className="flex flex-col w-full gap-4"
+        >
+          <div className="w-full flex gap-8 justify-center items-center">
+            <span className="text-content">Date : {humanDate(startDate)}</span>
+          </div>
           <div className="grid grid-cols-2 gap-8 px-2 pb-4 mb-4 border-b-default border-black">
-            
-            
             <div className="w-fit flex gap-8 items-center">
               <span className="text-content">Location : {locationName}</span>
             </div>
@@ -360,7 +358,8 @@ const MeetingFormLayout = () => {
                     select
                     fullWidth
                     disabled={!showExternalType}
-                    size="small">
+                    size="small"
+                  >
                     <MenuItem value="" disabled>
                       Select a Meeting Type
                     </MenuItem>
@@ -439,7 +438,8 @@ const MeetingFormLayout = () => {
                           label="Company"
                           select
                           size="small"
-                          fullWidth>
+                          fullWidth
+                        >
                           <MenuItem value="" disabled>
                             Select a company
                           </MenuItem>
@@ -592,7 +592,8 @@ const MeetingFormLayout = () => {
                         select
                         label="Select External Company"
                         size="small"
-                        fullWidth>
+                        fullWidth
+                      >
                         <MenuItem value="" disabled>
                           Select a company
                         </MenuItem>
@@ -601,7 +602,8 @@ const MeetingFormLayout = () => {
                           .map((user) => (
                             <MenuItem
                               key={user._id}
-                              value={user.visitorCompany?._id}>
+                              value={user.visitorCompany?._id}
+                            >
                               {user.visitorCompany?.companyName ?? ""}
                             </MenuItem>
                           ))}
@@ -680,12 +682,51 @@ const MeetingFormLayout = () => {
                   </React.Fragment>
                 ))}
 
-                <PrimaryButton
-                  title="Add Participant"
-                  type="button"
-                  handleSubmit={() => append({ name: "", mobileNumber: "" })}
-                />
+                <div className="col-span-2 place-items-center">
+                  <PrimaryButton
+                    title="Add Participant"
+                    type="button"
+                    handleSubmit={() => append({ name: "", mobileNumber: "" })}
+                  />
+                </div>
               </>
+            )}
+            {meetingType === "External" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-2 col-span-2">
+                <Controller
+                  name="paymentAmount"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Payment Amount"
+                      fullWidth
+                      onChange={(e) => field.onChange(e.target.value)}
+                      value={field.value}
+                    />
+                  )}
+                />
+                <Controller
+                  name="paymentStatus"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Payment Status"
+                      select
+                      fullWidth
+                    >
+                      <MenuItem value="" disabled>
+                        Select Payment Status
+                      </MenuItem>
+                      <MenuItem value="paid">Paid</MenuItem>
+                      <MenuItem value="unpaid">Unpaid</MenuItem>
+                    </TextField>
+                  )}
+                />
+              </div>
             )}
 
             {/* New End */}
