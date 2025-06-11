@@ -28,12 +28,32 @@ const LandlordPayments = () => {
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
   const yearCategories = {
     "FY 2024-25": [
-      "Apr-24", "May-24", "Jun-24", "Jul-24", "Aug-24", "Sep-24",
-      "Oct-24", "Nov-24", "Dec-24", "Jan-25", "Feb-25", "Mar-25",
+      "Apr-24",
+      "May-24",
+      "Jun-24",
+      "Jul-24",
+      "Aug-24",
+      "Sep-24",
+      "Oct-24",
+      "Nov-24",
+      "Dec-24",
+      "Jan-25",
+      "Feb-25",
+      "Mar-25",
     ],
     "FY 2025-26": [
-      "Apr-25", "May-25", "Jun-25", "Jul-25", "Aug-25", "Sep-25",
-      "Oct-25", "Nov-25", "Dec-25", "Jan-26", "Feb-26", "Mar-26",
+      "Apr-25",
+      "May-25",
+      "Jun-25",
+      "Jul-25",
+      "Aug-25",
+      "Sep-25",
+      "Oct-25",
+      "Nov-25",
+      "Dec-25",
+      "Jan-26",
+      "Feb-26",
+      "Mar-26",
     ],
   };
 
@@ -50,15 +70,18 @@ const LandlordPayments = () => {
     const monthKey = dayjs(item.dueDate).format("MMM-YY");
     if (excludedMonths.includes(monthKey)) return;
 
-    monthlyRentMap[monthKey] = (monthlyRentMap[monthKey] || 0) + (item.actualAmount || 0);
+    monthlyRentMap[monthKey] =
+      (monthlyRentMap[monthKey] || 0) + (item.actualAmount || 0);
   });
 
   // Structure for YearlyGraph
-  const graphData = Object.entries(yearCategories).map(([fiscalYear, months]) => ({
-    name: "Monthly Rent",
-    group: fiscalYear,
-    data: months.map((month) => monthlyRentMap[month] || 0),
-  }));
+  const graphData = Object.entries(yearCategories).map(
+    ([fiscalYear, months]) => ({
+      name: "Monthly Rent",
+      group: fiscalYear,
+      data: months.map((month) => monthlyRentMap[month] || 0),
+    })
+  );
 
   const totalRent = landLordData.reduce(
     (sum, item) => sum + (item.actualAmount || 0),
@@ -105,20 +128,14 @@ const LandlordPayments = () => {
   };
 
   return (
-    <div className="flex flex-col gap-8">
-      <WidgetSection
-        titleLabel={"FY 2024-25"}
-        title={"Landlord Payments".toUpperCase()}
-        border
-      >
-        <YearlyGraph
-          title="Landlord Monthly Rent"
-          chartId="landlord-rent-bar"
-          data={graphData}
-          options={barGraphOptions}
-          TitleAmountGreen={`Total INR ${totalRent.toLocaleString("en-IN")}`}
-        />
-      </WidgetSection>
+    <div className="flex flex-col gap-4">
+      <YearlyGraph
+        title="LANDLORD MONTHLY RENT"
+        chartId="landlord-rent-bar"
+        data={graphData}
+        options={barGraphOptions}
+        TitleAmountGreen={`Total INR ${totalRent.toLocaleString("en-IN")}`}
+      />
 
       <FilterUnits />
     </div>
