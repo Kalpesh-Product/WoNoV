@@ -12,6 +12,7 @@ const {
   handleDocumentUpload,
   handleFileDelete,
 } = require("../../config/cloudinaryConfig");
+const Department = require("../../models/Departments");
 
 const requestBudget = async (req, res, next) => {
   const logPath = "/budget/BudgetLog";
@@ -34,12 +35,23 @@ const requestBudget = async (req, res, next) => {
       srNo,
       particulars,
       gstIn,
+      departmentId,
     } = req.body;
-    const { departmentId } = req.params;
+    // const { departmentId } = req.params;
 
     if (!expanseName || !expanseType || !unitId) {
       throw new CustomError(
         "Missing required fields",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+    console.log("srNo", srNo);
+
+    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+      throw new CustomError(
+        "Invalid department Id provided",
         logPath,
         logAction,
         logSourceKey
@@ -51,45 +63,32 @@ const requestBudget = async (req, res, next) => {
     const parsedReimbursementDate =
       expanseType === "Reimbursement" ? new Date() : null;
 
-    const foundUser = await User.findOne({ _id: user })
-      .select("company")
+    const foundCompany = await Company.findById({
+      _id: company,
+    })
       .lean()
       .exec();
-    if (!foundUser) {
-      throw new CustomError("Unauthorized", logPath, logAction, logSourceKey);
-    }
 
-    const companyDoc = await Company.findOne({ _id: foundUser.company })
-      .select("selectedDepartments")
-      .populate([{ path: "selectedDepartments.department", select: "name" }])
+    const departmentExists = await Department.findById({
+      _id: departmentId,
+    })
       .lean()
       .exec();
-    if (!companyDoc) {
-      throw new CustomError(
-        "Company not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
 
-    const departmentExists = companyDoc.selectedDepartments.find(
-      (dept) => dept.department._id.toString() === departmentId
-    );
     if (!departmentExists) {
       throw new CustomError(
-        "You haven't selected this department",
+        "Department not found",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
-    const newBudgetRequest = new Budget({
+    const budgetData = {
       expanseName,
-      projectedAmount: projectedAmount ? projectedAmount : 0,
+      projectedAmount: projectedAmount || 0,
       department: departmentId,
-      company: companyDoc._id,
+      company: company,
       dueDate: parsedDueDate,
       reimbursementDate: parsedReimbursementDate,
       expanseType,
@@ -102,33 +101,80 @@ const requestBudget = async (req, res, next) => {
       l1Approval,
       srNo,
       particulars,
-      gstIn: gstIn ? gstIn : "",
-    });
+      gstIn: gstIn || "",
+    };
 
-    await newBudgetRequest.save();
+    // Handle invoice file upload
+    if (req.file) {
+      const allowedMimeTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+
+      const file = req.file;
+
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        throw new CustomError(
+          "Invalid file type",
+          logPath,
+          logAction,
+          logSourceKey
+        );
+      }
+
+      let processedBuffer = file.buffer;
+      const originalFilename = file.originalname;
+
+      if (file.mimetype === "application/pdf") {
+        const pdfDoc = await PDFDocument.load(file.buffer);
+        pdfDoc.setTitle(originalFilename.split(".")[0] || "Untitled");
+        processedBuffer = await pdfDoc.save();
+      }
+
+      const response = await handleDocumentUpload(
+        processedBuffer,
+        `${foundCompany.companyName}/departments/${departmentExists.name}/budget/invoice`,
+        originalFilename
+      );
+
+      if (!response.public_id) {
+        throw new CustomError(
+          "Failed to upload invoice",
+          logPath,
+          logAction,
+          logSourceKey
+        );
+      }
+
+      budgetData.invoice = {
+        name: originalFilename,
+        link: response.secure_url,
+        id: response.public_id,
+        date: new Date(),
+      };
+
+      budgetData.invoiceAttached = true;
+    }
+
+    const newBudgetRequest = new Budget(budgetData);
+    const savedBudget = await newBudgetRequest.save();
 
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: `Budget requested for ${departmentExists.department.name}`,
+      remarks: `Budget requested for ${departmentExists.name}`,
       status: "Success",
       user: user,
       ip: ip,
       company: company,
       sourceKey: logSourceKey,
-      sourceId: newBudgetRequest._id,
-      changes: {
-        projectedAmount: projectedAmount ? projectedAmount : 0,
-        expanseName,
-        dueDate,
-        expanseType,
-        paymentType,
-        isExtraBudget: false,
-      },
+      sourceId: savedBudget._id,
+      changes: newBudgetRequest,
     });
 
     return res.status(200).json({
-      message: `Budget requested for ${departmentExists.department.name}`,
+      message: `Budget requested for ${departmentExists.name}`,
     });
   } catch (error) {
     next(
