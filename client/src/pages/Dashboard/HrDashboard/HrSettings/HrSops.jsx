@@ -5,9 +5,7 @@ import AgTable from "../../../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
 
 const HrSops = () => {
-  const uploadItems = [
-    "Upload Sops"
-  ];
+  const uploadItems = ["Upload Sops"];
   const sopsUploadDataColumns = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "templateName", headerName: "Template Name", flex: 1 },
@@ -20,35 +18,31 @@ const HrSops = () => {
       srNo: 1,
       templateName: "Employee Onboarding Process",
       uploadedBy: "Utkarsha Palkar",
-      date: "23-11-2024"
+      date: "23-11-2024",
     },
     {
       srNo: 2,
       templateName: "Leave & Attendance Policy",
       uploadedBy: "Utkarsha Palkar",
-      date: "14-12-2024"
+      date: "14-12-2024",
     },
     {
       srNo: 3,
       templateName: "Performance Review Guidelines",
       uploadedBy: "Utkarsha Palkar",
-      date: "28-01-2025"
+      date: "28-01-2025",
     },
     {
       srNo: 4,
       templateName: "Exit & Offboarding Procedure",
       uploadedBy: "Utkarsha Palkar",
-      date: "09-03-2025"
-    }
+      date: "09-03-2025",
+    },
   ];
-  
-  
 
   return (
     <div className=" flex flex-col gap-4">
-      <span className="text-title font-pmedium text-primary">
-        Bulk Upload Data
-      </span>
+      <span className="text-title font-pmedium text-primary">Upload SOPs</span>
       <hr />
 
       <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
@@ -57,8 +51,7 @@ const HrSops = () => {
             <>
               <div
                 className="space-y-2 border-default p-4  rounded-md"
-                key={index}
-              >
+                key={index}>
                 <div className="mb-2">
                   <span className="text-subtitle text-primary">{index}</span>
                 </div>
@@ -83,7 +76,7 @@ const HrSops = () => {
       </div>
 
       <div>
-        <WidgetSection border title="Bulk Upload Data">
+        <WidgetSection border title="Upload SOPs">
           <AgTable
             data={sopsUploadData}
             columns={sopsUploadDataColumns}

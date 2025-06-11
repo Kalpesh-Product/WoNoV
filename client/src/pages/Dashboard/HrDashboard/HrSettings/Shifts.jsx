@@ -10,10 +10,11 @@ import { toast } from "sonner";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const Shifts = () => {
   const axios = useAxiosPrivate();
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   const [openModal, setOpenModal] = useState(false);
   const { handleSubmit, control, reset } = useForm({
     defaultValues: {
@@ -35,7 +36,7 @@ const Shifts = () => {
     },
     onSuccess: function (data) {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: ["shifts"] })
+      queryClient.invalidateQueries({ queryKey: ["shifts"] });
       setOpenModal(false);
       reset();
     },
@@ -57,7 +58,7 @@ const Shifts = () => {
     } catch (error) {
       throw new Error(error.response.data.message);
     }
-  }
+  };
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["shifts"],
@@ -109,88 +110,92 @@ const Shifts = () => {
     },
   ];
   return (
-    <div>
-      <AgTable
-        search={true}
-        searchColumn={"Shifts"}
-        tableTitle={"Shift List"}
-        buttonTitle={"Add Shift List"}
-        handleClick={() => setOpenModal(true)}
-        data={[
-          ...shifts.map((shift, index) => ({
-            id: index + 1, // Auto-increment Sr No
-            shift: shift.name,
-            status: shift.isActive,
-          })),
-        ]}
-        columns={departmentsColumn}
-      />
-
+    <PageFrame>
       <div>
-        <MuiModal title={"Add Shift"} open={openModal} onClose={() => setOpenModal(false)}>
-          <div>
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="flex flex-col gap-4"
-            >
-              <Controller
-                name="shiftName"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    fullWidth
-                    label={"Shift Name"}
+        <AgTable
+          search={true}
+          searchColumn={"Shifts"}
+          tableTitle={"Shift List"}
+          buttonTitle={"Add Shift List"}
+          handleClick={() => setOpenModal(true)}
+          data={[
+            ...shifts.map((shift, index) => ({
+              id: index + 1, // Auto-increment Sr No
+              shift: shift.name,
+              status: shift.isActive,
+            })),
+          ]}
+          columns={departmentsColumn}
+        />
+
+        <div>
+          <MuiModal
+            title={"Add Shift"}
+            open={openModal}
+            onClose={() => setOpenModal(false)}>
+            <div>
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="flex flex-col gap-4">
+                <Controller
+                  name="shiftName"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      fullWidth
+                      label={"Shift Name"}
+                    />
+                  )}
+                />
+
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Controller
+                    name="startTime"
+                    control={control}
+                    render={({ field }) => (
+                      <TimePicker
+                        {...field}
+                        slotProps={{ textField: { size: "small" } }}
+                        label={"Select Start Time"}
+                        render={(params) => (
+                          <TextField size="small" {...params} fullWidth />
+                        )}
+                      />
+                    )}
                   />
-                )}
-              />
+                </LocalizationProvider>
 
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <Controller
-                  name="startTime"
-                  control={control}
-                  render={({ field }) => (
-                    <TimePicker
-                      {...field}
-                      slotProps={{ textField: { size: "small" } }}
-                      label={"Select Start Time"}
-                      render={(params) => (
-                        <TextField size="small" {...params} fullWidth />
-                      )}
-                    />
-                  )}
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Controller
+                    name="endTime"
+                    control={control}
+                    render={({ field }) => (
+                      <TimePicker
+                        {...field}
+                        label={"Select End Time"}
+                        slotProps={{ textField: { size: "small" } }}
+                        renderInput={(params) => (
+                          <TextField {...params} size="small" fullWidth />
+                        )}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
+
+                <PrimaryButton
+                  title="Add Shift"
+                  type="submit"
+                  isLoading={isPending}
+                  disabled={isPending}
                 />
-              </LocalizationProvider>
-
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <Controller
-                  name="endTime"
-                  control={control}
-                  render={({ field }) => (
-                    <TimePicker
-                      {...field}
-                      label={"Select End Time"}
-                      slotProps={{ textField: { size: "small" } }}
-                      renderInput={(params) => (
-                        <TextField {...params} size="small" fullWidth />
-                      )}
-                    />
-                  )}
-                />
-              </LocalizationProvider>
-
-              <PrimaryButton
-                title="Add Shift"
-                type="submit"
-                isLoading={isPending}
-                disabled={isPending}
-              />
-            </form>
-          </div>
-        </MuiModal>
+              </form>
+            </div>
+          </MuiModal>
+        </div>
       </div>
-    </div>
+    </PageFrame>
   );
 };
 

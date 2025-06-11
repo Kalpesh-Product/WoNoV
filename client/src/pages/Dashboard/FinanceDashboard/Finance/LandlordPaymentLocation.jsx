@@ -241,14 +241,22 @@ const LandlordPaymentLocation = () => {
           onClose={() => setViewModalOpen(false)}
           title="Landlord Payment Details">
           <div className="space-y-3">
+            <div className="font-bold">Basic Information</div>
             <DetalisFormatted
               title="Expanse Name"
               detail={viewDetails.expanseName}
             />
             <DetalisFormatted
               title="Department"
-              detail={viewDetails.department?.name || "—"}
+              detail={viewDetails.department.name}
             />
+            <DetalisFormatted title="Status" detail={viewDetails.status} />
+            <DetalisFormatted
+              title="Extra Budget"
+              detail={viewDetails.isExtraBudget ? "Yes" : "No"}
+            />
+            <br />
+            <div className="font-bold">Financial Details</div>
             <DetalisFormatted
               title="Projected Amount"
               detail={`INR ${viewDetails.projectedAmount}`}
@@ -260,11 +268,6 @@ const LandlordPaymentLocation = () => {
             <DetalisFormatted
               title="Due Date"
               detail={humanDate(viewDetails.dueDate)}
-            />
-            <DetalisFormatted title="Status" detail={viewDetails.status} />
-            <DetalisFormatted
-              title="Extra Budget"
-              detail={viewDetails.isExtraBudget ? "Yes" : "No"}
             />
           </div>
         </MuiModal>
