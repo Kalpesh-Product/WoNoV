@@ -39,21 +39,28 @@ const vendorSchema = new mongoose.Schema(
     },
     companyName: {
       type: String,
-      required: true,
+      required: true, //Vendor Company
+    },
+    onboardingDate: {
+      type: Date,
     },
     state: { type: String },
     city: { type: String },
     country: { type: String },
+    pinCode: { type: String, match: [/^[0-9]{4,10}$/, "Invalid pin code"] },
     panIdNo: { type: String },
     gstIn: { type: String },
-    // registrationType: { type: String },
-    // assesseeOfOtherTerritory: { type: Boolean, default: false },
-    // isEcommerceOperator: { type: Boolean, default: false },
-    // isDeemedExporter: { type: Boolean, default: false },
     partyType: { type: String },
-    // gstinUin: { type: String },
-    // isTransporter: { type: Boolean, default: false },
+    bankIFSC: { type: String },
+    bankName: { type: String },
+    branchName: { type: String },
+    nameOnAccount: { type: String },
+    accountNumber: {
+      type: String,
+      match: [/^[0-9]+$/, "Invalid account number"],
+    },
   },
+
   { timestamps: true }
 );
 
