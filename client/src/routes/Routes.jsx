@@ -330,6 +330,9 @@ import ManageTicketLayout from "../pages/Tickets/Tables/ManageTicketLayout";
 import ManageTicketsHome from "../pages/Tickets/ManageTicketsHome";
 import Reimbursement from "../components/Pages/Reimbursement";
 import IncomeDetails from "../pages/Dashboard/FinanceDashboard/IncomeDetails/IncomeDetails";
+import ComplianceDocuments from "../pages/Dashboard/FinanceDashboard/MixBag/ComplianceDocuments";
+import LandlordAgreements from "../pages/Dashboard/FinanceDashboard/MixBag/LandlordAgreements";
+import ClientAgreements from "../pages/Dashboard/FinanceDashboard/MixBag/ClientAgreements";
 
 export const routes = createBrowserRouter([
   {
@@ -467,6 +470,18 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag/company-KYC",
                         element: <DirectorsCompany />,
+                      },
+                      {
+                        path: "mix-bag/compliance-documents",
+                        element: <ComplianceDocuments />,
+                      },
+                      {
+                        path: "mix-bag/landlord-agreements",
+                        element: <LandlordAgreements />,
+                      },
+                      {
+                        path: "mix-bag/client-agreements",
+                        element: <ClientAgreements />,
                       },
                       {
                         path: "company-KYC",
