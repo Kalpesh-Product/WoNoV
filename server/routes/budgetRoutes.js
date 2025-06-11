@@ -13,7 +13,11 @@ const {
   approveFinanceBudget,
 } = require("../controllers/budgetControllers/budgetController");
 
-router.post("/request-budget", upload.single("invoice"), requestBudget);
+router.post(
+  "/request-budget/:departmentId",
+  upload.single("invoice"),
+  requestBudget
+);
 router.get("/pending-approvals", fetchPendingApprovals);
 // router.patch("/approve-budget/:budgetId", approveBudget);
 router.patch("/approve-budget", approveFinanceBudget);

@@ -35,9 +35,8 @@ const requestBudget = async (req, res, next) => {
       srNo,
       particulars,
       gstIn,
-      departmentId,
     } = req.body;
-    // const { departmentId } = req.params;
+    const { departmentId } = req.params;
 
     if (!expanseName || !expanseType || !unitId) {
       throw new CustomError(
