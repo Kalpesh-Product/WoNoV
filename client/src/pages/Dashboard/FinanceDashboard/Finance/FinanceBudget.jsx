@@ -39,7 +39,6 @@ import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import useAuth from "../../../../hooks/useAuth";
 
-
 const FinanceBudget = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -58,7 +57,7 @@ const FinanceBudget = () => {
   });
 
   const [openModal, setOpenModal] = useState(false);
-  const { control, handleSubmit, reset,watch } = useForm({
+  const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: {
       expanseName: "",
       expanseType: "",
@@ -67,11 +66,11 @@ const FinanceBudget = () => {
       unit: "",
       projectedAmount: null,
       dueDate: "",
-      typeOfBudget:"Direct Budget"
+      typeOfBudget: "Direct Budget",
     },
   });
 
-  const selectedBuilding = watch("building")
+  const selectedBuilding = watch("building");
 
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     queryKey: ["financeBudget"],
@@ -89,28 +88,36 @@ const FinanceBudget = () => {
     },
   });
 
-    const {
-      data: units = [],
-      isLoading: locationsLoading,
-      error: locationsError,
-    } = useQuery({
-      queryKey: ["units"],
-      queryFn: async () => {
-        const response = await axios.get(
-          "/api/company/fetch-units"
-        );
-        
-        return response.data;
-      },
-    });
+  const {
+    data: units = [],
+    isLoading: locationsLoading,
+    error: locationsError,
+  } = useQuery({
+    queryKey: ["units"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
 
-     const uniqueBuildings = Array.from(
+      return response.data;
+    },
+  });
+
+  //    const uniqueBuildings = Array.from(
+  //   new Map(
+  //       units.length > 0 ? units.map((loc) => [
+  //       loc.building._id, // use building._id as unique key
+  //       loc.building.buildingName,
+  //     ]) : []
+  //   ).entries()
+  // );
+
+  const uniqueBuildings = Array.from(
     new Map(
-        units.length > 0 ? units.map((loc) => [
-        loc.building._id, // use building._id as unique key
-        loc.building.buildingName,
-      ]) : []
-    ).entries() 
+      units.length > 0
+        ? units
+            .filter((loc) => loc?.building && loc.building._id) // filter out bad data
+            .map((loc) => [loc.building._id, loc.building.buildingName])
+        : []
+    ).entries()
   );
 
   const { mutate: requestBudget, isPending: requestBudgetPending } =
@@ -118,7 +125,6 @@ const FinanceBudget = () => {
       mutationFn: async (data) => {
         const response = await axios.post(`/api/budget/request-budget`, {
           ...data,
-          
         });
         return response.data;
       },
@@ -183,7 +189,7 @@ const FinanceBudget = () => {
         ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
       }));
       const transformedCols = [
-        { field: "srNo", headerName: "SR NO", width : 100 },
+        { field: "srNo", headerName: "SR NO", width: 100 },
         ...data.tableData.columns,
       ];
 
@@ -339,8 +345,7 @@ const FinanceBudget = () => {
       <MuiModal
         title="Request Budget"
         open={openModal}
-        onClose={() => setOpenModal(false)}
-      >
+        onClose={() => setOpenModal(false)}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Expense Name */}
           <Controller
@@ -395,7 +400,7 @@ const FinanceBudget = () => {
             )}
           />
 
-           {/* Building */}
+          {/* Building */}
           <Controller
             name="building"
             control={control}
@@ -404,19 +409,21 @@ const FinanceBudget = () => {
               <FormControl fullWidth error={!!fieldState.error}>
                 <Select {...field} size="small" displayEmpty>
                   <MenuItem value="" disabled>
-                    Select Building  
+                    Select Building
                   </MenuItem>
-                  {
-                    locationsLoading ? [] : uniqueBuildings.map((building)=>(
-                      <MenuItem key={building[0]} value={building[1]}>{building[1]}</MenuItem>
-                    ))
-                  }
-                 </Select>
+                  {locationsLoading
+                    ? []
+                    : uniqueBuildings.map((building) => (
+                        <MenuItem key={building[0]} value={building[1]}>
+                          {building[1]}
+                        </MenuItem>
+                      ))}
+                </Select>
               </FormControl>
             )}
           />
 
-           {/* Unit */}
+          {/* Unit */}
           <Controller
             name="unit"
             control={control}
@@ -427,13 +434,17 @@ const FinanceBudget = () => {
                   <MenuItem value="" disabled>
                     Select Unit
                   </MenuItem>
-                  {
-                    locationsLoading ? [] : units.map((unit)=> (
-                       unit.building.buildingName === selectedBuilding ? 
-                        <MenuItem key={unit._id} value={unit.unitNo}>{unit.unitNo}</MenuItem> : <></>
-                    ))
-                  }
-                  
+                  {locationsLoading
+                    ? []
+                    : units.map((unit) =>
+                        unit.building.buildingName === selectedBuilding ? (
+                          <MenuItem key={unit._id} value={unit.unitNo}>
+                            {unit.unitNo}
+                          </MenuItem>
+                        ) : (
+                          <></>
+                        )
+                      )}
                 </Select>
               </FormControl>
             )}

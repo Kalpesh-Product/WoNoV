@@ -35,36 +35,63 @@ const CheckAvailability = () => {
   } = useQuery({
     queryKey: ["units"],
     queryFn: async () => {
-      const response = await axios.get(
-        "/api/company/fetch-units"
-      );
-      
+      const response = await axios.get("/api/company/fetch-units");
+
       return response.data;
     },
   });
 
-    const selectedUnitId = useMemo(() => {
-  if (!selectedUnit || !selectedLocation) return null;
+  // const selectedUnitId = useMemo(() => {
+  //   if (!selectedUnit || !selectedLocation) return null;
 
-  const unit = units.find(
-    (unit) =>
-      unit.unitNo === selectedUnit &&
-      unit.building.buildingName === selectedLocation
-  );
-  return unit._id
-}, [selectedUnit, selectedLocation, units]);
+  //   const unit = units.find(
+  //     (unit) =>
+  //       unit.unitNo === selectedUnit &&
+  //       unit.building.buildingName === selectedLocation
+  //   );
+  //   return unit._id;
+  // }, [selectedUnit, selectedLocation, units]);
 
+  const selectedUnitId = useMemo(() => {
+    if (!selectedUnit || !selectedLocation) return null;
+
+    // const unit = units.find(
+    //   (unit) =>
+    //     unit.unitNo === selectedUnit &&
+    //     unit.building.buildingName === selectedLocation
+    // );
+
+    // return unit ? unit._id : null; // Fix: prevent null._id error
+
+    const unit = units.find(
+      (unit) =>
+        unit.unitNo === selectedUnit &&
+        unit.building?.buildingName === selectedLocation // use ?. here too
+    );
+    return unit ? unit._id : null;
+  }, [selectedUnit, selectedLocation, units]);
+
+  // const uniqueBuildings = Array.from(
+  //   new Map(
+  //     units.length > 0
+  //       ? units.map((loc) => [
+  //           loc.building._id, // use building._id as unique key
+  //           loc.building.buildingName,
+  //         ])
+  //       : []
+  //   ).entries()
+  // );
 
   const uniqueBuildings = Array.from(
     new Map(
-        units.length > 0 ? units.map((loc) => [
-        loc.building._id, // use building._id as unique key
-        loc.building.buildingName,
-      ]) : []
-    ).entries() 
+      units.length > 0
+        ? units.map((loc) => [
+            loc.building?._id ?? `unknown-${loc.unitNo}`,
+            loc.building?.buildingName ?? "Unknown Building",
+          ])
+        : []
+    ).entries()
   );
-
-   
 
   const floors = ["501(A)", "501(B)", "601(A)", "601(B)", "701(A)", "701(B)"];
 
@@ -72,18 +99,17 @@ const CheckAvailability = () => {
     const { location, floor } = data;
     navigate(
       `/app/dashboard/finance-dashboard/finance/landlord-payments-unit?location=${location}&floor=${floor}`,
-       {
-    state: {
-      unitId: selectedUnitId,
-    },
-  }
+      {
+        state: {
+          unitId: selectedUnitId,
+        },
+      }
     );
   };
 
-  useEffect(()=>{
-
-    console.log("unit",selectedUnitId)
-  },[selectedUnit])
+  useEffect(() => {
+    console.log("unit", selectedUnitId);
+  }, [selectedUnit]);
 
   return (
     <div className="border-default border-borderGray p-4 rounded-md text-center">
@@ -92,8 +118,7 @@ const CheckAvailability = () => {
       </h2>
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col items-center"
-      >
+        className="flex flex-col items-center">
         <div className="flex justify-center gap-4 mb-10 px-20 w-full">
           {/* Location Dropdown */}
           <FormControl className="w-1/2">
@@ -114,12 +139,11 @@ const CheckAvailability = () => {
                     <MenuItem disabled>Error fetching units</MenuItem>
                   ) : (
                     uniqueBuildings.map(([id, name]) => (
-                        <MenuItem key={id} value={name}>
-                          {name}
-                        </MenuItem>
-                      ))
-                    )}
-                  
+                      <MenuItem key={id} value={name}>
+                        {name}
+                      </MenuItem>
+                    ))
+                  )}
                 </Select>
               )}
             />
@@ -137,15 +161,30 @@ const CheckAvailability = () => {
                   label="Select Unit"
                   disabled={!selectedLocation}
                   value={field.value}
-                  onChange={(event) => field.onChange(event.target.value)}
-                >
+                  onChange={(event) => field.onChange(event.target.value)}>
                   <MenuItem value="">Select Unit</MenuItem>
 
-                  {units.map((unit) => (
-                   unit.building.buildingName === selectedLocation ? <MenuItem key={unit._id} value={unit.unitNo}>
-                      {unit.unitNo}
-                    </MenuItem> : <></>
-                  ))}
+                  {/* {units.map((unit) =>
+                    unit.building.buildingName === selectedLocation ? (
+                      <MenuItem key={unit._id} value={unit.unitNo}>
+                        {unit.unitNo}
+                      </MenuItem>
+                    ) : (
+                      <></>
+                    )
+                  )} */}
+
+                  {units
+                    .filter(
+                      (unit) =>
+                        unit.building &&
+                        unit.building.buildingName === selectedLocation
+                    )
+                    .map((unit) => (
+                      <MenuItem key={unit._id} value={unit.unitNo}>
+                        {unit.unitNo}
+                      </MenuItem>
+                    ))}
                 </Select>
               )}
             />

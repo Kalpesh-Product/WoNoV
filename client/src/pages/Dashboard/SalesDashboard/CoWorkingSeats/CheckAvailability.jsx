@@ -200,16 +200,30 @@ const CheckAvailability = () => {
         .filter((item) => item.unitNo === selectedUnit)
         .map((item) => item._id);
 
+  // const uniqueBuildings = Array.from(
+  //   new Map(
+  //     workLocations.length > 0
+  //       ? workLocations.map((loc) => [
+  //           loc.building._id, // use building._id as unique key
+  //           loc.building.buildingName,
+  //         ])
+  //       : []
+  //   ).entries()
+  // );
+
   const uniqueBuildings = Array.from(
     new Map(
       workLocations.length > 0
-        ? workLocations.map((loc) => [
-            loc.building._id, // use building._id as unique key
-            loc.building.buildingName,
-          ])
+        ? workLocations
+            .filter(
+              (loc) =>
+                loc.building && loc.building._id && loc.building.buildingName
+            ) // ✅ safeguard
+            .map((loc) => [loc.building._id, loc.building.buildingName])
         : []
     ).entries()
   );
+
   const formatUnitDisplay = (unitNo, buildingName) => {
     if (typeof unitNo !== "string")
       return `${unitNo || "Unknown"} ${buildingName}`;
@@ -263,8 +277,7 @@ const CheckAvailability = () => {
         layout={1}
         border
         normalCase={true}
-        title={"TOTAL v/s OCCUPIED FY 2024-25"}
-      >
+        title={"TOTAL v/s OCCUPIED FY 2024-25"}>
         <NormalBarGraph
           data={barGraphSeries}
           options={barGraphOptions}
@@ -349,8 +362,7 @@ const CheckAvailability = () => {
         </h2>
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col items-center"
-        >
+          className="flex flex-col items-center">
           <div className="flex justify-center gap-4 mb-10 px-20 w-full">
             {/* Location Dropdown */}
             <FormControl className="w-1/2">
@@ -393,13 +405,19 @@ const CheckAvailability = () => {
                     label="Select Floor"
                     disabled={!selectedLocation}
                     value={field.value}
-                    onChange={(event) => field.onChange(event.target.value)}
-                  >
+                    onChange={(event) => field.onChange(event.target.value)}>
                     <MenuItem value="">Select Floor</MenuItem>
 
+                    {/* {workLocations
+                      .filter(
+                        (unit) =>
+                          unit.building.buildingName === selectedLocation
+                      ) */}
                     {workLocations
                       .filter(
                         (unit) =>
+                          unit.building &&
+                          unit.building.buildingName &&
                           unit.building.buildingName === selectedLocation
                       )
                       .sort(sortByUnitNo) // Sort using the custom sort function

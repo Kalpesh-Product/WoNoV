@@ -42,13 +42,24 @@ const TotalRevenue = () => {
   ];
 
   const financialDataForTable = months.map((monthLabel, i) => {
+    // const revenue = isTotalLoading
+    //   ? []
+    //   : totalRevenue.map((category) => ({
+    //       vertical: category.name,
+    //       revenue: inrFormat(category.data["2024-25"][i]),
+    //       percentage: `${100}%`,
+    //     }));
+
     const revenue = isTotalLoading
       ? []
-      : totalRevenue.map((category) => ({
-          vertical: category.name,
-          revenue: inrFormat(category.data["2024-25"][i]),
-          percentage: `${100}%`,
-        }));
+      : totalRevenue.map((category) => {
+          const value = category.data?.["2024-25"]?.[i] ?? 0;
+          return {
+            vertical: category.name,
+            revenue: inrFormat(value),
+            percentage: "100%",
+          };
+        });
 
     return {
       month: monthLabel,
@@ -154,8 +165,7 @@ const TotalRevenue = () => {
           layout={1}
           title={"Annual Monthly Mix Revenues FY 2024-25"}
           border
-          TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}
-        >
+          TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}>
           <BarGraph height={400} data={normalizedData} options={options} />
         </WidgetSection>
       )}
