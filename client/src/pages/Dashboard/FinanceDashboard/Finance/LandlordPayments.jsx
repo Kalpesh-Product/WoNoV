@@ -87,7 +87,7 @@ const LandlordPayments = () => {
     },
     yaxis: {
       labels: {
-        formatter: (val) => `${Math.round(val / 100000)}L`,
+        formatter: (val) => `${Math.round(val / 100000)}`,
       },
       title: {
         text: "Amount in INR (Lakhs)",
