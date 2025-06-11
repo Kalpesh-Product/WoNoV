@@ -42,8 +42,6 @@ const AllocatedBudget = ({
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState([]);
 
-  useEffect(() => console.log(selectedRow), [selectedRow]);
-
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       invoiceImage: null,
@@ -195,20 +193,28 @@ const AllocatedBudget = ({
         headerName: "Actions",
         pinned: "right",
         cellRenderer: (params) => {
-          const isAttached = params.data.invoiceAttached === true;
+          const { invoiceAttached, status } = params.data;
+          const isRejected = status === "Rejected";
+
           return (
             <div className="p-2">
-              {!isAttached ? (
+              {!invoiceAttached && !isRejected ? (
                 <PrimaryButton
                   title="Upload Invoice"
-                  externalStyles={"p-2"}
+                  externalStyles="p-2"
                   handleSubmit={() => {
                     setSelectedRow(params.data);
                     setUploadModalOpen(true);
                   }}
                 />
               ) : (
-                <span className="text-content">Invoice Uploaded</span>
+                <span className="text-content">
+                  {invoiceAttached
+                    ? "Invoice Uploaded"
+                    : isRejected
+                    ? "Rejected"
+                    : ""}
+                </span>
               )}
             </div>
           );
@@ -366,7 +372,12 @@ const AllocatedBudget = ({
             )}
           />
           <div className="text-right">
-            <PrimaryButton title="Submit" type="submit" isLoading={isUploadPending} disabled={isUploadPending}/>
+            <PrimaryButton
+              title="Submit"
+              type="submit"
+              isLoading={isUploadPending}
+              disabled={isUploadPending}
+            />
           </div>
         </form>
       </MuiModal>

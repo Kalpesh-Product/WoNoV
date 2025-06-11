@@ -44,7 +44,7 @@ const Reimbursement = () => {
   const department = usePageDepartment();
   console.log("department value : ", department)
   const axios = useAxiosPrivate();
-  const { control, watch, setValue, handleSubmit, getValues } = useForm({
+  const { control, watch, setValue, getValues, reset } = useForm({
     defaultValues: {
       department: "",
       sNo: "001",
@@ -142,16 +142,9 @@ const Reimbursement = () => {
 
   const onUpload = () => {
     const values = getValues();
-
     // If you are using useFieldArray for "particulars"
     values.particulars = fields;
-
-    console.log("Final Form Submission Data:", values);
     submitRequest(values);
-
-    // You can now send it to your API
-    // Example:
-    // await axios.post('/api/your-endpoint', values);
   };
 
   const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
@@ -166,6 +159,7 @@ const Reimbursement = () => {
     onSuccess: (data) => {
       toast.success(data.message);
       setOpenPreview(false);
+      reset()
     },
     onError: (error) => {
       toast.error(error.message);
@@ -672,7 +666,7 @@ const Reimbursement = () => {
           </div>
           <div className="mt-4 text-right flex gap-4 items-center justify-center">
             <PrimaryButton
-              title="Upload"
+              title="Submit"
               handleSubmit={onUpload}
               disabled={isSubmitRequest}
               isLoading={isSubmitRequest}

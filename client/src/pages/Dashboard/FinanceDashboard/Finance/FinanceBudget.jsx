@@ -38,40 +38,29 @@ import BarGraph from "../../../../components/graphs/BarGraph";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import useAuth from "../../../../hooks/useAuth";
-
+import usePageDepartment from "../../../../hooks/usePageDepartment";
 
 const FinanceBudget = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const location = useLocation();
-
-  //Identify department from breadcrumb
-  const pathName = location.pathname;
-  const pathSegments = location.pathname.split("/").filter(Boolean);
-  const dashboardSegment = pathSegments.find((segment) =>
-    segment.endsWith("-dashboard")
-  );
-  const section = dashboardSegment?.split("-")[0];
-
-  const departmentId = auth.user.departments.find((dept) => {
-    return dept.name.toLowerCase() === section;
-  });
+  const department = usePageDepartment();
 
   const [openModal, setOpenModal] = useState(false);
-  const { control, handleSubmit, reset,watch } = useForm({
+  const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: {
       expanseName: "",
       expanseType: "",
       paymentType: "",
       building: "",
-      unit: "",
+      unitId: "",
       projectedAmount: null,
       dueDate: "",
-      typeOfBudget:"Direct Budget"
+      typeOfBudget: "Direct Budget",
     },
   });
 
-  const selectedBuilding = watch("building")
+  const selectedBuilding = watch("building");
 
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     queryKey: ["financeBudget"],
@@ -89,37 +78,39 @@ const FinanceBudget = () => {
     },
   });
 
-    const {
-      data: units = [],
-      isLoading: locationsLoading,
-      error: locationsError,
-    } = useQuery({
-      queryKey: ["units"],
-      queryFn: async () => {
-        const response = await axios.get(
-          "/api/company/fetch-units"
-        );
-        
-        return response.data;
-      },
-    });
+  const {
+    data: units = [],
+    isLoading: locationsLoading,
+    error: locationsError,
+  } = useQuery({
+    queryKey: ["units"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
 
-     const uniqueBuildings = Array.from(
+      return response.data;
+    },
+  });
+
+  const uniqueBuildings = Array.from(
     new Map(
-        units.length > 0 ? units.map((loc) => [
-        loc.building._id, // use building._id as unique key
-        loc.building.buildingName,
-      ]) : []
-    ).entries() 
+      units.length > 0
+        ? units.map((loc) => [
+            loc.building._id, // use building._id as unique key
+            loc.building.buildingName,
+          ])
+        : []
+    ).entries()
   );
 
   const { mutate: requestBudget, isPending: requestBudgetPending } =
     useMutation({
       mutationFn: async (data) => {
-        const response = await axios.post(`/api/budget/request-budget`, {
-          ...data,
-          
-        });
+        const response = await axios.post(
+          `/api/budget/request-budget/${department._id}`,
+          {
+            ...data,
+          }
+        );
         return response.data;
       },
       onSuccess: function (data) {
@@ -167,7 +158,7 @@ const FinanceBudget = () => {
       actualAmount: inrFormat(item?.actualAmount || 0),
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       status: item.status,
-      invoiceAttached : item.invoiceAttached
+      invoiceAttached: item.invoiceAttached,
     });
 
     return acc;
@@ -184,7 +175,7 @@ const FinanceBudget = () => {
         ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
       }));
       const transformedCols = [
-        { field: "srNo", headerName: "SR NO", width : 100 },
+        { field: "srNo", headerName: "SR NO", width: 100 },
         ...data.tableData.columns,
       ];
 
@@ -396,7 +387,7 @@ const FinanceBudget = () => {
             )}
           />
 
-           {/* Building */}
+          {/* Building */}
           <Controller
             name="building"
             control={control}
@@ -405,21 +396,23 @@ const FinanceBudget = () => {
               <FormControl fullWidth error={!!fieldState.error}>
                 <Select {...field} size="small" displayEmpty>
                   <MenuItem value="" disabled>
-                    Select Building  
+                    Select Building
                   </MenuItem>
-                  {
-                    locationsLoading ? [] : uniqueBuildings.map((building)=>(
-                      <MenuItem key={building[0]} value={building[1]}>{building[1]}</MenuItem>
-                    ))
-                  }
-                 </Select>
+                  {locationsLoading
+                    ? []
+                    : uniqueBuildings.map((building) => (
+                        <MenuItem key={building[0]} value={building[1]}>
+                          {building[1]}
+                        </MenuItem>
+                      ))}
+                </Select>
               </FormControl>
             )}
           />
 
-           {/* Unit */}
+          {/* Unit */}
           <Controller
-            name="unit"
+            name="unitId"
             control={control}
             rules={{ required: "Unit is required" }}
             render={({ field, fieldState }) => (
@@ -428,13 +421,17 @@ const FinanceBudget = () => {
                   <MenuItem value="" disabled>
                     Select Unit
                   </MenuItem>
-                  {
-                    locationsLoading ? [] : units.map((unit)=> (
-                       unit.building.buildingName === selectedBuilding ? 
-                        <MenuItem key={unit._id} value={unit.unitNo}>{unit.unitNo}</MenuItem> : <></>
-                    ))
-                  }
-                  
+                  {locationsLoading
+                    ? []
+                    : units.map((unit) =>
+                        unit.building.buildingName === selectedBuilding ? (
+                          <MenuItem key={unit._id} value={unit._id}>
+                            {unit.unitNo}
+                          </MenuItem>
+                        ) : (
+                          <></>
+                        )
+                      )}
                 </Select>
               </FormControl>
             )}
