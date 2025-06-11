@@ -232,21 +232,7 @@ const MaintenanceInventory = () => {
         tableTitle={"List Of Inventory"}
         buttonTitle={"Add Inventory"}
         data={[
-          ...inventoryData.map((item, index) => ({
-            id: index + 1,
-            department: item.department,
-            inventoryNumber: item.inventoryNumber,
-            category: item.category,
-            brand: item.brand,
-            price: Number(
-              item.price.toString().replace(/,/g, "")
-            ).toLocaleString("en-IN", {
-              maximumFractionDigits: 0,
-            }),
-            quantity: item.quantity,
-            purchaseDate: dayjs(new Date(item.purchaseDate.split("-").reverse().join("-"))).format("DD-MM-YYYY"),
-            warranty: item.warranty,
-          })),
+          
         ]}
         columns={assetColumns}
         handleClick={handleAddAsset}

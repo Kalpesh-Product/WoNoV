@@ -20,7 +20,6 @@ const ManageTickets = () => {
   const selectedDepartment = useSelector(
     (state) => state.performance.selectedDepartment
   );
-  console.log("Selected department : ",selectedDepartment)
 
   const ticketLabel =
     auth.user.designation === "Founder & CEO" ||

@@ -105,6 +105,7 @@ const FinanceBudget = () => {
   const { mutate: requestBudget, isPending: requestBudgetPending } =
     useMutation({
       mutationFn: async (data) => {
+
         const response = await axios.post(
           `/api/budget/request-budget/${department._id}`,
           {
@@ -331,8 +332,7 @@ const FinanceBudget = () => {
       <MuiModal
         title="Request Budget"
         open={openModal}
-        onClose={() => setOpenModal(false)}
-      >
+        onClose={() => setOpenModal(false)}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Expense Name */}
           <Controller

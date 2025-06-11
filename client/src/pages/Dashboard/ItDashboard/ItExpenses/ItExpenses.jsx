@@ -448,7 +448,7 @@ const ItExpenses = () => {
 
       {/* Bar Graph Component */}
       <WidgetSection layout={1} title={"IT Expenses"} border>
-        <BarGraph data={graphData} options={options} height={400} />
+        <BarGraph data={[]} options={[]} height={400} />
       </WidgetSection>
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
@@ -475,7 +475,7 @@ const ItExpenses = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                    INR {domain.revenue.toLocaleString()}
+                    {/* INR {domain.revenue.toLocaleString()} */}
                   </span>
                 </div>
               </AccordionSummary>
@@ -506,14 +506,7 @@ const ItExpenses = () => {
                 </div>
                 {/* Details End */}
                 <AgTable
-                  data={domain.clients.map((client, index) => ({
-                    ...client,
-                    srNo: index + 1,
-                    registerDate: dayjs(client.registerDate).format(
-                      "DD-MM-YYYY"
-                    ),
-                    actualRevenue: inrFormat(client.actualRevenue),
-                  }))}
+                  data={[]}
                   hideFilter
                   columns={[
                     {

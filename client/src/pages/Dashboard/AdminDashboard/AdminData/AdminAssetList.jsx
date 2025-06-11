@@ -286,17 +286,7 @@ const AdminAssetList = () => {
         tableTitle={"Asset List"}
         buttonTitle={"Add Asset"}
         data={[
-          ...dummyAssets.map((asset, index) => ({
-            id: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price:inrFormat(asset.price),
-            quantity: asset.quantity,
-            purchaseDate: dayjs(new Date(asset.purchaseDate)).format("DD-MM-YYYY"),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
-          })),
+        
         ]}
         columns={assetColumns}
         handleClick={handleAddAsset}

@@ -258,23 +258,7 @@ const MaintenanceAssetList = () => {
         tableTitle={"Asset List"}
         buttonTitle={"Add Asset"}
         data={[
-          ...assetsList.map((item, index) => ({
-            id: index + 1,
-            department: item.department,
-            inventoryNumber: item.inventoryNumber,
-            category: item.category,
-            brand: item.brand,
-            price: Number(
-              item.price.toString().replace(/,/g, "")
-            ).toLocaleString("en-IN", {
-              maximumFractionDigits: 0,
-            }),
-            quantity: item.quantity,
-            purchaseDate: dayjs(item.purchaseDate, "DD-MM-YYYY").format(
-              "DD-MM-YYYY"
-            ),
-            warranty: item.warranty,
-          })),
+          
         ]}
         columns={assetColumns}
         handleClick={handleAddAsset}

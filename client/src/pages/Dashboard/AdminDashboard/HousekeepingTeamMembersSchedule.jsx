@@ -293,33 +293,7 @@ const HousekeepingTeamMembersSchedule = () => {
           search={true}
           tableTitle={"Housekeeping Members Schedule"}
           buttonTitle={"Assign Member"}
-          data={unitAssignees.map((item, index) => ({
-            id: index + 1,
-            meetingId: item._id,
-            employeeId: item.employee?.id?._id,
-            name: `${item.employee?.id?.firstName} ${item.employee?.id?.lastName}`,
-            isEmployeeAvailable: item.employee?.isActive,
-            assignmentId: item._id,
-            manager: item.manager,
-            startDate: item.startDate,
-            endDate: item.endDate,
-            locationId: item.location?._id,
-            unitName: item.location?.unitName,
-            unitNo: `${item.location?.building?.buildingName} ${item.location?.unitNo}`,
-            buildingId: item.location?.building?._id,
-            buildingName: item.location?.building?.buildingName,
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt,
-            substitutions: item.substitutions?.map((sub) => ({
-              substitutionId: sub._id,
-              substituteId: sub.substitute?._id,
-              substituteFirstName: sub.substitute?.firstName,
-              substituteLastName: sub.substitute?.lastName,
-              fromDate: sub.fromDate,
-              toDate: sub.toDate,
-              isActive: sub.isActive,
-            })),
-          }))}
+          data={[]}
           columns={memberColumns}
           handleClick={handleAddUser}
         />

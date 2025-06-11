@@ -109,6 +109,53 @@ const budgetSchema = new mongoose.Schema({
       },
     },
   ],
+  finance: {
+    fSrNo: {
+      type: String,
+    },
+    invoiceNo: {
+      type: String,
+    },
+    // debitEntries: [
+    //   {
+    //     particulars: { type: String, required: true },
+    //     amount: { type: Number, required: true },
+    //   },
+    // ],
+    // creditEntries: [
+    //   {
+    //     particulars: { type: String, required: true },
+    //     amount: { type: Number, required: true },
+    //   },
+    // ],
+    particulars: [
+      {
+        particular: { type: String, required: true },
+        amount: { type: Number, required: true },
+      },
+    ],
+    modeOfPayment: {
+      type: String,
+      enum: ["Cash", "Cheque", "NEFT", "RTGS", "IMPS", "Credit Card", "ETC"],
+      required: true,
+    },
+
+    // chequeOrUTRNumber: String,
+    // chequeOrUTRDate: Date,
+
+    // Dates and other string inputs
+    invoiceDate: Date,
+    invoiceNo: String,
+    deliveryDate: Date,
+    chequeNo: String,
+    chequeDate: Date,
+    // Advance payment section
+    amount: Number,
+    expectedDate: Date,
+    approvedAt: {
+      type: Date,
+    },
+  },
 });
 
 const Budget = mongoose.model("Budget", budgetSchema);

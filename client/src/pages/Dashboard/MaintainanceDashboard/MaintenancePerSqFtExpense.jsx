@@ -287,7 +287,7 @@ const MaintenancePerSqFtExpense = () => {
 
       {/* Bar Graph Component */}
       <WidgetSection layout={1} title={"Expense Per Sq Ft"} border>
-        <BarGraph data={graphData} options={options} height={400} />
+        <BarGraph data={[]} options={[]} height={400} />
       </WidgetSection>
 
       {/* Accordion Section for Domain-wise Revenue Breakdown */}
@@ -315,13 +315,13 @@ const MaintenancePerSqFtExpense = () => {
                     {domain.name}
                   </span>
                   <span className="text-subtitle font-pmedium">
-                  INR {Number(domain.expense).toLocaleString()}
+                  {/* INR {Number(domain.expense).toLocaleString()} */}
                   </span>
                 </div>
               </AccordionSummary>
               <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                 <AgTable
-                  data={domain.clients}
+                  data={[]}
                   hideFilter
                   columns={[
                     { headerName: "Sr No", field: "srNo", flex: 1 },
@@ -346,7 +346,7 @@ const MaintenancePerSqFtExpense = () => {
                       Total Expense for {domain.name}:{" "}
                     </span>
                     <span className="text-black font-pmedium">
-                    INR {Number(domain.expense).toLocaleString()}
+                    {/* INR {Number(domain.expense).toLocaleString()} */}
                     </span>{" "}
                   </div>
                 </div>
