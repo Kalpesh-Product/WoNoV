@@ -105,6 +105,7 @@ const FinanceBudget = () => {
   const { mutate: requestBudget, isPending: requestBudgetPending } =
     useMutation({
       mutationFn: async (data) => {
+
         const response = await axios.post(
           `/api/budget/request-budget/${department._id}`,
           {
