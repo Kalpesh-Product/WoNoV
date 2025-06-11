@@ -1,13 +1,13 @@
-import BarGraph from "../../../components/graphs/BarGraph";
-import WidgetSection from "../../../components/WidgetSection";
-import { inrFormat } from "../../../utils/currencyFormat";
-import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import BarGraph from "../../../../components/graphs/BarGraph";
+import WidgetSection from "../../../../components/WidgetSection";
+import { inrFormat } from "../../../../utils/currencyFormat";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { CircularProgress } from "@mui/material";
-import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
+import MonthWiseAgTable from "../../../../components/Tables/MonthWiseAgTable";
 
-const TotalRevenue = () => {
+const IncomeDetails = () => {
   const axios = useAxiosPrivate();
   const [selectedYear, setSelectedYear] = useState("2024-25");
 
@@ -141,7 +141,7 @@ const TotalRevenue = () => {
   }, 0);
 
   return (
-    <div className="flex flex-col gap-4 ">
+    <div className="flex flex-col gap-4 p-4">
       {isTotalLoading ? (
         <div className="flex h-72 justify-center items-center">
           <CircularProgress />
@@ -262,4 +262,4 @@ const TotalRevenue = () => {
   );
 };
 
-export default TotalRevenue;
+export default IncomeDetails;
