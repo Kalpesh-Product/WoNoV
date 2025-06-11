@@ -418,7 +418,7 @@ const approveFinanceBudget = async (req, res, next) => {
       chequeNo,
       chequeDate,
       amount,
-      expectedDate,
+      expectedDateInvoice,
       modeOfPayment,
       particulars, // if available
       approvedAt: new Date(),
@@ -440,7 +440,7 @@ const approveFinanceBudget = async (req, res, next) => {
         chequeNo,
         chequeDate,
         amount,
-        expectedDate,
+        expectedDateInvoice,
         modeOfPayment,
         particulars,
         approvedAt: new Date(),
