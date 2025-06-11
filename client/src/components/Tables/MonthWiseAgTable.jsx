@@ -108,9 +108,8 @@ const MonthWiseAgTable = ({ financialData, passedColumns, title, amount }) => {
       <WidgetSection
         title={title}
         TitleAmount={amount || `INR ${inrFormat(monthTotal)}`}
-        border
-      >
-        <div className="flex justify-end items-center space-x-2 px-4 pt-2">
+        border>
+        <div className="flex justify-center items-center space-x-2 px-4 pt-2 ">
           {/* Month Switcher */}
           {filteredMonths.length > 0 && (
             <div className="flex gap-4 items-center">
