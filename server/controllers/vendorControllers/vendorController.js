@@ -11,29 +11,41 @@ const onboardVendor = async (req, res, next) => {
   const logPath = "hr/HrLog";
   const logAction = "Onboard Vendor";
   const logSourceKey = "vendor";
-  const { ip, company, user: userId } = req;
+  const { ip, company, user } = req;
 
   try {
     const {
       name,
+      email,
+      mobileNo,
       address,
       departmentId,
       state,
       country,
+      city,
       pinCode,
-      panItNo,
-      gstUin,
-      registrationType,
-      assesseeOfOtherTerritory,
-      isEcommerceOperator,
-      isDeemedExporter,
+      panIdNo,
+      gstIn,
       partyType,
-      gstinUin,
-      isTransporter,
+      bankIFSC,
+      bankName,
+      branchName,
+      nameOnAccount,
+      accountNumber,
+      companyName,
     } = req.body;
 
-    const currentUser = await User.findOne({ _id: userId })
-      .select("departments company")
+    if (!name || !email || !mobileNo || !departmentId) {
+      throw new CustomError(
+        "Missing required fields",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const currentUser = await User.findOne({ _id: user })
+      .select("departments company role")
       .lean()
       .exec();
 
@@ -54,16 +66,18 @@ const onboardVendor = async (req, res, next) => {
       );
     }
 
+    const roleIds = currentUser.role.map((role) => role._id);
+
     const companyDoc = await Company.findOne({
       _id: currentUser.company,
       selectedDepartments: {
         $elemMatch: {
           department: departmentId,
           $or: [
-            { admin: { $in: currentUser.role } },
+            { admin: { $in: roleIds } },
             { admin: { $exists: false } },
             { admin: null },
-            { admin: "" },
+            // { admin: "" },
           ],
         },
       },
@@ -83,21 +97,25 @@ const onboardVendor = async (req, res, next) => {
     // Create and save the vendor
     const newVendor = new Vendor({
       name,
+      email,
+      mobileNo,
       address,
       departmentId, // Validated department
-      company: companyDoc._id, // Use the company from the companyDoc
+      company, // Use the company from the companyDoc
       state,
       country,
+      city,
       pinCode,
-      panItNo,
-      gstUin,
-      registrationType,
-      assesseeOfOtherTerritory,
-      isEcommerceOperator,
-      isDeemedExporter,
+      panIdNo,
+      gstIn,
       partyType,
-      gstinUin,
-      isTransporter,
+      bankIFSC,
+      bankName,
+      branchName,
+      nameOnAccount,
+      accountNumber,
+      companyName,
+      onboardingDate: new Date(),
     });
 
     await newVendor.save();
@@ -108,7 +126,7 @@ const onboardVendor = async (req, res, next) => {
       action: logAction,
       remarks: "Vendor onboarded successfully",
       status: "Success",
-      user: userId,
+      user: user,
       ip: ip,
       company: company,
       sourceKey: logSourceKey,

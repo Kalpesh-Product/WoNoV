@@ -138,15 +138,18 @@ const ReviewRequest = () => {
     const values = getValues();
     // If you are using useFieldArray for "particulars"
     values.particulars = fields;
-    submitRequest(values);
+    submitRequest({
+        ...values,
+        budgetId : voucherDetails._id
+    });
   };
 
   const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
-    mutationKey: ["reimbursement"],
+    mutationKey: ["approve"],
     mutationFn: async (data) => {
       console.log("Data ;", data);
-      const response = await axios.post(
-        `/api/budget/request-budget/${department._id}`,
+      const response = await axios.patch(
+        `/api/budget/approve-budget`,
         data
       );
       return response.data;
@@ -186,7 +189,7 @@ const ReviewRequest = () => {
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Controller
-              name="financeSno"
+              name="fSrNo"
               control={control}
               defaultValue=""
               render={({ field }) => (
@@ -419,7 +422,7 @@ const ReviewRequest = () => {
             )}
           />
           <Controller
-            name="expectedDate"
+            name="expectedDateInvoice"
             control={control}
             rules={{
               required: "Date is required",
@@ -724,7 +727,7 @@ const ReviewRequest = () => {
                     Expected Date of receipt of Invoice
                   </td>
                   <td className={cellClasses}>
-                    {humanDate(values.expectedDate)}
+                    {humanDate(values.expectedDateInvoice)}
                   </td>
                 </tr>
               </tbody>
