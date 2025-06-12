@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 
-const ManageVisitors = () => {
+const ExternalClients = () => {
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,7 +25,7 @@ const ManageVisitors = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
-    queryKey: ["visitors"],
+    queryKey: ["clients"],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/visitors/fetch-visitors");
@@ -95,11 +95,6 @@ const ManageVisitors = () => {
     {
       field: "purposeOfVisit",
       headerName: "Purpose",
-      cellStyle: { textAlign: "right" },
-    },
-    {
-      field: "toMeet",
-      headerName: "To Meet",
       cellStyle: { textAlign: "right" },
     },
     { field: "checkIn", headerName: "Check In" },
@@ -194,7 +189,7 @@ const ManageVisitors = () => {
         tableTitle={"Visitors Today"}
         data={[
           ...visitorsData
-            .filter((m) => m.visitorFlag === "Visitor")
+            .filter((m) => m.visitorFlag === "Client")
             .map((item, index) => ({
               srNo: index + 1,
               mongoId: item._id,
@@ -379,4 +374,4 @@ const ManageVisitors = () => {
   );
 };
 
-export default ManageVisitors;
+export default ExternalClients;

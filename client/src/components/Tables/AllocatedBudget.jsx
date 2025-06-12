@@ -26,6 +26,7 @@ import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../main";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import UploadFileInput from "../UploadFileInput";
+import usePageDepartment from "../../hooks/usePageDepartment";
 
 const AllocatedBudget = ({
   financialData,
@@ -48,20 +49,23 @@ const AllocatedBudget = ({
     },
   });
 
-  const onUpload = (data, row) => {
-    const file = data.invoiceImage;
+  const department = usePageDepartment();
+const onUpload = (data, row) => {
+  const file = data.invoiceImage;
 
-    if (!file || !row?.id) {
-      toast.error("Missing file or selected row.");
-      return;
-    }
+  if (!file || !row?.id) {
+    toast.error("Missing file or selected row.");
+    return;
+  }
 
-    const formData = new FormData();
-    formData.append("invoice", file);
-    formData.append("rowId", row.id);
+  const formData = new FormData();
+  formData.append("invoice", file);
+  formData.append("rowId", row.id);
+  formData.append("departmentName", department?.name || ""); // ✅ append it here
 
-    uploadInvoiceMutation(formData);
-  };
+  uploadInvoiceMutation(formData); // ✅ pass just FormData
+};
+
 
   const { mutate: uploadInvoiceMutation, isPending: isUploadPending } =
     useMutation({
@@ -237,7 +241,8 @@ const AllocatedBudget = ({
       <WidgetSection
         title={"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"}
         TitleAmount={`INR ${inrFormat(totalProjectedAmountForFY)}`}
-        border>
+        border
+      >
         <div className="flex flex-col gap-4 rounded-md ">
           {!hideTitle ? (
             <div className="flex justify-between items-center">
