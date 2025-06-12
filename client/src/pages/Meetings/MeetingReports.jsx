@@ -91,59 +91,6 @@ const MeetingReports = () => {
     },
   ];
 
-  const rows = [
-    {
-      name: "Sam",
-      department: "IT",
-      date: "2024-01-29",
-      startTime: "10:00 AM",
-      endTime: "11:00 AM",
-      duration: "1h",
-      creditsUsed: 20,
-      status: "Ongoing",
-    },
-    {
-      name: "Alice",
-      department: "Admin",
-      date: "2024-01-29",
-      startTime: "11:30 AM",
-      endTime: "12:15 PM",
-      duration: "45m",
-      creditsUsed: 50,
-      status: "Cancelled",
-    },
-    {
-      name: "Bob",
-      department: "HR",
-      date: "2024-01-29",
-      startTime: "2:00 PM",
-      endTime: "3:00 PM",
-      duration: "1h",
-      creditsUsed: 30,
-      status: "Upcoming",
-    },
-    {
-      name: "Emma",
-      department: "Finance",
-      date: "2024-01-29",
-      startTime: "3:30 PM",
-      endTime: "4:15 PM",
-      duration: "45m",
-      creditsUsed: 10,
-      status: "Cancelled",
-    },
-    {
-      name: "John",
-      department: "IT",
-      date: "2024-01-29",
-      startTime: "4:30 PM",
-      endTime: "6:00 PM",
-      duration: "1h 30m",
-      creditsUsed: 40,
-      status: "Upcoming",
-    },
-  ];
-
   return (
     <div className="flex flex-col gap-8 p-4">
       <PageFrame>
