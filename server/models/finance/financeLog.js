@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const financeLogSchema = new mongoose.Schema(
   {
-    finance: {
+    invoice: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Finance",
     },

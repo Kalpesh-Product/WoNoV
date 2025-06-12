@@ -24,7 +24,7 @@ const invoiceSchema = new mongoose.Schema(
       type: Date,
       //   required: true,
     },
-    paidStatus: {
+    paymentStatus: {
       type: Boolean,
       default: false,
     },

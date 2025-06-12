@@ -92,7 +92,7 @@ const getIncomeAndExpanse = async (req, res, next) => {
 const uploadClientInvoice = async (req, res, next) => {
   const logPath = "finance/FinanceLog";
   const logAction = "Upload Invoice";
-  const logSourceKey = "finance";
+  const logSourceKey = "invoice";
   const { client, invoiceUploadedAt } = req.body;
   const file = req.file;
   const { user, ip, company } = req;
@@ -253,4 +253,56 @@ const getInvoices = async (req, res, next) => {
   }
 };
 
-module.exports = { getIncomeAndExpanse, uploadClientInvoice, getInvoices };
+const updatePaymentStatus = async (req, res, next) => {
+  const logPath = "finance/FinanceLog";
+  const logAction = "Update Payment Status";
+  const logSourceKey = "invoice";
+  const { user, ip, company } = req;
+
+  try {
+    const { invoiceId } = req.params;
+
+    const updateInvoice = await Invoice.findByIdAndUpdate(
+      { _id: invoiceId },
+      { paymentStatus: true },
+      { new: true }
+    );
+
+    if (!updateInvoice) {
+      throw new CustomError(
+        "Failed to update payment status",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Payment status updated successfully",
+      status: "Success",
+      user: user,
+      ip: ip,
+      company: company,
+      sourceKey: logSourceKey,
+      sourceId: updateInvoice._id,
+      changes: { paymentStatus: true },
+    });
+
+    res.status(200).json({ message: "Payment status updated successfully" });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+    );
+  }
+};
+
+module.exports = {
+  getIncomeAndExpanse,
+  uploadClientInvoice,
+  getInvoices,
+  updatePaymentStatus,
+};
