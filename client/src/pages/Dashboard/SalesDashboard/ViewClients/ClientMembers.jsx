@@ -4,6 +4,7 @@ import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
 import { useSelector } from "react-redux";
 import humanDate from "../../../../utils/humanDateForamt";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const ClientMembers = () => {
   const navigate = useNavigate();
@@ -23,12 +24,10 @@ const ClientMembers = () => {
             cursor: "pointer",
           }}
           onClick={() =>
-            navigate(
-              `view-member/${params.data.employeeName}`,
-              { state: { memberDetails: params.data } }
-            )
-          }
-        >
+            navigate(`view-member/${params.data.employeeName}`, {
+              state: { memberDetails: params.data },
+            })
+          }>
           {params.value}
         </span>
       ),
@@ -64,19 +63,21 @@ const ClientMembers = () => {
   return (
     <div>
       <div className="w-full">
-        <AgTable
-          key={selectedClient?.members.length}
-          search={true}
-          searchColumn="Email"
-          data={selectedClient?.members.map((item, index) => ({
-            srno: index + 1,
-            employeeName: item.employeeName,
-            dob: humanDate(item.dob),
-            mobileNo: item.mobileNo || 0,
-            email: item.email || "N/A",
-          }))}
-          columns={viewEmployeeColumns}
-        />
+        <PageFrame>
+          <AgTable
+            key={selectedClient?.members.length}
+            search={true}
+            searchColumn="Email"
+            data={selectedClient?.members.map((item, index) => ({
+              srno: index + 1,
+              employeeName: item.employeeName,
+              dob: humanDate(item.dob),
+              mobileNo: item.mobileNo || 0,
+              email: item.email || "N/A",
+            }))}
+            columns={viewEmployeeColumns}
+          />
+        </PageFrame>
       </div>
       <div>
         <Outlet />

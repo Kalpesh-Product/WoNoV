@@ -4,6 +4,7 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import useAuth from "../../hooks/useAuth";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const VisitorTeamMembers = () => {
   const axios = useAxiosPrivate();
@@ -33,30 +34,32 @@ const VisitorTeamMembers = () => {
 
   return (
     <div className="flex flex-col gap-8 p-4">
-      <div>
-        <AgTable
-          search={true}
-          searchColumn={"kra"}
-          tableTitle={"Team Members"}
-          data={
-            isLoading
-              ? []
-              : [
-                  //   ...taskList.map((task, index) => ({
-                  ...teamMembersData.map((task, index) => ({
-                    srNo: index + 1,
-                    name: task.name,
-                    email: task.email,
-                    role: task.role,
-                    currentDesk: task.currentDesk,
-                    location: task.location,
-                    status: task.status,
-                  })),
-                ]
-          }
-          columns={teamMembersColumn}
-        />
-      </div>
+      <PageFrame>
+        <div>
+          <AgTable
+            search={true}
+            searchColumn={"kra"}
+            tableTitle={"Team Members"}
+            data={
+              isLoading
+                ? []
+                : [
+                    //   ...taskList.map((task, index) => ({
+                    ...teamMembersData.map((task, index) => ({
+                      srNo: index + 1,
+                      name: task.name,
+                      email: task.email,
+                      role: task.role,
+                      currentDesk: task.currentDesk,
+                      location: task.location,
+                      status: task.status,
+                    })),
+                  ]
+            }
+            columns={teamMembersColumn}
+          />
+        </div>
+      </PageFrame>
     </div>
   );
 };

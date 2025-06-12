@@ -28,6 +28,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 import useAuth from "../../../hooks/useAuth";
 import DateWiseTable from "../../../components/Tables/DateWiseTable";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const DailyTasks = () => {
   const axios = useAxiosPrivate();
@@ -309,50 +310,54 @@ const DailyTasks = () => {
   return (
     <>
       <div className="flex flex-col gap-4">
-        <WidgetSection padding layout={1}>
-          <DateWiseTable
-            key={departmentKra.length}
-            checkbox
-            tableTitle={`MY TASKS`}
-            buttonTitle={"Add Task"}
-            handleSubmit={() => {
-              setModalMode("add-task");
-              setOpenModal(true);
-            }}
-            data={[
-              ...departmentKra
-                .filter((item) => item.status !== "Completed")
-                .map((item, index) => ({
-                  srno: index + 1,
-                  id: item._id,
-                  taskList: item.taskName,
-                  assignedDate: item.assignedDate,
-                  dueDate: item.dueDate,
-                  status: item.status,
-                  dueTime: humanTime(item.dueTime),
-                  // createdAt: humanTime(item.createdAt),
-                  assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
-                })),
-            ]}
-            dateColumn={"dueDate"}
-            columns={departmentColumns}
-          />
-        </WidgetSection>
-        {!isCompletedLoading ? (
+        <PageFrame>
           <WidgetSection padding layout={1}>
             <DateWiseTable
-              key={completedEntries.length}
-              tableTitle={`MY COMPLETED TASKS`}
-              data={completedData}
-              dateColumn={"completionDate"}
-              columns={completedColumns}
+              key={departmentKra.length}
+              checkbox
+              tableTitle={`MY TASKS`}
+              buttonTitle={"Add Task"}
+              handleSubmit={() => {
+                setModalMode("add-task");
+                setOpenModal(true);
+              }}
+              data={[
+                ...departmentKra
+                  .filter((item) => item.status !== "Completed")
+                  .map((item, index) => ({
+                    srno: index + 1,
+                    id: item._id,
+                    taskList: item.taskName,
+                    assignedDate: item.assignedDate,
+                    dueDate: item.dueDate,
+                    status: item.status,
+                    dueTime: humanTime(item.dueTime),
+                    // createdAt: humanTime(item.createdAt),
+                    assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
+                  })),
+              ]}
+              dateColumn={"dueDate"}
+              columns={departmentColumns}
             />
           </WidgetSection>
-        ) : (
-          <div className="h-72 flex items-center justify-center">
-            <CircularProgress color="black" />
-          </div>
-        )}
+        </PageFrame>
+        <PageFrame>
+          {!isCompletedLoading ? (
+            <WidgetSection padding layout={1}>
+              <DateWiseTable
+                key={completedEntries.length}
+                tableTitle={`MY COMPLETED TASKS`}
+                data={completedData}
+                dateColumn={"completionDate"}
+                columns={completedColumns}
+              />
+            </WidgetSection>
+          ) : (
+            <div className="h-72 flex items-center justify-center">
+              <CircularProgress color="black" />
+            </div>
+          )}
+        </PageFrame>
       </div>
 
       <MuiModal

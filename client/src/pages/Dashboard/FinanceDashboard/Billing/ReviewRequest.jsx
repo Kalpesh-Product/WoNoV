@@ -11,18 +11,17 @@ import {
   CircularProgress,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import PrimaryButton from "../PrimaryButton";
-import MuiModal from "../MuiModal";
-import usePageDepartment from "../../hooks/usePageDepartment";
+import PrimaryButton from "../../../../components/PrimaryButton";
+import MuiModal from "../../../../components/MuiModal";
+import usePageDepartment from "../../../../hooks/usePageDepartment";
 import { MdDelete } from "react-icons/md";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import humanDate from "../../utils/humanDateForamt";
+import humanDate from "../../../../utils/humanDateForamt";
 import { toast } from "sonner";
-import PageFrame from "./PageFrame";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
@@ -39,11 +38,10 @@ const paymentModes = [
   "ETC",
 ];
 
-const Reimbursement = () => {
+const ReviewRequest = () => {
   const formRef = useRef(null);
   const [openPreview, setOpenPreview] = useState(false);
   const department = usePageDepartment();
-  console.log("department value : ", department);
   const axios = useAxiosPrivate();
   const { control, watch, setValue, getValues, reset } = useForm({
     defaultValues: {
@@ -179,332 +177,332 @@ const Reimbursement = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 ">
-      <PageFrame>
-        <div className="w-full space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-title text-primary font-pbold mb-4 uppercase">
-              {/* {department.name} Department - Voucher Form */}
-            </span>
-          </div>
+    <div className="flex flex-col gap-4">
+      <div className="w-full space-y-4">
+        <div className="flex justify-between items-center">
+          <span className="text-title text-primary font-pbold mb-4 uppercase">
+            Reimbursement Form
+          </span>
+        </div>
 
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <Controller
-                name="location"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    size="small"
-                    select
-                    {...field}
-                    label="Select Location">
-                    <MenuItem value="" disabled>
-                      Select Building
-                    </MenuItem>
-                    {locationsLoading ? (
-                      <MenuItem disabled>
-                        <CircularProgress size={20} />
-                      </MenuItem>
-                    ) : locationsError ? (
-                      <MenuItem disabled>Error fetching units</MenuItem>
-                    ) : (
-                      uniqueBuildings.map(([id, name]) => (
-                        <MenuItem key={id} value={name}>
-                          {name}
-                        </MenuItem>
-                      ))
-                    )}
-                  </TextField>
-                )}
-              />
-
-              <Controller
-                name="unitId"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    select
-                    size="small"
-                    label="Select Unit"
-                    disabled={!selectedLocation}
-                    {...field} // ✅ handles value and onChange
-                  >
-                    <MenuItem value="">Select Unit</MenuItem>
-                    {locationsLoading ? (
-                      <MenuItem disabled>
-                        <CircularProgress size={20} />
-                      </MenuItem>
-                    ) : (
-                      units
-                        .filter(
-                          (unit) =>
-                            unit.building?.buildingName === selectedLocation
-                        )
-                        .map((unit) => (
-                          <MenuItem key={unit._id} value={unit._id}>
-                            {unit.unitNo}
-                          </MenuItem>
-                        ))
-                    )}
-                  </TextField>
-                )}
-              />
-
-              {/* Hidden field to store department ID */}
-              <Controller
-                name="department"
-                control={control}
-                render={({ field }) => <input type="hidden" {...field} />}
-              />
-
-              {/* Display department name separately */}
-              <TextField
-                fullWidth
-                size="small"
-                disabled
-                label="Department"
-                value={department?.name || ""}
-              />
-              {["srNo"].map((fieldName) => (
-                <Controller
-                  key={fieldName}
-                  name={fieldName}
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      fullWidth
-                      size="small"
-                      disabled
-                      label={fieldName
-                        .replace(/([A-Z])/g, " $1")
-                        .replace(/^./, (str) => str.toUpperCase())}
-                      {...field}
-                    />
-                  )}
-                />
-              ))}
-
-              <Controller
-                name="reimbursementDate"
-                control={control}
-                rules={{
-                  required: "Date is required",
-                  validate: (value) => {
-                    if (!value) return true; // already handled by required
-                    const today = dayjs().startOf("day");
-                    const selected = dayjs(value);
-                    if (selected.isBefore(today)) {
-                      return "Date cannot be in the past.";
-                    }
-                    return true;
-                  },
-                }}
-                render={({ field, fieldState }) => (
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DatePicker
-                      {...field}
-                      label="Reimbursement Date"
-                      format="DD-MM-YYYY"
-                      disablePast
-                      value={field.value ? dayjs(field.value) : null}
-                      onChange={(date) =>
-                        field.onChange(date ? date.toISOString() : null)
-                      }
-                      slotProps={{
-                        textField: {
-                          fullWidth: true,
-                          size: "small",
-                        },
-                      }}
-                    />
-                  </LocalizationProvider>
-                )}
-              />
-
-              {/* Render the rest of the fields */}
-
-              <Controller
-                name="expanseName"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    size="small"
-                    label="Expense Name"
-                  />
-                )}
-              />
-            </div>
-
-            <span className="text-subtitle font-pmedium text-primary">
-              Add Expenses
-            </span>
-            <div className="flex gap-2">
-              <Controller
-                name="particularName"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    label="Particulars"
-                    size="small"
-                    fullWidth
-                    {...field}
-                  />
-                )}
-              />
-              <Controller
-                name="particularAmount"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    label="Amount"
-                    size="small"
-                    type="number"
-                    fullWidth
-                    {...field}
-                  />
-                )}
-              />
-              <div className="flex flex-col justify-center items-center">
-                {/* UI-only List of Added Particulars */}
-
-                <PrimaryButton
-                  title="Add"
-                  externalStyles={"w-1/4"}
-                  handleSubmit={() => {
-                    const { particularName, particularAmount } = watch();
-                    if (particularName && particularAmount) {
-                      append({
-                        particularName: particularName,
-                        particularAmount: parseFloat(particularAmount),
-                      });
-                      setValue("particularName", "");
-                      setValue("particularAmount", "");
-                    }
-                  }}
-                />
-              </div>
-            </div>
-            {fields.length > 0 && (
-              <div className="mt-4 border border-gray-300 rounded p-3 bg-gray-50">
-                <p className="text-sm font-semibold text-gray-800 mb-2">
-                  Added Particulars (UI Preview Only):
-                </p>
-                <ul className="text-xs space-y-1">
-                  {fields.map((item, index) => (
-                    <li
-                      key={index}
-                      className="flex justify-between items-center border-b py-1">
-                      <div className="flex flex-col">
-                        <span>{item.particularName}</span>
-                        <span className="font-medium text-gray-600">
-                          INR {item.particularAmount?.toFixed(2)}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => remove(index)}
-                        className="text-red-500 hover:text-red-700"
-                        title="Delete">
-                        <MdDelete size={20} />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-
-                {/* Total Section */}
-                <div className="flex justify-between border-t border-gray-300 pt-2 mt-2 text-xs font-semibold text-gray-700">
-                  <span>Total</span>
-                  <span>
-                    INR{" "}
-                    {fields
-                      .reduce(
-                        (acc, item) =>
-                          acc + (parseFloat(item.particularAmount) || 0),
-                        0
-                      )
-                      .toFixed(0)}
-                  </span>
-                </div>
-
-                <p className="text-[10px] text-gray-500 mt-2 italic">
-                  * This list is for UI purposes only. The actual voucher
-                  remains unchanged.
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Controller
-              name="gstIn"
+              name="location"
               control={control}
               render={({ field }) => (
-                <TextField label="GSTIN" size="small" fullWidth {...field} />
+                <TextField
+                  size="small"
+                  select
+                  {...field}
+                  label="Select Location"
+                >
+                  <MenuItem value="" disabled>
+                    Select Building
+                  </MenuItem>
+                  {locationsLoading ? (
+                    <MenuItem disabled>
+                      <CircularProgress size={20} />
+                    </MenuItem>
+                  ) : locationsError ? (
+                    <MenuItem disabled>Error fetching units</MenuItem>
+                  ) : (
+                    uniqueBuildings.map(([id, name]) => (
+                      <MenuItem key={id} value={name}>
+                        {name}
+                      </MenuItem>
+                    ))
+                  )}
+                </TextField>
               )}
             />
-            {[
-              {
-                name: "invoiceAttached",
-                label: "Invoice Attached ",
-                values: options,
-              },
-              {
-                name: "preApproved",
-                label: "Pre Approved in Budget ",
-                values: options,
-              },
-              {
-                name: "emergencyApproval",
-                label: "Emergency Approval ",
-                values: options,
-              },
-              {
-                name: "budgetApproval",
-                label: "Budget Approval (Finance)",
-                values: options,
-              },
-              {
-                name: "l1Approval",
-                label: "L1 Authority Approval",
-                values: options,
-              },
-            ].map(({ name, label, values }) => (
+
+            <Controller
+              name="unitId"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  select
+                  size="small"
+                  label="Select Unit"
+                  disabled={!selectedLocation}
+                  {...field} // ✅ handles value and onChange
+                >
+                  <MenuItem value="">Select Unit</MenuItem>
+                  {locationsLoading ? (
+                    <MenuItem disabled>
+                      <CircularProgress size={20} />
+                    </MenuItem>
+                  ) : (
+                    units
+                      .filter(
+                        (unit) =>
+                          unit.building?.buildingName === selectedLocation
+                      )
+                      .map((unit) => (
+                        <MenuItem key={unit._id} value={unit._id}>
+                          {unit.unitNo}
+                        </MenuItem>
+                      ))
+                  )}
+                </TextField>
+              )}
+            />
+
+            {/* Hidden field to store department ID */}
+            <Controller
+              name="department"
+              control={control}
+              render={({ field }) => <input type="hidden" {...field} />}
+            />
+
+            {/* Display department name separately */}
+            <TextField
+              fullWidth
+              size="small"
+              disabled
+              label="Department"
+              value={department?.name || ""}
+            />
+            {["srNo"].map((fieldName) => (
               <Controller
-                key={name}
-                name={name}
+                key={fieldName}
+                name={fieldName}
                 control={control}
                 render={({ field }) => (
                   <TextField
-                    select
                     fullWidth
                     size="small"
-                    label={label}
-                    value={field.value ? "Yes" : "No"}
-                    onChange={(e) => field.onChange(e.target.value === "Yes")}>
-                    {["Yes", "No"].map((opt) => (
-                      <MenuItem key={opt} value={opt}>
-                        {opt}
-                      </MenuItem>
-                    ))}
-                  </TextField>
+                    disabled
+                    label={fieldName
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (str) => str.toUpperCase())}
+                    {...field}
+                  />
                 )}
               />
             ))}
-          </div>
-          <div className="place-items-center">
-            <PrimaryButton
-              title="Preview"
-              externalStyles={"w-1/4"}
-              handleSubmit={() => setOpenPreview(true)}
+
+            <Controller
+              name="reimbursementDate"
+              control={control}
+              rules={{
+                required: "Date is required",
+                validate: (value) => {
+                  if (!value) return true; // already handled by required
+                  const today = dayjs().startOf("day");
+                  const selected = dayjs(value);
+                  if (selected.isBefore(today)) {
+                    return "Date cannot be in the past.";
+                  }
+                  return true;
+                },
+              }}
+              render={({ field, fieldState }) => (
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    {...field}
+                    label="Reimbursement Date"
+                    format="DD-MM-YYYY"
+                    disablePast
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(date) =>
+                      field.onChange(date ? date.toISOString() : null)
+                    }
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        size: "small",
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
+              )}
+            />
+
+            {/* Render the rest of the fields */}
+
+            <Controller
+              name="expanseName"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  size="small"
+                  label="Expense Name"
+                />
+              )}
             />
           </div>
+
+          <span className="text-subtitle font-pmedium">Add Particulars</span>
+          <div className="flex gap-2">
+            <Controller
+              name="particularName"
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <TextField
+                  label="Particulars"
+                  size="small"
+                  fullWidth
+                  {...field}
+                />
+              )}
+            />
+            <Controller
+              name="particularAmount"
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <TextField
+                  label="Amount"
+                  size="small"
+                  type="number"
+                  fullWidth
+                  {...field}
+                />
+              )}
+            />
+            <div className="flex flex-col justify-center items-center">
+              {/* UI-only List of Added Particulars */}
+
+              <PrimaryButton
+                title="Add"
+                externalStyles={"w-1/4"}
+                handleSubmit={() => {
+                  const { particularName, particularAmount } = watch();
+                  if (particularName && particularAmount) {
+                    append({
+                      particularName: particularName,
+                      particularAmount: parseFloat(particularAmount),
+                    });
+                    setValue("particularName", "");
+                    setValue("particularAmount", "");
+                  }
+                }}
+              />
+            </div>
+          </div>
+          {fields.length > 0 && (
+            <div className="mt-4 border border-gray-300 rounded p-3 bg-gray-50">
+              <p className="text-sm font-semibold text-gray-800 mb-2">
+                Added Particulars (UI Preview Only):
+              </p>
+              <ul className="text-xs space-y-1">
+                {fields.map((item, index) => (
+                  <li
+                    key={index}
+                    className="flex justify-between items-center border-b py-1"
+                  >
+                    <div className="flex flex-col">
+                      <span>{item.particularName}</span>
+                      <span className="font-medium text-gray-600">
+                        INR {item.particularAmount?.toFixed(2)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => remove(index)}
+                      className="text-red-500 hover:text-red-700"
+                      title="Delete"
+                    >
+                      <MdDelete size={20} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Total Section */}
+              <div className="flex justify-between border-t border-gray-300 pt-2 mt-2 text-xs font-semibold text-gray-700">
+                <span>Total</span>
+                <span>
+                  INR{" "}
+                  {fields
+                    .reduce(
+                      (acc, item) =>
+                        acc + (parseFloat(item.particularAmount) || 0),
+                      0
+                    )
+                    .toFixed(0)}
+                </span>
+              </div>
+
+              <p className="text-[10px] text-gray-500 mt-2 italic">
+                * This list is for UI purposes only. The actual voucher remains
+                unchanged.
+              </p>
+            </div>
+          )}
         </div>
-      </PageFrame>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Controller
+            name="gstIn"
+            control={control}
+            render={({ field }) => (
+              <TextField label="GSTIN" size="small" fullWidth {...field} />
+            )}
+          />
+          {[
+            {
+              name: "invoiceAttached",
+              label: "Invoice Attached ",
+              values: options,
+            },
+            {
+              name: "preApproved",
+              label: "Pre Approved in Budget ",
+              values: options,
+            },
+            {
+              name: "emergencyApproval",
+              label: "Emergency Approval ",
+              values: options,
+            },
+            {
+              name: "budgetApproval",
+              label: "Budget Approval (Finance)",
+              values: options,
+            },
+            {
+              name: "l1Approval",
+              label: "L1 Authority Approval",
+              values: options,
+            },
+          ].map(({ name, label, values }) => (
+            <Controller
+              key={name}
+              name={name}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  select
+                  fullWidth
+                  size="small"
+                  label={label}
+                  value={field.value ? "Yes" : "No"}
+                  onChange={(e) => field.onChange(e.target.value === "Yes")}
+                >
+                  {["Yes", "No"].map((opt) => (
+                    <MenuItem key={opt} value={opt}>
+                      {opt}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          ))}
+        </div>
+        <div className="place-items-center">
+          <PrimaryButton
+            title="Preview"
+            externalStyles={"w-1/4"}
+            handleSubmit={() => setOpenPreview(true)}
+          />
+        </div>
+      </div>
 
       <MuiModal open={openPreview} onClose={() => setOpenPreview(false)}>
         <Box className="absolute top-1/2 left-1/2 bg-white p-4 rounded shadow max-h-screen overflow-y-auto w-[53%] -translate-x-1/2 -translate-y-1/2">
@@ -688,4 +686,4 @@ const Reimbursement = () => {
   );
 };
 
-export default Reimbursement;
+export default ReviewRequest;

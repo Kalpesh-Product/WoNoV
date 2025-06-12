@@ -329,7 +329,12 @@ import TasksViewDepartment from "../pages/Tasks/DepartmentTasks/TasksViewDepartm
 import ManageTicketLayout from "../pages/Tickets/Tables/ManageTicketLayout";
 import ManageTicketsHome from "../pages/Tickets/ManageTicketsHome";
 import Reimbursement from "../components/Pages/Reimbursement";
+import AddClient from "../pages/Visitors/Forms/AddClient";
 import IncomeDetails from "../pages/Dashboard/FinanceDashboard/IncomeDetails/IncomeDetails";
+import ComplianceDocuments from "../pages/Dashboard/FinanceDashboard/MixBag/ComplianceDocuments";
+import LandlordAgreements from "../pages/Dashboard/FinanceDashboard/MixBag/LandlordAgreements";
+import ClientAgreements from "../pages/Dashboard/FinanceDashboard/MixBag/ClientAgreements";
+import ReviewRequest from "../pages/Dashboard/FinanceDashboard/Billing/ReviewRequest";
 
 export const routes = createBrowserRouter([
   {
@@ -469,6 +474,18 @@ export const routes = createBrowserRouter([
                         element: <DirectorsCompany />,
                       },
                       {
+                        path: "mix-bag/compliance-documents",
+                        element: <ComplianceDocuments />,
+                      },
+                      {
+                        path: "mix-bag/landlord-agreements",
+                        element: <LandlordAgreements />,
+                      },
+                      {
+                        path: "mix-bag/client-agreements",
+                        element: <ClientAgreements />,
+                      },
+                      {
                         path: "company-KYC",
                         element: <DirectorsCompany />,
                       },
@@ -590,6 +607,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "pending-approvals",
                             element: <PendingApprovals />,
+                          },
+                          {
+                            path: "pending-approvals/review-request",
+                            element: <ReviewRequest />,
                           },
                         ],
                       },
@@ -1919,6 +1940,10 @@ export const routes = createBrowserRouter([
                   {
                     path: "add-visitor", // Page with form to Add a new Visitor
                     element: <AddVisitor />,
+                  },
+                  {
+                    path: "add-client", // Page with form to Add a new Visitor
+                    element: <AddClient />,
                   },
                   {
                     path: "manage-visitors", // Page with table showing a list of all visitors

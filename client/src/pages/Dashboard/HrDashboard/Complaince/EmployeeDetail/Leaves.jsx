@@ -23,6 +23,7 @@ import useAuth from "../../../../../hooks/useAuth";
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import MonthWiseTable from "../../../../../components/Tables/MonthWiseTable";
+import PageFrame from "../../../../../components/Pages/PageFrame";
 
 const Leaves = () => {
   const axios = useAxiosPrivate();
@@ -300,42 +301,42 @@ const Leaves = () => {
         </WidgetSection> */}
       </div>
       <div>
-        <MonthWiseTable
-          key={leaves.length}
-          search={true}
-          searchColumn={"Leave Type"}
-          tableTitle={`${name}'s Leaves`}
-          buttonTitle={"Add Requested Leave"}
-          handleClick={() => {
-            setOpenModal(true);
-          }}
-          data={[
-            ...leaves.map((leave, index) => ({
-              id: index + 1,
-              fromDate: humanDate(leave.fromDate),
-              toDate: humanDate(leave.toDate),
-              leaveType: leave.leaveType,
-              leavePeriod: leave.leavePeriod,
-              hours: leave.hours,
-              description: leave.description,
-              status: leave.status,
-            })),
-          ]}
-          columns={leavesColumn}
-        />
+        <PageFrame>
+          <MonthWiseTable
+            key={leaves.length}
+            search={true}
+            searchColumn={"Leave Type"}
+            tableTitle={`${name}'s Leaves`}
+            buttonTitle={"Add Requested Leave"}
+            handleClick={() => {
+              setOpenModal(true);
+            }}
+            data={[
+              ...leaves.map((leave, index) => ({
+                id: index + 1,
+                fromDate: humanDate(leave.fromDate),
+                toDate: humanDate(leave.toDate),
+                leaveType: leave.leaveType,
+                leavePeriod: leave.leavePeriod,
+                hours: leave.hours,
+                description: leave.description,
+                status: leave.status,
+              })),
+            ]}
+            columns={leavesColumn}
+          />
+        </PageFrame>
       </div>
       <MuiModal
         title={"Leave Request"}
         open={openModal}
         onClose={() => {
           setOpenModal(false);
-        }}
-      >
+        }}>
         <div>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4"
-          >
+            className="flex flex-col gap-4">
             <Controller
               name="fromDate"
               control={control}
@@ -395,8 +396,7 @@ const Leaves = () => {
                   fullWidth
                   select
                   label="Leave type"
-                  size="small"
-                >
+                  size="small">
                   {leaveType.map((type) => (
                     <MenuItem key={leaveType.length} value={type}>
                       {type}
@@ -416,8 +416,7 @@ const Leaves = () => {
                   fullWidth
                   select
                   label="Leave period"
-                  size="small"
-                >
+                  size="small">
                   {leavePeriod.map((period) => (
                     <MenuItem key={leavePeriod.length} value={period}>
                       {period}

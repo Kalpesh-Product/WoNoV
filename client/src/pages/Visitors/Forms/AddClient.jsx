@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { TextField, Select, MenuItem, CircularProgress } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
+import { State, City } from "country-state-city";
 import {
   DatePicker,
   LocalizationProvider,
@@ -15,7 +16,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import PageFrame from "../../../components/Pages/PageFrame";
 
-const AddVisitor = () => {
+const AddClient = () => {
   const {
     control,
     handleSubmit,
@@ -53,6 +54,16 @@ const AddVisitor = () => {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  useEffect(() => {
+    setStates(State.getStatesOfCountry("IN"));
+  }, []);
+
+  const handleStateSelect = (stateCode) => {
+    const city = City.getCitiesOfState("IN", stateCode);
+    setCities(city);
+  };
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ["employees"],
     queryFn: async () => {
@@ -163,7 +174,7 @@ const AddVisitor = () => {
               {/* Section: Basic Information */}
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">
-                  Visitor Details
+                  Client Details
                 </span>
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
@@ -171,19 +182,12 @@ const AddVisitor = () => {
                   name="visitorType"
                   control={control}
                   rules={{ required: "Visitor type is required" }}
+                  disabled
                   render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      select
-                      label="Select Visitor Type"
-                      error={!!errors.visitorType}
-                      helperText={errors.visitorType?.message}>
-                      <MenuItem value="" disabled>
-                        Select Visitor Type
+                    <TextField {...field} size="small" select label="Meeting">
+                      <MenuItem value="Meeting" disabled>
+                        Meeting
                       </MenuItem>
-                      <MenuItem value="Walk In">Walk In</MenuItem>
-                      <MenuItem value="Scheduled">Scheduled</MenuItem>
                     </TextField>
                   )}
                 />
@@ -199,6 +203,73 @@ const AddVisitor = () => {
                     />
                   )}
                 />
+                <Controller
+                  name="sector"
+                  control={control}
+                  rules={{ required: "Sector is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Sector"
+                      fullWidth
+                      error={!!errors.sector}
+                      helperText={errors.sector?.message}>
+                      <MenuItem value="" disabled>
+                        Select a Sector
+                      </MenuItem>
+                      <MenuItem value="IT & Consulting">
+                        IT & Consulting
+                      </MenuItem>
+                    </TextField>
+                  )}
+                />
+                <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                  <Controller
+                    name="hoState"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        select
+                        label="State"
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleStateSelect(e.target.value);
+                        }}
+                        fullWidth>
+                        <MenuItem value="">Select a State</MenuItem>
+                        {states.map((item) => (
+                          <MenuItem value={item.isoCode} key={item.isoCode}>
+                            {item.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                  />
+                  <Controller
+                    name="hoCity"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        select
+                        label="City"
+                        fullWidth>
+                        <MenuItem value="">Select a State</MenuItem>
+                        {cities.map((item) => (
+                          <MenuItem
+                            value={item.name}
+                            key={`${item.name}-${item.stateCode}-${item.latitude}`}>
+                            {item.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                  />
+                </div>
 
                 <Controller
                   name="firstName"
@@ -301,123 +372,82 @@ const AddVisitor = () => {
             </div>
             <div>
               <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">To Meet</span>
+                <span className="text-subtitle font-pmedium">Verfication</span>
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
                 <Controller
-                  name="clientCompany"
+                  name="idProof.idType"
                   control={control}
+                  rules={{ required: "Id Type is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
-                      label={"Select Company"}
-                      fullWidth
-                      onChange={(e) => {
-                        field.onChange(e);
-                        setSelectedDepartment("");
-                      }}
-                      select>
+                      label="ID Type"
+                      select
+                      error={!!errors.idProof?.idType}
+                      helperText={errors.idProof?.idType?.message}
+                      fullWidth>
                       <MenuItem value="" disabled>
-                        Select Company
+                        Select Id Type
                       </MenuItem>
-                      <MenuItem value="6799f0cd6a01edbe1bc3fcea">
-                        BIZNest
+                      <MenuItem value="aadhar">Aadhar</MenuItem>
+                      <MenuItem value="pan">PAN</MenuItem>
+                      <MenuItem value="drivingLicense">
+                        Driving License
                       </MenuItem>
-                      {clientCompanies.map((client) => (
-                        <MenuItem key={client._id} value={client._id}>
-                          {client.clientName}
-                        </MenuItem>
-                      ))}
                     </TextField>
                   )}
                 />
-
                 <Controller
-                  name="department"
+                  name="idProof.idNumber"
                   control={control}
-                  rules={{ required: "Department is required" }}
+                  rules={{
+                    required: "ID Number is required",
+                    validate: (value) => {
+                      if (selectedIdType === "aadhar") {
+                        const regex = /^\d{4}-\d{4}-\d{4}$/;
+                        if (!regex.test(value))
+                          return "Aadhar must be in 1234-5678-9012 format";
+                      }
+                      if (selectedIdType === "pan") {
+                        const regex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+                        if (!regex.test(value))
+                          return "PAN must be in format: ABCDE1234F";
+                      }
+                      if (selectedIdType === "drivingLicense") {
+                        const regex = /^[A-Z]{2}[0-9]{2}\s?[0-9]{11}$/;
+                        if (!regex.test(value))
+                          return "DL must be like MH12 12345678901";
+                      }
+                      return true;
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
-                      label={"Select Department"}
+                      label="ID Number"
                       fullWidth
-                      disabled={selectedCompany !== "6799f0cd6a01edbe1bc3fcea"}
+                      error={!!errors.idProof?.idNumber}
+                      helperText={errors.idProof?.idNumber?.message}
                       onChange={(e) => {
-                        field.onChange(e);
-                        setSelectedDepartment(e.target.value);
-                      }}
-                      select>
-                      <MenuItem value="">Select Department</MenuItem>
+                        let value = e.target.value;
 
-                      {/* Conditionally add "N/A" option if visitor type is "Meeting" */}
-                      {visitorType === "Meeting" && (
-                        <MenuItem value="na">N/A</MenuItem>
-                      )}
+                        if (selectedIdType === "aadhar") {
+                          // Remove non-digit characters first
+                          value = value.replace(/\D/g, "").slice(0, 12);
 
-                      {uniqueDepartments.map((department) => (
-                        <MenuItem key={department._id} value={department._id}>
-                          {department.name}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                />
-
-                <Controller
-                  name="toMeet"
-                  control={control}
-                  render={({ field }) => {
-                    const isBiznest =
-                      selectedCompany === "6799f0cd6a01edbe1bc3fcea";
-                    const showClientMembers = selectedCompany && !isBiznest;
-                    const showBiznestEmployees =
-                      isBiznest &&
-                      selectedDepartment &&
-                      selectedDepartment !== "na";
-
-                    return (
-                      <TextField
-                        {...field}
-                        select
-                        size="small"
-                        fullWidth
-                        disabled={
-                          (!showClientMembers && !showBiznestEmployees) ||
-                          (isBiznest && selectedDepartment === "na")
+                          // Auto-insert hyphens after every 4 digits
+                          const parts = value.match(/.{1,4}/g);
+                          if (parts) value = parts.join("-");
                         }
-                        label={"Select Person"}>
-                        <MenuItem value="">Select the person to meet</MenuItem>
 
-                        {/* Show client members if a non-BIZNest company is selected */}
-                        {showClientMembers && !clientMembersIsLoading ? (
-                          clientMembers.map((member) => (
-                            <MenuItem key={member._id} value={member._id}>
-                              {member.employeeName}
-                            </MenuItem>
-                          ))
-                        ) : showClientMembers && clientMembersIsLoading ? (
-                          <MenuItem disabled>
-                            <CircularProgress size={20} />
-                          </MenuItem>
-                        ) : null}
-
-                        {/* Show BIZNest employees from selected department */}
-                        {showBiznestEmployees && !isLoading ? (
-                          departmentEmployees.map((emp) => (
-                            <MenuItem key={emp._id} value={emp._id}>
-                              {emp.firstName} {emp.lastName}
-                            </MenuItem>
-                          ))
-                        ) : showBiznestEmployees && isLoading ? (
-                          <MenuItem disabled>
-                            <CircularProgress size={20} />
-                          </MenuItem>
-                        ) : null}
-                      </TextField>
-                    );
-                  }}
+                        field.onChange(value);
+                      }}
+                      value={field.value}
+                    />
+                  )}
                 />
               </div>
 
@@ -515,4 +545,4 @@ const AddVisitor = () => {
   );
 };
 
-export default AddVisitor;
+export default AddClient;

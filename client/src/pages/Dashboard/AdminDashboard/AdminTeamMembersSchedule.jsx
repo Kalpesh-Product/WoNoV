@@ -15,6 +15,7 @@ import { HiOutlinePencilSquare } from "react-icons/hi2";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import humanDate from "../../../utils/humanDateForamt";
 import { queryClient } from "../../../main";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const AdminTeamMembersSchedule = () => {
   const navigate = useNavigate();
@@ -43,11 +44,15 @@ const AdminTeamMembersSchedule = () => {
     },
   });
 
-  const { handleSubmit: updateUser, reset: updateUserReset, control: updateUserControl } = useForm({
+  const {
+    handleSubmit: updateUser,
+    reset: updateUserReset,
+    control: updateUserControl,
+  } = useForm({
     defaultValues: {
       meetingId: "",
-    }
-  })
+    },
+  });
 
   //----------------------------------------API---------------------------------------//
   const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
@@ -84,7 +89,8 @@ const AdminTeamMembersSchedule = () => {
       try {
         const adminDepId = "6798bae6e469e809084e24a4";
         const response = await axios.get(
-          `/api/administration/fetch-weekly-unit/${adminDepId}`);
+          `/api/administration/fetch-weekly-unit/${adminDepId}`
+        );
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -118,7 +124,7 @@ const AdminTeamMembersSchedule = () => {
     { field: "id", headerName: "Sr No", width: 100 },
     { field: "name", headerName: "Name" },
     { field: "manager", headerName: "Manager" },
-    { field: "unitNo", headerName: "Unit",flex:"1" },
+    { field: "unitNo", headerName: "Unit", flex: "1" },
     {
       field: "actions",
       headerName: "Actions",
@@ -126,14 +132,12 @@ const AdminTeamMembersSchedule = () => {
         <div className="flex items-center gap-4 py-2">
           <span
             onClick={() => handleViewUser(params.data)}
-            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
-          >
+            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
             <MdOutlineRemoveRedEye />
           </span>
           <span
             onClick={() => handleEditUser(params.data)}
-            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
-          >
+            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
             <HiOutlinePencilSquare />
           </span>
         </div>
@@ -169,36 +173,35 @@ const AdminTeamMembersSchedule = () => {
   };
   //---------------------------------------Event Handlers------------------------------//
 
-
   return (
     <div className="p-4">
-      {!isUnitAssignees ? (
-        <AgTable
-          key={unitAssignees.length}
-          search={true}
-          tableTitle={"Team Members Schedule"}
-          buttonTitle={"Assign Member"}
-          data={[]}
-          columns={memberColumns}
-          handleClick={handleAddUser}
-        />
-      ) : (
-        <div className="flex justify-center items-center h-[60vh]">
-          <CircularProgress color="#1E3D73"/>
-        </div>
-      )}
+      <PageFrame>
+        {!isUnitAssignees ? (
+          <AgTable
+            key={unitAssignees.length}
+            search={true}
+            tableTitle={"Team Members Schedule"}
+            buttonTitle={"Assign Member"}
+            data={[]}
+            columns={memberColumns}
+            handleClick={handleAddUser}
+          />
+        ) : (
+          <div className="flex justify-center items-center h-[60vh]">
+            <CircularProgress color="#1E3D73" />
+          </div>
+        )}
+      </PageFrame>
 
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={"Assign Substitute"}
-      >
+        title={"Assign Substitute"}>
         {modalMode === "add" && (
           <div>
             <form
               onSubmit={handleSubmit(handleFormSubmit)}
-              className="flex flex-col gap-4"
-            >
+              className="flex flex-col gap-4">
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <Controller
@@ -213,8 +216,7 @@ const AdminTeamMembersSchedule = () => {
                         size="small"
                         select
                         error={!!errors.employee}
-                        helperText={errors.employee?.message}
-                      >
+                        helperText={errors.employee?.message}>
                         <MenuItem value="" disabled>
                           Select a Member
                         </MenuItem>
@@ -251,8 +253,7 @@ const AdminTeamMembersSchedule = () => {
                         fullWidth
                         error={!!errors.location}
                         helperText={errors.unitId?.message}
-                        select
-                      >
+                        select>
                         <MenuItem value="" disabled>
                           Select Unit
                         </MenuItem>
@@ -334,8 +335,7 @@ const AdminTeamMembersSchedule = () => {
                   {selectedUser.substitutions.map((sub, index) => (
                     <div
                       key={sub.substitutionId}
-                      className="flex flex-col gap-2 border border-borderGray rounded-2xl p-4"
-                    >
+                      className="flex flex-col gap-2 border border-borderGray rounded-2xl p-4">
                       <h4 className="text-subtitle font-pmedium text-primary mb-2">
                         Substitute {index + 1}
                       </h4>

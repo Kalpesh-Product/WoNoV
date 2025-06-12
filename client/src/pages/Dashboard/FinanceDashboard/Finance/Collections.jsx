@@ -38,8 +38,7 @@ const Collections = () => {
       cellRenderer: (params) => (
         <span
           className="text-primary underline cursor-pointer"
-          onClick={() => handleViewModal(params.data)}
-        >
+          onClick={() => handleViewModal(params.data)}>
           {params.value}
         </span>
       ),
@@ -119,21 +118,27 @@ const Collections = () => {
       },
     },
     legend: { position: "top" },
-    tooltip: {
-      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-        const month = w.globals.categories[dataPointIndex];
-        const paid = series[0][dataPointIndex];
-        const unpaid = series[1][dataPointIndex];
-        const total = paid + unpaid;
+    // tooltip: {
+    //   custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+    //     const month = w.globals.categories[dataPointIndex];
+    //     const paid = series[0][dataPointIndex];
+    //     const unpaid = series[1][dataPointIndex];
+    //     const total = paid + unpaid;
 
-        return `
-      <div style="padding:10px;font-family:Poppins-Regular;font-size:13px">
-        <div><strong>Month:</strong> ${month}</div>
-        <div><strong>Total Clients:</strong> ${total}</div>
-        <div style="color:#54C4A7"><strong>Paid:</strong> ${paid}</div>
-        <div style="color:#EB5C45"><strong>Unpaid:</strong> ${unpaid}</div>
-      </div>
-    `;
+    //     return `
+    //   <div style="padding:10px;font-family:Poppins-Regular;font-size:13px">
+    //     <div><strong>Month:</strong> ${month}</div>
+    //     <div><strong>Total Clients:</strong> ${total}</div>
+    //     <div style="color:#54C4A7"><strong>Paid:</strong> ${paid}</div>
+    //     <div style="color:#EB5C45"><strong>Unpaid:</strong> ${unpaid}</div>
+    //   </div>
+    // `;
+    //   },
+    // },
+
+    tooltip: {
+      y: {
+        formatter: (val) => `${val}%`,
       },
     },
     colors: ["#54C4A7", "#EB5C45"],
@@ -164,19 +169,20 @@ const Collections = () => {
         layout={1}
         title={"COLLECTIONS"}
         titleLabel={"FY 2024-25"}
-        border
-      >
+        border>
         <BarGraph data={barGraphData} options={barGraphOptions} />
         <hr />
         <WidgetSection layout={2}>
           <DataCard
-            title={"Paid"}
+            title={"Collected"}
             // description={`Current Month: ${sortedData[0]?.month || "N/A"}`}
+            description={`Total : INR ${inrFormat(grandTotal)}`}
             data={`${barGraphData[0]?.data?.[0] || 0}%`}
           />
           <DataCard
-            title={"Unpaid"}
+            title={"Due"}
             // description={`Current Month: ${sortedData[0]?.month || "N/A"}`}
+            description={`Total : INR 0`}
             data={`${barGraphData[1]?.data?.[0] || 0}%`}
           />
         </WidgetSection>
@@ -187,8 +193,7 @@ const Collections = () => {
         title="Collections"
         titleLabel={"FY 2024-25"}
         TitleAmount={`INR ${inrFormat(grandTotal)}`}
-        className="bg-white rounded-md shadow-sm"
-      >
+        className="bg-white rounded-md shadow-sm">
         <YearWiseTable
           data={flatClientData}
           columns={kraColumn}
@@ -201,14 +206,24 @@ const Collections = () => {
         <MuiModal
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
-          title="Collection Details"
-        >
+          title="Collection Details">
           <div className="space-y-3">
+            <div className="font-bold">Client & Contract Info</div>
             <DetalisFormatted
               title="Client Name"
               detail={viewDetails.clientName}
             />
             <DetalisFormatted title="Channel" detail={viewDetails.channel} />
+            <DetalisFormatted
+              title="Total Term"
+              detail={`${viewDetails.totalTerm} months`}
+            />
+            <DetalisFormatted
+              title="Rent Status"
+              detail={viewDetails.rentStatus}
+            />
+            <br />
+            <div className="font-bold">Space & Financials</div>
             <DetalisFormatted
               title="No. of Desks"
               detail={viewDetails.noOfDesks}
@@ -221,18 +236,13 @@ const Collections = () => {
               title="Revenue"
               detail={`INR ${inrFormat(viewDetails.revenue)}`}
             />
-            <DetalisFormatted
-              title="Total Term"
-              detail={`${viewDetails.totalTerm} months`}
-            />
+            <br />
+            <div className="font-bold">Rent Schedule</div>
             <DetalisFormatted
               title="Rent Date"
               detail={humanDate(viewDetails.rentDate)}
             />
-            <DetalisFormatted
-              title="Rent Status"
-              detail={viewDetails.rentStatus}
-            />
+
             <DetalisFormatted
               title="Past Due Date"
               detail={humanDate(viewDetails.pastDueDate)}

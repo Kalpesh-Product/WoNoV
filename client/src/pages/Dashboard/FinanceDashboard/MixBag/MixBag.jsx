@@ -15,9 +15,15 @@ const MixBag = () => {
     },
     {
       title: "Compliance Documents",
+      route: "/app/dashboard/finance-dashboard/mix-bag/compliance-documents",
     },
     {
       title: "Landlord Agreements",
+      route: "/app/dashboard/finance-dashboard/mix-bag/landlord-agreements",
+    },
+    {
+      title: "Client Agreements",
+      route: "/app/dashboard/finance-dashboard/mix-bag/client-agreements",
     },
   ];
 
@@ -50,7 +56,14 @@ const MixBag = () => {
       <div className="h-[50vh] uppercase">
         <WidgetSection key={filteredRoutes.length} layout={2} padding>
           {filteredRoutes.map((route, index) => {
-            return <Card fullHeight key={index} title={route.title} route={route.route} />;
+            return (
+              <Card
+                fullHeight
+                key={index}
+                title={route.title}
+                route={route.route}
+              />
+            );
           })}
         </WidgetSection>
       </div>

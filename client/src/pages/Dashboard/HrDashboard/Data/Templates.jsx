@@ -14,6 +14,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
 import { queryClient } from "../../../../main";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const Templates = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -124,152 +125,153 @@ const Templates = () => {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <span className="text-primary text-title font-pmedium uppercase">
-          Templates
-        </span>
-        <PrimaryButton
-          title="Add Template"
-          handleSubmit={() => setOpenModal(true)}
-        />
-      </div>
-      {!isTemplatesLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {isTemplatesLoading
-            ? []
-            : templatesData?.map((template) => (
-                <div
-                  key={template._id}
-                  onClick={() => {
-                    const extension =
-                      template.documentLink?.split(".").pop()?.toLowerCase() ||
-                      "pdf";
-                    const safeName = template.name.replace(
-                      /[^a-z0-9_\- ]/gi,
-                      "_"
-                    ); // sanitize filename
-                    const fileName = `${safeName}.${extension}`;
-                    console.log(fileName);
+    <PageFrame>
+      <div>
+        <div className="flex justify-between items-center mb-6">
+          <span className="text-primary text-title font-pmedium uppercase">
+            Templates
+          </span>
+          <PrimaryButton
+            title="Add Template"
+            handleSubmit={() => setOpenModal(true)}
+          />
+        </div>
+        {!isTemplatesLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isTemplatesLoading
+              ? []
+              : templatesData?.map((template) => (
+                  <div
+                    key={template._id}
+                    onClick={() => {
+                      const extension =
+                        template.documentLink
+                          ?.split(".")
+                          .pop()
+                          ?.toLowerCase() || "pdf";
+                      const safeName = template.name.replace(
+                        /[^a-z0-9_\- ]/gi,
+                        "_"
+                      ); // sanitize filename
+                      const fileName = `${safeName}.${extension}`;
+                      console.log(fileName);
 
-                    const downloadUrl = template.documentLink.replace(
-                      "/upload/",
-                      "/upload/fl_attachment/"
-                    );
+                      const downloadUrl = template.documentLink.replace(
+                        "/upload/",
+                        "/upload/fl_attachment/"
+                      );
 
-                    const link = document.createElement("a");
-                    link.href = downloadUrl;
-                    link.download = `New ${fileName}`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  }}
-                  className="bg-white shadow-md rounded-lg overflow-hidden border cursor-pointer"
-                >
-                  <div className="h-48 bg-gray-100 overflow-hidden rounded">
-                    {getFilePreview(template.documentLink, template.name)}
-                  </div>
+                      const link = document.createElement("a");
+                      link.href = downloadUrl;
+                      link.download = `New ${fileName}`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                    className="bg-white shadow-md rounded-lg overflow-hidden border cursor-pointer">
+                    <div className="h-48 bg-gray-100 overflow-hidden rounded">
+                      {getFilePreview(template.documentLink, template.name)}
+                    </div>
 
-                  <div className="p-4">
-                    <h2 className="widgetTitle font-semibold font-pregular hover:underline">
-                      {template.name}
-                    </h2>
-                    {/* <p className="text-content text-gray-500 font-pregular">
+                    <div className="p-4">
+                      <h2 className="widgetTitle font-semibold font-pregular hover:underline">
+                        {template.name}
+                      </h2>
+                      {/* <p className="text-content text-gray-500 font-pregular">
                 {template.date}
               </p> */}
+                    </div>
                   </div>
-                </div>
-              ))}
-        </div>
-      ) : (
-        <div className="flex justify-center items-center h-full">
-          <CircularProgress />
-        </div>
-      )}
+                ))}
+          </div>
+        ) : (
+          <div className="flex justify-center items-center h-full">
+            <CircularProgress />
+          </div>
+        )}
 
-      <MuiModal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-        title="Add New Template"
-      >
-        <form onSubmit={handleSubmit(handleAddTemplate)}>
-          <Box display="flex" flexDirection="column" gap={3}>
-            <Controller
-              control={control}
-              name="documentName"
-              rules={{ required: "Document Name is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Name"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  error={!!errors.title}
-                  helperText={errors.title?.message}
-                />
-              )}
-            />
-
-            {/* Hidden File Input */}
-            <Controller
-              control={control}
-              name="file"
-              rules={{ required: "File is required" }}
-              render={({ field }) => (
-                <>
-                  <input
-                    ref={imageInputRef}
-                    type="file"
-                    accept="image/*,application/pdf,.doc,.docx,.ppt,.pptx"
-                    hidden
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setValue("file", file);
-                      }
-                    }}
-                  />
-
+        <MuiModal
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          title="Add New Template">
+          <form onSubmit={handleSubmit(handleAddTemplate)}>
+            <Box display="flex" flexDirection="column" gap={3}>
+              <Controller
+                control={control}
+                name="documentName"
+                rules={{ required: "Document Name is required" }}
+                render={({ field }) => (
                   <TextField
-                    label="Upload Template"
-                    placeholder="Choose a file..."
+                    {...field}
+                    label="Name"
+                    variant="outlined"
                     size="small"
                     fullWidth
-                    value={watchedFile?.name || ""}
-                    error={!!errors.file}
-                    helperText={errors.file?.message}
-                    InputProps={{
-                      readOnly: true,
-                      endAdornment: (
-                        <IconButton
-                          color="primary"
-                          component="label"
-                          onClick={() => imageInputRef.current?.click()}
-                        >
-                          <LuImageUp />
-                        </IconButton>
-                      ),
-                    }}
+                    error={!!errors.title}
+                    helperText={errors.title?.message}
                   />
-                </>
-              )}
-            />
-
-            {/* Submit Button */}
-            <Box textAlign="right">
-              <PrimaryButton
-                type="submit"
-                isLoading={isDocumentPending}
-                title={"Add Template"}
-                className="w-full"
-                disabled={isDocumentPending}
+                )}
               />
+
+              {/* Hidden File Input */}
+              <Controller
+                control={control}
+                name="file"
+                rules={{ required: "File is required" }}
+                render={({ field }) => (
+                  <>
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      accept="image/*,application/pdf,.doc,.docx,.ppt,.pptx"
+                      hidden
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setValue("file", file);
+                        }
+                      }}
+                    />
+
+                    <TextField
+                      label="Upload Template"
+                      placeholder="Choose a file..."
+                      size="small"
+                      fullWidth
+                      value={watchedFile?.name || ""}
+                      error={!!errors.file}
+                      helperText={errors.file?.message}
+                      InputProps={{
+                        readOnly: true,
+                        endAdornment: (
+                          <IconButton
+                            color="primary"
+                            component="label"
+                            onClick={() => imageInputRef.current?.click()}>
+                            <LuImageUp />
+                          </IconButton>
+                        ),
+                      }}
+                    />
+                  </>
+                )}
+              />
+
+              {/* Submit Button */}
+              <Box textAlign="right">
+                <PrimaryButton
+                  type="submit"
+                  isLoading={isDocumentPending}
+                  title={"Add Template"}
+                  className="w-full"
+                  disabled={isDocumentPending}
+                />
+              </Box>
             </Box>
-          </Box>
-        </form>
-      </MuiModal>
-    </div>
+          </form>
+        </MuiModal>
+      </div>
+    </PageFrame>
   );
 };
 

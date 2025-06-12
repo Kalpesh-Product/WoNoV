@@ -6,6 +6,7 @@ import { Chip, TextField } from "@mui/material";
 import MuiModal from "../../../../../components/MuiModal";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { toast } from "sonner";
+import PageFrame from "../../../../../components/Pages/PageFrame";
 
 const Agreements = () => {
   const axios = useAxiosPrivate();
@@ -58,7 +59,9 @@ const Agreements = () => {
     queryKey: ["agreements"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/company/get-company-documents/agreements");
+        const response = await axios.get(
+          "/api/company/get-company-documents/agreements"
+        );
         return response.data.agreements;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -84,29 +87,30 @@ const Agreements = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <AgTable
-          key={agreements.length}
-          search={true}
-          searchColumn={"Agreement Name"}
-          tableTitle={`${name}'s Agreement List`}
-          buttonTitle={"Add Agreement"}
-          handleClick={() => setModalOpen(true)}
-          data={agreements.map((agreement, index) => ({
-            id: index + 1,
-            name: agreement.name,
-            status: agreement.isActive,
-          }))}
-          columns={agreementColumn}
-        />
-      </div>
+      <PageFrame>
+        <div>
+          <AgTable
+            key={agreements.length}
+            search={true}
+            searchColumn={"Agreement Name"}
+            tableTitle={`${name}'s Agreement List`}
+            buttonTitle={"Add Agreement"}
+            handleClick={() => setModalOpen(true)}
+            data={agreements.map((agreement, index) => ({
+              id: index + 1,
+              name: agreement.name,
+              status: agreement.isActive,
+            }))}
+            columns={agreementColumn}
+          />
+        </div>
+      </PageFrame>
 
       {/* Modal for adding Agreement */}
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Add New Agreement"
-      >
+        title="Add New Agreement">
         <div>
           <TextField
             label="Agreement Name"

@@ -72,6 +72,9 @@ const budgetSchema = new mongoose.Schema({
       type: Date,
     },
   },
+  gstIn: {
+    type: String,
+  },
   invoiceAttached: {
     type: Boolean,
     default: false,
@@ -130,14 +133,13 @@ const budgetSchema = new mongoose.Schema({
     // ],
     particulars: [
       {
-        particular: { type: String, required: true },
-        amount: { type: Number, required: true },
+        particular: { type: String },
+        amount: { type: Number },
       },
     ],
     modeOfPayment: {
       type: String,
       enum: ["Cash", "Cheque", "NEFT", "RTGS", "IMPS", "Credit Card", "ETC"],
-      required: true,
     },
 
     // chequeOrUTRNumber: String,

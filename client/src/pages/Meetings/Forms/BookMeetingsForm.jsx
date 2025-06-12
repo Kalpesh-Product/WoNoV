@@ -20,7 +20,7 @@ import useAuth from "../../../hooks/useAuth";
 
 const BookMeetingsForm = () => {
   const [open, setOpen] = useState(false);
-  const {auth} = useAuth()
+  const { auth } = useAuth();
 
   const { control, handleSubmit, watch } = useForm({
     defaultValues: {
@@ -62,12 +62,10 @@ const BookMeetingsForm = () => {
       <MuiModal
         open={open}
         onClose={() => setOpen(false)}
-        title={`${meetingType} Meeting`}
-      >
+        title={`${meetingType} Meeting`}>
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col px-8 w-full gap-4"
-        >
+          className="flex flex-col px-8 w-full gap-4">
           {/* Two Input Fields */}
           <div className="flex gap-4">
             <Controller

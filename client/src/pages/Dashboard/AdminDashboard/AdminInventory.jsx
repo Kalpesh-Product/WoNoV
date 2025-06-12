@@ -12,7 +12,8 @@ import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { inrFormat } from "../../../utils/currencyFormat";
-import humanDateForamt from "../../../utils/humanDateForamt"
+import humanDateForamt from "../../../utils/humanDateForamt";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const AdminInventory = () => {
   const { auth } = useAuth();
@@ -64,8 +65,6 @@ const AdminInventory = () => {
       }
     },
   });
-
-
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
@@ -143,7 +142,7 @@ const AdminInventory = () => {
       quantity: 10,
       purchaseDate: "2024-01-15",
       warranty: 24,
-      vendorName: "TechSource Pvt Ltd"
+      vendorName: "TechSource Pvt Ltd",
     },
     {
       id: 2,
@@ -154,7 +153,7 @@ const AdminInventory = () => {
       quantity: 5,
       purchaseDate: "2023-12-01",
       warranty: 36,
-      vendorName: "OfficeComfort Solutions"
+      vendorName: "OfficeComfort Solutions",
     },
     {
       id: 3,
@@ -165,7 +164,7 @@ const AdminInventory = () => {
       quantity: 100,
       purchaseDate: "2024-03-10",
       warranty: 0,
-      vendorName: "SmartOffice Supplies"
+      vendorName: "SmartOffice Supplies",
     },
     {
       id: 4,
@@ -176,7 +175,7 @@ const AdminInventory = () => {
       quantity: 7,
       purchaseDate: "2023-11-25",
       warranty: 12,
-      vendorName: "Prime IT Distributors"
+      vendorName: "Prime IT Distributors",
     },
     {
       id: 5,
@@ -187,10 +186,9 @@ const AdminInventory = () => {
       quantity: 4,
       purchaseDate: "2024-02-05",
       warranty: 24,
-      vendorName: "NetConnect Systems"
-    }
+      vendorName: "NetConnect Systems",
+    },
   ];
-
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -212,20 +210,23 @@ const AdminInventory = () => {
 
   return (
     <div className="p-4">
-      <AgTable
-        key={mixedInventory.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"List Of Inventory"}
-        buttonTitle={"Add Inventory"}
-        data={[
-          
-        ]}
-        columns={assetColumns}
-        handleClick={handleAddAsset}
-      />
+      <PageFrame>
+        <AgTable
+          key={mixedInventory.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"List Of Inventory"}
+          buttonTitle={"Add Inventory"}
+          data={[]}
+          columns={assetColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add inventory">
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Add inventory">
         {modalMode === "add" && (
           <form onSubmit={handleSubmit(handleFormSubmit)}>
             <div className="grid grid-cols-1 gap-4">
@@ -242,8 +243,7 @@ const AdminInventory = () => {
                     select
                     error={!!errors.category}
                     helperText={errors.category?.message}
-                    fullWidth
-                  >
+                    fullWidth>
                     {assetsCategories?.map((cat) => (
                       <MenuItem key={cat} value={cat}>
                         {cat}
@@ -378,8 +378,7 @@ const AdminInventory = () => {
                     select
                     error={!!errors.vendor}
                     helperText={errors.vendor?.message}
-                    fullWidth
-                  >
+                    fullWidth>
                     {vendorDetials?.map((vendor) => (
                       <MenuItem key={vendor._id} value={vendor.name}>
                         {vendor.name}
@@ -391,15 +390,17 @@ const AdminInventory = () => {
             </div>
 
             <div className="flex gap-4 justify-center items-center mt-4">
-              <PrimaryButton title="Submit" handleSubmit={() => {
-                toast.success("Added item successfully")
-                setIsModalOpen(false)
-              }} />
+              <PrimaryButton
+                title="Submit"
+                handleSubmit={() => {
+                  toast.success("Added item successfully");
+                  setIsModalOpen(false);
+                }}
+              />
             </div>
           </form>
         )}
       </MuiModal>
-
     </div>
   );
 };
