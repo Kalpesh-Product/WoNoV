@@ -10,14 +10,14 @@ const FinanceData = () => {
   const tabs = [
     { label: "Vendor Database", path: "finance-vendor-database" },
     { label: "Asset List", path: "finance-asset-list" },
-    {
-      label: "Monthly Invoices",
-      path: "finance-monthly-invoices",
-    },
-    {
-      label: "Monthly Vouchers",
-      path: "finance-monthly-vouchers",
-    },
+    // {
+    //   label: "Monthly Invoices",
+    //   path: "finance-monthly-invoices",
+    // },
+    // {
+    //   label: "Monthly Vouchers",
+    //   path: "finance-monthly-vouchers",
+    // },
   ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"

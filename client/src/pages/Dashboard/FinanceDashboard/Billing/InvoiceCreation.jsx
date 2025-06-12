@@ -1,9 +1,4 @@
 import { useState } from "react";
-import Template from "../../../../utils/Template.png";
-import Template2 from "../../../../utils/Template1.png";
-import Template1 from "../../../../utils/Template2.png";
-import Template3 from "../../../../utils/Template3.png";
-import Template4 from "../../../../utils/Template4.png";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
@@ -12,10 +7,12 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
-import { TextField, IconButton } from "@mui/material";
+import { TextField, IconButton, MenuItem } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
-import { LuImageUp } from "react-icons/lu";
+import UploadFileInput from "../../../../components/UploadFileInput";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 
 const InvoiceCreation = () => {
   const navigate = useNavigate();
@@ -23,12 +20,28 @@ const InvoiceCreation = () => {
   const [viewModal, setViewModal] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
   const [viewAddTemplateModal, setViewAddTemplateModal] = useState(false);
+  const axios = useAxiosPrivate();
+
+  const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
+    queryKey: ["clientsData"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/co-working-clients");
+        const data = response.data.filter((item) => item.isActive);
+        return data;
+      } catch (error) {
+        console.error("Error fetching clients data:", error);
+      }
+    },
+  });
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       title: "",
-      file: null,
-      date: dayjs(),
+      invoiceFile: null,
+      clientId: "",
+      date: null,
+      status: false,
     },
   });
 
@@ -43,38 +56,12 @@ const InvoiceCreation = () => {
     reset();
   };
 
-  const templateData = [
-    {
-      id: 1,
-      imgSrc: Template,
-      title: "Experience Letter",
-      date: "Jan 10, 2025",
-    },
-    {
-      id: 2,
-      imgSrc: Template2,
-      title: "Handover & No-Dues Form",
-      date: "Opened Jan 7, 2025",
-    },
-    {
-      id: 3,
-      imgSrc: Template1,
-      title: "Timings Agreement",
-      date: "Opened Jan 7, 2025",
-    },
-    {
-      id: 4,
-      imgSrc: Template3,
-      title: "SOP Agreement",
-      date: "Opened Jan 6, 2025",
-    },
-    {
-      id: 5,
-      imgSrc: Template4,
-      title: "Internship Report",
-      date: "Dec 24, 2024",
-    },
-  ];
+  const { mutate: submitInvoice, isPending: isSubmitPending } = useMutation({
+    mutationKey: ["submitInvoice"],
+    mutation: async (data) => {},
+    onSuccess: () => {},
+    onError: (error) => {},
+  });
 
   const invoiceCreationColumns = [
     { field: "invoiceName", headerName: "Invoice Name", flex: 1 },
@@ -89,7 +76,7 @@ const InvoiceCreation = () => {
         </div>
       ),
     },
-    { field: "date", headerName: "KRAs", flex: 1 },
+    { field: "date", headerName: "Uplaod Date", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -177,7 +164,7 @@ const InvoiceCreation = () => {
         <MuiModal
           open={viewAddTemplateModal}
           onClose={() => setViewAddTemplateModal(false)}
-          title="Add New Template"
+          title="Add New Invoice"
           primaryAction={{
             label: "Submit",
             onClick: handleSubmit(onSubmitTemplate),
@@ -189,44 +176,52 @@ const InvoiceCreation = () => {
               name="title"
               control={control}
               render={({ field }) => (
-                <TextField label="Template Title" fullWidth {...field} />
+                <TextField
+                  size="small"
+                  label="Invoice Title"
+                  fullWidth
+                  {...field}
+                />
               )}
             />
 
             {/* File Upload */}
             <Controller
-              name="file"
+              name="invoiceFile"
               control={control}
-              render={({ field: { onChange, value } }) => (
-                <>
-                  <input
-                    id="image-upload"
-                    type="file"
-                    accept=".png,.jpg,.jpeg,.pdf"
-                    hidden
-                    onChange={(e) => onChange(e.target.files[0])}
-                  />
-                  <TextField
-                    size="small"
-                    variant="outlined"
-                    fullWidth
-                    label="Upload Image"
-                    value={value ? value.name : ""}
-                    placeholder="Choose a file..."
-                    InputProps={{
-                      readOnly: true,
-                      endAdornment: (
-                        <IconButton
-                          color="primary"
-                          component="label"
-                          htmlFor="image-upload"
-                        >
-                          <LuImageUp />
-                        </IconButton>
-                      ),
-                    }}
-                  />
-                </>
+              render={({ field }) => (
+                <UploadFileInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  allowedExtensions={["pdf"]}
+                  previewType="pdf"
+                />
+              )}
+            />
+            <Controller
+              name="clientId"
+              control={control}
+              rules={{ required: "Client is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  size="small"
+                  fullWidth
+                  label={"Select Client"}
+                  placeholder="Zomato"
+                >
+                  <MenuItem value="" disabled>
+                    Select Client
+                  </MenuItem>
+                  {isClientsDataPending
+                    ? []
+                    : clientsData.map((item) => (
+                        <MenuItem key={item._id} value={item._id}>
+                          {item.clientName}
+                        </MenuItem>
+                      ))}
+                </TextField>
               )}
             />
 
@@ -236,18 +231,33 @@ const InvoiceCreation = () => {
               control={control}
               render={({ field }) => (
                 <DatePicker
-                  label="Template Date"
+                  label="Invoice Upload Date"
+                  format="DD-MM-YYYY"
                   {...field}
                   value={field.value || dayjs()}
                   onChange={(date) => field.onChange(date)}
-                  slotProps={{ textField: { fullWidth: true } }}
+                  slotProps={{ textField: { fullWidth: true, size: "small" } }}
                 />
               )}
             />
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  label="Status"
+                  fullWidth
+                  size="small"
+                  disabled
+                  value={field.value ? "Paid" : "Unpaid"} // ✅ convert boolean to label
+                />
+              )}
+            />
+
             <PrimaryButton
-              title="Add Template"
+              title="Add Invoice"
               handleSubmit={() => {
-                toast.success("Added template successfully");
+                toast.success("Added invoice successfully");
                 setViewAddTemplateModal(false);
               }}
             />

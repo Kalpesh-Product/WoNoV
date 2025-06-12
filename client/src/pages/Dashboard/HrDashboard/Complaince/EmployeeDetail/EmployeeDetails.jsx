@@ -12,8 +12,8 @@ const EmployeeDetails = () => {
     { label: "Attendance", path: "attendance" },
     { label: "Leaves", path: "leaves" },
     { label: "Agreements", path: "agreements" },
-    { label: "KPI'S", path: "kpi" },
-    { label: "KRA'S", path: "kra" },
+    // { label: "KPI'S", path: "kpi" },
+    // { label: "KRA'S", path: "kra" },
     { label: "Payslip", path: "payslip" },
   ];
 
