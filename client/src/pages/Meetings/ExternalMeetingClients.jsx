@@ -67,6 +67,22 @@ const ExternalMeetingCLients = () => {
   // const meetings = useSelector((state) => state.meetings?.data);
 
   //-----------------------------Form--------------------------------//
+  const [openPaymentModal, setOpenPaymentModal] = useState(false);
+  const [paymentMeeting, setPaymentMeeting] = useState(null);
+
+  const {
+    handleSubmit: handlePaymentSubmit,
+    control: paymentControl,
+    reset: resetPaymentForm,
+    formState: { errors: paymentErrors },
+  } = useForm({
+    defaultValues: {
+      amount: "",
+      method: "",
+      transactionId: "",
+    },
+  });
+
   const {
     handleSubmit: cancelMeetingSubmit,
     control: cancelMeetingControl,
@@ -264,6 +280,21 @@ const ExternalMeetingCLients = () => {
     setNewItem("");
   };
 
+  const handleOpenPaymentModal = (meeting) => {
+    setPaymentMeeting(meeting);
+    resetPaymentForm({
+      amount: meeting.paymentDetails?.amount || "",
+      method: meeting.paymentDetails?.method || "",
+      transactionId: meeting.paymentDetails?.transactionId || "",
+    });
+    setOpenPaymentModal(true);
+  };
+
+  const handleClosePaymentModal = () => {
+    setOpenPaymentModal(false);
+    setPaymentMeeting(null);
+  };
+
   const handleToggleChecklistItem = (index, type) => {
     if (!selectedMeetingId) return;
     setChecklists((prev) => {
@@ -390,32 +421,32 @@ const ExternalMeetingCLients = () => {
         );
       },
     },
-    {
-      field: "participants",
-      headerName: "Participants",
-      cellRenderer: (params) => {
-        const participants = Array.isArray(params.data?.participants)
-          ? params.data?.participants
-          : [];
-        return (
-          <div className="flex justify-start items-center">
-            <AvatarGroup max={4}>
-              {participants?.map((participant, index) => {
-                return (
-                  <Avatar
-                    key={index}
-                    alt={participant.firstName}
-                    // src={participant.avatar}
-                    src="https://ui-avatars.com/api/?name=Alice+Johnson&background=random"
-                    sx={{ width: 23, height: 23 }}
-                  />
-                );
-              })}
-            </AvatarGroup>
-          </div>
-        );
-      },
-    },
+    // {
+    //   field: "participants",
+    //   headerName: "Participants",
+    //   cellRenderer: (params) => {
+    //     const participants = Array.isArray(params.data?.participants)
+    //       ? params.data?.participants
+    //       : [];
+    //     return (
+    //       <div className="flex justify-start items-center">
+    //         <AvatarGroup max={4}>
+    //           {participants?.map((participant, index) => {
+    //             return (
+    //               <Avatar
+    //                 key={index}
+    //                 alt={participant.firstName}
+    //                 // src={participant.avatar}
+    //                 src="https://ui-avatars.com/api/?name=Alice+Johnson&background=random"
+    //                 sx={{ width: 23, height: 23 }}
+    //               />
+    //             );
+    //           })}
+    //         </AvatarGroup>
+    //       </div>
+    //     );
+    //   },
+    // },
     {
       field: "action",
       headerName: "Action",
@@ -432,6 +463,11 @@ const ExternalMeetingCLients = () => {
         const isHousekeepingCompleted = housekeepingStatus === "Completed";
 
         const menuItems = [
+          {
+            label: "Update Payment Details",
+            onClick: () => handleOpenPaymentModal(params.data),
+          },
+
           !isOngoing &&
             !isHousekeepingCompleted && {
               label: "Update Checklist",
@@ -682,8 +718,8 @@ const ExternalMeetingCLients = () => {
                 detail={humanTime(selectedMeeting?.extendTime)}
               />
             )} */}
-            <br />
-            <div className="font-bold">People Involved</div>
+            {/* <br />
+            <div className="font-bold">People Involved</div> */}
             {/* <div className="col-span-1 ">
               <DetalisFormatted
                 title={"Participants"}
@@ -701,7 +737,7 @@ const ExternalMeetingCLients = () => {
 
             {/* dddd */}
 
-            {selectedMeeting.participants?.length > 0 && (
+            {/* {selectedMeeting.participants?.length > 0 && (
               <DetalisFormatted
                 title="Participants"
                 detail={selectedMeeting.participants
@@ -714,7 +750,7 @@ const ExternalMeetingCLients = () => {
                   })
                   .join(", ")}
               />
-            )}
+            )} */}
 
             <DetalisFormatted
               title="Booked By"
@@ -871,6 +907,72 @@ const ExternalMeetingCLients = () => {
             </form>
           </div>
         )}
+      </MuiModal>
+
+      <MuiModal
+        open={openPaymentModal}
+        onClose={handleClosePaymentModal}
+        title={"Update Payment Details"}
+      >
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={handlePaymentSubmit((data) => {
+            // Here you'd send the data to your API via a mutation
+            console.log("Submitted payment update:", data);
+            toast.success("Payment details updated");
+            setOpenPaymentModal(false);
+          })}
+        >
+          <Controller
+            name="amount"
+            control={paymentControl}
+            rules={{ required: "Amount is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Amount"
+                type="number"
+                size="small"
+                fullWidth
+                error={!!paymentErrors.amount}
+                helperText={paymentErrors.amount?.message}
+              />
+            )}
+          />
+          <Controller
+            name="method"
+            control={paymentControl}
+            rules={{ required: "Payment method is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Method"
+                size="small"
+                fullWidth
+                error={!!paymentErrors.method}
+                helperText={paymentErrors.method?.message}
+              />
+            )}
+          />
+          <Controller
+            name="transactionId"
+            control={paymentControl}
+            rules={{ required: "Transaction ID is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Transaction ID"
+                size="small"
+                fullWidth
+                error={!!paymentErrors.transactionId}
+                helperText={paymentErrors.transactionId?.message}
+              />
+            )}
+          />
+          <div className="flex justify-center">
+            <PrimaryButton title={"Save Payment Details"} type={"submit"} />
+          </div>
+        </form>
       </MuiModal>
     </div>
   );
