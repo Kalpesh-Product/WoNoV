@@ -142,337 +142,337 @@ const AddClient = () => {
 
   return (
     <div className=" p-4">
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            {/* Section: Basic Information */}
-            <div className="py-4 border-b-default border-borderGray">
-              <span className="text-subtitle font-pmedium">Client Details</span>
-            </div>
-            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-              <div hidden>
-                <Controller
-                  name="visitorType"
-                  control={control}
-                  rules={{ required: "Visitor type is required" }}
-                  disabled
-                  render={({ field }) => (
-                    <TextField {...field} size="small" select label="Meeting">
-                      <MenuItem value="Meeting" disabled>
-                        Meeting
-                      </MenuItem>
-                    </TextField>
-                  )}
-                />
+      <PageFrame>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              {/* Section: Basic Information */}
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">
+                  Client Details
+                </span>
               </div>
-              <div className="flex gap-4 items-center">
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+                <div hidden>
+                  <Controller
+                    name="visitorType"
+                    control={control}
+                    rules={{ required: "Visitor type is required" }}
+                    disabled
+                    render={({ field }) => (
+                      <TextField {...field} size="small" select label="Meeting">
+                        <MenuItem value="Meeting" disabled>
+                          Meeting
+                        </MenuItem>
+                      </TextField>
+                    )}
+                  />
+                </div>
+                <div className="flex gap-4 items-center">
+                  <Controller
+                    name="firstName"
+                    control={control}
+                    rules={{ required: "First Name is required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        error={!!errors.firstName}
+                        helperText={errors.firstName?.message}
+                        label="First Name"
+                        fullWidth
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="lastName"
+                    control={control}
+                    rules={{ required: "Last Name is required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        error={!!errors.lastName}
+                        helperText={errors.lastName?.message}
+                        label="Last Name"
+                        fullWidth
+                      />
+                    )}
+                  />
+                </div>
+
+                <div className="flex gap-4 items-center">
+                  <Controller
+                    name="phoneNumber"
+                    control={control}
+                    rules={{ required: "Phone Number is required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Phone"
+                        error={!!errors.phoneNumber}
+                        helperText={errors.phoneNumber?.message}
+                        fullWidth
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="gender"
+                    control={control}
+                    rules={{ required: "Gender is required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        error={!!errors.gender}
+                        select
+                        helperText={errors.gender?.message}
+                        size="small"
+                        label="Gender"
+                        fullWidth>
+                        <MenuItem value="" disabled>
+                          Select Gender
+                        </MenuItem>
+                        <MenuItem value="male">Male</MenuItem>
+                        <MenuItem value="female">Female</MenuItem>
+                      </TextField>
+                    )}
+                  />
+                </div>
                 <Controller
-                  name="firstName"
+                  name="email"
                   control={control}
-                  rules={{ required: "First Name is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
-                      error={!!errors.firstName}
-                      helperText={errors.firstName?.message}
-                      label="First Name"
+                      error={!!errors.email}
+                      helperText={errors.email?.message}
+                      label="Email"
                       fullWidth
                     />
                   )}
                 />
+
                 <Controller
-                  name="lastName"
+                  name="purposeOfVisit"
                   control={control}
-                  rules={{ required: "Last Name is required" }}
+                  rules={{ required: "Purpose is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
-                      error={!!errors.lastName}
-                      helperText={errors.lastName?.message}
-                      label="Last Name"
+                      label="Purpose of visit"
+                      error={!!errors.purposeOfVisit}
+                      helperText={errors.purposeOfVisit?.message}
                       fullWidth
                     />
                   )}
                 />
               </div>
 
-              <div className="flex gap-4 items-center">
-                <Controller
-                  name="phoneNumber"
-                  control={control}
-                  rules={{ required: "Phone Number is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Phone"
-                      error={!!errors.phoneNumber}
-                      helperText={errors.phoneNumber?.message}
-                      fullWidth
+              <div>
+                <div className="py-4 border-b-default border-borderGray">
+                  <span className="text-subtitle font-pmedium">Timings</span>
+                </div>
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Controller
+                      name="checkIn"
+                      control={control}
+                      rules={{ required: "Check-In time is required" }}
+                      render={({ field }) => (
+                        <TimePicker
+                          {...field}
+                          label={"Check-In Time"}
+                          slotProps={{
+                            textField: { size: "small", fullWidth: true },
+                          }}
+                          render={(params) => (
+                            <TextField
+                              {...params}
+                              fullWidth
+                              error={!!errors.checkIn}
+                              helperText={errors.checkIn?.message}
+                            />
+                          )}
+                        />
+                      )}
                     />
-                  )}
-                />
-                <Controller
-                  name="gender"
-                  control={control}
-                  rules={{ required: "Gender is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      error={!!errors.gender}
-                      select
-                      helperText={errors.gender?.message}
-                      size="small"
-                      label="Gender"
-                      fullWidth
-                    >
-                      <MenuItem value="" disabled>
-                        Select Gender
-                      </MenuItem>
-                      <MenuItem value="male">Male</MenuItem>
-                      <MenuItem value="female">Female</MenuItem>
-                    </TextField>
-                  )}
-                />
+                  </LocalizationProvider>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Controller
+                      name="checkOut"
+                      control={control}
+                      render={({ field }) => (
+                        <TimePicker
+                          {...field}
+                          label={"Check-Out Time"}
+                          slotProps={{
+                            textField: { size: "small", fullWidth: true },
+                          }}
+                          render={(params) => (
+                            <TextField
+                              {...params}
+                              fullWidth
+                              error={!!errors.checkOut}
+                              helperText={errors.checkOut?.message}
+                            />
+                          )}
+                        />
+                      )}
+                    />
+                  </LocalizationProvider>
+                </div>
               </div>
-              <Controller
-                name="email"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    error={!!errors.email}
-                    helperText={errors.email?.message}
-                    label="Email"
-                    fullWidth
-                  />
-                )}
-              />
-
-              <Controller
-                name="purposeOfVisit"
-                control={control}
-                rules={{ required: "Purpose is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Purpose of visit"
-                    error={!!errors.purposeOfVisit}
-                    helperText={errors.purposeOfVisit?.message}
-                    fullWidth
-                  />
-                )}
-              />
             </div>
 
             <div>
               <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">Timings</span>
+                <span className="text-subtitle font-pmedium">
+                  Company Details
+                </span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+                <Controller
+                  name="clientCompany"
+                  control={control}
+                  rules={{ required: "Client Company is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Client Company"
+                      fullWidth
+                      error={!!errors.clientCompany}
+                      helperText={errors.clientCompany?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="sector"
+                  control={control}
+                  rules={{ required: "Sector is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Sector"
+                      fullWidth
+                      error={!!errors.sector}
+                      helperText={errors.sector?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="hoState"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      select
+                      label="State"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleStateSelect(e.target.value);
+                      }}
+                      fullWidth>
+                      <MenuItem value="">Select a State</MenuItem>
+                      {states.map((item) => (
+                        <MenuItem value={item.isoCode} key={item.isoCode}>
+                          {item.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+                <Controller
+                  name="hoCity"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      select
+                      label="City"
+                      fullWidth>
+                      <MenuItem value="">Select a City</MenuItem>
+                      {cities.map((item) => (
+                        <MenuItem
+                          value={item.name}
+                          key={`${item.name}-${item.stateCode}-${item.latitude}`}>
+                          {item.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              </div>
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">Verification</span>
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <Controller
-                    name="checkIn"
-                    control={control}
-                    rules={{ required: "Check-In time is required" }}
-                    render={({ field }) => (
-                      <TimePicker
-                        {...field}
-                        label={"Check-In Time"}
-                        slotProps={{
-                          textField: { size: "small", fullWidth: true },
-                        }}
-                        render={(params) => (
-                          <TextField
-                            {...params}
-                            fullWidth
-                            error={!!errors.checkIn}
-                            helperText={errors.checkIn?.message}
-                          />
-                        )}
-                      />
-                    )}
-                  />
-                </LocalizationProvider>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <Controller
-                    name="checkOut"
-                    control={control}
-                    render={({ field }) => (
-                      <TimePicker
-                        {...field}
-                        label={"Check-Out Time"}
-                        slotProps={{
-                          textField: { size: "small", fullWidth: true },
-                        }}
-                        render={(params) => (
-                          <TextField
-                            {...params}
-                            fullWidth
-                            error={!!errors.checkOut}
-                            helperText={errors.checkOut?.message}
-                          />
-                        )}
-                      />
-                    )}
-                  />
-                </LocalizationProvider>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="py-4 border-b-default border-borderGray">
-              <span className="text-subtitle font-pmedium">
-                Company Details
-              </span>
-            </div>
-            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-              <Controller
-                name="clientCompany"
-                control={control}
-                rules={{ required: "Client Company is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Client Company"
-                    fullWidth
-                    error={!!errors.clientCompany}
-                    helperText={errors.clientCompany?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="sector"
-                control={control}
-                rules={{ required: "Sector is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Sector"
-                    fullWidth
-                    error={!!errors.sector}
-                    helperText={errors.sector?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="hoState"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    select
-                    label="State"
-                    onChange={(e) => {
-                      field.onChange(e);
-                      handleStateSelect(e.target.value);
-                    }}
-                    fullWidth
-                  >
-                    <MenuItem value="">Select a State</MenuItem>
-                    {states.map((item) => (
-                      <MenuItem value={item.isoCode} key={item.isoCode}>
-                        {item.name}
+                <Controller
+                  name="idProof.idType"
+                  control={control}
+                  rules={{ required: "Id Type is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="ID Type"
+                      select
+                      error={!!errors.idProof?.idType}
+                      helperText={errors.idProof?.idType?.message}
+                      fullWidth>
+                      <MenuItem value="" disabled>
+                        Select Id Type
                       </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-              <Controller
-                name="hoCity"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    select
-                    label="City"
-                    fullWidth
-                  >
-                    <MenuItem value="">Select a City</MenuItem>
-                    {cities.map((item) => (
-                      <MenuItem
-                        value={item.name}
-                        key={`${item.name}-${item.stateCode}-${item.latitude}`}
-                      >
-                        {item.name}
+                      <MenuItem value="aadhar">Aadhar</MenuItem>
+                      <MenuItem value="pan">PAN</MenuItem>
+                      <MenuItem value="drivingLicense">
+                        Driving License
                       </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-            </div>
-            <div className="py-4 border-b-default border-borderGray">
-              <span className="text-subtitle font-pmedium">Verification</span>
-            </div>
-            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
-              <Controller
-                name="idProof.idType"
-                control={control}
-                rules={{ required: "Id Type is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="ID Type"
-                    select
-                    error={!!errors.idProof?.idType}
-                    helperText={errors.idProof?.idType?.message}
-                    fullWidth
-                  >
-                    <MenuItem value="" disabled>
-                      Select Id Type
-                    </MenuItem>
-                    <MenuItem value="aadhar">Aadhar</MenuItem>
-                    <MenuItem value="pan">PAN</MenuItem>
-                    <MenuItem value="drivingLicense">Driving License</MenuItem>
-                  </TextField>
-                )}
-              />
-              <Controller
-                name="idProof.idNumber"
-                control={control}
-                rules={{
-                  required: "ID Number is required",
-                  validate: (value) => {
-                    if (selectedIdType === "aadhar") {
-                      const regex = /^\d{4}-\d{4}-\d{4}$/;
-                      if (!regex.test(value))
-                        return "Aadhar must be in 1234-5678-9012 format";
-                    }
-                    if (selectedIdType === "pan") {
-                      const regex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
-                      if (!regex.test(value))
-                        return "PAN must be in format: ABCDE1234F";
-                    }
-                    if (selectedIdType === "drivingLicense") {
-                      const regex = /^[A-Z]{2}[0-9]{2}\s?[0-9]{11}$/;
-                      if (!regex.test(value))
-                        return "DL must be like MH12 12345678901";
-                    }
-                    return true;
-                  },
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="ID Number"
-                    fullWidth
-                    error={!!errors.idProof?.idNumber}
-                    helperText={errors.idProof?.idNumber?.message}
-                    onChange={(e) => {
-                      let value = e.target.value;
+                    </TextField>
+                  )}
+                />
+                <Controller
+                  name="idProof.idNumber"
+                  control={control}
+                  rules={{
+                    required: "ID Number is required",
+                    validate: (value) => {
+                      if (selectedIdType === "aadhar") {
+                        const regex = /^\d{4}-\d{4}-\d{4}$/;
+                        if (!regex.test(value))
+                          return "Aadhar must be in 1234-5678-9012 format";
+                      }
+                      if (selectedIdType === "pan") {
+                        const regex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+                        if (!regex.test(value))
+                          return "PAN must be in format: ABCDE1234F";
+                      }
+                      if (selectedIdType === "drivingLicense") {
+                        const regex = /^[A-Z]{2}[0-9]{2}\s?[0-9]{11}$/;
+                        if (!regex.test(value))
+                          return "DL must be like MH12 12345678901";
+                      }
+                      return true;
+                    },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="ID Number"
+                      fullWidth
+                      error={!!errors.idProof?.idNumber}
+                      helperText={errors.idProof?.idNumber?.message}
+                      onChange={(e) => {
+                        let value = e.target.value;
 
                         if (selectedIdType === "aadhar") {
                           // Remove non-digit characters first
@@ -483,15 +483,15 @@ const AddClient = () => {
                           if (parts) value = parts.join("-");
                         }
 
-                      field.onChange(value);
-                    }}
-                    value={field.value}
-                  />
-                )}
-              />
+                        field.onChange(value);
+                      }}
+                      value={field.value}
+                    />
+                  )}
+                />
+              </div>
             </div>
           </div>
-        </div>
 
           {/* Submit Button */}
           <div className="flex items-center justify-center gap-4">

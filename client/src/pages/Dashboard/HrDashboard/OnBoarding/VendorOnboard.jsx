@@ -420,7 +420,6 @@ const VendorOnboard = () => {
                     )}
                   />
                 </div>
-                >>>>>>>>> Temporary merge branch 2
               </div>
               <div>
                 {/* Section: Other Information */}
