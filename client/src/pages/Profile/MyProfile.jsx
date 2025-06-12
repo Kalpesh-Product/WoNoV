@@ -228,8 +228,12 @@ const MyProfile = ({ handleClose, pageTitle }) => {
         <span className="text-title font-pmedium text-primary uppercase">
           My profile
         </span>
+        <PrimaryButton
+          title={isEditable ? "Cancel" : "Edit"}
+          handleSubmit={handleEditClick}
+        />
       </div>
-      <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-md">
+      {/* <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-md">
         <div className="flex gap-6 items-center">
           <div className="w-40 h-40">
             <Avatar
@@ -249,8 +253,7 @@ const MyProfile = ({ handleClose, pageTitle }) => {
             </span>
             <span className="text-subtitle">{user.designation}</span>
 
-            {/* File Upload START */}
-            {/* File Input & Preview */}
+        
             <label
               htmlFor="fileUpload"
               className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 p-6 rounded-md cursor-pointer transition">
@@ -275,7 +278,7 @@ const MyProfile = ({ handleClose, pageTitle }) => {
                 onChange={handleFileChange}
               />
             </label>
-            {/* Buttons: Change File & Upload */}
+       
             {previewUrl && (
               <div className="mt-4 flex flex-col items-center gap-2">
                 <button
@@ -293,11 +296,11 @@ const MyProfile = ({ handleClose, pageTitle }) => {
                 </label>
               </div>
             )}
-            {/* File Upload END */}
+          
           </div>
         </div>
-      </div>
-      <div className="flex items-center justify-between p-4">
+      </div> */}
+      {/* <div className="flex items-center justify-between p-4">
         <span className="text-title font-pmedium text-primary uppercase">
           &nbsp;
         </span>
@@ -305,7 +308,7 @@ const MyProfile = ({ handleClose, pageTitle }) => {
           title={isEditable ? "Cancel" : "Edit"}
           handleSubmit={handleEditClick}
         />
-      </div>
+      </div> */}
       <div className="border-2 border-gray-200 p-2 rounded-md sm:h-[30vh] sm:overflow-y-auto md:h-[55vh] overflow-y-auto ">
         <form
           onSubmit={(e) => {
