@@ -20,7 +20,7 @@ const meetingClientRevenueSchema = new mongoose.Schema(
     },
     unitsOrHours: {
       type: String,
-      required: true,
+      // required: true,
     },
     hoursBooked: {
       type: String,

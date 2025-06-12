@@ -1180,24 +1180,115 @@ const getSingleRoomMeetings = async (req, res, next) => {
 
 //Update payment details
 const updateMeeting = async (req, res, next) => {
-  const { paymentAmount, paymentMode, paymentStatus } = req.body;
-  const { meetingId } = req.params;
+  const logPath = "meetings/MeetingLog";
+  const logAction = "Extend Meeting Time";
+  const logSourceKey = "meeting";
 
-  if (!mongoose.Types.ObjectId.isValid(meetingId)) {
-    return res.status(400).json({ message: "Invalid meeting Id provided" });
+  try {
+    const { user, ip, company } = req;
+    const { paymentAmount, paymentMode, paymentStatus } = req.body;
+    const { meetingId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(meetingId)) {
+      return res.status(400).json({ message: "Invalid meeting Id provided" });
+    }
+
+    const updatedMeeting = await Meeting.findByIdAndUpdate(
+      meetingId,
+      { paymentAmount, paymentMode, paymentStatus },
+      { new: true }
+    ).populate({ path: "bookedRoom" });
+
+    // console.log("meeting", updatedMeeting);
+
+    if (!updatedMeeting) {
+      throw new CustomError(
+        "Meeting not found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (updatedMeeting.meetingType !== "External") {
+      console.log("type", updatedMeeting);
+      throw new CustomError(
+        "Meeting type is not external",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const durationInMs = updatedMeeting.endTime - updatedMeeting.startTime;
+    const durationInHours = durationInMs / (1000 * 60 * 60);
+    const perHourCost = updatedMeeting.bookedRoom.perHourPrice;
+    const amountToBePaid = durationInHours * perHourCost;
+
+    console.log("duration", durationInHours);
+    console.log("perHourCost", perHourCost);
+    console.log("actualAmount", amountToBePaid);
+
+    const isValidAmount = Number(paymentAmount) === amountToBePaid;
+
+    console.log("payment", typeof Number(paymentAmount));
+    console.log("actual", typeof amountToBePaid);
+    if (!isValidAmount) {
+      throw new CustomError(
+        `Actual amount is INR ${amountToBePaid}`,
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const meetingRevenue = new MeetingRevenue({
+      date: updatedMeeting.startDate,
+      company,
+      clientName: updatedMeeting.client,
+      particulars: "Meeting room booking",
+      costPerHour: updatedMeeting.bookedRoom.perHourPrice,
+      totalAmount: paymentAmount,
+      paymentDate: updatedMeeting.startDate,
+      remarks: paymentMode,
+      meetingRoomName: updatedMeeting.bookedRoom.name,
+      hoursBooked: durationInHours,
+    });
+
+    savedRevenue = await meetingRevenue.save();
+
+    if (!savedRevenue) {
+      throw new CustomError(
+        "Failed to save meeting revenue",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Meeting updated successfully",
+      status: "Success",
+      user: user,
+      ip: ip,
+      company: company,
+      sourceKey: logSourceKey,
+      sourceId: updatedMeeting._id,
+      changes: { meetingId },
+    });
+
+    return res.status(200).json({ message: "Meeting updated successfully" });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
   }
-
-  const updatedMeeting = await Meeting.findByIdAndUpdate(
-    meetingId,
-    { paymentAmount, paymentMode, paymentStatus },
-    { new: true }
-  );
-
-  if (!updatedMeeting) {
-    return res.status(404).json({ message: "Meeting not found" });
-  }
-
-  return res.status(200).json({ message: "Meeting updated successfully" });
 };
 
 const updateMeetingStatus = async (req, res, next) => {
