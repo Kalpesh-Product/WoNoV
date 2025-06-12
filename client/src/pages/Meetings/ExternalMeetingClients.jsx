@@ -14,6 +14,7 @@ import {
   AvatarGroup,
   Avatar,
   CircularProgress,
+  MenuItem,
 } from "@mui/material";
 import AgTable from "../../components/AgTable";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
@@ -28,6 +29,7 @@ import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import { TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import UploadFileInput from "../../components/UploadFileInput";
 
 const ExternalMeetingCLients = () => {
   const axios = useAxiosPrivate();
@@ -39,6 +41,16 @@ const ExternalMeetingCLients = () => {
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
+
+  const paymentModes = [
+    "Cash",
+    "Cheque",
+    "NEFT",
+    "RTGS",
+    "IMPS",
+    "Credit Card",
+    "ETC",
+  ];
 
   const statusColors = {
     Upcoming: { bg: "#E3F2FD", text: "#1565C0" }, // Light Blue
@@ -206,6 +218,21 @@ const ExternalMeetingCLients = () => {
       },
     }
   );
+
+  const { isPending: isPaymentPending, mutate: updatePayment } = useMutation({
+    mutationKey: ["meeting-payment"],
+    mutationFn: async (data) => {
+      try {
+        await axios.patch(`/api/meetings/update-meeting/${data.meetingId}`, data);
+        setOpenPaymentModal(false);
+      } catch (error) {
+        toast.error(error.message);
+      }
+    },
+    onSuccess: () => {
+      toast.success("payment details updated successfully");
+    },
+  });
   //------------------------------API--------------------------------//
 
   // Initialize checklists when meetings are loaded
@@ -917,10 +944,12 @@ const ExternalMeetingCLients = () => {
         <form
           className="flex flex-col gap-4"
           onSubmit={handlePaymentSubmit((data) => {
-            // Here you'd send the data to your API via a mutation
-            console.log("Submitted payment update:", data);
-            toast.success("Payment details updated");
-            setOpenPaymentModal(false);
+            updatePayment({
+              paymentAmount: data?.amount,
+              paymentMode: data?.paymentType,
+              paymentStatus: data?.paymentStatus,
+              meetingId: paymentMeeting?._id,
+            });
           })}
         >
           <Controller
@@ -940,37 +969,65 @@ const ExternalMeetingCLients = () => {
             )}
           />
           <Controller
-            name="method"
+            name="paymentType"
             control={paymentControl}
-            rules={{ required: "Payment method is required" }}
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Method"
                 size="small"
+                label="Payment Type"
+                select
                 fullWidth
-                error={!!paymentErrors.method}
-                helperText={paymentErrors.method?.message}
-              />
+              >
+                <MenuItem value="" disabled>
+                  Select Payment Type
+                </MenuItem>
+                {paymentModes.map((p) => {
+                  return <MenuItem value={p}>{p}</MenuItem>;
+                })}
+              </TextField>
             )}
           />
           <Controller
-            name="transactionId"
+            name="paymentStatus"
             control={paymentControl}
-            rules={{ required: "Transaction ID is required" }}
+            rules={{ required: "Payment status is required" }}
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Transaction ID"
+                select
+                label="Payment Status"
                 size="small"
                 fullWidth
-                error={!!paymentErrors.transactionId}
-                helperText={paymentErrors.transactionId?.message}
+                error={!!paymentErrors.paymentStatus}
+                helperText={paymentErrors.paymentStatus?.message}
+              >
+                <MenuItem value="Paid">Paid</MenuItem>
+                <MenuItem value="Unpaid">Unpaid</MenuItem>
+              </TextField>
+            )}
+          />
+          <Controller
+            name="invoiceFile"
+            control={paymentControl}
+            render={({ field }) => (
+              <UploadFileInput
+                value={field.value}
+                label="Add Payment Proof"
+                onChange={field.onChange}
+                allowedExtensions={["pdf"]}
+                previewType="pdf"
               />
             )}
           />
+
           <div className="flex justify-center">
-            <PrimaryButton className="w-full" title={"Save Payment Details"} type={"submit"} />
+            <PrimaryButton
+              disabled={isPaymentPending}
+              className="w-full"
+              title={"Save Payment Details"}
+              type={"submit"}
+            />
           </div>
         </form>
       </MuiModal>

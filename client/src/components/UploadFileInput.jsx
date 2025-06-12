@@ -17,8 +17,7 @@ const UploadFileInput = ({
   );
   const [openModal, setOpenModal] = useState(false);
 
-  const getExtension = (fileName) =>
-    fileName.split(".").pop().toLowerCase();
+  const getExtension = (fileName) => fileName.split(".").pop().toLowerCase();
 
   const isImage = (ext) =>
     ["jpg", "jpeg", "png", "webp", "gif", "bmp"].includes(ext);
@@ -49,13 +48,14 @@ const UploadFileInput = ({
 
   const renderPreview = () => {
     const ext = getExtension(value.name);
-    const type = previewType === "auto"
-      ? isImage(ext)
-        ? "image"
-        : isPDF(ext)
-        ? "pdf"
-        : "none"
-      : previewType;
+    const type =
+      previewType === "auto"
+        ? isImage(ext)
+          ? "image"
+          : isPDF(ext)
+          ? "pdf"
+          : "none"
+        : previewType;
 
     if (type === "image") {
       return (

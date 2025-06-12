@@ -55,15 +55,6 @@ const MeetingFormLayout = () => {
 
   const roles = auth.user.role.map((role) => role.roleTitle);
 
-  const paymentModes = [
-    "Cash",
-    "Cheque",
-    "NEFT",
-    "RTGS",
-    "IMPS",
-    "Credit Card",
-    "ETC",
-  ];
 
   if (
     roles.includes("Master Admin") ||
@@ -707,7 +698,7 @@ const MeetingFormLayout = () => {
                 </div>
               </>
             )}
-            {meetingType === "External" && (
+            {/* {meetingType === "External" && (
               <div className="grid grid-cols-1 md:grid-cols-1 gap-4 p-2 col-span-2">
                 <Controller
                   name="paymentAmount"
@@ -742,28 +733,9 @@ const MeetingFormLayout = () => {
                     </TextField>
                   )}
                 />
-                <Controller
-                  name="paymentType"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Payment Type"
-                      select
-                      fullWidth
-                    >
-                      <MenuItem value="" disabled>
-                        Select Payment Type
-                      </MenuItem>
-                      {paymentModes.map((p) => {
-                        return <MenuItem value={p}>{p}</MenuItem>;
-                      })}
-                    </TextField>
-                  )}
-                />
+               
               </div>
-            )}
+            )} */}
 
             {/* New End */}
             <div className="col-span-2 sm:col-span-1 md:col-span-2">

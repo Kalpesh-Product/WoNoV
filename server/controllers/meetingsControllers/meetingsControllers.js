@@ -1186,7 +1186,11 @@ const updateMeeting = async (req, res, next) => {
 
     const updatedMeeting = await Meeting.findByIdAndUpdate(
       meetingId,
-      { paymentAmount, paymentMode, paymentStatus },
+      {
+        paymentAmount,
+        paymentMode,
+        paymentStatus: paymentStatus === "Paid" ? true : false,
+      },
       { new: true }
     ).populate({ path: "bookedRoom" });
 
@@ -1218,14 +1222,14 @@ const updateMeeting = async (req, res, next) => {
 
     const isValidAmount = Number(paymentAmount) === amountToBePaid;
 
-    if (!isValidAmount) {
-      throw new CustomError(
-        `Actual amount is INR ${amountToBePaid}`,
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // if (!isValidAmount) {
+    //   throw new CustomError(
+    //     `Actual amount is INR ${amountToBePaid}`,
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
 
     const meetingRevenue = new MeetingRevenue({
       date: updatedMeeting.startDate,
