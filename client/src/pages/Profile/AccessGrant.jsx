@@ -3,7 +3,7 @@ import { Avatar, Chip } from "@mui/material";
 import PermissionsTable from "../../components/PermissionsTable";
 import useAuth from "../../hooks/useAuth";
 import { toast } from "sonner";
-import Abrar from "../../assets/abrar.jpeg"
+import Abrar from "../../assets/abrar.jpeg";
 
 const AccessGrant = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -110,11 +110,12 @@ const AccessGrant = () => {
     // You can also trigger your API call here
   };
 
-
   return (
     <div className="bg-white">
-         <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary uppercase">My permissions</span>
+      <div className="flex items-center justify-between pb-4">
+        <span className="text-title font-pmedium text-primary uppercase">
+          My permissions
+        </span>
       </div>
       {/* User Info */}
       <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-md">
@@ -127,11 +128,9 @@ const AccessGrant = () => {
                 height: "100%",
                 fontSize: "5rem",
               }}
-              src={user.email === "abrar@biznest.co.in" ? Abrar : undefined}
-            >
+              src={user.email === "abrar@biznest.co.in" ? Abrar : undefined}>
               {user.email !== "abrar@biznest.co.in" && user.name?.charAt(0)}
             </Avatar>
-
           </div>
           <div className="flex flex-col gap-6">
             <span className="text-title flex items-center gap-3">
@@ -172,10 +171,11 @@ const AccessGrant = () => {
           {departments.map((department) => (
             <div
               key={department.departmentId}
-              className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${selectedDepartment?.departmentId === department.departmentId
+              className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
+                selectedDepartment?.departmentId === department.departmentId
                   ? "border-default border-primary"
                   : ""
-                }`}
+              }`}
               // onClick={() => setSelectedDepartment(department)}
             >
               <span className="text-subtitle">{department.departmentName}</span>

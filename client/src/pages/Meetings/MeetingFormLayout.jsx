@@ -94,17 +94,13 @@ const MeetingFormLayout = () => {
   });
   const { fields, append } = useFieldArray({
     control,
-    name: "externalParticipants",
+    name: "manualExternalParticipants", // ⬅️ changed here
   });
 
+  const isReceptionist = auth.user?.role?.some((item) => {
+    item.roleTitle.startsWith("Administration");
+  });
 
-  const isReceptionist = auth.user?.role?.some(
-    (item) =>{
-      item.roleTitle.startsWith("Administration")
-    } 
-  );
-
-  
   useEffect(() => {
     if (!isReceptionist) {
       setValue("company", "6799f0cd6a01edbe1bc3fcea");
@@ -639,7 +635,9 @@ const MeetingFormLayout = () => {
                                 (v) => v._id === externalCompany
                               )?.clientCompany
                         )}
-                        getOptionLabel={(user) => `${user.firstName}`} // Display names
+                        getOptionLabel={(user) =>
+                          `${user.firstName} ${user.lastName}`
+                        } // Display names
                         onChange={(_, newValue) =>
                           field.onChange(newValue.map((user) => user.firstName))
                         } // Sync selected users with form state

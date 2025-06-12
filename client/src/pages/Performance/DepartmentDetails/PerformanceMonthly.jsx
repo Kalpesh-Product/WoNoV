@@ -28,10 +28,7 @@ const PerformanceMonthly = () => {
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
 
-  const departmentAccess = [
-    "67b2cf85b9b6ed5cedeb9a2e",
-    "6798bab9e469e809084e249e",
-  ];
+    const departmentAccess = ["67b2cf85b9b6ed5cedeb9a2e","6798bab9e469e809084e249e"]
 
   const isTop = auth.user.departments.some((item) => {
     return departmentAccess.includes(item._id.toString());
@@ -236,59 +233,63 @@ const PerformanceMonthly = () => {
   return (
     <>
       <div className="flex flex-col gap-4">
-        {!isCompletedLoading && !isUpdatePending ? (
-          <WidgetSection padding layout={1}>
-            <MonthWiseTable
-              checkbox={showCheckBox}
-              tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
-              buttonTitle={"Add Monthly KPA"}
-              handleSubmit={() => setOpenModal(true)}
-              key={departmentKra.length}
-              data={[
-                ...departmentKra
-                  .filter((item) => item.status !== "Completed")
-                  .map((item, index) => ({
-                    srno: index + 1,
-                    mongoId: item.id,
+        <PageFrame>
+          {!isCompletedLoading && !isUpdatePending ? (
+            <WidgetSection padding layout={1}>
+              <MonthWiseTable
+                checkbox={showCheckBox}
+                tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
+                buttonTitle={"Add Monthly KPA"}
+                handleSubmit={() => setOpenModal(true)}
+                key={departmentKra.length}
+                data={[
+                  ...departmentKra
+                    .filter((item) => item.status !== "Completed")
+                    .map((item, index) => ({
+                      srno: index + 1,
+                      mongoId: item.id,
+                      taskName: item.taskName,
+                      assignedDate: item.assignedDate,
+                      dueDate: item.dueDate,
+                      status: item.status,
+                    })),
+                ]}
+                dateColumn={"dueDate"}
+                columns={departmentColumns}
+              />
+            </WidgetSection>
+          ) : (
+            <div className="h-72 flex items-center justify-center">
+              <CircularProgress />
+            </div>
+          )}
+        </PageFrame>
+        <PageFrame>
+          {!isCompletedLoading ? (
+            <WidgetSection padding layout={1}>
+              <MonthWiseTable
+                tableTitle={`COMPLETED - MONTHLY KPA`}
+                key={completedEntries.length}
+                data={[
+                  ...completedEntries.map((item, index) => ({
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
-                    dueDate: item.dueDate,
+                    completionDate: humanDate(item.completionDate),
+                    completionTime: humanTime(item.completionDate),
+                    completedBy: item.completedBy,
                     status: item.status,
                   })),
-              ]}
-              dateColumn={"dueDate"}
-              columns={departmentColumns}
-            />
-          </WidgetSection>
-        ) : (
-          <div className="h-72 flex items-center justify-center">
-            <CircularProgress />
-          </div>
-        )}
-        {!isCompletedLoading ? (
-          <WidgetSection padding layout={1}>
-            <MonthWiseTable
-              tableTitle={`COMPLETED - MONTHLY KPA`}
-              key={completedEntries.length}
-              data={[
-                ...completedEntries.map((item, index) => ({
-                  taskName: item.taskName,
-                  assignedDate: item.assignedDate,
-                  completionDate: humanDate(item.completionDate),
-                  completionTime: humanTime(item.completionDate),
-                  completedBy: item.completedBy,
-                  status: item.status,
-                })),
-              ]}
-              dateColumn={"dueDate"}
-              columns={completedColumns}
-            />
-          </WidgetSection>
-        ) : (
-          <div className="h-72 flex items-center justify-center">
-            <CircularProgress />
-          </div>
-        )}
+                ]}
+                dateColumn={"dueDate"}
+                columns={completedColumns}
+              />
+            </WidgetSection>
+          ) : (
+            <div className="h-72 flex items-center justify-center">
+              <CircularProgress />
+            </div>
+          )}
+        </PageFrame>
       </div>
 
       <MuiModal

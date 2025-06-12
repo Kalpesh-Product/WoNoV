@@ -21,7 +21,7 @@ router.get("/assignees", getAssignees);
 router.get("/fetch-single-user/:empid", fetchSingleUser);
 router.post("/check-password", checkPassword);
 router.post("/update-password", updatePassword);
-router.patch("/update-single-user", updateProfile);
+router.patch("/update-single-user",upload.single("profilePic"), updateProfile);
 // router.patch("/update-single-user", upload.single("profilePic"), updateProfile);
 router.post("/bulk-insert-users", upload.single("users"), bulkInsertUsers);
 

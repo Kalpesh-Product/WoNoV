@@ -7,7 +7,8 @@
     "dev": "vite --host",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "structure": "node generateStructure.cjs > structure.txt"
   },
   "dependencies": {
     "@ag-grid-community/client-side-row-model": "^32.3.3",
