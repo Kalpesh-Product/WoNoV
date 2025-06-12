@@ -459,10 +459,9 @@ const getMeetings = async (req, res, next) => {
         externalClient: meeting.externalClient
           ? meeting.externalClient.companyName
           : null,
-        // pocName: meeting.externalClient ? meeting.externalClient.pocName : "",
-        // mobileNumber: meeting.externalClient
-        //   ? meeting.externalClient.mobileNumber
-        //   : "",
+        paymentAmount: meeting.paymentAmount ? meeting.paymentAmount : null,
+        paymentMode: meeting.paymentMode ? meeting.paymentMode : null,
+        paymentStatus: meeting.paymentStatus ? meeting.paymentStatus : null,
         meetingType: meeting.meetingType,
         housekeepingStatus: meeting.houeskeepingStatus,
         date: meeting.startDate,
@@ -644,10 +643,9 @@ const getMyMeetings = async (req, res, next) => {
         externalClient: meeting.externalClient
           ? meeting.externalClient.companyName
           : null,
-        // pocName: meeting.externalClient ? meeting.externalClient.pocName : "",
-        // mobileNumber: meeting.externalClient
-        //   ? meeting.externalClient.mobileNumber
-        //   : "",
+        paymentAmount: meeting.paymentAmount ? meeting.paymentAmount : null,
+        paymentMode: meeting.paymentMode ? meeting.paymentMode : null,
+        paymentStatus: meeting.paymentStatus ? meeting.paymentStatus : null,
         meetingType: meeting.meetingType,
         housekeepingStatus: meeting.houeskeepingStatus,
         date: meeting.startDate,
