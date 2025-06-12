@@ -7,13 +7,14 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
-import { TextField, MenuItem } from "@mui/material";
+import { TextField, MenuItem, Chip } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import UploadFileInput from "../../../../components/UploadFileInput";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { queryClient } from "../../../../main";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 
 const InvoiceCreation = () => {
   const navigate = useNavigate();
@@ -88,6 +89,23 @@ const InvoiceCreation = () => {
     },
   });
 
+  const { mutate: updateInvoice, isPending: isUpdatePending } = useMutation({
+    mutationKey: ["updateInvoice"],
+    mutationFn: async (data) => {
+      const response = await axios.patch(
+        `/api/finance/update-payment-status/${data}`
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "PAYMENT STATUS UPDATED");
+      queryClient.invalidateQueries({ queryKey: ["invoiceData"] });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error updating payment status");
+    },
+  });
+
   const invoiceCreationColumns = [
     {
       headerName: "Client",
@@ -105,15 +123,36 @@ const InvoiceCreation = () => {
       flex: 1,
     },
     {
-      headerName: "Status",
       field: "status",
-      flex: 1,
+      headerName: "Status",
+      cellRenderer: (params) => {
+        const statusColorMap = {
+          Paid: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+          Unpaid: { backgroundColor: "#FFEBEE", color: "#B71C1C" }, // Light purple bg, dark purple font
+        };
+
+        const { backgroundColor, color } = statusColorMap[params.value] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+        return (
+          <>
+            <Chip
+              label={params.value}
+              style={{
+                backgroundColor,
+                color,
+              }}
+            />
+          </>
+        );
+      },
     },
     {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <div className="p-2 mb-2 flex gap-2">
+        <div className="p-2  flex gap-2 items-center">
           <span
             className="text-subtitle cursor-pointer"
             onClick={() => {
@@ -123,6 +162,17 @@ const InvoiceCreation = () => {
           >
             <MdOutlineRemoveRedEye />
           </span>
+          <ThreeDotMenu
+            rowId={params.data.id}
+            menuItems={[
+              {
+                label: "Mark As Paid",
+                onClick: () => {
+                  updateInvoice(params.data.id);
+                },
+              },
+            ]}
+          />
         </div>
       ),
     },
@@ -280,7 +330,12 @@ const InvoiceCreation = () => {
               )}
             />
 
-            <PrimaryButton disabled={isSubmitPending} isLoading={isSubmitPending} title="Add Invoice" type="submit" />
+            <PrimaryButton
+              disabled={isSubmitPending}
+              isLoading={isSubmitPending}
+              title="Add Invoice"
+              type="submit"
+            />
           </form>
         </MuiModal>
       )}
