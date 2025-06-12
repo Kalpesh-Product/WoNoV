@@ -1188,7 +1188,10 @@ const updateMeeting = async (req, res, next) => {
       meetingId,
       { paymentAmount, paymentMode, paymentStatus },
       { new: true }
-    ).populate({ path: "bookedRoom" });
+    ).populate([
+      { path: "bookedRoom" },
+      { path: "externalClient", select: "clientCompany" },
+    ]);
 
     // console.log("meeting", updatedMeeting);
 
@@ -1230,7 +1233,7 @@ const updateMeeting = async (req, res, next) => {
     const meetingRevenue = new MeetingRevenue({
       date: updatedMeeting.startDate,
       company,
-      clientName: updatedMeeting.externalClient,
+      clientName: updatedMeeting.externalClient.clientCompany,
       particulars: "Meeting room booking",
       costPerHour: updatedMeeting.bookedRoom.perHourPrice,
       totalAmount: paymentAmount,
@@ -1251,8 +1254,10 @@ const updateMeeting = async (req, res, next) => {
       );
     }
 
-    const updatedVisitor = await Visitor.findByIdAndUpdate(
-      { clientCompany: updatedMeeting.externalClient },
+    const updatedVisitor = await Visitor.findOneAndUpdate(
+      {
+        clientCompany: updatedMeeting.externalClient.clientCompany,
+      },
       {
         meeting: updatedMeeting._id,
       }
