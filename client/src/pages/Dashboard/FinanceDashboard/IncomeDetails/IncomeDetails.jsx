@@ -149,7 +149,7 @@ const IncomeDetails = () => {
       ) : (
         <WidgetSection
           layout={1}
-          title={"Annual Monthly Mix Revenues FY 2024-25"}
+          title={"Annual Monthly Mix Income FY 2024-25"}
           border
           TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}
         >
@@ -157,99 +157,8 @@ const IncomeDetails = () => {
         </WidgetSection>
       )}
 
-      {/* <WidgetSection
-        border
-        title={"Annual Monthly Revenue Breakup"}
-        padding
-        TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}
-      >
-        <div className="flex flex-col gap-2 rounded-md p-4">
-          <CollapsibleTable
-            columns={[
-              { headerName: "Vertical", field: "vertical" },
-              { headerName: "Revenue (INR)", field: "revenue" },
-              {
-                headerName: "Percentage Of Business (%)",
-                field: "contribution",
-              },
-            ]}
-            data={filteredByYear.map((domain, index) => {
-              const totalRevenue = domain.data.reduce(
-                (sum, val) => sum + val,
-                0
-              );
-              const contribution =
-                totalAnnualRevenue > 0
-                  ? ((totalRevenue / totalAnnualRevenue) * 100).toFixed(2)
-                  : "0.00";
-
-              return {
-                id: index,
-                vertical: domain.name,
-                revenue: totalRevenue.toLocaleString("en-IN"),
-                contribution: `${contribution}%`,
-                monthly: domain.data.map((val, idx) => {
-                  const [shortMonth, yearSuffix] = [
-                    "Apr-24",
-                    "May-24",
-                    "Jun-24",
-                    "Jul-24",
-                    "Aug-24",
-                    "Sep-24",
-                    "Oct-24",
-                    "Nov-24",
-                    "Dec-24",
-                    "Jan-25",
-                    "Feb-25",
-                    "Mar-25",
-                  ][idx].split("-");
-
-                  const fullMonthMap = {
-                    Jan: "January",
-                    Feb: "February",
-                    Mar: "March",
-                    Apr: "April",
-                    May: "May",
-                    Jun: "June",
-                    Jul: "July",
-                    Aug: "August",
-                    Sep: "September",
-                    Oct: "October",
-                    Nov: "November",
-                    Dec: "December",
-                  };
-
-                  return {
-                    srNo: idx + 1,
-                    month: fullMonthMap[shortMonth],
-                    year: `20${yearSuffix}`,
-                    revenue: val.toLocaleString("en-IN"),
-                  };
-                }),
-              };
-            })}
-            renderExpandedRow={(row) => (
-              <AgTable
-                data={row.monthly}
-                columns={[
-                  { headerName: "Sr No", field: "srNo", flex: 1 },
-                  { headerName: "Month", field: "month", flex: 1 },
-                  { headerName: "Year", field: "year", flex: 1 },
-                  { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
-                ]}
-                tableHeight={300}
-                hideFilter
-              />
-            )}
-          /> 
-
-         
-        </div>
-         
-      </WidgetSection> */}
-
       <MonthWiseAgTable
-        title={"Annual Monthly Revenue Breakup"}
+        title={"Annual Monthly Income Breakup"}
         passedColumns={[
           { headerName: "Sr No", field: "srNo", flex: 1 },
           { headerName: "Vertical", field: "vertical", flex: 1 },

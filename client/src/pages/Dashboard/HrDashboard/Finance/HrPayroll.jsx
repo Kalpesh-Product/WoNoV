@@ -17,6 +17,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import MuiModal from "../../../../components/MuiModal";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const HrPayroll = () => {
   const navigate = useNavigate();
@@ -255,183 +256,184 @@ const HrPayroll = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <AgTable
-          search={true}
-          searchColumn={"Employee Name"}
-          tableTitle={""}
-          data={[]}
-          columns={payrollColumn}
-        />
-        <MuiModal
-          open={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          title={"Employee Details"}>
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-end">
-              <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
-            </div>
-            <form>
-              {!isVisitorsData ? (
-                <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* First Name */}
-                  {isEditing ? (
-                    <Controller
-                      name="firstName"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label="First Name"
-                          fullWidth
-                        />
-                      )}
-                    />
-                  ) : (
-                    <DetalisFormatted
-                      title="First Name"
-                      // detail={selectedVisitor.firstName}
-                      detail="Aiwinraj"
-                    />
-                  )}
+      <PageFrame>
+        <div>
+          <AgTable
+            search={true}
+            searchColumn={"Employee Name"}
+            tableTitle={""}
+            data={[]}
+            columns={payrollColumn}
+          />
+          <MuiModal
+            open={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            title={"Employee Details"}>
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-end">
+                <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
+              </div>
+              <form>
+                {!isVisitorsData ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* First Name */}
+                    {isEditing ? (
+                      <Controller
+                        name="firstName"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="First Name"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <DetalisFormatted
+                        title="First Name"
+                        // detail={selectedVisitor.firstName}
+                        detail="Aiwinraj"
+                      />
+                    )}
 
-                  {/* Last Name */}
-                  {isEditing ? (
-                    <Controller
-                      name="lastName"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label="Last Name"
-                          fullWidth
-                        />
-                      )}
-                    />
-                  ) : (
-                    <DetalisFormatted
-                      title="Last Name"
-                      // detail={selectedVisitor.lastName}
-                      detail="KS"
-                    />
-                  )}
+                    {/* Last Name */}
+                    {isEditing ? (
+                      <Controller
+                        name="lastName"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Last Name"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <DetalisFormatted
+                        title="Last Name"
+                        // detail={selectedVisitor.lastName}
+                        detail="KS"
+                      />
+                    )}
 
-                  {/* Address */}
-                  {isEditing ? (
-                    <Controller
-                      name="address"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label="Role"
-                          fullWidth
-                        />
-                      )}
-                    />
-                  ) : (
-                    <DetalisFormatted
-                      title="Role"
-                      // detail={selectedVisitor.address}
-                      detail="Associate Software Engineer"
-                    />
-                  )}
+                    {/* Address */}
+                    {isEditing ? (
+                      <Controller
+                        name="address"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Role"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <DetalisFormatted
+                        title="Role"
+                        // detail={selectedVisitor.address}
+                        detail="Associate Software Engineer"
+                      />
+                    )}
 
-                  {/* Phone Number */}
-                  {isEditing ? (
-                    <Controller
-                      name="phoneNumber"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label="Total Salary (INR)"
-                          type="tel"
-                          fullWidth
-                        />
-                      )}
-                    />
-                  ) : (
-                    <DetalisFormatted
-                      title="Total Salary (INR)"
-                      // detail={selectedVisitor.phoneNumber}
-                      detail=" 40,000"
-                    />
-                  )}
+                    {/* Phone Number */}
+                    {isEditing ? (
+                      <Controller
+                        name="phoneNumber"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Total Salary (INR)"
+                            type="tel"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <DetalisFormatted
+                        title="Total Salary (INR)"
+                        // detail={selectedVisitor.phoneNumber}
+                        detail=" 40,000"
+                      />
+                    )}
 
-                  {/* Email */}
-                  {isEditing ? (
-                    <Controller
-                      name="email"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label="Email"
-                          type="email"
-                          fullWidth
-                        />
-                      )}
-                    />
-                  ) : (
-                    <DetalisFormatted
-                      title="Email"
-                      // detail={selectedVisitor.email}
-                      detail="aiwinraj.wono@gmail.com"
-                    />
-                  )}
+                    {/* Email */}
+                    {isEditing ? (
+                      <Controller
+                        name="email"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Email"
+                            type="email"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <DetalisFormatted
+                        title="Email"
+                        // detail={selectedVisitor.email}
+                        detail="aiwinraj.wono@gmail.com"
+                      />
+                    )}
 
-                  {/* Purpose of Visit */}
-                  {isEditing ? (
-                    <Controller
-                      name="purposeOfVisit"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label="Employee ID"
-                          fullWidth
-                        />
-                      )}
-                    />
-                  ) : (
-                    <DetalisFormatted
-                      title="Employee ID"
-                      // detail={selectedVisitor.purposeOfVisit}
-                      detail="EMP007"
-                    />
-                  )}
+                    {/* Purpose of Visit */}
+                    {isEditing ? (
+                      <Controller
+                        name="purposeOfVisit"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Employee ID"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <DetalisFormatted
+                        title="Employee ID"
+                        // detail={selectedVisitor.purposeOfVisit}
+                        detail="EMP007"
+                      />
+                    )}
 
-                  {/* To Meet */}
-                  {isEditing ? (
-                    <Controller
-                      name="toMeet"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label="Tenure"
-                          fullWidth
-                        />
-                      )}
-                    />
-                  ) : (
-                    <DetalisFormatted
-                      title="Tenure"
-                      // detail={selectedVisitor?.toMeet}
-                      detail="36 Months"
-                    />
-                  )}
+                    {/* To Meet */}
+                    {isEditing ? (
+                      <Controller
+                        name="toMeet"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Tenure"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <DetalisFormatted
+                        title="Tenure"
+                        // detail={selectedVisitor?.toMeet}
+                        detail="36 Months"
+                      />
+                    )}
 
-                  {/* Check In */}
-                  {/* {isEditing ? (
+                    {/* Check In */}
+                    {/* {isEditing ? (
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Controller
                       name="checkIn"
@@ -455,14 +457,15 @@ const HrPayroll = () => {
                     detail={selectedVisitor.checkIn}
                   />
                 )} */}
-                </div>
-              ) : (
-                []
-              )}
-            </form>
-          </div>
-        </MuiModal>
-      </div>
+                  </div>
+                ) : (
+                  []
+                )}
+              </form>
+            </div>
+          </MuiModal>
+        </div>
+      </PageFrame>
     </div>
   );
 };

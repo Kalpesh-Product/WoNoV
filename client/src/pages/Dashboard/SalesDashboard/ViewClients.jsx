@@ -11,13 +11,14 @@ import { setSelectedClient } from "../../../redux/slices/clientSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { setClientData } from "../../../redux/slices/salesSlice";
 import WidgetSection from "../../../components/WidgetSection";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const ViewClients = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
   const clientsData = useSelector((state) => state.sales.clientsData);
-  const location = useLocation()
+  const location = useLocation();
 
   useEffect(() => {
     const fetchSourceIfEmpty = async () => {
@@ -37,16 +38,20 @@ const ViewClients = () => {
   const handleClickRow = (clientData) => {
     dispatch(setSelectedClient(clientData));
     const isMixBag = location.pathname.includes("mix-bag");
-    const isRevenueBasePath = location.pathname.endsWith("/clients") || location.pathname.endsWith("/clients/");
-  
+    const isRevenueBasePath =
+      location.pathname.endsWith("/clients") ||
+      location.pathname.endsWith("/clients/");
+
     if (isMixBag && isRevenueBasePath) {
-      navigate(`/app/dashboard/sales-dashboard/mix-bag/clients/${clientData.clientName}`, { replace: true });
+      navigate(
+        `/app/dashboard/sales-dashboard/mix-bag/clients/${clientData.clientName}`,
+        { replace: true }
+      );
     } else if (!isMixBag && isRevenueBasePath) {
       navigate(
         `/app/dashboard/sales-dashboard/clients/${clientData.clientName}`
       );
     }
-    
   };
 
   const viewEmployeeColumns = [
@@ -54,7 +59,7 @@ const ViewClients = () => {
     {
       field: "clientName",
       headerName: "Client Name",
-      flex:1,
+      flex: 1,
       cellRenderer: (params) => (
         <span
           style={{
@@ -62,8 +67,7 @@ const ViewClients = () => {
             textDecoration: "underline",
             cursor: "pointer",
           }}
-          onClick={() => handleClickRow(params.data)}
-        >
+          onClick={() => handleClickRow(params.data)}>
           {params.value}
         </span>
       ),
@@ -126,13 +130,13 @@ const ViewClients = () => {
       </div>
 
       <div className="w-full px-4">
-
+        <PageFrame>
           <AgTable
             search={true}
             tableTitle={"CLIENT DETAILS"}
             key={clientsData.length}
             buttonTitle={"Add Client"}
-            handleClick={()=>navigate('client-onboarding')}
+            handleClick={() => navigate("client-onboarding")}
             data={[
               ...clientsData.map((item, index) => ({
                 id: index + 1,
@@ -151,8 +155,11 @@ const ViewClients = () => {
                 cabinDesks: item.cabinDesks,
                 openDesks: item.openDesks,
                 totalDesks: item.totalDesks,
-                desks : (Number(item.openDesks) + Number(item.cabinDesks)),
-                occupancy : ((((Number(item.openDesks) + Number(item.cabinDesks))/589)*100).toFixed(1)),
+                desks: Number(item.openDesks) + Number(item.cabinDesks),
+                occupancy: (
+                  ((Number(item.openDesks) + Number(item.cabinDesks)) / 589) *
+                  100
+                ).toFixed(1),
                 ratePerOpenDesk: item.ratePerOpenDesk,
                 ratePerCabinDesk: item.ratePerCabinDesk,
                 annualIncrement: item.annualIncrement,
@@ -173,11 +180,12 @@ const ViewClients = () => {
                 createdAt: item.createdAt,
                 updatedAt: item.updatedAt,
                 occupiedImage: item.occupiedImage?.imageUrl,
-                members : item.members || []
+                members: item.members || [],
               })),
             ]}
             columns={viewEmployeeColumns}
           />
+        </PageFrame>
       </div>
     </div>
   );

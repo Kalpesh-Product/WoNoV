@@ -3,6 +3,7 @@ import AgTable from "../../../../components/AgTable";
 import { Chip, Skeleton } from "@mui/material";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const HrSettingsDepartments = () => {
   const axios = useAxiosPrivate();
@@ -115,29 +116,31 @@ const HrSettingsDepartments = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        {!departmentLoading ? (
-          <AgTable
-            search={true}
-            searchColumn={"Department Name"}
-            tableTitle={"Department List"}
-            data={[
-              ...fetchedDepartments.map((item, index) => ({
-                id: index + 1,
-                departmentName: item.department?.name,
-                manager: item?.admin ,
-              })),
-            ]}
-            columns={departmentsColumn}
-          />
-        ) : (
-          <div className="flex flex-col gap-2">
-            {/* Simulating chart skeleton */}
-            <Skeleton variant="text" width={200} height={30} />
-            <Skeleton variant="rectangular" width="100%" height={300} />
-          </div>
-        )}
-      </div>
+      <PageFrame>
+        <div>
+          {!departmentLoading ? (
+            <AgTable
+              search={true}
+              searchColumn={"Department Name"}
+              tableTitle={"Department List"}
+              data={[
+                ...fetchedDepartments.map((item, index) => ({
+                  id: index + 1,
+                  departmentName: item.department?.name,
+                  manager: item?.admin,
+                })),
+              ]}
+              columns={departmentsColumn}
+            />
+          ) : (
+            <div className="flex flex-col gap-2">
+              {/* Simulating chart skeleton */}
+              <Skeleton variant="text" width={200} height={30} />
+              <Skeleton variant="rectangular" width="100%" height={300} />
+            </div>
+          )}
+        </div>
+      </PageFrame>
     </div>
   );
 };

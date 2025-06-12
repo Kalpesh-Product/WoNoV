@@ -1,10 +1,9 @@
-
 import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const ClientRevenue = () => {
-
   const viewEmployeeColumns = [
     { field: "srno", headerName: "SR No", width: 100 },
     {
@@ -86,12 +85,14 @@ const ClientRevenue = () => {
   return (
     <div>
       <div className="w-full">
-        <AgTable
-          search={true}
-          searchColumn="Email"
-          data={rows}
-          columns={viewEmployeeColumns}
-        />
+        <PageFrame>
+          <AgTable
+            search={true}
+            searchColumn="Email"
+            data={rows}
+            columns={viewEmployeeColumns}
+          />
+        </PageFrame>
       </div>
     </div>
   );

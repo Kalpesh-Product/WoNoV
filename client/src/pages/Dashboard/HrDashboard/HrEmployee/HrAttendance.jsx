@@ -7,6 +7,7 @@ import SecondaryButton from "../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Box, MenuItem, Skeleton, TextField, Tooltip } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const HrAttendance = () => {
   const axios = useAxiosPrivate();
@@ -206,8 +207,7 @@ const HrAttendance = () => {
                     textAlign: "center",
                     fontWeight: 500,
                     width: "100%",
-                  }}
-                >
+                  }}>
                   {label}
                 </Box>
               </Tooltip>
@@ -262,8 +262,7 @@ const HrAttendance = () => {
                   textAlign: "center",
                   fontWeight: 500,
                   width: "100%",
-                }}
-              >
+                }}>
                 {label}
               </Box>
             </Tooltip>
@@ -308,76 +307,76 @@ const HrAttendance = () => {
     dayjs(currentMonth).isSameOrBefore(dayjs(selectedFY.end), "month");
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
-        <div className="flex gap-2 items-center">
-          <TextField
-            select
-            size="small"
-            value={selectedFY.label}
-            onChange={(e) => {
-              const fy = fyOptions.find((fy) => fy.label === e.target.value);
-              setSelectedFY(fy);
-              setCurrentMonth(fy.start);
-            }}
-            className="min-w-[140px]"
-          >
-            {fyOptions.map((fy) => (
-              <MenuItem key={fy.label} value={fy.label}>
-                {fy.label}
-              </MenuItem>
-            ))}
-          </TextField>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" />
-
-          <TextField
-            select
-            size="small"
-            variant="standard"
-            value={dayjs(currentMonth).format("YYYY-MM")}
-            onChange={(e) => {
-              const [year, month] = e.target.value.split("-");
-              const newDate = dayjs(`${year}-${month}-01`).toDate();
-              setCurrentMonth(newDate);
-            }}
-            className="min-w-[160px]"
-            SelectProps={{
-              IconComponent: KeyboardArrowDownIcon,
-            }}
-          >
-            {generateMonthOptions(selectedFY.start, selectedFY.end).map(
-              (option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
+    <PageFrame>
+      <div>
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+          <div className="flex gap-2 items-center">
+            <TextField
+              select
+              size="small"
+              value={selectedFY.label}
+              onChange={(e) => {
+                const fy = fyOptions.find((fy) => fy.label === e.target.value);
+                setSelectedFY(fy);
+                setCurrentMonth(fy.start);
+              }}
+              className="min-w-[140px]">
+              {fyOptions.map((fy) => (
+                <MenuItem key={fy.label} value={fy.label}>
+                  {fy.label}
                 </MenuItem>
-              )
-            )}
-          </TextField>
-
-          <PrimaryButton handleSubmit={handleNextMonth} title="Next" />
-        </div>
-      </div>
-
-      {!isLoading ? (
-        isMonthWithinFY ? (
-          <AgTable
-            data={tableData}
-            columns={columns}
-            search={true}
-            searchColumn="empName"
-          />
-        ) : (
-          <div className="text-center text-gray-500 py-8 text-lg">
-            Data not available for selected financial year.
+              ))}
+            </TextField>
           </div>
-        )
-      ) : (
-        <Skeleton width={"100%"} height={600} />
-      )}
-    </div>
+
+          <div className="flex items-center gap-4">
+            <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" />
+
+            <TextField
+              select
+              size="small"
+              variant="standard"
+              value={dayjs(currentMonth).format("YYYY-MM")}
+              onChange={(e) => {
+                const [year, month] = e.target.value.split("-");
+                const newDate = dayjs(`${year}-${month}-01`).toDate();
+                setCurrentMonth(newDate);
+              }}
+              className="min-w-[160px]"
+              SelectProps={{
+                IconComponent: KeyboardArrowDownIcon,
+              }}>
+              {generateMonthOptions(selectedFY.start, selectedFY.end).map(
+                (option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                )
+              )}
+            </TextField>
+
+            <PrimaryButton handleSubmit={handleNextMonth} title="Next" />
+          </div>
+        </div>
+
+        {!isLoading ? (
+          isMonthWithinFY ? (
+            <AgTable
+              data={tableData}
+              columns={columns}
+              search={true}
+              searchColumn="empName"
+            />
+          ) : (
+            <div className="text-center text-gray-500 py-8 text-lg">
+              Data not available for selected financial year.
+            </div>
+          )
+        ) : (
+          <Skeleton width={"100%"} height={600} />
+        )}
+      </div>
+    </PageFrame>
   );
 };
 
