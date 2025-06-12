@@ -262,7 +262,7 @@ const DeptWiseBudget = () => {
         titleAmount={`INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`}
       />
 
-      <AllocatedBudget financialData={financialData} noFilter hideTitle />
+      <AllocatedBudget financialData={financialData} noFilter hideTitle noInvoice/>
     </div>
   );
 };

@@ -12,7 +12,6 @@ import { useNavigate } from "react-router-dom";
 const CoWorkingSeats = () => {
   const clientsData = useSelector((state) => state.sales.clientsData);
   const navigate = useNavigate();
-  console.log("-----------CLIENTS DATA-----------", clientsData);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
   const [selectedTableMonth, setSelectedTableMonth] = useState(null);
@@ -140,9 +139,15 @@ const CoWorkingSeats = () => {
     });
 
     return { totalSeats, occupiedSeats, monthlySeatData };
+    
   }, [clientsData]);
+   const totalOccupiedSeats = clientsData.filter((item)=>item.isActive === true).reduce(
+    (sum, item) => (item.totalDesks || 0) + sum,
+    0
+  );
 
-  const remainingSeats = totalSeats - occupiedSeats;
+
+  const remainingSeats = totalSeats - totalOccupiedSeats;
 
   const categories = monthlySeatData.map((m) => m.month);
   const bookedRawCounts = monthlySeatData.map((m) => m.booked);
@@ -153,6 +158,7 @@ const CoWorkingSeats = () => {
   const remainingPercentages = monthlySeatData.map(
     (m) => ((m.total - m.booked) / (m.total || 1)) * 100
   );
+
 
   const series = [
     { name: "Booked", data: bookedPercentages },
@@ -203,7 +209,6 @@ const CoWorkingSeats = () => {
     },
   };
 
-  console.log("---------MONTHLY SEATS DATA-----------", monthlySeatData);
   const generateUnitMonthData = (clientsData) => {
     const monthData = [];
 
@@ -330,11 +335,7 @@ const CoWorkingSeats = () => {
 
         return (
           <span
-            style={{
-              color: "#1a73e8",
-              cursor: "pointer",
-              textDecoration: "underline",
-            }}
+            className="text-primary underline cursor-pointer"
             onClick={() => {
               const parsedDate = dayjs(rowData.date, "DD-MM-YYYY");
               const selectedMonth = parsedDate.format("MMM-YYYY");
@@ -419,13 +420,14 @@ const CoWorkingSeats = () => {
         />
         <DataCard
           title={"Booked Seats"}
-          data={occupiedSeats}
+          data={totalOccupiedSeats}
           description={`Current Month : ${new Date().toLocaleString("default", {
             month: "short",
           })}-25`}
         />
         <DataCard
           title={"Available Seats"}
+          route={"check-availability"}
           data={remainingSeats}
           description={`Current Month : ${new Date().toLocaleString("default", {
             month: "short",
