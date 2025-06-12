@@ -17,6 +17,8 @@ const UserData = require("../../models/hr/UserData");
 const Company = require("../../models/hr/Company");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 const ExternalCompany = require("../../models/meetings/ExternalCompany");
+const MeetingRevenue = require("../../models/sales/MeetingRevenue");
+const { isValid } = require("date-fns/isValid");
 
 const addMeetings = async (req, res, next) => {
   const logPath = "meetings/MeetingLog";
@@ -38,6 +40,9 @@ const addMeetings = async (req, res, next) => {
       externalCompany,
       internalParticipants,
       externalParticipants,
+      paymentAmount,
+      paymentStatus,
+      paymentMode,
     } = req.body;
 
     const company = req.company;
@@ -67,15 +72,6 @@ const addMeetings = async (req, res, next) => {
     if (client && !mongoose.Types.ObjectId.isValid(client)) {
       throw new CustomError(
         "Invalid client Id provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    if (externalCompany && !mongoose.Types.ObjectId.isValid(externalCompany)) {
-      throw new CustomError(
-        "Invalid external company Id provided",
         logPath,
         logAction,
         logSourceKey
@@ -261,28 +257,14 @@ const addMeetings = async (req, res, next) => {
     //   Room.findByIdAndUpdate(roomAvailable._id, { status: "Occupied" }),
     // ]);
 
-    // const savedMeeting = await meeting.save();
-
-    // if (!savedMeeting) {
-    //   throw new CustomError("Booking failed", logPath, logAction, logSourceKey);
-    // }
-
-    // console.log("roomId", roomAvailable._id);
-    // const updateRoomStatus = Room.findByIdAndUpdate(
-    //   { _id: roomAvailable._id },
-    //   {
-    //     status: "Occupied",
-    //   }
-    // );
-
-    // if (!updateRoomStatus) {
-    //   throw new CustomError(
-    //     "Failed to update room status",
-    //     logPath,
-    //     logAction,
-    //     logSourceKey
-    //   );
-    // }
+    if (!savedMeeting) {
+      throw new CustomError(
+        "Failed to book meeting",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
 
     await createLog({
       path: logPath,
@@ -386,7 +368,7 @@ const getMeetings = async (req, res, next) => {
         { path: "clientBookedBy", select: "employeeName email" },
         { path: "receptionist", select: "firstName lastName" },
         { path: "client", select: "clientName" },
-        { path: "externalClient", select: "companyName pocName mobileNumber" },
+        // { path: "externalClient", select: "companyName pocName mobileNumber" },
         { path: "internalParticipants", select: "firstName lastName email" },
         { path: "clientParticipants", select: "employeeName email" },
         { path: "externalParticipants", select: "firstName lastName email" },
@@ -477,10 +459,10 @@ const getMeetings = async (req, res, next) => {
         externalClient: meeting.externalClient
           ? meeting.externalClient.companyName
           : null,
-        pocName: meeting.externalClient ? meeting.externalClient.pocName : "",
-        mobileNumber: meeting.externalClient
-          ? meeting.externalClient.mobileNumber
-          : "",
+        // pocName: meeting.externalClient ? meeting.externalClient.pocName : "",
+        // mobileNumber: meeting.externalClient
+        //   ? meeting.externalClient.mobileNumber
+        //   : "",
         meetingType: meeting.meetingType,
         housekeepingStatus: meeting.houeskeepingStatus,
         date: meeting.startDate,
@@ -544,10 +526,10 @@ const getMyMeetings = async (req, res, next) => {
           { path: "clientBookedBy", select: "employeeName email" },
           { path: "receptionist", select: "firstName lastName" },
           { path: "client", select: "clientName" },
-          {
-            path: "externalClient",
-            select: "companyName pocName mobileNumber",
-          },
+          // {
+          //   path: "externalClient",
+          //   select: "companyName pocName mobileNumber",
+          // },
           { path: "internalParticipants", select: "firstName lastName email" },
           { path: "clientParticipants", select: "employeeName email" },
           { path: "externalParticipants", select: "firstName lastName email" },
@@ -573,10 +555,10 @@ const getMyMeetings = async (req, res, next) => {
           { path: "clientBookedBy", select: "employeeName email" },
           { path: "receptionist", select: "firstName lastName" },
           { path: "client", select: "clientName" },
-          {
-            path: "externalClient",
-            select: "companyName pocName mobileNumber",
-          },
+          // {
+          //   path: "externalClient",
+          //   select: "companyName pocName mobileNumber",
+          // },
           { path: "internalParticipants", select: "firstName lastName email" },
           { path: "clientParticipants", select: "employeeName email" },
           { path: "externalParticipants", select: "firstName lastName email" },
@@ -662,10 +644,10 @@ const getMyMeetings = async (req, res, next) => {
         externalClient: meeting.externalClient
           ? meeting.externalClient.companyName
           : null,
-        pocName: meeting.externalClient ? meeting.externalClient.pocName : "",
-        mobileNumber: meeting.externalClient
-          ? meeting.externalClient.mobileNumber
-          : "",
+        // pocName: meeting.externalClient ? meeting.externalClient.pocName : "",
+        // mobileNumber: meeting.externalClient
+        //   ? meeting.externalClient.mobileNumber
+        //   : "",
         meetingType: meeting.meetingType,
         housekeepingStatus: meeting.houeskeepingStatus,
         date: meeting.startDate,
@@ -1163,7 +1145,7 @@ const getSingleRoomMeetings = async (req, res, next) => {
 
   try {
     if (!mongoose.Types.ObjectId.isValid(roomId)) {
-      return res.status(400).json({ message: "Invalid roomId provided" });
+      return res.status(400).json({ message: "Invalid room Id provided" });
     }
 
     const startOfDay = new Date();
@@ -1184,6 +1166,134 @@ const getSingleRoomMeetings = async (req, res, next) => {
     res.status(200).json(meetings);
   } catch (error) {
     next(error);
+  }
+};
+
+//Update payment details
+const updateMeeting = async (req, res, next) => {
+  const logPath = "meetings/MeetingLog";
+  const logAction = "Extend Meeting Time";
+  const logSourceKey = "meeting";
+
+  try {
+    const { user, ip, company } = req;
+    const { paymentAmount, paymentMode, paymentStatus } = req.body;
+    const { meetingId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(meetingId)) {
+      return res.status(400).json({ message: "Invalid meeting Id provided" });
+    }
+
+    const updatedMeeting = await Meeting.findByIdAndUpdate(
+      meetingId,
+      { paymentAmount, paymentMode, paymentStatus },
+      { new: true }
+    ).populate([
+      { path: "bookedRoom" },
+      { path: "externalClient", select: "clientCompany" },
+    ]);
+
+    // console.log("meeting", updatedMeeting);
+
+    if (!updatedMeeting) {
+      throw new CustomError(
+        "Meeting not found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (updatedMeeting.meetingType !== "External") {
+      console.log("type", updatedMeeting);
+      throw new CustomError(
+        "Meeting type is not external",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const durationInMs = updatedMeeting.endTime - updatedMeeting.startTime;
+    const durationInHours = durationInMs / (1000 * 60 * 60);
+    const perHourCost = updatedMeeting.bookedRoom.perHourPrice;
+    const amountToBePaid = durationInHours * perHourCost;
+
+    const isValidAmount = Number(paymentAmount) === amountToBePaid;
+
+    if (!isValidAmount) {
+      throw new CustomError(
+        `Actual amount is INR ${amountToBePaid}`,
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const meetingRevenue = new MeetingRevenue({
+      date: updatedMeeting.startDate,
+      company,
+      clientName: updatedMeeting.externalClient.clientCompany,
+      particulars: "Meeting room booking",
+      costPerHour: updatedMeeting.bookedRoom.perHourPrice,
+      totalAmount: paymentAmount,
+      paymentDate: updatedMeeting.startDate,
+      remarks: paymentMode,
+      meetingRoomName: updatedMeeting.bookedRoom.name,
+      hoursBooked: durationInHours,
+    });
+
+    savedRevenue = await meetingRevenue.save();
+
+    if (!savedRevenue) {
+      throw new CustomError(
+        "Failed to save meeting revenue",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const updatedVisitor = await Visitor.findOneAndUpdate(
+      {
+        clientCompany: updatedMeeting.externalClient.clientCompany,
+      },
+      {
+        meeting: updatedMeeting._id,
+      }
+    );
+
+    if (!updatedVisitor) {
+      throw new CustomError(
+        "Failed to save meeting revenue",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Meeting updated successfully",
+      status: "Success",
+      user: user,
+      ip: ip,
+      company: company,
+      sourceKey: logSourceKey,
+      sourceId: updatedMeeting._id,
+      changes: { meetingId },
+    });
+
+    return res.status(200).json({ message: "Meeting updated successfully" });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
   }
 };
 
@@ -1310,4 +1420,5 @@ module.exports = {
   getAllCompanies,
   getSingleRoomMeetings,
   updateMeetingStatus,
+  updateMeeting,
 };

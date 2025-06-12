@@ -149,8 +149,7 @@ const StatutoryPayments = () => {
             <div className="p-2 mb-2 flex gap-2">
               <span
                 className="text-subtitle cursor-pointer"
-                onClick={() => handleViewModal(params.data)}
-              >
+                onClick={() => handleViewModal(params.data)}>
                 <MdOutlineRemoveRedEye />
               </span>
             </div>
@@ -192,9 +191,9 @@ const StatutoryPayments = () => {
         <MuiModal
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
-          title="Statutory Payment Detail"
-        >
+          title="Statutory Payment Detail">
           <div className="space-y-3">
+            <div className="font-bold">General Information</div>
             <DetalisFormatted
               title="Expense Name"
               detail={viewDetails.expanseName}
@@ -208,6 +207,16 @@ const StatutoryPayments = () => {
               detail={viewDetails.department?.name || "-"}
             />
             <DetalisFormatted
+              title="Extra Budget?"
+              detail={viewDetails.isExtraBudget ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title="Payment Status"
+              detail={viewDetails.status}
+            />
+            <br />
+            <div className="font-bold">Financial Overview</div>
+            <DetalisFormatted
               title="Projected Amount"
               detail={`INR ${viewDetails.projectedAmount}`}
             />
@@ -215,25 +224,17 @@ const StatutoryPayments = () => {
               title="Actual Amount Paid"
               detail={`INR ${viewDetails.actualAmount}`}
             />
+            <br />
+            <div className="font-bold">Payment Timeline</div>
             <DetalisFormatted
               title="Due Date"
               detail={
-                viewDetails.dueDate
-                  ? humanDate(viewDetails.dueDate)
-                  : "-"
+                viewDetails.dueDate ? humanDate(viewDetails.dueDate) : "-"
               }
             />
             <DetalisFormatted
               title="Payment Date"
               detail={viewDetails.date || "-"}
-            />
-            <DetalisFormatted
-              title="Extra Budget?"
-              detail={viewDetails.isExtraBudget ? "Yes" : "No"}
-            />
-            <DetalisFormatted
-              title="Payment Status"
-              detail={viewDetails.status}
             />
           </div>
         </MuiModal>

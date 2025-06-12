@@ -1,21 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import { Chip, TextField } from "@mui/material";
-import useAxiosPrivate from '../../../../hooks/useAxiosPrivate';
-import { useQuery } from '@tanstack/react-query';
-import MuiModal from '../../../../components/MuiModal';
-import PrimaryButton from '../../../../components/PrimaryButton';
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
+import MuiModal from "../../../../components/MuiModal";
+import PrimaryButton from "../../../../components/PrimaryButton";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const HrSOP = () => {
   const [openModal, setOpenModal] = useState(false);
-  const [sopName, setSopName] = useState('');
+  const [sopName, setSopName] = useState("");
   const axios = useAxiosPrivate();
 
   const { data: sops = [], refetch } = useQuery({
     queryKey: ["sops"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/company/get-company-documents/sop");
+        const response = await axios.get(
+          "/api/company/get-company-documents/sop"
+        );
         return response.data.sop;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -30,7 +33,7 @@ const HrSOP = () => {
         isActive: true,
       });
       setOpenModal(false);
-      setSopName('');
+      setSopName("");
       refetch(); // Refetch to update the list
     } catch (error) {
       console.error("Error adding SOP:", error);
@@ -84,39 +87,40 @@ const HrSOP = () => {
   ];
 
   return (
-    <div>
-      <AgTable
-        key={sops.length}
-        search={true}
-        searchColumn={"SOPs"}
-        tableTitle={"SOP List"}
-        buttonTitle={"Add SOP"}
-        data={sops.map((sop, index) => ({
-          id: index + 1,
-          sopname: sop.name,
-          status: sop.isActive,
-        }))}
-        handleClick={() => setOpenModal(true)}
-        columns={departmentsColumn}
-      />
+    <PageFrame>
+      <div>
+        <AgTable
+          key={sops.length}
+          search={true}
+          searchColumn={"SOPs"}
+          tableTitle={"SOP List"}
+          buttonTitle={"Add SOP"}
+          data={sops.map((sop, index) => ({
+            id: index + 1,
+            sopname: sop.name,
+            status: sop.isActive,
+          }))}
+          handleClick={() => setOpenModal(true)}
+          columns={departmentsColumn}
+        />
 
-      <MuiModal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-        title="Add New SOP"
-      >
-        <div className="flex flex-col gap-4">
-          <TextField
-            label="SOP Name"
-            variant="outlined"
-            fullWidth
-            value={sopName}
-            onChange={(e) => setSopName(e.target.value)}
-          />
-          <PrimaryButton title="Add SOP" onClick={handleAddSOP} />
-        </div>
-      </MuiModal>
-    </div>
+        <MuiModal
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          title="Add New SOP">
+          <div className="flex flex-col gap-4">
+            <TextField
+              label="SOP Name"
+              variant="outlined"
+              fullWidth
+              value={sopName}
+              onChange={(e) => setSopName(e.target.value)}
+            />
+            <PrimaryButton title="Add SOP" onClick={handleAddSOP} />
+          </div>
+        </MuiModal>
+      </div>
+    </PageFrame>
   );
 };
 

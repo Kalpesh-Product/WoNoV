@@ -14,6 +14,7 @@ import useAuth from "../../../../hooks/useAuth";
 import dayjs from "dayjs";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const ItMonthlyInvoice = () => {
   const { auth } = useAuth();
@@ -115,8 +116,7 @@ const ItMonthlyInvoice = () => {
         <div className="p-2 mb-2  flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleDetailsClick(params.data)}
-          >
+            onClick={() => handleDetailsClick(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -230,7 +230,6 @@ const ItMonthlyInvoice = () => {
     },
   ];
 
-
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
     setModalMode("view");
@@ -251,20 +250,23 @@ const ItMonthlyInvoice = () => {
 
   return (
     <>
-      <AgTable
-        key={assetsList.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"Monthly Invoice Reports"}
-        buttonTitle={"Add Invoice"}
-        data={[
-          
-        ]}
-        columns={assetColumns}
-        handleClick={handleAddAsset}
-      />
+      <PageFrame>
+        <AgTable
+          key={assetsList.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"Monthly Invoice Reports"}
+          buttonTitle={"Add Invoice"}
+          data={[]}
+          columns={assetColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "add" ? "Add Invoice" : "Asset Details"}>
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalMode === "add" ? "Add Invoice" : "Asset Details"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -284,10 +286,11 @@ const ItMonthlyInvoice = () => {
                       label="Category"
                       size="small"
                       error={!!errors.name}
-                      helperText={errors.name?.message}
-                    >
+                      helperText={errors.name?.message}>
                       {assetsCategories.map((category) => (
-                        <MenuItem key={category._id} value={category.categoryName}>
+                        <MenuItem
+                          key={category._id}
+                          value={category.categoryName}>
                           {category.categoryName}
                         </MenuItem>
                       ))}
@@ -308,8 +311,7 @@ const ItMonthlyInvoice = () => {
                       label="Department"
                       size="small"
                       error={!!errors.department}
-                      helperText={errors.department?.message}
-                    >
+                      helperText={errors.department?.message}>
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept.name}>
                           {dept.name}
@@ -422,8 +424,7 @@ const ItMonthlyInvoice = () => {
                       label="Vendor"
                       size="small"
                       error={!!errors.vendor}
-                      helperText={errors.vendor?.message}
-                    >
+                      helperText={errors.vendor?.message}>
                       {vendorDetials.map((vendor) => (
                         <MenuItem key={vendor._id} value={vendor.name}>
                           {vendor.name}
@@ -436,30 +437,46 @@ const ItMonthlyInvoice = () => {
 
               {/* Submit button */}
               <div className="flex gap-4 justify-center items-center mt-4">
-                <PrimaryButton title={modalMode === "add" ? "Submit" : "Update"} />
+                <PrimaryButton
+                  title={modalMode === "add" ? "Submit" : "Update"}
+                />
               </div>
             </form>
-
           </div>
         )}
         {modalMode === "view" && selectedAsset && (
           <div className="p-4">
             <div className="grid grid-cols-2 gap-4">
-              <DetalisFormatted title="Department" detail={selectedAsset.department} />
+              <DetalisFormatted
+                title="Department"
+                detail={selectedAsset.department}
+              />
               <DetalisFormatted title="Category" detail={selectedAsset.name} />
               <DetalisFormatted title="Brand" detail={selectedAsset.brand} />
-              <DetalisFormatted title="Price" detail={`INR ${selectedAsset.price.toLocaleString("en-IN")}`} />
-              <DetalisFormatted title="Quantity" detail={selectedAsset.quantity} />
-              <DetalisFormatted title="Purchase Date" detail={dayjs(selectedAsset.purchaseDate).format("DD-MM-YYYY")} />
-              <DetalisFormatted title="Warranty" detail={`${selectedAsset.warranty} months`} />
-              <DetalisFormatted title="Vendor" detail={selectedAsset.vendor?.name} />
+              <DetalisFormatted
+                title="Price"
+                detail={`INR ${selectedAsset.price.toLocaleString("en-IN")}`}
+              />
+              <DetalisFormatted
+                title="Quantity"
+                detail={selectedAsset.quantity}
+              />
+              <DetalisFormatted
+                title="Purchase Date"
+                detail={dayjs(selectedAsset.purchaseDate).format("DD-MM-YYYY")}
+              />
+              <DetalisFormatted
+                title="Warranty"
+                detail={`${selectedAsset.warranty} months`}
+              />
+              <DetalisFormatted
+                title="Vendor"
+                detail={selectedAsset.vendor?.name}
+              />
             </div>
           </div>
         )}
       </MuiModal>
-
-
-
     </>
   );
 };

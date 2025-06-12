@@ -45,6 +45,16 @@ const meetingSchema = new mongoose.Schema(
     creditsUsed: {
       type: Number,
     },
+    paymentAmount: {
+      type: Number,
+    },
+    paymentStatus: {
+      type: Boolean,
+    },
+    paymentMode: {
+      type: String,
+      enum: ["Cash", "Cheque", "NEFT", "RTGS", "IMPS", "Credit Card", "ETC"],
+    },
     internalParticipants: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -96,7 +106,7 @@ const meetingSchema = new mongoose.Schema(
     },
     externalClient: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "ExternalCompany",
+      ref: "Visitor",
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,

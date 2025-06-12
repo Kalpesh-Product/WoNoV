@@ -1,22 +1,31 @@
-import { useState } from 'react';
+import { useState } from "react";
 import AgTable from "../../../../components/AgTable";
-import { Chip, TextField, Switch, Button, FormControlLabel } from "@mui/material";
-import useAxiosPrivate from '../../../../hooks/useAxiosPrivate';
-import { useQuery } from '@tanstack/react-query';
-import MuiModal from '../../../../components/MuiModal';
-import PrimaryButton from '../../../../components/PrimaryButton';
-import { toast } from 'sonner';
+import {
+  Chip,
+  TextField,
+  Switch,
+  Button,
+  FormControlLabel,
+} from "@mui/material";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
+import MuiModal from "../../../../components/MuiModal";
+import PrimaryButton from "../../../../components/PrimaryButton";
+import { toast } from "sonner";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const HrSettingsPolicies = () => {
   const [openModal, setOpenModal] = useState(false);
-  const [policyName, setPolicyName] = useState('');
+  const [policyName, setPolicyName] = useState("");
   const axios = useAxiosPrivate();
 
   const { data: policies = [] } = useQuery({
     queryKey: ["policies"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/company/get-company-documents/policies");
+        const response = await axios.get(
+          "/api/company/get-company-documents/policies"
+        );
         return response.data.policies;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -39,21 +48,23 @@ const HrSettingsPolicies = () => {
   // };
 
   const handleAddPolicy = () => {
-    toast.success("Successfully added policy")
+    toast.success("Successfully added policy");
     setOpenModal(false);
-  }
+  };
 
   const departmentsColumn = [
     { field: "id", headerName: "Sr No", width: "100" },
     {
-      field: "policyname", headerName: "POLICY NAME",
+      field: "policyname",
+      headerName: "POLICY NAME",
       cellRenderer: (params) => (
         <div>
           <span className="text-primary cursor-pointer hover:underline">
             {params.value}
           </span>
         </div>
-      ), flex: 1
+      ),
+      flex: 1,
     },
     {
       field: "status",
@@ -69,7 +80,8 @@ const HrSettingsPolicies = () => {
           color: "white",
         };
         return <Chip label={status} style={{ backgroundColor, color }} />;
-      }, flex: 1
+      },
+      flex: 1,
     },
     {
       field: "actions",
@@ -85,40 +97,43 @@ const HrSettingsPolicies = () => {
   ];
 
   return (
-    <div>
-      <AgTable
-        key={policies.length}
-        search={true}
-        searchColumn={"Policies"}
-        tableTitle={"Policy List"}
-        buttonTitle={"Add Policy"}
-        data={[...policies.map((policy, index) => ({
-          id: index + 1,
-          policyname: policy.name,
-          status: policy.isActive
-        }))]}
-        handleClick={() => setOpenModal(true)}
-        columns={departmentsColumn}
-      />
+    <PageFrame>
+      <div>
+        <AgTable
+          key={policies.length}
+          search={true}
+          searchColumn={"Policies"}
+          tableTitle={"Policy List"}
+          buttonTitle={"Add Policy"}
+          data={[
+            ...policies.map((policy, index) => ({
+              id: index + 1,
+              policyname: policy.name,
+              status: policy.isActive,
+            })),
+          ]}
+          handleClick={() => setOpenModal(true)}
+          columns={departmentsColumn}
+        />
 
-      <MuiModal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-        title="Add New Policy"
-      >
-        <div className="flex flex-col gap-4">
-          <TextField
-            label="Policy Name"
-            variant="outlined"
-            fullWidth
-            value={policyName}
-            onChange={(e) => setPolicyName(e.target.value)}
-          />
+        <MuiModal
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          title="Add New Policy">
+          <div className="flex flex-col gap-4">
+            <TextField
+              label="Policy Name"
+              variant="outlined"
+              fullWidth
+              value={policyName}
+              onChange={(e) => setPolicyName(e.target.value)}
+            />
 
-          <PrimaryButton title="Add Policy" onClick={handleAddPolicy} />
-        </div>
-      </MuiModal>
-    </div>
+            <PrimaryButton title="Add Policy" onClick={handleAddPolicy} />
+          </div>
+        </MuiModal>
+      </div>
+    </PageFrame>
   );
 };
 

@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const TicketsHistory = ({ pageTitle }) => {
   const axios = useAxiosPrivate();
@@ -93,8 +94,7 @@ const TicketsHistory = ({ pageTitle }) => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewTicketDetails(params.data)}
-          >
+            onClick={() => handleViewTicketDetails(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -103,40 +103,41 @@ const TicketsHistory = ({ pageTitle }) => {
   ];
   return (
     <>
-      <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary uppercase">
-          My Ticket History
-        </span>
-      </div>
-      <div className=" w-full">
-        {ticketsLoading ? (
-          <div className="w-full h-full flex justify-center items-center">
-            <CircularProgress color="black" />
-          </div>
-        ) : (
-          <AgTable
-            key={tickets?.length}
-            search
-            data={tickets?.map((ticket, index) => ({
-              id: index + 1,
-              raisedBy: ticket.raisedBy.firstName,
-              raisedTo: ticket.raisedToDepartment.name,
-              description: ticket.description,
-              ticketTitle: ticket.ticket,
-              status: ticket.status,
-              priority: ticket.priority,
-            }))}
-            columns={recievedTicketsColumns}
-            paginationPageSize={10}
-          />
-        )}
-      </div>
+      <PageFrame>
+        <div className="flex items-center justify-between pb-4">
+          <span className="text-title font-pmedium text-primary uppercase">
+            My Ticket History
+          </span>
+        </div>
+        <div className=" w-full">
+          {ticketsLoading ? (
+            <div className="w-full h-full flex justify-center items-center">
+              <CircularProgress color="black" />
+            </div>
+          ) : (
+            <AgTable
+              key={tickets?.length}
+              search
+              data={tickets?.map((ticket, index) => ({
+                id: index + 1,
+                raisedBy: ticket.raisedBy.firstName,
+                raisedTo: ticket.raisedToDepartment.name,
+                description: ticket.description,
+                ticketTitle: ticket.ticket,
+                status: ticket.status,
+                priority: ticket.priority,
+              }))}
+              columns={recievedTicketsColumns}
+              paginationPageSize={10}
+            />
+          )}
+        </div>
+      </PageFrame>
 
       <MuiModal
         open={openModal && viewTicketDetails}
         onClose={() => setOpenModal(false)}
-        title={"View Ticket Details"}
-      >
+        title={"View Ticket Details"}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
           <DetalisFormatted
             title="Raised By"

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import useAuth from "../../hooks/useAuth";
 import { CircularProgress } from "@mui/material";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const TeamMembers = () => {
   const axios = useAxiosPrivate();
@@ -47,8 +48,7 @@ const TeamMembers = () => {
             justifyContent: "center",
             fontWeight: "bold",
             marginRight: "10px",
-          }}
-        >
+          }}>
           {initials}
         </div>
         <span>{name}</span>
@@ -73,29 +73,33 @@ const TeamMembers = () => {
 
   return (
     <div className="w-full rounded-md bg-white p-4 ">
-      <div className="flex flex-row justify-between mb-4 items-center">
+      <PageFrame>
         <div>
-          Total Team Members: <b>{teamMembersData.length || 0}</b>
+          <div className="flex flex-row justify-between mb-4 items-center">
+            <div>
+              Total Team Members: <b>{teamMembersData.length || 0}</b>
+            </div>
+            {/* <PrimaryButton title="Add New Member"></PrimaryButton> */}
+          </div>
+          {!isTeamMembers ? (
+            <div className=" w-full">
+              <AgTable
+                data={teamMembersData.map((item, index) => ({
+                  srNo: index + 1,
+                  ...item,
+                }))}
+                columns={laptopColumns}
+                paginationPageSize={10}
+                hideFilter
+              />
+            </div>
+          ) : (
+            <div className="h-72 flex justify-center items-center">
+              <CircularProgress />
+            </div>
+          )}
         </div>
-        {/* <PrimaryButton title="Add New Member"></PrimaryButton> */}
-      </div>
-      {!isTeamMembers ? (
-        <div className=" w-full">
-          <AgTable
-            data={teamMembersData.map((item,index)=>({
-              srNo:index + 1,
-              ...item
-            }))}
-            columns={laptopColumns}
-            paginationPageSize={10}
-            hideFilter
-          />
-        </div>
-      ) : (
-        <div className="h-72 flex justify-center items-center">
-          <CircularProgress />
-        </div>
-      )}
+      </PageFrame>
     </div>
   );
 };

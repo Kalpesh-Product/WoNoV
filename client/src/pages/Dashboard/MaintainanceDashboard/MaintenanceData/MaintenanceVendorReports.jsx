@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const MaintenanceVendorReports = () => {
   const { auth } = useAuth();
@@ -114,8 +115,7 @@ const MaintenanceVendorReports = () => {
           onClick={() => {
             handleDetailsClick(params.data);
           }}
-          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
-        >
+          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center">
           <span className="text-subtitle">
             <MdOutlineRemoveRedEye />
           </span>
@@ -218,7 +218,7 @@ const MaintenanceVendorReports = () => {
       company: "Bajaj Electricals Ltd.",
       address: "Mumbai Central, Mumbai, Maharashtra",
       gstNumber: "27AABCB1234W1Z7",
-    }
+    },
   ];
 
   const handleDetailsClick = (asset) => {
@@ -241,20 +241,23 @@ const MaintenanceVendorReports = () => {
 
   return (
     <>
-      <AgTable
-        key={vendorData.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"Vendor Database"}
-        buttonTitle={"Add Vendor"}
-        data={[
-          
-        ]}
-        columns={vendorColumns}
-        handleClick={handleAddAsset}
-      />
+      <PageFrame>
+        <AgTable
+          key={vendorData.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"Vendor Database"}
+          buttonTitle={"Add Vendor"}
+          data={[]}
+          columns={vendorColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "view" ? "View Details" : "Add Vendor"}>
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalMode === "view" ? "View Details" : "Add Vendor"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -267,11 +270,11 @@ const MaintenanceVendorReports = () => {
                     render={({ field }) => (
                       <div
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${errors.assetImage
-                          ? "border-red-500"
-                          : "border-gray-300"
-                          } `}
-                      >
+                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
+                          errors.assetImage
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        } `}>
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -281,8 +284,7 @@ const MaintenanceVendorReports = () => {
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}
-                        >
+                          }}>
                           <Button
                             variant="outlined"
                             component="label"
@@ -297,8 +299,7 @@ const MaintenanceVendorReports = () => {
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}
-                          >
+                            }}>
                             Select Image
                             <input
                               type="file"
@@ -324,8 +325,7 @@ const MaintenanceVendorReports = () => {
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}
-                          >
+                            }}>
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -342,8 +342,7 @@ const MaintenanceVendorReports = () => {
                       {...field}
                       label="Asset Type"
                       helperText={!!errors.assetType?.message}
-                      select
-                    >
+                      select>
                       <MenuItem value="">Select an Asset Type</MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
@@ -363,8 +362,7 @@ const MaintenanceVendorReports = () => {
                       {...field}
                       select
                       label="Department"
-                      size="small"
-                    >
+                      size="small">
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -385,8 +383,7 @@ const MaintenanceVendorReports = () => {
                       fullWidth
                       select
                       label="Category"
-                      size="small"
-                    >
+                      size="small">
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -406,8 +403,7 @@ const MaintenanceVendorReports = () => {
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small"
-                    >
+                      size="small">
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}

@@ -6,10 +6,11 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
 import { setSelectedEmployee } from "../../../../redux/slices/hrSlice";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const ViewEmployees = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
   const axios = useAxiosPrivate();
   const { data: employees, isLoading } = useQuery({
     queryKey: ["employees"],
@@ -45,11 +46,10 @@ const ViewEmployees = () => {
             localStorage.setItem("employeeName", params.data.employeeName);
 
             navigate(
-              `/app/dashboard/HR-dashboard/employee/view-employees/${params.data.employeeName}/edit-details`,
+              `/app/dashboard/HR-dashboard/employee/view-employees/${params.data.employeeName}/edit-details`
             );
-            dispatch(setSelectedEmployee(params.data.employmentID))
-          }}
-        >
+            dispatch(setSelectedEmployee(params.data.employmentID));
+          }}>
           {params.value}
         </span>
       ),
@@ -86,31 +86,35 @@ const ViewEmployees = () => {
 
   return (
     <div>
-      <div className="w-full">
-        <AgTable
-          search={true}
-          searchColumn="Email"
-          data={
-            isLoading
-              ? []
-              : [
-                  ...employees.map((employee, index) => ({
-                    id: employee._id,
-                    srno: index + 1,
-                    employeeName: `${
-                      employee.firstName ? employee.firstName : ""
-                    } ${employee.lastName ? employee.lastName : ""}`,
-                    employmentID: employee.empId,
-                    email: employee.email,
-                    department: employee.departments?.map((item) => item.name),
-                    role: employee.role?.map((r) => r.roleTitle),
-                    status: employee.isActive,
-                  })),
-                ]
-          }
-          columns={viewEmployeeColumns}
-        />
-      </div>
+      <PageFrame>
+        <div className="w-full">
+          <AgTable
+            search={true}
+            searchColumn="Email"
+            data={
+              isLoading
+                ? []
+                : [
+                    ...employees.map((employee, index) => ({
+                      id: employee._id,
+                      srno: index + 1,
+                      employeeName: `${
+                        employee.firstName ? employee.firstName : ""
+                      } ${employee.lastName ? employee.lastName : ""}`,
+                      employmentID: employee.empId,
+                      email: employee.email,
+                      department: employee.departments?.map(
+                        (item) => item.name
+                      ),
+                      role: employee.role?.map((r) => r.roleTitle),
+                      status: employee.isActive,
+                    })),
+                  ]
+            }
+            columns={viewEmployeeColumns}
+          />
+        </div>
+      </PageFrame>
     </div>
   );
 };

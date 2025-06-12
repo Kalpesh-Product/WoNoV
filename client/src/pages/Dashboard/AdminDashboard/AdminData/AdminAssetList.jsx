@@ -15,6 +15,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import dayjs from "dayjs";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const AdminAssetList = () => {
   const { auth } = useAuth();
@@ -67,7 +68,6 @@ const AdminAssetList = () => {
     },
   });
 
-
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
     mutationFn: async (data) => {
@@ -115,30 +115,32 @@ const AdminAssetList = () => {
       headerName: "Actions",
       cellRenderer: (params) => (
         <>
-        <div className="flex gap-2 items-center">
-          <div
-             
-            className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-          >
-            <span className="text-subtitle"
-             onClick={() => {
-              // Find the full asset object from dummyAssets + assetsList
-              const fullAsset = [...(assetsList || []), ...dummyAssets].find(
-                (item) =>
-                  item.name === params.data.category &&
-                  item.brand === params.data.brand &&
-                  item.price.toString().includes(params.data.price.replace(/,/g, "")) // fuzzy match in case formatting differs
-              );
-              if (fullAsset) {
-                handleDetailsClick(fullAsset);
-              }
-            }}
-            >
-              <MdOutlineRemoveRedEye />
-            </span>
+          <div className="flex gap-2 items-center">
+            <div className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
+              <span
+                className="text-subtitle"
+                onClick={() => {
+                  // Find the full asset object from dummyAssets + assetsList
+                  const fullAsset = [
+                    ...(assetsList || []),
+                    ...dummyAssets,
+                  ].find(
+                    (item) =>
+                      item.name === params.data.category &&
+                      item.brand === params.data.brand &&
+                      item.price
+                        .toString()
+                        .includes(params.data.price.replace(/,/g, "")) // fuzzy match in case formatting differs
+                  );
+                  if (fullAsset) {
+                    handleDetailsClick(fullAsset);
+                  }
+                }}>
+                <MdOutlineRemoveRedEye />
+              </span>
+            </div>
           </div>
-        </div>
-      </>
+        </>
       ),
     },
   ];
@@ -255,9 +257,8 @@ const AdminAssetList = () => {
       purchaseDate: "2023-11-20T00:00:00.000Z",
       warranty: 18,
       vendor: { name: "Appliance Distributors Ltd." },
-    }
+    },
   ];
-  
 
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
@@ -279,18 +280,18 @@ const AdminAssetList = () => {
 
   return (
     <>
-      <AgTable
-        key={dummyAssets.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"Asset List"}
-        buttonTitle={"Add Asset"}
-        data={[
-        
-        ]}
-        columns={assetColumns}
-        handleClick={handleAddAsset}
-      />
+      <PageFrame>
+        <AgTable
+          key={dummyAssets.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"Asset List"}
+          buttonTitle={"Add Asset"}
+          data={[]}
+          columns={assetColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
 
       <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
         {modalMode === "add" && (
@@ -575,17 +576,31 @@ const AdminAssetList = () => {
             </form>
           </div>
         )}
-         {modalMode === "view" && selectedAsset && (
+        {modalMode === "view" && selectedAsset && (
           <div className="p-4 w-full">
             <div className="grid grid-cols-2 gap-4">
-              <DetalisFormatted title="Asset Name" detail={selectedAsset.name} />
-              <DetalisFormatted title="Department" detail={selectedAsset.department?.name || "N/A"} />
-              <DetalisFormatted title="Brand" detail={selectedAsset.brand || "N/A"} />
+              <DetalisFormatted
+                title="Asset Name"
+                detail={selectedAsset.name}
+              />
+              <DetalisFormatted
+                title="Department"
+                detail={selectedAsset.department?.name || "N/A"}
+              />
+              <DetalisFormatted
+                title="Brand"
+                detail={selectedAsset.brand || "N/A"}
+              />
               <DetalisFormatted
                 title="Price"
-                detail={`INR ${Number(selectedAsset.price).toLocaleString("en-IN")}`}
+                detail={`INR ${Number(selectedAsset.price).toLocaleString(
+                  "en-IN"
+                )}`}
               />
-              <DetalisFormatted title="Quantity" detail={selectedAsset.quantity} />
+              <DetalisFormatted
+                title="Quantity"
+                detail={selectedAsset.quantity}
+              />
               <DetalisFormatted
                 title="Purchase Date"
                 detail={dayjs(selectedAsset.purchaseDate).format("DD-MM-YYYY")}
@@ -594,7 +609,10 @@ const AdminAssetList = () => {
                 title="Warranty"
                 detail={`${selectedAsset.warranty} months`}
               />
-              <DetalisFormatted title="Vendor" detail={selectedAsset.vendor?.name || "N/A"} />
+              <DetalisFormatted
+                title="Vendor"
+                detail={selectedAsset.vendor?.name || "N/A"}
+              />
             </div>
           </div>
         )}

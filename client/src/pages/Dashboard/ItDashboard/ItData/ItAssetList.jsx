@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import dayjs from "dayjs";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const ItAssetList = () => {
   const { auth } = useAuth();
@@ -225,19 +226,19 @@ const ItAssetList = () => {
                   (item) =>
                     item.name === params.data.category &&
                     item.brand === params.data.brand &&
-                    item.price.toString().includes(params.data.price.replace(/,/g, "")) // fuzzy match in case formatting differs
+                    item.price
+                      .toString()
+                      .includes(params.data.price.replace(/,/g, "")) // fuzzy match in case formatting differs
                 );
                 if (fullAsset) {
                   handleDetailsClick(fullAsset);
                 }
-              }}
-            >
+              }}>
               <MdOutlineRemoveRedEye />
             </span>
           </div>
         );
-      }
-
+      },
     },
   ];
 
@@ -273,20 +274,23 @@ const ItAssetList = () => {
 
   return (
     <>
-      <AgTable
-        key={assetsList.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"Asset List"}
-        buttonTitle={"Add Asset"}
-        data={[
-         
-        ]}
-        columns={assetColumns}
-        handleClick={handleAddAsset}
-      />
+      <PageFrame>
+        <AgTable
+          key={assetsList.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"Asset List"}
+          buttonTitle={"Add Asset"}
+          data={[]}
+          columns={assetColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "add" ? "Add Asset" : "Asset Details"}>
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalMode === "add" ? "Add Asset" : "Asset Details"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -299,11 +303,11 @@ const ItAssetList = () => {
                     render={({ field }) => (
                       <div
                         {...field}
-                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${errors.assetImage
-                          ? "border-red-500"
-                          : "border-gray-300"
-                          } `}
-                      >
+                        className={`w-full flex justify-center border-2 rounded-md p-2 relative ${
+                          errors.assetImage
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        } `}>
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -313,8 +317,7 @@ const ItAssetList = () => {
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}
-                        >
+                          }}>
                           <Button
                             variant="outlined"
                             component="label"
@@ -329,8 +332,7 @@ const ItAssetList = () => {
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}
-                          >
+                            }}>
                             Select Image
                             <input
                               type="file"
@@ -356,8 +358,7 @@ const ItAssetList = () => {
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}
-                          >
+                            }}>
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -374,8 +375,7 @@ const ItAssetList = () => {
                       {...field}
                       label="Asset Type"
                       helperText={!!errors.assetType?.message}
-                      select
-                    >
+                      select>
                       <MenuItem value="">Select an Asset Type</MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
@@ -395,8 +395,7 @@ const ItAssetList = () => {
                       {...field}
                       select
                       label="Department"
-                      size="small"
-                    >
+                      size="small">
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -417,8 +416,7 @@ const ItAssetList = () => {
                       fullWidth
                       select
                       label="Category"
-                      size="small"
-                    >
+                      size="small">
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -438,8 +436,7 @@ const ItAssetList = () => {
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small"
-                    >
+                      size="small">
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}
@@ -579,14 +576,28 @@ const ItAssetList = () => {
         {modalMode === "view" && selectedAsset && (
           <div className="p-4 w-full">
             <div className="grid grid-cols-2 gap-4">
-              <DetalisFormatted title="Asset Name" detail={selectedAsset.name} />
-              <DetalisFormatted title="Department" detail={selectedAsset.department?.name || "N/A"} />
-              <DetalisFormatted title="Brand" detail={selectedAsset.brand || "N/A"} />
+              <DetalisFormatted
+                title="Asset Name"
+                detail={selectedAsset.name}
+              />
+              <DetalisFormatted
+                title="Department"
+                detail={selectedAsset.department?.name || "N/A"}
+              />
+              <DetalisFormatted
+                title="Brand"
+                detail={selectedAsset.brand || "N/A"}
+              />
               <DetalisFormatted
                 title="Price"
-                detail={`INR ${Number(selectedAsset.price).toLocaleString("en-IN")}`}
+                detail={`INR ${Number(selectedAsset.price).toLocaleString(
+                  "en-IN"
+                )}`}
               />
-              <DetalisFormatted title="Quantity" detail={selectedAsset.quantity} />
+              <DetalisFormatted
+                title="Quantity"
+                detail={selectedAsset.quantity}
+              />
               <DetalisFormatted
                 title="Purchase Date"
                 detail={dayjs(selectedAsset.purchaseDate).format("DD-MM-YYYY")}
@@ -595,11 +606,13 @@ const ItAssetList = () => {
                 title="Warranty"
                 detail={`${selectedAsset.warranty} months`}
               />
-              <DetalisFormatted title="Vendor" detail={selectedAsset.vendor?.name || "N/A"} />
+              <DetalisFormatted
+                title="Vendor"
+                detail={selectedAsset.vendor?.name || "N/A"}
+              />
             </div>
           </div>
         )}
-
       </MuiModal>
     </>
   );

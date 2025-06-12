@@ -71,6 +71,9 @@ const fetchVisitors = async (req, res, next) => {
             path: "clientCompany",
             select: "clientName email",
           },
+          {
+            path: "meeting",
+          },
         ]);
         break;
 
@@ -95,6 +98,9 @@ const fetchVisitors = async (req, res, next) => {
           {
             path: "clientCompany",
             select: "clientName email",
+          },
+          {
+            path: "meeting",
           },
         ]);
     }
@@ -166,8 +172,7 @@ const addVisitor = async (req, res, next) => {
     if (visitorType === "Scheduled") {
       const existingVisitor = await Visitor.findOne({
         toMeet,
-        dateOfVisit,
-        scheduledTime,
+        dateOfVisit: visitDate,
         visitorType: "Scheduled",
         company,
       });

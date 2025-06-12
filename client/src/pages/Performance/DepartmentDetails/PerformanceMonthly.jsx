@@ -19,6 +19,7 @@ import { FaCheck } from "react-icons/fa6";
 import { queryClient } from "../../../main";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const PerformanceMonthly = () => {
   const axios = useAxiosPrivate();
@@ -31,7 +32,17 @@ const PerformanceMonthly = () => {
     "67b2cf85b9b6ed5cedeb9a2e",
     "6798bab9e469e809084e249e",
   ];
+  const departmentAccess = [
+    "67b2cf85b9b6ed5cedeb9a2e",
+    "6798bab9e469e809084e249e",
+  ];
 
+  const isTop = auth.user.departments.some((item) => {
+    return departmentAccess.includes(item._id.toString());
+  });
+
+  const isHr = department === "HR";
+  const showCheckBox = !isTop || isHr;
   const isTop = auth.user.departments.some((item) => {
     return departmentAccess.includes(item._id.toString());
   });
@@ -43,6 +54,7 @@ const PerformanceMonthly = () => {
     handleSubmit: submitDailyKra,
     control,
     formState: { errors },
+    reset,
     reset,
   } = useForm({
     mode: "onChange",
@@ -74,6 +86,7 @@ const PerformanceMonthly = () => {
       queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
       toast.success(data.message || "KPA Added");
       reset();
+      reset();
       setOpenModal(false);
     },
     onError: (error) => {
@@ -92,6 +105,7 @@ const PerformanceMonthly = () => {
   const { mutate: updateMonthlyKpa, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateMonthlyKpa"],
     mutationFn: async (data) => {
+      console.log("Data inside query", data);
       console.log("Data inside query", data);
       const response = await axios.patch(
         `/api/performance/update-status/${data}/KPA`
@@ -140,6 +154,7 @@ const PerformanceMonthly = () => {
     },
   });
   const departmentColumns = [
+    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "KPA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
@@ -290,12 +305,10 @@ const PerformanceMonthly = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Monthly KPA"}
-      >
+        title={"Add Monthly KPA"}>
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
-          className="grid grid-cols-1 lg:grid-cols-1 gap-4"
-        >
+          className="grid grid-cols-1 lg:grid-cols-1 gap-4">
           <Controller
             name="kpaName"
             control={control}

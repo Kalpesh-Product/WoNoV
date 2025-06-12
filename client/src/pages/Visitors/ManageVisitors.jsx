@@ -15,6 +15,8 @@ import dayjs from "dayjs";
 import { queryClient } from "../../main";
 import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import ThreeDotMenu from "../../components/ThreeDotMenu";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const ManageVisitors = () => {
   const axios = useAxiosPrivate();
@@ -91,8 +93,16 @@ const ManageVisitors = () => {
     { field: "lastName", headerName: "Last Name" },
     { field: "email", headerName: "Email" },
     { field: "phoneNumber", headerName: "Phone No" },
-    { field: "purposeOfVisit", headerName: "Purpose", align: "right" },
-    { field: "toMeet", headerName: "To Meet", align: "right" },
+    {
+      field: "purposeOfVisit",
+      headerName: "Purpose",
+      cellStyle: { textAlign: "right" },
+    },
+    {
+      field: "toMeet",
+      headerName: "To Meet",
+      cellStyle: { textAlign: "right" },
+    },
     { field: "checkIn", headerName: "Check In" },
     { field: "checkOut", headerName: "Checkout" },
     {
@@ -104,8 +114,7 @@ const ManageVisitors = () => {
           onClick={() => {
             handleDetailsClick({ ...params.data });
           }}
-          className="p-2 rounded-full w-fit hover:bg-borderGray"
-        >
+          className="p-2 rounded-full w-fit hover:bg-borderGray">
           <MdOutlineRemoveRedEye />
         </div>
       ),
@@ -148,49 +157,45 @@ const ManageVisitors = () => {
 
   return (
     <div className="p-4">
-      <AgTable
-        key={visitorsData.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"Visitors Today"}
-        data={[
-          ...visitorsData.map((item, index) => ({
-            srNo: index + 1,
-            mongoId: item._id,
-            firstName: item.firstName,
-            lastName: item.lastName,
-            address: item.address,
-            phoneNumber: item.phoneNumber,
-            email: item.email,
-            purposeOfVisit: item.purposeOfVisit,
-            toMeet: !item?.toMeet
-              ? null
-              : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
-            checkInRaw: item.checkIn,
-            checkOutRaw: item.checkOut,
-            checkIn: humanTime(item.checkIn),
-            checkOut: item.checkOut ? humanTime(item.checkOut) : "",
-          })),
-        ]}
-        columns={visitorsColumns}
-        handleClick={handleAddAsset}
-      />
+      <PageFrame>
+        <AgTable
+          key={visitorsData.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"Visitors Today"}
+          data={[
+            ...visitorsData.map((item, index) => ({
+              srNo: index + 1,
+              mongoId: item._id,
+              firstName: item.firstName,
+              lastName: item.lastName,
+              address: item.address,
+              phoneNumber: item.phoneNumber,
+              email: item.email,
+              purposeOfVisit: item.purposeOfVisit,
+              toMeet: !item?.toMeet
+                ? null
+                : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
+              checkInRaw: item.checkIn,
+              checkOutRaw: item.checkOut,
+              checkIn: humanTime(item.checkIn),
+              checkOut: item.checkOut ? humanTime(item.checkOut) : "",
+            })),
+          ]}
+          columns={visitorsColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
       <MuiModal
         open={isModalOpen}
         onClose={handleCloseModal}
-        title={"Visitor Detail"}
-      >
+        title={"Visitor Details"}>
         <div className="flex flex-col gap-4">
-          <div className="flex justify-end">
-            <PrimaryButton
-              handleSubmit={handleEditToggle}
-              title={isEditing ? "Cancel" : "Edit"}
-            />
-          </div>
           <form onSubmit={handleSubmit(submit)}>
             {!isVisitorsData ? (
-              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
                 {/* First Name */}
+                <div className="font-bold">Personal Information</div>
                 {isEditing ? (
                   <Controller
                     name="firstName"
@@ -233,7 +238,7 @@ const ManageVisitors = () => {
                 )}
 
                 {/* Address */}
-                {isEditing ? (
+                {/* {isEditing ? (
                   <Controller
                     name="address"
                     control={control}
@@ -251,7 +256,7 @@ const ManageVisitors = () => {
                     title="Address"
                     detail={selectedVisitor.address}
                   />
-                )}
+                )} */}
 
                 {/* Phone Number */}
                 {isEditing ? (
@@ -296,7 +301,8 @@ const ManageVisitors = () => {
                     detail={selectedVisitor.email}
                   />
                 )}
-
+                <br />
+                <div className="font-bold">Visit Details</div>
                 {/* Purpose of Visit */}
                 {isEditing ? (
                   <Controller

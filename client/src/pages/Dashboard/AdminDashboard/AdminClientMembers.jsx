@@ -2,6 +2,7 @@ import React from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import { Chip } from "@mui/material";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const AdminClientMembers = () => {
   const navigate = useNavigate();
@@ -126,12 +127,14 @@ const AdminClientMembers = () => {
   return (
     <div>
       <div className="w-full">
-        <AgTable
-          search={true}
-          searchColumn="Email"
-          data={rows}
-          columns={viewEmployeeColumns}
-        />
+        <PageFrame>
+          <AgTable
+            search={true}
+            searchColumn="Email"
+            data={rows}
+            columns={viewEmployeeColumns}
+          />
+        </PageFrame>
       </div>
       <div>
         <Outlet />

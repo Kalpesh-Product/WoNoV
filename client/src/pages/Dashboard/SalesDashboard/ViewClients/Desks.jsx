@@ -3,13 +3,9 @@ import { useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import clearImage from "../../../../assets/biznest/clear-seats.png";
 import occupiedImage from "../../../../assets/biznest/occupied-seats.png";
-import clientOccupied from "../../../../assets/biznest/occupancy/occupied-701.jpeg"
-import clientClear from "../../../../assets/biznest/occupancy/clear-701.png"
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-} from "@mui/material";
+import clientOccupied from "../../../../assets/biznest/occupancy/occupied-701.jpeg";
+import clientClear from "../../../../assets/biznest/occupancy/clear-701.png";
+import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import MuiModal from "../../../../components/MuiModal";
 import { MdUploadFile } from "react-icons/md";
@@ -19,6 +15,7 @@ import { toast } from "sonner";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const Desks = () => {
   const navigate = useNavigate();
@@ -62,7 +59,14 @@ const Desks = () => {
     },
   ];
   const currentRoomData = [
-    { id: 1, title: "Occupied", image: selectedClient?.occupiedImage ? selectedClient.occupiedImage : clientOccupied, type: "occupiedImage" },
+    {
+      id: 1,
+      title: "Occupied",
+      image: selectedClient?.occupiedImage
+        ? selectedClient.occupiedImage
+        : clientOccupied,
+      type: "occupiedImage",
+    },
     { id: 2, title: "Available", image: clientClear, type: "clearImage" },
   ];
 
@@ -107,57 +111,56 @@ const Desks = () => {
   return (
     <div>
       <div className="w-full ">
-        {currentRoomData.map((item, index) => (
-          <Accordion
-            expanded={expanded === index}
-            onChange={handleChange(index)}
-          >
-            <AccordionSummary
-              expandIcon={<IoIosArrowDown />}
-              id={index}
-              sx={{ borderBottom: "1px solid #d1d5db" }}
-            >
-              <div className="p-2 w-full flex justify-between items-center">
-                <span className="text-subtitle">{item.title}</span>
-                {rows.map((row, index) => (
-                  <span key={index} className="text-subtitle">
-                    {item.title === "Occupied"
-                      ? row.totalSeats
-                      : row.availableSeats}
-                  </span>
-                ))}
-              </div>
-            </AccordionSummary>
-            <AccordionDetails>
-              <div className="w-full flex flex-col gap-4">
-                <div className="flex justify-center items-center">
-                  <img
-                    className="w-[50%] h-[80%] object-contain cursor-pointer"
-                    src={item.image}
-                    alt="Image"
-                    onClick={() => {
-                      setImageType(item.type);
-                      setImageOpen(true);
-                    }}
+        <PageFrame>
+          {currentRoomData.map((item, index) => (
+            <Accordion
+              expanded={expanded === index}
+              onChange={handleChange(index)}>
+              <AccordionSummary
+                expandIcon={<IoIosArrowDown />}
+                id={index}
+                sx={{ borderBottom: "1px solid #d1d5db" }}>
+                <div className="p-2 w-full flex justify-between items-center">
+                  <span className="text-subtitle">{item.title}</span>
+                  {rows.map((row, index) => (
+                    <span key={index} className="text-subtitle">
+                      {item.title === "Occupied"
+                        ? row.totalSeats
+                        : row.availableSeats}
+                    </span>
+                  ))}
+                </div>
+              </AccordionSummary>
+              <AccordionDetails>
+                <div className="w-full flex flex-col gap-4">
+                  <div className="flex justify-center items-center">
+                    <img
+                      className="w-[50%] h-[80%] object-contain cursor-pointer"
+                      src={item.image}
+                      alt="Image"
+                      onClick={() => {
+                        setImageType(item.type);
+                        setImageOpen(true);
+                      }}
+                    />
+                  </div>
+                  <AgTable
+                    search={true}
+                    searchColumn="Email"
+                    data={rows}
+                    columns={viewEmployeeColumns}
+                    tableHeight={150}
                   />
                 </div>
-                <AgTable
-                  search={true}
-                  searchColumn="Email"
-                  data={rows}
-                  columns={viewEmployeeColumns}
-                  tableHeight={150}
-                />
-              </div>
-            </AccordionDetails>
-          </Accordion>
-        ))}
+              </AccordionDetails>
+            </Accordion>
+          ))}
+        </PageFrame>
       </div>
       <MuiModal
         open={imageOpen}
         onClose={() => setImageOpen(false)}
-        title={`Upload ${imageType} space image`}
-      >
+        title={`Upload ${imageType} space image`}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="flex flex-col items-center justify-center gap-4 p-6">
             <span className="text-subtitle font-pmedium">Upload New Image</span>

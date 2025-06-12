@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { queryClient } from "../../main";
 import PrimaryButton from "../../components/PrimaryButton";
 import SecondaryButton from "../../components/SecondaryButton";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const Row = ({ row, onApprove, onReject }) => {
   const [open, setOpen] = React.useState(false);
@@ -138,8 +139,7 @@ const Row = ({ row, onApprove, onReject }) => {
                 </select> */}
                 <form
                   onSubmit={handleSubmit(onSubmit)}
-                  className="flex items-center gap-4 mt-2 w-3/4"
-                >
+                  className="flex items-center gap-4 mt-2 w-3/4">
                   <Controller
                     name="ticketTitle"
                     control={control}
@@ -152,8 +152,7 @@ const Row = ({ row, onApprove, onReject }) => {
                           label="Issue"
                           fullWidth
                           helperText={errors.ticketTitle?.message}
-                          error={!!errors.ticketTitle}
-                        >
+                          error={!!errors.ticketTitle}>
                           <MenuItem value="" disabled>
                             Select Ticket Title
                           </MenuItem>
@@ -254,50 +253,52 @@ const TicketSettingsNew = () => {
 
   return (
     <div className="p-4">
-      <TableContainer component={Paper}>
-        <Table aria-label="collapsible table">
-          <TableHead>
-            <TableRow>
-              <TableCell align="center" sx={headerCellStyle}>
-                Sr No
-              </TableCell>
-              <TableCell align="center" sx={headerCellStyle}>
-                Raised By
-              </TableCell>
-              <TableCell align="center" sx={headerCellStyle}>
-                From Department
-              </TableCell>
-              <TableCell align="center" sx={headerCellStyle}>
-                Ticket Title
-              </TableCell>
-              <TableCell align="center" sx={headerCellStyle}>
-                Ticket Description
-              </TableCell>
-              <TableCell align="center" sx={headerCellStyle}>
-                Status
-              </TableCell>
-              <TableCell align="left" sx={headerCellStyle}>
-                Action
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {ticketsData.map((row, index) => (
-              <Row
-                key={index}
-                row={{
-                  ...row,
-                  srNo: index + 1,
-                  department,
-                  description: row.description,
-                }}
-                onApprove={approveTicketMutation.mutate}
-                onReject={rejectTicketMutation.mutate}
-              />
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <PageFrame>
+        <TableContainer component={Paper}>
+          <Table aria-label="collapsible table">
+            <TableHead>
+              <TableRow>
+                <TableCell align="center" sx={headerCellStyle}>
+                  Sr No
+                </TableCell>
+                <TableCell align="center" sx={headerCellStyle}>
+                  Raised By
+                </TableCell>
+                <TableCell align="center" sx={headerCellStyle}>
+                  From Department
+                </TableCell>
+                <TableCell align="center" sx={headerCellStyle}>
+                  Ticket Title
+                </TableCell>
+                <TableCell align="center" sx={headerCellStyle}>
+                  Ticket Description
+                </TableCell>
+                <TableCell align="center" sx={headerCellStyle}>
+                  Status
+                </TableCell>
+                <TableCell align="left" sx={headerCellStyle}>
+                  Action
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {ticketsData.map((row, index) => (
+                <Row
+                  key={index}
+                  row={{
+                    ...row,
+                    srNo: index + 1,
+                    department,
+                    description: row.description,
+                  }}
+                  onApprove={approveTicketMutation.mutate}
+                  onReject={rejectTicketMutation.mutate}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </PageFrame>
     </div>
   );
 };

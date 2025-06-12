@@ -10,6 +10,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import { DatePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const HoildaysEvents = ({ title }) => {
   const axios = useAxiosPrivate();
@@ -59,53 +60,55 @@ const HoildaysEvents = ({ title }) => {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center pb-4">
-        <span className="text-title font-pmedium text-primary">{title}</span>
+    <PageFrame>
+      <div>
+        <div className="flex justify-between items-center pb-4">
+          <span className="text-title font-pmedium text-primary">{title}</span>
+        </div>
+
+        <AgTable
+          key={combinedEvents.length}
+          search={true}
+          tableTitle={"Holidays"}
+          columns={columns}
+          buttonTitle="Add Holiday"
+          handleClick={() => setModalOpen(true)}
+          data={combinedEvents}
+        />
+
+        <MuiModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          title="Add Holiday">
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <TextField
+                label="Title"
+                fullWidth
+                size="small"
+                value={newEvent.title}
+                onChange={(e) =>
+                  setNewEvent({ ...newEvent, title: e.target.value })
+                }
+              />
+              <DatePicker
+                label="Date"
+                slotProps={{ textField: { size: "small" } }}
+                value={newEvent.startDate ? dayjs(newEvent.startDate) : null}
+                onChange={(newDate) =>
+                  setNewEvent({ ...newEvent, startDate: newDate })
+                }
+                renderInput={(params) => (
+                  <TextField size="small" {...params} fullWidth />
+                )}
+              />
+
+              <PrimaryButton type="submit" title="Add Holiday" />
+            </form>
+          </LocalizationProvider>
+        </MuiModal>
       </div>
-
-      <AgTable
-        key={combinedEvents.length}
-        search={true}
-        tableTitle={"Holidays"}
-        columns={columns}
-        buttonTitle="Add Holiday"
-        handleClick={() => setModalOpen(true)}
-        data={combinedEvents}
-      />
-
-      <MuiModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title="Add Holiday">
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <TextField
-              label="Title"
-              fullWidth
-              size="small"
-              value={newEvent.title}
-              onChange={(e) =>
-                setNewEvent({ ...newEvent, title: e.target.value })
-              }
-            />
-            <DatePicker
-              label="Date"
-              slotProps={{ textField: { size: "small" } }}
-              value={newEvent.startDate ? dayjs(newEvent.startDate) : null}
-              onChange={(newDate) =>
-                setNewEvent({ ...newEvent, startDate: newDate })
-              }
-              renderInput={(params) => (
-                <TextField size="small" {...params} fullWidth />
-              )}
-            />
-
-            <PrimaryButton type="submit" title="Add Holiday" />
-          </form>
-        </LocalizationProvider>
-      </MuiModal>
-    </div>
+    </PageFrame>
   );
 };
 

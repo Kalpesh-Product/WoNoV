@@ -9,6 +9,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { useEffect, useState } from "react";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import dayjs from "dayjs";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const MeetingReports = () => {
   const axios = useAxiosPrivate();
@@ -78,8 +79,7 @@ const MeetingReports = () => {
                 onClick={() => {
                   handleSelectedMeeting(params.data);
                 }}
-                className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-              >
+                className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
                 <span className="text-subtitle">
                   <MdOutlineRemoveRedEye />
                 </span>
@@ -91,107 +91,55 @@ const MeetingReports = () => {
     },
   ];
 
-  const rows = [
-    {
-      name: "Sam",
-      department: "IT",
-      date: "2024-01-29",
-      startTime: "10:00 AM",
-      endTime: "11:00 AM",
-      duration: "1h",
-      creditsUsed: 20,
-      status: "Ongoing",
-    },
-    {
-      name: "Alice",
-      department: "Admin",
-      date: "2024-01-29",
-      startTime: "11:30 AM",
-      endTime: "12:15 PM",
-      duration: "45m",
-      creditsUsed: 50,
-      status: "Cancelled",
-    },
-    {
-      name: "Bob",
-      department: "HR",
-      date: "2024-01-29",
-      startTime: "2:00 PM",
-      endTime: "3:00 PM",
-      duration: "1h",
-      creditsUsed: 30,
-      status: "Upcoming",
-    },
-    {
-      name: "Emma",
-      department: "Finance",
-      date: "2024-01-29",
-      startTime: "3:30 PM",
-      endTime: "4:15 PM",
-      duration: "45m",
-      creditsUsed: 10,
-      status: "Cancelled",
-    },
-    {
-      name: "John",
-      department: "IT",
-      date: "2024-01-29",
-      startTime: "4:30 PM",
-      endTime: "6:00 PM",
-      duration: "1h 30m",
-      creditsUsed: 40,
-      status: "Upcoming",
-    },
-  ];
-
   return (
     <div className="flex flex-col gap-8 p-4">
-      <div>
-        {!isMyMeetingsPending ? (
-          <AgTable
-            search={true}
-            exportData
-            tableTitle={"Meetings Reports"}
-            data={[
-              ...myMeetings.map((item, index) => ({
-                srNo: index + 1,
-                id: index + 1,
-                department: item.department,
-                roomName: item.roomName,
-                unitNo: item.location?.unitNo,
-                unitName: item.location?.unitName,
-                buildingName: item.location?.building?.buildingName,
-                meetingType: item.meetingType,
-                housekeepingStatus: item.housekeepingStatus,
-                date: dayjs(item.date).format("DD-MM-YYYY"),
-                startTime: item.startTime,
-                endTime: item.endTime,
-                duration: item.duration,
-                meetingStatus: item.meetingStatus,
-                agenda: item.agenda,
-                subject: item.subject,
-                housekeepingChecklist: item.housekeepingChecklist,
-                participants: item.participants
-                  ?.map(
-                    (p) =>
-                      `${p.firstName || ""} ${p.lastName || ""} (${
-                        p.email || ""
-                      })`
-                  )
-                  .join(", "),
-              })),
-            ]}
-            columns={meetingReportsColumn}
-          />
-        ) : (
-          <CircularProgress />
-        )}
-      </div>
+      <PageFrame>
+        <div>
+          {!isMyMeetingsPending ? (
+            <AgTable
+              search={true}
+              exportData
+              tableTitle={"Meetings Reports"}
+              data={[
+                ...myMeetings.map((item, index) => ({
+                  srNo: index + 1,
+                  id: index + 1,
+                  department: item.department,
+                  roomName: item.roomName,
+                  unitNo: item.location?.unitNo,
+                  unitName: item.location?.unitName,
+                  buildingName: item.location?.building?.buildingName,
+                  meetingType: item.meetingType,
+                  housekeepingStatus: item.housekeepingStatus,
+                  date: dayjs(item.date).format("DD-MM-YYYY"),
+                  startTime: item.startTime,
+                  endTime: item.endTime,
+                  duration: item.duration,
+                  meetingStatus: item.meetingStatus,
+                  agenda: item.agenda,
+                  subject: item.subject,
+                  housekeepingChecklist: item.housekeepingChecklist,
+                  participants: item.participants
+                    ?.map(
+                      (p) =>
+                        `${p.firstName || ""} ${p.lastName || ""} (${
+                          p.email || ""
+                        })`
+                    )
+                    .join(", "),
+                })),
+              ]}
+              columns={meetingReportsColumn}
+            />
+          ) : (
+            <CircularProgress />
+          )}
+        </div>
+      </PageFrame>
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Meeting Details"}
-      >
+        title={"Meeting Details"}>
         {!isMyMeetingsPending && selectedMeeting ? (
           <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
             <DetalisFormatted

@@ -10,6 +10,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { queryClient } from "../../../../main";
 import Loader from "../../../Loading";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const WorkLocations = () => {
   const axios = useAxiosPrivate();
@@ -163,35 +164,35 @@ const WorkLocations = () => {
         <Loader />
       ) : (
         <div>
-          <AgTable
-            key={workLocations.length}
-            search={true}
-            searchColumn={"Work Location"}
-            tableTitle={"Work Location List"}
-            buttonTitle={"Add Work Location"}
-            handleClick={handleAddLocation}
-            columns={departmentsColumn}
-            data={[
-              ...workLocations.map((location, index) => ({
-                id: index + 1, // Auto-increment Sr No
-                name: location.buildingName,
-                status: location.isActive,
-              })),
-            ]}
-          />
+          <PageFrame>
+            <AgTable
+              key={workLocations.length}
+              search={true}
+              searchColumn={"Work Location"}
+              tableTitle={"Work Location List"}
+              buttonTitle={"Add Work Location"}
+              handleClick={handleAddLocation}
+              columns={departmentsColumn}
+              data={[
+                ...workLocations.map((location, index) => ({
+                  id: index + 1, // Auto-increment Sr No
+                  name: location.buildingName,
+                  status: location.isActive,
+                })),
+              ]}
+            />
+          </PageFrame>
         </div>
       )}
 
       <MuiModal
         open={openModal}
         onClose={handleCloseModal}
-        title={"Add Work Location"}
-      >
+        title={"Add Work Location"}>
         <div>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4"
-          >
+            className="flex flex-col gap-4">
             <Controller
               name="workLocation"
               rules={{ required: "Work location is required" }}
@@ -243,8 +244,7 @@ const WorkLocations = () => {
                     // Reset dependent fields
                     control.setValue("state", "");
                     control.setValue("city", "");
-                  }}
-                >
+                  }}>
                   <MenuItem value="">Select a Country</MenuItem>
                   {countries.map((item) => (
                     <MenuItem key={item.isoCode} value={item.isoCode}>
@@ -274,8 +274,7 @@ const WorkLocations = () => {
                       e.target.value
                     );
                     control.setValue("city", "");
-                  }}
-                >
+                  }}>
                   <MenuItem value="">Select a State</MenuItem>
                   {states.map((item) => (
                     <MenuItem value={item.isoCode} key={item.isoCode}>
@@ -297,14 +296,12 @@ const WorkLocations = () => {
                   select
                   label="City"
                   fullWidth
-                  disabled={!control._formValues.state}
-                >
+                  disabled={!control._formValues.state}>
                   <MenuItem value="">Select a City</MenuItem>
                   {cities.map((item) => (
                     <MenuItem
                       value={item.name}
-                      key={`${item.name}-${item.stateCode}-${item.latitude}`}
-                    >
+                      key={`${item.name}-${item.stateCode}-${item.latitude}`}>
                       {item.name}
                     </MenuItem>
                   ))}

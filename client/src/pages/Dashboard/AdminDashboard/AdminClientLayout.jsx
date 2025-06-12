@@ -7,14 +7,17 @@ const AdminClientLayout = () => {
   const navigate = useNavigate();
 
   const tabs = [
-    { label: "Members", path: "client-members-data" },
-    { label: "Client-Onboarding", path: "client-members-onboard" },
+    { label: "Clients", path: "client-members-data" },
+    { label: "Client-Member Onboarding", path: "client-members-onboard" },
   ];
   useEffect(() => {
     if (location.pathname === "/app/dashboard/admin-dashboard/client-members") {
-      navigate("/app/dashboard/admin-dashboard/client-members/client-members-data", {
-        replace: true,
-      });
+      navigate(
+        "/app/dashboard/admin-dashboard/client-members/client-members-data",
+        {
+          replace: true,
+        }
+      );
     }
   }, [location, navigate]);
 

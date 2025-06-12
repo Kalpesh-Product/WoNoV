@@ -201,13 +201,15 @@ const Calender = () => {
                         return (
                           <div
                             key={index}
-                            className="flex gap-2 items-center mb-2">
+                            className="flex gap-2 items-center mb-2"
+                          >
                             <div
                               className="w-3 h-3 rounded-full mr-2"
                               style={{
                                 backgroundColor:
                                   colors[event.extendedProps.meetingStatus],
-                              }}></div>
+                              }}
+                            ></div>
                             <div className="flex flex-col">
                               <span className="text-content font-medium">
                                 {event.title}
@@ -258,7 +260,8 @@ const Calender = () => {
           open={isDrawerOpen}
           onClose={closeDrawer}
           headerBackground={headerBackground}
-          title="Meeting Details">
+          title="Meeting Details"
+        >
           {drawerMode === "view" && selectedEvent && (
             <div className="space-y-2">
               <div className="font-bold">Basic Info</div>
@@ -300,7 +303,13 @@ const Calender = () => {
                   title="Participants"
                   detail={
                     selectedEvent.extendedProps.participants
-                      .map((p) => `${p.firstName} ${p.lastName}`)
+                      .map((p) => {
+                        return p.employeeName
+                          ? p.employeeName
+                          : p.firstName
+                          ? `${p.firstName} ${p.lastName}`
+                          : "N/A";
+                      })
                       .join(", ") || "N/A"
                   }
                 />
@@ -312,8 +321,8 @@ const Calender = () => {
               />
               <DetalisFormatted
                 title="Receptionist"
-                // detail={selectedEvent.extendedProps.receptionist}
-                detail={`N/A`}
+                detail={selectedEvent.extendedProps.receptionist? selectedEvent.extendedProps.receptionist : "N/A"}
+                
               />
               <DetalisFormatted
                 title="Department"
