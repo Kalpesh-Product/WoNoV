@@ -1,6 +1,6 @@
 import React from "react";
 import AgTable from "../../components/AgTable";
-
+import PageFrame from "../../components/Pages/PageFrame";
 
 const MyAssets = ({ pageTitle }) => {
   const laptopColumns = [
@@ -17,16 +17,23 @@ const MyAssets = ({ pageTitle }) => {
     { field: "warranty", headerName: "Warranty (Months)", flex: 1 },
   ];
 
-  
   return (
     <>
-      <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary uppercase">My Assets</span>
-      </div>
-
-      <div className=" w-full">
-        <AgTable data={[]} columns={laptopColumns} paginationPageSize={10} search/>
-      </div>
+      <PageFrame>
+        <div className="flex items-center justify-between pb-4">
+          <span className="text-title font-pmedium text-primary uppercase">
+            My Assets
+          </span>
+        </div>
+        <div className=" w-full">
+          <AgTable
+            data={[]}
+            columns={laptopColumns}
+            paginationPageSize={10}
+            search
+          />
+        </div>
+      </PageFrame>
     </>
   );
 };

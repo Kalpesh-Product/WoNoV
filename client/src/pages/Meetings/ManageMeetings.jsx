@@ -28,6 +28,7 @@ import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import { TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const ManageMeetings = () => {
   const axios = useAxiosPrivate();
@@ -475,17 +476,19 @@ const ManageMeetings = () => {
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      {!isMeetingsLoading ? (
-        <AgTable
-          key={transformedMeetings.length}
-          search
-          tableTitle={"Manage Meetings"}
-          data={transformedMeetings || []}
-          columns={columns}
-        />
-      ) : (
-        <CircularProgress />
-      )}
+      <PageFrame>
+        {!isMeetingsLoading ? (
+          <AgTable
+            key={transformedMeetings.length}
+            search
+            tableTitle={"Manage Meetings"}
+            data={transformedMeetings || []}
+            columns={columns}
+          />
+        ) : (
+          <CircularProgress />
+        )}
+      </PageFrame>
 
       {/* Checklist Modal */}
       <MuiModal

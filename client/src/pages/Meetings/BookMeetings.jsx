@@ -182,15 +182,13 @@ const BookMeetings = () => {
             ) : (
               <span
                 onClick={() => handleAddReview(params.data)}
-                className="cursor-pointer"
-              >
+                className="cursor-pointer">
                 <MdOutlineRateReview size={20} />
               </span>
             )}
             <span
               className="text-subtitle cursor-pointer"
-              onClick={() => handleViewDetails(params.data)}
-            >
+              onClick={() => handleViewDetails(params.data)}>
               <MdOutlineRemoveRedEye />
             </span>
           </div>
@@ -233,8 +231,7 @@ const BookMeetings = () => {
         </h2>
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col items-center"
-        >
+          className="flex flex-col items-center">
           <div className="grid grid-cols-1 px-0 sm:grid-cols-1 md:grid-cols-2 md:px-0 sm:px-0 justify-center gap-4 mb-10 w-full">
             {/* Location Dropdown */}
             <Controller
@@ -259,8 +256,7 @@ const BookMeetings = () => {
                         (building) => building?._id === locationId
                       );
                       setSelectedUnitId(selectedLocation?._id || "");
-                    }}
-                  >
+                    }}>
                     <MenuItem value="" disabled>
                       {" "}
                       Seletc Location
@@ -287,8 +283,7 @@ const BookMeetings = () => {
                   select
                   disabled={!watchFields.location}
                   error={!!errors.meetingRoom}
-                  helperText={errors.meetingRoom?.message}
-                >
+                  helperText={errors.meetingRoom?.message}>
                   <MenuItem value="" disabled>
                     Select Room
                   </MenuItem>
@@ -363,12 +358,10 @@ const BookMeetings = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add review"}
-      >
+        title={"Add review"}>
         <form
           onSubmit={reviewForm(submitReview)}
-          className="flex flex-col gap-4"
-        >
+          className="flex flex-col gap-4">
           <div className="flex gap-4 items-center">
             <span className="text-content">
               How was your meeting room experience ?
@@ -412,8 +405,7 @@ const BookMeetings = () => {
       <MuiModal
         open={detailsModal}
         onClose={() => setDetailsModal(false)}
-        title={"Meeting Details"}
-      >
+        title={"Meeting Details"}>
         {selectedMeeting ? (
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
             <DetalisFormatted

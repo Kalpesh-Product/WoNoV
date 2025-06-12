@@ -15,6 +15,7 @@ import useAuth from "../../hooks/useAuth";
 import { toast } from "sonner";
 import { queryClient } from "../../main";
 import humanDate from "../../utils/humanDateForamt";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const Reviews = () => {
   const axios = useAxiosPrivate();
@@ -62,7 +63,6 @@ const Reviews = () => {
       toast.error(error.message);
     },
   });
-
 
   const departmentsColumn = [
     { field: "srno", headerName: "Sr No" },
@@ -128,8 +128,7 @@ const Reviews = () => {
                 params.value === "Reply Review" ? (
                   <div
                     className="flex flex-row items-center justify-center gap-2"
-                    onClick={handleClick}
-                  >
+                    onClick={handleClick}>
                     <PiArrowBendLeftDownBold />
                     {params.value}
                   </div>
@@ -153,10 +152,11 @@ const Reviews = () => {
   ];
 
   const averageRatings =
-  reviews.length > 0
-    ? (reviews.reduce((acc, curr) => acc + curr.rate, 0) / reviews.length).toFixed(2)
-    : "0.00";
-
+    reviews.length > 0
+      ? (
+          reviews.reduce((acc, curr) => acc + curr.rate, 0) / reviews.length
+        ).toFixed(2)
+      : "0.00";
 
   // const averageRatings = rating
 
@@ -178,28 +178,29 @@ const Reviews = () => {
         </WidgetSection>
 
         <div className="p-6">
-          <AgTable
-            search={true}
-            searchColumn={"Policies"}
-            data={[
-              ...reviews.map((review, index) => ({
-                id: review._id,
-                srno: index + 1,
-                nameofreview: review.reviewerName,
-                date : humanDate(review.createdAt),
-                rate: review.rate,
-                Reviews: review.review,
-                action: review?.reply ? "Replied" : "Reply Review",
-              })),
-            ]}
-            columns={departmentsColumn}
-          />
+          <PageFrame>
+            <AgTable
+              search={true}
+              searchColumn={"Policies"}
+              data={[
+                ...reviews.map((review, index) => ({
+                  id: review._id,
+                  srno: index + 1,
+                  nameofreview: review.reviewerName,
+                  date: humanDate(review.createdAt),
+                  rate: review.rate,
+                  Reviews: review.review,
+                  action: review?.reply ? "Replied" : "Reply Review",
+                })),
+              ]}
+              columns={departmentsColumn}
+            />
+          </PageFrame>
         </div>
         <MuiAside
           open={openSidebar}
           onClose={() => setOpenSidebar(false)}
-          title={"Reviews"}
-        >
+          title={"Reviews"}>
           <div className="p-2 space-y-6">
             <h1 className="font-pmedium text-subtitle">
               {reviewData.nameofreview}
@@ -213,8 +214,7 @@ const Reviews = () => {
             <div className="mt-5">
               <form
                 onSubmit={handleSubmit(replyReview)}
-                className="flex flex-col gap-4"
-              >
+                className="flex flex-col gap-4">
                 <Controller
                   name="reply"
                   control={control}

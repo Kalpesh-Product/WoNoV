@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import humanDate from "../../../utils/humanDateForamt";
 import humanTime from "../../../utils/humanTime";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const AssignedTaskReports = () => {
   const axios = useAxiosPrivate();
@@ -66,31 +67,33 @@ const AssignedTaskReports = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <AgTable
-          search={true}
-          tableTitle={"Assigned Tasks Reports"}
-          data={
-            isLoading
-              ? []
-              : [
-                  ...taskList.map((task, index) => ({
-                    srNo: index + 1,
-                    taskName: task.taskName,
-                    assignedDate: humanDate(task.assignedDate),
-                    dueDate: humanDate(task.dueDate),
-                    completedDate: humanDate(task.completedDate),
-                    completedTime: humanTime(task.completedDate),
-                    assignedBy: `${task.assignedBy.firstName} ${task.assignedBy.lastName}`,
-                    priority: task.priority,
-                    department: task.department?.name,
-                    endDate: humanDate(task.dueDate),
-                  })),
-                ]
-          }
-          columns={myTaskReportsColumns}
-        />
-      </div>
+      <PageFrame>
+        <div>
+          <AgTable
+            search={true}
+            tableTitle={"Assigned Tasks Reports"}
+            data={
+              isLoading
+                ? []
+                : [
+                    ...taskList.map((task, index) => ({
+                      srNo: index + 1,
+                      taskName: task.taskName,
+                      assignedDate: humanDate(task.assignedDate),
+                      dueDate: humanDate(task.dueDate),
+                      completedDate: humanDate(task.completedDate),
+                      completedTime: humanTime(task.completedDate),
+                      assignedBy: `${task.assignedBy.firstName} ${task.assignedBy.lastName}`,
+                      priority: task.priority,
+                      department: task.department?.name,
+                      endDate: humanDate(task.dueDate),
+                    })),
+                  ]
+            }
+            columns={myTaskReportsColumns}
+          />
+        </div>
+      </PageFrame>
     </div>
   );
 };

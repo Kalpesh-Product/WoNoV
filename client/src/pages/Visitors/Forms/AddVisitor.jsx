@@ -10,6 +10,7 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const AddVisitor = () => {
   const {
@@ -153,287 +154,283 @@ const AddVisitor = () => {
 
   return (
     <div className=" p-4">
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            {/* Section: Basic Information */}
-            <div className="py-4 border-b-default border-borderGray">
-              <span className="text-subtitle font-pmedium">
-                Visitor Details
-              </span>
-            </div>
-            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-              <Controller
-                name="visitorType"
-                control={control}
-                rules={{ required: "Visitor type is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    select
-                    label="Select Visitor Type"
-                    error={!!errors.visitorType}
-                    helperText={errors.visitorType?.message}
-                  >
-                    <MenuItem value="" disabled>
-                      Select Visitor Type
-                    </MenuItem>
-                    <MenuItem value="Walk In">Walk In</MenuItem>
-                    <MenuItem value="Scheduled">Scheduled</MenuItem>
-                  </TextField>
-                )}
-              />
-              <Controller
-                name="visitorComapany"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    fullWidth
-                    label={"Visitor company"}
-                  />
-                )}
-              />
-
-              <Controller
-                name="firstName"
-                control={control}
-                rules={{ required: "First Name is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    error={!!errors.firstName}
-                    helperText={errors.firstName?.message}
-                    label="First Name"
-                    fullWidth
-                  />
-                )}
-              />
-              <Controller
-                name="lastName"
-                control={control}
-                rules={{ required: "Last Name is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    error={!!errors.lastName}
-                    helperText={errors.lastName?.message}
-                    label="Last Name"
-                    fullWidth
-                  />
-                )}
-              />
-              <Controller
-                name="phoneNumber"
-                control={control}
-                rules={{ required: "Phone Number is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Phone"
-                    error={!!errors.phoneNumber}
-                    helperText={errors.phoneNumber?.message}
-                    fullWidth
-                  />
-                )}
-              />
-              <Controller
-                name="email"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    error={!!errors.email}
-                    helperText={errors.email?.message}
-                    label="Email"
-                    fullWidth
-                  />
-                )}
-              />
-
-              <Controller
-                name="gender"
-                control={control}
-                rules={{ required: "Gender is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    error={!!errors.gender}
-                    select
-                    helperText={errors.gender?.message}
-                    size="small"
-                    label="Gender"
-                    fullWidth
-                  >
-                    <MenuItem value="" disabled>
-                      Select Gender
-                    </MenuItem>
-                    <MenuItem value="male">Male</MenuItem>
-                    <MenuItem value="female">Female</MenuItem>
-                  </TextField>
-                )}
-              />
-
-              <Controller
-                name="purposeOfVisit"
-                control={control}
-                rules={{ required: "Purpose is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Purpose of visit"
-                    error={!!errors.purposeOfVisit}
-                    helperText={errors.purposeOfVisit?.message}
-                    fullWidth
-                  />
-                )}
-              />
-            </div>
-          </div>
-          <div>
-            <div className="py-4 border-b-default border-borderGray">
-              <span className="text-subtitle font-pmedium">To Meet</span>
-            </div>
-            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-              <Controller
-                name="clientCompany"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label={"Select Company"}
-                    fullWidth
-                    onChange={(e) => {
-                      field.onChange(e);
-                      setSelectedDepartment("");
-                    }}
-                    select
-                  >
-                    <MenuItem value="" disabled>
-                      Select Company
-                    </MenuItem>
-                    <MenuItem value="6799f0cd6a01edbe1bc3fcea">
-                      BIZNest
-                    </MenuItem>
-                    {clientCompanies.map((client) => (
-                      <MenuItem key={client._id} value={client._id}>
-                        {client.clientName}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-
-              <Controller
-                name="department"
-                control={control}
-                rules={{
-                  validate: (value) => {
-                    if (selectedCompany === "6799f0cd6a01edbe1bc3fcea") {
-                      return value ? true : "Department is required";
-                    }
-                    return true;
-                  },
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label={"Select Department"}
-                    fullWidth
-                    disabled={selectedCompany !== "6799f0cd6a01edbe1bc3fcea"}
-                    onChange={(e) => {
-                      field.onChange(e);
-                      setSelectedDepartment(e.target.value);
-                    }}
-                    select
-                    error={!!errors.department}
-                    helperText={errors.department?.message}
-                  >
-                    <MenuItem value="">Select Department</MenuItem>
-                    {visitorType === "Meeting" && (
-                      <MenuItem value="na">N/A</MenuItem>
-                    )}
-                    {uniqueDepartments.map((department) => (
-                      <MenuItem key={department._id} value={department._id}>
-                        {department.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-
-              <Controller
-                name="toMeet"
-                control={control}
-                render={({ field }) => {
-                  const isBiznest =
-                    selectedCompany === "6799f0cd6a01edbe1bc3fcea";
-                  const showClientMembers = selectedCompany && !isBiznest;
-                  const showBiznestEmployees =
-                    isBiznest &&
-                    selectedDepartment &&
-                    selectedDepartment !== "na";
-
-                  return (
-                    <TextField
-                      {...field}
-                      select
-                      size="small"
-                      fullWidth
-                      disabled={
-                        (!showClientMembers && !showBiznestEmployees) ||
-                        (isBiznest && selectedDepartment === "na")
-                      }
-                      label={"Select Person"}
-                    >
-                      <MenuItem value="">Select the person to meet</MenuItem>
-
-                      {/* Show client members if a non-BIZNest company is selected */}
-                      {showClientMembers && !clientMembersIsLoading ? (
-                        clientMembers.map((member) => (
-                          <MenuItem key={member._id} value={member._id}>
-                            {member.employeeName}
-                          </MenuItem>
-                        ))
-                      ) : showClientMembers && clientMembersIsLoading ? (
-                        <MenuItem disabled>
-                          <CircularProgress size={20} />
-                        </MenuItem>
-                      ) : null}
-
-                      {/* Show BIZNest employees from selected department */}
-                      {showBiznestEmployees && !isLoading ? (
-                        departmentEmployees.map((emp) => (
-                          <MenuItem key={emp._id} value={emp._id}>
-                            {emp.firstName} {emp.lastName}
-                          </MenuItem>
-                        ))
-                      ) : showBiznestEmployees && isLoading ? (
-                        <MenuItem disabled>
-                          <CircularProgress size={20} />
-                        </MenuItem>
-                      ) : null}
-                    </TextField>
-                  );
-                }}
-              />
-            </div>
-
+      <PageFrame>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
             <div>
+              {/* Section: Basic Information */}
               <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">Timings</span>
+                <span className="text-subtitle font-pmedium">
+                  Visitor Details
+                </span>
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-                {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Controller
+                  name="visitorType"
+                  control={control}
+                  rules={{ required: "Visitor type is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      select
+                      label="Select Visitor Type"
+                      error={!!errors.visitorType}
+                      helperText={errors.visitorType?.message}>
+                      <MenuItem value="" disabled>
+                        Select Visitor Type
+                      </MenuItem>
+                      <MenuItem value="Walk In">Walk In</MenuItem>
+                      <MenuItem value="Scheduled">Scheduled</MenuItem>
+                    </TextField>
+                  )}
+                />
+                <Controller
+                  name="visitorComapany"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      fullWidth
+                      label={"Visitor company"}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="firstName"
+                  control={control}
+                  rules={{ required: "First Name is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      error={!!errors.firstName}
+                      helperText={errors.firstName?.message}
+                      label="First Name"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="lastName"
+                  control={control}
+                  rules={{ required: "Last Name is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      error={!!errors.lastName}
+                      helperText={errors.lastName?.message}
+                      label="Last Name"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="phoneNumber"
+                  control={control}
+                  rules={{ required: "Phone Number is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Phone"
+                      error={!!errors.phoneNumber}
+                      helperText={errors.phoneNumber?.message}
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="email"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      error={!!errors.email}
+                      helperText={errors.email?.message}
+                      label="Email"
+                      fullWidth
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="gender"
+                  control={control}
+                  rules={{ required: "Gender is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      error={!!errors.gender}
+                      select
+                      helperText={errors.gender?.message}
+                      size="small"
+                      label="Gender"
+                      fullWidth>
+                      <MenuItem value="" disabled>
+                        Select Gender
+                      </MenuItem>
+                      <MenuItem value="male">Male</MenuItem>
+                      <MenuItem value="female">Female</MenuItem>
+                    </TextField>
+                  )}
+                />
+
+                <Controller
+                  name="purposeOfVisit"
+                  control={control}
+                  rules={{ required: "Purpose is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Purpose of visit"
+                      error={!!errors.purposeOfVisit}
+                      helperText={errors.purposeOfVisit?.message}
+                      fullWidth
+                    />
+                  )}
+                />
+              </div>
+            </div>
+            <div>
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">To Meet</span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+                <Controller
+                  name="clientCompany"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label={"Select Company"}
+                      fullWidth
+                      onChange={(e) => {
+                        field.onChange(e);
+                        setSelectedDepartment("");
+                      }}
+                      select>
+                      <MenuItem value="" disabled>
+                        Select Company
+                      </MenuItem>
+                      <MenuItem value="6799f0cd6a01edbe1bc3fcea">
+                        BIZNest
+                      </MenuItem>
+                      {clientCompanies.map((client) => (
+                        <MenuItem key={client._id} value={client._id}>
+                          {client.clientName}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+
+                <Controller
+                  name="department"
+                  control={control}
+                  rules={{
+                    validate: (value) => {
+                      if (selectedCompany === "6799f0cd6a01edbe1bc3fcea") {
+                        return value ? true : "Department is required";
+                      }
+                      return true;
+                    },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label={"Select Department"}
+                      fullWidth
+                      disabled={selectedCompany !== "6799f0cd6a01edbe1bc3fcea"}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        setSelectedDepartment(e.target.value);
+                      }}
+                      select
+                      error={!!errors.department}
+                      helperText={errors.department?.message}>
+                      <MenuItem value="">Select Department</MenuItem>
+                      {visitorType === "Meeting" && (
+                        <MenuItem value="na">N/A</MenuItem>
+                      )}
+                      {uniqueDepartments.map((department) => (
+                        <MenuItem key={department._id} value={department._id}>
+                          {department.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+
+                <Controller
+                  name="toMeet"
+                  control={control}
+                  render={({ field }) => {
+                    const isBiznest =
+                      selectedCompany === "6799f0cd6a01edbe1bc3fcea";
+                    const showClientMembers = selectedCompany && !isBiznest;
+                    const showBiznestEmployees =
+                      isBiznest &&
+                      selectedDepartment &&
+                      selectedDepartment !== "na";
+
+                    return (
+                      <TextField
+                        {...field}
+                        select
+                        size="small"
+                        fullWidth
+                        disabled={
+                          (!showClientMembers && !showBiznestEmployees) ||
+                          (isBiznest && selectedDepartment === "na")
+                        }
+                        label={"Select Person"}>
+                        <MenuItem value="">Select the person to meet</MenuItem>
+
+                        {/* Show client members if a non-BIZNest company is selected */}
+                        {showClientMembers && !clientMembersIsLoading ? (
+                          clientMembers.map((member) => (
+                            <MenuItem key={member._id} value={member._id}>
+                              {member.employeeName}
+                            </MenuItem>
+                          ))
+                        ) : showClientMembers && clientMembersIsLoading ? (
+                          <MenuItem disabled>
+                            <CircularProgress size={20} />
+                          </MenuItem>
+                        ) : null}
+
+                        {/* Show BIZNest employees from selected department */}
+                        {showBiznestEmployees && !isLoading ? (
+                          departmentEmployees.map((emp) => (
+                            <MenuItem key={emp._id} value={emp._id}>
+                              {emp.firstName} {emp.lastName}
+                            </MenuItem>
+                          ))
+                        ) : showBiznestEmployees && isLoading ? (
+                          <MenuItem disabled>
+                            <CircularProgress size={20} />
+                          </MenuItem>
+                        ) : null}
+                      </TextField>
+                    );
+                  }}
+                />
+              </div>
+
+              <div>
+                <div className="py-4 border-b-default border-borderGray">
+                  <span className="text-subtitle font-pmedium">Timings</span>
+                </div>
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+                  {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <Controller
                     name="dateOfVisit"
                     control={control}
@@ -457,60 +454,67 @@ const AddVisitor = () => {
                     )}
                   />
                 </LocalizationProvider> */}
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <Controller
-                    name="checkIn"
-                    control={control}
-                    rules={{ required: "Check-In time is required" }}
-                    render={({ field }) => (
-                      <TimePicker
-                        {...field}
-                        label={"Check-In Time"}
-                        slotProps={{ textField: { size: "small" } }}
-                        render={(params) => (
-                          <TextField
-                            {...params}
-                            fullWidth
-                            error={!!errors.checkIn}
-                            helperText={errors.checkIn?.message}
-                          />
-                        )}
-                      />
-                    )}
-                  />
-                </LocalizationProvider>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <Controller
-                    name="checkOut"
-                    control={control}
-                    render={({ field }) => (
-                      <TimePicker
-                        {...field}
-                        label={"Check-Out Time"}
-                        value={field.value || null}
-                        onChange={(val) => field.onChange(val)}
-                        slotProps={{ textField: { size: "small" } }}
-                        render={(params) => <TextField {...params} fullWidth />}
-                      />
-                    )}
-                  />
-                </LocalizationProvider>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Controller
+                      name="checkIn"
+                      control={control}
+                      rules={{ required: "Check-In time is required" }}
+                      render={({ field }) => (
+                        <TimePicker
+                          {...field}
+                          label={"Check-In Time"}
+                          slotProps={{ textField: { size: "small" } }}
+                          render={(params) => (
+                            <TextField
+                              {...params}
+                              fullWidth
+                              error={!!errors.checkIn}
+                              helperText={errors.checkIn?.message}
+                            />
+                          )}
+                        />
+                      )}
+                    />
+                  </LocalizationProvider>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Controller
+                      name="checkOut"
+                      control={control}
+                      rules={{ required: "Check-Out time is required" }}
+                      render={({ field }) => (
+                        <TimePicker
+                          {...field}
+                          label={"Check-Out Time"}
+                          slotProps={{ textField: { size: "small" } }}
+                          render={(params) => (
+                            <TextField
+                              {...params}
+                              fullWidth
+                              error={!!errors.checkOut}
+                              helperText={errors.checkOut?.message}
+                            />
+                          )}
+                        />
+                      )}
+                    />
+                  </LocalizationProvider>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Submit Button */}
-        <div className="flex items-center justify-center gap-4">
-          <PrimaryButton
-            type="submit"
-            title={"Submit"}
-            isLoading={isMutateVisitor}
-            disabled={isMutateVisitor}
-          />
-          <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
-        </div>
-      </form>
+          {/* Submit Button */}
+          <div className="flex items-center justify-center gap-4">
+            <PrimaryButton
+              type="submit"
+              title={"Submit"}
+              isLoading={isMutateVisitor}
+              disabled={isMutateVisitor}
+            />
+            <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
+          </div>
+        </form>
+      </PageFrame>
     </div>
   );
 };
