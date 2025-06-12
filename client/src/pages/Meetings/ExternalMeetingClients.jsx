@@ -970,7 +970,7 @@ const ExternalMeetingCLients = () => {
             )}
           />
           <div className="flex justify-center">
-            <PrimaryButton title={"Save Payment Details"} type={"submit"} />
+            <PrimaryButton className="w-full" title={"Save Payment Details"} type={"submit"} />
           </div>
         </form>
       </MuiModal>
