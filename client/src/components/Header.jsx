@@ -45,6 +45,7 @@ const Header = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/company/get-company-logo");
+        console.log(response.data);
         return response.data;
       } catch (error) {
         console.log(error);

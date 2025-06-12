@@ -46,7 +46,6 @@ const CheckAvailability = () => {
     }
     groupedByBuilding.get(buildingName).push(unit);
   });
-  console.log("GROUPED BY BUILDING : ", groupedByBuilding);
 
   const chartData = Array.from(groupedByBuilding.entries()).map(
     ([buildingName, units]) => {
@@ -224,7 +223,7 @@ const CheckAvailability = () => {
     ).entries()
   );
 
-  const formatUnitDisplay = (unitNo, buildingName) => {
+  const formatUnitDisplay = (buildingName, unitNo ) => {
     if (typeof unitNo !== "string")
       return `${unitNo || "Unknown"} ${buildingName}`;
 
@@ -233,7 +232,7 @@ const CheckAvailability = () => {
 
     if (!match) return `${unitNo} ${buildingName}`;
     const [_, number, letter] = match;
-    return `${number}${letter ? ` - ${letter}` : ""} ${buildingName}`;
+    return ` ${buildingName} - ${number}${letter ? ` - ${letter}` : ""}`;
   };
 
   // Sorting function
@@ -271,89 +270,162 @@ const CheckAvailability = () => {
         );
   };
 
+  const inventoryStats = {
+    ST: { total: 0, occupied: 0 },
+    DTC: { total: 0, occupied: 0 },
+  };
+
+  const seenUnits = new Set();
+
+  clientsData.forEach((client, index) => {
+    if (!client.unit || !client.unit.building) return;
+
+    const unit = client.unit;
+    const unitNo = unit.unitNo || "N/A";
+    const buildingName = unit.building.buildingName || "Unknown";
+
+    const isNewUnit = !seenUnits.has(unitNo);
+    if (isNewUnit) seenUnits.add(unitNo);
+
+    const unitOpenDesks = Number(unit.openDesks) || 0;
+    const unitCabinDesks = Number(unit.cabinDesks) || 0;
+    const totalSeats = unitOpenDesks + unitCabinDesks;
+    const bookedSeats = Number(client.totalDesks) || 0;
+
+    if (buildingName.includes("Sunteck Kanaka")) {
+      if (isNewUnit) {
+        inventoryStats.ST.total += totalSeats;
+      }
+      inventoryStats.ST.occupied += bookedSeats;
+    } else if (buildingName.includes("Dempo Trade Centre")) {
+      if (isNewUnit) {
+        inventoryStats.DTC.total += totalSeats;
+      }
+      inventoryStats.DTC.occupied += bookedSeats;
+    }
+  });
+
+  const allBuildings = new Set();
+
+  clientsData.forEach((client) => {
+    const buildingName = client.unit?.building?.buildingName;
+    if (buildingName) allBuildings.add(buildingName);
+  });
+
+  const inventoryCards = {
+    inventory: [
+      {
+        title: "ST Inventory",
+        value: String(Number(inventoryStats.ST?.total) || 0),
+        route: "#",
+      },
+      {
+        title: "DTC Inventory",
+        value: String(Number(inventoryStats.DTC?.total) || 0),
+        route: "#",
+      },
+      {
+        title: "Total Inventory",
+        value: String(
+          (Number(inventoryStats.ST?.total) || 0) +
+            (Number(inventoryStats.DTC?.total) || 0)
+        ),
+        route: "#",
+      },
+    ],
+    occupancy: [
+      {
+        title: "ST Occupancy",
+        value: String(Number(inventoryStats.ST?.occupied) || 0),
+        route: "#",
+      },
+      {
+        title: "DTC Occupancy",
+        value: String(Number(inventoryStats.DTC?.occupied) || 0),
+        route: "#",
+      },
+      {
+        title: "Total Occupancy",
+        value: String(
+          (Number(inventoryStats.ST?.occupied) || 0) +
+            (Number(inventoryStats.DTC?.occupied) || 0)
+        ),
+        route: "#",
+      },
+    ],
+    freeInventory: [
+      {
+        title: "ST Free Inventory",
+        value: String(
+          (Number(inventoryStats.ST?.total) || 0) -
+            (Number(inventoryStats.ST?.occupied) || 0)
+        ),
+        route: "#",
+      },
+      {
+        title: "DTC Free Inventory",
+        value: String(
+          (Number(inventoryStats.DTC?.total) || 0) -
+            (Number(inventoryStats.DTC?.occupied) || 0)
+        ),
+        route: "#",
+      },
+      {
+        title: "Total Free Inventory",
+        value: String(
+          (Number(inventoryStats.ST?.total) || 0) -
+            (Number(inventoryStats.ST?.occupied) || 0) +
+            (Number(inventoryStats.DTC?.total) || 0) -
+            (Number(inventoryStats.DTC?.occupied) || 0)
+        ),
+        route: "#",
+      },
+    ],
+  };
+
   return (
     <div className="flex flex-col gap-4 p-4">
       <WidgetSection
         layout={1}
         border
         normalCase={true}
-        title={"TOTAL v/s OCCUPIED FY 2024-25"}>
-        <NormalBarGraph
-          data={barGraphSeries}
-          options={barGraphOptions}
-          height={400}
-        />
-        {/* <WidgetSection layout={3}><FinanceCard /></WidgetSection> */}
+        title={"TOTAL v/s OCCUPIED FY 2024-25"}
+      >
+        {chartData.length > 0 ? (
+          <NormalBarGraph
+            data={barGraphSeries}
+            options={barGraphOptions}
+            height={400}
+          />
+        ) : (
+          <div className="text-center text-gray-500 text-sm py-10">
+            No data available to display chart.
+          </div>
+        )}
       </WidgetSection>
       <WidgetSection layout={3} padding>
         <FinanceCard
           cardTitle="Inventory"
           titleCenter
-          highlightNegativePositive={true}
+          highlightNegativePositive
           disableColorChange
-          descriptionData={[
-            {
-              title: "ST Inventory",
-              value: "400",
-              route: "#",
-            },
-            {
-              title: "DTC Inventory",
-              value: "200",
-              route: "#",
-            },
-            {
-              title: "Total Inventory",
-              value: "600",
-              route: "#",
-            },
-          ]}
+          descriptionData={inventoryCards.inventory}
         />
+
         <FinanceCard
           cardTitle="Occupancy"
           titleCenter
-          highlightNegativePositive={true}
+          highlightNegativePositive
           disableColorChange
-          descriptionData={[
-            {
-              title: "ST Occupancy",
-              value: "350",
-              route: "#",
-            },
-            {
-              title: "DTC Occupancy",
-              value: "150",
-              route: "#",
-            },
-            {
-              title: "Total Occupancy",
-              value: "500",
-              route: "#",
-            },
-          ]}
+          descriptionData={inventoryCards.occupancy}
         />
+
         <FinanceCard
           cardTitle="Free Inventory"
           titleCenter
-          highlightNegativePositive={true}
+          highlightNegativePositive
           disableColorChange
-          descriptionData={[
-            {
-              title: "ST Free Inventory",
-              value: "50",
-              route: "#",
-            },
-            {
-              title: "DTC Free Inventory",
-              value: "50",
-              route: "#",
-            },
-            {
-              title: "Total Free Inventory",
-              value: "100",
-              route: "#",
-            },
-          ]}
+          descriptionData={inventoryCards.freeInventory}
         />
       </WidgetSection>
       <div className="border-default border-borderGray p-4 rounded-md text-center">
@@ -362,7 +434,8 @@ const CheckAvailability = () => {
         </h2>
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col items-center">
+          className="flex flex-col items-center"
+        >
           <div className="flex justify-center gap-4 mb-10 px-20 w-full">
             {/* Location Dropdown */}
             <FormControl className="w-1/2">
@@ -375,18 +448,14 @@ const CheckAvailability = () => {
                     <MenuItem value="" disabled>
                       Select Location
                     </MenuItem>
-                    {locationsLoading ? (
-                      <MenuItem disabled>
-                        <CircularProgress size={20} />
-                      </MenuItem>
-                    ) : locationsError ? (
-                      <MenuItem disabled>Error fetching floors</MenuItem>
-                    ) : (
+                    {uniqueBuildings.length > 0 ? (
                       uniqueBuildings.map(([id, name]) => (
                         <MenuItem key={id} value={name}>
                           {name}
                         </MenuItem>
                       ))
+                    ) : (
+                      <MenuItem disabled>No locations available</MenuItem>
                     )}
                   </Select>
                 )}
@@ -405,30 +474,28 @@ const CheckAvailability = () => {
                     label="Select Floor"
                     disabled={!selectedLocation}
                     value={field.value}
-                    onChange={(event) => field.onChange(event.target.value)}>
+                    onChange={(event) => field.onChange(event.target.value)}
+                  >
                     <MenuItem value="">Select Floor</MenuItem>
-
-                    {/* {workLocations
-                      .filter(
-                        (unit) =>
-                          unit.building.buildingName === selectedLocation
-                      ) */}
-                    {workLocations
-                      .filter(
-                        (unit) =>
-                          unit.building &&
-                          unit.building.buildingName &&
-                          unit.building.buildingName === selectedLocation
-                      )
-                      .sort(sortByUnitNo) // Sort using the custom sort function
-                      .map((unit) => (
-                        <MenuItem key={unit._id} value={unit.unitNo}>
-                          {formatUnitDisplay(
-                            unit.unitNo,
-                            unit.building.buildingName
-                          )}
-                        </MenuItem>
-                      ))}
+                    {workLocations.length > 0 ? (
+                      workLocations
+                        .filter(
+                          (unit) =>
+                            unit.building &&
+                            unit.building.buildingName === selectedLocation
+                        )
+                        .sort(sortByUnitNo)
+                        .map((unit) => (
+                          <MenuItem key={unit._id} value={unit.unitNo}>
+                            {formatUnitDisplay(
+                              unit.building.buildingName,
+                              unit.unitNo,
+                            )}
+                          </MenuItem>
+                        ))
+                    ) : (
+                      <MenuItem disabled>No floors found</MenuItem>
+                    )}
                   </Select>
                 )}
               />

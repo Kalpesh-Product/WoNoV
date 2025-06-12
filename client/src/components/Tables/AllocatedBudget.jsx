@@ -33,6 +33,7 @@ const AllocatedBudget = ({
   isLoading,
   variant,
   hideTitle,
+  noInvoice=false,
   noFilter = false,
 }) => {
   const axios = useAxiosPrivate();
@@ -50,22 +51,21 @@ const AllocatedBudget = ({
   });
 
   const department = usePageDepartment();
-const onUpload = (data, row) => {
-  const file = data.invoiceImage;
+  const onUpload = (data, row) => {
+    const file = data.invoiceImage;
 
-  if (!file || !row?.id) {
-    toast.error("Missing file or selected row.");
-    return;
-  }
+    if (!file || !row?.id) {
+      toast.error("Missing file or selected row.");
+      return;
+    }
 
-  const formData = new FormData();
-  formData.append("invoice", file);
-  formData.append("rowId", row.id);
-  formData.append("departmentName", department?.name || ""); // ✅ append it here
+    const formData = new FormData();
+    formData.append("invoice", file);
+    formData.append("rowId", row.id);
+    formData.append("departmentName", department?.name || ""); // ✅ append it here
 
-  uploadInvoiceMutation(formData); // ✅ pass just FormData
-};
-
+    uploadInvoiceMutation(formData); // ✅ pass just FormData
+  };
 
   const { mutate: uploadInvoiceMutation, isPending: isUploadPending } =
     useMutation({
@@ -195,9 +195,10 @@ const onUpload = (data, row) => {
   }, [filteredMonths, selectedMonthIndex, groupedData]);
 
   const enhancedColumns = useMemo(() => {
-    return [
-      ...monthDataForSelectedType.columns,
-      {
+    const baseColumns = [...monthDataForSelectedType.columns];
+
+    if (!noInvoice) {
+      baseColumns.push({
         field: "actions",
         headerName: "Actions",
         pinned: "right",
@@ -228,9 +229,11 @@ const onUpload = (data, row) => {
             </div>
           );
         },
-      },
-    ];
-  }, [monthDataForSelectedType.columns]);
+      });
+    }
+
+    return baseColumns;
+  }, [monthDataForSelectedType.columns, noInvoice]);
 
   console.log("Enhanced columns : ", enhancedColumns);
 

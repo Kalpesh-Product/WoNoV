@@ -157,35 +157,33 @@ const ManageVisitors = () => {
 
   return (
     <div className="p-4">
-      <PageFrame>
-        <AgTable
-          key={visitorsData.length}
-          search={true}
-          searchColumn={"Asset Number"}
-          tableTitle={"Visitors Today"}
-          data={[
-            ...visitorsData.map((item, index) => ({
-              srNo: index + 1,
-              mongoId: item._id,
-              firstName: item.firstName,
-              lastName: item.lastName,
-              address: item.address,
-              phoneNumber: item.phoneNumber,
-              email: item.email,
-              purposeOfVisit: item.purposeOfVisit,
-              toMeet: !item?.toMeet
-                ? null
-                : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
-              checkInRaw: item.checkIn,
-              checkOutRaw: item.checkOut,
-              checkIn: humanTime(item.checkIn),
-              checkOut: item.checkOut ? humanTime(item.checkOut) : "",
-            })),
-          ]}
-          columns={visitorsColumns}
-          handleClick={handleAddAsset}
-        />
-      </PageFrame>
+      <AgTable
+        key={visitorsData.length}
+        search={true}
+        searchColumn={"Asset Number"}
+        tableTitle={"Visitors Today"}
+        data={[
+          ...visitorsData.map((item, index) => ({
+            srNo: index + 1,
+            mongoId: item._id,
+            firstName: item.firstName,
+            lastName: item.lastName,
+            address: item.address,
+            phoneNumber: item.phoneNumber,
+            email: item.email,
+            purposeOfVisit: item.purposeOfVisit,
+            toMeet: !item?.toMeet
+              ? null
+              : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
+            checkInRaw: item.checkIn,
+            checkOutRaw: item.checkOut,
+            checkIn: humanTime(item.checkIn),
+            checkOut: item.checkOut ? humanTime(item.checkOut) : "",
+          })),
+        ]}
+        columns={visitorsColumns}
+        handleClick={handleAddAsset}
+      />
       <MuiModal
         open={isModalOpen}
         onClose={handleCloseModal}
@@ -237,26 +235,6 @@ const ManageVisitors = () => {
                   />
                 )}
 
-                {/* Address */}
-                {/* {isEditing ? (
-                  <Controller
-                    name="address"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Address"
-                        fullWidth
-                      />
-                    )}
-                  />
-                ) : (
-                  <DetalisFormatted
-                    title="Address"
-                    detail={selectedVisitor.address}
-                  />
-                )} */}
 
                 {/* Phone Number */}
                 {isEditing ? (

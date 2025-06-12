@@ -106,7 +106,7 @@ const meetingSchema = new mongoose.Schema(
     },
     externalClient: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "ExternalCompany",
+      ref: "Visitor",
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,

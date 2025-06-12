@@ -10,7 +10,7 @@ const MaintenanceFinance = () => {
   const tabs = [
     { label: "Budget", path: "budget" },
     { label: "Payment Schedule", path: "payment-schedule" },
-    { label: "Reimbursement", path: "reimbursement" },
+    { label: "Voucher", path: "voucher" },
   ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"

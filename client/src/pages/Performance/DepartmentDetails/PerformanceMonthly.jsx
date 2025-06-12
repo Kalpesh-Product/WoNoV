@@ -28,10 +28,7 @@ const PerformanceMonthly = () => {
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
 
-  const departmentAccess = [
-    "67b2cf85b9b6ed5cedeb9a2e",
-    "6798bab9e469e809084e249e",
-  ];
+    const departmentAccess = ["67b2cf85b9b6ed5cedeb9a2e","6798bab9e469e809084e249e"]
 
   const isTop = auth.user.departments.some((item) => {
     return departmentAccess.includes(item._id.toString());
@@ -75,6 +72,7 @@ const PerformanceMonthly = () => {
       queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
       toast.success(data.message || "KPA Added");
       reset();
+      reset();
       setOpenModal(false);
     },
     onError: (error) => {
@@ -94,6 +92,7 @@ const PerformanceMonthly = () => {
     mutationKey: ["updateMonthlyKpa"],
     mutationFn: async (data) => {
       console.log("Data inside query", data);
+      console.log("Data inside query", data);
       const response = await axios.patch(
         `/api/performance/update-status/${data}/KPA`
       );
@@ -107,8 +106,8 @@ const PerformanceMonthly = () => {
       toast.success(data.message || "KPA updated");
     },
     onError: (error) => {
-      toast.success("KPA updated");
-      // toast.error(error.message || "Error Updating");
+      // toast.success("KPA updated");
+      toast.error(error.message || "Error Updating");
     },
   });
   //--------------UPDATE REQUEST FOR MONTHLY KPA-----------------//
@@ -141,6 +140,7 @@ const PerformanceMonthly = () => {
     },
   });
   const departmentColumns = [
+    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "KPA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
@@ -182,8 +182,9 @@ const PerformanceMonthly = () => {
             cellRenderer: (params) => (
               <div
                 role="button"
-                onClick={() => updateMonthlyKpa(params.data.id)}
-                className="p-2">
+                onClick={() => updateMonthlyKpa(params.data.mongoId)}
+                className="p-2"
+              >
                 <PrimaryButton
                   title={"Mark As Done"}
                   disabled={!params.node.selected}
@@ -294,10 +295,12 @@ const PerformanceMonthly = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Monthly KPA"}>
+        title={"Add Monthly KPA"}
+      >
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
-          className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+          className="grid grid-cols-1 lg:grid-cols-1 gap-4"
+        >
           <Controller
             name="kpaName"
             control={control}
