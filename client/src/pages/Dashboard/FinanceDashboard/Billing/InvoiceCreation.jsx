@@ -7,31 +7,35 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
-import { TextField, IconButton, MenuItem } from "@mui/material";
+import { TextField, MenuItem } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import UploadFileInput from "../../../../components/UploadFileInput";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { queryClient } from "../../../../main";
 
 const InvoiceCreation = () => {
   const navigate = useNavigate();
+  const axios = useAxiosPrivate();
 
   const [viewModal, setViewModal] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
   const [viewAddTemplateModal, setViewAddTemplateModal] = useState(false);
-  const axios = useAxiosPrivate();
 
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
     queryFn: async () => {
-      try {
-        const response = await axios.get("/api/sales/co-working-clients");
-        const data = response.data.filter((item) => item.isActive);
-        return data;
-      } catch (error) {
-        console.error("Error fetching clients data:", error);
-      }
+      const response = await axios.get("/api/sales/co-working-clients");
+      return response.data.filter((item) => item.isActive);
+    },
+  });
+
+  const { data: invoiceData = [], isPending: isInvoicePending } = useQuery({
+    queryKey: ["invoiceData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/finance/client-invoices");
+      return response.data;
     },
   });
 
@@ -39,44 +43,72 @@ const InvoiceCreation = () => {
     defaultValues: {
       title: "",
       invoiceFile: null,
-      clientId: "",
+      client: "",
       date: null,
       status: false,
     },
   });
 
   const onSubmitTemplate = (data) => {
-    console.log("Template Submitted:", {
-      ...data,
-      file: data.file?.name,
-    });
+    const file = data.invoiceFile;
+    if (!file) return toast.error("Missing file");
 
-    toast.success("Template Added!");
-    setViewAddTemplateModal(false);
-    reset();
+    const formData = new FormData();
+    formData.append("title", data.title);
+    formData.append("client-invoice", file);
+    formData.append("client", data.client);
+    formData.append(
+      "invoiceUploadedAt",
+      data.date?.toISOString() || new Date().toISOString()
+    );
+
+    submitInvoice(formData);
   };
 
   const { mutate: submitInvoice, isPending: isSubmitPending } = useMutation({
     mutationKey: ["submitInvoice"],
-    mutation: async (data) => {},
-    onSuccess: () => {},
-    onError: (error) => {},
+    mutationFn: async (data) => {
+      const response = await axios.post(
+        "/api/finance/upload-client-invoice",
+        data,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Invoice uploaded");
+      queryClient.invalidateQueries({ queryKey: ["invoiceData"] });
+      reset();
+      setViewAddTemplateModal(false);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error uploading invoice");
+    },
   });
 
   const invoiceCreationColumns = [
-    { field: "invoiceName", headerName: "Invoice Name", flex: 1 },
     {
-      field: "emailInvoice",
-      headerName: "Email Invoice",
-      cellRenderer: () => (
-        <div className="flex gap-2">
-          <span className="text-primary hover:underline text-content cursor-pointer">
-            Send Email
-          </span>
-        </div>
-      ),
+      headerName: "Client",
+      field: "clientName",
+      flex: 1,
     },
-    { field: "date", headerName: "Uplaod Date", flex: 1 },
+    {
+      headerName: "Invoice Name",
+      field: "invoiceName",
+      flex: 1,
+    },
+    {
+      headerName: "Uploaded On",
+      field: "uploadDate",
+      flex: 1,
+    },
+    {
+      headerName: "Status",
+      field: "status",
+      flex: 1,
+    },
     {
       field: "actions",
       headerName: "Actions",
@@ -96,48 +128,25 @@ const InvoiceCreation = () => {
     },
   ];
 
-  const rows = [
-    {
-      id: 1,
-      invoiceName: "Chair Invoice",
-      date: "Jan 6, 2025",
-    },
-    {
-      id: 2,
-      invoiceName: "Table Invoice",
-      date: "Jan 6, 2025",
-    },
-    {
-      id: 3,
-      invoiceName: "AC Invoice",
-      date: "Jan 6, 2025",
-    },
-    {
-      id: 4,
-      invoiceName: "Laptop Invoice",
-      date: "Jan 6, 2025",
-    },
-    {
-      id: 5,
-      invoiceName: "John Doe Invoice",
-      date: "Jan 6, 2025",
-    },
-  ];
+  const rows = invoiceData.map((item) => ({
+    id: item._id,
+    clientName: item?.client?.clientName || "N/A",
+    invoiceName: item?.invoice?.name || "N/A",
+    uploadDate: dayjs(item?.invoiceUploadedAt).format("DD-MM-YYYY"),
+    status: item?.paidStatus || item?.paymentStatus ? "Paid" : "Unpaid",
+    ...item,
+  }));
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <AgTable
-          data={rows}
-          columns={invoiceCreationColumns}
-          search
-          tableTitle={"Invoice"}
-          buttonTitle={"Add Invoice"}
-          handleClick={() => {
-            setViewAddTemplateModal(true);
-          }}
-        />
-      </div>
+      <AgTable
+        data={rows}
+        columns={invoiceCreationColumns}
+        search
+        tableTitle="Invoice"
+        buttonTitle="Add Invoice"
+        handleClick={() => setViewAddTemplateModal(true)}
+      />
 
       {/* View Details Modal */}
       {viewModal && viewDetails && (
@@ -147,45 +156,62 @@ const InvoiceCreation = () => {
             setViewModal(false);
             setViewDetails(null);
           }}
-          title="Invoice Detail"
+          title="Invoice Details"
         >
           <div className="space-y-3">
             <DetalisFormatted
-              title="Invoice Name"
-              detail={viewDetails.invoiceName}
+              title="Client Name"
+              detail={viewDetails?.client?.clientName || "N/A"}
             />
-            <DetalisFormatted title="KRAs" detail={viewDetails.date} />
+            <DetalisFormatted
+              title="Invoice Name"
+              detail={viewDetails?.invoice?.name || "N/A"}
+            />
+            <DetalisFormatted
+              title="Invoice Link"
+              detail={
+                viewDetails?.invoice?.link ? (
+                  <a
+                    href={viewDetails.invoice.link}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View PDF
+                  </a>
+                ) : (
+                  "N/A"
+                )
+              }
+            />
+            <DetalisFormatted
+              title="Uploaded At"
+              detail={dayjs(viewDetails?.invoiceUploadedAt).format(
+                "DD-MM-YYYY"
+              )}
+            />
+            <DetalisFormatted
+              title="Status"
+              detail={
+                viewDetails?.paidStatus || viewDetails?.paymentStatus
+                  ? "Paid"
+                  : "Unpaid"
+              }
+            />
           </div>
         </MuiModal>
       )}
 
-      {/* Add Template Modal */}
+      {/* Add Invoice Modal */}
       {viewAddTemplateModal && (
         <MuiModal
           open={viewAddTemplateModal}
           onClose={() => setViewAddTemplateModal(false)}
           title="Add New Invoice"
-          primaryAction={{
-            label: "Submit",
-            onClick: handleSubmit(onSubmitTemplate),
-          }}
         >
-          <form className="flex flex-col gap-4 mt-2">
-            {/* Title */}
-            <Controller
-              name="title"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  size="small"
-                  label="Invoice Title"
-                  fullWidth
-                  {...field}
-                />
-              )}
-            />
-
-            {/* File Upload */}
+          <form
+            onSubmit={handleSubmit(onSubmitTemplate)}
+            className="flex flex-col gap-4 mt-2"
+          >
             <Controller
               name="invoiceFile"
               control={control}
@@ -198,8 +224,9 @@ const InvoiceCreation = () => {
                 />
               )}
             />
+
             <Controller
-              name="clientId"
+              name="client"
               control={control}
               rules={{ required: "Client is required" }}
               render={({ field }) => (
@@ -208,8 +235,7 @@ const InvoiceCreation = () => {
                   select
                   size="small"
                   fullWidth
-                  label={"Select Client"}
-                  placeholder="Zomato"
+                  label="Select Client"
                 >
                   <MenuItem value="" disabled>
                     Select Client
@@ -225,7 +251,6 @@ const InvoiceCreation = () => {
               )}
             />
 
-            {/* Date */}
             <Controller
               name="date"
               control={control}
@@ -240,6 +265,7 @@ const InvoiceCreation = () => {
                 />
               )}
             />
+
             <Controller
               name="status"
               control={control}
@@ -249,18 +275,12 @@ const InvoiceCreation = () => {
                   fullWidth
                   size="small"
                   disabled
-                  value={field.value ? "Paid" : "Unpaid"} // ✅ convert boolean to label
+                  value={field.value ? "Paid" : "Unpaid"}
                 />
               )}
             />
 
-            <PrimaryButton
-              title="Add Invoice"
-              handleSubmit={() => {
-                toast.success("Added invoice successfully");
-                setViewAddTemplateModal(false);
-              }}
-            />
+            <PrimaryButton disabled={isSubmitPending} isLoading={isSubmitPending} title="Add Invoice" type="submit" />
           </form>
         </MuiModal>
       )}

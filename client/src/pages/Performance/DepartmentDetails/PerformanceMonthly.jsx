@@ -32,17 +32,7 @@ const PerformanceMonthly = () => {
     "67b2cf85b9b6ed5cedeb9a2e",
     "6798bab9e469e809084e249e",
   ];
-  const departmentAccess = [
-    "67b2cf85b9b6ed5cedeb9a2e",
-    "6798bab9e469e809084e249e",
-  ];
 
-  const isTop = auth.user.departments.some((item) => {
-    return departmentAccess.includes(item._id.toString());
-  });
-
-  const isHr = department === "HR";
-  const showCheckBox = !isTop || isHr;
   const isTop = auth.user.departments.some((item) => {
     return departmentAccess.includes(item._id.toString());
   });
@@ -54,7 +44,6 @@ const PerformanceMonthly = () => {
     handleSubmit: submitDailyKra,
     control,
     formState: { errors },
-    reset,
     reset,
   } = useForm({
     mode: "onChange",
@@ -305,10 +294,12 @@ const PerformanceMonthly = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Monthly KPA"}>
+        title={"Add Monthly KPA"}
+      >
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
-          className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+          className="grid grid-cols-1 lg:grid-cols-1 gap-4"
+        >
           <Controller
             name="kpaName"
             control={control}
