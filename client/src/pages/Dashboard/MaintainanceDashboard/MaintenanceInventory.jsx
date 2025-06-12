@@ -14,6 +14,7 @@ import useAuth from "../../../hooks/useAuth";
 import dayjs from "dayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const MaintenanceInventory = () => {
   const { auth } = useAuth();
@@ -116,8 +117,7 @@ const MaintenanceInventory = () => {
           onClick={() => {
             handleDetailsClick(params.data);
           }}
-          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
-        >
+          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center">
           <span className="text-subtitle">
             <MdOutlineRemoveRedEye />
           </span>
@@ -225,24 +225,23 @@ const MaintenanceInventory = () => {
 
   return (
     <div className="p-4">
-      <AgTable
-        key={inventoryData.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"List Of Inventory"}
-        buttonTitle={"Add Inventory"}
-        data={[
-          
-        ]}
-        columns={assetColumns}
-        handleClick={handleAddAsset}
-      />
+      <PageFrame>
+        <AgTable
+          key={inventoryData.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"List Of Inventory"}
+          buttonTitle={"Add Inventory"}
+          data={[]}
+          columns={assetColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
 
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === "view" ? "View Details" : "Add Inventory"}
-      >
+        title={modalMode === "view" ? "View Details" : "Add Inventory"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -259,8 +258,7 @@ const MaintenanceInventory = () => {
                           errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                        } `}
-                      >
+                        } `}>
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -270,8 +268,7 @@ const MaintenanceInventory = () => {
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}
-                        >
+                          }}>
                           <Button
                             variant="outlined"
                             component="label"
@@ -286,8 +283,7 @@ const MaintenanceInventory = () => {
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}
-                          >
+                            }}>
                             Select Image
                             <input
                               type="file"
@@ -313,8 +309,7 @@ const MaintenanceInventory = () => {
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}
-                          >
+                            }}>
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -332,8 +327,7 @@ const MaintenanceInventory = () => {
                       label="Asset Type"
                       size="small"
                       helperText={!!errors.assetType?.message}
-                      select
-                    >
+                      select>
                       <MenuItem value="" disabled>
                         Select an Asset Type
                       </MenuItem>
@@ -355,8 +349,7 @@ const MaintenanceInventory = () => {
                       {...field}
                       select
                       label="Department"
-                      size="small"
-                    >
+                      size="small">
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -377,8 +370,7 @@ const MaintenanceInventory = () => {
                       fullWidth
                       select
                       label="Category"
-                      size="small"
-                    >
+                      size="small">
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -398,8 +390,7 @@ const MaintenanceInventory = () => {
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small"
-                    >
+                      size="small">
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}

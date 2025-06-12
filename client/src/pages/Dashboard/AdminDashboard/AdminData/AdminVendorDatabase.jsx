@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const AdminVendorDatabase = () => {
   const { auth } = useAuth();
@@ -65,7 +66,6 @@ const AdminVendorDatabase = () => {
     },
   });
 
-
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
     mutationFn: async (data) => {
@@ -117,12 +117,11 @@ const AdminVendorDatabase = () => {
             className="text-subtitle cursor-pointer"
             onClick={() => {
               const fullVendor = vendorsList.find(
-                (v) => v.name === params.data.name && v.email === params.data.email
+                (v) =>
+                  v.name === params.data.name && v.email === params.data.email
               );
               handleDetailsClick(fullVendor);
-            }}
-
-          >
+            }}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -241,12 +240,11 @@ const AdminVendorDatabase = () => {
       gstNumber: "33AABCL1234Q1Z4",
       services: ["Office Plants", "Landscaping"],
       rating: 4.6,
-    }
+    },
   ];
 
-
   // const vendorsList = []
-  
+
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
     setModalMode("view");
@@ -267,20 +265,23 @@ const AdminVendorDatabase = () => {
 
   return (
     <>
-      <AgTable
-        key={vendorsList.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"Vendor Database"}
-        buttonTitle={"Add Vendor"}
-        data={[
-         
-        ]}
-        columns={vendorColumns}
-        handleClick={handleAddAsset}
-      />
+      <PageFrame>
+        <AgTable
+          key={vendorsList.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"Vendor Database"}
+          buttonTitle={"Add Vendor"}
+          data={[]}
+          columns={vendorColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "add" ? "Add Vendor" : "Vendor Details"}>
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalMode === "add" ? "Add Vendor" : "Vendor Details"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -417,7 +418,6 @@ const AdminVendorDatabase = () => {
                     />
                   )}
                 />
-
               </div>
               <div className="flex gap-4 justify-center items-center mt-4">
                 <PrimaryButton title="Submit" />
@@ -429,16 +429,33 @@ const AdminVendorDatabase = () => {
         {modalMode === "view" && selectedAsset && (
           <div className="p-4">
             <div className="grid grid-cols-2 gap-4">
-              <DetalisFormatted title="Vendor Name" detail={selectedAsset.name} />
-              <DetalisFormatted title="Contact Person" detail={selectedAsset.contactPerson} />
+              <DetalisFormatted
+                title="Vendor Name"
+                detail={selectedAsset.name}
+              />
+              <DetalisFormatted
+                title="Contact Person"
+                detail={selectedAsset.contactPerson}
+              />
               <DetalisFormatted title="Phone" detail={selectedAsset.phone} />
               <DetalisFormatted title="Email" detail={selectedAsset.email} />
-              <DetalisFormatted title="GST Number" detail={selectedAsset.gstNumber} />
+              <DetalisFormatted
+                title="GST Number"
+                detail={selectedAsset.gstNumber}
+              />
               <div className="col-span-2">
-                <DetalisFormatted title="Address" detail={selectedAsset.address} gap="w-[20%]" />
+                <DetalisFormatted
+                  title="Address"
+                  detail={selectedAsset.address}
+                  gap="w-[20%]"
+                />
               </div>
               <div className="col-span-2">
-                <DetalisFormatted title="Services" detail={selectedAsset.services?.join(", ")} gap="w-[20%]" />
+                <DetalisFormatted
+                  title="Services"
+                  detail={selectedAsset.services?.join(", ")}
+                  gap="w-[20%]"
+                />
               </div>
               <DetalisFormatted title="Rating" detail={selectedAsset.rating} />
             </div>

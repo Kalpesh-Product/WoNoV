@@ -4,10 +4,11 @@ import PrimaryButton from "../../components/PrimaryButton";
 import useAuth from "../../hooks/useAuth";
 import { toast } from "sonner";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const ChangePassword = ({ pageTitle }) => {
   const { auth } = useAuth();
-    const axios = useAxiosPrivate();
+  const axios = useAxiosPrivate();
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -33,7 +34,7 @@ const ChangePassword = ({ pageTitle }) => {
         return;
       }
       const response = await axios.post("/api/users/check-password", {
-        currentPassword: formData.currentPassword
+        currentPassword: formData.currentPassword,
       });
       toast.success(response.data.message);
       setPasswordVerified(true);
@@ -81,77 +82,87 @@ const ChangePassword = ({ pageTitle }) => {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary uppercase">Change password</span>
+        <span className="text-title font-pmedium text-primary uppercase">
+          Change password
+        </span>
       </div>
+      <PageFrame>
+        <div>
+          {/* Current Password Field */}
+          <div className="mb-4 w-full flex justify-start items-center gap-4">
+            <TextField
+              size="small"
+              label="Current Password"
+              type="password"
+              // disabled={passwordVerified}
+              disabled={true}
+              sx={{ width: "49.3%" }}
+              value={formData.currentPassword}
+              onChange={(e) => handleChange("currentPassword", e.target.value)}
+              required
+            />
+            {!passwordVerified && (
+              <PrimaryButton
+                title="Verify"
+                type="button"
+                disabled={true}
+                handleSubmit={handlePasswordCheck}
+              />
+            )}
+          </div>
 
-      {/* Current Password Field */}
-      <div className="mb-4 w-full flex justify-start items-center gap-4">
-        <TextField
-          size="small"
-          label="Current Password"
-          type="password"
-          // disabled={passwordVerified}
-          disabled={true}
-          sx={{ width: "49.3%" }}
-          value={formData.currentPassword}
-          onChange={(e) => handleChange("currentPassword", e.target.value)}
-          required
-        />
-        {!passwordVerified && (
-          <PrimaryButton
-            title="Verify"
-            type="button"
-            disabled={true}
-            handleSubmit={handlePasswordCheck}
-          />
-        )}
-      </div>
+          {/* New Password and Confirm Password Fields */}
+          <div className="grid grid-cols-2 gap-4">
+            <TextField
+              size="small"
+              label="New Password"
+              disabled
+              type="password"
+              value={formData.newPassword}
+              onChange={(e) => handleChange("newPassword", e.target.value)}
+              fullWidth
+              required
+            />
+            <TextField
+              size="small"
+              label="Confirm Password"
+              type="password"
+              disabled
+              value={formData.confirmPassword}
+              onChange={(e) => handleChange("confirmPassword", e.target.value)}
+              fullWidth
+              required
+            />
+          </div>
 
-      {/* New Password and Confirm Password Fields */}
-      <div className="grid grid-cols-2 gap-4">
-        <TextField
-          size="small"
-          label="New Password"
-          disabled
-          type="password"
-          value={formData.newPassword}
-          onChange={(e) => handleChange("newPassword", e.target.value)}
-          fullWidth
-          required
-        />
-        <TextField
-          size="small"
-          label="Confirm Password"
-          type="password"
-          disabled
-          value={formData.confirmPassword}
-          onChange={(e) => handleChange("confirmPassword", e.target.value)}
-          fullWidth
-          required
-        />
-      </div>
+          {/* Error and Success Messages */}
+          <div className="mt-4">
+            {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+            {successMessage && (
+              <p className="text-green-500">{successMessage}</p>
+            )}
+          </div>
 
-      {/* Error and Success Messages */}
-      <div className="mt-4">
-        {errorMessage && <p className="text-red-500">{errorMessage}</p>}
-        {successMessage && <p className="text-green-500">{successMessage}</p>}
-      </div>
+          <div className="flex flex-col gap-3 text-gray-500">
+            <span className="text-subtitle">Password Requirements</span>
+            <ul className="text-content list-disc pl-5">
+              <li>Must be at least 8 characters long.</li>
+              <li>Should include both uppercase and lowercase letters.</li>
+              <li>Must contain at least one number or special character.</li>
+            </ul>
+          </div>
 
-      <div className="flex flex-col gap-3 text-gray-500">
-        <span className="text-subtitle">Password Requirements</span>
-        <ul className="text-content list-disc pl-5">
-          <li>Must be at least 8 characters long.</li>
-          <li>Should include both uppercase and lowercase letters.</li>
-          <li>Must contain at least one number or special character.</li>
-        </ul>
-      </div>
-
-      {/* Submit Button */}
-      <div className="mt-4 flex justify-center items-center">
-        <PrimaryButton title={"Submit"} handleSubmit={handlePasswordChange} disabled={true}>
-          Change Password
-        </PrimaryButton>
-      </div>
+          {/* Submit Button */}
+          <div className="mt-4 flex justify-center items-center">
+            <PrimaryButton
+              title={"Submit"}
+              handleSubmit={handlePasswordChange}
+              disabled={true}>
+              Change Password
+            </PrimaryButton>
+          </div>
+        </div>
+      </PageFrame>
     </div>
   );
 };

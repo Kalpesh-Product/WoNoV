@@ -12,6 +12,7 @@ import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import dayjs from "dayjs";
+import PageFrame from "./../../../components/Pages/PageFrame";
 
 const AdminAnnualExpenses = () => {
   const { auth } = useAuth();
@@ -64,7 +65,6 @@ const AdminAnnualExpenses = () => {
     },
   });
 
-
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
     mutationFn: async (data) => {
@@ -102,9 +102,8 @@ const AdminAnnualExpenses = () => {
     { field: "category", headerName: "Category" },
     { field: "expenseName", headerName: "Expense Name", flex: 1 },
     { field: "date", headerName: "Date" },
-    { field: "amount", headerName: "Amount (INR)" }
+    { field: "amount", headerName: "Amount (INR)" },
   ];
-
 
   const { data: assetsList = [] } = useQuery({
     queryKey: ["assetsList"],
@@ -151,7 +150,6 @@ const AdminAnnualExpenses = () => {
     },
   ];
 
-
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
     setModalMode("view");
@@ -172,21 +170,23 @@ const AdminAnnualExpenses = () => {
 
   return (
     <div className="p-4">
-      <AgTable
-        key={annualExpenses.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"Annual Expenses"}
-        buttonTitle={"Add Expense"}
-        data={[
-          
-        ]}
+      <PageFrame>
+        <AgTable
+          key={annualExpenses.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"Annual Expenses"}
+          buttonTitle={"Add Expense"}
+          data={[]}
+          columns={annualExpenseColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
 
-        columns={annualExpenseColumns}
-        handleClick={handleAddAsset}
-      />
-
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Expense">
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Add Expense">
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -201,14 +201,19 @@ const AdminAnnualExpenses = () => {
                       label="Category"
                       size="small"
                       helperText={!!errors.assetType?.message}
-                      select
-                    >
+                      select>
                       <MenuItem value="" disabled>
                         Select an Asset Type
                       </MenuItem>
-                      <MenuItem value="OfficeSupplies">Office Supplies</MenuItem>
-                      <MenuItem value="FacilityManagement">Facility Management</MenuItem>
-                      <MenuItem value="TravelArrangements">Travel Arrangements</MenuItem>
+                      <MenuItem value="OfficeSupplies">
+                        Office Supplies
+                      </MenuItem>
+                      <MenuItem value="FacilityManagement">
+                        Facility Management
+                      </MenuItem>
+                      <MenuItem value="TravelArrangements">
+                        Travel Arrangements
+                      </MenuItem>
                     </TextField>
                   )}
                 />

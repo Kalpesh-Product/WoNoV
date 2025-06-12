@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import { TextField } from "@mui/material";
 import MuiModal from "../../../components/MuiModal";
 import { DatePicker } from "@mui/x-date-pickers";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const AdminHolidaysEvents = ({ title }) => {
   const axios = useAxiosPrivate();
@@ -101,44 +102,56 @@ const AdminHolidaysEvents = ({ title }) => {
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center pb-4">
-        <span className="text-title font-pmedium text-primary">{title}</span>
-        <PrimaryButton title={"Add Holiday / Event"} handleSubmit={() => setModalOpen(true)} />
-      </div>
+      <PageFrame>
+        <div>
+          <div className="flex justify-between items-center pb-4">
+            <span className="text-title font-pmedium text-primary">
+              {title}
+            </span>
+            <PrimaryButton
+              title={"Add Holiday / Event"}
+              handleSubmit={() => setModalOpen(true)}
+            />
+          </div>
 
-      <div>
-        <AgTable
-          key={holdiayEvents.length}
-          search={true}
-          searchColumn={"Holiday / Event Name"}
-          columns={holdiayEvents}
-          data={[
-            ...holidayEvents.map((holidays, index) => ({
-              id: index + 1, // Auto-increment Sr No
-              title: holidays.title, // Birthday Name
-              start: dayjs(new Date(holidays.start)).format("DD-MM-YYYY"), // Format as readable date
-            })),
-          ]}
-        />
-      </div>
+          <div>
+            <AgTable
+              key={holdiayEvents.length}
+              search={true}
+              searchColumn={"Holiday / Event Name"}
+              columns={holdiayEvents}
+              data={[
+                ...holidayEvents.map((holidays, index) => ({
+                  id: index + 1, // Auto-increment Sr No
+                  title: holidays.title, // Birthday Name
+                  start: dayjs(new Date(holidays.start)).format("DD-MM-YYYY"), // Format as readable date
+                })),
+              ]}
+            />
+          </div>
+        </div>
+      </PageFrame>
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Add Holiday / Event"
-      >
+        title="Add Holiday / Event">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <TextField
             label="Title"
             fullWidth
             size="small"
             value={newEvent.title}
-            onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+            onChange={(e) =>
+              setNewEvent({ ...newEvent, title: e.target.value })
+            }
           />
           <DatePicker
             label="Date"
-            slotProps={{ textField: { size: 'small' } }}
+            slotProps={{ textField: { size: "small" } }}
             value={newEvent.startDate ? dayjs(newEvent.startDate) : null}
-            onChange={(newDate) => setNewEvent({ ...newEvent, startDate: newDate })}
+            onChange={(newDate) =>
+              setNewEvent({ ...newEvent, startDate: newDate })
+            }
           />
           <PrimaryButton type="submit" title="Add Holiday / Event" />
         </form>

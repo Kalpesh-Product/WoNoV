@@ -9,6 +9,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { useEffect, useState } from "react";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import dayjs from "dayjs";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const MeetingReports = () => {
   const axios = useAxiosPrivate();
@@ -78,8 +79,7 @@ const MeetingReports = () => {
                 onClick={() => {
                   handleSelectedMeeting(params.data);
                 }}
-                className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-              >
+                className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
                 <span className="text-subtitle">
                   <MdOutlineRemoveRedEye />
                 </span>
@@ -146,52 +146,53 @@ const MeetingReports = () => {
 
   return (
     <div className="flex flex-col gap-8 p-4">
-      <div>
-        {!isMyMeetingsPending ? (
-          <AgTable
-            search={true}
-            exportData
-            tableTitle={"Meetings Reports"}
-            data={[
-              ...myMeetings.map((item, index) => ({
-                srNo: index + 1,
-                id: index + 1,
-                department: item.department,
-                roomName: item.roomName,
-                unitNo: item.location?.unitNo,
-                unitName: item.location?.unitName,
-                buildingName: item.location?.building?.buildingName,
-                meetingType: item.meetingType,
-                housekeepingStatus: item.housekeepingStatus,
-                date: dayjs(item.date).format("DD-MM-YYYY"),
-                startTime: item.startTime,
-                endTime: item.endTime,
-                duration: item.duration,
-                meetingStatus: item.meetingStatus,
-                agenda: item.agenda,
-                subject: item.subject,
-                housekeepingChecklist: item.housekeepingChecklist,
-                participants: item.participants
-                  ?.map(
-                    (p) =>
-                      `${p.firstName || ""} ${p.lastName || ""} (${
-                        p.email || ""
-                      })`
-                  )
-                  .join(", "),
-              })),
-            ]}
-            columns={meetingReportsColumn}
-          />
-        ) : (
-          <CircularProgress />
-        )}
-      </div>
+      <PageFrame>
+        <div>
+          {!isMyMeetingsPending ? (
+            <AgTable
+              search={true}
+              exportData
+              tableTitle={"Meetings Reports"}
+              data={[
+                ...myMeetings.map((item, index) => ({
+                  srNo: index + 1,
+                  id: index + 1,
+                  department: item.department,
+                  roomName: item.roomName,
+                  unitNo: item.location?.unitNo,
+                  unitName: item.location?.unitName,
+                  buildingName: item.location?.building?.buildingName,
+                  meetingType: item.meetingType,
+                  housekeepingStatus: item.housekeepingStatus,
+                  date: dayjs(item.date).format("DD-MM-YYYY"),
+                  startTime: item.startTime,
+                  endTime: item.endTime,
+                  duration: item.duration,
+                  meetingStatus: item.meetingStatus,
+                  agenda: item.agenda,
+                  subject: item.subject,
+                  housekeepingChecklist: item.housekeepingChecklist,
+                  participants: item.participants
+                    ?.map(
+                      (p) =>
+                        `${p.firstName || ""} ${p.lastName || ""} (${
+                          p.email || ""
+                        })`
+                    )
+                    .join(", "),
+                })),
+              ]}
+              columns={meetingReportsColumn}
+            />
+          ) : (
+            <CircularProgress />
+          )}
+        </div>
+      </PageFrame>
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Meeting Details"}
-      >
+        title={"Meeting Details"}>
         {!isMyMeetingsPending && selectedMeeting ? (
           <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
             <DetalisFormatted

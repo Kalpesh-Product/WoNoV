@@ -14,6 +14,7 @@ import useAuth from "../../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import dayjs from "dayjs";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const ItAmcRecords = () => {
   const { auth } = useAuth();
@@ -120,18 +121,17 @@ const ItAmcRecords = () => {
           <span
             className="text-subtitle cursor-pointer"
             onClick={() => {
-              const original = assetsList.find(a => a.name === params.data.assetName);
+              const original = assetsList.find(
+                (a) => a.name === params.data.assetName
+              );
               handleDetailsClick(original);
-            }}
-
-          >
+            }}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
       ),
     },
   ];
-
 
   // const { data: assetsList = [] } = useQuery({
   //   queryKey: ["assetsList"],
@@ -195,7 +195,7 @@ const ItAmcRecords = () => {
       vendor: { name: "PowerTech India" },
     },
     {
-      name: "MacBook Pro 14\" M1",
+      name: 'MacBook Pro 14" M1',
       department: { name: "IT" },
       category: { categoryName: "Laptop" },
       subCategory: { categoryName: "Developer Machine" },
@@ -256,7 +256,6 @@ const ItAmcRecords = () => {
     },
   ];
 
-
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
     setModalMode("view");
@@ -277,21 +276,23 @@ const ItAmcRecords = () => {
 
   return (
     <>
-      <AgTable
-        key={assetsList.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"AMC Records"}
-        buttonTitle={"Add Record"}
-        data={[
-          
-        ]}
+      <PageFrame>
+        <AgTable
+          key={assetsList.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"AMC Records"}
+          buttonTitle={"Add Record"}
+          data={[]}
+          columns={assetColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
 
-        columns={assetColumns}
-        handleClick={handleAddAsset}
-      />
-
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "add" ? "Add Record" : "AMC Details"}>
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalMode === "add" ? "Add Record" : "AMC Details"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -328,8 +329,7 @@ const ItAmcRecords = () => {
                       select
                       fullWidth
                       error={!!errors.department}
-                      helperText={errors.department?.message}
-                    >
+                      helperText={errors.department?.message}>
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -352,8 +352,7 @@ const ItAmcRecords = () => {
                       select
                       fullWidth
                       error={!!errors.categoryId}
-                      helperText={errors.categoryId?.message}
-                    >
+                      helperText={errors.categoryId?.message}>
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -376,8 +375,7 @@ const ItAmcRecords = () => {
                       select
                       fullWidth
                       error={!!errors.subCategoryId}
-                      helperText={errors.subCategoryId?.message}
-                    >
+                      helperText={errors.subCategoryId?.message}>
                       {assetsCategories
                         .flatMap((cat) => cat.subCategories || [])
                         .map((sub) => (
@@ -496,8 +494,7 @@ const ItAmcRecords = () => {
                       select
                       fullWidth
                       error={!!errors.vendor}
-                      helperText={errors.vendor?.message}
-                    >
+                      helperText={errors.vendor?.message}>
                       {vendorDetials.map((vendor) => (
                         <MenuItem key={vendor._id} value={vendor._id}>
                           {vendor.name}
@@ -513,28 +510,52 @@ const ItAmcRecords = () => {
                 <PrimaryButton title="Submit" isLoading={isAddingAsset} />
               </div>
             </form>
-
           </div>
         )}
         {modalMode === "view" && selectedAsset && (
           <div className="p-4 w-full">
             <div className="grid grid-cols-2 gap-4">
-              <DetalisFormatted title="Asset Name" detail={selectedAsset.name} />
-              <DetalisFormatted title="Department" detail={selectedAsset.department?.name || "N/A"} />
-              <DetalisFormatted title="Category" detail={selectedAsset.category?.categoryName || "N/A"} />
-              <DetalisFormatted title="Sub-Category" detail={selectedAsset.subCategory?.categoryName || "N/A"} />
+              <DetalisFormatted
+                title="Asset Name"
+                detail={selectedAsset.name}
+              />
+              <DetalisFormatted
+                title="Department"
+                detail={selectedAsset.department?.name || "N/A"}
+              />
+              <DetalisFormatted
+                title="Category"
+                detail={selectedAsset.category?.categoryName || "N/A"}
+              />
+              <DetalisFormatted
+                title="Sub-Category"
+                detail={selectedAsset.subCategory?.categoryName || "N/A"}
+              />
               <DetalisFormatted title="Brand" detail={selectedAsset.brand} />
               <DetalisFormatted
                 title="Price"
-                detail={`INR ${Number(selectedAsset.price).toLocaleString("en-IN")}`}
+                detail={`INR ${Number(selectedAsset.price).toLocaleString(
+                  "en-IN"
+                )}`}
               />
-              <DetalisFormatted title="Quantity" detail={selectedAsset.quantity} />
+              <DetalisFormatted
+                title="Quantity"
+                detail={selectedAsset.quantity}
+              />
               <DetalisFormatted
                 title="Purchase Date"
-                detail={dayjs(new Date(selectedAsset.purchaseDate)).format("DD-MM-YYYY")}
+                detail={dayjs(new Date(selectedAsset.purchaseDate)).format(
+                  "DD-MM-YYYY"
+                )}
               />
-              <DetalisFormatted title="Warranty" detail={`${selectedAsset.warranty} months`} />
-              <DetalisFormatted title="Vendor" detail={selectedAsset.vendor?.name || "N/A"} />
+              <DetalisFormatted
+                title="Warranty"
+                detail={`${selectedAsset.warranty} months`}
+              />
+              <DetalisFormatted
+                title="Vendor"
+                detail={selectedAsset.vendor?.name || "N/A"}
+              />
             </div>
           </div>
         )}

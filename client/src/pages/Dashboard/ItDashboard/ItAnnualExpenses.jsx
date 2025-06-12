@@ -5,6 +5,7 @@ import { inrFormat } from "../../../utils/currencyFormat";
 import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const ItAnnualExpenses = () => {
   const [data, setData] = useState([]);
@@ -27,8 +28,7 @@ const ItAnnualExpenses = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewExpense(params.data)}
-          >
+            onClick={() => handleViewExpense(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -113,25 +113,28 @@ const ItAnnualExpenses = () => {
 
   return (
     <div className="p-4">
-      <AgTable
-        key={expenseData.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"Annual Expenses"}
-        data={[
-         
-        ]}
-        columns={expenseColumns}
-      />
+      <PageFrame>
+        <AgTable
+          key={expenseData.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"Annual Expenses"}
+          data={[]}
+          columns={expenseColumns}
+        />
+      </PageFrame>
 
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"View details"}
-      >
+        title={"View details"}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
           <DetalisFormatted title="Category" detail={data?.category} />
-          <DetalisFormatted title="Expense Name" gap={"w-full"} detail={data?.expenseName} />
+          <DetalisFormatted
+            title="Expense Name"
+            gap={"w-full"}
+            detail={data?.expenseName}
+          />
           <DetalisFormatted title="Date" detail={data?.date} />
           <DetalisFormatted
             title="Amount (INR)"

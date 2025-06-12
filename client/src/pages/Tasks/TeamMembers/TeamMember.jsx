@@ -8,11 +8,12 @@ import { useState } from "react";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { CircularProgress } from "@mui/material";
 import MuiModal from "../../../components/MuiModal";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const TeamMember = () => {
   const axios = useAxiosPrivate();
-    const [openModal, setOpenModal] = useState(false);
-    const [selectedMember, setSelectedMember] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
   const { data: taskList, isLoading } = useQuery({
     queryKey: ["taskList"],
     queryFn: async () => {
@@ -25,7 +26,7 @@ const TeamMember = () => {
     },
   });
 
-    const handleSelectedMember = (meeting) => {
+  const handleSelectedMember = (meeting) => {
     setSelectedMember(meeting);
     setOpenModal(true);
   };
@@ -37,28 +38,27 @@ const TeamMember = () => {
     { field: "role", headerName: "Role", flex: 1 },
     { field: "tasks", headerName: "Task", flex: 1 },
     // { field: "status", headerName: "Status", flex: 1 },
-     {
-          field: "action",
-          headerName: "Actions",
-          cellRenderer: (params) => {
-            return (
-              <>
-                <div className="flex gap-2 items-center">
-                  <div
-                    onClick={() => {
-                      handleSelectedMember(params.data);
-                    }}
-                    className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-                  >
-                    <span className="text-subtitle">
-                      <MdOutlineRemoveRedEye />
-                    </span>
-                  </div>
-                </div>
-              </>
-            );
-          },
-        },
+    {
+      field: "action",
+      headerName: "Actions",
+      cellRenderer: (params) => {
+        return (
+          <>
+            <div className="flex gap-2 items-center">
+              <div
+                onClick={() => {
+                  handleSelectedMember(params.data);
+                }}
+                className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
+                <span className="text-subtitle">
+                  <MdOutlineRemoveRedEye />
+                </span>
+              </div>
+            </div>
+          </>
+        );
+      },
+    },
   ];
 
   const teamMembersData = [
@@ -156,56 +156,45 @@ const TeamMember = () => {
 
   return (
     <div className="flex flex-col gap-8 p-4">
-      <div>
-        <AgTable
-          search={true}
-          searchColumn={"kra"}
-          tableTitle={"Team Members"}
-          data={
-            isLoading
-              ? []
-              : [
-                  ...taskList.map((task, index) => ({
-                    srNo: index + 1,
-                    name: task.name,
-                    email: task.email,
-                    role: task.role,
-                    tasks: task.tasks,
-                    status: task.status,
-                  })),
-                ]
-          }
-          columns={teamMembersColumn}
-        />
-      </div>
-       <MuiModal
-              open={openModal}
-              onClose={() => setOpenModal(false)}
-              title={"Team Member Details"}
-            >
-              {!isLoading && selectedMember ? (
-                <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
-                  <DetalisFormatted
-                    title="Name"
-                    detail={selectedMember?.name}
-                  />
-                  <DetalisFormatted
-                    title="Email"
-                    detail={selectedMember?.email}
-                  />
-                  <DetalisFormatted
-                    title="Role"
-                    detail={selectedMember?.role}
-                  />
-                  <DetalisFormatted
-                    title="Tasks"
-                    detail={selectedMember?.tasks}
-                  />
-                </div>
-              ) : (
-                <CircularProgress />
-              )}
-            </MuiModal>
+      <PageFrame>
+        <div>
+          <AgTable
+            search={true}
+            searchColumn={"kra"}
+            tableTitle={"Team Members"}
+            data={
+              isLoading
+                ? []
+                : [
+                    ...taskList.map((task, index) => ({
+                      srNo: index + 1,
+                      name: task.name,
+                      email: task.email,
+                      role: task.role,
+                      tasks: task.tasks,
+                      status: task.status,
+                    })),
+                  ]
+            }
+            columns={teamMembersColumn}
+          />
+        </div>
+      </PageFrame>
+      <MuiModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        title={"Team Member Details"}>
+        {!isLoading && selectedMember ? (
+          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+            <DetalisFormatted title="Name" detail={selectedMember?.name} />
+            <DetalisFormatted title="Email" detail={selectedMember?.email} />
+            <DetalisFormatted title="Role" detail={selectedMember?.role} />
+            <DetalisFormatted title="Tasks" detail={selectedMember?.tasks} />
+          </div>
+        ) : (
+          <CircularProgress />
+        )}
+      </MuiModal>
     </div>
   );
 };

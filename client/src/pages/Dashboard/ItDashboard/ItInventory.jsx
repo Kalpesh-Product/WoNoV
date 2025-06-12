@@ -15,6 +15,7 @@ import { inrFormat } from "../../../utils/currencyFormat";
 import dayjs from "dayjs";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const ItInventory = () => {
   const { auth } = useAuth();
@@ -69,132 +70,132 @@ const ItInventory = () => {
 
   const assetsList = [
     {
-      "department": {
-        "name": "IT"
+      department: {
+        name: "IT",
       },
-      "name": "Laptop",
-      "brand": "Dell",
-      "price": 60000,
-      "quantity": 5,
-      "purchaseDate": "2024-04-27T00:00:00",
-      "warranty": 24,
-      "vendor": {
-        "name": "TechVendor Pvt Ltd"
-      }
+      name: "Laptop",
+      brand: "Dell",
+      price: 60000,
+      quantity: 5,
+      purchaseDate: "2024-04-27T00:00:00",
+      warranty: 24,
+      vendor: {
+        name: "TechVendor Pvt Ltd",
+      },
     },
     {
-      "department": {
-        "name": "IT"
+      department: {
+        name: "IT",
       },
-      "name": "Router",
-      "brand": "Cisco",
-      "price": 20000,
-      "quantity": 3,
-      "purchaseDate": "2024-05-03T00:00:00",
-      "warranty": 36,
-      "vendor": {
-        "name": "Network Hub"
-      }
+      name: "Router",
+      brand: "Cisco",
+      price: 20000,
+      quantity: 3,
+      purchaseDate: "2024-05-03T00:00:00",
+      warranty: 36,
+      vendor: {
+        name: "Network Hub",
+      },
     },
     {
-      "department": {
-        "name": "IT"
+      department: {
+        name: "IT",
       },
-      "name": "External Hard Drive",
-      "brand": "Seagate",
-      "price": 7000,
-      "quantity": 10,
-      "purchaseDate": "2024-06-04T00:00:00",
-      "warranty": 12,
-      "vendor": {
-        "name": "Storage Solutions"
-      }
+      name: "External Hard Drive",
+      brand: "Seagate",
+      price: 7000,
+      quantity: 10,
+      purchaseDate: "2024-06-04T00:00:00",
+      warranty: 12,
+      vendor: {
+        name: "Storage Solutions",
+      },
     },
     {
-      "department": {
-        "name": "IT"
+      department: {
+        name: "IT",
       },
-      "name": "Firewall Appliance",
-      "brand": "Fortinet",
-      "price": 85000,
-      "quantity": 1,
-      "purchaseDate": "2024-07-12T00:00:00",
-      "warranty": 36,
-      "vendor": {
-        "name": "CyberSec Solutions"
-      }
+      name: "Firewall Appliance",
+      brand: "Fortinet",
+      price: 85000,
+      quantity: 1,
+      purchaseDate: "2024-07-12T00:00:00",
+      warranty: 36,
+      vendor: {
+        name: "CyberSec Solutions",
+      },
     },
     {
-      "department": {
-        "name": "IT"
+      department: {
+        name: "IT",
       },
-      "name": "Network Switch",
-      "brand": "Netgear",
-      "price": 15000,
-      "quantity": 4,
-      "purchaseDate": "2024-08-07T00:00:00",
-      "warranty": 24,
-      "vendor": {
-        "name": "Network Hub"
-      }
+      name: "Network Switch",
+      brand: "Netgear",
+      price: 15000,
+      quantity: 4,
+      purchaseDate: "2024-08-07T00:00:00",
+      warranty: 24,
+      vendor: {
+        name: "Network Hub",
+      },
     },
     {
-      "department": {
-        "name": "IT"
+      department: {
+        name: "IT",
       },
-      "name": "Server Rack",
-      "brand": "APC",
-      "price": 95000,
-      "quantity": 1,
-      "purchaseDate": "2024-09-14T00:00:00",
-      "warranty": 60,
-      "vendor": {
-        "name": "InfraTech India"
-      }
+      name: "Server Rack",
+      brand: "APC",
+      price: 95000,
+      quantity: 1,
+      purchaseDate: "2024-09-14T00:00:00",
+      warranty: 60,
+      vendor: {
+        name: "InfraTech India",
+      },
     },
     {
-      "department": {
-        "name": "IT"
+      department: {
+        name: "IT",
       },
-      "name": "KVM Switch",
-      "brand": "Aten",
-      "price": 12000,
-      "quantity": 2,
-      "purchaseDate": "2024-10-04T00:00:00",
-      "warranty": 36,
-      "vendor": {
-        "name": "DataCenter Supplies"
-      }
+      name: "KVM Switch",
+      brand: "Aten",
+      price: 12000,
+      quantity: 2,
+      purchaseDate: "2024-10-04T00:00:00",
+      warranty: 36,
+      vendor: {
+        name: "DataCenter Supplies",
+      },
     },
     {
-      "department": {
-        "name": "IT"
+      department: {
+        name: "IT",
       },
-      "name": "Patch Panel",
-      "brand": "D-Link",
-      "price": 3000,
-      "quantity": 6,
-      "purchaseDate": "2024-11-04T00:00:00",
-      "warranty": 24,
-      "vendor": {
-        "name": "CableTech Systems"
-      }
+      name: "Patch Panel",
+      brand: "D-Link",
+      price: 3000,
+      quantity: 6,
+      purchaseDate: "2024-11-04T00:00:00",
+      warranty: 24,
+      vendor: {
+        name: "CableTech Systems",
+      },
     },
     {
-      "department": {
-        "name": "IT"
+      department: {
+        name: "IT",
       },
-      "name": "Uninterruptible Power Supply (UPS)",
-      "brand": "APC",
-      "price": 22000,
-      "quantity": 2,
-      "purchaseDate": "2024-12-20T00:00:00",
-      "warranty": 36,
-      "vendor": {
-        "name": "PowerSafe Solutions"
-      }
-    }
-  ]
+      name: "Uninterruptible Power Supply (UPS)",
+      brand: "APC",
+      price: 22000,
+      quantity: 2,
+      purchaseDate: "2024-12-20T00:00:00",
+      warranty: 36,
+      vendor: {
+        name: "PowerSafe Solutions",
+      },
+    },
+  ];
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
@@ -245,8 +246,7 @@ const ItInventory = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleDetailsClick(params.data)}
-          >
+            onClick={() => handleDetailsClick(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -272,23 +272,25 @@ const ItInventory = () => {
     }
   };
 
-
   return (
     <div className="p-4">
-      <AgTable
-        key={assetsList.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"List Of Inventory"}
-        buttonTitle={"Add Inventory"}
-        data={[
-          
-        ]}
-        columns={assetColumns}
-        handleClick={handleAddAsset}
-      />
+      <PageFrame>
+        <AgTable
+          key={assetsList.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"List Of Inventory"}
+          buttonTitle={"Add Inventory"}
+          data={[]}
+          columns={assetColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={`${modalMode} Details`}>
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={`${modalMode} Details`}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -305,8 +307,7 @@ const ItInventory = () => {
                           errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                        } `}
-                      >
+                        } `}>
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -316,8 +317,7 @@ const ItInventory = () => {
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}
-                        >
+                          }}>
                           <Button
                             variant="outlined"
                             component="label"
@@ -332,8 +332,7 @@ const ItInventory = () => {
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}
-                          >
+                            }}>
                             Select Image
                             <input
                               type="file"
@@ -359,8 +358,7 @@ const ItInventory = () => {
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}
-                          >
+                            }}>
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -377,8 +375,7 @@ const ItInventory = () => {
                       {...field}
                       label="Asset Type"
                       helperText={!!errors.assetType?.message}
-                      select
-                    >
+                      select>
                       <MenuItem value="">Select an Asset Type</MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
@@ -398,8 +395,7 @@ const ItInventory = () => {
                       {...field}
                       select
                       label="Department"
-                      size="small"
-                    >
+                      size="small">
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -420,8 +416,7 @@ const ItInventory = () => {
                       fullWidth
                       select
                       label="Category"
-                      size="small"
-                    >
+                      size="small">
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -441,8 +436,7 @@ const ItInventory = () => {
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small"
-                    >
+                      size="small">
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}
@@ -586,7 +580,10 @@ const ItInventory = () => {
               title="Department"
               detail={selectedAsset?.department}
             />
-            <DetalisFormatted title="Category" detail={selectedAsset?.category} />
+            <DetalisFormatted
+              title="Category"
+              detail={selectedAsset?.category}
+            />
             <DetalisFormatted title="Brand" detail={selectedAsset?.brand} />
             <DetalisFormatted
               title="Price (INR)"

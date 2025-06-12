@@ -8,7 +8,13 @@ import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { Button, CircularProgress, FormHelperText, MenuItem, TextField } from "@mui/material";
+import {
+  Button,
+  CircularProgress,
+  FormHelperText,
+  MenuItem,
+  TextField,
+} from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -18,13 +24,13 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import { DateRange } from "@mui/icons-material";
 import humanDate from "../../../utils/humanDateForamt";
 import { queryClient } from "../../../main";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const HousekeepingTeamMembersSchedule = () => {
-
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);  
+  const [selectedUser, setSelectedUser] = useState(null);
   const [selectionRange, setSelectionRange] = useState({
     startDate: new Date(),
     endDate: new Date(),
@@ -47,123 +53,122 @@ const HousekeepingTeamMembersSchedule = () => {
 
   const unitAssignees = [
     {
-      "employee": {
-        "id": {
-          "_id": "emp001",
-          "firstName": "Gunaraj",
-          "lastName": ""
+      employee: {
+        id: {
+          _id: "emp001",
+          firstName: "Gunaraj",
+          lastName: "",
         },
-        "isActive": true,
-        "isReassigned": false
+        isActive: true,
+        isReassigned: false,
       },
-      "location": {
-        "_id": "loc001",
-        "unitNo": "5B",
-        "unitName": "5th B Wing",
-        "building": {
-          "_id": "bld001",
-          "buildingName": "Sunteck Kanaka"
-        }
+      location: {
+        _id: "loc001",
+        unitNo: "5B",
+        unitName: "5th B Wing",
+        building: {
+          _id: "bld001",
+          buildingName: "Sunteck Kanaka",
+        },
       },
-      "startDate": "2025-04-07T00:00:00.000Z",
-      "endDate": "2025-04-12T00:00:00.000Z",
-      "manager": "Machindranath Parkar"
+      startDate: "2025-04-07T00:00:00.000Z",
+      endDate: "2025-04-12T00:00:00.000Z",
+      manager: "Machindranath Parkar",
     },
     {
-      "employee": {
-        "id": {
-          "_id": "emp001",
-          "firstName": "Gunaraj",
-          "lastName": ""
+      employee: {
+        id: {
+          _id: "emp001",
+          firstName: "Gunaraj",
+          lastName: "",
         },
-        "isActive": true,
-        "isReassigned": false
+        isActive: true,
+        isReassigned: false,
       },
-      "location": {
-        "_id": "loc002",
-        "unitNo": "6A",
-        "unitName": "6th A Wing",
-        "building": {
-          "_id": "bld001",
-          "buildingName": "Sunteck Kanaka"
-        }
+      location: {
+        _id: "loc002",
+        unitNo: "6A",
+        unitName: "6th A Wing",
+        building: {
+          _id: "bld001",
+          buildingName: "Sunteck Kanaka",
+        },
       },
-      "startDate": "2025-04-07T00:00:00.000Z",
-      "endDate": "2025-04-12T00:00:00.000Z",
-      "manager": "Machindranath Parkar"
+      startDate: "2025-04-07T00:00:00.000Z",
+      endDate: "2025-04-12T00:00:00.000Z",
+      manager: "Machindranath Parkar",
     },
     {
-      "employee": {
-        "id": {
-          "_id": "emp002",
-          "firstName": "Shamim",
-          "lastName": ""
+      employee: {
+        id: {
+          _id: "emp002",
+          firstName: "Shamim",
+          lastName: "",
         },
-        "isActive": true,
-        "isReassigned": false
+        isActive: true,
+        isReassigned: false,
       },
-      "location": {
-        "_id": "loc003",
-        "unitNo": "7A",
-        "unitName": "7th A Wing",
-        "building": {
-          "_id": "bld001",
-          "buildingName": "Sunteck Kanaka"
-        }
+      location: {
+        _id: "loc003",
+        unitNo: "7A",
+        unitName: "7th A Wing",
+        building: {
+          _id: "bld001",
+          buildingName: "Sunteck Kanaka",
+        },
       },
-      "startDate": "2025-04-07T00:00:00.000Z",
-      "endDate": "2025-04-12T00:00:00.000Z",
-      "manager": "Machindranath Parkar"
+      startDate: "2025-04-07T00:00:00.000Z",
+      endDate: "2025-04-12T00:00:00.000Z",
+      manager: "Machindranath Parkar",
     },
     {
-      "employee": {
-        "id": {
-          "_id": "emp003",
-          "firstName": "Shreya",
-          "lastName": ""
+      employee: {
+        id: {
+          _id: "emp003",
+          firstName: "Shreya",
+          lastName: "",
         },
-        "isActive": true,
-        "isReassigned": false
+        isActive: true,
+        isReassigned: false,
       },
-      "location": {
-        "_id": "loc004",
-        "unitNo": "7B",
-        "unitName": "7th B Wing",
-        "building": {
-          "_id": "bld001",
-          "buildingName": "Sunteck Kanaka"
-        }
+      location: {
+        _id: "loc004",
+        unitNo: "7B",
+        unitName: "7th B Wing",
+        building: {
+          _id: "bld001",
+          buildingName: "Sunteck Kanaka",
+        },
       },
-      "startDate": "2025-04-07T00:00:00.000Z",
-      "endDate": "2025-04-12T00:00:00.000Z",
-      "manager": "Machindranath Parkar"
+      startDate: "2025-04-07T00:00:00.000Z",
+      endDate: "2025-04-12T00:00:00.000Z",
+      manager: "Machindranath Parkar",
     },
     {
-      "employee": {
-        "id": {
-          "_id": "emp004",
-          "firstName": "Farida",
-          "lastName": ""
+      employee: {
+        id: {
+          _id: "emp004",
+          firstName: "Farida",
+          lastName: "",
         },
-        "isActive": true,
-        "isReassigned": false
+        isActive: true,
+        isReassigned: false,
       },
-      "location": {
-        "_id": "loc005",
-        "unitNo": "DTC GF",
-        "unitName": "DTC Grd Floor",
-        "building": {
-          "_id": "bld001",
-          "buildingName": "Sunteck Kanaka"
-        }
+      location: {
+        _id: "loc005",
+        unitNo: "DTC GF",
+        unitName: "DTC Grd Floor",
+        building: {
+          _id: "bld001",
+          buildingName: "Sunteck Kanaka",
+        },
       },
-      "startDate": "2025-04-07T00:00:00.000Z",
-      "endDate": "2025-04-12T00:00:00.000Z",
-      "manager": "Machindranath Parkar"
-    }
+      startDate: "2025-04-07T00:00:00.000Z",
+      endDate: "2025-04-12T00:00:00.000Z",
+      manager: "Machindranath Parkar",
+    },
   ];
-  
-  
+
   // const { data: unitAssignees = [], isLoading: isUnitAssignees } = useQuery({
   //   queryKey: ["unitAssignees"],
   //   queryFn: async () => {
@@ -207,54 +212,51 @@ const HousekeepingTeamMembersSchedule = () => {
     },
   });
 
- const { mutate: assignMember, isPending: isAssignMemberPending } =
-     useMutation({
-       mutationKey: ["assignMember"],
-       mutationFn: async (data) => {
-         const response = await axios.post(
-           "/api/administration/assign-weekly-unit",
-           data
-         );
-         return response.data;
-       },
-       onSuccess: (data) => {
-         queryClient.invalidateQueries({ queryKey: ["unitAssignees"] });
-         toast.success(data.message || "Data submitted successfully!");
-         reset();
-         setIsModalOpen(false);
-       },
-       onError: (error) => {
-         toast.error(error.message || "Error submitting data");
-       },
-     });
+  const { mutate: assignMember, isPending: isAssignMemberPending } =
+    useMutation({
+      mutationKey: ["assignMember"],
+      mutationFn: async (data) => {
+        const response = await axios.post(
+          "/api/administration/assign-weekly-unit",
+          data
+        );
+        return response.data;
+      },
+      onSuccess: (data) => {
+        queryClient.invalidateQueries({ queryKey: ["unitAssignees"] });
+        toast.success(data.message || "Data submitted successfully!");
+        reset();
+        setIsModalOpen(false);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Error submitting data");
+      },
+    });
 
   const memberColumns = [
-     { field: "id", headerName: "Sr No", width: 100 },
-     { field: "name", headerName: "Name" },
-     { field: "manager", headerName: "Manager" },
-     { field: "unitNo", headerName: "Unit",flex:"1" },
-     {
-       field: "actions",
-       headerName: "Actions",
-       cellRenderer: (params) => (
-         <div className="flex items-center gap-4 py-2">
-           <span
-             onClick={() => handleViewUser(params.data)}
-             className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
-           >
-             <MdOutlineRemoveRedEye />
-           </span>
-           <span
-             onClick={() => handleEditUser(params.data)}
-             className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
-           >
-             <HiOutlinePencilSquare />
-           </span>
-         </div>
-       ),
-     },
-  
-   ];
+    { field: "id", headerName: "Sr No", width: 100 },
+    { field: "name", headerName: "Name" },
+    { field: "manager", headerName: "Manager" },
+    { field: "unitNo", headerName: "Unit", flex: "1" },
+    {
+      field: "actions",
+      headerName: "Actions",
+      cellRenderer: (params) => (
+        <div className="flex items-center gap-4 py-2">
+          <span
+            onClick={() => handleViewUser(params.data)}
+            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
+            <MdOutlineRemoveRedEye />
+          </span>
+          <span
+            onClick={() => handleEditUser(params.data)}
+            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
+            <HiOutlinePencilSquare />
+          </span>
+        </div>
+      ),
+    },
+  ];
 
   const handleAddUser = () => {
     setModalMode("add");
@@ -284,36 +286,35 @@ const HousekeepingTeamMembersSchedule = () => {
     assignMember(data);
   };
 
-  
   return (
     <div className="p-4">
-     {unitAssignees.length > 0 ? (
-        <AgTable
-          key={unitAssignees.length}
-          search={true}
-          tableTitle={"Housekeeping Members Schedule"}
-          buttonTitle={"Assign Member"}
-          data={[]}
-          columns={memberColumns}
-          handleClick={handleAddUser}
-        />
-      ) : (
-        <div className="flex justify-center items-center h-[60vh]">
-          <CircularProgress />
-        </div>
-      )}
+      <PageFrame>
+        {unitAssignees.length > 0 ? (
+          <AgTable
+            key={unitAssignees.length}
+            search={true}
+            tableTitle={"Housekeeping Members Schedule"}
+            buttonTitle={"Assign Member"}
+            data={[]}
+            columns={memberColumns}
+            handleClick={handleAddUser}
+          />
+        ) : (
+          <div className="flex justify-center items-center h-[60vh]">
+            <CircularProgress />
+          </div>
+        )}
+      </PageFrame>
 
-<MuiModal
+      <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={"Assign Substitute"}
-      >
-         {modalMode === "add" && (
+        title={"Assign Substitute"}>
+        {modalMode === "add" && (
           <div>
             <form
               onSubmit={handleSubmit(handleFormSubmit)}
-              className="flex flex-col gap-4"
-            >
+              className="flex flex-col gap-4">
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <Controller
@@ -328,8 +329,7 @@ const HousekeepingTeamMembersSchedule = () => {
                         size="small"
                         select
                         error={!!errors.employee}
-                        helperText={errors.employee?.message}
-                      >
+                        helperText={errors.employee?.message}>
                         <MenuItem value="" disabled>
                           Select a Member
                         </MenuItem>
@@ -366,8 +366,7 @@ const HousekeepingTeamMembersSchedule = () => {
                         fullWidth
                         error={!!errors.location}
                         helperText={errors.unitId?.message}
-                        select
-                      >
+                        select>
                         <MenuItem value="" disabled>
                           Select Unit
                         </MenuItem>
@@ -449,8 +448,7 @@ const HousekeepingTeamMembersSchedule = () => {
                   {selectedUser.substitutions.map((sub, index) => (
                     <div
                       key={sub.substitutionId}
-                      className="flex flex-col gap-2 border border-borderGray rounded-2xl p-4"
-                    >
+                      className="flex flex-col gap-2 border border-borderGray rounded-2xl p-4">
                       <h4 className="text-subtitle font-pmedium text-primary mb-2">
                         Substitute {index + 1}
                       </h4>
@@ -507,7 +505,7 @@ const HousekeepingTeamMembersSchedule = () => {
               </div>
             </form>
           </>
-        )} 
+        )}
       </MuiModal>
     </div>
   );

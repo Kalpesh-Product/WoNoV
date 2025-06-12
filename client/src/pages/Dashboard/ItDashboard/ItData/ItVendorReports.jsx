@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import useAuth from "../../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const ItVendorReports = () => {
   const { auth } = useAuth();
@@ -164,7 +165,7 @@ const ItVendorReports = () => {
       gstNumber: "33AABCL1234Q1Z4",
       services: ["Laptops & Desktops", "Data Center Solutions"],
       rating: 4.5,
-    }
+    },
   ];
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
@@ -218,12 +219,11 @@ const ItVendorReports = () => {
             className="text-subtitle cursor-pointer"
             onClick={() => {
               const fullVendor = vendorsList.find(
-                (v) => v.name === params.data.name && v.email === params.data.email
+                (v) =>
+                  v.name === params.data.name && v.email === params.data.email
               );
               handleDetailsClick(fullVendor);
-            }}
-
-          >
+            }}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -263,19 +263,24 @@ const ItVendorReports = () => {
 
   return (
     <>
-      <AgTable
-        key={vendorsList.length}
-        search={true}
-        searchColumn={"name"}
-        tableTitle={"Vendor Database"}
-        buttonTitle={"Add Vendor"}
-        data={[]}
-        columns={vendorColumns}
-        handleClick={handleAddAsset}
-      />
+      <PageFrame>
+        <AgTable
+          key={vendorsList.length}
+          search={true}
+          searchColumn={"name"}
+          tableTitle={"Vendor Database"}
+          buttonTitle={"Add Vendor"}
+          data={[]}
+          columns={vendorColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "add" ? "Add Vendor" : "Vendor Details"}>
-      {modalMode === "add" && (
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalMode === "add" ? "Add Vendor" : "Vendor Details"}>
+        {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
               <div className="grid grid-cols-2 gap-4">
@@ -411,7 +416,6 @@ const ItVendorReports = () => {
                     />
                   )}
                 />
-
               </div>
               <div className="flex gap-4 justify-center items-center mt-4">
                 <PrimaryButton title="Submit" />
@@ -422,22 +426,38 @@ const ItVendorReports = () => {
         {modalMode === "view" && selectedAsset && (
           <div className="p-4">
             <div className="grid grid-cols-2 gap-4">
-              <DetalisFormatted title="Vendor Name" detail={selectedAsset.name} />
-              <DetalisFormatted title="Contact Person" detail={selectedAsset.contactPerson} />
+              <DetalisFormatted
+                title="Vendor Name"
+                detail={selectedAsset.name}
+              />
+              <DetalisFormatted
+                title="Contact Person"
+                detail={selectedAsset.contactPerson}
+              />
               <DetalisFormatted title="Phone" detail={selectedAsset.phone} />
               <DetalisFormatted title="Email" detail={selectedAsset.email} />
-              <DetalisFormatted title="GST Number" detail={selectedAsset.gstNumber} />
+              <DetalisFormatted
+                title="GST Number"
+                detail={selectedAsset.gstNumber}
+              />
               <div className="col-span-2">
-                <DetalisFormatted title="Address" detail={selectedAsset.address} gap="w-[20%]" />
+                <DetalisFormatted
+                  title="Address"
+                  detail={selectedAsset.address}
+                  gap="w-[20%]"
+                />
               </div>
               <div className="col-span-2">
-                <DetalisFormatted title="Services" detail={selectedAsset.services?.join(", ")} gap="w-[20%]" />
+                <DetalisFormatted
+                  title="Services"
+                  detail={selectedAsset.services?.join(", ")}
+                  gap="w-[20%]"
+                />
               </div>
               <DetalisFormatted title="Rating" detail={selectedAsset.rating} />
             </div>
           </div>
         )}
-
       </MuiModal>
     </>
   );

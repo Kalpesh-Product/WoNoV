@@ -19,6 +19,7 @@ import { FaCheck } from "react-icons/fa6";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { InsertEmoticonTwoTone } from "@mui/icons-material";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
@@ -161,27 +162,25 @@ const PerformanceKra = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-   ...((!isTop || isHr)
-  ? [
-      {
-        headerName: "Actions",
-        field: "actions",
-        cellRenderer: (params) => (
-          <div
-            role="button"
-            onClick={() => updateDailyKra(params.data.id)}
-            className="p-2"
-          >
-            <PrimaryButton
-              title={"Mark As Done"}
-              disabled={!params.node.selected}
-            />
-          </div>
-        ),
-      },
-    ]
-  : [])
-,
+    ...(!isTop || isHr
+      ? [
+          {
+            headerName: "Actions",
+            field: "actions",
+            cellRenderer: (params) => (
+              <div
+                role="button"
+                onClick={() => updateDailyKra(params.data.id)}
+                className="p-2">
+                <PrimaryButton
+                  title={"Mark As Done"}
+                  disabled={!params.node.selected}
+                />
+              </div>
+            ),
+          },
+        ]
+      : []),
   ];
 
   const completedColumns = [
@@ -223,71 +222,72 @@ const PerformanceKra = () => {
   return (
     <>
       <div className="flex flex-col gap-4">
-        {!departmentLoading ? (
-          <WidgetSection padding layout={1}>
-            <DateWiseTable
-              formatTime
-              key={departmentKra.length}
-              checkbox={showCheckBox}
-              buttonTitle={"Add Daily KRA"}
-              handleSubmit={() => setOpenModal(true)}
-              tableTitle={`${department} DEPARTMENT - DAILY KRA`}
-              data={(departmentKra || [])
-                .filter((item) => item.status !== "Completed")
-                .map((item, index) => ({
+        <PageFrame>
+          {!departmentLoading ? (
+            <WidgetSection padding layout={1}>
+              <DateWiseTable
+                formatTime
+                key={departmentKra.length}
+                checkbox={showCheckBox}
+                buttonTitle={"Add Daily KRA"}
+                handleSubmit={() => setOpenModal(true)}
+                tableTitle={`${department} DEPARTMENT - DAILY KRA`}
+                data={(departmentKra || [])
+                  .filter((item) => item.status !== "Completed")
+                  .map((item, index) => ({
+                    srno: index + 1,
+                    id: item.id,
+                    taskName: item.taskName,
+                    assignedDate: item.assignedDate,
+                    dueTime: item.dueTime,
+                    status: item.status,
+                  }))}
+                dateColumn={"dueDate"}
+                columns={departmentColumns}
+              />
+            </WidgetSection>
+          ) : (
+            <div className="h-72 flex items-center justify-center">
+              <CircularProgress />
+            </div>
+          )}
+        </PageFrame>
+        <PageFrame>
+          {!departmentLoading ? (
+            <WidgetSection>
+              <DateWiseTable
+                formatTime
+                tableTitle={`COMPLETED - DAILY KRA`}
+                checkAll={false}
+                key={completedEntries.length}
+                data={completedEntries.map((item, index) => ({
                   srno: index + 1,
                   id: item.id,
                   taskName: item.taskName,
                   assignedDate: item.assignedDate,
-                  dueTime: item.dueTime,
+                  dueDate: item.dueDate,
                   status: item.status,
+                  completedBy: item.completedBy,
                 }))}
-              dateColumn={"dueDate"}
-              columns={departmentColumns}
-            />
-          </WidgetSection>
-        ) : (
-          <div className="h-72 flex items-center justify-center">
-            <CircularProgress />
-          </div>
-        )}
-
-        {!departmentLoading ? (
-          <WidgetSection>
-            <DateWiseTable
-              formatTime
-              tableTitle={`COMPLETED - DAILY KRA`}
-              checkAll={false}
-              key={completedEntries.length}
-              data={completedEntries.map((item, index) => ({
-                srno: index + 1,
-                id: item.id,
-                taskName: item.taskName,
-                assignedDate: item.assignedDate,
-                dueDate: item.dueDate,
-                status: item.status,
-                completedBy: item.completedBy,
-              }))}
-              dateColumn={"dueDate"}
-              columns={completedColumns}
-            />
-          </WidgetSection>
-        ) : (
-          <div className="h-72 flex items-center justify-center">
-            <CircularProgress />
-          </div>
-        )}
+                dateColumn={"dueDate"}
+                columns={completedColumns}
+              />
+            </WidgetSection>
+          ) : (
+            <div className="h-72 flex items-center justify-center">
+              <CircularProgress />
+            </div>
+          )}
+        </PageFrame>
       </div>
 
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Daily KRA"}
-      >
+        title={"Add Daily KRA"}>
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
-          className="grid grid-cols-1 lg:grid-cols-1 gap-4"
-        >
+          className="grid grid-cols-1 lg:grid-cols-1 gap-4">
           <Controller
             name="dailyKra"
             control={control}
