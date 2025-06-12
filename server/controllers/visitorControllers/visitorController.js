@@ -71,6 +71,9 @@ const fetchVisitors = async (req, res, next) => {
             path: "clientCompany",
             select: "clientName email",
           },
+          {
+            path: "meeting",
+          },
         ]);
         break;
 
@@ -95,6 +98,9 @@ const fetchVisitors = async (req, res, next) => {
           {
             path: "clientCompany",
             select: "clientName email",
+          },
+          {
+            path: "meeting",
           },
         ]);
     }
