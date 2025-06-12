@@ -96,9 +96,15 @@ const MeetingFormLayout = () => {
     control,
     name: "externalParticipants",
   });
+
+
   const isReceptionist = auth.user?.role?.some(
-    (item) => item._id === "6798c034e469e809084e2514"
+    (item) =>{
+      item.roleTitle.startsWith("Administration")
+    } 
   );
+
+  
   useEffect(() => {
     if (!isReceptionist) {
       setValue("company", "6799f0cd6a01edbe1bc3fcea");
