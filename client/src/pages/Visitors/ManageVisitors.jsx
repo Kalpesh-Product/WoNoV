@@ -164,25 +164,23 @@ const ManageVisitors = () => {
           searchColumn={"Asset Number"}
           tableTitle={"Visitors Today"}
           data={[
-            ...visitorsData
-            .filter((m) => m.visitorFlag === "Visitor")
-            .map((item, index) => ({
-                srNo: index + 1,
-                mongoId: item._id,
-                firstName: item.firstName,
-                lastName: item.lastName,
-                address: item.address,
-                phoneNumber: item.phoneNumber,
-                email: item.email,
-                purposeOfVisit: item.purposeOfVisit,
-                toMeet: !item?.toMeet
-                  ? null
-                  : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
-                checkInRaw: item.checkIn,
-                checkOutRaw: item.checkOut,
-                checkIn: humanTime(item.checkIn),
-                checkOut: item.checkOut ? humanTime(item.checkOut) : "",
-              })),
+            ...visitorsData.map((item, index) => ({
+              srNo: index + 1,
+              mongoId: item._id,
+              firstName: item.firstName,
+              lastName: item.lastName,
+              address: item.address,
+              phoneNumber: item.phoneNumber,
+              email: item.email,
+              purposeOfVisit: item.purposeOfVisit,
+              toMeet: !item?.toMeet
+                ? null
+                : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
+              checkInRaw: item.checkIn,
+              checkOutRaw: item.checkOut,
+              checkIn: humanTime(item.checkIn),
+              checkOut: item.checkOut ? humanTime(item.checkOut) : "",
+            })),
           ]}
           columns={visitorsColumns}
           handleClick={handleAddAsset}
