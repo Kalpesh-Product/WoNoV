@@ -253,31 +253,33 @@ const PerformanceKra = () => {
           )}
         </PageFrame>
         <PageFrame>
-          {!departmentLoading ? (
-            <WidgetSection>
-              <DateWiseTable
-                formatTime
-                tableTitle={`COMPLETED - DAILY KRA`}
-                checkAll={false}
-                key={completedEntries.length}
-                data={completedEntries.map((item, index) => ({
-                  srno: index + 1,
-                  id: item.id,
-                  taskName: item.taskName,
-                  assignedDate: item.assignedDate,
-                  dueDate: item.dueDate,
-                  status: item.status,
-                  completedBy: item.completedBy,
-                }))}
-                dateColumn={"dueDate"}
-                columns={completedColumns}
-              />
-            </WidgetSection>
-          ) : (
-            <div className="h-72 flex items-center justify-center">
-              <CircularProgress />
-            </div>
-          )}
+          <div>
+            {!departmentLoading ? (
+              <WidgetSection>
+                <DateWiseTable
+                  formatTime
+                  tableTitle={`COMPLETED - DAILY KRA`}
+                  checkAll={false}
+                  key={completedEntries.length}
+                  data={completedEntries.map((item, index) => ({
+                    srno: index + 1,
+                    id: item.id,
+                    taskName: item.taskName,
+                    assignedDate: item.assignedDate,
+                    dueDate: item.dueDate,
+                    status: item.status,
+                    completedBy: item.completedBy,
+                  }))}
+                  dateColumn={"dueDate"}
+                  columns={completedColumns}
+                />
+              </WidgetSection>
+            ) : (
+              <div className="h-72 flex items-center justify-center">
+                <CircularProgress />
+              </div>
+            )}
+          </div>
         </PageFrame>
       </div>
 
