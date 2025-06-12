@@ -87,14 +87,17 @@ const VisitorReports = () => {
         onClose={() => setIsModalOpen(false)}
         title="Visitor Details">
         {selectedVisitor && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+            <div className="font-bold">Personal Information</div>
             <DetalisFormatted title="Name" detail={selectedVisitor.name} />
-            <DetalisFormatted title="Email" detail={selectedVisitor.email} />
             <DetalisFormatted title="Phone" detail={selectedVisitor.phone} />
-            <DetalisFormatted
+            <DetalisFormatted title="Email" detail={selectedVisitor.email} />
+            {/* <DetalisFormatted
               title="Address"
               detail={selectedVisitor.address}
-            />
+            /> */}
+            <br />
+            <div className="font-bold">Visit Details</div>
             <DetalisFormatted title="To Meet" detail={selectedVisitor.toMeet} />
             <DetalisFormatted
               title="Purpose"

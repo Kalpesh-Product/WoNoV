@@ -180,7 +180,7 @@ const ManageVisitors = () => {
       <MuiModal
         open={isModalOpen}
         onClose={handleCloseModal}
-        title={"Visitor Detail"}>
+        title={"Visitor Details"}>
         <div className="flex flex-col gap-4">
           <div className="flex justify-end">
             <PrimaryButton
@@ -190,8 +190,9 @@ const ManageVisitors = () => {
           </div>
           <form onSubmit={handleSubmit(submit)}>
             {!isVisitorsData ? (
-              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
                 {/* First Name */}
+                <div className="font-bold">Personal Information</div>
                 {isEditing ? (
                   <Controller
                     name="firstName"
@@ -234,7 +235,7 @@ const ManageVisitors = () => {
                 )}
 
                 {/* Address */}
-                {isEditing ? (
+                {/* {isEditing ? (
                   <Controller
                     name="address"
                     control={control}
@@ -252,7 +253,7 @@ const ManageVisitors = () => {
                     title="Address"
                     detail={selectedVisitor.address}
                   />
-                )}
+                )} */}
 
                 {/* Phone Number */}
                 {isEditing ? (
@@ -297,7 +298,8 @@ const ManageVisitors = () => {
                     detail={selectedVisitor.email}
                   />
                 )}
-
+                <br />
+                <div className="font-bold">Visit Details</div>
                 {/* Purpose of Visit */}
                 {isEditing ? (
                   <Controller
