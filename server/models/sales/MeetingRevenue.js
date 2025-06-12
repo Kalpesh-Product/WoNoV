@@ -20,19 +20,27 @@ const meetingClientRevenueSchema = new mongoose.Schema(
     },
     unitsOrHours: {
       type: String,
+      // required: true,
+    },
+    hoursBooked: {
+      type: String,
       required: true,
     },
-    costPerPass: {
+    meetingRoomName: {
+      type: String,
+      required: true,
+    },
+    costPerHour: {
       type: Number,
       required: true,
     },
     taxable: {
       type: Number,
-      required: true,
+      // required: true,
     },
     gst: {
       type: Number,
-      required: true,
+      // required: true,
     },
     totalAmount: {
       type: Number,
@@ -44,7 +52,7 @@ const meetingClientRevenueSchema = new mongoose.Schema(
     },
     remarks: {
       type: String,
-      required: false,
+      required: false, // could be payment mode (Cheque,NEFT etc)
     },
   },
   {
@@ -52,5 +60,8 @@ const meetingClientRevenueSchema = new mongoose.Schema(
   }
 );
 
-const MeetingRevenue = mongoose.model("MeetingClientRevenue", meetingClientRevenueSchema);
+const MeetingRevenue = mongoose.model(
+  "MeetingClientRevenue",
+  meetingClientRevenueSchema
+);
 module.exports = MeetingRevenue;

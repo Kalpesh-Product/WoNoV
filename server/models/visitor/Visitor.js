@@ -46,6 +46,10 @@ const visitorSchema = new mongoose.Schema(
         type: String,
       },
     },
+    meeting: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Meeting",
+    },
     dateOfVisit: {
       type: Date,
       required: true,
