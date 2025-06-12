@@ -13,7 +13,7 @@ import financeReducer from "../slices/financeSlice"
 const persistConfig = {
   key: "root",
   storage: sessionStorage,
-  whitelist: ["client","tickets","hr","sales","performance"],
+  whitelist: ["client","tickets","hr","sales","performance","finance"],
   transforms: [
     encryptTransform({
       secretKey: import.meta.env.VITE_REDUX_PERSIST,

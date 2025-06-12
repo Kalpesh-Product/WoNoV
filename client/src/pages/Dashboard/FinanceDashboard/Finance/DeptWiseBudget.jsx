@@ -17,7 +17,7 @@ const DeptWiseBudget = () => {
   const navigate = useNavigate();
 
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
-    queryKey: ["hrFinance"],
+    queryKey: ["allBudgets"],
     queryFn: async () => {
       try {
         const response = await axios.get(`/api/budget/company-budget`);

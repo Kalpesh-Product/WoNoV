@@ -26,6 +26,7 @@ import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../main";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import UploadFileInput from "../UploadFileInput";
+import usePageDepartment from "../../hooks/usePageDepartment";
 
 const AllocatedBudget = ({
   financialData,
@@ -48,20 +49,23 @@ const AllocatedBudget = ({
     },
   });
 
-  const onUpload = (data, row) => {
-    const file = data.invoiceImage;
+  const department = usePageDepartment();
+const onUpload = (data, row) => {
+  const file = data.invoiceImage;
 
-    if (!file || !row?.id) {
-      toast.error("Missing file or selected row.");
-      return;
-    }
+  if (!file || !row?.id) {
+    toast.error("Missing file or selected row.");
+    return;
+  }
 
-    const formData = new FormData();
-    formData.append("invoice", file);
-    formData.append("rowId", row.id);
+  const formData = new FormData();
+  formData.append("invoice", file);
+  formData.append("rowId", row.id);
+  formData.append("departmentName", department?.name || ""); // ✅ append it here
 
-    uploadInvoiceMutation(formData);
-  };
+  uploadInvoiceMutation(formData); // ✅ pass just FormData
+};
+
 
   const { mutate: uploadInvoiceMutation, isPending: isUploadPending } =
     useMutation({
@@ -177,13 +181,18 @@ const AllocatedBudget = ({
     selectedTab,
     noFilter,
   ]);
-  console.log("Month Data : ", monthDataForSelectedType);
+
+  // const totalProjectedAmountForFY = useMemo(() => {
+  //   return filteredMonths.reduce((sum, month) => {
+  //     const data = groupedData["All"]?.[month];
+  //     return sum + (data?.projectedAmount || 0);
+  //   }, 0);
+  // }, [filteredMonths, groupedData]);
+
   const totalProjectedAmountForFY = useMemo(() => {
-    return filteredMonths.reduce((sum, month) => {
-      const data = groupedData["All"]?.[month];
-      return sum + (data?.projectedAmount || 0);
-    }, 0);
-  }, [filteredMonths, groupedData]);
+    const data = groupedData["All"]?.[filteredMonths[selectedMonthIndex]];
+    return data?.projectedAmount || 0;
+  }, [filteredMonths, selectedMonthIndex, groupedData]);
 
   const enhancedColumns = useMemo(() => {
     return [
@@ -279,7 +288,7 @@ const AllocatedBudget = ({
                 </div>
               )} */}
             </div>
-            <div className="flex gap-4 justify-end items-center w-3/4 ">
+            <div className="flex gap-4 justify-start items-center w-full ">
               <div className="">
                 {/* Month Switcher */}
                 {filteredMonths.length > 0 && (

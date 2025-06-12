@@ -330,6 +330,12 @@ import ManageTicketLayout from "../pages/Tickets/Tables/ManageTicketLayout";
 import ManageTicketsHome from "../pages/Tickets/ManageTicketsHome";
 import Reimbursement from "../components/Pages/Reimbursement";
 import AddClient from "../pages/Visitors/Forms/AddClient";
+import IncomeDetails from "../pages/Dashboard/FinanceDashboard/IncomeDetails/IncomeDetails";
+import ReviewRequest from "../pages/Dashboard/FinanceDashboard/Billing/ReviewRequest";
+import ManageVisitorLayout from "../pages/Visitors/ManageVisitorLayout";
+import ExternalClients from "../pages/Visitors/ExternalClients";
+import ManageMeetingsLayout from "../pages/Meetings/ManageMeetingsLayout";
+import ExternalMeetingClients from "../pages/Meetings/ExternalMeetingClients";
 
 export const routes = createBrowserRouter([
   {
@@ -543,13 +549,26 @@ export const routes = createBrowserRouter([
                         element: <MonthlyProfitLoss />,
                       },
                       {
+                        path: "monthly-profit-loss/income-details",
+                        element: <IncomeDetails />,
+                      },
+                      {
                         path: "annual-average-profit-loss",
                         element: <AverageProfitLoss />,
+                      },
+                      {
+                        path: "annual-average-profit-loss/income-details",
+                        element: <IncomeDetails />,
                       },
                       {
                         path: "overall-profit-loss",
                         element: <OverallProfitLoss />,
                       },
+                      {
+                        path: "overall-profit-loss/income-details",
+                        element: <IncomeDetails />,
+                      },
+
                       {
                         path: "sqft-wise-data",
                         element: <SqWiseData />,
@@ -559,12 +578,8 @@ export const routes = createBrowserRouter([
                         element: <BillingsLayout />,
                         children: [
                           {
-                            path: "invoice-creation",
+                            path: "invoice",
                             element: <InvoiceCreation />,
-                          },
-                          {
-                            path: "invoice-creation/:id",
-                            element: <ViewTemplate />,
                           },
                           {
                             path: "finance-monthly-vouchers",
@@ -575,12 +590,16 @@ export const routes = createBrowserRouter([
                             element: <FinanceViewVoucher />,
                           },
                           {
-                            path: "voucher-creation",
+                            path: "voucher",
                             element: <VoucherCreation />,
                           },
                           {
                             path: "pending-approvals",
                             element: <PendingApprovals />,
+                          },
+                          {
+                            path: "pending-approvals/review-request",
+                            element: <ReviewRequest />,
                           },
                         ],
                       },
@@ -660,7 +679,7 @@ export const routes = createBrowserRouter([
                             path: "payment-schedule",
                             element: <AdminPayment />,
                           },
-                              {
+                          {
                             path: "reimbursement",
                             element: <Reimbursement />,
                           },
@@ -1656,8 +1675,19 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "manage-meetings",
-                    element: <ManageMeetings />,
+                    element: <ManageMeetingsLayout />,
+                    children: [
+                      {
+                        path: "internal-meetings",
+                        element: <ManageMeetings />,
+                      },
+                      {
+                        path: "external-clients",
+                        element: <ExternalMeetingClients />,
+                      },
+                    ],
                   },
+
                   {
                     path: "settings",
                     element: <MeetingSettings />,
@@ -1913,12 +1943,25 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "add-client", // Page with form to Add a new Visitor
-                    element: <AddClient/>,
+                    element: <AddClient />,
                   },
                   {
-                    path: "manage-visitors", // Page with table showing a list of all visitors
-                    element: <ManageVisitors />,
+                    path: "manage-visitors",
+                    element: <ManageVisitorLayout />,
+                    children: [
+                      {
+                        path: "internal-visitors", // Page with table showing a list of all visitors
+                        element: <ManageVisitors />,
+                        index: true,
+                      },
+                      {
+                        path: "external-clients", // Page with table showing a list of all visitors
+                        element: <ExternalClients />,
+                        index: true,
+                      },
+                    ],
                   },
+
                   {
                     path: "team-members", // Page with table showing a list of all the team members(receptionists)
                     element: <VisitorTeamMembers />,

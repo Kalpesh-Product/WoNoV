@@ -10,9 +10,7 @@ const usePageDepartment = () => {
     segment.endsWith("-dashboard")
   );
 
-
   let section = dashboardSegment?.split("-")[0];
-  console.log("section from hook : ", section)
 
   // ✅ Temporary override: treat "frontend" as "tech"
   if (section === "frontend") {
@@ -21,7 +19,6 @@ const usePageDepartment = () => {
   if (section === "HR") {
     section = "hr";
   }
-
 
   const department = auth?.user?.departments?.find((dept) =>
     dept.name.toLowerCase().includes(section)

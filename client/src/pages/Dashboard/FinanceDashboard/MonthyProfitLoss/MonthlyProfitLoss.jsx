@@ -10,9 +10,12 @@ import dayjs from "dayjs";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import { CircularProgress } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const MonthlyProfitLoss = () => {
   const axios = useAxiosPrivate();
+  const navigate = useNavigate();
 
   //-----------------API-----------------//
   const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
@@ -83,7 +86,7 @@ const MonthlyProfitLoss = () => {
   const monthWiseIncome = {};
 
   // Flatten all income arrays from all sources
-  const incomeSources = revenueExpenseData.flatMap((item) => {
+  const incomeSources = (revenueExpenseData || []).flatMap((item) => {
     const income = item.income || {};
     return [
       ...(income.meetingRevenue || []),
@@ -102,8 +105,7 @@ const MonthlyProfitLoss = () => {
     // income.paDueDate ||
     // income.dueTerm;
 
-    if (!rawDate) return;
-
+    if (!rawDate || !dayjs(rawDate).isValid()) return;
     const monthKey = dayjs(rawDate).format("MMM-YY");
 
     // Skip excluded months
@@ -137,7 +139,7 @@ const MonthlyProfitLoss = () => {
     ([fiscalYear, months]) => ({
       name: "Income",
       group: fiscalYear,
-      data: months.map((month) => incomeMap[month] || 0),
+      data: months.map((month) => (incomeMap ? incomeMap[month] || 0 : 0)),
     })
   );
 
@@ -151,7 +153,7 @@ const MonthlyProfitLoss = () => {
   //-------INCOME-------//
 
   //------------------Expensedata----------------------//
-    const testExpense = revenueExpenseData
+  const testExpense = revenueExpenseData
     .filter((item) => item.expense)
     .flatMap((item) => item.expense);
   const testIncome = revenueExpenseData.filter((item) => item.income);
@@ -214,7 +216,7 @@ const MonthlyProfitLoss = () => {
     ([fiscalYear, months]) => ({
       name: "Expense",
       group: fiscalYear,
-      data: months.map((month) => expenseMap[month] || 0),
+      data: months.map((month) => (expenseMap ? expenseMap[month] || 0 : 0)),
     })
   );
   //------------------Expensedata----------------------//
@@ -222,110 +224,69 @@ const MonthlyProfitLoss = () => {
   //-----------------------------------------------------Graph------------------------------------------------------//
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const monthlyProfitLossColumns = [
-    { field: "id", headerName: "Sr No", flex: 1 },
+    { field: "id", headerName: "Sr No", width: 100 },
     { field: "month", headerName: "Month", flex: 1 },
-    { field: "income", headerName: "Income (INR)", flex: 1 },
-    { field: "expense", headerName: "Expense (INR)", flex: 1 },
-    { field: "pnl", headerName: "P&L (INR)", flex: 1 },
     {
-      field: "actions",
-      headerName: "Actions",
+      field: "income",
+      headerName: "Income (INR)",
+      flex: 1,
       cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-            <span
-              className="text-subtitle cursor-pointer"
-              onClick={() => handleViewModal(params.data)}
-            >
-              <MdOutlineRemoveRedEye />
-            </span>
-          </div>
-        </>
+        <span
+          role="button"
+          onClick={() =>
+            navigate(
+              "/app/dashboard/finance-dashboard/monthly-profit-loss/income-details"
+            )
+          }
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value}
+        </span>
       ),
     },
+    {
+      field: "expense",
+      headerName: "Expense (INR)",
+      flex: 1,
+      cellRenderer: (params) => (
+        <span
+          role="button"
+          onClick={() =>
+            navigate(
+              "/app/dashboard/finance-dashboard/finance/dept-wise-budget"
+            )
+          }
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value}
+        </span>
+      ),
+    },
+    { field: "pnl", headerName: "P&L (INR)", flex: 1 },
+    // {
+    //   field: "actions",
+    //   headerName: "Actions",
+    //   cellRenderer: (params) => (
+    //     <>
+    //       <div className="p-2 mb-2 flex gap-2">
+    //         <span
+    //           className="text-subtitle cursor-pointer"
+    //           onClick={() => handleViewModal(params.data)}
+    //         >
+    //           <MdOutlineRemoveRedEye />
+    //         </span>
+    //       </div>
+    //     </>
+    //   ),
+    // },
   ];
 
-  const monthlyProfitLossData = [
-    {
-      id: 1,
-      month: "Apr-24",
-      income: inrFormat(1250000),
-      expense: inrFormat(750000),
-      pnl: inrFormat(500000),
-    },
-    {
-      id: 2,
-      month: "May-24",
-      income: inrFormat(1400000),
-      expense: inrFormat(800000),
-      pnl: inrFormat(600000),
-    },
-    {
-      id: 3,
-      month: "Jun-24",
-      income: inrFormat(1600000),
-      expense: inrFormat(1700000),
-      pnl: inrFormat(-100000),
-    },
-    {
-      id: 4,
-      month: "Jul-24",
-      income: inrFormat(1800000),
-      expense: inrFormat(950000),
-      pnl: inrFormat(850000),
-    },
-    {
-      id: 5,
-      month: "Aug-24",
-      income: inrFormat(2000000),
-      expense: inrFormat(2100000),
-      pnl: inrFormat(-100000),
-    },
-    {
-      id: 6,
-      month: "Sep-24",
-      income: inrFormat(1700000),
-      expense: inrFormat(1100000),
-      pnl: inrFormat(600000),
-    },
-    {
-      id: 7,
-      month: "Oct-24",
-      income: inrFormat(1900000),
-      expense: inrFormat(1300000),
-      pnl: inrFormat(600000),
-    },
-    {
-      id: 8,
-      month: "Nov-24",
-      income: inrFormat(2100000),
-      expense: inrFormat(1600000),
-      pnl: inrFormat(500000),
-    },
-    {
-      id: 9,
-      month: "Dec-24",
-      income: inrFormat(2200000),
-      expense: inrFormat(2100000),
-      pnl: inrFormat(100000),
-    },
-  ];
   const handleViewModal = (rowData) => {
     setViewDetails(rowData);
     setViewModalOpen(true);
   };
 
-  const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
-    const numericalPnL = parseInt(item.pnl.replace(/,/g, ""), 10);
-    return sum + numericalPnL;
-  }, 0);
-
-
-
-    const incomeExpenseData = [
-    ...incomeData,
-    ...expenseData,
-  ];
+  const incomeExpenseData = [...incomeData, ...expenseData];
 
   const incomeExpenseOptions = {
     chart: {
@@ -406,6 +367,27 @@ const MonthlyProfitLoss = () => {
   };
 
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
+  const monthlyProfitLossData = yearCategories["FY 2024-25"].map(
+    (month, index) => {
+      const income = incomeMap[month] || 0;
+      const expense = expenseMap[month] || 0;
+      const pnl = income - expense;
+
+      return {
+        id: index + 1,
+        month,
+        income: inrFormat(income),
+        expense: inrFormat(expense),
+        pnl: inrFormat(pnl),
+      };
+    }
+  );
+  const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
+    const numericalPnL = parseInt(item.pnl.replace(/,/g, ""), 10);
+    return sum + numericalPnL;
+  }, 0);
+
+  //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const techWidgets = [
     {
       layout: 1,
@@ -421,6 +403,13 @@ const MonthlyProfitLoss = () => {
       ],
     },
   ];
+  if (isRevenueExpenseLoading || isBudgetDataLoading) {
+    return (
+      <div className="p-4 h-72 flex justify-center items-center text-center text-gray-500">
+        <CircularProgress />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -431,14 +420,26 @@ const MonthlyProfitLoss = () => {
       ))}
 
       <div>
-        <WidgetSection
-          border
-          TitleAmount={``}
-          titleLabel={"FY 2024-25"}
-          title={`Total Monthly P&L`}
-        >
-          <AgTable data={[]} columns={monthlyProfitLossColumns} search={true} />
-        </WidgetSection>
+        {monthlyProfitLossData.length > 0 ? (
+          <WidgetSection
+            border
+            TitleAmount={`P&L :  INR ${inrFormat(totalPnL)}`}
+            titleLabel={"FY 2024-25"}
+            title={`Total Monthly P&L`}
+          >
+            <AgTable
+              data={monthlyProfitLossData}
+              columns={monthlyProfitLossColumns}
+              search={true}
+            />
+          </WidgetSection>
+        ) : (
+          <WidgetSection title="Monthly P&L">
+            <p className="text-center text-gray-500 py-8">
+              No data available for FY 2024–25
+            </p>
+          </WidgetSection>
+        )}
       </div>
       {viewDetails && (
         <MuiModal

@@ -8,15 +8,15 @@ const BillingsLayout = () => {
 
   // Map routes to tabs
   const tabs = [
-    { label: "Invoice Creation", path: "invoice-creation" },
-    { label: "Voucher Creation", path: "voucher-creation" },
+    { label: "Invoice", path: "invoice" },
+    { label: "Voucher", path: "voucher" },
     { label: "Pending Approvals", path: "pending-approvals" },
   ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
   useEffect(() => {
     if (location.pathname === "/app/dashboard/finance-dashboard/billing") {
-      navigate("/app/dashboard/finance-dashboard/billing/invoice-creation", {
+      navigate("/app/dashboard/finance-dashboard/billing/invoice", {
         replace: true,
       });
     }

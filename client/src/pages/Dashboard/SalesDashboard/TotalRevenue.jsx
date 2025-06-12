@@ -1,9 +1,6 @@
 import BarGraph from "../../../components/graphs/BarGraph";
 import WidgetSection from "../../../components/WidgetSection";
-import AgTable from "../../../components/AgTable";
-import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 import { inrFormat } from "../../../utils/currencyFormat";
-import { parseRevenue } from "../../../utils/removeCommaInNum";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";

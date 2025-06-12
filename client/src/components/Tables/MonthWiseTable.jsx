@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import dayjs from "dayjs";
 import AgTable from "../AgTable"; // Adjust the import path as needed
@@ -15,8 +15,11 @@ const MonthWiseTable = ({
   handleSubmit,
   checkbox,
   checkAll,
-  key
+  key,
+  onMonthChange,
 }) => {
+
+
   // Step 1: Get unique months from the date column
   const monthLabels = useMemo(() => {
     const monthSet = new Set();
@@ -47,6 +50,13 @@ const MonthWiseTable = ({
   );
 
   const selectedMonth = monthLabels[selectedMonthIndex];
+
+  
+  useEffect(() => {
+  if (onMonthChange) {
+    onMonthChange(selectedMonth);
+  }
+}, [selectedMonth, onMonthChange]);
 
   // Step 4: Filter data by selected month
   const filteredData = useMemo(() => {
@@ -115,14 +125,14 @@ const MonthWiseTable = ({
       </div>
 
       <AgTable
-      key={key}
+        key={key}
         enableCheckbox={checkbox}
         checkAll={checkAll}
         tableHeight={300}
         columns={formattedColumns}
-        data={filteredData.map((item,index) => ({
+        data={filteredData.map((item, index) => ({
           ...item,
-          srno:index + 1,
+          srno: index + 1,
           date: humanDate(item.date),
         }))}
         hideFilter={filteredData.length <= 9}
