@@ -332,6 +332,10 @@ import Reimbursement from "../components/Pages/Reimbursement";
 import AddClient from "../pages/Visitors/Forms/AddClient";
 import IncomeDetails from "../pages/Dashboard/FinanceDashboard/IncomeDetails/IncomeDetails";
 import ReviewRequest from "../pages/Dashboard/FinanceDashboard/Billing/ReviewRequest";
+import ManageVisitorLayout from "../pages/Visitors/ManageVisitorLayout";
+import ExternalClients from "../pages/Visitors/ExternalClients";
+import ManageMeetingsLayout from "../pages/Meetings/ManageMeetingsLayout";
+import ExternalMeetingClients from "../pages/Meetings/ExternalMeetingClients";
 
 export const routes = createBrowserRouter([
   {
@@ -1671,8 +1675,19 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "manage-meetings",
-                    element: <ManageMeetings />,
+                    element: <ManageMeetingsLayout />,
+                    children: [
+                      {
+                        path: "internal-meetings",
+                        element: <ManageMeetings />,
+                      },
+                      {
+                        path: "external-clients",
+                        element: <ExternalMeetingClients />,
+                      },
+                    ],
                   },
+
                   {
                     path: "settings",
                     element: <MeetingSettings />,
@@ -1928,12 +1943,25 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "add-client", // Page with form to Add a new Visitor
-                    element: <AddClient/>,
+                    element: <AddClient />,
                   },
                   {
-                    path: "manage-visitors", // Page with table showing a list of all visitors
-                    element: <ManageVisitors />,
+                    path: "manage-visitors",
+                    element: <ManageVisitorLayout />,
+                    children: [
+                      {
+                        path: "internal-visitors", // Page with table showing a list of all visitors
+                        element: <ManageVisitors />,
+                        index: true,
+                      },
+                      {
+                        path: "external-clients", // Page with table showing a list of all visitors
+                        element: <ExternalClients />,
+                        index: true,
+                      },
+                    ],
                   },
+
                   {
                     path: "team-members", // Page with table showing a list of all the team members(receptionists)
                     element: <VisitorTeamMembers />,
