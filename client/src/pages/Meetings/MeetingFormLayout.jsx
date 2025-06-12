@@ -55,6 +55,16 @@ const MeetingFormLayout = () => {
 
   const roles = auth.user.role.map((role) => role.roleTitle);
 
+  const paymentModes = [
+    "Cash",
+    "Cheque",
+    "NEFT",
+    "RTGS",
+    "IMPS",
+    "Credit Card",
+    "ETC",
+  ];
+
   if (
     roles.includes("Master Admin") ||
     roles.includes("Super Admin") ||
@@ -352,7 +362,7 @@ const MeetingFormLayout = () => {
               </span>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-1 gap-4 gap-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 gap-4 gap-y-6">
             <div className="col-span-2 sm:col-span-1 md:col-span-2">
               <Controller
                 name="meetingType"
@@ -604,13 +614,10 @@ const MeetingFormLayout = () => {
                           Select a company
                         </MenuItem>
                         {externalUsers
-                          .filter((item) => item.visitorCompany)
+                          .filter((item) => item.visitorFlag === "Client")
                           .map((user) => (
-                            <MenuItem
-                              key={user._id}
-                              value={user.visitorCompany?._id}
-                            >
-                              {user.visitorCompany?.companyName ?? ""}
+                            <MenuItem key={user._id} value={user._id}>
+                              {user.clientCompany ?? ""}
                             </MenuItem>
                           ))}
                       </TextField>
@@ -625,8 +632,13 @@ const MeetingFormLayout = () => {
                       <Autocomplete
                         multiple
                         options={externalUsers.filter(
-                          (item) => item.visitorCompany?._id === externalCompany
-                        )} // The user list
+                          (item) =>
+                            item.visitorFlag === "Client" &&
+                            item.clientCompany ===
+                              externalUsers.find(
+                                (v) => v._id === externalCompany
+                              )?.clientCompany
+                        )}
                         getOptionLabel={(user) => `${user.firstName}`} // Display names
                         onChange={(_, newValue) =>
                           field.onChange(newValue.map((user) => user.firstName))
@@ -698,7 +710,7 @@ const MeetingFormLayout = () => {
               </>
             )}
             {meetingType === "External" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-2 col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-4 p-2 col-span-2">
                 <Controller
                   name="paymentAmount"
                   control={control}
@@ -729,6 +741,26 @@ const MeetingFormLayout = () => {
                       </MenuItem>
                       <MenuItem value="paid">Paid</MenuItem>
                       <MenuItem value="unpaid">Unpaid</MenuItem>
+                    </TextField>
+                  )}
+                />
+                <Controller
+                  name="paymentType"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Payment Type"
+                      select
+                      fullWidth
+                    >
+                      <MenuItem value="" disabled>
+                        Select Payment Type
+                      </MenuItem>
+                      {paymentModes.map((p) => {
+                        return <MenuItem value={p}>{p}</MenuItem>;
+                      })}
                     </TextField>
                   )}
                 />

@@ -15,6 +15,7 @@ import dayjs from "dayjs";
 import { queryClient } from "../../main";
 import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import ThreeDotMenu from "../../components/ThreeDotMenu";
 
 const ManageVisitors = () => {
   const axios = useAxiosPrivate();
@@ -91,24 +92,62 @@ const ManageVisitors = () => {
     { field: "lastName", headerName: "Last Name" },
     { field: "email", headerName: "Email" },
     { field: "phoneNumber", headerName: "Phone No" },
-    { field: "purposeOfVisit", headerName: "Purpose", align: "right" },
-    { field: "toMeet", headerName: "To Meet", align: "right" },
+    {
+      field: "purposeOfVisit",
+      headerName: "Purpose",
+      cellStyle: { textAlign: "right" },
+    },
+    {
+      field: "toMeet",
+      headerName: "To Meet",
+      cellStyle: { textAlign: "right" },
+    },
     { field: "checkIn", headerName: "Check In" },
     { field: "checkOut", headerName: "Checkout" },
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: (params) => (
-        <div
-          role="button"
-          onClick={() => {
-            handleDetailsClick({ ...params.data });
-          }}
-          className="p-2 rounded-full w-fit hover:bg-borderGray"
-        >
-          <MdOutlineRemoveRedEye />
-        </div>
-      ),
+      cellRenderer: (params) => {
+        const menuItems = [
+          {
+            label: "View details",
+            onClick: () => handleDetailsClick({ ...params.data }),
+          },
+          !params.data.checkOut && {
+            label: "Mark as checked out",
+            onClick: () => {
+              const currentTimeISO = dayjs().toISOString();
+
+              const updatePayload = {
+                firstName: params.data.firstName,
+                lastName: params.data.lastName,
+                address: params.data.address,
+                email: params.data.email,
+                phoneNumber: params.data.phoneNumber,
+                purposeOfVisit: params.data.purposeOfVisit,
+                checkOut: currentTimeISO,
+              };
+
+              // Send update mutation
+              setSelectedVisitor(params.data);
+              mutate(updatePayload);
+            },
+          },
+        ];
+
+        return (
+          <div
+            role="button"
+            disabled={params.data.checkOut}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent row selection on click
+            }}
+            className="rounded-full w-fit hover:bg-borderGray"
+          >
+            <ThreeDotMenu menuItems={menuItems} />
+          </div>
+        );
+      },
     },
   ];
 
@@ -181,12 +220,6 @@ const ManageVisitors = () => {
         title={"Visitor Detail"}
       >
         <div className="flex flex-col gap-4">
-          <div className="flex justify-end">
-            <PrimaryButton
-              handleSubmit={handleEditToggle}
-              title={isEditing ? "Cancel" : "Edit"}
-            />
-          </div>
           <form onSubmit={handleSubmit(submit)}>
             {!isVisitorsData ? (
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
@@ -232,26 +265,6 @@ const ManageVisitors = () => {
                   />
                 )}
 
-                {/* Address */}
-                {isEditing ? (
-                  <Controller
-                    name="address"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Address"
-                        fullWidth
-                      />
-                    )}
-                  />
-                ) : (
-                  <DetalisFormatted
-                    title="Address"
-                    detail={selectedVisitor.address}
-                  />
-                )}
 
                 {/* Phone Number */}
                 {isEditing ? (
