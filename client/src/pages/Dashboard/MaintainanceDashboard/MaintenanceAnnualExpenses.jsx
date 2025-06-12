@@ -14,6 +14,7 @@ import useAuth from "../../../hooks/useAuth";
 import dayjs from "dayjs";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const MaintenanceAnnualExpenses = () => {
   const { auth } = useAuth();
@@ -112,8 +113,7 @@ const MaintenanceAnnualExpenses = () => {
           onClick={() => {
             handleDetailsClick(params.data);
           }}
-          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
-        >
+          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center">
           <span className="text-subtitle">
             <MdOutlineRemoveRedEye />
           </span>
@@ -192,7 +192,7 @@ const MaintenanceAnnualExpenses = () => {
       expenseName: "Air Conditioning Overhaul",
       date: "22/05/2024",
       amount: "6,000",
-    }
+    },
   ];
 
   const handleDetailsClick = (asset) => {
@@ -215,24 +215,23 @@ const MaintenanceAnnualExpenses = () => {
 
   return (
     <div className="p-4">
-      <AgTable
-        key={annualExpenses.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"Annual Expenses"}
-        buttonTitle={"Add Expense"}
-        data={[
-          
-        ]}
-        columns={assetColumns}
-        handleClick={handleAddAsset}
-      />
+      <PageFrame>
+        <AgTable
+          key={annualExpenses.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"Annual Expenses"}
+          buttonTitle={"Add Expense"}
+          data={[]}
+          columns={assetColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
 
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === "view" ? "View Details" : "Add Expense"}
-      >
+        title={modalMode === "view" ? "View Details" : "Add Expense"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -247,8 +246,7 @@ const MaintenanceAnnualExpenses = () => {
                       label="Category"
                       size="small"
                       helperText={!!errors.assetType?.message}
-                      select
-                    >
+                      select>
                       <MenuItem value="" disabled>
                         Select an Asset Type
                       </MenuItem>

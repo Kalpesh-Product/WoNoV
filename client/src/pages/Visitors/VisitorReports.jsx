@@ -8,6 +8,7 @@ import humanTime from "../../utils/humanTime";
 import humanDate from "../../utils/humanDateForamt";
 import MuiModal from "../../components/MuiModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const VisitorReports = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,32 +68,36 @@ const VisitorReports = () => {
 
   return (
     <div className="flex flex-col gap-8 p-4">
-      <div>
-        <AgTable
-          exportData
-          search={true}
-          searchColumn={"name"}
-          tableTitle={"Visitor Reports"}
-          data={rows}
-          columns={meetingReportsColumn}
-          loading={isVisitorsData}
-        />
-      </div>
+      <PageFrame>
+        <div>
+          <AgTable
+            exportData
+            search={true}
+            searchColumn={"name"}
+            tableTitle={"Visitor Reports"}
+            data={rows}
+            columns={meetingReportsColumn}
+            loading={isVisitorsData}
+          />
+        </div>
+      </PageFrame>
 
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Visitor Details"
-      >
+        title="Visitor Details">
         {selectedVisitor && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+            <div className="font-bold">Personal Information</div>
             <DetalisFormatted title="Name" detail={selectedVisitor.name} />
-            <DetalisFormatted title="Email" detail={selectedVisitor.email} />
             <DetalisFormatted title="Phone" detail={selectedVisitor.phone} />
-            <DetalisFormatted
+            <DetalisFormatted title="Email" detail={selectedVisitor.email} />
+            {/* <DetalisFormatted
               title="Address"
               detail={selectedVisitor.address}
-            />
+            /> */}
+            <br />
+            <div className="font-bold">Visit Details</div>
             <DetalisFormatted title="To Meet" detail={selectedVisitor.toMeet} />
             <DetalisFormatted
               title="Purpose"

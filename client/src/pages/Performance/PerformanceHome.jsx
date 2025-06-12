@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { setSelectedDepartment } from "../../redux/slices/performanceSlice";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
 import useAuth from "../../hooks/useAuth";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const PerformanceHome = () => {
   const axios = useAxiosPrivate();
@@ -17,7 +18,11 @@ const PerformanceHome = () => {
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
   useTopDepartment({
-    additionalTopUserIds: ["67b83885daad0f7bab2f1888","681a10b13fc9dc666ede401c","67b83885daad0f7bab2f188b"], //utkarsha //nigel //mac
+    additionalTopUserIds: [
+      "67b83885daad0f7bab2f1888",
+      "681a10b13fc9dc666ede401c",
+      "67b83885daad0f7bab2f188b",
+    ], //utkarsha //nigel //mac
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       navigate(`/app/performance/${currentDepartment}`);
@@ -53,8 +58,7 @@ const PerformanceHome = () => {
               navigate(`${params.value}`);
               console.log("Navigating with ID:", params.data?.mongoId);
             }}
-            className="text-primary font-pregular hover:underline cursor-pointer"
-          >
+            className="text-primary font-pregular hover:underline cursor-pointer">
             {params.value}
           </span>
         );
@@ -65,23 +69,25 @@ const PerformanceHome = () => {
   ];
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection layout={1} padding>
-        <AgTable
-          data={[
-            ...fetchedDepartments.map((item, index) => ({
-              srNo: index + 1,
-              mongoId: item.department?._id,
-              department: item.department?.name,
-              dailyKra: item.dailyKRA,
-              monthlyKpa: item.monthlyKPA,
-              annualKpa: item.annualKPA,
-            })),
-          ]}
-          columns={departmentColumns}
-          tableTitle={"DEPARTMENT WISE KRA/KPA"}
-          hideFilter
-        />
-      </WidgetSection>
+      <PageFrame>
+        <WidgetSection layout={1} padding>
+          <AgTable
+            data={[
+              ...fetchedDepartments.map((item, index) => ({
+                srNo: index + 1,
+                mongoId: item.department?._id,
+                department: item.department?.name,
+                dailyKra: item.dailyKRA,
+                monthlyKpa: item.monthlyKPA,
+                annualKpa: item.annualKPA,
+              })),
+            ]}
+            columns={departmentColumns}
+            tableTitle={"DEPARTMENT WISE KRA/KPA"}
+            hideFilter
+          />
+        </WidgetSection>
+      </PageFrame>
     </div>
   );
 };

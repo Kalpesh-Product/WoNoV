@@ -181,7 +181,6 @@ const ViewAvailability = () => {
       <div className=" flex flex-col gap-4">
         <WidgetSection layout={4} padding>
           <DataCard
-            
             data={unitDetails?.totalDesks}
             title={"Total Desks"}
             description={`Last Month : Apr-25`}
@@ -193,14 +192,14 @@ const ViewAvailability = () => {
           />
           <DataCard
             data={(
-              (unitDetails?.totalOccupiedDesks  / unitDetails?.totalDesks ) *
+              (unitDetails?.totalOccupiedDesks / unitDetails?.totalDesks) *
               100
             ).toFixed(0)}
             title={"Occupancy %"}
             description={`Last Month : Apr-25`}
           />
           <DataCard
-            data={unitDetails?.totalDesks  - unitDetails?.totalOccupiedDesks }
+            data={unitDetails?.totalDesks - unitDetails?.totalOccupiedDesks}
             title={"Free Desks"}
             // description={`Last Month : ${new Date().toLocaleString("default", {
             //   month: "short",
@@ -218,14 +217,17 @@ const ViewAvailability = () => {
         border
         TitleAmount={`TOTAL OCCUPIED : ${totalOccupied} `}
       >
-        <CollapsibleTable
+        <AgTable
+          tableHeight={300}
+          hideFilter
           columns={[
-            { field: "client", headerName: "Client Name" },
+            { field: "id", headerName: "Sr. No", width: 100 },
+            { field: "client", headerName: "Client Name", flex: 1 },
             { field: "occupiedDesks", headerName: "Occupied Desks" },
             { field: "occupancyPercent", headerName: "Occupied %" },
           ]}
           data={unitDetails?.clientDetails?.map((data, index) => ({
-            id: index, // Using index as a unique identifier
+            id: index + 1, // Using index as a unique identifier
             client: data.client || "",
             occupiedDesks: data.occupiedDesks || "",
             occupancyPercent:
@@ -234,7 +236,15 @@ const ViewAvailability = () => {
                 100
               ).toFixed(0) || "",
             memberDetails: data.memberDetails, // Pass memberDetails to the data for each row
-          }))} // Mapping through clientDetails
+          }))}
+        />
+        {/* <CollapsibleTable
+          columns={[
+            { field: "client", headerName: "Client Name" },
+            { field: "occupiedDesks", headerName: "Occupied Desks" },
+            { field: "occupancyPercent", headerName: "Occupied %" },
+          ]}
+      // Mapping through clientDetails
           renderExpandedRow={(row) => {
             if (!row?.memberDetails || !Array.isArray(row.memberDetails)) {
               return <div>No member details available</div>; // Fallback message if no data
@@ -273,7 +283,7 @@ const ViewAvailability = () => {
               />
             );
           }}
-        />
+        /> */}
       </WidgetSection>
 
       <MuiModal

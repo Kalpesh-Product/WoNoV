@@ -15,6 +15,7 @@ import useAuth from "../../hooks/useAuth";
 import { toast } from "sonner";
 import { queryClient } from "../../main";
 import humanDate from "../../utils/humanDateForamt";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const VisitorReviews = () => {
   const axios = useAxiosPrivate();
@@ -175,25 +176,27 @@ const VisitorReviews = () => {
             title="Average"
             description=" Ratings"
           />
-         </WidgetSection>
+        </WidgetSection>
 
-        <div className="p-6">
-          <AgTable
-            search={true}
-            searchColumn={"Policies"}
-            data={[
-              ...reviews.map((review, index) => ({
-                id: review._id,
-                srno: index + 1,
-                nameofreview: review.reviewerName,
-                date: humanDate(review.createdAt),
-                rate: review.rate,
-                Reviews: review.review,
-                action: review?.reply ? "Replied" : "Reply Review",
-              })),
-            ]}
-            columns={departmentsColumn}
-          />
+        <div className="p-4">
+          <PageFrame>
+            <AgTable
+              search={true}
+              searchColumn={"Policies"}
+              data={[
+                ...reviews.map((review, index) => ({
+                  id: review._id,
+                  srno: index + 1,
+                  nameofreview: review.reviewerName,
+                  date: humanDate(review.createdAt),
+                  rate: review.rate,
+                  Reviews: review.review,
+                  action: review?.reply ? "Replied" : "Reply Review",
+                })),
+              ]}
+              columns={departmentsColumn}
+            />
+          </PageFrame>
         </div>
         <MuiAside
           open={openSidebar}

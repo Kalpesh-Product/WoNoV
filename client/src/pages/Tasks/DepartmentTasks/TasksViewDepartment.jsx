@@ -24,6 +24,7 @@ import {
 } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const TasksViewDepartment = () => {
   const axios = useAxiosPrivate();
@@ -266,66 +267,74 @@ const TasksViewDepartment = () => {
   return (
     <>
       <div className="flex flex-col gap-4">
-        {!departmentLoading ? (
-          <WidgetSection padding layout={1}>
-            <DateWiseTable
-              checkbox
-              key={departmentKra.length}
-              buttonTitle={"Add Task"}
-              handleSubmit={() => setOpenModal(true)}
-              tableTitle={`${department} DEPARTMENT TASKS`}
-              data={(departmentKra || [])
-                .filter((item) => item.status !== "Completed")
-                .map((item, index) => ({
-                  srno: index + 1,
-                  id: item._id,
-                  taskName: item.taskName,
-                  description: item.description,
-                  assignedDate: item.assignedDate,
-                  status: item.status,
-                  dueDate: item.dueDate,
-                  dueTime: humanTime(item.dueTime),
-                  assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
-                }))}
-              dateColumn={"assignedDate"}
-              columns={departmentColumns}
-            />
-          </WidgetSection>
-        ) : (
-          <div className="h-72 flex items-center justify-center">
-            <CircularProgress />
-          </div>
-        )}
-
-        {!departmentLoading ? (
-          <WidgetSection padding>
-            <DateWiseTable
-              tableTitle={`COMPLETED TASKS`}
-              key={completedTasks.length}
-              data={
-                completedTasksFetchPending
-                  ? []
-                  : completedTasks.map((item, index) => ({
+        <PageFrame>
+          <div>
+            {!departmentLoading ? (
+              <WidgetSection padding layout={1}>
+                <DateWiseTable
+                  checkbox
+                  key={departmentKra.length}
+                  buttonTitle={"Add Task"}
+                  handleSubmit={() => setOpenModal(true)}
+                  tableTitle={`${department} DEPARTMENT TASKS`}
+                  data={(departmentKra || [])
+                    .filter((item) => item.status !== "Completed")
+                    .map((item, index) => ({
+                      srno: index + 1,
                       id: item._id,
                       taskName: item.taskName,
-                      completedBy: item.completedBy,
-                      assignedDate: humanDate(item.assignedDate),
-                      dueDate: humanDate(item.dueDate),
-                      dueTime: humanTime(item.dueTime),
-                      completedDate: humanDate(item.completedDate),
-                      completedTime: humanTime(item.completedDate),
+                      description: item.description,
+                      assignedDate: item.assignedDate,
                       status: item.status,
-                    }))
-              }
-              dateColumn={"assignedDate"}
-              columns={completedColumns}
-            />
-          </WidgetSection>
-        ) : (
-          <div className="h-72 flex items-center justify-center">
-            <CircularProgress />
+                      dueDate: item.dueDate,
+                      dueTime: humanTime(item.dueTime),
+                      assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
+                    }))}
+                  dateColumn={"assignedDate"}
+                  columns={departmentColumns}
+                />
+              </WidgetSection>
+            ) : (
+              <div className="h-72 flex items-center justify-center">
+                <CircularProgress />
+              </div>
+            )}
           </div>
-        )}
+        </PageFrame>
+
+        <PageFrame>
+          <div>
+            {!departmentLoading ? (
+              <WidgetSection padding>
+                <DateWiseTable
+                  tableTitle={`COMPLETED TASKS`}
+                  key={completedTasks.length}
+                  data={
+                    completedTasksFetchPending
+                      ? []
+                      : completedTasks.map((item, index) => ({
+                          id: item._id,
+                          taskName: item.taskName,
+                          completedBy: item.completedBy,
+                          assignedDate: humanDate(item.assignedDate),
+                          dueDate: humanDate(item.dueDate),
+                          dueTime: humanTime(item.dueTime),
+                          completedDate: humanDate(item.completedDate),
+                          completedTime: humanTime(item.completedDate),
+                          status: item.status,
+                        }))
+                  }
+                  dateColumn={"assignedDate"}
+                  columns={completedColumns}
+                />
+              </WidgetSection>
+            ) : (
+              <div className="h-72 flex items-center justify-center">
+                <CircularProgress />
+              </div>
+            )}
+          </div>
+        </PageFrame>
       </div>
 
       <MuiModal

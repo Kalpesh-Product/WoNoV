@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import useAuth from "../../../hooks/useAuth";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const DepartmentTasks = () => {
   const axios = useAxiosPrivate();
@@ -51,8 +52,7 @@ const DepartmentTasks = () => {
               dispatch(setSelectedDepartment(params.data.mongoId));
               navigate(`${params.value}`);
             }}
-            className="text-primary font-pregular hover:underline cursor-pointer"
-          >
+            className="text-primary font-pregular hover:underline cursor-pointer">
             {params.value}
           </span>
         );
@@ -64,23 +64,25 @@ const DepartmentTasks = () => {
   ];
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection layout={1} padding>
-        <AgTable
-          data={[
-            ...fetchedDepartments.map((item, index) => ({
-              srNo: index + 1,
-              mongoId: item.department?._id,
-              department: item.department?.name,
-              totalTasks: item.totalTasks,
-              pendingTasks: item.pendingTasks,
-              completedTasks: item.completedTasks,
-            })),
-          ]}
-          columns={departmentColumns}
-          tableTitle={"ACTIVE DEPARTMENT WISE TASKS"}
-          hideFilter
-        />
-      </WidgetSection>
+      <PageFrame>
+        <WidgetSection layout={1} padding>
+          <AgTable
+            data={[
+              ...fetchedDepartments.map((item, index) => ({
+                srNo: index + 1,
+                mongoId: item.department?._id,
+                department: item.department?.name,
+                totalTasks: item.totalTasks,
+                pendingTasks: item.pendingTasks,
+                completedTasks: item.completedTasks,
+              })),
+            ]}
+            columns={departmentColumns}
+            tableTitle={"ACTIVE DEPARTMENT WISE TASKS"}
+            hideFilter
+          />
+        </WidgetSection>
+      </PageFrame>
     </div>
   );
 };

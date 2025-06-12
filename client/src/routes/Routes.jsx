@@ -339,6 +339,7 @@ import ManageVisitorLayout from "../pages/Visitors/ManageVisitorLayout";
 import ExternalClients from "../pages/Visitors/ExternalClients";
 import ManageMeetingsLayout from "../pages/Meetings/ManageMeetingsLayout";
 import ExternalMeetingClients from "../pages/Meetings/ExternalMeetingClients";
+import CoWorkingDetails from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CoWorkingDetails";
 
 export const routes = createBrowserRouter([
   {
@@ -1140,9 +1141,17 @@ export const routes = createBrowserRouter([
                         path: "mix-bag/co-working-seats",
                         element: <CoWorkingSeats />,
                       },
+                       {
+                        path: "mix-bag/co-working-seats/:id",
+                        element: <CoWorkingDetails />,
+                      },
                       {
                         path: "co-working-seats",
                         element: <CoWorkingSeats />,
+                      },
+                      {
+                        path: "co-working-seats/:id",
+                        element: <CoWorkingDetails />,
                       },
                       {
                         path: "mix-bag/co-working-seats/check-availability",

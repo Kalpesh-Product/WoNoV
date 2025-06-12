@@ -1,9 +1,10 @@
 import AgTable from "../../../../components/AgTable";
+import PageFrame from "../../../../components/Pages/PageFrame";
 import PrimaryButton from "../../../../components/PrimaryButton";
 
 const FrontendWebsiteIssueReports = () => {
   const websiteIssueReportsColumn = [
-    { field: "id", headerName: "Sr No", width : 100 },
+    { field: "id", headerName: "Sr No", width: 100 },
     { field: "dueBy", headerName: "Due By" },
     { field: "clientName", headerName: "Client Name" },
     { field: "issue", headerName: "Issue" },
@@ -166,15 +167,17 @@ const FrontendWebsiteIssueReports = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <AgTable
-          search={true}
-          searchColumn={"clientName"}
-          tableTitle={"Website Issue Reports"}
-          data={[]}
-          columns={websiteIssueReportsColumn}
-        />
-      </div>
+      <PageFrame>
+        <div>
+          <AgTable
+            search={true}
+            searchColumn={"clientName"}
+            tableTitle={"Website Issue Reports"}
+            data={[]}
+            columns={websiteIssueReportsColumn}
+          />
+        </div>
+      </PageFrame>
     </div>
   );
 };

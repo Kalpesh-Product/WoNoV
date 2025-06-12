@@ -16,6 +16,7 @@ import CustomRating from "../../components/CustomRating";
 import humanTime from "../../utils/humanTime";
 import humanDateFormat from "../../utils/humanDateForamt";
 import humanDate from "../../utils/humanDateForamt";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const MeetingRoomCredits = ({ pageTitle }) => {
   const [selectedMeeting, setSelectedMeeting] = useState(null);
@@ -139,8 +140,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
             )} */}
             <span
               className="text-subtitle cursor-pointer"
-              onClick={() => handleViewDetails(params.data)}
-            >
+              onClick={() => handleViewDetails(params.data)}>
               <MdOutlineRemoveRedEye />
             </span>
           </div>
@@ -160,56 +160,55 @@ const MeetingRoomCredits = ({ pageTitle }) => {
                 style={{
                   backgroundColor: card.bgcolor,
                   color: card.quantityColor,
-                }}
-              >
+                }}>
                 <div className="text-md">{card.cardTitle}</div>
                 <div className="text-lg font-bold">{card.quantity}</div>
               </div>
             ))}
           </WidgetSection>
         </div>
-        <div>
-          {!isMyMeetingsPending ? (
-            <div className=" rounded-md">
-              <AgTable
-                tableTitle={"My Meetings"}
-                data={[
-                  ...myMeetings.map((meeting, index) => ({
-                    id: index + 1,
-                    meetingId: meeting._id,
-                    agenda: meeting.agenda,
-                    date: humanDate(meeting.date),
-                    roomName: meeting.roomName,
-                    reviews: meeting.reviews,
-                    location: meeting.location
-                      ? `${meeting.location?.unitName} - ${meeting.location.unitNo}`
-                      : "N/A",
-                  })),
-                ]}
-                columns={myMeetingsColumn}
-                search
+        <PageFrame>
+          <div>
+            {!isMyMeetingsPending ? (
+              <div className=" rounded-md">
+                <AgTable
+                  tableTitle={"My Meetings"}
+                  data={[
+                    ...myMeetings.map((meeting, index) => ({
+                      id: index + 1,
+                      meetingId: meeting._id,
+                      agenda: meeting.agenda,
+                      date: humanDate(meeting.date),
+                      roomName: meeting.roomName,
+                      reviews: meeting.reviews,
+                      location: meeting.location
+                        ? `${meeting.location?.unitName} - ${meeting.location.unitNo}`
+                        : "N/A",
+                    })),
+                  ]}
+                  columns={myMeetingsColumn}
+                  search
+                />
+              </div>
+            ) : (
+              <LinearProgress
+                sx={{
+                  backgroundColor: "black",
+                  "& .MuiLinearProgress-bar": { backgroundColor: "black" },
+                }}
               />
-            </div>
-          ) : (
-            <LinearProgress
-              sx={{
-                backgroundColor: "black",
-                "& .MuiLinearProgress-bar": { backgroundColor: "black" },
-              }}
-            />
-          )}
-        </div>
+            )}
+          </div>
+        </PageFrame>
       </div>
 
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add review"}
-      >
+        title={"Add review"}>
         <form
           onSubmit={reviewForm(submitReview)}
-          className="flex flex-col gap-4"
-        >
+          className="flex flex-col gap-4">
           <div className="flex gap-4 items-center">
             <span className="text-content">
               How was your meeting room experience ?
@@ -253,8 +252,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
       <MuiModal
         open={detailsModal}
         onClose={() => setDetailsModal(false)}
-        title={"Meeting Details"}
-      >
+        title={"Meeting Details"}>
         {selectedMeeting ? (
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
             <DetalisFormatted

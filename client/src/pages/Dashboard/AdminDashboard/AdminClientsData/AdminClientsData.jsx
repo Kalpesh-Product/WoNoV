@@ -5,6 +5,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { setClientData } from "../../../../redux/slices/salesSlice";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const AdminClientsData = () => {
   const navigate = useNavigate();
@@ -124,53 +125,55 @@ const AdminClientsData = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="w-full">
-        <AgTable
-          search={true}
-          key={clientsData.length}
-          data={[
-            ...clientsData.map((item, index) => ({
-              id: index + 1,
-              _id: item._id,
-              company: item.company,
-              clientName: item.clientName,
-              serviceName: item.service?.serviceName,
-              serviceDescription: item.service?.description,
-              sector: item.sector,
-              hoCity: item.hoCity,
-              hoState: item.hoState,
-              unitName: item.unit?.unitName,
-              unitNo: item.unit?.unitNo,
-              buildingName: item.unit?.building?.buildingName,
-              buildingAddress: item.unit?.building?.fullAddress,
-              cabinDesks: item.cabinDesks,
-              openDesks: item.openDesks,
-              totalDesks: item.totalDesks,
-              ratePerOpenDesk: item.ratePerOpenDesk,
-              ratePerCabinDesk: item.ratePerCabinDesk,
-              annualIncrement: item.annualIncrement,
-              perDeskMeetingCredits: item.perDeskMeetingCredits,
-              totalMeetingCredits: item.totalMeetingCredits,
-              startDate: item.startDate,
-              endDate: item.endDate,
-              lockinPeriod: item.lockinPeriod,
-              rentDate: item.rentDate,
-              nextIncrement: item.nextIncrement,
-              localPocName: item.localPoc?.name,
-              localPocEmail: item.localPoc?.email,
-              localPocPhone: item.localPoc?.phone,
-              hoPocName: item.hOPoc?.name,
-              hoPocEmail: item.hOPoc?.email,
-              hoPocPhone: item.hOPoc?.phone,
-              isActive: item.isActive,
-              createdAt: item.createdAt,
-              updatedAt: item.updatedAt,
-              occupiedImage: item.occupiedImage?.imageUrl,
-            })),
-          ]}
-          columns={viewEmployeeColumns}
-        />
-      </div>
+      <PageFrame>
+        <div className="w-full">
+          <AgTable
+            search={true}
+            key={clientsData.length}
+            data={[
+              ...clientsData.map((item, index) => ({
+                id: index + 1,
+                _id: item._id,
+                company: item.company,
+                clientName: item.clientName,
+                serviceName: item.service?.serviceName,
+                serviceDescription: item.service?.description,
+                sector: item.sector,
+                hoCity: item.hoCity,
+                hoState: item.hoState,
+                unitName: item.unit?.unitName,
+                unitNo: item.unit?.unitNo,
+                buildingName: item.unit?.building?.buildingName,
+                buildingAddress: item.unit?.building?.fullAddress,
+                cabinDesks: item.cabinDesks,
+                openDesks: item.openDesks,
+                totalDesks: item.totalDesks,
+                ratePerOpenDesk: item.ratePerOpenDesk,
+                ratePerCabinDesk: item.ratePerCabinDesk,
+                annualIncrement: item.annualIncrement,
+                perDeskMeetingCredits: item.perDeskMeetingCredits,
+                totalMeetingCredits: item.totalMeetingCredits,
+                startDate: item.startDate,
+                endDate: item.endDate,
+                lockinPeriod: item.lockinPeriod,
+                rentDate: item.rentDate,
+                nextIncrement: item.nextIncrement,
+                localPocName: item.localPoc?.name,
+                localPocEmail: item.localPoc?.email,
+                localPocPhone: item.localPoc?.phone,
+                hoPocName: item.hOPoc?.name,
+                hoPocEmail: item.hOPoc?.email,
+                hoPocPhone: item.hOPoc?.phone,
+                isActive: item.isActive,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt,
+                occupiedImage: item.occupiedImage?.imageUrl,
+              })),
+            ]}
+            columns={viewEmployeeColumns}
+          />
+        </div>
+      </PageFrame>
     </div>
   );
 };

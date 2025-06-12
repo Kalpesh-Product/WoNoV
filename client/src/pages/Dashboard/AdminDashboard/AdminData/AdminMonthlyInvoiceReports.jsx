@@ -15,6 +15,7 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 import dayjs from "dayjs";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const AdminMonthlyInvoiceReports = () => {
   const { auth } = useAuth();
@@ -67,7 +68,6 @@ const AdminMonthlyInvoiceReports = () => {
     },
   });
 
-
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
     mutationFn: async (data) => {
@@ -117,8 +117,7 @@ const AdminMonthlyInvoiceReports = () => {
         <div className="p-2 mb-2  flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleDetailsClick(params.data)}
-          >
+            onClick={() => handleDetailsClick(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -138,100 +137,98 @@ const AdminMonthlyInvoiceReports = () => {
     },
   });
 
-  const invoiceData =
-    [
-      {
-        department: { name: "Admin" },
-        name: "Office Chair",
-        brand: "Godrej Interio",
-        price: 8500,
-        quantity: 10,
-        purchaseDate: "2024-04-12",
-        warranty: 24,
-        vendor: { name: "Comfort Seating Co." },
-      },
-      {
-        department: { name: "Admin" },
-        name: "Laser Printer",
-        brand: "Brother",
-        price: 14000,
-        quantity: 2,
-        purchaseDate: "2024-06-18",
-        warranty: 18,
-        vendor: { name: "Print Solutions Pvt Ltd" },
-      },
-      {
-        department: { name: "Admin" },
-        name: "Filing Cabinet",
-        brand: "DurableStore",
-        price: 6000,
-        quantity: 5,
-        purchaseDate: "2024-08-08",
-        warranty: 36,
-        vendor: { name: "Office Interiors Ltd" },
-      },
-      {
-        department: { name: "Admin" },
-        name: "Wi-Fi Router",
-        brand: "Netgear",
-        price: 4500,
-        quantity: 3,
-        purchaseDate: "2024-07-20",
-        warranty: 24,
-        vendor: { name: "NetCom Solutions" },
-      },
-      {
-        department: { name: "Admin" },
-        name: "Work Desk",
-        brand: "Featherlite",
-        price: 9000,
-        quantity: 6,
-        purchaseDate: "2024-09-30",
-        warranty: 48,
-        vendor: { name: "Urban Office Supplies" },
-      },
-      {
-        department: { name: "Admin" },
-        name: "Reception Sofa Set",
-        brand: "Nilkamal",
-        price: 30000,
-        quantity: 1,
-        purchaseDate: "2024-11-10",
-        warranty: 60,
-        vendor: { name: "FurniStyle India" },
-      },
-      {
-        department: { name: "Admin" },
-        name: "Coffee Machine",
-        brand: "Nescafe",
-        price: 15000,
-        quantity: 1,
-        purchaseDate: "2025-01-15",
-        warranty: 12,
-        vendor: { name: "PantryPlus Services" },
-      },
-      {
-        department: { name: "Admin" },
-        name: "Document Shredder",
-        brand: "Kores",
-        price: 10000,
-        quantity: 1,
-        purchaseDate: "2025-02-02",
-        warranty: 24,
-        vendor: { name: "SecureDocs India" },
-      },
-      {
-        department: { name: "Admin" },
-        name: "Visitor Register Tablet",
-        brand: "Samsung",
-        price: 28000,
-        quantity: 2,
-        purchaseDate: "2025-03-20",
-        warranty: 24,
-        vendor: { name: "Digital Gateways" },
-      },
-    ];
-
+  const invoiceData = [
+    {
+      department: { name: "Admin" },
+      name: "Office Chair",
+      brand: "Godrej Interio",
+      price: 8500,
+      quantity: 10,
+      purchaseDate: "2024-04-12",
+      warranty: 24,
+      vendor: { name: "Comfort Seating Co." },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Laser Printer",
+      brand: "Brother",
+      price: 14000,
+      quantity: 2,
+      purchaseDate: "2024-06-18",
+      warranty: 18,
+      vendor: { name: "Print Solutions Pvt Ltd" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Filing Cabinet",
+      brand: "DurableStore",
+      price: 6000,
+      quantity: 5,
+      purchaseDate: "2024-08-08",
+      warranty: 36,
+      vendor: { name: "Office Interiors Ltd" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Wi-Fi Router",
+      brand: "Netgear",
+      price: 4500,
+      quantity: 3,
+      purchaseDate: "2024-07-20",
+      warranty: 24,
+      vendor: { name: "NetCom Solutions" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Work Desk",
+      brand: "Featherlite",
+      price: 9000,
+      quantity: 6,
+      purchaseDate: "2024-09-30",
+      warranty: 48,
+      vendor: { name: "Urban Office Supplies" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Reception Sofa Set",
+      brand: "Nilkamal",
+      price: 30000,
+      quantity: 1,
+      purchaseDate: "2024-11-10",
+      warranty: 60,
+      vendor: { name: "FurniStyle India" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Coffee Machine",
+      brand: "Nescafe",
+      price: 15000,
+      quantity: 1,
+      purchaseDate: "2025-01-15",
+      warranty: 12,
+      vendor: { name: "PantryPlus Services" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Document Shredder",
+      brand: "Kores",
+      price: 10000,
+      quantity: 1,
+      purchaseDate: "2025-02-02",
+      warranty: 24,
+      vendor: { name: "SecureDocs India" },
+    },
+    {
+      department: { name: "Admin" },
+      name: "Visitor Register Tablet",
+      brand: "Samsung",
+      price: 28000,
+      quantity: 2,
+      purchaseDate: "2025-03-20",
+      warranty: 24,
+      vendor: { name: "Digital Gateways" },
+    },
+  ];
 
   // const invoiceData = []
 
@@ -254,25 +251,28 @@ const AdminMonthlyInvoiceReports = () => {
   };
 
   useEffect(() => {
-    console.log(selectedAsset)
-  }, [selectedAsset])
+    console.log(selectedAsset);
+  }, [selectedAsset]);
 
   return (
     <>
-      <AgTable
-        key={invoiceData.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"Monthly Invoice Reports"}
-        buttonTitle={"Add Invoice"}
-        data={[
-          
-        ]}
-        columns={invoiceColumns}
-        handleClick={handleAddAsset}
-      />
+      <PageFrame>
+        <AgTable
+          key={invoiceData.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"Monthly Invoice Reports"}
+          buttonTitle={"Add Invoice"}
+          data={[]}
+          columns={invoiceColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === "add" ? "Add Invoice" : "Invoice Details"}>
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalMode === "add" ? "Add Invoice" : "Invoice Details"}>
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -315,7 +315,9 @@ const AdminMonthlyInvoiceReports = () => {
                       error={!!errors.category}
                       helperText={errors.category?.message}>
                       {assetsCategories.map((category) => (
-                        <MenuItem key={category._id} value={category.categoryName}>
+                        <MenuItem
+                          key={category._id}
+                          value={category.categoryName}>
                           {category.categoryName}
                         </MenuItem>
                       ))}
@@ -442,20 +444,40 @@ const AdminMonthlyInvoiceReports = () => {
                 <PrimaryButton title="Submit" />
               </div>
             </form>
-
           </div>
         )}
         {modalMode === "view" && selectedAsset && (
           <div className="p-4">
             <div className="grid grid-cols-2 gap-4">
-              <DetalisFormatted title="Department" detail={selectedAsset.department} />
-              <DetalisFormatted title="Category" detail={selectedAsset.category} />
+              <DetalisFormatted
+                title="Department"
+                detail={selectedAsset.department}
+              />
+              <DetalisFormatted
+                title="Category"
+                detail={selectedAsset.category}
+              />
               <DetalisFormatted title="Brand" detail={selectedAsset.brand} />
-              <DetalisFormatted title="Price" detail={`INR ${selectedAsset.price.toLocaleString("en-IN")}`} />
-              <DetalisFormatted title="Quantity" detail={selectedAsset.quantity} />
-              <DetalisFormatted title="Purchase Date" detail={dayjs(selectedAsset.purchaseDate).format("DD-MM-YYYY")} />
-              <DetalisFormatted title="Warranty" detail={`${selectedAsset.warranty} months`} />
-              <DetalisFormatted title="Vendor" detail={selectedAsset.vendorName} />
+              <DetalisFormatted
+                title="Price"
+                detail={`INR ${selectedAsset.price.toLocaleString("en-IN")}`}
+              />
+              <DetalisFormatted
+                title="Quantity"
+                detail={selectedAsset.quantity}
+              />
+              <DetalisFormatted
+                title="Purchase Date"
+                detail={dayjs(selectedAsset.purchaseDate).format("DD-MM-YYYY")}
+              />
+              <DetalisFormatted
+                title="Warranty"
+                detail={`${selectedAsset.warranty} months`}
+              />
+              <DetalisFormatted
+                title="Vendor"
+                detail={selectedAsset.vendorName}
+              />
             </div>
           </div>
         )}

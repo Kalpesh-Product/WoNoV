@@ -11,7 +11,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 const HrDepartmentTasks = () => {
   const location = useLocation();
   const { month, department, tasks, year } = location.state || {};
-  console.log("month", month)
+  console.log("month", month);
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
   const fullMonthNames = {
     Jan: "January",
@@ -44,18 +44,14 @@ const HrDepartmentTasks = () => {
   const initialShortMonth = Object.keys(fullMonthNames).find(
     (key) => fullMonthNames[key] === month
   );
-  
+
   const initialMonthIndex = fyMonths.findIndex((m) =>
     m.startsWith(initialShortMonth)
   );
-  
+
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(
     initialMonthIndex !== -1 ? initialMonthIndex : 0
   );
-  
-  
-
-
 
   const selectedMonth = fyMonths[selectedMonthIndex];
   const shortMonth = selectedMonth.split("-")[0];
@@ -277,8 +273,7 @@ const HrDepartmentTasks = () => {
       <WidgetSection
         title={`${departmentName} department task overview`}
         border
-        TitleAmount={`TOTAL TASKS :  ${tasksData.length || 0}`}
-      >
+        TitleAmount={`TOTAL TASKS :  ${tasksData.length || 0}`}>
         <NormalBarGraph
           data={graphData}
           options={graphOptions}
@@ -310,8 +305,7 @@ const HrDepartmentTasks = () => {
           filteredTasks.length > 1
             ? `${filteredTasks.length} tasks`
             : `${filteredTasks.length} task`
-        } `}
-      >
+        } `}>
         {filteredTasks.length === 0 ? (
           <div className="text-center flex justify-center items-center py-8 text-gray-500 h-80">
             No data available
