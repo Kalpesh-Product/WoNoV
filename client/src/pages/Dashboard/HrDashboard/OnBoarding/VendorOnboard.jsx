@@ -64,7 +64,7 @@ const VendorOnboard = () => {
       toast.success(data.message);
     },
     onError: function (data) {
-      toast.error(data.message);
+      toast.error(data.response.data.message);
     },
   });
 
@@ -168,7 +168,6 @@ const VendorOnboard = () => {
       })) || [];
 
   const onSubmit = (data) => {
-    console.log("dataa",data)
     vendorDetails(data);
   };
 
@@ -411,6 +410,7 @@ const VendorOnboard = () => {
 
               </div>
             </div>
+           
             <div>
               {/* Section: Other Information */}
               <div className="py-4 border-b-default border-borderGray">
@@ -618,7 +618,7 @@ const VendorOnboard = () => {
                 
               </div>
             </div>
-
+ </div>
             {/* Submit Button */}
             <div className="flex items-center justify-center gap-4">
               <PrimaryButton type="submit" title={"Submit"} />
