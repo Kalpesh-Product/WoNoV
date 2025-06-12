@@ -43,7 +43,6 @@ const Reimbursement = () => {
   const formRef = useRef(null);
   const [openPreview, setOpenPreview] = useState(false);
   const department = usePageDepartment();
-  console.log("department value : ", department);
   const axios = useAxiosPrivate();
   const { control, watch, setValue, getValues, reset } = useForm({
     defaultValues: {
@@ -184,7 +183,7 @@ const Reimbursement = () => {
         <div className="w-full space-y-4">
           <div className="flex justify-between items-center">
             <span className="text-title text-primary font-pbold mb-4 uppercase">
-              {/* {department.name} Department - Voucher Form */}
+              {department?.name} Department - Voucher Form
             </span>
           </div>
 

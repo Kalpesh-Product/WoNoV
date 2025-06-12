@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Country, State, City } from "country-state-city";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import usePageDepartment from "../../../../hooks/usePageDepartment";
 import useAuth from "../../../../hooks/useAuth";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
@@ -33,6 +34,9 @@ const VendorOnboard = () => {
     setCountries(Country.getAllCountries());
   }, []);
 
+  const department = usePageDepartment();
+  console.log("dept", department);
+
   // Fetch states when a country is selected
   const handleCountryChange = (countryCode) => {
     setSelectedCountry(countryCode);
@@ -40,7 +44,7 @@ const VendorOnboard = () => {
   };
   const handleStateChange = (state) => {
     setSelectedState(state);
-    setCities(City.getCitiesOfState(state));
+    setCities(City.getCitiesOfState(selectedCountry, state));
   };
   const handleCityChange = (city) => {
     setSelectedCity(city);
@@ -51,7 +55,7 @@ const VendorOnboard = () => {
     mutationFn: async (data) => {
       const response = await axios.post(`/api/vendors/onboard-vendor`, {
         ...data,
-        departmentId: auth.user.departments[0]._id || "id",
+        departmentId: department._id,
       });
 
       return response.data;
@@ -60,7 +64,7 @@ const VendorOnboard = () => {
       toast.success(data.message);
     },
     onError: function (data) {
-      toast.error(data.message);
+      toast.error(data.response.data.message);
     },
   });
 
@@ -171,11 +175,6 @@ const VendorOnboard = () => {
     reset();
   };
 
-  useEffect(() => {
-    console.log("country", selectedCountry);
-    console.log("state", selectedState);
-  }, [selectedCountry, selectedState]);
-
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
@@ -243,7 +242,6 @@ const VendorOnboard = () => {
                       />
                     )}
                   />
-
                   <Controller
                     name="address"
                     control={control}
@@ -260,7 +258,6 @@ const VendorOnboard = () => {
                       />
                     )}
                   />
-
                   <Controller
                     name="country"
                     control={control}
@@ -288,7 +285,6 @@ const VendorOnboard = () => {
                       </Select>
                     )}
                   />
-
                   <Controller
                     name="state"
                     control={control}
@@ -308,14 +304,13 @@ const VendorOnboard = () => {
                         error={!!error}>
                         <MenuItem value="">Select State</MenuItem>
                         {states.map((state) => (
-                          <MenuItem key={state.isoCode} value={state.name}>
+                          <MenuItem key={state.isoCode} value={state.isoCode}>
                             {state.name}
                           </MenuItem>
                         ))}
                       </Select>
                     )}
                   />
-
                   <Controller
                     name="city"
                     control={control}
@@ -328,7 +323,7 @@ const VendorOnboard = () => {
                         displayEmpty
                         onChange={(e) => {
                           field.onChange(e);
-                          console.log("city", e.target.value);
+
                           handleCityChange(e.target.value);
                         }}
                         size="small"
@@ -343,7 +338,6 @@ const VendorOnboard = () => {
                       </Select>
                     )}
                   />
-
                   <Controller
                     name="pinCode"
                     control={control}
@@ -366,7 +360,44 @@ const VendorOnboard = () => {
                       />
                     )}
                   />
-
+                  <Controller
+                    name="panIdNo"
+                    control={control}
+                    defaultValue=""
+                    rules={{
+                      pattern: {
+                        value: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
+                        message: "Invalid PAN (e.g., ABCDE1234F)",
+                      },
+                    }}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="PAN IT No"
+                        fullWidth
+                        error={!!error}
+                        helperText={error?.message}
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="companyName"
+                    control={control}
+                    defaultValue=""
+                    rules={{ required: "Company Name is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Company Name"
+                        fullWidth
+                        error={!!error}
+                        helperText={error?.message}
+                      />
+                    )}
+                  />
+                  =========
                   <Controller
                     name="panIdNo"
                     control={control}
@@ -513,6 +544,22 @@ const VendorOnboard = () => {
                 </div>
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
                   <Controller
+                    name="ifscCode"
+                    control={control}
+                    defaultValue=""
+                    rules={{ required: "IFSC Code is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="IFSC Code"
+                        fullWidth
+                        error={!!error}
+                        helperText={error?.message}
+                      />
+                    )}
+                  />
+                  <Controller
                     name="bankName"
                     control={control}
                     defaultValue=""
@@ -529,7 +576,40 @@ const VendorOnboard = () => {
                     )}
                   />
                   <Controller
-                    name="accountNo"
+                    name="branchName"
+                    control={control}
+                    defaultValue=""
+                    rules={{ required: "Branch Name is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Branch Name"
+                        fullWidth
+                        error={!!error}
+                        helperText={error?.message}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="nameOnAccount"
+                    control={control}
+                    defaultValue=""
+                    rules={{ required: "Name On Account is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Name On Account"
+                        fullWidth
+                        error={!!error}
+                        helperText={error?.message}
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="accountNumber"
                     control={control}
                     defaultValue=""
                     rules={{ required: "Account Number is required" }}
@@ -544,26 +624,9 @@ const VendorOnboard = () => {
                       />
                     )}
                   />
-                  <Controller
-                    name="ifscCode"
-                    control={control}
-                    defaultValue=""
-                    rules={{ required: "IFSC Code is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="IFSC Code"
-                        fullWidth
-                        error={!!error}
-                        helperText={error?.message}
-                      />
-                    )}
-                  />
                 </div>
               </div>
             </div>
-
             {/* Submit Button */}
             <div className="flex items-center justify-center gap-4">
               <PrimaryButton type="submit" title={"Submit"} />

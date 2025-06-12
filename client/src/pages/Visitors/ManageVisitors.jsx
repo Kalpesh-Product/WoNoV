@@ -15,6 +15,7 @@ import dayjs from "dayjs";
 import { queryClient } from "../../main";
 import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import ThreeDotMenu from "../../components/ThreeDotMenu";
 import PageFrame from "../../components/Pages/PageFrame";
 
 const ManageVisitors = () => {
@@ -92,8 +93,16 @@ const ManageVisitors = () => {
     { field: "lastName", headerName: "Last Name" },
     { field: "email", headerName: "Email" },
     { field: "phoneNumber", headerName: "Phone No" },
-    { field: "purposeOfVisit", headerName: "Purpose", align: "right" },
-    { field: "toMeet", headerName: "To Meet", align: "right" },
+    {
+      field: "purposeOfVisit",
+      headerName: "Purpose",
+      cellStyle: { textAlign: "right" },
+    },
+    {
+      field: "toMeet",
+      headerName: "To Meet",
+      cellStyle: { textAlign: "right" },
+    },
     { field: "checkIn", headerName: "Check In" },
     { field: "checkOut", headerName: "Checkout" },
     {
@@ -182,12 +191,6 @@ const ManageVisitors = () => {
         onClose={handleCloseModal}
         title={"Visitor Details"}>
         <div className="flex flex-col gap-4">
-          <div className="flex justify-end">
-            <PrimaryButton
-              handleSubmit={handleEditToggle}
-              title={isEditing ? "Cancel" : "Edit"}
-            />
-          </div>
           <form onSubmit={handleSubmit(submit)}>
             {!isVisitorsData ? (
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
