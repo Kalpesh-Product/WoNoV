@@ -3,11 +3,13 @@ const {
   getIncomeAndExpanse,
   uploadClientInvoice,
   getInvoices,
+  updatePaymentStatus,
 } = require("../controllers/financeControllers/financeControllers");
 const upload = require("../config/multerConfig");
 
 router.get("/income-expense", getIncomeAndExpanse);
 router.get("/client-invoices", getInvoices);
+router.patch("/update-payment-status/:invoiceId", updatePaymentStatus);
 router.post(
   "/upload-client-invoice",
   upload.single("client-invoice"),
