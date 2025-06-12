@@ -335,6 +335,11 @@ import ComplianceDocuments from "../pages/Dashboard/FinanceDashboard/MixBag/Comp
 import LandlordAgreements from "../pages/Dashboard/FinanceDashboard/MixBag/LandlordAgreements";
 import ClientAgreements from "../pages/Dashboard/FinanceDashboard/MixBag/ClientAgreements";
 import ReviewRequest from "../pages/Dashboard/FinanceDashboard/Billing/ReviewRequest";
+import ManageVisitorLayout from "../pages/Visitors/ManageVisitorLayout";
+import ExternalClients from "../pages/Visitors/ExternalClients";
+import ManageMeetingsLayout from "../pages/Meetings/ManageMeetingsLayout";
+import ExternalMeetingClients from "../pages/Meetings/ExternalMeetingClients";
+import CoWorkingDetails from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CoWorkingDetails";
 
 export const routes = createBrowserRouter([
   {
@@ -1136,9 +1141,17 @@ export const routes = createBrowserRouter([
                         path: "mix-bag/co-working-seats",
                         element: <CoWorkingSeats />,
                       },
+                       {
+                        path: "mix-bag/co-working-seats/:id",
+                        element: <CoWorkingDetails />,
+                      },
                       {
                         path: "co-working-seats",
                         element: <CoWorkingSeats />,
+                      },
+                      {
+                        path: "co-working-seats/:id",
+                        element: <CoWorkingDetails />,
                       },
                       {
                         path: "mix-bag/co-working-seats/check-availability",
@@ -1686,8 +1699,19 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "manage-meetings",
-                    element: <ManageMeetings />,
+                    element: <ManageMeetingsLayout />,
+                    children: [
+                      {
+                        path: "internal-meetings",
+                        element: <ManageMeetings />,
+                      },
+                      {
+                        path: "external-clients",
+                        element: <ExternalMeetingClients />,
+                      },
+                    ],
                   },
+
                   {
                     path: "settings",
                     element: <MeetingSettings />,
@@ -1946,9 +1970,22 @@ export const routes = createBrowserRouter([
                     element: <AddClient />,
                   },
                   {
-                    path: "manage-visitors", // Page with table showing a list of all visitors
-                    element: <ManageVisitors />,
+                    path: "manage-visitors",
+                    element: <ManageVisitorLayout />,
+                    children: [
+                      {
+                        path: "internal-visitors", // Page with table showing a list of all visitors
+                        element: <ManageVisitors />,
+                        index: true,
+                      },
+                      {
+                        path: "external-clients", // Page with table showing a list of all visitors
+                        element: <ExternalClients />,
+                        index: true,
+                      },
+                    ],
                   },
+
                   {
                     path: "team-members", // Page with table showing a list of all the team members(receptionists)
                     element: <VisitorTeamMembers />,

@@ -1,19 +1,21 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import BarGraph from "../../../../components/graphs/BarGraph";
-import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
-import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import DataCard from "../../../../components/DataCard";
 import MuiModal from "../../../../components/MuiModal";
-import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable";
 import { useSelector } from "react-redux";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import YearWiseTable from "../../../../components/Tables/YearWiseTable";
+import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
 
 const CoWorkingSeats = () => {
   const clientsData = useSelector((state) => state.sales.clientsData);
+  const navigate = useNavigate();
+  console.log("-----------CLIENTS DATA-----------", clientsData);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
+  const [selectedTableMonth, setSelectedTableMonth] = useState(null);
 
   const handleViewModal = (data) => {
     setViewDetails(data);
@@ -201,6 +203,189 @@ const CoWorkingSeats = () => {
     },
   };
 
+  console.log("---------MONTHLY SEATS DATA-----------", monthlySeatData);
+  const generateUnitMonthData = (clientsData) => {
+    const monthData = [];
+
+    // 1. Get global date range
+    const earliestStartDate = clientsData.reduce((earliest, client) => {
+      const clientStart = dayjs(client.startDate);
+      return clientStart.isBefore(earliest) ? clientStart : earliest;
+    }, dayjs(clientsData[0]?.startDate || new Date()));
+
+    const latestEndDate = clientsData.reduce((latest, client) => {
+      const clientEnd = dayjs(client.endDate);
+      return clientEnd.isAfter(latest) ? clientEnd : latest;
+    }, dayjs(clientsData[0]?.endDate || new Date()));
+
+    const globalStart = earliestStartDate.startOf("month");
+    const globalEnd = latestEndDate.endOf("month");
+
+    // 2. Build unit map & track first booking per unit
+    const unitsMap = new Map();
+    const firstBookingMonthPerUnit = new Map();
+
+    clientsData.forEach((client) => {
+      const unit = client.unit;
+      const unitKey = unit.unitNo;
+      const clientStart = dayjs(client.startDate).startOf("month");
+
+      if (!unitsMap.has(unitKey)) {
+        unitsMap.set(unitKey, {
+          unitNo: unit.unitNo,
+          unitName: unit.unitName,
+          buildingName: unit.building?.buildingName || "",
+          totalSeats: unit.openDesks + unit.cabinDesks,
+        });
+      }
+
+      // Track first booking month
+      if (
+        !firstBookingMonthPerUnit.has(unitKey) ||
+        clientStart.isBefore(firstBookingMonthPerUnit.get(unitKey))
+      ) {
+        firstBookingMonthPerUnit.set(unitKey, clientStart);
+      }
+    });
+
+    // 3. Track availability per unit across months
+    const availabilityState = new Map();
+
+    for (
+      let m = globalStart.clone();
+      m.isBefore(globalEnd);
+      m = m.add(1, "month")
+    ) {
+      unitsMap.forEach((unitInfo, unitNo) => {
+        const totalSeats = unitInfo.totalSeats;
+        const unitStartMonth = firstBookingMonthPerUnit.get(unitNo);
+
+        // Skip months before this unit's first booking
+        if (m.isBefore(unitStartMonth)) return;
+
+        // New bookings that start in this month
+        const bookedThisMonth = clientsData
+          .filter((client) => client.unit.unitNo === unitNo)
+          .filter((client) => {
+            const clientStart = dayjs(client.startDate);
+            return (
+              clientStart.isBefore(m.endOf("month")) &&
+              clientStart.isSameOrAfter(m.startOf("month"))
+            );
+          })
+          .reduce((sum, client) => sum + client.totalDesks, 0);
+
+        const prevAvailable =
+          availabilityState.has(unitNo) &&
+          availabilityState.get(unitNo) !== undefined
+            ? availabilityState.get(unitNo)
+            : totalSeats;
+
+        const available = Math.max(prevAvailable - bookedThisMonth, 0);
+
+        monthData.push({
+          unitNo,
+          unitName: unitInfo.unitName,
+          buildingName: unitInfo.buildingName,
+          totalSeats,
+          booked: bookedThisMonth,
+          available,
+          date: m.startOf("month").toISOString(),
+        });
+
+        // Update availability for next month
+        availabilityState.set(unitNo, available);
+      });
+    }
+
+    console.log("MONTH DATA FROM function ", monthData);
+
+    return monthData;
+  };
+
+  const tableData = useMemo(
+    () => generateUnitMonthData(clientsData),
+    [clientsData]
+  );
+
+  const totalBookedForMonth = useMemo(() => {
+    if (!selectedTableMonth) return 0;
+    return tableData
+      .filter(
+        (row) => dayjs(row.date).format("MMM-YYYY") === selectedTableMonth
+      )
+      .reduce((sum, row) => sum + (row.booked || 0), 0);
+  }, [tableData, selectedTableMonth]);
+
+  console.log("TABLE DATA", tableData);
+
+  const columns = [
+    { headerName: "Sr No", field: "srno", maxWidth: 80 },
+    {
+      headerName: "Unit No",
+      field: "unitNo",
+      cellRenderer: (params) => {
+        const rowData = params.data;
+        const unitNo = rowData.unitNo;
+
+        return (
+          <span
+            style={{
+              color: "#1a73e8",
+              cursor: "pointer",
+              textDecoration: "underline",
+            }}
+            onClick={() => {
+              const parsedDate = dayjs(rowData.date, "DD-MM-YYYY");
+              const selectedMonth = parsedDate.format("MMM-YYYY");
+
+              console.log("Row Date Raw:", rowData.date);
+              console.log("Parsed Month:", selectedMonth);
+
+              const monthStart = parsedDate.startOf("month");
+              const monthEnd = parsedDate.endOf("month");
+
+              const bookedClients = clientsData.filter((client) => {
+                const clientUnit = client.unit?.unitNo;
+                const clientStart = dayjs(client.startDate);
+                const clientEnd = dayjs(client.endDate);
+
+                return (
+                  clientUnit === unitNo &&
+                  clientStart.isBefore(monthEnd) &&
+                  clientEnd.isAfter(monthStart)
+                );
+              });
+
+              navigate(`/app/dashboard/sales-dashboard/mix-bag/co-working-seats/${params.value}`, {
+                state: {
+                  bookings: bookedClients,
+                  unitNo: unitNo,
+                  selectedMonth: selectedMonth,
+                },
+              });
+              console.log(
+                `📅 Bookings for unit ${unitNo} in ${selectedMonth}:`,
+                bookedClients
+              );
+            }}
+          >
+            {params.value}
+          </span>
+        );
+      },
+    },
+
+    { headerName: "Unit Name", field: "unitName" },
+    { headerName: "Building", field: "buildingName" },
+    { headerName: "Total Seats", field: "totalSeats" },
+    { headerName: "Booked", field: "booked" },
+    { headerName: "Available", field: "available" },
+    { headerName: "Month", field: "date" },
+  ];
+
+  console.log("tableData", tableData);
+
   return (
     <div className="p-4 flex flex-col gap-4">
       <WidgetSection
@@ -249,35 +434,19 @@ const CoWorkingSeats = () => {
       </WidgetSection>
 
       <WidgetSection
-        title={`Co-Working Occupancy Details`}
         border
-        TitleAmount={`TOTAL ACTIVE SEATS : ${occupiedSeats}`}
+        title={"Unit-wise Co-Working Bookings"}
+        TitleAmount={`Total Booked : ${totalBookedForMonth}`}
       >
-        <CollapsibleTable
-          columns={[
-            { field: "month", headerName: "Month" },
-            { field: "booked", headerName: "Booked Seats" },
-          ]}
-          data={monthlySeatData.map((m, index) => ({
-            id: index,
-            ...m,
-          }))}
-          renderExpandedRow={(row) => (
-            <AgTable
-              data={row.clients.map((c, idx) => ({ ...c, id: idx + 1 }))}
-              hideFilter
-              columns={[
-                { headerName: "Sr No", field: "id", width: 100 },
-                { headerName: "Location", field: "location" },
-                { headerName: "Unit No", field: "floor" }, // ✅ Correct label
-
-                { headerName: "Total Seats", field: "totalSeats" },
-                { headerName: "Booked Seats", field: "booked" },
-                { headerName: "Available Seats", field: "available" },
-              ]}
-              tableHeight={300}
-            />
-          )}
+        <YearWiseTable
+          data={tableData}
+          columns={columns}
+          s
+          formatDate={false}
+          formatTime={false}
+          dateColumn="date"
+          initialMonth="April"
+          onMonthChange={setSelectedTableMonth}
         />
       </WidgetSection>
 

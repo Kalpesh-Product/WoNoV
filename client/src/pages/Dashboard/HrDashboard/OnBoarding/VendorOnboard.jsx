@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Country, State, City } from "country-state-city";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import usePageDepartment from "../../../../hooks/usePageDepartment";
 import useAuth from "../../../../hooks/useAuth";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
@@ -33,6 +34,9 @@ const VendorOnboard = () => {
     setCountries(Country.getAllCountries());
   }, []);
 
+  const department =  usePageDepartment()
+  console.log("dept",department)
+
   // Fetch states when a country is selected
   const handleCountryChange = (countryCode) => {
     setSelectedCountry(countryCode);
@@ -40,7 +44,7 @@ const VendorOnboard = () => {
   };
   const handleStateChange = (state) => {
     setSelectedState(state);
-    setCities(City.getCitiesOfState(state));
+    setCities(City.getCitiesOfState(selectedCountry,state));
   };
   const handleCityChange = (city) => {
     setSelectedCity(city);
@@ -51,7 +55,7 @@ const VendorOnboard = () => {
     mutationFn: async (data) => {
       const response = await axios.post(`/api/vendors/onboard-vendor`, {
         ...data,
-        departmentId: auth.user.departments[0]._id || "id",
+        departmentId: department._id,
       });
 
       return response.data;
@@ -164,6 +168,7 @@ const VendorOnboard = () => {
       })) || [];
 
   const onSubmit = (data) => {
+    console.log("dataa",data)
     vendorDetails(data);
   };
 
@@ -171,10 +176,6 @@ const VendorOnboard = () => {
     reset();
   };
 
-  useEffect(() => {
-    console.log("country", selectedCountry);
-    console.log("state", selectedState);
-  }, [selectedCountry, selectedState]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -300,21 +301,22 @@ const VendorOnboard = () => {
                         fullWidth
                         displayEmpty
                         onChange={(e) => {
-                          field.onChange(e);
-                          handleStateChange(e.target.value);
-                        }}
-                        size="small"
-                        disabled={!selectedCountry}
-                        error={!!error}>
-                        <MenuItem value="">Select State</MenuItem>
-                        {states.map((state) => (
-                          <MenuItem key={state.isoCode} value={state.name}>
-                            {state.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    )}
-                  />
+                        field.onChange(e);
+                        handleStateChange(e.target.value);
+                      }}
+                      size="small"
+                      disabled={!selectedCountry}
+                      error={!!error}
+                    >
+                      <MenuItem value="">Select State</MenuItem>
+                      {states.map((state) => (
+                        <MenuItem key={state.isoCode} value={state.isoCode}>
+                          {state.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
 
                   <Controller
                     name="city"
@@ -327,22 +329,23 @@ const VendorOnboard = () => {
                         fullWidth
                         displayEmpty
                         onChange={(e) => {
-                          field.onChange(e);
-                          console.log("city", e.target.value);
-                          handleCityChange(e.target.value);
-                        }}
-                        size="small"
-                        disabled={!selectedState}
-                        error={!!error}>
-                        <MenuItem value="">Select City</MenuItem>
-                        {cities.map((city) => (
-                          <MenuItem key={city.isoCode} value={city.name}>
-                            {city.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    )}
-                  />
+                        field.onChange(e);
+                      
+                        handleCityChange(e.target.value);
+                      }}
+                      size="small"
+                      disabled={!selectedState}
+                      error={!!error}
+                    >
+                      <MenuItem value="">Select City</MenuItem>
+                      {cities.map((city) => (
+                        <MenuItem key={city.isoCode} value={city.name}>
+                          {city.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
 
                   <Controller
                     name="pinCode"
@@ -367,38 +370,56 @@ const VendorOnboard = () => {
                     )}
                   />
 
-                  <Controller
-                    name="panIdNo"
-                    control={control}
-                    defaultValue=""
-                    rules={{
-                      pattern: {
-                        value: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
-                        message: "Invalid PAN (e.g., ABCDE1234F)",
-                      },
-                    }}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="PAN IT No"
-                        fullWidth
-                        error={!!error}
-                        helperText={error?.message}
-                      />
-                    )}
-                  />
-                </div>
+                <Controller
+                  name="panIdNo"
+                  control={control}
+                  defaultValue=""
+                  rules={{
+                    pattern: {
+                      value: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
+                      message: "Invalid PAN (e.g., ABCDE1234F)",
+                    },
+                  }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="PAN IT No"
+                      fullWidth
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
+                />
+
+                   <Controller
+                  name="companyName"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Company Name is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Company Name"
+                      fullWidth
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
+                />
+
               </div>
-              <div>
-                {/* Section: Other Information */}
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Other Information
-                  </span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {/* <Controller
+            </div>
+            <div>
+              {/* Section: Other Information */}
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">
+                  Other Information
+                </span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                {/* <Controller
                   name="assesseeOfOtherTerritory"
                   control={control}
                   defaultValue=""
@@ -506,61 +527,95 @@ const VendorOnboard = () => {
                   />
                 </div>
                 {/* Section: Bank Information */}
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Bank Information
-                  </span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  <Controller
-                    name="bankName"
-                    control={control}
-                    defaultValue=""
-                    rules={{ required: "Bank Name is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Bank Name"
-                        fullWidth
-                        error={!!error}
-                        helperText={error?.message}
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="accountNo"
-                    control={control}
-                    defaultValue=""
-                    rules={{ required: "Account Number is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Account Number"
-                        fullWidth
-                        error={!!error}
-                        helperText={error?.message}
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="ifscCode"
-                    control={control}
-                    defaultValue=""
-                    rules={{ required: "IFSC Code is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="IFSC Code"
-                        fullWidth
-                        error={!!error}
-                        helperText={error?.message}
-                      />
-                    )}
-                  />
-                </div>
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">
+                  Bank Information
+                </span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+            
+             <Controller
+                  name="ifscCode"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "IFSC Code is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="IFSC Code"
+                      fullWidth
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
+                />
+                    <Controller
+                  name="bankName"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Bank Name is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Bank Name"
+                      fullWidth
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
+                />
+                    <Controller
+                  name="branchName"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Branch Name is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Branch Name"
+                      fullWidth
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
+                />
+
+                    <Controller
+                  name="nameOnAccount"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Name On Account is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Name On Account"
+                      fullWidth
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
+                />
+                    <Controller
+                  name="accountNumber"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Account Number is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Account Number"
+                      fullWidth
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
+                />
+                
               </div>
             </div>
 

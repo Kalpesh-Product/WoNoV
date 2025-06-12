@@ -15,6 +15,8 @@ import { queryClient } from "../../../../main";
 import { IoCloseCircleOutline } from "react-icons/io5";
 import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setVoucherDetails } from "../../../../redux/slices/financeSlice"; // adjust path as needed
 
 const PendingApprovals = () => {
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ const PendingApprovals = () => {
   const [modalType, setModalType] = useState("");
   const [selectedBudget, setSelectedBudget] = useState([]);
   const axios = useAxiosPrivate();
+  const dispatch = useDispatch();
   const cellClasses = "border border-black p-2 text-xs align-top";
   const tableClasses = "w-full border border-black border-collapse mb-5";
   const { data: pendingApprovals = [], isPending: isPendingLoading } = useQuery(
@@ -83,8 +86,6 @@ const PendingApprovals = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => {
-        const srNumber = params.data?.sNo || "UNKNOWN";
-        console.log("PARAMS DATA :", srNumber)
         return (
           <>
             {isRejectPending ? (
@@ -106,8 +107,11 @@ const PendingApprovals = () => {
                   {
                     label: "Review",
                     onClick: () => {
+                      dispatch(setVoucherDetails(params.data)); // dispatching to redux
                       setSelectedBudget(params.data);
-                      navigate(`/app/dashboard/finance-dashboard/billing/pending-approvals/review-request`)
+                      navigate(
+                        `/app/dashboard/finance-dashboard/billing/pending-approvals/review-request`
+                      );
                     },
                   },
                   {
@@ -135,7 +139,7 @@ const PendingApprovals = () => {
           tableTitle={"Pending Approvals"}
           data={pendingApprovals.map((item, index) => ({
             ...item,
-            sNo: item.srNo,
+            srNo: item.srNo,
             srno: index + 1,
             department: item.department?.name,
             reimbursementDate: humanDate(item.reimbursementDate),
