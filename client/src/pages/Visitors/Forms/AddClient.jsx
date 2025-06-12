@@ -1,14 +1,10 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { TextField, Select, MenuItem, CircularProgress } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import { State, City } from "country-state-city";
-import {
-  DatePicker,
-  LocalizationProvider,
-  TimePicker,
-} from "@mui/x-date-pickers";
+import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -76,34 +72,6 @@ const AddClient = () => {
     },
   });
 
-  const { data: clientCompanies = [], clientCompaniesIsLoading } = useQuery({
-    queryKey: ["clientCompanies"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/sales/co-working-clients");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
-
-  const { data: clientMembers = [], isLoading: clientMembersIsLoading } =
-    useQuery({
-      queryKey: ["clientMembers", selectedCompany],
-      queryFn: async () => {
-        try {
-          const response = await axios.get(
-            `/api/sales/co-working-client-members?clientId=${selectedCompany}`
-          );
-          return response.data;
-        } catch (error) {
-          throw new Error(error.response.data.message);
-        }
-      },
-      enabled: !!selectedCompany, // <-- Runs only if selectedCompany has a truthy value
-    });
-
   //---------------------------------------Data processing----------------------------------------------------//
   const departmentMap = new Map();
   employees.forEach((employee) => {
@@ -146,6 +114,10 @@ const AddClient = () => {
 
     const payload = {
       ...data,
+      visitorFlag: "Client", // Identify this as a client visitor
+      sector: data.sector,
+      hoState: data.hoState,
+      hoCity: data.hoCity,
       department: isBiznest
         ? data.department === "na"
           ? null
@@ -155,7 +127,10 @@ const AddClient = () => {
         ? data.department === "na"
           ? null
           : data.toMeet
-        : data.toMeet || null, // allow client member ID
+        : data.toMeet || null,
+      checkIn: data.checkIn?.toISOString() || null,
+      checkOut: data.checkOut?.toISOString() || null,
+      dateOfVisit: data.dateOfVisit?.toISOString() || null,
     };
 
     addVisitor(payload);
@@ -167,17 +142,15 @@ const AddClient = () => {
 
   return (
     <div className=" p-4">
-      <PageFrame>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              {/* Section: Basic Information */}
-              <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">
-                  Client Details
-                </span>
-              </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            {/* Section: Basic Information */}
+            <div className="py-4 border-b-default border-borderGray">
+              <span className="text-subtitle font-pmedium">Client Details</span>
+            </div>
+            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+              <div hidden>
                 <Controller
                   name="visitorType"
                   control={control}
@@ -191,86 +164,8 @@ const AddClient = () => {
                     </TextField>
                   )}
                 />
-                <Controller
-                  name="visitorComapany"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      fullWidth
-                      label={"Visitor company"}
-                    />
-                  )}
-                />
-                <Controller
-                  name="sector"
-                  control={control}
-                  rules={{ required: "Sector is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Sector"
-                      fullWidth
-                      error={!!errors.sector}
-                      helperText={errors.sector?.message}>
-                      <MenuItem value="" disabled>
-                        Select a Sector
-                      </MenuItem>
-                      <MenuItem value="IT & Consulting">
-                        IT & Consulting
-                      </MenuItem>
-                    </TextField>
-                  )}
-                />
-                <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
-                  <Controller
-                    name="hoState"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        select
-                        label="State"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleStateSelect(e.target.value);
-                        }}
-                        fullWidth>
-                        <MenuItem value="">Select a State</MenuItem>
-                        {states.map((item) => (
-                          <MenuItem value={item.isoCode} key={item.isoCode}>
-                            {item.name}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                    )}
-                  />
-                  <Controller
-                    name="hoCity"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        select
-                        label="City"
-                        fullWidth>
-                        <MenuItem value="">Select a State</MenuItem>
-                        {cities.map((item) => (
-                          <MenuItem
-                            value={item.name}
-                            key={`${item.name}-${item.stateCode}-${item.latitude}`}>
-                            {item.name}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                    )}
-                  />
-                </div>
-
+              </div>
+              <div className="flex gap-4 items-center">
                 <Controller
                   name="firstName"
                   control={control}
@@ -301,6 +196,9 @@ const AddClient = () => {
                     />
                   )}
                 />
+              </div>
+
+              <div className="flex gap-4 items-center">
                 <Controller
                   name="phoneNumber"
                   control={control}
@@ -317,21 +215,6 @@ const AddClient = () => {
                   )}
                 />
                 <Controller
-                  name="email"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      error={!!errors.email}
-                      helperText={errors.email?.message}
-                      label="Email"
-                      fullWidth
-                    />
-                  )}
-                />
-
-                <Controller
                   name="gender"
                   control={control}
                   rules={{ required: "Gender is required" }}
@@ -343,7 +226,8 @@ const AddClient = () => {
                       helperText={errors.gender?.message}
                       size="small"
                       label="Gender"
-                      fullWidth>
+                      fullWidth
+                    >
                       <MenuItem value="" disabled>
                         Select Gender
                       </MenuItem>
@@ -352,87 +236,243 @@ const AddClient = () => {
                     </TextField>
                   )}
                 />
-
-                <Controller
-                  name="purposeOfVisit"
-                  control={control}
-                  rules={{ required: "Purpose is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Purpose of visit"
-                      error={!!errors.purposeOfVisit}
-                      helperText={errors.purposeOfVisit?.message}
-                      fullWidth
-                    />
-                  )}
-                />
               </div>
+              <Controller
+                name="email"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                    label="Email"
+                    fullWidth
+                  />
+                )}
+              />
+
+              <Controller
+                name="purposeOfVisit"
+                control={control}
+                rules={{ required: "Purpose is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Purpose of visit"
+                    error={!!errors.purposeOfVisit}
+                    helperText={errors.purposeOfVisit?.message}
+                    fullWidth
+                  />
+                )}
+              />
             </div>
+
             <div>
               <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">Verfication</span>
+                <span className="text-subtitle font-pmedium">Timings</span>
               </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-                <Controller
-                  name="idProof.idType"
-                  control={control}
-                  rules={{ required: "Id Type is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="ID Type"
-                      select
-                      error={!!errors.idProof?.idType}
-                      helperText={errors.idProof?.idType?.message}
-                      fullWidth>
-                      <MenuItem value="" disabled>
-                        Select Id Type
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Controller
+                    name="checkIn"
+                    control={control}
+                    rules={{ required: "Check-In time is required" }}
+                    render={({ field }) => (
+                      <TimePicker
+                        {...field}
+                        label={"Check-In Time"}
+                        slotProps={{
+                          textField: { size: "small", fullWidth: true },
+                        }}
+                        render={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            error={!!errors.checkIn}
+                            helperText={errors.checkIn?.message}
+                          />
+                        )}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Controller
+                    name="checkOut"
+                    control={control}
+                    render={({ field }) => (
+                      <TimePicker
+                        {...field}
+                        label={"Check-Out Time"}
+                        slotProps={{
+                          textField: { size: "small", fullWidth: true },
+                        }}
+                        render={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            error={!!errors.checkOut}
+                            helperText={errors.checkOut?.message}
+                          />
+                        )}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="py-4 border-b-default border-borderGray">
+              <span className="text-subtitle font-pmedium">
+                Company Details
+              </span>
+            </div>
+            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+              <Controller
+                name="clientCompany"
+                control={control}
+                rules={{ required: "Client Company is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Client Company"
+                    fullWidth
+                    error={!!errors.clientCompany}
+                    helperText={errors.clientCompany?.message}
+                  />
+                )}
+              />
+
+              <Controller
+                name="sector"
+                control={control}
+                rules={{ required: "Sector is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Sector"
+                    fullWidth
+                    error={!!errors.sector}
+                    helperText={errors.sector?.message}
+                  />
+                )}
+              />
+
+              <Controller
+                name="hoState"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    select
+                    label="State"
+                    onChange={(e) => {
+                      field.onChange(e);
+                      handleStateSelect(e.target.value);
+                    }}
+                    fullWidth
+                  >
+                    <MenuItem value="">Select a State</MenuItem>
+                    {states.map((item) => (
+                      <MenuItem value={item.isoCode} key={item.isoCode}>
+                        {item.name}
                       </MenuItem>
-                      <MenuItem value="aadhar">Aadhar</MenuItem>
-                      <MenuItem value="pan">PAN</MenuItem>
-                      <MenuItem value="drivingLicense">
-                        Driving License
+                    ))}
+                  </TextField>
+                )}
+              />
+              <Controller
+                name="hoCity"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    select
+                    label="City"
+                    fullWidth
+                  >
+                    <MenuItem value="">Select a City</MenuItem>
+                    {cities.map((item) => (
+                      <MenuItem
+                        value={item.name}
+                        key={`${item.name}-${item.stateCode}-${item.latitude}`}
+                      >
+                        {item.name}
                       </MenuItem>
-                    </TextField>
-                  )}
-                />
-                <Controller
-                  name="idProof.idNumber"
-                  control={control}
-                  rules={{
-                    required: "ID Number is required",
-                    validate: (value) => {
-                      if (selectedIdType === "aadhar") {
-                        const regex = /^\d{4}-\d{4}-\d{4}$/;
-                        if (!regex.test(value))
-                          return "Aadhar must be in 1234-5678-9012 format";
-                      }
-                      if (selectedIdType === "pan") {
-                        const regex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
-                        if (!regex.test(value))
-                          return "PAN must be in format: ABCDE1234F";
-                      }
-                      if (selectedIdType === "drivingLicense") {
-                        const regex = /^[A-Z]{2}[0-9]{2}\s?[0-9]{11}$/;
-                        if (!regex.test(value))
-                          return "DL must be like MH12 12345678901";
-                      }
-                      return true;
-                    },
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="ID Number"
-                      fullWidth
-                      error={!!errors.idProof?.idNumber}
-                      helperText={errors.idProof?.idNumber?.message}
-                      onChange={(e) => {
-                        let value = e.target.value;
+                    ))}
+                  </TextField>
+                )}
+              />
+            </div>
+            <div className="py-4 border-b-default border-borderGray">
+              <span className="text-subtitle font-pmedium">Verification</span>
+            </div>
+            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
+              <Controller
+                name="idProof.idType"
+                control={control}
+                rules={{ required: "Id Type is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="ID Type"
+                    select
+                    error={!!errors.idProof?.idType}
+                    helperText={errors.idProof?.idType?.message}
+                    fullWidth
+                  >
+                    <MenuItem value="" disabled>
+                      Select Id Type
+                    </MenuItem>
+                    <MenuItem value="aadhar">Aadhar</MenuItem>
+                    <MenuItem value="pan">PAN</MenuItem>
+                    <MenuItem value="drivingLicense">Driving License</MenuItem>
+                  </TextField>
+                )}
+              />
+              <Controller
+                name="idProof.idNumber"
+                control={control}
+                rules={{
+                  required: "ID Number is required",
+                  validate: (value) => {
+                    if (selectedIdType === "aadhar") {
+                      const regex = /^\d{4}-\d{4}-\d{4}$/;
+                      if (!regex.test(value))
+                        return "Aadhar must be in 1234-5678-9012 format";
+                    }
+                    if (selectedIdType === "pan") {
+                      const regex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+                      if (!regex.test(value))
+                        return "PAN must be in format: ABCDE1234F";
+                    }
+                    if (selectedIdType === "drivingLicense") {
+                      const regex = /^[A-Z]{2}[0-9]{2}\s?[0-9]{11}$/;
+                      if (!regex.test(value))
+                        return "DL must be like MH12 12345678901";
+                    }
+                    return true;
+                  },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="ID Number"
+                    fullWidth
+                    error={!!errors.idProof?.idNumber}
+                    helperText={errors.idProof?.idNumber?.message}
+                    onChange={(e) => {
+                      let value = e.target.value;
 
                         if (selectedIdType === "aadhar") {
                           // Remove non-digit characters first
@@ -443,91 +483,15 @@ const AddClient = () => {
                           if (parts) value = parts.join("-");
                         }
 
-                        field.onChange(value);
-                      }}
-                      value={field.value}
-                    />
-                  )}
-                />
-              </div>
-
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">Timings</span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-                  {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <Controller
-                    name="dateOfVisit"
-                    control={control}
-                    rules={{ required: "Date of visit is required" }}
-                    render={({ field }) => (
-                      <DatePicker
-                        {...field}
-                        format="DD-MM-YYYY"
-                        label={"Date of Visit"}
-                        value={field.value || null}
-                        onChange={(e) => field.onChange(e)}
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            size: "small",
-                            error: !!errors.dateOfVisit,
-                            helperText: errors.dateOfVisit?.message,
-                          },
-                        }}
-                      />
-                    )}
+                      field.onChange(value);
+                    }}
+                    value={field.value}
                   />
-                </LocalizationProvider> */}
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Controller
-                      name="checkIn"
-                      control={control}
-                      rules={{ required: "Check-In time is required" }}
-                      render={({ field }) => (
-                        <TimePicker
-                          {...field}
-                          label={"Check-In Time"}
-                          slotProps={{ textField: { size: "small" } }}
-                          render={(params) => (
-                            <TextField
-                              {...params}
-                              fullWidth
-                              error={!!errors.checkIn}
-                              helperText={errors.checkIn?.message}
-                            />
-                          )}
-                        />
-                      )}
-                    />
-                  </LocalizationProvider>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Controller
-                      name="checkOut"
-                      control={control}
-                      rules={{ required: "Check-Out time is required" }}
-                      render={({ field }) => (
-                        <TimePicker
-                          {...field}
-                          label={"Check-Out Time"}
-                          slotProps={{ textField: { size: "small" } }}
-                          render={(params) => (
-                            <TextField
-                              {...params}
-                              fullWidth
-                              error={!!errors.checkOut}
-                              helperText={errors.checkOut?.message}
-                            />
-                          )}
-                        />
-                      )}
-                    />
-                  </LocalizationProvider>
-                </div>
-              </div>
+                )}
+              />
             </div>
           </div>
+        </div>
 
           {/* Submit Button */}
           <div className="flex items-center justify-center gap-4">
