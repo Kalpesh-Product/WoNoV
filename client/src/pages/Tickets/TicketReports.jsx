@@ -10,6 +10,7 @@ import MonthWiseTable from "../../components/Tables/MonthWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import dayjs from "dayjs";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const TicketReports = () => {
   const { auth } = useAuth();
@@ -77,8 +78,7 @@ const TicketReports = () => {
               onClick={() => {
                 handleSelectedMeeting(params.data);
               }}
-              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-            >
+              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
               <span className="text-subtitle">
                 <MdOutlineRemoveRedEye />
               </span>
@@ -91,54 +91,55 @@ const TicketReports = () => {
 
   return (
     <div className="flex flex-col gap-8 p-4">
-      <div>
-        {!isLoading ? (
-          <AgTable
-            search={true}
-            tableTitle={"Ticket Reports"}
-            data={[
-              ...ticketsData.map((item, index) => ({
-                id: index + 1,
-                ticket: item.ticket || "",
-                raisedToDepartment: item.raisedToDepartment?.name || "",
-                raisedBy: `${item.raisedBy?.firstName || ""} ${
-                  item.raisedBy?.lastName || ""
-                }`.trim(),
-                description: item.description || "",
-                status: item.status || "",
-                assignees:
-                  item.assignees?.map(
-                    (assignee) => `${assignee.firstName} ${assignee.lastName}`
-                  ) || "",
-                company: item.company?.companyName,
-                createdAt: dayjs(item.createdAt).format("DD-MM-YYYY") || "",
-                updatedAt: humanDate(item.updatedAt) || "",
-                acceptedBy: `${item.acceptedBy?.firstName || ""} ${
-                  item.acceptedBy?.lastName || ""
-                }`,
-                rejectedBy: `${item.reject?.rejectedBy?.firstName || ""} ${
-                  item.reject?.rejectedBy?.lastName || ""
-                }`,
-                reason: item.reject?.reason,
-              })),
-            ]}
-            exportData
-            columns={kraColumn}
-          />
-        ) : (
-          // <MonthWiseTable
+      <PageFrame>
+        <div>
+          {!isLoading ? (
+            <AgTable
+              search={true}
+              tableTitle={"Ticket Reports"}
+              data={[
+                ...ticketsData.map((item, index) => ({
+                  id: index + 1,
+                  ticket: item.ticket || "",
+                  raisedToDepartment: item.raisedToDepartment?.name || "",
+                  raisedBy: `${item.raisedBy?.firstName || ""} ${
+                    item.raisedBy?.lastName || ""
+                  }`.trim(),
+                  description: item.description || "",
+                  status: item.status || "",
+                  assignees:
+                    item.assignees?.map(
+                      (assignee) => `${assignee.firstName} ${assignee.lastName}`
+                    ) || "",
+                  company: item.company?.companyName,
+                  createdAt: dayjs(item.createdAt).format("DD-MM-YYYY") || "",
+                  updatedAt: humanDate(item.updatedAt) || "",
+                  acceptedBy: `${item.acceptedBy?.firstName || ""} ${
+                    item.acceptedBy?.lastName || ""
+                  }`,
+                  rejectedBy: `${item.reject?.rejectedBy?.firstName || ""} ${
+                    item.reject?.rejectedBy?.lastName || ""
+                  }`,
+                  reason: item.reject?.reason,
+                })),
+              ]}
+              exportData
+              columns={kraColumn}
+            />
+          ) : (
+            // <MonthWiseTable
 
-          // />
-          <div className="flex justify-center items-center">
-            <CircularProgress />
-          </div>
-        )}
-      </div>
+            // />
+            <div className="flex justify-center items-center">
+              <CircularProgress />
+            </div>
+          )}
+        </div>
+      </PageFrame>
       <MuiModal
         open={detailsModal}
         onClose={() => setDetailsModal(false)}
-        title={"Ticket Detials"}
-      >
+        title={"Ticket Detials"}>
         {!isLoading && selectedMeeting ? (
           <div className="w-full grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
             <DetalisFormatted

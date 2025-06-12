@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { setSelectedDepartment } from "../../redux/slices/performanceSlice";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
 import useAuth from "../../hooks/useAuth";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const ManageTicketsHome = () => {
   const axios = useAxiosPrivate();
@@ -17,14 +18,14 @@ const ManageTicketsHome = () => {
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
   useTopDepartment({
-       additionalTopUserIds: ["67b83885daad0f7bab2f188b"], //mac
+    additionalTopUserIds: ["67b83885daad0f7bab2f188b"], //mac
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       navigate(`/app/tickets/manage-tickets/${currentDepartment}`);
     },
   });
 
-  const { data: getAllTickets=[], isLoading } = useQuery({
+  const { data: getAllTickets = [], isLoading } = useQuery({
     queryKey: ["all-tickets"],
     queryFn: async () => {
       try {
@@ -51,8 +52,7 @@ const ManageTicketsHome = () => {
               navigate(`${params.value}`);
               console.log("Navigating with ID:", params.data?.mongoId);
             }}
-            className="text-primary font-pregular hover:underline cursor-pointer"
-          >
+            className="text-primary font-pregular hover:underline cursor-pointer">
             {params.value}
           </span>
         );
@@ -64,23 +64,25 @@ const ManageTicketsHome = () => {
   ];
   return (
     <div className="flex flex-col gap-4 p-4">
-      <WidgetSection layout={1} padding>
-        <AgTable
-          data={[
-            ...getAllTickets.map((item, index) => ({
-              srNo: index + 1,
-              mongoId: item.department?._id,
-              department: item.department?.name,
-              totalTickets: item.totalTickets,
-              openTickets: item.openTickets,
-              closedTickets: item.closedTickets,
-            })),
-          ]}
-          columns={departmentColumns}
-          tableTitle={"DEPARTMENT WISE TICKETS"}
-          hideFilter
-        />
-      </WidgetSection>
+      <PageFrame>
+        <WidgetSection layout={1} padding>
+          <AgTable
+            data={[
+              ...getAllTickets.map((item, index) => ({
+                srNo: index + 1,
+                mongoId: item.department?._id,
+                department: item.department?.name,
+                totalTickets: item.totalTickets,
+                openTickets: item.openTickets,
+                closedTickets: item.closedTickets,
+              })),
+            ]}
+            columns={departmentColumns}
+            tableTitle={"DEPARTMENT WISE TICKETS"}
+            hideFilter
+          />
+        </WidgetSection>
+      </PageFrame>
     </div>
   );
 };

@@ -601,7 +601,7 @@ const uploadInvoice = async (req, res, next) => {
       {
         $set: {
           invoice: {
-            name: invoiceName,
+            name: originalFilename,
             link: response.secure_url,
             id: response.public_id,
             date: new Date(),
@@ -632,7 +632,7 @@ const uploadInvoice = async (req, res, next) => {
       sourceKey: logSourceKey,
       sourceId: updatedBudget._id,
       changes: {
-        invoiceName: invoiceName,
+        invoiceName: originalFilename,
         invoiceLink: response.secure_url,
         invoiceId: response.public_id,
       },

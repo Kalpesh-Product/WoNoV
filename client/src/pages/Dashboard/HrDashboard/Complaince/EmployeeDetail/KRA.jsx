@@ -9,10 +9,11 @@ import DetalisFormatted from "../../../../../components/DetalisFormatted";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
 import { useSelector } from "react-redux";
+import PageFrame from "../../../../../components/Pages/PageFrame";
 
 const KRA = () => {
-   const axios = useAxiosPrivate();
-   const id = useSelector((state)=>state.hr.selectedEmployee)
+  const axios = useAxiosPrivate();
+  const id = useSelector((state) => state.hr.selectedEmployee);
   const name = localStorage.getItem("employeeName") || "Employee";
   const [modalOpen, setModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -58,21 +59,23 @@ const KRA = () => {
       reviewDate: "31-05-2025",
       status: "Pending",
       comments: "",
-    }
+    },
   ]);
 
-    const { data: kra,isLoading} = useQuery({
-      queryKey: ["kra"],
-      queryFn: async () => {
-        try {
-          const response = await axios.get(`/api/tasks/get-tasks/?empId=${id}&type=KRA`);
-          return response.data;
-        } catch (error) {
-          throw new Error(error.response.data.message);
-        }
-      },
-    });
-    
+  const { data: kra, isLoading } = useQuery({
+    queryKey: ["kra"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/tasks/get-tasks/?empId=${id}&type=KRA`
+        );
+        return response.data;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
+
   const handleAddKRA = () => {
     if (newKRA.trim()) {
       const newEntry = {
@@ -110,8 +113,7 @@ const KRA = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewKRA(params.data)}
-          >
+            onClick={() => handleViewKRA(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -121,24 +123,25 @@ const KRA = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <AgTable
-          search={true}
-          buttonTitle="Add KRA"
-          searchColumn="kra"
-          tableTitle={`${name}'s KRA List`}
-          data={isLoading ? [] : kra}
-          columns={kraColumn}
-          handleClick={() => setModalOpen(true)}
-        />
-      </div>
+      <PageFrame>
+        <div>
+          <AgTable
+            search={true}
+            buttonTitle="Add KRA"
+            searchColumn="kra"
+            tableTitle={`${name}'s KRA List`}
+            data={isLoading ? [] : kra}
+            columns={kraColumn}
+            handleClick={() => setModalOpen(true)}
+          />
+        </div>
+      </PageFrame>
 
       {/* Modal for adding KRA */}
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Add New KRA"
-      >
+        title="Add New KRA">
         <div>
           <TextField
             label="KRA Period (e.g. 2025-06-01)"
@@ -159,17 +162,18 @@ const KRA = () => {
       <MuiModal
         open={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
-        title="KRA Detail"
-      >
+        title="KRA Detail">
         {viewKRA && (
           <>
             <DetalisFormatted title="Period" detail={viewKRA.kra} />
             <DetalisFormatted title="Assigned By" detail={viewKRA.assignedBy} />
             <DetalisFormatted title="Review Date" detail={viewKRA.reviewDate} />
-            <DetalisFormatted title="Comments" detail={viewKRA.comments || "No comments"} />
+            <DetalisFormatted
+              title="Comments"
+              detail={viewKRA.comments || "No comments"}
+            />
           </>
         )}
-
       </MuiModal>
     </div>
   );

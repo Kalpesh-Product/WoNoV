@@ -139,7 +139,7 @@ const LandlordPaymentLocation = () => {
       categories: [], // Injected by YearlyGraph
     },
     yaxis: {
-      max : 500000,
+      max: 500000,
       labels: {
         formatter: (val) => `${Math.round(val / 100000)}L`,
       },
@@ -179,8 +179,7 @@ const LandlordPaymentLocation = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewModal(params.data)}
-          >
+            onClick={() => handleViewModal(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -221,8 +220,7 @@ const LandlordPaymentLocation = () => {
             layout={1}
             title={`Landlord Payments (${unit})`}
             TitleAmount={`INR ${inrFormat(currentMonthTotal)}`}
-            border
-          >
+            border>
             <MonthWiseTable
               dateColumn={"dueDate"}
               data={payments.map((payment, index) => ({
@@ -241,17 +239,24 @@ const LandlordPaymentLocation = () => {
         <MuiModal
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
-          title="Landlord Payment Details"
-        >
+          title="Landlord Payment Details">
           <div className="space-y-3">
+            <div className="font-bold">Basic Information</div>
             <DetalisFormatted
               title="Expanse Name"
               detail={viewDetails.expanseName}
             />
             <DetalisFormatted
               title="Department"
-              detail={viewDetails.department?.name || "—"}
+              detail={viewDetails.department.name}
             />
+            <DetalisFormatted title="Status" detail={viewDetails.status} />
+            <DetalisFormatted
+              title="Extra Budget"
+              detail={viewDetails.isExtraBudget ? "Yes" : "No"}
+            />
+            <br />
+            <div className="font-bold">Financial Details</div>
             <DetalisFormatted
               title="Projected Amount"
               detail={`INR ${viewDetails.projectedAmount}`}
@@ -263,11 +268,6 @@ const LandlordPaymentLocation = () => {
             <DetalisFormatted
               title="Due Date"
               detail={humanDate(viewDetails.dueDate)}
-            />
-            <DetalisFormatted title="Status" detail={viewDetails.status} />
-            <DetalisFormatted
-              title="Extra Budget"
-              detail={viewDetails.isExtraBudget ? "Yes" : "No"}
             />
           </div>
         </MuiModal>

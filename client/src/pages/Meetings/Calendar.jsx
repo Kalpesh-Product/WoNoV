@@ -321,8 +321,8 @@ const Calender = () => {
               />
               <DetalisFormatted
                 title="Receptionist"
-                // detail={selectedEvent.extendedProps.receptionist}
-                detail={`N/A`}
+                detail={selectedEvent.extendedProps.receptionist? selectedEvent.extendedProps.receptionist : "N/A"}
+                
               />
               <DetalisFormatted
                 title="Department"

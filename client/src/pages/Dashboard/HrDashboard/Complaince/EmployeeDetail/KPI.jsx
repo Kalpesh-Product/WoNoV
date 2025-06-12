@@ -9,6 +9,7 @@ import DetalisFormatted from "../../../../../components/DetalisFormatted";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
 import { useSelector } from "react-redux";
+import PageFrame from "../../../../../components/Pages/PageFrame";
 
 const KPI = () => {
   const name = localStorage.getItem("employeeName") || "Employee";
@@ -61,7 +62,7 @@ const KPI = () => {
     },
   ]);
 
-  const { data: kpa =[], isLoading } = useQuery({
+  const { data: kpa = [], isLoading } = useQuery({
     queryKey: ["kpa"],
     queryFn: async () => {
       try {
@@ -108,8 +109,7 @@ const KPI = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewKPI(params.data)}
-          >
+            onClick={() => handleViewKPI(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -119,30 +119,31 @@ const KPI = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        {!isLoading ? (
-          <AgTable
-            search={true}
-            buttonTitle="Add KPA"
-            searchColumn="KPAs"
-            tableTitle={`${name}'s KPA List`}
-            data={kpa}
-            columns={kpiColumn}
-            handleClick={() => setModalOpen(true)}
-          />
-        ) : (
-          <div className="h-72 flex justify-center items-center">
-            <CircularProgress />
-          </div>
-        )}
-      </div>
+      <PageFrame>
+        <div>
+          {!isLoading ? (
+            <AgTable
+              search={true}
+              buttonTitle="Add KPA"
+              searchColumn="KPAs"
+              tableTitle={`${name}'s KPA List`}
+              data={kpa}
+              columns={kpiColumn}
+              handleClick={() => setModalOpen(true)}
+            />
+          ) : (
+            <div className="h-72 flex justify-center items-center">
+              <CircularProgress />
+            </div>
+          )}
+        </div>
+      </PageFrame>
 
       {/* Modal for adding KPI */}
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Add New KPA"
-      >
+        title="Add New KPA">
         <div>
           <TextField
             label="KPA Description"
@@ -164,8 +165,7 @@ const KPI = () => {
       <MuiModal
         open={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
-        title="KPI Detail"
-      >
+        title="KPI Detail">
         {viewKPI && (
           <div className="space-y-3 text-sm">
             <DetalisFormatted title="Description" detail={viewKPI.kpi} />

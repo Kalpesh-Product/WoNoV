@@ -44,6 +44,28 @@ const onboardVendor = async (req, res, next) => {
       );
     }
 
+    const existingDetails = [
+      email,
+      panIdNo,
+      gstIn,
+      bankIFSC,
+      bankName,
+      branchName,
+      nameOnAccount,
+      accountNumber,
+    ];
+
+    const emailExists = await Vendor.findOne({ email });
+
+    if (emailExists) {
+      throw new CustomError(
+        "Email already exists",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const currentUser = await User.findOne({ _id: user })
       .select("departments company role")
       .lean()
