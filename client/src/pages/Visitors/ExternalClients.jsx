@@ -99,6 +99,7 @@ const ExternalClients = () => {
     },
     { field: "checkIn", headerName: "Check In" },
     { field: "checkOut", headerName: "Checkout" },
+    
     {
       field: "actions",
       headerName: "Actions",

@@ -30,6 +30,7 @@ import humanTime from "../../utils/humanTime";
 import { TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import UploadFileInput from "../../components/UploadFileInput";
+import { inrFormat } from "../../utils/currencyFormat";
 
 const ExternalMeetingCLients = () => {
   const axios = useAxiosPrivate();
@@ -148,6 +149,9 @@ const ExternalMeetingCLients = () => {
       endTime: meeting.endTime,
       extendTime: meeting.extendTime,
       srNo: index + 1,
+      paymentAmount: inrFormat(meeting.paymentAmount) ?? "N/A",
+      paymentMode: meeting.paymentMode ?? "",
+      paymentStatus: meeting.paymentStatus ?? false,
     }));
 
   // API mutation for submitting housekeeping tasks
@@ -223,7 +227,10 @@ const ExternalMeetingCLients = () => {
     mutationKey: ["meeting-payment"],
     mutationFn: async (data) => {
       try {
-        await axios.patch(`/api/meetings/update-meeting/${data.meetingId}`, data);
+        await axios.patch(
+          `/api/meetings/update-meeting/${data.meetingId}`,
+          data
+        );
         setOpenPaymentModal(false);
       } catch (error) {
         toast.error(error.message);
@@ -418,6 +425,31 @@ const ExternalMeetingCLients = () => {
       headerName: "Extended Time",
       cellRenderer: (params) => humanTime(params.value) || "-",
     },
+    {
+      field: "paymentAmount",
+      headerName: "Amount (INR)",
+      cellStyle: { textAlign: "right" },
+    },
+    {
+      field: "paymentMode",
+      headerName: "Mode",
+      cellStyle: { textAlign: "center" },
+    },
+    {
+      field: "paymentStatus",
+      headerName: "Status",
+      cellRenderer: ({ value }) => (
+        <span
+          className={`px-2 py-1 text-xs rounded-full ${
+            value ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+          }`}
+        >
+          {value ? "Paid" : "Unpaid"}
+        </span>
+      ),
+      cellStyle: { textAlign: "center" },
+    },
+
     {
       field: "meetingStatus",
       headerName: "Meeting Status",
