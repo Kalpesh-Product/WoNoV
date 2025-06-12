@@ -17,6 +17,8 @@ const UserData = require("../../models/hr/UserData");
 const Company = require("../../models/hr/Company");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 const ExternalCompany = require("../../models/meetings/ExternalCompany");
+const MeetingRevenue = require("../../models/sales/MeetingRevenue");
+const { isValid } = require("date-fns/isValid");
 
 const addMeetings = async (req, res, next) => {
   const logPath = "meetings/MeetingLog";
@@ -38,6 +40,9 @@ const addMeetings = async (req, res, next) => {
       externalCompany,
       internalParticipants,
       externalParticipants,
+      paymentAmount,
+      paymentStatus,
+      paymentMode,
     } = req.body;
 
     const company = req.company;
@@ -261,28 +266,14 @@ const addMeetings = async (req, res, next) => {
     //   Room.findByIdAndUpdate(roomAvailable._id, { status: "Occupied" }),
     // ]);
 
-    // const savedMeeting = await meeting.save();
-
-    // if (!savedMeeting) {
-    //   throw new CustomError("Booking failed", logPath, logAction, logSourceKey);
-    // }
-
-    // console.log("roomId", roomAvailable._id);
-    // const updateRoomStatus = Room.findByIdAndUpdate(
-    //   { _id: roomAvailable._id },
-    //   {
-    //     status: "Occupied",
-    //   }
-    // );
-
-    // if (!updateRoomStatus) {
-    //   throw new CustomError(
-    //     "Failed to update room status",
-    //     logPath,
-    //     logAction,
-    //     logSourceKey
-    //   );
-    // }
+    if (!savedMeeting) {
+      throw new CustomError(
+        "Failed to book meeting",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
 
     await createLog({
       path: logPath,
@@ -1163,7 +1154,7 @@ const getSingleRoomMeetings = async (req, res, next) => {
 
   try {
     if (!mongoose.Types.ObjectId.isValid(roomId)) {
-      return res.status(400).json({ message: "Invalid roomId provided" });
+      return res.status(400).json({ message: "Invalid room Id provided" });
     }
 
     const startOfDay = new Date();
@@ -1185,6 +1176,28 @@ const getSingleRoomMeetings = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+//Update payment details
+const updateMeeting = async (req, res, next) => {
+  const { paymentAmount, paymentMode, paymentStatus } = req.body;
+  const { meetingId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(meetingId)) {
+    return res.status(400).json({ message: "Invalid meeting Id provided" });
+  }
+
+  const updatedMeeting = await Meeting.findByIdAndUpdate(
+    meetingId,
+    { paymentAmount, paymentMode, paymentStatus },
+    { new: true }
+  );
+
+  if (!updatedMeeting) {
+    return res.status(404).json({ message: "Meeting not found" });
+  }
+
+  return res.status(200).json({ message: "Meeting updated successfully" });
 };
 
 const updateMeetingStatus = async (req, res, next) => {
@@ -1310,4 +1323,5 @@ module.exports = {
   getAllCompanies,
   getSingleRoomMeetings,
   updateMeetingStatus,
+  updateMeeting,
 };
