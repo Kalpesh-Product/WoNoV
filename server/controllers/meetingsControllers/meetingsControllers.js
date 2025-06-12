@@ -459,10 +459,9 @@ const getMeetings = async (req, res, next) => {
         externalClient: meeting.externalClient
           ? meeting.externalClient.companyName
           : null,
-        // pocName: meeting.externalClient ? meeting.externalClient.pocName : "",
-        // mobileNumber: meeting.externalClient
-        //   ? meeting.externalClient.mobileNumber
-        //   : "",
+        paymentAmount: meeting.paymentAmount ? meeting.paymentAmount : null,
+        paymentMode: meeting.paymentMode ? meeting.paymentMode : null,
+        paymentStatus: meeting.paymentStatus ? meeting.paymentStatus : null,
         meetingType: meeting.meetingType,
         housekeepingStatus: meeting.houeskeepingStatus,
         date: meeting.startDate,
@@ -644,10 +643,9 @@ const getMyMeetings = async (req, res, next) => {
         externalClient: meeting.externalClient
           ? meeting.externalClient.companyName
           : null,
-        // pocName: meeting.externalClient ? meeting.externalClient.pocName : "",
-        // mobileNumber: meeting.externalClient
-        //   ? meeting.externalClient.mobileNumber
-        //   : "",
+        paymentAmount: meeting.paymentAmount ? meeting.paymentAmount : null,
+        paymentMode: meeting.paymentMode ? meeting.paymentMode : null,
+        paymentStatus: meeting.paymentStatus ? meeting.paymentStatus : null,
         meetingType: meeting.meetingType,
         housekeepingStatus: meeting.houeskeepingStatus,
         date: meeting.startDate,
@@ -1186,7 +1184,11 @@ const updateMeeting = async (req, res, next) => {
 
     const updatedMeeting = await Meeting.findByIdAndUpdate(
       meetingId,
-      { paymentAmount, paymentMode, paymentStatus },
+      {
+        paymentAmount,
+        paymentMode,
+        paymentStatus: paymentStatus === "Paid" ? true : false,
+      },
       { new: true }
     ).populate([
       { path: "bookedRoom" },
@@ -1221,14 +1223,14 @@ const updateMeeting = async (req, res, next) => {
 
     const isValidAmount = Number(paymentAmount) === amountToBePaid;
 
-    if (!isValidAmount) {
-      throw new CustomError(
-        `Actual amount is INR ${amountToBePaid}`,
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // if (!isValidAmount) {
+    //   throw new CustomError(
+    //     `Actual amount is INR ${amountToBePaid}`,
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
 
     const meetingRevenue = new MeetingRevenue({
       date: updatedMeeting.startDate,
