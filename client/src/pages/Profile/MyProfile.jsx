@@ -27,6 +27,8 @@ const MyProfile = ({ handleClose, pageTitle }) => {
   const [uploading, setUploading] = useState(false);
   const axios = useAxiosPrivate();
 
+  console.log("user img url", auth.user.profilePicture?.url);
+
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
     if (selectedFile) {
@@ -34,6 +36,35 @@ const MyProfile = ({ handleClose, pageTitle }) => {
       setPreviewUrl(URL.createObjectURL(selectedFile)); // Generate preview URL
     }
   };
+
+  // const handleUpload = async () => {
+  //   if (!file) {
+  //     alert("Please select a file before uploading.");
+  //     return;
+  //   }
+
+  //   setUploading(true);
+
+  //   const formData = new FormData();
+  //   formData.append("profilePicture", file);
+
+  //   try {
+  //     const response = await axios.patch(
+  //       "/api/users/update-single-user",
+  //       formData,
+  //       {
+  //         headers: { "Content-Type": "multipart/form-data" },
+  //       }
+  //     );
+
+  //     alert(response.data.message || "Image uploaded successfully!");
+  //   } catch (error) {
+  //     console.error("Upload Error:", error);
+  //     alert("Failed to upload image.");
+  //   } finally {
+  //     setUploading(false);
+  //   }
+  // };
 
   const handleUpload = async () => {
     if (!file) {
@@ -44,10 +75,10 @@ const MyProfile = ({ handleClose, pageTitle }) => {
     setUploading(true);
 
     const formData = new FormData();
-    formData.append("logo", file);
+    formData.append("profilePic", file);
 
     try {
-      const response = await axios.post(
+      const response = await axios.patch(
         "/api/users/update-single-user",
         formData,
         {
@@ -55,7 +86,28 @@ const MyProfile = ({ handleClose, pageTitle }) => {
         }
       );
 
-      alert(response.data.message || "Image uploaded successfully!");
+      // ✅ Show success message
+      // alert(response.data.message || "Image uploaded successfully!");
+      // toast.success(response.data.message || "Profile Image uploaded successfully!");
+      toast.success("Profile Image uploaded successfully!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000); // delay of 1000ms = 1 second
+
+      // ✅ Update preview URL so <Avatar> shows the new image
+      if (response.data.profilePicture?.url) {
+        setPreviewUrl(response.data.profilePicture.url);
+        console.log("Updated preview URL:", response.data.profilePicture.url);
+      }
+
+      // ✅ Optional: update auth context if you store user globally
+      // setAuth((prev) => ({
+      //   ...prev,
+      //   user: {
+      //     ...prev.user,
+      //     profilePicture: response.data.profilePicture,
+      //   },
+      // }));
     } catch (error) {
       console.error("Upload Error:", error);
       alert("Failed to upload image.");
@@ -220,7 +272,7 @@ const MyProfile = ({ handleClose, pageTitle }) => {
     };
 
     fetchUserDetails();
-  }, [auth.user.empId]);
+  }, [auth.user.empId, previewUrl]);
 
   return (
     <div>
@@ -228,15 +280,11 @@ const MyProfile = ({ handleClose, pageTitle }) => {
         <span className="text-title font-pmedium text-primary uppercase">
           My profile
         </span>
-        <PrimaryButton
-          title={isEditable ? "Cancel" : "Edit"}
-          handleSubmit={handleEditClick}
-        />
       </div>
-      {/* <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-md">
+      <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-md">
         <div className="flex gap-6 items-center">
           <div className="w-40 h-40">
-            <Avatar
+            {/* <Avatar
               style={{
                 backgroundColor: user.avatarColor,
                 width: "100%",
@@ -245,28 +293,43 @@ const MyProfile = ({ handleClose, pageTitle }) => {
               }}
               src={user.email === "abrar@biznest.co.in" ? Abrar : undefined}>
               {user.email !== "abrar@biznest.co.in" && user.name?.charAt(0)}
+            </Avatar> */}
+            <Avatar
+              style={{
+                backgroundColor: user.avatarColor,
+                width: "100%",
+                height: "100%",
+                fontSize: "5rem",
+              }}
+              src={previewUrl || auth?.user?.profilePicture?.url}>
+              {!previewUrl &&
+                !auth?.user?.profilePicture?.url &&
+                user.name?.charAt(0)}
             </Avatar>
           </div>
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-1">
             <span className="text-title flex items-center gap-3">
               {user.name}{" "}
             </span>
             <span className="text-subtitle">{user.designation}</span>
 
-        
+            {/* File Upload START */}
+            {/* File Input & Preview */}
             <label
               htmlFor="fileUpload"
-              className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 p-6 rounded-md cursor-pointer transition">
+              // className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 p-6 rounded-md cursor-pointer transition">
+              className="flex flex-col items-center justify-center   rounded-md cursor-pointer transition">
               {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt="Company Logo Preview"
-                  className="w-32 h-32 object-cover rounded-md"
-                />
+                // <img
+                //   src={previewUrl}
+                //   alt="Company Logo Preview"
+                //   className="w-32 h-32 object-cover rounded-md"
+                // />
+                <span> </span>
               ) : (
                 <>
-                  <span className="text-content text-gray-500">
-                    Upload Profile Image
+                  <span className="text-content text-white bg-primary font-pregular mt-8 px-4 py-3 rounded-md hover:scale-[1.05] transition">
+                    Update Profile Image
                   </span>
                 </>
               )}
@@ -278,29 +341,48 @@ const MyProfile = ({ handleClose, pageTitle }) => {
                 onChange={handleFileChange}
               />
             </label>
-       
+            {/* Buttons: Change File & Upload */}
             {previewUrl && (
-              <div className="mt-4 flex flex-col items-center gap-2">
+              <div className=" flex flex-col items-center gap-2">
+                <label
+                  htmlFor="fileUpload"
+                  className="text-primary cursor-pointer underline">
+                  Change Image
+                </label>
                 <button
                   onClick={handleUpload}
                   disabled={uploading}
                   className={`px-4 py-2 rounded-md text-white ${
-                    uploading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+                    uploading
+                      ? "bg-gray-400"
+                      : "bg-primary hover:scale-[1.05] transition"
                   }`}>
-                  {uploading ? "Uploading..." : "Upload Image"}
+                  {uploading ? "Uploading..." : "Save Image"}
                 </button>
-                <label
-                  htmlFor="fileUpload"
-                  className="text-blue-600 cursor-pointer underline">
-                  Change Image
-                </label>
               </div>
             )}
-          
+            {/* File Upload END */}
+          </div>
+          {/* <div>&nbsp;&nbsp;</div> */}
+          <div className="flex flex-col gap-4 flex-1">
+            <div className="flex gap-2">
+              <div className="flex flex-col gap-4 text-gray-600">
+                <span className="capitalize">Email : </span>
+                <span className="capitalize">Phone: </span>
+                <span className="capitalize">Department : </span>
+                <span className="capitalize">Work Location : </span>
+              </div>
+              <div className="flex flex-col gap-4 text-gray-500">
+                <span>{user.email}</span>
+                <span>{auth.user.phone}</span>
+                <span>{auth.user.departments.map((item) => item.name)[0]}</span>
+                <span>{user.workLocation}</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div> */}
-      {/* <div className="flex items-center justify-between p-4">
+      </div>
+      <div className="flex items-center justify-between p-4">
         <span className="text-title font-pmedium text-primary uppercase">
           &nbsp;
         </span>
@@ -308,7 +390,7 @@ const MyProfile = ({ handleClose, pageTitle }) => {
           title={isEditable ? "Cancel" : "Edit"}
           handleSubmit={handleEditClick}
         />
-      </div> */}
+      </div>
       <div className="border-2 border-gray-200 p-2 rounded-md sm:h-[30vh] sm:overflow-y-auto md:h-[55vh] overflow-y-auto ">
         <form
           onSubmit={(e) => {

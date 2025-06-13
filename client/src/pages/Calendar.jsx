@@ -291,7 +291,8 @@ const Calender = () => {
             {drawerMode === "view" && selectedEvent && (
               <div>
                 <div className="flex flex-col gap-2">
-                  <div className="font-bold">Basic Info</div>
+                  {selectedEvent?.extendedProps?.type.toLowerCase() ===
+                    "meeting" && <div className="font-bold">Basic Info</div>}
                   <span className="text-content flex items-center">
                     <span className="w-[30%]">Title</span>
                     <span>:</span>
@@ -409,8 +410,13 @@ const Calender = () => {
                       </span>{" "}
                     </div>
                   )}
-                  <br />
-                  <div className="font-bold">People Involved</div>
+                  {selectedEvent?.extendedProps?.type.toLowerCase() ===
+                    "meeting" && (
+                    <>
+                      <br />
+                      <div className="font-bold">People Involved</div>
+                    </>
+                  )}
                   {selectedEvent.extendedProps?.participants?.length > 0 && (
                     <div>
                       <span className="text-content flex items-start">
@@ -458,8 +464,13 @@ const Calender = () => {
                       </span>
                     </div>
                   )}
-                  <br />
-                  <div className="font-bold">Venue Details</div>
+                  {selectedEvent?.extendedProps?.type.toLowerCase() ===
+                    "meeting" && (
+                    <>
+                      <br />
+                      <div className="font-bold">Venue Details</div>
+                    </>
+                  )}
                   {selectedEvent.extendedProps?.roomName && (
                     <div>
                       <span className="text-content flex items-start">
