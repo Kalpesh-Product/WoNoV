@@ -7,7 +7,7 @@ import humanTime from "../../utils/humanTime";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { TextField } from "@mui/material";
+import { Chip, TextField } from "@mui/material";
 import { TimePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -16,6 +16,7 @@ import { queryClient } from "../../main";
 import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
+import { inrFormat } from "../../utils/currencyFormat";
 
 const ExternalClients = () => {
   const axios = useAxiosPrivate();
@@ -99,7 +100,23 @@ const ExternalClients = () => {
     },
     { field: "checkIn", headerName: "Check In" },
     { field: "checkOut", headerName: "Checkout" },
-    
+    {
+      field: "paymentStatus",
+      headerName: "Payment Status",
+      cellRenderer: ({ value }) => (
+        <Chip
+          label={value}
+          sx={{
+            backgroundColor: value === "Paid" ? "#D1FAE5" : "#FECACA", // green-100 / red-100
+            color: value === "Paid" ? "#047857" : "#B91C1C", // green-700 / red-700
+            fontWeight: "bold",
+          }}
+        />
+      ),
+    },
+    { field: "paymentAmount", headerName: "Amount (INR)" },
+    { field: "paymentMode", headerName: "Mode" },
+
     {
       field: "actions",
       headerName: "Actions",
@@ -207,6 +224,13 @@ const ExternalClients = () => {
               checkOutRaw: item.checkOut,
               checkIn: humanTime(item.checkIn),
               checkOut: item.checkOut ? humanTime(item.checkOut) : "",
+              paymentStatus:
+                item?.meeting?.paymentStatus === true ? "Paid" : "Unpaid",
+              paymentAmount: item?.meeting?.paymentAmount
+                ? inrFormat(item?.meeting?.paymentAmount)
+                : 0,
+              paymentMode: item?.meeting?.paymentMode || "N/A",
+              paymentDate: item?.meeting?.paymentDate || null,
             })),
         ]}
         columns={visitorsColumns}
@@ -360,6 +384,68 @@ const ExternalClients = () => {
             ) : (
               []
             )}
+            {isEditing ? (
+              <Controller
+                name="paymentStatus"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Payment Status"
+                    fullWidth
+                  />
+                )}
+              />
+            ) : (
+              <DetalisFormatted
+                title="Payment Status"
+                detail={selectedVisitor?.paymentStatus}
+              />
+            )}
+            {/* Payment Amount */}
+            {isEditing ? (
+              <Controller
+                name="paymentAmount"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Payment Amount"
+                    type="number"
+                    fullWidth
+                  />
+                )}
+              />
+            ) : (
+              <DetalisFormatted
+                title="Payment Amount"
+                detail={inrFormat(selectedVisitor?.paymentAmount || 0)}
+              />
+            )}
+
+            {/* Payment Mode */}
+            {isEditing ? (
+              <Controller
+                name="paymentMode"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Payment Mode"
+                    fullWidth
+                  />
+                )}
+              />
+            ) : (
+              <DetalisFormatted
+                title="Payment Mode"
+                detail={selectedVisitor?.paymentMode || "N/A"}
+              />
+            )}
+
             {isEditing && (
               <PrimaryButton
                 disabled={isPending}
