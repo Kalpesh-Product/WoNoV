@@ -1,4 +1,5 @@
 const Company = require("../../models/hr/Company");
+const UserData = require("../../models/hr/UserData");
 const bcrypt = require("bcryptjs");
 const User = require("../../models/hr/UserData");
 const Role = require("../../models/roles/Roles");
@@ -803,6 +804,27 @@ const getAssignees = async (req, res, next) => {
   }
 };
 
+const getEmployeePoliciesByEmpId = async (req, res) => {
+  const { employeeId } = req.params;
+
+  try {
+    const employee = await UserData.findOne({ empId: employeeId }, { policies: 1, firstName: 1, lastName: 1, empId: 1 });
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    res.json({
+      empId: employee.empId,
+      name: `${employee.firstName} ${employee.lastName}`,
+      policies: employee.policies,
+    });
+  } catch (error) {
+    console.error("Error fetching employee policies:", error);
+    res.status(500).json({ message: "Failed to fetch employee policies" });
+  }
+};
+
 module.exports = {
   createUser,
   fetchUser,
@@ -812,4 +834,5 @@ module.exports = {
   getAssignees,
   checkPassword,
   updatePassword,
+  getEmployeePoliciesByEmpId
 };

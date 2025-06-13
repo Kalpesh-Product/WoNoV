@@ -7,9 +7,11 @@ import MuiModal from "../../../../../components/MuiModal";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { toast } from "sonner";
 import PageFrame from "../../../../../components/Pages/PageFrame";
+import { useSelector } from "react-redux";
 
 const Agreements = () => {
   const axios = useAxiosPrivate();
+    const id = useSelector((state) => state.hr.selectedEmployee);
   const name = localStorage.getItem("employeeName") || "Employee";
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -55,14 +57,13 @@ const Agreements = () => {
     },
   ];
 
-  const { data: agreements = [], refetch } = useQuery({
+
+  const { data: agreements = [], isLoading } = useQuery({
     queryKey: ["agreements"],
     queryFn: async () => {
       try {
-        const response = await axios.get(
-          "/api/company/get-company-documents/agreements"
-        );
-        return response.data.agreements;
+        const response = await axios.get(`/api/users/policies/${id}`);
+        return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
       }
@@ -78,7 +79,6 @@ const Agreements = () => {
         toast.success("Successfully added agreement");
         setNewAgreement("");
         setModalOpen(false);
-        refetch();
       } catch (error) {
         toast.error(error.response?.data?.message || "Failed to add agreement");
       }
@@ -88,7 +88,7 @@ const Agreements = () => {
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
-        <div>
+        {/* <div>
           <AgTable
             key={agreements.length}
             search={true}
@@ -103,7 +103,7 @@ const Agreements = () => {
             }))}
             columns={agreementColumn}
           />
-        </div>
+        </div> */}
       </PageFrame>
 
       {/* Modal for adding Agreement */}

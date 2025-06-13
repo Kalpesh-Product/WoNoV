@@ -134,35 +134,67 @@ const ReviewRequest = () => {
   });
   const values = watch();
 
-  const onUpload = () => {
-    const values = getValues();
-    // If you are using useFieldArray for "particulars"
-    values.particulars = fields;
-    submitRequest({
-        ...values,
-        budgetId : voucherDetails._id
-    });
-  };
+const onUpload = async () => {
+  const values = getValues();
+  values.particulars = fields;
 
-  const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
-    mutationKey: ["approve"],
-    mutationFn: async (data) => {
-      console.log("Data ;", data);
-      const response = await axios.patch(
-        `/api/budget/approve-budget`,
-        data
-      );
-      return response.data;
-    },
-    onSuccess: (data) => {
-      toast.success(data.message);
-      setOpenPreview(false);
-      reset();
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+  // Step 1: Generate PDF
+  const canvas = await html2canvas(formRef.current, {
+    scale: window.devicePixelRatio,
   });
+
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF("p", "mm", "a4");
+  const imgWidth = 210;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+
+  // Step 2: Convert to Blob
+  const pdfBlob = pdf.output("blob");
+
+  // Step 3: Append to FormData
+  const formData = new FormData();
+  formData.append("pdf", pdfBlob, "Voucher_Form.pdf");
+  formData.append("budgetId", voucherDetails._id);
+
+  // Append other values
+  for (const key in values) {
+    if (Array.isArray(values[key])) {
+      formData.append(key, JSON.stringify(values[key]));
+    } else {
+      formData.append(key, values[key]);
+    }
+  }
+
+  // Step 4: Trigger mutation
+  submitRequest(formData);
+};
+
+
+const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
+  mutationKey: ["approve"],
+  mutationFn: async (formData) => {
+    const response = await axios.patch(
+      `/api/budget/approve-budget`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  },
+  onSuccess: (data) => {
+    toast.success(data.message);
+    setOpenPreview(false);
+    reset();
+  },
+  onError: (error) => {
+    toast.error(error.message);
+  },
+});
+
 
   const exportToPDF = async () => {
     const canvas = await html2canvas(formRef.current, {

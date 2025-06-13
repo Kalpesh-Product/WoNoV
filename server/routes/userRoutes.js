@@ -8,6 +8,7 @@ const {
   getAssignees,
   checkPassword,
   updatePassword,
+  getEmployeePoliciesByEmpId
 } = require("../controllers/userControllers/userControllers");
 const upload = require("../config/multerConfig");
 const {
@@ -24,5 +25,6 @@ router.post("/update-password", updatePassword);
 router.patch("/update-single-user",upload.single("profilePic"), updateProfile);
 // router.patch("/update-single-user", upload.single("profilePic"), updateProfile);
 router.post("/bulk-insert-users", upload.single("users"), bulkInsertUsers);
+router.get("/policies/:employeeId", getEmployeePoliciesByEmpId);
 
 module.exports = router;

@@ -340,6 +340,7 @@ import ExternalClients from "../pages/Visitors/ExternalClients";
 import ManageMeetingsLayout from "../pages/Meetings/ManageMeetingsLayout";
 import ExternalMeetingClients from "../pages/Meetings/ExternalMeetingClients";
 import CoWorkingDetails from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CoWorkingDetails";
+import DepartmentInvoice from "../pages/Dashboard/FinanceDashboard/Billing/DepartmentInvoice";
 
 export const routes = createBrowserRouter([
   {
@@ -594,8 +595,12 @@ export const routes = createBrowserRouter([
                         element: <BillingsLayout />,
                         children: [
                           {
-                            path: "invoice",
+                            path: "client-invoice",
                             element: <InvoiceCreation />,
+                          },
+                          {
+                            path: "department-invoice",
+                            element: <DepartmentInvoice />,
                           },
                           {
                             path: "finance-monthly-vouchers",

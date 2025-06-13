@@ -16,7 +16,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { queryClient } from "../../../../main";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 
-const InvoiceCreation = () => {
+const DepartmentInvoice = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
 
@@ -199,8 +199,7 @@ const InvoiceCreation = () => {
         data={rows}
         columns={invoiceCreationColumns}
         search
-        tableTitle="Client-Invoice"
-        buttonTitle="Add Invoice"
+        tableTitle="Department-Invoice"
         handleClick={() => setViewAddTemplateModal(true)}
       />
 
@@ -350,4 +349,4 @@ const InvoiceCreation = () => {
   );
 };
 
-export default InvoiceCreation;
+export default DepartmentInvoice;

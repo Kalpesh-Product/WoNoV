@@ -15,6 +15,7 @@ router.get(
   employmentAgreementController.fetchAllEmploymentAgreements
 );
 
+
 // // Delete Leave type
 // router.delete("/delete-leave-type/:id", leaveTypeController.deleteLeaveType);
 
