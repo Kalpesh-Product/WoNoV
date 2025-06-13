@@ -91,13 +91,22 @@ const FinanceBudget = () => {
     },
   });
 
+  // const uniqueBuildings = Array.from(
+  //   new Map(
+  //     units.length > 0
+  //       ? units.map((loc) => [
+  //           loc.building._id, // use building._id as unique key
+  //           loc.building.buildingName,
+  //         ])
+  //       : []
+  //   ).entries()
+  // );
   const uniqueBuildings = Array.from(
     new Map(
       units.length > 0
-        ? units.map((loc) => [
-            loc.building._id, // use building._id as unique key
-            loc.building.buildingName,
-          ])
+        ? units
+            .filter((loc) => loc.building && loc.building._id)
+            .map((loc) => [loc.building._id, loc.building.buildingName])
         : []
     ).entries()
   );
@@ -105,7 +114,6 @@ const FinanceBudget = () => {
   const { mutate: requestBudget, isPending: requestBudgetPending } =
     useMutation({
       mutationFn: async (data) => {
-
         const response = await axios.post(
           `/api/budget/request-budget/${department._id}`,
           {
