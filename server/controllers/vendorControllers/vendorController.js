@@ -176,6 +176,10 @@ const fetchVendors = async (req, res, next) => {
   let vendors;
   if (departmentId) {
     vendors = await Vendor.find({ company, departmentId }).lean().exec();
+
+    if (!vendors) {
+      return res.status(200).json([]);
+    }
     return res.status(200).json(vendors);
   }
   vendors = await Vendor.find({ company }).lean().exec();

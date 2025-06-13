@@ -10,6 +10,8 @@ const FrontendData = () => {
   const tabs = [
     { label: "New Leads", path: "leads" },
     { label: "Website Issue Reports", path: "website-issue-reports" },
+    { label: "Vendor", path: "vendor" },
+
   ];
 
   // Redirect to "leads" if the current path is "/frontend-dashboard/data"

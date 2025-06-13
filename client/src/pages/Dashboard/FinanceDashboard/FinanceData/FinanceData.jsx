@@ -8,8 +8,8 @@ const FinanceData = () => {
 
   // Map routes to tabs
   const tabs = [
-    { label: "Vendor Database", path: "finance-vendor-database" },
     { label: "Asset List", path: "finance-asset-list" },
+    { label: "Vendor", path: "vendor" },
     // {
     //   label: "Monthly Invoices",
     //   path: "finance-monthly-invoices",
@@ -24,7 +24,7 @@ const FinanceData = () => {
   useEffect(() => {
     if (location.pathname === "/app/dashboard/finance-dashboard/data") {
       navigate(
-        "/app/dashboard/finance-dashboard/data/finance-vendor-database",
+        "/app/dashboard/finance-dashboard/data/vendor",
         {
           replace: true,
         }
