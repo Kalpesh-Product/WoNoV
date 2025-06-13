@@ -135,13 +135,13 @@ const AccessGrant = () => {
           <div className="flex flex-col gap-6">
             <span className="text-title flex items-center gap-3">
               {user.name}{" "}
-              <Chip
+              {/* <Chip
                 label={user.status ? "Active" : "Inactive"}
                 sx={{
                   backgroundColor: user.status ? "green" : "grey",
                   color: "white",
                 }}
-              />
+              /> */}
             </span>
             <span className="text-subtitle">{user.designation}</span>
           </div>
@@ -149,17 +149,28 @@ const AccessGrant = () => {
         <div className="flex flex-col gap-4 flex-1">
           <div className="flex gap-2">
             <div className="flex flex-col gap-4 text-gray-600">
-              <span className="capitalize">User Name : </span>
               <span className="capitalize">Email : </span>
-              <span className="capitalize">Designation : </span>
+              <span className="capitalize">Phone: </span>
+              <span className="capitalize">Department : </span>
               <span className="capitalize">Work Location : </span>
             </div>
             <div className="flex flex-col gap-4 text-gray-500">
-              <span>{user.name}</span>
               <span>{user.email}</span>
-              <span>{user.designation}</span>
+              <span>{auth.user.phone}</span>
+              <span>{auth.user.departments.map((item) => item.name)[0]}</span>
               <span>{user.workLocation}</span>
             </div>
+          </div>
+        </div>
+        <div className="h-40  flex flex-col justify-start items-start  ">
+          <div className="">
+            <Chip
+              label={user.status ? "Active" : "Inactive"}
+              sx={{
+                backgroundColor: user.status ? "green" : "grey",
+                color: "white",
+              }}
+            />
           </div>
         </div>
       </div>

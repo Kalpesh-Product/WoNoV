@@ -130,8 +130,10 @@ const Header = () => {
         {/* <div className="flex items-center gap-4 w-[40%]"> */}
         <div className="flex items-center gap-4 w-[45%]">
           <Avatar onClick={handleAvatarClick} className="cursor-pointer">
-            {auth.user.email === "abrar@biznest.co.in" ? (
-              <img src={Abrar} alt="" />
+            {/* {auth.user.email === "abrar@biznest.co.in" ? ( */}
+            {auth?.user?.profilePicture?.url ? (
+              // <img src={Abrar} alt="" />
+              <img src={auth?.user?.profilePicture?.url} alt="" />
             ) : (
               auth.user.firstName.charAt(0)
             )}
