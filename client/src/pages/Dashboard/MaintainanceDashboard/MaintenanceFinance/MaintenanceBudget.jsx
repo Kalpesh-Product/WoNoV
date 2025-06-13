@@ -202,6 +202,7 @@ const Maintenance = () => {
           expanseName: item?.expanseName,
           department: item?.department,
           expanseType: item?.expanseType,
+          invoiceAttached : item?.invoiceAttached,
           projectedAmount: Number(item?.projectedAmount).toFixed(2),
           actualAmount: inrFormat(item?.actualAmount || 0), // ✅ Add this
           dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),

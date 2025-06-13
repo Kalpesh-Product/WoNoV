@@ -26,6 +26,7 @@ const HrCommonAttendance = () => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
+
   const { control, reset, handleSubmit } = useForm({
     defaultValues: {
       targetedDay: null,
@@ -33,196 +34,177 @@ const HrCommonAttendance = () => {
       outTime: null,
     },
   });
+
   const attendanceColumns = [
-    { field: "id", headerName: "Sr No", width: 100 },
-    { field: "date", headerName: "Date", width: 200, sort :'asc' },
+    { field: "srNo", headerName: "Sr No", width: 100 },
+    { field: "date", headerName: "Date", width: 200, cellRenderer: (params)=>((params.value)) },
     { field: "inTime", headerName: "In Time" },
     { field: "outTime", headerName: "Out Time" },
     { field: "workHours", headerName: "Work Hours" },
     { field: "breakHours", headerName: "Break Hours" },
-
     { field: "totalHours", headerName: "Total Hours" },
-    // { field: "entryType", headerName: "Entry Type" },
   ];
 
   const fetchAttendance = async () => {
-    try {
-      const response = await axios.get(
-        `/api/attendance/get-attendance/${auth.user.empId}`
-      );
-      const data = response.data;
-      return Array.isArray(data) ? data : data.attendance ?? [];
-    } catch (error) {
-      throw new Error(error.response.data.message);
-    }
+    if (!auth?.user?.empId) throw new Error("User not found");
+    const response = await axios.get(`/api/attendance/get-attendance/${auth.user.empId}`);
+    const data = response.data;
+    return Array.isArray(data) ? data : data?.attendance ?? [];
   };
 
-  const { data: attendance, isLoading } = useQuery({
+  const { data: attendance = [], isLoading } = useQuery({
     queryKey: ["attendance"],
     queryFn: fetchAttendance,
+    enabled: !!auth?.user?.empId, // only run if empId exists
   });
 
   const { mutate: correctionPost, isPending: correctionPending } = useMutation({
     mutationFn: async (data) => {
-      const response = await axios.patch("/api/attendance/correct-attendance", {
+      const payload = {
         ...data,
-        empId: auth.user.empId,
-      });
+        empId: auth?.user?.empId || "",
+      };
+      const response = await axios.patch("/api/attendance/correct-attendance", payload);
       return response.data;
     },
-    onSuccess: function (data) {
+    onSuccess: (data) => {
       setOpenModal(false);
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
       reset();
     },
-    onError: function (error) {
-      toast.error(error.response.data.message);
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Error submitting correction");
     },
   });
 
   const onSubmit = (data) => {
+    if (!auth?.user?.empId) return toast.error("User not found");
     correctionPost(data);
-    reset();
   };
 
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <div>
-          {isLoading ? (
-            <div className="flex justify-center items-center">
-              <CircularProgress color="#1E3D73" />
-            </div>
-          ) : (
-            // <AgTable
-            //   key={isLoading ? 1 : attendance.length}
-
-            //   paginationPageSize={20}
-            //   buttonTitle={"Correction Request"}
-            //   tableHeight={300}
-            //   search={true}
-            //   searchColumn={"Date"}
-            //    handleClick={() => {
-            //   setOpenModal(true);
-            // }}
-
-            // />
-            <MonthWiseTable
-              tableTitle={`Attendance Table`}
-              dateColumn={"date"}
-              columns={attendanceColumns}
-              data={
-                isLoading
-                  ? [
-                      {
-                        id: "loading",
-                        date: "Loading...",
-                        inTime: "-",
-                        outTime: "-",
-                        workHours: "-",
-                        breakHours: "-",
-                        totalHours: "-",
-                        entryType: "-",
-                      },
-                    ]
-                  : attendance?.map((record, index) => ({
-                      id: index + 1,
-                      date: (record.inTime),
-                      inTime: record?.inTime ? humanTime(record.inTime) : "N/A",
-                      outTime: record?.outTime
-                        ? humanTime(record.outTime)
-                        : "N/A",
-                      workHours: formatDuration(
-                        record?.inTime,
-                        record?.outTime
-                      ),
-                      breakHours: record.breakDuration,
-                      totalHours: formatDuration(
-                        record?.inTime,
-                        record?.outTime
-                      ),
-                      entryType: record.entryType,
-                    }))
-              }
-            />
-          )}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center items-center">
+            <CircularProgress color="#1E3D73" />
+          </div>
+        ) : (
+          <MonthWiseTable
+            tableTitle={`Attendance Table`}
+            dateColumn={"date"}
+            columns={attendanceColumns}
+            data={
+              attendance.length > 0
+                ? attendance.map((record, index) => ({
+                    id: index + 1,
+                    date: record?.inTime
+                      ? (record?.inTime)
+                      : "N/A",
+                    inTime: record?.inTime ? humanTime(record.inTime) : "N/A",
+                    outTime: record?.outTime ? humanTime(record.outTime) : "N/A",
+                    workHours: record?.inTime && record?.outTime
+                      ? formatDuration(record.inTime, record.outTime)
+                      : "N/A",
+                    breakHours: record?.breakDuration ?? "N/A",
+                    totalHours: record?.inTime && record?.outTime
+                      ? formatDuration(record.inTime, record.outTime)
+                      : "N/A",
+                  }))
+                : [
+                    {
+                      id: 1,
+                      date: "No Data",
+                      inTime: "-",
+                      outTime: "-",
+                      workHours: "-",
+                      breakHours: "-",
+                      totalHours: "-",
+                    },
+                  ]
+            }
+          />
+        )}
       </div>
+
       <MuiModal
         title={"Correction Request"}
         open={openModal}
-        onClose={() => {
-          setOpenModal(false);
-        }}
+        onClose={() => setOpenModal(false)}
       >
-        <div>
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4"
-          >
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+        >
+          <Controller
+            name="targetedDay"
+            control={control}
+            render={({ field }) => (
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  {...field}
+                  label={"Select Date"}
+                  format="DD-MM-YYYY"
+                  disablePast
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) => {
+                    field.onChange(date ? date.toISOString() : null);
+                  }}
+                />
+              </LocalizationProvider>
+            )}
+          />
+
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Controller
-              name="targetedDay"
+              name="inTime"
               control={control}
               render={({ field }) => (
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    {...field}
-                    label={"Select Date"}
-                    format="DD-MM-YYYY"
-                    value={field.value ? dayjs(field.value) : null}
-                    onChange={(date) => {
-                      field.onChange(date ? date.toISOString() : null);
-                    }}
-                  />
-                </LocalizationProvider>
+                <TimePicker
+                  {...field}
+                  label={"Select In-Time"}
+                  slotProps={{ textField: { size: "small", fullWidth: true } }}
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(time) => {
+                    field.onChange(time ? time.toISOString() : null);
+                  }}
+                />
               )}
             />
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <Controller
-                name="inTime"
-                control={control}
-                render={({ field }) => (
-                  <TimePicker
-                    {...field}
-                    label={"Select In-Time"}
-                    slotProps={{ textField: { size: "small" } }}
-                    render={(params) => <TextField {...params} fullWidth />}
-                  />
-                )}
-              />
-            </LocalizationProvider>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <Controller
-                name="outTime"
-                control={control}
-                render={({ field }) => (
-                  <TimePicker
-                    {...field}
-                    label={"Select Out-Time"}
-                    slotProps={{ textField: { size: "small" } }}
-                    render={(params) => <TextField {...params} fullWidth />}
-                  />
-                )}
-              />
-            </LocalizationProvider>
+          </LocalizationProvider>
 
-            <div className="flex items-center justify-center gap-4">
-              <SecondaryButton
-                title={"Cancel"}
-                handleSubmit={() => {
-                  setOpenModal(false);
-                }}
-              />
-              <PrimaryButton
-                title={"Submit"}
-                type={"submit"}
-                isLoading={correctionPending}
-                disabled={correctionPending}
-              />
-            </div>
-          </form>
-        </div>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Controller
+              name="outTime"
+              control={control}
+              render={({ field }) => (
+                <TimePicker
+                  {...field}
+                  label={"Select Out-Time"}
+                  slotProps={{ textField: { size: "small", fullWidth: true } }}
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(time) => {
+                    field.onChange(time ? time.toISOString() : null);
+                  }}
+                />
+              )}
+            />
+          </LocalizationProvider>
+
+          <div className="flex items-center justify-center gap-4">
+            <SecondaryButton
+              title={"Cancel"}
+              handleSubmit={() => setOpenModal(false)}
+            />
+            <PrimaryButton
+              title={"Submit"}
+              type={"submit"}
+              isLoading={correctionPending}
+              disabled={correctionPending}
+            />
+          </div>
+        </form>
       </MuiModal>
     </div>
   );

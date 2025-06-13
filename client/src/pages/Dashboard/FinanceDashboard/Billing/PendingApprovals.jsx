@@ -17,6 +17,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setVoucherDetails } from "../../../../redux/slices/financeSlice"; // adjust path as needed
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const PendingApprovals = () => {
   const navigate = useNavigate();
@@ -133,7 +134,7 @@ const PendingApprovals = () => {
 
   return (
     <div>
-      <div>
+      <PageFrame>
         <AgTable
           search={true}
           tableTitle={"Pending Approvals"}
@@ -147,7 +148,7 @@ const PendingApprovals = () => {
           }))}
           columns={kraColumn}
         />
-      </div>
+      </PageFrame>
       <div>
         <MuiModal
           open={modalOpen}

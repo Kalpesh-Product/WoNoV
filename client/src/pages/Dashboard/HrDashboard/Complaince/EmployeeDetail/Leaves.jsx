@@ -16,7 +16,7 @@ import {
 import { Controller, useForm } from "react-hook-form";
 import MuiModal from "../../../../../components/MuiModal";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { MenuItem, TextField } from "@mui/material";
+import { CircularProgress, MenuItem, TextField } from "@mui/material";
 import dayjs from "dayjs";
 import { toast } from "sonner";
 import useAuth from "../../../../../hooks/useAuth";
@@ -79,7 +79,7 @@ const Leaves = () => {
   });
 
   const leavesColumn = [
-    { field: "id", headerName: "Sr No", sort: "desc" },
+    { field: "srNo", headerName: "Sr No" },
     { field: "fromDate", headerName: "From Date" },
     { field: "toDate", headerName: "To Date" },
     { field: "leaveType", headerName: "Leave Type" },
@@ -108,58 +108,6 @@ const Leaves = () => {
 
   const leaveType = ["Privileged", "Sick"];
   const leavePeriod = ["Partial", "Single", "Multiple"];
-
-  // Prepare data for ApexCharts
-
-  // const options = {
-  //   chart: {
-  //     type: 'bar',
-  //   },
-  //   xaxis: {
-  //     categories: ['Privileged Leaves', 'Sick Leaves', 'Abrupt Leaves']
-  //   }
-  // };
-
-  // Series data (stacked bar with allocated vs taken)
-  // const series = [
-  //   {
-  //     name: "Privileged Leaves (Taken)",
-  //     data: leavesData.monthlyData.map((entry) => entry.privilegedLeaves),
-  //     color: "#FF4560", // Red for taken leaves
-  //   },
-  //   {
-  //     name: "Privileged Leaves (Remaining)",
-  //     data: leavesData.monthlyData.map((entry) =>
-  //       Math.max(leavesData.allocated / 3 - entry.privilegedLeaves, 0)
-  //     ),
-  //     color: "#00E396", // Green for remaining allocation
-  //   },
-  //   {
-  //     name: "Sick Leaves (Taken)",
-  //     data: leavesData.monthlyData.map((entry) => entry.sickLeaves),
-  //     color: "#775DD0", // Purple for taken leaves
-  //   },
-  //   {
-  //     name: "Sick Leaves (Remaining)",
-  //     data: leavesData.monthlyData.map((entry) =>
-  //       Math.max(leavesData.allocated / 3 - entry.sickLeaves, 0)
-  //     ),
-  //     color: "#4CAF50", // Green for remaining allocation
-  //   },
-  //   {
-  //     name: "Casual Leaves (Taken)",
-  //     data: leavesData.monthlyData.map((entry) => entry.casualLeaves),
-  //     color: "#FBC02D", // Yellow for taken leaves
-  //   },
-  //   {
-  //     name: "Casual Leaves (Remaining)",
-  //     data: leavesData.monthlyData.map((entry) =>
-  //       Math.max(leavesData.allocated / 3 - entry.casualLeaves, 0)
-  //     ),
-  //     color: "#29B6F6", // Blue for remaining allocation
-  //   },
-  // ];
-
   const leaveData = [
     { type: "Sick Leave", allocated: 12, taken: 12 },
     { type: "Privileged Leave", allocated: 12, taken: 3 },
@@ -209,19 +157,23 @@ const Leaves = () => {
   console.log("leavesData", leavessData);
   const months = leavesData.monthlyData.map((entry) => entry.month);
 
-  const series = [
+  const leaveCounts = useMemo(() => {
+    const counts = {};
+    for (const leave of leaves) {
+      const type = leave.leaveType || "Unknown";
+      counts[type] = (counts[type] || 0) + 1;
+    }
+    return counts;
+  }, [leaves]);
+
+  const chartSeries = [
     {
-      name: "Leaves Taken",
-      data: leaveData.map((entry) => ({
-        x: entry.type,
-        y: entry.taken,
-        fillColor: entry.taken <= entry.allocated ? "#54C4A7" : "#FF4D4F", // Green or Red
-        allocated: entry.allocated,
-      })),
+      name: "Leave Count",
+      data: Object.values(leaveCounts),
     },
   ];
 
-  const options = {
+  const chartOptions = {
     chart: {
       type: "bar",
       toolbar: { show: false },
@@ -229,59 +181,33 @@ const Leaves = () => {
     },
     plotOptions: {
       bar: {
-        horizontal: false,
-        columnWidth: "20%",
-        distributed: true,
-        borderRadius: 3,
+        columnWidth: "20%", // ✅ Bar width
+        borderRadius: 2, // ✅ Rounded corners
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    colors: ["#1E3D73"],
+    dataLabels: {
+      enabled: true,
+      offsetY: -25, // ✅ Vertical offset for labels
+      style: {
+        fontSize: "12px",
+        colors: ["#304758"],
       },
     },
     xaxis: {
-      title: {
-        text: "",
-      },
-      labels: {
-        style: {
-          fontSize: "14px",
-        },
-      },
+      categories: Object.keys(leaveCounts),
+      title: { text: "Leave Type" },
     },
     yaxis: {
       max: 12,
-      title: {
-        text: "Number of Leaves",
-      },
-      labels: {
-        style: {
-          fontSize: "14px",
-        },
+      title: { text: "Number of Leaves" },
+      dataLabels: {
+        positon: "top",
       },
     },
-    colors: leaveData.map((entry) =>
-      entry.taken <= entry.allocated ? "#54C4A7" : "#FF4D4F"
-    ),
-    tooltip: {
-      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-        const data = w.config.series[seriesIndex].data[dataPointIndex];
-        return `
-          <div style="padding: 8px;">
-            <strong>Type:</strong> ${data.x}<br/>
-            <strong>Allocated:</strong> ${data.allocated}<br/>
-            <strong>Taken:</strong> ${data.y}
-          </div>
-        `;
-      },
-    },
-    dataLabels: {
-      enabled: true,
-      style: {
-        fontSize: "12px",
-        colors: ["#fff"],
-      },
-      formatter: function (val) {
-        return `${val} leave${val > 1 ? "s" : ""}`;
-      },
-    },
-    legend: { show: false },
   };
 
   const onSubmit = (data) => {
@@ -292,7 +218,18 @@ const Leaves = () => {
     <div className="flex flex-col gap-8">
       <div>
         <WidgetSection layout={1} title={"Leaves Data"} border>
-          <BarGraph data={series} options={options} />
+          {isLoading ? (
+            <div className="flex justify-center items-center h-96">
+              <CircularProgress />
+            </div>
+          ) : (
+            <BarGraph
+              chartId="leave-type-bar"
+              data={chartSeries}
+              options={chartOptions}
+              height={350}
+            />
+          )}
         </WidgetSection>
       </div>
       <div>
@@ -307,14 +244,15 @@ const Leaves = () => {
             search={true}
             searchColumn={"Leave Type"}
             tableTitle={`${name}'s Leaves`}
+            dateColumn={"fromDate"}
             buttonTitle={"Add Requested Leave"}
-            handleClick={() => {
+            handleSubmit={() => {
               setOpenModal(true);
             }}
             data={[
               ...leaves.map((leave, index) => ({
-                id: index + 1,
-                fromDate: humanDate(leave.fromDate),
+             
+                fromDate: (leave.fromDate),
                 toDate: humanDate(leave.toDate),
                 leaveType: leave.leaveType,
                 leavePeriod: leave.leavePeriod,
@@ -332,11 +270,13 @@ const Leaves = () => {
         open={openModal}
         onClose={() => {
           setOpenModal(false);
-        }}>
+        }}
+      >
         <div>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4">
+            className="flex flex-col gap-4"
+          >
             <Controller
               name="fromDate"
               control={control}
@@ -346,7 +286,9 @@ const Leaves = () => {
                     {...field}
                     label={"From Date"}
                     format="DD-MM-YYYY"
+                    disablePast // ✅ disables past dates
                     value={field.value ? dayjs(field.value) : null}
+                    slotProps={{ textField: { size: "small" } }}
                     onChange={(date) => {
                       field.onChange(date ? date.toISOString() : null);
                     }}
@@ -354,6 +296,7 @@ const Leaves = () => {
                 </LocalizationProvider>
               )}
             />
+
             <Controller
               name="toDate"
               control={control}
@@ -363,7 +306,9 @@ const Leaves = () => {
                     {...field}
                     label={"To Date"}
                     format="DD-MM-YYYY"
+                    disablePast // ✅ disables past dates
                     value={field.value ? dayjs(field.value) : null}
+                    slotProps={{ textField: { size: "small" } }}
                     onChange={(date) => {
                       field.onChange(date ? date.toISOString() : null);
                     }}
@@ -371,6 +316,7 @@ const Leaves = () => {
                 </LocalizationProvider>
               )}
             />
+
             <Controller
               name="hours"
               control={control}
@@ -396,7 +342,8 @@ const Leaves = () => {
                   fullWidth
                   select
                   label="Leave type"
-                  size="small">
+                  size="small"
+                >
                   {leaveType.map((type) => (
                     <MenuItem key={leaveType.length} value={type}>
                       {type}
@@ -416,7 +363,8 @@ const Leaves = () => {
                   fullWidth
                   select
                   label="Leave period"
-                  size="small">
+                  size="small"
+                >
                   {leavePeriod.map((period) => (
                     <MenuItem key={leavePeriod.length} value={period}>
                       {period}

@@ -15,6 +15,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { queryClient } from "../../../../main";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const InvoiceCreation = () => {
   const navigate = useNavigate();
@@ -108,9 +109,9 @@ const InvoiceCreation = () => {
 
   const invoiceCreationColumns = [
     {
-      headerName : "Sr. No",
-      field : "srno",
-      width : 100
+      headerName: "Sr. No",
+      field: "srno",
+      width: 100,
     },
     {
       headerName: "Client",
@@ -184,7 +185,7 @@ const InvoiceCreation = () => {
   ];
 
   const rows = invoiceData.map((item, index) => ({
-    srno : index + 1,
+    srno: index + 1,
     id: item._id,
     clientName: item?.client?.clientName || "N/A",
     invoiceName: item?.invoice?.name || "N/A",
@@ -195,14 +196,16 @@ const InvoiceCreation = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <AgTable
-        data={rows}
-        columns={invoiceCreationColumns}
-        search
-        tableTitle="Client-Invoice"
-        buttonTitle="Add Invoice"
-        handleClick={() => setViewAddTemplateModal(true)}
-      />
+      <PageFrame>
+        <AgTable
+          data={rows}
+          columns={invoiceCreationColumns}
+          search
+          tableTitle="Client-Invoice"
+          buttonTitle="Add Invoice"
+          handleClick={() => setViewAddTemplateModal(true)}
+        />
+      </PageFrame>
 
       {/* View Details Modal */}
       {viewModal && viewDetails && (

@@ -1,14 +1,9 @@
 import { useState } from "react";
-import Template from "../../../../utils/Template.png";
-import Template2 from "../../../../utils/Template1.png";
-import Template1 from "../../../../utils/Template2.png";
-import Template3 from "../../../../utils/Template3.png";
-import Template4 from "../../../../utils/Template4.png";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-import { TextField, MenuItem, IconButton } from "@mui/material";
+import { TextField, IconButton } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import MuiModal from "../../../../components/MuiModal";
@@ -16,13 +11,26 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
 import { LuImageUp } from "react-icons/lu";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import YearWiseTable from "../../../../components/Tables/YearWiseTable";
+import PageFrame from "../../../../components/Pages/PageFrame";
+import humanDate from "../../../../utils/humanDateForamt";
 
 const VoucherCreation = () => {
   const navigate = useNavigate();
+  const axios = useAxiosPrivate();
   const [viewModal, setViewModal] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
   const [viewAddVoucherModal, setViewVoucherModal] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(dayjs());
+
+  const { data: voucherData = [], isPending: isVoucherPending } = useQuery({
+    queryKey: ["voucherData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/budget/approved-budgets");
+      return response.data.allBudgets;
+    },
+  });
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -35,73 +43,28 @@ const VoucherCreation = () => {
   const onSubmitTemplate = (data) => {
     console.log("Template Submitted:", {
       ...data,
-      file: data.file?.name, // just logging file name for now
+      file: data.file?.name,
     });
-
     toast.success("Template Added!");
     setViewVoucherModal(false);
     reset();
   };
 
-  const templateData = [
-    {
-      id: 1,
-      imgSrc: Template,
-      title: "Experience Letter",
-      date: "Jan 10, 2025",
-    },
-    {
-      id: 2,
-      imgSrc: Template2,
-      title: "Handover & No-Dues Form",
-      date: "Opened Jan 7, 2025",
-    },
-    {
-      id: 3,
-      imgSrc: Template1,
-      title: "Timings Agreement",
-      date: "Opened Jan 7, 2025",
-    },
-    {
-      id: 4,
-      imgSrc: Template3,
-      title: "SOP Agreement",
-      date: "Opened Jan 6, 2025",
-    },
-    {
-      id: 5,
-      imgSrc: Template4,
-      title: "Internship Report",
-      date: "Dec 24, 2024",
-    },
-  ];
-
   const invoiceCreationColumns = [
-    { field: "invoiceName", headerName: "Invoice Name", flex: 1 },
-    {
-      field: "emailInvoice",
-      headerName: "Email Invoice",
-      cellRenderer: (params) => (
-        <>
-          <div className="flex gap-2">
-            <span
-              onClick={() => toast.success("email sent successfully")}
-              className="text-primary hover:underline text-content cursor-pointer"
-            >
-              Send Email
-            </span>
-          </div>
-        </>
-      ),
-    },
-    { field: "date", headerName: "KRAs", flex: 1 },
+    { field: "srNo", headerName: "Sr No", flex: 1 },
+    { field: "voucherName", headerName: "Voucher Name", flex: 1 },
+    { field: "modeOfPayment", headerName: "Mode of Payment", flex: 1 },
+    { field: "amount", headerName: "Amount", flex: 1 },
+    { field: "chequeNo", headerName: "Cheque No", flex: 1 },
+    { field: "chequeDate", headerName: "Cheque Date", flex: 1 },
+    { field: "approvedAt", headerName: "Approved Date", flex: 1, cellRenderer : (params)=>(humanDate(params.value)) },
     {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <div className="p-2 mb-2 flex gap-2">
+        <div className="p-2 flex gap-2 hover:bg-gray-300 rounded-full w-fit">
           <span
-            className="text-subtitle cursor-pointer"
+            role="button"
             onClick={() => {
               setViewDetails(params.data);
               setViewModal(true);
@@ -113,48 +76,39 @@ const VoucherCreation = () => {
       ),
     },
   ];
-  const rows = [
-    {
-      id: 1,
-      invoiceName: "Chair Invoice",
-      date: "Jan 6, 2025",
-    },
-    {
-      id: 2,
-      invoiceName: "Table Invoice",
-      date: "Jan 6, 2025",
-    },
-    {
-      id: 3,
-      invoiceName: "AC Invoice",
-      date: "Jan 6, 2025",
-    },
-    {
-      id: 4,
-      invoiceName: "Laptop Invoice",
-      date: "Jan 6, 2025",
-    },
-    {
-      id: 5,
-      invoiceName: "John Doe Invoice",
-      date: "Jan 6, 2025",
-    },
-  ];
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <AgTable
-          data={rows}
+      <PageFrame>
+        <YearWiseTable
+          data={(voucherData || []).map((item, index) => ({
+            ...item,
+          
+            voucherName: item.finance?.voucher?.name || "-",
+            voucherLink: item.finance?.voucher?.link || "-",
+            modeOfPayment: item.finance?.modeOfPayment || "-",
+            amount: item.finance?.amount ?? "-",
+            chequeNo: item.finance?.chequeNo || "-",
+            chequeDate: item.finance?.chequeDate
+              ? dayjs(item.finance.chequeDate).format("DD MMM YYYY")
+              : "-",
+            approvedAt: item.finance?.approvedAt || "-",
+            expectedDateInvoice: humanDate(item.finance?.expectedDateInvoice) || "-",
+            financeParticulars: Array.isArray(item.finance?.particulars)
+              ? item.finance.particulars
+              : [],
+          }))}
+          dateColumn={"approvedAt"}
           columns={invoiceCreationColumns}
           search
           tableTitle={"Voucher"}
-          buttonTitle={"Add Voucher"}
+          tableHeight={450}
           handleClick={() => {
             setViewVoucherModal(true);
           }}
+          isLoading={isVoucherPending}
         />
-      </div>
+      </PageFrame>
 
       {viewModal && viewDetails && (
         <MuiModal
@@ -163,14 +117,51 @@ const VoucherCreation = () => {
             setViewModal(false);
             setViewDetails(null);
           }}
-          title="Invoice Detail"
+          title="Voucher Finance Details"
         >
           <div className="space-y-3">
+            <DetalisFormatted title="Sr No" detail={viewDetails.srNo || "-"} />
             <DetalisFormatted
-              title="Invoice Name"
-              detail={viewDetails.invoiceName}
+              title="Mode of Payment"
+              detail={viewDetails.modeOfPayment}
             />
-            <DetalisFormatted title="KRAs" detail={viewDetails.date} />
+            <DetalisFormatted title="Amount" detail={viewDetails.amount} />
+            <DetalisFormatted title="Cheque No" detail={viewDetails.chequeNo} />
+            <DetalisFormatted
+              title="Cheque Date"
+              detail={viewDetails.chequeDate}
+            />
+            <DetalisFormatted
+              title="Expected Invoice Date"
+              detail={viewDetails.expectedDateInvoice}
+            />
+            <DetalisFormatted
+              title="Voucher File"
+              detail={
+                viewDetails.voucherLink !== "-" ? (
+                  <a
+                    href={viewDetails.voucherLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    {viewDetails.voucherName}
+                  </a>
+                ) : (
+                  "-"
+                )
+              }
+            />
+            {(viewDetails.financeParticulars || []).map((p, idx) => (
+              <div key={idx} className="border-t pt-2">
+                <DetalisFormatted
+                  title={`Particular ${idx + 1}`}
+                  detail={`${p.particularName || "-"} — ₹${
+                    p.particularAmount || 0
+                  }`}
+                />
+              </div>
+            ))}
           </div>
         </MuiModal>
       )}
@@ -186,7 +177,6 @@ const VoucherCreation = () => {
           }}
         >
           <form className="flex flex-col gap-4 mt-2">
-            {/* Title Field */}
             <Controller
               name="title"
               control={control}
@@ -195,7 +185,6 @@ const VoucherCreation = () => {
               )}
             />
 
-            {/* File Upload */}
             <Controller
               name="file"
               control={control}
@@ -232,7 +221,6 @@ const VoucherCreation = () => {
               )}
             />
 
-            {/* Date Picker */}
             <Controller
               name="date"
               control={control}

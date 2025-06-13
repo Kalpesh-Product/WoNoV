@@ -132,7 +132,7 @@ const MonthWiseTable = ({
         columns={formattedColumns}
         data={filteredData.map((item, index) => ({
           ...item,
-          srno: index + 1,
+          srNo: index + 1,
           date: humanDate(item.date),
         }))}
         hideFilter={filteredData.length <= 9}

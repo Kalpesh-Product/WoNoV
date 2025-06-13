@@ -1,20 +1,14 @@
 import { useState } from "react";
-import PrimaryButton from "../../../../components/PrimaryButton";
 import { useNavigate } from "react-router-dom";
-import AgTable from "../../../../components/AgTable";
+import { useQuery } from "@tanstack/react-query";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { Chip } from "@mui/material";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
-import { toast } from "sonner";
-import { useForm, Controller } from "react-hook-form";
-import { TextField, MenuItem, Chip } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import dayjs from "dayjs";
-import UploadFileInput from "../../../../components/UploadFileInput";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { queryClient } from "../../../../main";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import PageFrame from "../../../../components/Pages/PageFrame";
+import YearWiseTable from "../../../../components/Tables/YearWiseTable";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 
 const DepartmentInvoice = () => {
   const navigate = useNavigate();
@@ -22,142 +16,35 @@ const DepartmentInvoice = () => {
 
   const [viewModal, setViewModal] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
-  const [viewAddTemplateModal, setViewAddTemplateModal] = useState(false);
 
-  const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
-    queryKey: ["clientsData"],
+  const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+    queryKey: ["allBudgets"],
     queryFn: async () => {
-      const response = await axios.get("/api/sales/co-working-clients");
-      return response.data.filter((item) => item.isActive);
-    },
-  });
-
-  const { data: invoiceData = [], isPending: isInvoicePending } = useQuery({
-    queryKey: ["invoiceData"],
-    queryFn: async () => {
-      const response = await axios.get("/api/finance/client-invoices");
-      return response.data;
-    },
-  });
-
-  const { control, handleSubmit, reset } = useForm({
-    defaultValues: {
-      title: "",
-      invoiceFile: null,
-      client: "",
-      date: null,
-      status: false,
-    },
-  });
-
-  const onSubmitTemplate = (data) => {
-    const file = data.invoiceFile;
-    if (!file) return toast.error("Missing file");
-
-    const formData = new FormData();
-    formData.append("title", data.title);
-    formData.append("client-invoice", file);
-    formData.append("client", data.client);
-    formData.append(
-      "invoiceUploadedAt",
-      data.date?.toISOString() || new Date().toISOString()
-    );
-
-    submitInvoice(formData);
-  };
-
-  const { mutate: submitInvoice, isPending: isSubmitPending } = useMutation({
-    mutationKey: ["submitInvoice"],
-    mutationFn: async (data) => {
-      const response = await axios.post(
-        "/api/finance/upload-client-invoice",
-        data,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-      return response.data;
-    },
-    onSuccess: (data) => {
-      toast.success(data.message || "Invoice uploaded");
-      queryClient.invalidateQueries({ queryKey: ["invoiceData"] });
-      reset();
-      setViewAddTemplateModal(false);
-    },
-    onError: (error) => {
-      toast.error(error.message || "Error uploading invoice");
-    },
-  });
-
-  const { mutate: updateInvoice, isPending: isUpdatePending } = useMutation({
-    mutationKey: ["updateInvoice"],
-    mutationFn: async (data) => {
-      const response = await axios.patch(
-        `/api/finance/update-payment-status/${data}`
-      );
-      return response.data;
-    },
-    onSuccess: (data) => {
-      toast.success(data.message || "PAYMENT STATUS UPDATED");
-      queryClient.invalidateQueries({ queryKey: ["invoiceData"] });
-    },
-    onError: (error) => {
-      toast.error(error.message || "Error updating payment status");
+      try {
+        const response = await axios.get(`/api/budget/company-budget`);
+        return Array.isArray(response.data.allBudgets)
+          ? response.data.allBudgets
+          : [];
+      } catch (error) {
+        console.error("Error fetching budget:", error);
+        return [];
+      }
     },
   });
 
   const invoiceCreationColumns = [
-    {
-      headerName : "Sr. No",
-      field : "srno",
-      width : 100
-    },
-    {
-      headerName: "Client",
-      field: "clientName",
-      flex: 1,
-    },
-    {
-      headerName: "Invoice Name",
-      field: "invoiceName",
-      flex: 1,
-    },
-    {
-      headerName: "Uploaded On",
-      field: "uploadDate",
-      flex: 1,
-    },
-    {
-      field: "status",
-      headerName: "Status",
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          Paid: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-          Unpaid: { backgroundColor: "#FFEBEE", color: "#B71C1C" }, // Light purple bg, dark purple font
-        };
+    { headerName: "Sr. No", field: "srNo", width: 100 },
+    { headerName: "Department", field: "department", flex: 1 },
+    { headerName: "Invoice Name", field: "invoiceName", flex: 1 },
+    { headerName: "GSTIN", field: "gstIn", flex: 1 },
+    { headerName: "Invoice Date", field: "invoiceDate", flex: 1 },
+    { headerName: "Due Date", field: "dueDate", flex: 1 },
 
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return (
-          <>
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-          </>
-        );
-      },
-    },
     {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <div className="p-2  flex gap-2 items-center">
+        <div className="p-2 flex gap-2 items-center">
           <span
             className="text-subtitle cursor-pointer"
             onClick={() => {
@@ -171,9 +58,10 @@ const DepartmentInvoice = () => {
             rowId={params.data.id}
             menuItems={[
               {
-                label: "Mark As Paid",
+                label: "View",
                 onClick: () => {
-                  updateInvoice(params.data.id);
+                  setViewDetails(params.data);
+                  setViewModal(true);
                 },
               },
             ]}
@@ -183,27 +71,63 @@ const DepartmentInvoice = () => {
     },
   ];
 
-  const rows = invoiceData.map((item, index) => ({
-    srno : index + 1,
-    id: item._id,
-    clientName: item?.client?.clientName || "N/A",
-    invoiceName: item?.invoice?.name || "N/A",
-    uploadDate: dayjs(item?.invoiceUploadedAt).format("DD-MM-YYYY"),
-    status: item?.paidStatus || item?.paymentStatus ? "Paid" : "Unpaid",
-    ...item,
-  }));
+  const mappedRows = (hrFinance || []).map((item, index) => {
+    const invoice = item.invoice || {};
+    const finance = item.finance || {};
+    const unit = item.unit || {};
+    const building = unit.building || {};
+    const departmentName = item.department?.name || "-";
+
+    return {
+      ...item,
+
+      id: item._id,
+      expanseName: item.expanseName || "-",
+      expanseType: item.expanseType || "-",
+      department: departmentName,
+      unitName: unit.unitName || "-",
+      unitNo: unit.unitNo || "-",
+      buildingName: building.buildingName || "-",
+      dueDate: item.dueDate || "-",
+      gstIn: item.gstIn || "-",
+      isPaid: item.isPaid || "Unpaid",
+
+      invoiceName: invoice.name || "-",
+      invoiceLink: invoice.link || "-",
+      invoiceDate: invoice.date || null,
+
+      finance: {
+        fSrNo: finance.fSrNo || "-",
+        modeOfPayment: finance.modeOfPayment || "-",
+        chequeNo: finance.chequeNo || "-",
+        chequeDate: finance.chequeDate || null,
+        approvedAt: finance.approvedAt || null,
+        expectedDateInvoice: finance.expectedDateInvoice || null,
+        amount: finance.amount || 0,
+        voucher: finance.voucher || null,
+        particulars: Array.isArray(finance.particulars)
+          ? finance.particulars
+          : [],
+      },
+      unit: unit,
+    };
+  });
 
   return (
     <div className="flex flex-col gap-4">
-      <AgTable
-        data={rows}
-        columns={invoiceCreationColumns}
-        search
-        tableTitle="Department-Invoice"
-        handleClick={() => setViewAddTemplateModal(true)}
-      />
+      <PageFrame>
+        <YearWiseTable
+          data={mappedRows}
+          dropdownColumns={["department"]}
+          columns={invoiceCreationColumns}
+          search
+          tableTitle="Department-Invoice"
+          dateColumn="dueDate"
+          formatDate={true}
+          tableHeight={450}
+        />
+      </PageFrame>
 
-      {/* View Details Modal */}
       {viewModal && viewDetails && (
         <MuiModal
           open={viewModal}
@@ -215,134 +139,177 @@ const DepartmentInvoice = () => {
         >
           <div className="space-y-3">
             <DetalisFormatted
-              title="Client Name"
-              detail={viewDetails?.client?.clientName || "N/A"}
+              title="Expense Name"
+              detail={viewDetails.expanseName || "-"}
+            />
+            <DetalisFormatted
+              title="Expense Type"
+              detail={viewDetails.expanseType || "-"}
+            />
+            <DetalisFormatted
+              title="Department"
+              detail={viewDetails.department || "-"}
+            />
+            <DetalisFormatted
+              title="Unit"
+              detail={viewDetails.unitName || "-"}
+            />
+            <DetalisFormatted
+              title="Unit No"
+              detail={viewDetails.unitNo || "-"}
+            />
+            <DetalisFormatted
+              title="Building"
+              detail={viewDetails.buildingName || "-"}
+            />
+            <DetalisFormatted
+              title="Due Date"
+              detail={
+                viewDetails.dueDate
+                  ? new Date(viewDetails.dueDate).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "-"
+              }
             />
             <DetalisFormatted
               title="Invoice Name"
-              detail={viewDetails?.invoice?.name || "N/A"}
+              detail={viewDetails.invoiceName || "-"}
             />
+            <DetalisFormatted title="GSTIN" detail={viewDetails.gstIn || "-"} />
             <DetalisFormatted
-              title="Invoice Link"
+              title="Invoice Date"
               detail={
-                viewDetails?.invoice?.link ? (
-                  <a
-                    href={viewDetails.invoice.link}
-                    className="text-primary underline cursor-pointer"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    View PDF
-                  </a>
-                ) : (
-                  "N/A"
-                )
+                viewDetails.invoiceDate
+                  ? new Date(viewDetails.invoiceDate).toLocaleDateString(
+                      "en-IN",
+                      {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      }
+                    )
+                  : "-"
               }
-            />
-            <DetalisFormatted
-              title="Uploaded At"
-              detail={dayjs(viewDetails?.invoiceUploadedAt).format(
-                "DD-MM-YYYY"
-              )}
             />
             <DetalisFormatted
               title="Status"
+              detail={viewDetails.isPaid || "Unpaid"}
+            />
+            <DetalisFormatted
+              title="Invoice File"
               detail={
-                viewDetails?.paidStatus || viewDetails?.paymentStatus
-                  ? "Paid"
-                  : "Unpaid"
+                viewDetails.invoiceLink !== "-" ? (
+                  <a
+                    href={viewDetails.invoiceLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    {viewDetails.invoiceName}
+                  </a>
+                ) : (
+                  "-"
+                )
               }
             />
+
+            {/* Finance Details */}
+            {viewDetails.finance && (
+              <div className="mt-4 flex flex-col gap-4">
+                <span className="text-subtitle font-pmedium text-primary my-4 uppercase">
+                  Finance Details
+                </span>
+                <DetalisFormatted
+                  title="Finance Sr No"
+                  detail={viewDetails.finance.fSrNo || "-"}
+                />
+                <DetalisFormatted
+                  title="Mode of Payment"
+                  detail={viewDetails.finance.modeOfPayment || "-"}
+                />
+                <DetalisFormatted
+                  title="Cheque No"
+                  detail={viewDetails.finance.chequeNo || "-"}
+                />
+                <DetalisFormatted
+                  title="Cheque Date"
+                  detail={
+                    viewDetails.finance.chequeDate
+                      ? new Date(
+                          viewDetails.finance.chequeDate
+                        ).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "-"
+                  }
+                />
+                <DetalisFormatted
+                  title="Approved At"
+                  detail={
+                    viewDetails.finance.approvedAt
+                      ? new Date(
+                          viewDetails.finance.approvedAt
+                        ).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "-"
+                  }
+                />
+                <DetalisFormatted
+                  title="Expected Invoice Date"
+                  detail={
+                    viewDetails.finance.expectedDateInvoice
+                      ? new Date(
+                          viewDetails.finance.expectedDateInvoice
+                        ).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "-"
+                  }
+                />
+                <DetalisFormatted
+                  title="Amount"
+                  detail={`₹${viewDetails.finance.amount || 0}`}
+                />
+                <DetalisFormatted
+                  title="Voucher File"
+                  detail={
+                    viewDetails.finance.voucher?.link ? (
+                      <a
+                        href={viewDetails.finance.voucher.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                      >
+                        {viewDetails.finance.voucher.name}
+                      </a>
+                    ) : (
+                      "-"
+                    )
+                  }
+                />
+                {(viewDetails.finance.particulars || []).map((p, idx) => (
+                  <div key={idx} className="border-t pt-2">
+                    <DetalisFormatted
+                      title={`Particular ${idx + 1}`}
+                      detail={`${p.particularName || "-"} — ₹${
+                        p.particularAmount || 0
+                      }`}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </MuiModal>
-      )}
-
-      {/* Add Invoice Modal */}
-      {viewAddTemplateModal && (
-        <MuiModal
-          open={viewAddTemplateModal}
-          onClose={() => setViewAddTemplateModal(false)}
-          title="Add New Invoice"
-        >
-          <form
-            onSubmit={handleSubmit(onSubmitTemplate)}
-            className="flex flex-col gap-4 mt-2"
-          >
-            <Controller
-              name="invoiceFile"
-              control={control}
-              render={({ field }) => (
-                <UploadFileInput
-                  value={field.value}
-                  onChange={field.onChange}
-                  allowedExtensions={["pdf"]}
-                  previewType="pdf"
-                />
-              )}
-            />
-
-            <Controller
-              name="client"
-              control={control}
-              rules={{ required: "Client is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  size="small"
-                  fullWidth
-                  label="Select Client"
-                >
-                  <MenuItem value="" disabled>
-                    Select Client
-                  </MenuItem>
-                  {isClientsDataPending
-                    ? []
-                    : clientsData.map((item) => (
-                        <MenuItem key={item._id} value={item._id}>
-                          {item.clientName}
-                        </MenuItem>
-                      ))}
-                </TextField>
-              )}
-            />
-
-            <Controller
-              name="date"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  label="Invoice Upload Date"
-                  format="DD-MM-YYYY"
-                  {...field}
-                  value={field.value || dayjs()}
-                  onChange={(date) => field.onChange(date)}
-                  slotProps={{ textField: { fullWidth: true, size: "small" } }}
-                />
-              )}
-            />
-
-            <Controller
-              name="status"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  label="Status"
-                  fullWidth
-                  size="small"
-                  disabled
-                  value={field.value ? "Paid" : "Unpaid"}
-                />
-              )}
-            />
-
-            <PrimaryButton
-              disabled={isSubmitPending}
-              isLoading={isSubmitPending}
-              title="Add Invoice"
-              type="submit"
-            />
-          </form>
         </MuiModal>
       )}
     </div>

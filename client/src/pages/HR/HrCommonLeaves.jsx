@@ -45,7 +45,7 @@ const HrCommonLeaves = () => {
   const leavePeriod = ["Partial", "Single", "Multiple"];
 
   const leavesColumn = [
-    { field: "id", headerName: "Sr No", sort: "desc" },
+    { field: "srNo", headerName: "Sr No" },
     { field: "fromDate", headerName: "From Date" },
     { field: "toDate", headerName: "To Date" },
     { field: "leaveType", headerName: "Leave Type" },
@@ -125,18 +125,20 @@ const HrCommonLeaves = () => {
                         status: "-",
                       },
                     ]
-                  : leaves.filter((item)=>item.fromDate !== undefined).map((leave, index) => {
-                    console.log(leave.fromDate)
-                    return({
-                      // id: index + 1,
-                      fromDate: leave.fromDate,
-                      toDate: leave.toDate,
-                      leaveType: leave.leaveType,
-                      leavePeriod: leave.leavePeriod,
-                      hours: leave.hours,
-                      description: leave.description,
-                      status: leave.status,
-                    })})
+                  : leaves
+                      .filter((item) => item.fromDate !== undefined)
+                      .map((leave, index) => {
+                        return {
+                          // id: index + 1,
+                          fromDate: leave.fromDate,
+                          toDate: leave.toDate,
+                          leaveType: leave.leaveType,
+                          leavePeriod: leave.leavePeriod,
+                          hours: leave.hours,
+                          description: leave.description,
+                          status: leave.status,
+                        };
+                      })
               }
             />
           )}

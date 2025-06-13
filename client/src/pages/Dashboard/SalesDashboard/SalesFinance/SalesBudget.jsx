@@ -232,6 +232,7 @@ const SalesBudget = () => {
       const transoformedRows = data.tableData.rows.map((row, index) => ({
         ...row,
         srNo: index + 1,
+        invoiceAttached : row?.invoiceAttached,
         projectedAmount: Number(
           row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")
         ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),

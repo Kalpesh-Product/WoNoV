@@ -23,6 +23,7 @@ import { useSelector } from "react-redux";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
@@ -41,6 +42,7 @@ const paymentModes = [
 
 const ReviewRequest = () => {
   const formRef = useRef(null);
+  const navigate= useNavigate()
   const voucherDetails = useSelector((state) => state.finance.voucherDetails);
   console.log("Voucher REdux" , voucherDetails)
   const [openPreview, setOpenPreview] = useState(false);
@@ -136,22 +138,24 @@ const ReviewRequest = () => {
 
 const onUpload = async () => {
   const values = getValues();
-  values.particulars = fields; // useFieldArray data
+  values.particulars = fields;
 
-  // Step 1: Generate PDF from form
+  // Step 1: Generate canvas with lower resolution
   const canvas = await html2canvas(formRef.current, {
-    scale: window.devicePixelRatio,
+    scale: 1, // lower scale for compression
   });
 
   const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF("p", "mm", "a4");
+
+  // Step 2: Create compressed PDF
+  const pdf = new jsPDF("p", "mm", "a4", true); // true enables internal compression
   const imgWidth = 210;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
-  pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+  pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight, undefined, "FAST");
 
   const pdfBlob = pdf.output("blob");
 
-  // Step 2: Prepare FormData
+  // Step 3: Create FormData
   const formData = new FormData();
   formData.append("voucher", pdfBlob, "Voucher_Form.pdf");
   formData.append("budgetId", voucherDetails._id);
@@ -163,9 +167,10 @@ const onUpload = async () => {
   formData.append("expectedDateInvoice", values.expectedDateInvoice || "");
   formData.append("particulars", JSON.stringify(values.particulars || []));
 
-  // Step 3: Trigger mutation
+  // Step 4: Upload
   submitRequest(formData);
 };
+
 
 
 
@@ -188,6 +193,7 @@ const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
     toast.success(data.message);
     setOpenPreview(false);
     reset();
+    navigate('/app/dashboard/finance-dashboard/billing/pending-approvals')
   },
   onError: (error) => {
     toast.error(error.message);
@@ -676,7 +682,7 @@ const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
               <div className="flex gap-2 items-end">
                 <p>S.No.</p>
                 <span className="w-28 border-b-default border-black pb-2">
-                  {values.financeSno}
+                  {values.fSrNo}
                 </span>
               </div>
               <div className="flex gap-2 items-end">

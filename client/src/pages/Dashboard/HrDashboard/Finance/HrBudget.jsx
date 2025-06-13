@@ -200,6 +200,7 @@ const HrBudget = () => {
         acc[month].tableData.rows.push({
           id: item._id,
           expanseName: item?.expanseName,
+          invoiceAttached : item?.invoiceAttached,
           department: item?.department,
           expanseType: item?.expanseType,
           projectedAmount: Number(item?.projectedAmount).toFixed(2),
