@@ -9,7 +9,6 @@ const AdminData = () => {
   // Map routes to tabs
   const tabs = [
     { label: "Asset List", path: "asset-list" },
-    { label: "Vendor Database", path: "vendor-database" },
     {
       label: "Electricity Consumption & Expenses",
       path: "electricity-expenses",
@@ -18,6 +17,7 @@ const AdminData = () => {
       label: "Monthly Invoice Reports",
       path: "monthly-invoice-reports",
     },
+    { label: "Vendor", path: "vendor" },
   ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"

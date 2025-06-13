@@ -1,42 +1,32 @@
-import { Tab, Tabs } from "@mui/material";
 import React, { useEffect } from "react";
+import { Tab, Tabs } from "@mui/material";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
-const ItData = () => {
+const SalesDataCard = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Map routes to tabs
   const tabs = [
-    { label: "Asset List", path: "asset-list" },
-    {
-      label: "AMC Records",
-      path: "amc-records",
-    },
-    {
-      label: "Monthly Invoice Reports",
-      path: "monthly-invoice-reports",
-    },
+      { label: "Asset List", path: "sales-asset-list" },
     { label: "Vendor", path: "vendor" },
   ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
   useEffect(() => {
-    if (location.pathname === "/app/dashboard/IT-dashboard/data") {
-      navigate("/app/dashboard/IT-dashboard/data/asset-list", {
+    if (location.pathname === "/app/dashboard/sales-dashboard/data") {
+      navigate("/app/dashboard/sales-dashboard/data/vendor", {
         replace: true,
       });
     }
   }, [location, navigate]);
 
   // Determine whether to show the tabs
-  const showTabs = !location.pathname.includes("asset-list/");
+  const showTabs = !location.pathname.includes("vendor/");
 
   // Determine active tab based on location
   const activeTab = tabs.findIndex((tab) =>
     location.pathname.includes(tab.path)
   );
-
   return (
     <div className="p-4">
       {/* Render tabs only if the current route is not EmployeeDetails */}
@@ -87,4 +77,4 @@ const ItData = () => {
   );
 };
 
-export default ItData;
+export default SalesDataCard;

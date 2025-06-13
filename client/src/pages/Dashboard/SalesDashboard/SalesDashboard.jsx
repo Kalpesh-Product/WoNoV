@@ -25,7 +25,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
 import { setClientData, setLeadsData, setUnitData } from "../../../redux/slices/salesSlice";
 import { CircularProgress, Skeleton } from "@mui/material";
-import { SiCashapp } from "react-icons/si";
+import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import { useSidebar } from "../../../context/SideBarContext";
 import FinanceCard from "../../../components/FinanceCard";
 import { YearCalendar } from "@mui/x-date-pickers";
@@ -771,7 +771,7 @@ const SalesDashboard = () => {
       ],
     },
     {
-      layout: 5,
+      layout: 6,
       widgets: [
         <Card route={"turnover"} title={"Turnover"} icon={<RiPagesLine />} />,
         <Card
@@ -785,6 +785,11 @@ const SalesDashboard = () => {
           icon={<MdFormatListBulleted />}
         />,
         <Card route={""} title={"Reports"} icon={<CgProfile />} />,
+        <Card
+          route={"/app/dashboard/sales-dashboard/data"}
+          title={"Data"}
+          icon={<SiGoogleadsense />}
+        />,
         <Card
           route={"/app/dashboard/sales-dashboard/settings"}
           title={"Settings"}
