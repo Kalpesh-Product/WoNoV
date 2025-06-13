@@ -156,7 +156,6 @@ const uploadClientInvoice = async (req, res, next) => {
       processedBuffer = await pdfDoc.save();
     }
 
-    console.log("client:", foundClient.clientName);
     const response = await handleDocumentUpload(
       processedBuffer,
       `${foundCompany.companyName}/clients/${foundClient.clientName}/invoice`,
@@ -222,6 +221,150 @@ const uploadClientInvoice = async (req, res, next) => {
 
     return res.status(200).json({
       message: `Invoice uploaded successfully`,
+    });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
+  }
+};
+
+const uploadClientVoucher = async (req, res, next) => {
+  const logPath = "finance/FinanceLog";
+  const logAction = "Upload Voucher";
+  const logSourceKey = "voucher";
+  const { client, voucherUploadedAt } = req.body;
+  const file = req.file;
+  const { user, ip, company } = req;
+
+  try {
+    const allowedMimeTypes = [
+      "application/pdf",
+      "application/msword", // .doc
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+    ];
+
+    if (!mongoose.Types.ObjectId.isValid(client)) {
+      throw new CustomError(
+        "Invalid client Id provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new CustomError(
+        "Invalid file type. Allowed types: PDF, DOC, DOCX",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const foundClient = await CoworkingClient.findById({ _id: client });
+
+    if (!foundClient) {
+      throw new CustomError(
+        "Client not found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const foundCompany = await Company.findById(company);
+
+    if (!foundCompany) {
+      throw new CustomError(
+        "Company not found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    let processedBuffer = file.buffer;
+    const originalFilename = file.originalname;
+
+    // Process PDF: set document title
+    if (file.mimetype === "application/pdf") {
+      const pdfDoc = await PDFDocument.load(file.buffer);
+      pdfDoc.setTitle(
+        file.originalname ? file.originalname.split(".")[0] : "Untitled"
+      );
+      processedBuffer = await pdfDoc.save();
+    }
+
+    const response = await handleDocumentUpload(
+      processedBuffer,
+      `${foundCompany.companyName}/clients/${foundClient.clientName}/voucher`,
+      originalFilename
+    );
+
+    if (!response.public_id) {
+      throw new CustomError(
+        "Failed to upload document",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const voucherExists = await Invoice.findOne({
+      "invoice.id": response.public_id,
+    });
+
+    if (voucherExists) {
+      await handleFileDelete(voucherExists.invoice.id);
+    }
+
+    const newVoucher = new Invoice({
+      client,
+      voucher: {
+        name: originalFilename,
+        link: response.secure_url,
+        id: response.public_id,
+        date: new Date(),
+      },
+      voucherUploadedAt: voucherUploadedAt ? voucherUploadedAt : new Date(),
+      company,
+    });
+
+    const savedVoucher = await newVoucher.save();
+
+    if (!savedVoucher) {
+      throw new CustomError(
+        "Failed to save invoice",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: `Invoice uploaded successfully`,
+      status: "Success",
+      user: user,
+      ip: ip,
+      company: company,
+      sourceKey: logSourceKey,
+      sourceId: savedVoucher._id,
+      changes: {
+        invoiceName: originalFilename,
+        invoiceLink: response.secure_url,
+        invoiceId: response.public_id,
+      },
+    });
+
+    return res.status(200).json({
+      message: `Voucher uploaded successfully`,
     });
   } catch (error) {
     if (error instanceof CustomError) {

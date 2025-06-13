@@ -20,7 +20,7 @@ router.post(
 );
 router.get("/pending-approvals", fetchPendingApprovals);
 // router.patch("/approve-budget/:budgetId", approveBudget);
-router.patch("/approve-budget", approveFinanceBudget);
+router.patch("/approve-budget", upload.single("voucher"), approveFinanceBudget);
 router.patch("/reject-budget/:budgetId", rejectBudget);
 router.patch(
   "/upload-budget-invoice/:budgetId",

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+//Company budget
 const budgetSchema = new mongoose.Schema({
   company: {
     type: mongoose.Schema.Types.ObjectId,
@@ -115,6 +116,7 @@ const budgetSchema = new mongoose.Schema({
       },
     },
   ],
+  //Finance dept approving budget
   finance: {
     fSrNo: {
       type: String,
@@ -131,6 +133,20 @@ const budgetSchema = new mongoose.Schema({
     //     amount: { type: Number, required: true },
     //   },
     // ],
+    voucher: {
+      name: {
+        type: String,
+      },
+      link: {
+        type: String,
+      },
+      id: {
+        type: String,
+      },
+      date: {
+        type: Date,
+      },
+    },
     particulars: [
       {
         particularName: { type: String },
