@@ -11,6 +11,7 @@ const ViewVendor = () => {
   const [isEditing, setIsEditing] = useState(false);
   const location = useLocation();
   const { state } = location;
+ 
 
   useEffect(() => {
     if (state) {
@@ -35,7 +36,7 @@ const ViewVendor = () => {
     }
   }, [state, setValue]);
 
-  console.log("Inside data",state);
+
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
   };
