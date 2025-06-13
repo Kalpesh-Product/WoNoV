@@ -428,24 +428,23 @@ const ExternalMeetingCLients = () => {
     {
       field: "paymentAmount",
       headerName: "Amount (INR)",
-      cellStyle: { textAlign: "right" },
     },
     {
       field: "paymentMode",
       headerName: "Mode",
-      cellStyle: { textAlign: "center" },
     },
     {
       field: "paymentStatus",
       headerName: "Status",
-      cellRenderer: ({ value }) => (
-        <span
-          className={`px-2 py-1 text-xs rounded-full ${
-            value ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-          }`}
-        >
-          {value ? "Paid" : "Unpaid"}
-        </span>
+      cellRenderer: (params) => (
+        <Chip
+          label={params.value ? "Paid" : "Unpaid"}
+          sx={{
+            backgroundColor: params.value ? "#D1FAE5" : "#FECACA", // Tailwind: green-100 / red-100
+            color: params.value ? "#047857" : "#B91C1C", // Tailwind: green-700 / red-700
+            fontWeight: "bold",
+          }}
+        />
       ),
       cellStyle: { textAlign: "center" },
     },
@@ -852,6 +851,39 @@ const ExternalMeetingCLients = () => {
               title={"Department"}
               detail={selectedMeeting?.department}
             /> */}
+
+            <br />
+            <div className="font-bold">Payment Details</div>
+            <DetalisFormatted
+              title="Amount"
+              detail={
+                selectedMeeting?.paymentAmount
+                  
+              }
+            />
+            <DetalisFormatted
+              title="Mode"
+              detail={selectedMeeting?.paymentMode || "N/A"}
+            />
+            <DetalisFormatted
+              title="Status"
+              detail={selectedMeeting?.paymentStatus ? "Paid" : "Unpaid"}
+            />
+            {selectedMeeting?.paymentProofUrl && (
+              <DetalisFormatted
+                title="Proof"
+                detail={
+                  <a
+                    href={selectedMeeting.paymentProofUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    View File
+                  </a>
+                }
+              />
+            )}
           </div>
         )}
         {modalMode === "cancel" && (

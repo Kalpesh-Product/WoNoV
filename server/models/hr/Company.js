@@ -101,6 +101,36 @@ const companySchema = new mongoose.Schema({
       ],
     },
   ],
+
+  kycDetails: {
+    companyKyc: [
+      {
+        name: String,
+        documentLink: String,
+        documentId: String,
+        isActive: {
+          type: Boolean,
+          default: true,
+        },
+      },
+    ],
+    directorKyc: [
+      {
+        nameOfDirector: String,
+        documents: [
+          {
+            name: String,
+            documentLink: String,
+            documentId: String,
+          },
+        ],
+        isActive: {
+          type: Boolean,
+          default: true,
+        },
+      },
+    ],
+  },
   companyName: {
     type: String,
     required: true,
