@@ -4,7 +4,11 @@ const financeLogSchema = new mongoose.Schema(
   {
     invoice: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Finance",
+      ref: "Invoice",
+    },
+    voucher: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Voucher",
     },
     action: {
       type: String,

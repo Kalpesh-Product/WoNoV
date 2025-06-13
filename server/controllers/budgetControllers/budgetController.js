@@ -300,6 +300,10 @@ const fetchLandlordPayments = async (req, res, next) => {
   }
 };
 
+//Problem Statement: Should I add voucher file in Finance collections or Budget collection
+//Will there be a voucher file uploaded
+//Fetch all approved budgets in voucher table
+
 const approveBudget = async (req, res, next) => {
   const logPath = "budget/BudgetLog";
   const logAction = "Approve Budget";
@@ -352,6 +356,7 @@ const approveFinanceBudget = async (req, res, next) => {
   const logAction = "Approve Budget";
   const logSourceKey = "budget";
   const { user, ip, company } = req;
+  const file = req.file;
 
   try {
     const {
@@ -373,10 +378,8 @@ const approveFinanceBudget = async (req, res, next) => {
       chequeDate,
       amount,
       expectedDateInvoice,
-      particulars,
     };
 
-    // Validate missing fields
     const missingFields = Object.entries(requiredFields)
       .filter(([_, value]) => value === undefined || value === "")
       .map(([key]) => key);
@@ -390,7 +393,11 @@ const approveFinanceBudget = async (req, res, next) => {
       );
     }
 
-    const budget = await Budget.findById({ _id: budgetId });
+    const foundCompany = await Company.findById({ _id: company });
+
+    const budget = await Budget.findById({ _id: budgetId }).populate(
+      "department"
+    );
     if (!budget) {
       throw new CustomError(
         "Budget not found",
@@ -400,35 +407,76 @@ const approveFinanceBudget = async (req, res, next) => {
       );
     }
 
-    if (budget.status === "Approved") {
+    // ====== VOUCHER UPLOAD LOGIC =======
+    const allowedMimeTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    if (!file || !allowedMimeTypes.includes(file.mimetype)) {
       throw new CustomError(
-        "Budget already approved",
+        "Invalid or missing file. Allowed types: PDF, DOC, DOCX",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
-    // Update approval fields
+    if (budget.voucher && budget.voucher.id) {
+      await handleFileDelete(budget.voucher.id);
+    }
 
+    let processedBuffer = file.buffer;
+    const originalFilename = file.originalname;
+
+    if (file.mimetype === "application/pdf") {
+      const pdfDoc = await PDFDocument.load(file.buffer);
+      pdfDoc.setTitle(originalFilename?.split(".")[0] || "Voucher");
+      processedBuffer = await pdfDoc.save();
+    }
+
+    const response = await handleDocumentUpload(
+      processedBuffer,
+      `${foundCompany.companyName}/departments/${budget.department.name}/budget/voucher`,
+      originalFilename
+    );
+
+    if (!response.public_id) {
+      throw new CustomError(
+        "Failed to upload voucher document",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    // ========== APPROVE FIELDS ============
     budget.status = "Approved";
 
     budget.finance = {
-      fSrNo, // optional if you have it
+      fSrNo,
       chequeNo,
       chequeDate,
       amount,
       expectedDateInvoice,
       modeOfPayment,
-      particulars, // if available
+      particulars,
       approvedAt: new Date(),
+      voucher: {
+        name: originalFilename,
+        link: response.secure_url,
+        id: response.public_id,
+        date: new Date(),
+      },
     };
+
     await budget.save();
 
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: `Budget approved`,
+      remarks: `Budget approved with voucher`,
       status: "Success",
       user,
       ip,
@@ -445,11 +493,14 @@ const approveFinanceBudget = async (req, res, next) => {
         particulars,
         approvedAt: new Date(),
         status: "Approved",
+        voucherName: originalFilename,
+        voucherLink: response.secure_url,
+        voucherId: response.public_id,
       },
     });
 
     return res.status(200).json({
-      message: "Budget approved",
+      message: "Budget approved with voucher uploaded",
     });
   } catch (error) {
     next(
