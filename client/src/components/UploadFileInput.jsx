@@ -7,6 +7,7 @@ import MuiModal from "./MuiModal";
 const UploadFileInput = ({
   value,
   onChange,
+  disabled=false,
   label = "Upload File",
   allowedExtensions = ["jpg", "jpeg", "png", "pdf"],
   previewType = "auto", // "image", "pdf", "none", or "auto"
@@ -88,6 +89,7 @@ const UploadFileInput = ({
         ref={fileInputRef}
         type="file"
         accept={acceptAttr}
+        disabled={disabled}
         hidden
         id="file-upload"
         onChange={handleFileChange}
@@ -99,6 +101,7 @@ const UploadFileInput = ({
         variant="outlined"
         fullWidth
         label={label}
+        disabled={disabled}
         value={value?.name || ""}
         placeholder="Choose a file..."
         InputProps={{

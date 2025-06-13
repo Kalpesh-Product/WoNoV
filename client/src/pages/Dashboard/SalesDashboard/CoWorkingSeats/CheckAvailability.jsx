@@ -116,7 +116,7 @@ const CheckAvailability = () => {
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "15%",
+        columnWidth: "10%",
         borderRadius: 2,
       },
     },

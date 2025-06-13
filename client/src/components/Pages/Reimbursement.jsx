@@ -23,6 +23,7 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import humanDate from "../../utils/humanDateForamt";
 import { toast } from "sonner";
 import PageFrame from "./PageFrame";
+import UploadFileInput from "../UploadFileInput";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
@@ -120,13 +121,23 @@ const Reimbursement = () => {
     return unit._id;
   }, [selectedUnit, selectedLocation, units]);
 
+  // const uniqueBuildings = Array.from(
+  //   new Map(
+  //     units.length > 0
+  //       ? units.map((loc) => [
+  //           loc.building._id, // use building._id as unique key
+  //           loc.building.buildingName,
+  //         ])
+  //       : []
+  //   ).entries()
+  // );
+
   const uniqueBuildings = Array.from(
     new Map(
       units.length > 0
-        ? units.map((loc) => [
-            loc.building._id, // use building._id as unique key
-            loc.building.buildingName,
-          ])
+        ? units
+            .filter((loc) => loc.building && loc.building._id)
+            .map((loc) => [loc.building._id, loc.building.buildingName])
         : []
     ).entries()
   );
@@ -139,18 +150,46 @@ const Reimbursement = () => {
 
   const onUpload = () => {
     const values = getValues();
-    // If you are using useFieldArray for "particulars"
     values.particulars = fields;
-    submitRequest(values);
+
+    const formData = new FormData();
+
+    // Always required fields
+    formData.append("department", values.department || "");
+    formData.append("srNo", values.srNo || "");
+    formData.append("expanseName", values.expanseName || "");
+    formData.append("expanseType", values.expanseType || "");
+    formData.append("unitId", values.unitId || "");
+    formData.append("location", values.location || "");
+    formData.append("reimbursementDate", values.reimbursementDate || "");
+    formData.append("particulars", JSON.stringify(values.particulars || []));
+    formData.append("invoiceAttached", values.invoiceAttached);
+    formData.append("preApproved", values.preApproved);
+    formData.append("emergencyApproval", values.emergencyApproval);
+    formData.append("budgetApproval", values.budgetApproval);
+    formData.append("l1Approval", values.l1Approval);
+    formData.append("gstIn", values.gstIn || "");
+    formData.append("invoiceNo", values.invoiceNo || "");
+
+    // Only append file if invoice is attached
+    if (values.invoiceAttached && values.invoiceFile instanceof File) {
+      formData.append("invoice", values.invoiceFile);
+    }
+
+    submitRequest(formData);
   };
 
   const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
     mutationKey: ["reimbursement"],
     mutationFn: async (data) => {
-      console.log("Data ;", data);
       const response = await axios.post(
         `/api/budget/request-budget/${department._id}`,
-        data
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
       return response.data;
     },
@@ -197,7 +236,8 @@ const Reimbursement = () => {
                     size="small"
                     select
                     {...field}
-                    label="Select Location">
+                    label="Select Location"
+                  >
                     <MenuItem value="" disabled>
                       Select Building
                     </MenuItem>
@@ -397,7 +437,8 @@ const Reimbursement = () => {
                   {fields.map((item, index) => (
                     <li
                       key={index}
-                      className="flex justify-between items-center border-b py-1">
+                      className="flex justify-between items-center border-b py-1"
+                    >
                       <div className="flex flex-col">
                         <span>{item.particularName}</span>
                         <span className="font-medium text-gray-600">
@@ -408,7 +449,8 @@ const Reimbursement = () => {
                         type="button"
                         onClick={() => remove(index)}
                         className="text-red-500 hover:text-red-700"
-                        title="Delete">
+                        title="Delete"
+                      >
                         <MdDelete size={20} />
                       </button>
                     </li>
@@ -446,17 +488,42 @@ const Reimbursement = () => {
                 <TextField label="GSTIN" size="small" fullWidth {...field} />
               )}
             />
+
+            <Controller
+              name={"invoiceAttached"}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  select
+                  fullWidth
+                  size="small"
+                  label={"Invoice Attached"}
+                  value={field.value ? "Yes" : "No"}
+                  onChange={(e) => field.onChange(e.target.value === "Yes")}
+                >
+                  {["Yes", "No"].map((opt) => (
+                    <MenuItem key={opt} value={opt}>
+                      {opt}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="invoiceFile"
+              control={control}
+              render={({ field }) => (
+                <UploadFileInput
+                  allowedExtensions={["pdf"]}
+                  value={field.value}
+                  onChange={field.onChange}
+                  previewType="pdf"
+                  disabled={!watch("invoiceAttached")} // 🔒 Disable if not attached
+                />
+              )}
+            />
+
             {[
-              {
-                name: "invoiceAttached",
-                label: "Invoice Attached ",
-                values: options,
-              },
-              {
-                name: "preApproved",
-                label: "Pre Approved in Budget ",
-                values: options,
-              },
               {
                 name: "emergencyApproval",
                 label: "Emergency Approval ",
@@ -484,7 +551,8 @@ const Reimbursement = () => {
                     size="small"
                     label={label}
                     value={field.value ? "Yes" : "No"}
-                    onChange={(e) => field.onChange(e.target.value === "Yes")}>
+                    onChange={(e) => field.onChange(e.target.value === "Yes")}
+                  >
                     {["Yes", "No"].map((opt) => (
                       <MenuItem key={opt} value={opt}>
                         {opt}

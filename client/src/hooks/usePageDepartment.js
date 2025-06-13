@@ -10,20 +10,18 @@ const usePageDepartment = () => {
     segment.endsWith("-dashboard")
   );
 
-  let section = dashboardSegment?.split("-")[0];
+  let section = dashboardSegment?.split("-")[0].toLowerCase();
 
   // ✅ Temporary override: treat "frontend" as "tech"
   if (section === "frontend") {
     section = "tech";
-  }
-  if (section === "HR") {
-    section = "hr";
   }
 
   const department = auth?.user?.departments?.find((dept) =>
     dept.name.toLowerCase().includes(section)
   );
 
+  console.log("res", department);
   return department;
 };
 

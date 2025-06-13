@@ -340,6 +340,10 @@ import ExternalClients from "../pages/Visitors/ExternalClients";
 import ManageMeetingsLayout from "../pages/Meetings/ManageMeetingsLayout";
 import ExternalMeetingClients from "../pages/Meetings/ExternalMeetingClients";
 import CoWorkingDetails from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CoWorkingDetails";
+import Vendor from "../components/Vendor";
+import ViewVendor from "../components/vendor/ViewVendor";
+import SalesDataCard from "../pages/Dashboard/SalesDashboard/SalesData/SalesDataCard";
+import DepartmentInvoice from "../pages/Dashboard/FinanceDashboard/Billing/DepartmentInvoice";
 
 export const routes = createBrowserRouter([
   {
@@ -405,6 +409,14 @@ export const routes = createBrowserRouter([
                           {
                             path: "website-issue-reports",
                             element: <FrontendWebsiteIssueReports />,
+                          },
+                        {
+                            path: "vendor",
+                            element: <Vendor />,
+                          },
+                          {
+                            path: "vendor/:id",
+                            element: <ViewVendor />,
                           },
                         ],
                       },
@@ -520,9 +532,13 @@ export const routes = createBrowserRouter([
                         path: "data",
                         element: <FinanceData />,
                         children: [
+                        {
+                            path: "vendor",
+                            element: <Vendor />,
+                          },
                           {
-                            path: "finance-vendor-database",
-                            element: <FinanceVendorDatabase />,
+                            path: "vendor/:id",
+                            element: <ViewVendor />,
                           },
                           {
                             path: "finance-asset-list",
@@ -594,8 +610,12 @@ export const routes = createBrowserRouter([
                         element: <BillingsLayout />,
                         children: [
                           {
-                            path: "invoice",
+                            path: "client-invoice",
                             element: <InvoiceCreation />,
+                          },
+                          {
+                            path: "department-invoice",
+                            element: <DepartmentInvoice />,
                           },
                           {
                             path: "finance-monthly-vouchers",
@@ -766,9 +786,13 @@ export const routes = createBrowserRouter([
                             path: "asset-list",
                             element: <AdminAssetList />,
                           },
+                             {
+                            path: "vendor",
+                            element: <Vendor />,
+                          },
                           {
-                            path: "vendor-database",
-                            element: <AdminVendorDatabase />,
+                            path: "vendor/:id",
+                            element: <ViewVendor />,
                           },
                           {
                             path: "electricity-expenses",
@@ -892,9 +916,13 @@ export const routes = createBrowserRouter([
                             path: "asset-list",
                             element: <MaintenanceAssetList />,
                           },
+                             {
+                            path: "vendor",
+                            element: <Vendor />,
+                          },
                           {
-                            path: "vendor-database",
-                            element: <MaintenanceVendorReports />,
+                            path: "vendor/:id",
+                            element: <ViewVendor />,
                           },
                           {
                             path: "amc-records",
@@ -1014,9 +1042,13 @@ export const routes = createBrowserRouter([
                             path: "asset-list",
                             element: <ItAssetList />,
                           },
+                             {
+                            path: "vendor",
+                            element: <Vendor />,
+                          },
                           {
-                            path: "vendor-database",
-                            element: <ItVendorReports />,
+                            path: "vendor/:id",
+                            element: <ViewVendor />,
                           },
                           {
                             path: "amc-records",
@@ -1298,7 +1330,25 @@ export const routes = createBrowserRouter([
                         path: "clients/client-onboarding",
                         element: <ClientOnboarding />,
                       },
-
+                       {
+                        path: "data",
+                        element: <SalesDataCard/>,
+                        children: [
+                           {
+                            path: "sales-asset-list",
+                            element: <FinanceAssetList />,// temporary
+                          },
+                             {
+                            path: "vendor",
+                            element: <Vendor />,
+                          },
+                          {
+                            path: "vendor/:id",
+                            element: <ViewVendor />,
+                          },
+                           
+                        ],
+                      },
                       {
                         path: "settings",
                         element: <SalesSettings />,
@@ -1477,11 +1527,11 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "vendor",
-                            element: <VendorOnboard />,
+                            element: <Vendor />,
                           },
                           {
                             path: "vendor/:id",
-                            element: <ViewVendors />,
+                            element: <ViewVendor />,
                           },
                         ],
                       },

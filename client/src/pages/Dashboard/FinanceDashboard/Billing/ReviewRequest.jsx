@@ -23,6 +23,7 @@ import { useSelector } from "react-redux";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
@@ -41,6 +42,7 @@ const paymentModes = [
 
 const ReviewRequest = () => {
   const formRef = useRef(null);
+  const navigate= useNavigate()
   const voucherDetails = useSelector((state) => state.finance.voucherDetails);
   console.log("Voucher REdux" , voucherDetails)
   const [openPreview, setOpenPreview] = useState(false);
@@ -134,35 +136,70 @@ const ReviewRequest = () => {
   });
   const values = watch();
 
-  const onUpload = () => {
-    const values = getValues();
-    // If you are using useFieldArray for "particulars"
-    values.particulars = fields;
-    submitRequest({
-        ...values,
-        budgetId : voucherDetails._id
-    });
-  };
+const onUpload = async () => {
+  const values = getValues();
+  values.particulars = fields;
 
-  const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
-    mutationKey: ["approve"],
-    mutationFn: async (data) => {
-      console.log("Data ;", data);
-      const response = await axios.patch(
-        `/api/budget/approve-budget`,
-        data
-      );
-      return response.data;
-    },
-    onSuccess: (data) => {
-      toast.success(data.message);
-      setOpenPreview(false);
-      reset();
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+  // Step 1: Generate canvas with lower resolution
+  const canvas = await html2canvas(formRef.current, {
+    scale: 1, // lower scale for compression
   });
+
+  const imgData = canvas.toDataURL("image/png");
+
+  // Step 2: Create compressed PDF
+  const pdf = new jsPDF("p", "mm", "a4", true); // true enables internal compression
+  const imgWidth = 210;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight, undefined, "FAST");
+
+  const pdfBlob = pdf.output("blob");
+
+  // Step 3: Create FormData
+  const formData = new FormData();
+  formData.append("voucher", pdfBlob, "Voucher_Form.pdf");
+  formData.append("budgetId", voucherDetails._id);
+  formData.append("fSrNo", values.fSrNo || "");
+  formData.append("modeOfPayment", values.modeOfPayment || "");
+  formData.append("chequeNo", values.chequeNo || "");
+  formData.append("chequeDate", values.chequeDate || "");
+  formData.append("amount", values.amount?.toString() || "0");
+  formData.append("expectedDateInvoice", values.expectedDateInvoice || "");
+  formData.append("particulars", JSON.stringify(values.particulars || []));
+
+  // Step 4: Upload
+  submitRequest(formData);
+};
+
+
+
+
+
+const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
+  mutationKey: ["approve"],
+  mutationFn: async (formData) => {
+    const response = await axios.patch(
+      `/api/budget/approve-budget`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  },
+  onSuccess: (data) => {
+    toast.success(data.message);
+    setOpenPreview(false);
+    reset();
+    navigate('/app/dashboard/finance-dashboard/billing/pending-approvals')
+  },
+  onError: (error) => {
+    toast.error(error.message);
+  },
+});
+
 
   const exportToPDF = async () => {
     const canvas = await html2canvas(formRef.current, {
@@ -645,7 +682,7 @@ const ReviewRequest = () => {
               <div className="flex gap-2 items-end">
                 <p>S.No.</p>
                 <span className="w-28 border-b-default border-black pb-2">
-                  {values.financeSno}
+                  {values.fSrNo}
                 </span>
               </div>
               <div className="flex gap-2 items-end">

@@ -201,6 +201,7 @@ const ItBudget = () => {
           id: item._id,
           expanseName: item?.expanseName,
           department: item?.department,
+          invoiceAttached : item?.invoiceAttached,
           expanseType: item?.expanseType,
           projectedAmount: Number(item?.projectedAmount).toFixed(2),
           actualAmount: inrFormat(item?.actualAmount || 0), // ✅ Add this

@@ -1,25 +1,28 @@
 import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { Chip, MenuItem, Select, TextField } from "@mui/material";
-import PrimaryButton from "../../../../components/PrimaryButton";
-import SecondaryButton from "../../../../components/SecondaryButton";
-import AgTable from "../../../../components/AgTable";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Country, State, City } from "country-state-city";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import usePageDepartment from "../../../../hooks/usePageDepartment";
-import useAuth from "../../../../hooks/useAuth";
-import MuiModal from "../../../../components/MuiModal";
-import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-import PageFrame from "../../../../components/Pages/PageFrame";
+import PrimaryButton from "./PrimaryButton";
+import SecondaryButton from "./SecondaryButton";
+import AgTable from "./AgTable";
+import useAxiosPrivate from "../hooks/useAxiosPrivate";
+import usePageDepartment from "../hooks/usePageDepartment";
+import useAuth from "../hooks/useAuth";
+import MuiModal from "./MuiModal";
+import DetalisFormatted from "./DetalisFormatted";
+import PageFrame from "./Pages/PageFrame";
+import { useQueryClient } from "@tanstack/react-query";
 
-const VendorOnboard = () => {
+
+const Vendor = () => {
   const { auth } = useAuth();
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
+   const queryClient = useQueryClient();
   const { control, handleSubmit, reset } = useForm();
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
@@ -29,12 +32,21 @@ const VendorOnboard = () => {
   const [selectedCity, setSelectedCity] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
-
+ 
   useEffect(() => {
     setCountries(Country.getAllCountries());
   }, []);
 
   const department = usePageDepartment();
+  let departmentName = department.name
+
+  if(department.name === "Administration"){
+    departmentName = "Admin"
+  }
+  if(department.name === "Tech"){
+    departmentName = "Frontend"
+  }
+
 
   // Fetch states when a country is selected
   const handleCountryChange = (countryCode) => {
@@ -52,6 +64,7 @@ const VendorOnboard = () => {
 
   const { mutate: vendorDetails, isPending } = useMutation({
     mutationFn: async (data) => {
+     
       const response = await axios.post(`/api/vendors/onboard-vendor`, {
         ...data,
         departmentId: department._id,
@@ -61,11 +74,14 @@ const VendorOnboard = () => {
     },
     onSuccess: function (data) {
       toast.success(data.message);
+      queryClient.invalidateQueries({
+    queryKey: ["vendors", department._id],
+  });
     },
     onError: function (data) {
-      if(!department){
-         toast.error("Unauthorized, department doesn't match");
-      }
+          if(!department){
+                 toast.error("Unauthorized, department doesn't match");
+              }
       toast.error(data.response.data.message);
     },
   });
@@ -75,11 +91,14 @@ const VendorOnboard = () => {
     isPending: isVendorFetchingPending,
     error,
   } = useQuery({
-    queryKey: ["vendors", "6798bab9e469e809084e249e"],
+    queryKey: ["vendors",department?._id],
+    enabled: !! department?._id,
     queryFn: async function () {
+      
       const response = await axios.get(
-        "/api/vendors/get-vendors/6798bab9e469e809084e249e"
+        `/api/vendors/get-vendors/${department._id}`
       );
+    
       return response.data;
     },
   });
@@ -104,7 +123,7 @@ const VendorOnboard = () => {
           }}
           onClick={() =>
             navigate(
-              `/app/dashboard/HR-dashboard/data/vendor/${params.data.vendorName}`,
+              `/app/dashboard/${departmentName}-dashboard/data/vendor/${params.data.vendorName}`,
               { state: params.data }
             )
           }>
@@ -148,13 +167,7 @@ const VendorOnboard = () => {
   ];
 
   const rows =
-    data
-      ?.filter(
-        (vendor) =>
-          vendor.departmentId === "6798bab9e469e809084e249e" &&
-          vendor.company === "6799f0cd6a01edbe1bc3fcea"
-      )
-      .map((vendor, index) => ({
+   isVendorFetchingPending ? [] : data.map((vendor, index) => ({
         id: index + 1,
         vendorID: vendor._id.slice(-4).toUpperCase(),
         vendorName: vendor.name,
@@ -376,7 +389,7 @@ const VendorOnboard = () => {
                       <TextField
                         {...field}
                         size="small"
-                        label="PAN IT No"
+                        label="PAN ID No"
                         fullWidth
                         error={!!error}
                         helperText={error?.message}
@@ -399,28 +412,8 @@ const VendorOnboard = () => {
                       />
                     )}
                   />
-          
-                  <Controller
-                    name="panIdNo"
-                    control={control}
-                    defaultValue=""
-                    rules={{
-                      pattern: {
-                        value: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
-                        message: "Invalid PAN (e.g., ABCDE1234F)",
-                      },
-                    }}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="PAN IT No"
-                        fullWidth
-                        error={!!error}
-                        helperText={error?.message}
-                      />
-                    )}
-                  />
+              
+                  
                 </div>
               </div>
               <div>
@@ -692,4 +685,4 @@ const VendorOnboard = () => {
   );
 };
 
-export default VendorOnboard;
+export default Vendor;

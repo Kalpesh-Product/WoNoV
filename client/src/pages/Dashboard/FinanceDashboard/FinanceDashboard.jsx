@@ -236,7 +236,6 @@ const FinanceDashboard = () => {
   const sortedExpenses = transformedExpenses.sort((a, b) =>
     dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
   );
-
   // Build map of month => actualExpense
   const expenseMap = {};
   sortedExpenses.forEach((item) => {
@@ -432,12 +431,20 @@ const FinanceDashboard = () => {
   const availableMonths = sortedExpenses.map((e) => e.month);
   const todayMonth = dayjs().format("MMM-YY");
 
-  // 2. Determine the latest applicable month
+  // 1. Filter available months where actualAmount > 0 exists
+  const monthsWithPositiveAmount = sortedExpenses
+    .filter((monthData) =>
+      (monthData.expenses || []).some((exp) => Number(exp.actualAmount) > 0)
+    )
+    .map((e) => e.month);
+
+  // 2. Determine the latest applicable month (closest to today)
   let selectedMonth = todayMonth;
-  if (!availableMonths.includes(todayMonth)) {
-    const todayIndex = availableMonths.indexOf(todayMonth);
+  if (!monthsWithPositiveAmount.includes(todayMonth)) {
+    const todayIndex = monthsWithPositiveAmount.indexOf(todayMonth);
     selectedMonth =
-      availableMonths[Math.max(0, todayIndex - 1)] || availableMonths.at(-1);
+      monthsWithPositiveAmount[Math.max(0, todayIndex - 1)] ||
+      monthsWithPositiveAmount.at(-1);
   }
 
   // 3. Get that month's data
@@ -449,7 +456,7 @@ const FinanceDashboard = () => {
 
   const clientPayouts = (selectedMonthData?.expenses || []).map((expense) => ({
     clientName: expense.expanseName,
-    amount: expense.actualAmount,
+    amount: expense.actualAmount || 0,
     status: expense.status === "Approved" ? "paid" : "unpaid",
     date: dayjs(expense.dueDate).format("DD-MMM-YYYY"), // e.g., "15-May-2024"
   }));
@@ -474,6 +481,24 @@ const FinanceDashboard = () => {
   const pieMonthlyPayoutOptions = {
     chart: {
       fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: function (event, chartContext, config) {
+          const dataPointIndex = config.dataPointIndex;
+          const selectedCategory = pieMonthlyPayoutData[dataPointIndex];
+
+          // Perform navigation or logic
+          if (selectedCategory) {
+            // Example: navigate or log the label/value
+            console.log(
+              "Selected:",
+              selectedCategory.label,
+              selectedCategory.value
+            );
+            // Replace with actual navigation logic
+            navigate(`finance`);
+          }
+        },
+      },
     },
     colors: ["#4CAF50", "#F44336"],
     labels: pieMonthlyPayoutData.map((item) => item.label),
@@ -491,8 +516,13 @@ const FinanceDashboard = () => {
       y: {
         formatter: function (value, { seriesIndex }) {
           const category = pieMonthlyPayoutData[seriesIndex];
-          return `INR  ${category?.value?.toLocaleString("en-IN") || 0}`;
+          return `INR ${category?.value?.toLocaleString("en-IN") || 0}`;
         },
+      },
+    },
+    plotOptions: {
+      pie: {
+        expandOnClick: true,
       },
     },
   };

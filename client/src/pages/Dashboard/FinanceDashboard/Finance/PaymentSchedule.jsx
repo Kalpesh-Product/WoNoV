@@ -15,6 +15,8 @@ import dayjs from "dayjs";
 import MuiModal from "../../../../components/MuiModal";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import humanDate from "../../../../utils/humanDateForamt";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const PaymentSchedule = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -42,6 +44,13 @@ const PaymentSchedule = () => {
               actualAmount: item.actualAmount,
               projectedAmount: item.projectedAmount,
               status: item.status === "Approved" ? "paid" : "unpaid",
+              expanseType: item.expanseType,
+              invoiceAttached: item.invoiceAttached,
+              unitName: item.unit?.unitName,
+              unitNo: item.unit?.unitNo,
+              buildingName: item.unit?.building?.buildingName,
+              department: item.department?.name,
+              unit: item.unit,
             }))
           : [];
       } catch (error) {
@@ -50,40 +59,6 @@ const PaymentSchedule = () => {
       }
     },
   });
-
-  // Updated dummy data for April 2025
-  const dummyData = [
-    {
-      title: "Salary Disbursement",
-      date: "2025-04-03",
-      amount: "4000",
-      status: "paid",
-    },
-    {
-      title: "Freelancer Payment",
-      date: "2025-04-05",
-      amount: "1200",
-      status: "unpaid",
-    },
-    {
-      title: "Team Bonus",
-      date: "2025-04-10",
-      amount: "900",
-      status: "paid",
-    },
-    {
-      title: "Medical Reimbursement",
-      date: "2025-04-21",
-      amount: "300",
-      status: "paid",
-    },
-    {
-      title: "Travel Allowance",
-      date: "2025-04-20",
-      amount: "600",
-      status: "unpaid",
-    },
-  ];
 
   // Payment status colors
   const statusColorMap = {
@@ -99,8 +74,19 @@ const PaymentSchedule = () => {
     backgroundColor: statusColorMap[payment.status],
     borderColor: statusColorMap[payment.status],
     extendedProps: {
-      amount: payment.amount,
+      amount: payment.projectedAmount,
       status: payment.status,
+      expanseName: payment.expanseName,
+      dueDate: payment.dueDate,
+
+      projectedAmount: payment.projectedAmount,
+      expanseType: payment.expanseType,
+      invoiceAttached: payment.invoiceAttached,
+      unitName: payment.unit?.unitName,
+      unitNo: payment.unit?.unitNo,
+      buildingName: payment.unit?.building?.buildingName,
+      department: payment.name,
+      unit: payment.unit,
     },
   }));
 
@@ -108,7 +94,10 @@ const PaymentSchedule = () => {
     statusFilters.includes(event.extendedProps.status)
   );
 
+  console.log("Filtered", filteredEvents);
+
   const handleEventClick = (clickInfo) => {
+    console.log("ASDADS", clickInfo.event);
     setSelectedEvent(clickInfo.event);
     setIsDrawerOpen(true);
   };
@@ -155,7 +144,8 @@ const PaymentSchedule = () => {
                           fontSize: "0.875rem",
                           fontWeight: "bold",
                           textTransform: "capitalize",
-                        }}>
+                        }}
+                      >
                         {status}
                       </span>
                     }
@@ -182,7 +172,8 @@ const PaymentSchedule = () => {
                         className="w-3 h-3 rounded-full mt-[0.3rem]"
                         style={{
                           backgroundColor: event.backgroundColor,
-                        }}></div>
+                        }}
+                      ></div>
                       <div className="flex flex-col">
                         <span className="text-content font-medium">
                           {event.title}
@@ -238,42 +229,65 @@ const PaymentSchedule = () => {
           selectedEvent
             ? statusColorMap[selectedEvent.extendedProps.status]
             : ""
-        }>
+        }
+      >
         {selectedEvent && (
-          <div>
-            <div className="flex flex-col gap-2">
-              <span className="text-content flex items-center">
-                <span className="w-[30%]">Title</span>
-                <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4">
-                  {selectedEvent.title}
-                </span>
-              </span>
-              <span className="text-content flex items-center">
-                <span className="w-[30%]">Date</span>
-                <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4">
-                  {dayjs(selectedEvent.start).format("YYYY-MM-DD")}
-                </span>
-              </span>
-              <span className="text-content flex items-center">
-                <span className="w-[30%]">Status</span>
-                <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4 capitalize">
-                  {selectedEvent.extendedProps.status}
-                </span>
-              </span>
-              <span className="text-content flex items-center">
-                <span className="w-[30%]">Amount</span>
-                <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4">
-                  {Number(selectedEvent.extendedProps.amount).toLocaleString(
-                    "en-IN"
-                  )}
-                  &nbsp;INR
-                </span>
-              </span>
-            </div>
+          <div className="flex flex-col gap-3">
+            <DetalisFormatted title="Title" detail={selectedEvent.title} />
+            <DetalisFormatted
+              title="Date"
+              detail={humanDate(selectedEvent.start)}
+            />
+            <DetalisFormatted
+              title="Status"
+              detail={selectedEvent.extendedProps.status}
+              upperCase
+            />
+            <DetalisFormatted
+              title="Projected Amount"
+              detail={
+                selectedEvent.extendedProps.projectedAmount
+                  ? `INR ${selectedEvent.extendedProps.projectedAmount}`
+                  : "Not Available"
+              }
+            />
+            <DetalisFormatted
+              title="Actual Amount"
+              detail={
+                selectedEvent.extendedProps.amount
+                  ? `INR ${selectedEvent.extendedProps.amount}`
+                  : "Not Available"
+              }
+            />
+            <DetalisFormatted
+              title="Expense Type"
+              detail={
+                selectedEvent.extendedProps.expanseType || "Not Available"
+              }
+            />
+            <DetalisFormatted
+              title="Unit"
+              detail={
+                selectedEvent.extendedProps.unit?.unitName ||
+                selectedEvent.extendedProps.unitName ||
+                "Not Available"
+              }
+            />
+            <DetalisFormatted
+              title="Department"
+              detail={
+                selectedEvent.extendedProps.department?.name ||
+                selectedEvent.extendedProps.department ||
+                "Not Available"
+              }
+            />
+            <DetalisFormatted
+              title="Building"
+              detail={
+                selectedEvent.extendedProps.unit?.building?.buildingName ||
+                "Not Available"
+              }
+            />
           </div>
         )}
       </MuiModal>

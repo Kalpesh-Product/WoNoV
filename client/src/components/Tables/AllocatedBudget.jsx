@@ -33,7 +33,7 @@ const AllocatedBudget = ({
   isLoading,
   variant,
   hideTitle,
-  noInvoice=false,
+  noInvoice = false,
   noFilter = false,
 }) => {
   const axios = useAxiosPrivate();
@@ -194,46 +194,51 @@ const AllocatedBudget = ({
     return data?.projectedAmount || 0;
   }, [filteredMonths, selectedMonthIndex, groupedData]);
 
-  const enhancedColumns = useMemo(() => {
-    const baseColumns = [...monthDataForSelectedType.columns];
+const enhancedColumns = useMemo(() => {
+  const baseColumns = [...monthDataForSelectedType.columns];
 
-    if (!noInvoice) {
-      baseColumns.push({
-        field: "actions",
-        headerName: "Actions",
-        pinned: "right",
-        cellRenderer: (params) => {
-          const { invoiceAttached, status } = params.data;
-          const isRejected = status === "Rejected";
+  if (!noInvoice) {
+    baseColumns.push({
+      field: "actions",
+      headerName: "Actions",
+      pinned: "right",
+      cellRenderer: (params) => {
+        const invoiceAttached =
+          params.data.invoiceAttached === true ||
+          params.data.invoiceAttached === "true";
+        const status = params.data.status;
 
-          return (
-            <div className="p-2">
-              {!invoiceAttached && !isRejected ? (
-                <PrimaryButton
-                  title="Upload Invoice"
-                  externalStyles="p-2"
-                  handleSubmit={() => {
-                    setSelectedRow(params.data);
-                    setUploadModalOpen(true);
-                  }}
-                />
-              ) : (
-                <span className="text-content">
-                  {invoiceAttached
-                    ? "Invoice Uploaded"
-                    : isRejected
-                    ? "Rejected"
-                    : ""}
-                </span>
-              )}
-            </div>
-          );
-        },
-      });
-    }
+        const isApproved = status === "Approved";
+        const isRejected = status === "Rejected";
 
-    return baseColumns;
-  }, [monthDataForSelectedType.columns, noInvoice]);
+        return (
+          <div className="p-2">
+            {isApproved && !invoiceAttached ? (
+              <PrimaryButton
+                title="Upload Invoice"
+                externalStyles="p-2"
+                handleSubmit={() => {
+                  setSelectedRow(params.data);
+                  setUploadModalOpen(true);
+                }}
+              />
+            ) : (
+              <span className="text-content">
+                {invoiceAttached
+                  ? "Invoice Uploaded"
+                  : isRejected
+                  ? "Rejected"
+                  : ""}
+              </span>
+            )}
+          </div>
+        );
+      },
+    });
+  }
+
+  return baseColumns;
+}, [monthDataForSelectedType.columns, noInvoice]);
 
   console.log("Enhanced columns : ", enhancedColumns);
 

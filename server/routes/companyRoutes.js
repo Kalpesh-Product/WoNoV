@@ -17,6 +17,8 @@ const {
   getCompanyDocuments,
   uploadDepartmentDocument,
   getDepartmentDocuments,
+  addCompanyKyc,
+  getCompanyKyc,
 } = require("../controllers/companyControllers/documentControllers");
 const {
   addEmployeeType,
@@ -61,6 +63,8 @@ router.get("/get-company-data", getCompanyData);
 router.post("/update-active-status/:field", updateActiveStatus);
 router.post("/add-company-logo", upload.single("logo"), addCompanyLogo);
 router.get("/get-company-logo", getCompanyLogo);
+router.post("/add-kyc-document", upload.single("kyc"), addCompanyKyc);
+router.get("/get-kyc", getCompanyKyc);
 router.post("/add-shift", addShift);
 router.post(
   "/bulk-insert-job-applications",
