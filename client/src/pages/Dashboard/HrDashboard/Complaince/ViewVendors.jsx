@@ -118,7 +118,7 @@ const ViewVendors = () => {
                           />
                         ) : (
                           <div className="py-2 flex justify-between items-start gap-2">
-                            <div className="w-[100%] justify-start flex">
+                            <div className="w-[35%] justify-start flex">
                               <span className="font-pmedium text-gray-600 text-content">
                                 {fieldKey
                                   .replace(/([A-Z])/g, " $1")

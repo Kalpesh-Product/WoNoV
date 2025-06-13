@@ -38,6 +38,15 @@ const Vendor = () => {
   }, []);
 
   const department = usePageDepartment();
+  let departmentName = department.name
+
+  if(department.name === "Administration"){
+    departmentName = "Admin"
+  }
+  if(department.name === "Tech"){
+    departmentName = "Frontend"
+  }
+
 
   // Fetch states when a country is selected
   const handleCountryChange = (countryCode) => {
@@ -114,7 +123,7 @@ const Vendor = () => {
           }}
           onClick={() =>
             navigate(
-              `/app/dashboard/HR-dashboard/data/vendor/${params.data.vendorName}`,
+              `/app/dashboard/${departmentName}-dashboard/data/vendor/${params.data.vendorName}`,
               { state: params.data }
             )
           }>
@@ -380,7 +389,7 @@ const Vendor = () => {
                       <TextField
                         {...field}
                         size="small"
-                        label="PAN IT No"
+                        label="PAN ID No"
                         fullWidth
                         error={!!error}
                         helperText={error?.message}
@@ -404,27 +413,7 @@ const Vendor = () => {
                     )}
                   />
               
-                  <Controller
-                    name="panIdNo"
-                    control={control}
-                    defaultValue=""
-                    rules={{
-                      pattern: {
-                        value: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
-                        message: "Invalid PAN (e.g., ABCDE1234F)",
-                      },
-                    }}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="PAN IT No"
-                        fullWidth
-                        error={!!error}
-                        helperText={error?.message}
-                      />
-                    )}
-                  />
+                  
                 </div>
               </div>
               <div>
