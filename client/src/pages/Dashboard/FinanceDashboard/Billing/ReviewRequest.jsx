@@ -136,9 +136,9 @@ const ReviewRequest = () => {
 
 const onUpload = async () => {
   const values = getValues();
-  values.particulars = fields;
+  values.particulars = fields; // useFieldArray data
 
-  // Step 1: Generate PDF
+  // Step 1: Generate PDF from form
   const canvas = await html2canvas(formRef.current, {
     scale: window.devicePixelRatio,
   });
@@ -149,26 +149,25 @@ const onUpload = async () => {
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
   pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
 
-  // Step 2: Convert to Blob
   const pdfBlob = pdf.output("blob");
 
-  // Step 3: Append to FormData
+  // Step 2: Prepare FormData
   const formData = new FormData();
-  formData.append("pdf", pdfBlob, "Voucher_Form.pdf");
+  formData.append("voucher", pdfBlob, "Voucher_Form.pdf");
   formData.append("budgetId", voucherDetails._id);
+  formData.append("fSrNo", values.fSrNo || "");
+  formData.append("modeOfPayment", values.modeOfPayment || "");
+  formData.append("chequeNo", values.chequeNo || "");
+  formData.append("chequeDate", values.chequeDate || "");
+  formData.append("amount", values.amount?.toString() || "0");
+  formData.append("expectedDateInvoice", values.expectedDateInvoice || "");
+  formData.append("particulars", JSON.stringify(values.particulars || []));
 
-  // Append other values
-  for (const key in values) {
-    if (Array.isArray(values[key])) {
-      formData.append(key, JSON.stringify(values[key]));
-    } else {
-      formData.append(key, values[key]);
-    }
-  }
-
-  // Step 4: Trigger mutation
+  // Step 3: Trigger mutation
   submitRequest(formData);
 };
+
+
 
 
 const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({

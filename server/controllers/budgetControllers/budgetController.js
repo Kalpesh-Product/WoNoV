@@ -461,7 +461,7 @@ const approveFinanceBudget = async (req, res, next) => {
       amount,
       expectedDateInvoice,
       modeOfPayment,
-      particulars,
+      particulars: JSON.parse(particulars),
       approvedAt: new Date(),
       voucher: {
         name: originalFilename,

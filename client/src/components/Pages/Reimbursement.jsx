@@ -144,25 +144,30 @@ const Reimbursement = () => {
     submitRequest(values);
   };
 
-  const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
-    mutationKey: ["reimbursement"],
-    mutationFn: async (data) => {
-      console.log("Data ;", data);
-      const response = await axios.post(
-        `/api/budget/request-budget/${department._id}`,
-        data
-      );
-      return response.data;
-    },
-    onSuccess: (data) => {
-      toast.success(data.message);
-      setOpenPreview(false);
-      reset();
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
+const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
+  mutationKey: ["approve"],
+  mutationFn: async (formData) => {
+    const response = await axios.patch(
+      `/api/budget/approve-budget`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  },
+  onSuccess: (data) => {
+    toast.success(data.message);
+    setOpenPreview(false);
+    reset();
+  },
+  onError: (error) => {
+    toast.error(error.message);
+  },
+});
+
 
   const exportToPDF = async () => {
     const canvas = await html2canvas(formRef.current, {
