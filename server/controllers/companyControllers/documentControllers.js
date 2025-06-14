@@ -421,12 +421,13 @@ const addCompanyKyc = async (req, res, next) => {
 
     const { originalname, buffer } = req.file;
     const uploads = [];
-
     const company = await Company.findOne({ _id: companyId });
+
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
     }
 
+    const now = new Date(); // For timestamps
     let updatedFields = {};
     let uploadResult;
 
@@ -435,10 +436,12 @@ const addCompanyKyc = async (req, res, next) => {
       const existingIndex = kycDocs.findIndex(
         (doc) => doc.name === documentName
       );
+      let createdDate = now;
 
       if (existingIndex !== -1) {
         const oldDoc = kycDocs[existingIndex];
         await handleDocumentDelete(oldDoc.documentId);
+        createdDate = oldDoc.createdDate || now; // Preserve createdDate
         kycDocs.splice(existingIndex, 1);
       }
 
@@ -452,6 +455,9 @@ const addCompanyKyc = async (req, res, next) => {
         name: documentName,
         documentLink: uploadResult.secure_url,
         documentId: uploadResult.public_id,
+        createdDate,
+        updatedDate: now,
+        isActive: true,
       };
 
       kycDocs.push(doc);
@@ -471,7 +477,11 @@ const addCompanyKyc = async (req, res, next) => {
       );
 
       if (!directorEntry) {
-        directorEntry = { nameOfDirector, documents: [], isActive: true };
+        directorEntry = {
+          nameOfDirector,
+          documents: [],
+          isActive: true,
+        };
         directorKyc.push(directorEntry);
       }
 
@@ -479,9 +489,12 @@ const addCompanyKyc = async (req, res, next) => {
         (doc) => doc.name === documentName
       );
 
+      let createdDate = now;
+
       if (existingDocIndex !== -1) {
         const oldDoc = directorEntry.documents[existingDocIndex];
         await handleDocumentDelete(oldDoc.documentId);
+        createdDate = oldDoc.createdDate || now; // Preserve createdDate
         directorEntry.documents.splice(existingDocIndex, 1);
       }
 
@@ -495,12 +508,14 @@ const addCompanyKyc = async (req, res, next) => {
         name: documentName,
         documentLink: uploadResult.secure_url,
         documentId: uploadResult.public_id,
+        createdDate,
+        updatedDate: now,
       };
 
       directorEntry.documents.push(newDoc);
       uploads.push(newDoc);
 
-      // Rebuild updated directorKyc array
+      // Update the full directorKyc array
       const updatedDirectorKyc = directorKyc.map((d) =>
         d.nameOfDirector === nameOfDirector ? directorEntry : d
       );
@@ -542,11 +557,34 @@ const getCompanyKyc = async (req, res, next) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
+    const companyKyc = (company.kycDetails.companyKyc || []).map((doc) => ({
+      name: doc.name,
+      documentLink: doc.documentLink,
+      documentId: doc.documentId,
+      createdDate: doc.createdDate,
+      updatedDate: doc.updatedDate,
+      isActive: doc.isActive,
+    }));
+
+    const directorKyc = (company.kycDetails.directorKyc || []).map(
+      (director) => ({
+        nameOfDirector: director.nameOfDirector,
+        isActive: director.isActive,
+        documents: (director.documents || []).map((doc) => ({
+          name: doc.name,
+          documentLink: doc.documentLink,
+          documentId: doc.documentId,
+          createdDate: doc.createdDate,
+          updatedDate: doc.updatedDate,
+        })),
+      })
+    );
+
     res.status(200).json({
       data: {
         companyName: company.companyName,
-        companyKyc: company.kycDetails.companyKyc || [],
-        directorKyc: company.kycDetails.directorKyc || [],
+        companyKyc,
+        directorKyc,
       },
     });
   } catch (error) {

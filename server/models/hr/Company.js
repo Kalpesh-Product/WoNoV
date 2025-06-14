@@ -108,6 +108,8 @@ const companySchema = new mongoose.Schema({
         name: String,
         documentLink: String,
         documentId: String,
+        createdDate: Date,
+        updatedDate: Date,
         isActive: {
           type: Boolean,
           default: true,
@@ -122,6 +124,8 @@ const companySchema = new mongoose.Schema({
             name: String,
             documentLink: String,
             documentId: String,
+            createdDate: Date,
+            updatedDate: Date,
           },
         ],
         isActive: {
