@@ -447,7 +447,7 @@ const addCompanyKyc = async (req, res, next) => {
 
       uploadResult = await handleDocumentUpload(
         buffer,
-        `${company.companyName}/kyc/${type}/${documentName}`,
+        `${company.companyName}/kyc/${type}/${documentName?.trim()}`,
         originalname
       );
 
@@ -500,7 +500,7 @@ const addCompanyKyc = async (req, res, next) => {
 
       uploadResult = await handleDocumentUpload(
         buffer,
-        `${company.companyName}/kyc/${type}/${nameOfDirector}/${documentName}`,
+        `${company.companyName}/kyc/${type}/${nameOfDirector}/${documentName?.trim()}`,
         originalname
       );
 
