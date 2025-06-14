@@ -2,52 +2,26 @@ import { useLocation, useParams } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import MuiModal from "../../../../components/MuiModal";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
-import { MenuItem, TextField } from "@mui/material";
+import { TextField } from "@mui/material";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import UploadFileInput from "../../../../components/UploadFileInput";
 import { toast } from "sonner";
-
-const formatDate = (date) => {
-  if (!date) return "Not Available";
-  const parsed = new Date(date);
-  return isNaN(parsed) ? "Invalid Date" : parsed.toLocaleDateString("en-GB");
-};
+import humanDate from "../../../../utils/humanDateForamt";
+import PrimaryButton from "../../../../components/PrimaryButton";
 
 const DirectorData = () => {
   const location = useLocation();
   const { id } = useParams();
-  const path = location?.pathname?.split("/") || [];
   const axios = useAxiosPrivate();
-  const isCompany = path[path.length - 1] === "Company";
+  const queryClient = useQueryClient();
   const [openModal, setOpenModal] = useState(false);
 
-  const queryClient = useQueryClient();
-
-  const { data: employees = [], isLoading } = useQuery({
-    queryKey: ["employees"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/users/fetch-users");
-        return Array.isArray(response.data)
-          ? response.data.filter((e) => e.isActive)
-          : [];
-      } catch (error) {
-        console.error("Fetch error:", error);
-        return [];
-      }
-    },
-  });
-
-  const filtered = Array.isArray(employees)
-    ? employees.filter((emp) =>
-        Array.isArray(emp?.departments)
-          ? emp.departments.some((dept) => dept?.name === "Top Management")
-          : false
-      )
-    : [];
+  const nameFromState = location?.state?.name;
+  const name = nameFromState || id || "N/A";
+  const isCompany = name === "Company";
 
   const {
     control,
@@ -57,34 +31,43 @@ const DirectorData = () => {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      type: "",
-      directorName: "",
-      documentName : '',
+      type: isCompany ? "companyKyc" : "directorKyc",
+      nameOfDirector: name,
+      documentName: "",
       kyc: null,
     },
   });
 
-  const files = Array.isArray(location?.state?.files)
-    ? location.state.files
-    : [];
-  const name = location?.state?.name || "N/A";
+  const { data: kycDetails = {}, isLoading } = useQuery({
+    queryKey: ["directorsCompany"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/get-kyc");
+      return response.data.data;
+    },
+  });
+
+  const files = useMemo(() => {
+    if (!kycDetails) return [];
+
+    if (isCompany) return kycDetails.companyKyc || [];
+
+    const match = kycDetails.directorKyc?.find(
+      (d) => d.nameOfDirector === name
+    );
+    return match?.documents || [];
+  }, [kycDetails, name, isCompany]);
 
   const fileRows = files.map((file, index) => ({
     srno: index + 1,
     label: file?.name?.trim() || "Unnamed Document",
     documentLink: file?.documentLink?.trim() || null,
-    uploadedDate: file?.uploadedDate || null,
-    lastModified: file?.lastModified || null,
+    uploadedDate: file?.createdDate || null,
+    lastModified: file?.updatedDate || null,
   }));
-
-  useEffect(() => {
-    if (name) setValue("directorName", name);
-    setValue("type", isCompany ? "companyKyc" : "directorKyc");
-  }, [name, isCompany, setValue]);
 
   const { mutate: uploadKycDocument, isPending: isUploading } = useMutation({
     mutationFn: async (formData) => {
-      const res = await axios.post(`/api/company/add-kyc-document`, formData, {
+      const res = await axios.post("/api/company/add-kyc-document", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -93,7 +76,7 @@ const DirectorData = () => {
     },
     onSuccess: () => {
       toast.success("Document uploaded successfully");
-      queryClient.invalidateQueries(["kycDocuments"]);
+      queryClient.invalidateQueries({ queryKey: ["directorsCompany"] });
       setOpenModal(false);
       reset();
     },
@@ -103,14 +86,14 @@ const DirectorData = () => {
   });
 
   const onSubmit = (formValues) => {
-    const { directorName, type, kyc, documentName } = formValues;
+    const { nameOfDirector, type, kyc, documentName } = formValues;
     if (!kyc) return toast.error("Please upload a document");
 
     const formData = new FormData();
     formData.append("type", type);
     formData.append("kyc", kyc);
     if (!isCompany) {
-      formData.append("directorName", directorName);
+      formData.append("nameOfDirector", nameOfDirector);
     }
     formData.append("referenceId", id);
     formData.append("documentName", documentName);
@@ -125,13 +108,13 @@ const DirectorData = () => {
       field: "uploadedDate",
       headerName: "Uploaded Date",
       flex: 1,
-      cellRenderer: (params) => formatDate(params.value),
+      cellRenderer: (params) => humanDate(params.value),
     },
     {
       field: "lastModified",
       headerName: "Last Modified",
       flex: 1,
-      cellRenderer: (params) => formatDate(params.value),
+      cellRenderer: (params) => humanDate(params.value),
     },
     {
       field: "documentLink",
@@ -164,6 +147,7 @@ const DirectorData = () => {
           tableHeight={300}
           hideFilter
           search={fileRows.length >= 10}
+          loading={isLoading}
           handleClick={() => setOpenModal(true)}
         />
       </PageFrame>
@@ -180,7 +164,7 @@ const DirectorData = () => {
           <div className="grid grid-cols-1 gap-4">
             {!isCompany && (
               <Controller
-                name="directorName"
+                name="nameOfDirector"
                 control={control}
                 rules={{ required: "Director Name is required" }}
                 render={({ field }) => (
@@ -190,8 +174,8 @@ const DirectorData = () => {
                     {...field}
                     fullWidth
                     label={"Director Name"}
-                    error={!!errors.directorName}
-                    helperText={errors.directorName?.message}
+                    error={!!errors.nameOfDirector}
+                    helperText={errors.nameOfDirector?.message}
                   />
                 )}
               />
@@ -221,7 +205,6 @@ const DirectorData = () => {
                 />
               )}
             />
-
             <Controller
               name="kyc"
               control={control}
@@ -235,13 +218,12 @@ const DirectorData = () => {
               )}
             />
 
-            <button
+            <PrimaryButton
               type="submit"
+              title={"Submit"}
               disabled={isUploading}
-              className="bg-primary text-white rounded px-4 py-2 mt-2"
-            >
-              {isUploading ? "Uploading..." : "Submit"}
-            </button>
+              isLoading={isUploading}
+            />
           </div>
         </form>
       </MuiModal>

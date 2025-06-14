@@ -11,7 +11,7 @@ const FinanceData = () => {
     { label: "Asset List", path: "finance-asset-list" },
     { label: "Vendor", path: "vendor" },
     {
-      label: "Monthly Invoices",
+      label: "Monthly Invoice Reports",
       path: "monthly-invoice-reports",
     },
     // {

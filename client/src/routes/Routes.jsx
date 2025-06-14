@@ -1546,6 +1546,10 @@ export const routes = createBrowserRouter([
                             element: <Vendor />,
                           },
                           {
+                            path: "monthly-invoice-reports",
+                            element: <MonthlyInvoiceCommon />,
+                          },
+                          {
                             path: "vendor/:id",
                             element: <ViewVendor />,
                           },

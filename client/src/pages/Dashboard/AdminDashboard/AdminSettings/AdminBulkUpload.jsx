@@ -80,7 +80,7 @@ const AdminBulkUpload = () => {
       <div>
         <WidgetSection border title="Bulk Upload Data">
           <AgTable
-            data={bulkUploadData}
+            data={[]}
             columns={bulkUploadDataColumns}
             search={true}
           />

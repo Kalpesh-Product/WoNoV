@@ -28,7 +28,10 @@ const PerformanceMonthly = () => {
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
 
-    const departmentAccess = ["67b2cf85b9b6ed5cedeb9a2e","6798bab9e469e809084e249e"]
+  const departmentAccess = [
+    "67b2cf85b9b6ed5cedeb9a2e",
+    "6798bab9e469e809084e249e",
+  ];
 
   const isTop = auth.user.departments.some((item) => {
     return departmentAccess.includes(item._id.toString());
@@ -140,8 +143,7 @@ const PerformanceMonthly = () => {
     },
   });
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "Sr no", field: "srNo", width: 100, sort: "desc" },
     { headerName: "KPA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
@@ -196,7 +198,7 @@ const PerformanceMonthly = () => {
       : []),
   ];
   const completedColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "Sr no", field: "srNo", width: 100, sort: "desc" },
     { headerName: "KPA List", field: "taskName", width: 300 },
     { headerName: "Completed Time", field: "completionTime", flex: 1 },
     { headerName: "Completed By", field: "completedBy" },
@@ -246,7 +248,6 @@ const PerformanceMonthly = () => {
                   ...departmentKra
                     .filter((item) => item.status !== "Completed")
                     .map((item, index) => ({
-                      srno: index + 1,
                       mongoId: item.id,
                       taskName: item.taskName,
                       assignedDate: item.assignedDate,
