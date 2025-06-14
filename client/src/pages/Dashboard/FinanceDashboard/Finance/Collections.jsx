@@ -10,6 +10,7 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import humanDate from "../../../../utils/humanDateForamt";
+import { Chip } from "@mui/material";
 
 const Collections = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -49,7 +50,33 @@ const Collections = () => {
       flex: 1,
       cellRenderer: (params) => `${inrFormat(params.value)}`,
     },
-    { field: "rentStatus", headerName: "Status", flex: 1 },
+     {
+          field: "status",
+          headerName: "Status",
+          flex: 1,
+          cellRenderer: (params) => {
+          
+            const statusColorMap = {
+              Paid: { backgroundColor: "#4CAF50", color: "#259bf5" },
+              Unpaid: { backgroundColor: "#F44336", color: "#CC8400" },
+            };
+    
+            const { backgroundColor, color } = statusColorMap[params.data.rentStatus] || {
+              backgroundColor: "gray",
+              color: "white",
+            };
+    
+            return (
+              <Chip
+                label={params.data.rentStatus}
+                style={{
+                  backgroundColor,
+                  color,
+                }}
+              />
+            );
+          },
+        },
   ];
 
   const sortedData = useMemo(() => {
