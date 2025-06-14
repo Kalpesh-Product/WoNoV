@@ -165,8 +165,7 @@ const InvoiceCreation = () => {
             onClick={() => {
               setViewDetails(params.data);
               setViewModal(true);
-            }}
-          >
+            }}>
             <MdOutlineRemoveRedEye />
           </span>
           <ThreeDotMenu
@@ -217,9 +216,9 @@ const InvoiceCreation = () => {
             setViewModal(false);
             setViewDetails(null);
           }}
-          title="Invoice Details"
-        >
+          title="Invoice Details">
           <div className="space-y-3">
+            <div className="font-bold">Invoice Information</div>
             <DetalisFormatted
               title="Client Name"
               detail={viewDetails?.client?.clientName || "N/A"}
@@ -236,8 +235,7 @@ const InvoiceCreation = () => {
                     href={viewDetails.invoice.link}
                     className="text-primary underline cursor-pointer"
                     target="_blank"
-                    rel="noreferrer"
-                  >
+                    rel="noreferrer">
                     View PDF
                   </a>
                 ) : (
@@ -268,12 +266,10 @@ const InvoiceCreation = () => {
         <MuiModal
           open={viewAddTemplateModal}
           onClose={() => setViewAddTemplateModal(false)}
-          title="Add New Invoice"
-        >
+          title="Add New Invoice">
           <form
             onSubmit={handleSubmit(onSubmitTemplate)}
-            className="flex flex-col gap-4 mt-2"
-          >
+            className="flex flex-col gap-4 mt-2">
             <Controller
               name="invoiceFile"
               control={control}
@@ -297,8 +293,7 @@ const InvoiceCreation = () => {
                   select
                   size="small"
                   fullWidth
-                  label="Select Client"
-                >
+                  label="Select Client">
                   <MenuItem value="" disabled>
                     Select Client
                   </MenuItem>
