@@ -16,6 +16,7 @@ import MuiModal from "./MuiModal";
 import DetalisFormatted from "./DetalisFormatted";
 import PageFrame from "./Pages/PageFrame";
 import { useQueryClient } from "@tanstack/react-query";
+import humanDate from "../utils/humanDateForamt";
 
 
 const Vendor = () => {
@@ -169,17 +170,29 @@ const Vendor = () => {
   const rows =
    isVendorFetchingPending ? [] : data.map((vendor, index) => ({
         id: index + 1,
+        vendorMongoId:vendor._id,
         vendorID: vendor._id.slice(-4).toUpperCase(),
         vendorName: vendor.name,
-        address: vendor.address,
-        state: vendor.state,
-        country: vendor.country,
-        partyType: vendor.partyType,
-        assesseeOfOtherTerritory: vendor.assesseeOfOtherTerritory,
-        isEcommerceOperator: vendor.isEcommerceOperator,
-        isDeemedExporter: vendor.isDeemedExporter,
-        isTransporter: vendor.isTransporter,
-        status: vendor.status,
+    address: vendor.address,
+    state: vendor.state,
+    country: vendor.country,
+    partyType: vendor.partyType,
+    status: vendor.status,
+    departmentId: vendor.departmentId,
+    company: vendor.company,
+    email: vendor.email,
+    mobile: vendor.mobile,
+    companyName: vendor.companyName,
+    onboardingDate: humanDate(vendor.onboardingDate),
+    city: vendor.city,
+    pinCode: vendor.pinCode,
+    panIdNo: vendor.panIdNo,
+    gstIn: vendor.gstIn,
+    ifscCode: vendor.ifscCode,
+    bankName: vendor.bankName,
+    branchName: vendor.branchName,
+    nameOnAccount: vendor.nameOnAccount,
+    accountNumber: vendor.accountNumber,
       })) || [];
 
   const onSubmit = (data) => {
@@ -242,7 +255,7 @@ const Vendor = () => {
                     )}
                   />
                   <Controller
-                    name="mobileNo"
+                    name="mobile"
                     control={control}
                     defaultValue=""
                     rules={{ required: "Mobile No is required" }}
@@ -501,7 +514,7 @@ const Vendor = () => {
                         size="small"
                         displayEmpty
                         error={!!error}>
-                        <MenuItem value="">Party Type</MenuItem>
+                        <MenuItem value="" disabled>Party Type</MenuItem>
                         <MenuItem value="Domestic">Domestic</MenuItem>
                         <MenuItem value="International">International</MenuItem>
                       </Select>
@@ -656,29 +669,30 @@ const Vendor = () => {
         title="Vendor Details">
         <div className="flex flex-col gap-3">
           <>
-            <DetalisFormatted
-              title="Vendor Name"
-              detail={selectedVendor?.vendorName}
-            />
-            <DetalisFormatted
-              title="Vendor ID"
-              detail={selectedVendor?.vendorID}
-            />
-            <DetalisFormatted
-              title="Address"
-              detail={selectedVendor?.address}
-            />
-            <DetalisFormatted
-              title="Country"
-              detail={selectedVendor?.country}
-            />
-            <DetalisFormatted title="State" detail={selectedVendor?.state} />
-            <DetalisFormatted
-              title="Party Type"
-              detail={selectedVendor?.partyType}
-            />
-            <DetalisFormatted title="Status" detail={selectedVendor?.status} />
-          </>
+  <DetalisFormatted title="Vendor ID" detail={selectedVendor?.vendorID} />
+  <DetalisFormatted title="Vendor Name" detail={selectedVendor?.vendorName} />
+  <DetalisFormatted title="Address" detail={selectedVendor?.address} />
+  <DetalisFormatted title="City" detail={selectedVendor?.city} />
+  <DetalisFormatted title="State" detail={selectedVendor?.state} />
+  <DetalisFormatted title="Country" detail={selectedVendor?.country} />
+  <DetalisFormatted title="Pin Code" detail={selectedVendor?.pinCode} />
+  <DetalisFormatted title="Party Type" detail={selectedVendor?.partyType} />
+  <DetalisFormatted title="Status" detail={selectedVendor?.status} />
+  <DetalisFormatted title="Department ID" detail={selectedVendor?.departmentId} />
+  <DetalisFormatted title="Company ID" detail={selectedVendor?.company} />
+  <DetalisFormatted title="Company Name" detail={selectedVendor?.companyName} />
+  <DetalisFormatted title="Email" detail={selectedVendor?.email} />
+  <DetalisFormatted title="Mobile" detail={selectedVendor?.mobile} />
+  <DetalisFormatted title="Onboarding Date" detail={selectedVendor?.onboardingDate} />
+  <DetalisFormatted title="PAN ID No" detail={selectedVendor?.panIdNo} />
+  <DetalisFormatted title="GSTIN" detail={selectedVendor?.gstIn} />
+  <DetalisFormatted title="IFSC Code" detail={selectedVendor?.ifscCode} />
+  <DetalisFormatted title="Bank Name" detail={selectedVendor?.bankName} />
+  <DetalisFormatted title="Branch Name" detail={selectedVendor?.branchName} />
+  <DetalisFormatted title="Name on Account" detail={selectedVendor?.nameOnAccount} />
+  <DetalisFormatted title="Account Number" detail={selectedVendor?.accountNumber} />
+</>
+
         </div>
       </MuiModal>
     </div>

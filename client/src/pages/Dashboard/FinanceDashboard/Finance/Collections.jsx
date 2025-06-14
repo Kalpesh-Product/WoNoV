@@ -57,8 +57,8 @@ const Collections = () => {
           cellRenderer: (params) => {
           
             const statusColorMap = {
-              Paid: { backgroundColor: "#4CAF50", color: "#259bf5" },
-              Unpaid: { backgroundColor: "#F44336", color: "#CC8400" },
+             Paid: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+             Unpaid: { backgroundColor: "#FFEBEE", color: "#B71C1C" }, // Light red bg, dark red font
             };
     
             const { backgroundColor, color } = statusColorMap[params.data.rentStatus] || {
