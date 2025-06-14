@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import dayjs from "dayjs";
 import AgTable from "../AgTable";
@@ -26,8 +26,9 @@ const YearWiseTable = ({
   key,
   initialMonth, // ✅ NEW PROP
   onMonthChange,
-  dropdownColumns=[]
+  dropdownColumns = [],
 }) => {
+  const lastEmittedMonthRef = useRef(null);
   const fiscalMap = useMemo(() => {
     const map = new Map();
     data.forEach((item) => {
@@ -79,8 +80,14 @@ const YearWiseTable = ({
 
   // When selectedMonthIndex changes, notify parent
   useEffect(() => {
-    if (onMonthChange) {
-      onMonthChange(monthsInFY[selectedMonthIndex]);
+    const currentMonth = monthsInFY[selectedMonthIndex];
+    if (
+      onMonthChange &&
+      currentMonth &&
+      currentMonth !== lastEmittedMonthRef.current
+    ) {
+      onMonthChange(currentMonth);
+      lastEmittedMonthRef.current = currentMonth;
     }
   }, [selectedMonthIndex, monthsInFY, onMonthChange]);
 
@@ -114,15 +121,16 @@ const YearWiseTable = ({
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex items-center w-full justify-between">
+      <span className="text-title text-primary font-pmedium uppercase">
+        {tableTitle}
+      </span>
+        {buttonTitle && (
+          <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
+        )}  
+      </div>
       <div className="flex items-center justify-between">
-        <span className="text-title text-primary font-pmedium uppercase">
-          {tableTitle}
-        </span>
         <div className="flex items-center gap-4 w-full justify-center">
-          {buttonTitle && (
-            <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
-          )}
-
           {filteredData.length > 0 && (
             <>
               {/* Month Switcher */}
@@ -178,7 +186,7 @@ const YearWiseTable = ({
       <AgTable
         key={key}
         enableCheckbox={checkbox}
-        dropdownColumns = {dropdownColumns}
+        dropdownColumns={dropdownColumns}
         checkAll={checkAll}
         tableHeight={tableHeight ? tableHeight : 300}
         columns={formattedColumns}

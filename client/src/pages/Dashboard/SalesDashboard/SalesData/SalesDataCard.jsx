@@ -7,8 +7,9 @@ const SalesDataCard = () => {
   const navigate = useNavigate();
 
   const tabs = [
-      { label: "Asset List", path: "sales-asset-list" },
     { label: "Vendor", path: "vendor" },
+    { label: "Asset List", path: "sales-asset-list" },
+    { label: "Monthly Invoice Reports", path: "monthly-invoice-reports" },
   ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
@@ -49,7 +50,8 @@ const SalesDataCard = () => {
               backgroundColor: "#1E3D73",
               color: "white",
             },
-          }}>
+          }}
+        >
           {tabs.map((tab, index) => (
             <NavLink
               key={index}
@@ -63,7 +65,8 @@ const SalesDataCard = () => {
                 padding: "12px 16px",
                 display: "block",
                 backgroundColor: isActive ? "#1E3D73" : "white",
-              })}>
+              })}
+            >
               {tab.label}
             </NavLink>
           ))}

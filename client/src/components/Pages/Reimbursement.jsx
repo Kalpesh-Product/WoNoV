@@ -183,7 +183,7 @@ const Reimbursement = () => {
     mutationKey: ["reimbursement"],
     mutationFn: async (data) => {
       const response = await axios.post(
-        `/api/budget/request-budget/${department._id}`,
+        `/api/budget/request-budget/${department?._id}`,
         data,
         {
           headers: {
@@ -614,7 +614,7 @@ const Reimbursement = () => {
               <div className="flex gap-2 items-end">
                 <p>S.No.</p>
                 <span className="w-28 border-b-default border-black py-1">
-                  {values.sNo}
+                  {values.srNo}
                 </span>
               </div>
               <div className="flex gap-2 items-end">

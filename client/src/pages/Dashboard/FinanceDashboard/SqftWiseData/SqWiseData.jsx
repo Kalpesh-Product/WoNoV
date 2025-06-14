@@ -11,9 +11,11 @@ import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { CircularProgress } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const SqWiseData = () => {
   const axios = useAxiosPrivate();
+  const navigate = useNavigate()
 
   //-----------------API-----------------//
   const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
@@ -226,7 +228,19 @@ const SqWiseData = () => {
   const monthlyProfitLossColumns = [
     { field: "id", headerName: "Sr No", width: 100 },
     { field: "month", headerName: "Month", flex: 1 },
-    { field: "income", headerName: "Income (INR)", flex: 1 },
+    { field: "income", headerName: "Income (INR)", flex: 1 ,cellRenderer: (params) => (
+        <span
+          role="button"
+          onClick={() =>
+            navigate(
+              "/app/dashboard/finance-dashboard/overall-profit-loss/income-details"
+            )
+          }
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value}
+        </span>
+      ) },
     { field: "sqft", headerName: "Sq.Ft", flex: 1, cellRenderer : (params)=>(inrFormat(params.value)) },
     { field: "perSqFt", headerName: "Per Sq.Ft Income (INR)", flex: 1 },
     // {

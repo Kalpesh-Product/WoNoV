@@ -11,6 +11,7 @@ const usePageDepartment = () => {
   );
 
   let section = dashboardSegment?.split("-")[0].toLowerCase();
+  console.log("Section from hook", section)
 
   // ✅ Temporary override: treat "frontend" as "tech"
   if (section === "frontend") {

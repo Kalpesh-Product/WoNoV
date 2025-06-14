@@ -7,6 +7,7 @@ import AccessTree from "../../../../components/AccessTree";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
+import Access from "../../../Access/Access";
 
 const CompanyHandbook = () => {
   const [generalDoc, setGeneralDoc] = useState(null); // initially null
@@ -526,8 +527,9 @@ const CompanyHandbook = () => {
         </div>
       </div> */}
       <div className="flex">
-        <div className="w-full h-full shadow-md p-4 rounded-md">
-          <AccessTree clickState={false} />
+        <div className="w-full h-full rounded-md">
+          <Access />
+          {/* <AccessTree clickState={false} /> */}
         </div>
       </div>
 

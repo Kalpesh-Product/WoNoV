@@ -124,8 +124,10 @@ const Projections = () => {
       title: {
         text: "Amount in Lakhs (INR)",
       },
+      min: 1,
+        max: 10_00_000, // Adjust based on expected scale (e.g., 10 lakhs)
       labels: {
-        formatter: (val) => val / 100000,
+        formatter: (val) => (val / 100000).toFixed(0),
       },
       tickAmount: 4,
     },

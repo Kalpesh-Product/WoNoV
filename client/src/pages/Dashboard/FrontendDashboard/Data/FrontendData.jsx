@@ -9,8 +9,9 @@ const FrontendData = () => {
   // Map routes to tabs
   const tabs = [
     { label: "New Leads", path: "leads" },
-    { label: "Website Issue Reports", path: "website-issue-reports" },
     { label: "Vendor", path: "vendor" },
+    { label: "Monthly Invoice Reports", path: "monthly-invoice-reports" },
+    { label: "Website Issue Reports", path: "website-issue-reports" },
 
   ];
 

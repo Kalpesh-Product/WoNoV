@@ -10,10 +10,10 @@ const FinanceData = () => {
   const tabs = [
     { label: "Asset List", path: "finance-asset-list" },
     { label: "Vendor", path: "vendor" },
-    // {
-    //   label: "Monthly Invoices",
-    //   path: "finance-monthly-invoices",
-    // },
+    {
+      label: "Monthly Invoices",
+      path: "monthly-invoice-reports",
+    },
     // {
     //   label: "Monthly Vouchers",
     //   path: "finance-monthly-vouchers",

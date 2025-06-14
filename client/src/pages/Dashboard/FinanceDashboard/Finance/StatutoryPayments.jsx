@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import AgTable from "../../../../components/AgTable";
@@ -16,6 +16,9 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 const StatutoryPayments = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
+  const [selectedMonthData, setSelectedMonthData] = useState([]);
+  const [selectedMonthLabel, setSelectedMonthLabel] = useState("");
+
   const axios = useAxiosPrivate();
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     queryKey: ["financeBudget"],
@@ -40,24 +43,31 @@ const StatutoryPayments = () => {
       const monthKey = dayjs(item.dueDate).format("MMM-YY");
 
       if (!monthMap[monthKey]) {
-        monthMap[monthKey] = { total: 0, approved: 0 };
+        monthMap[monthKey] = { total: 0, approved: 0, amount: 0 };
       }
 
       monthMap[monthKey].total += 1;
+      monthMap[monthKey].amount += item.projectedAmount || 0;
+
       if (item.status === "Approved") {
         monthMap[monthKey].approved += 1;
       }
     });
 
-    // Convert into desired array format
-    return Object.entries(monthMap).map(([month, { total, approved }]) => {
-      const paid = Math.round((approved / total) * 100);
-      return {
-        month,
-        paid,
-        unpaid: 100 - paid,
-      };
-    });
+    return Object.entries(monthMap).map(
+      ([month, { total, approved, amount }]) => {
+        const paid = Math.round((approved / total) * 100);
+        return {
+          month,
+          paid,
+          unpaid: 100 - paid,
+          approved,
+          unapproved: total - approved,
+          total,
+          amount,
+        };
+      }
+    );
   };
 
   const statutoryRaw = hrFinance.filter(
@@ -125,10 +135,30 @@ const StatutoryPayments = () => {
       position: "top",
     },
     tooltip: {
-      y: {
-        formatter: (val) => `${val}%`,
+      custom: function ({ series, seriesIndex, dataPointIndex }) {
+        const item = statutoryFormatted[dataPointIndex];
+        if (!item) return "";
+
+        return `
+      <div style="padding:10px;font-family:Poppins-Regular;font-size:13px; width: 220px">
+        <div style="display:flex; justify-content:space-between;"><strong>Month</strong> ${
+          item.month
+        }</div>
+        <div style="display:flex; justify-content:space-between;"><strong>Total Payments</strong> ${
+          item.total
+        }</div>
+        <div style="display:flex; justify-content:space-between;"><strong>Amount</strong> INR ${item.amount.toLocaleString()}</div>
+        <div style="color:#54C4A7; display:flex; justify-content:space-between;"><strong>Approved</strong> ${
+          item.approved
+        }</div>
+        <div style="color:#EB5C45; display:flex; justify-content:space-between;"><strong>Unapproved</strong> ${
+          item.unapproved
+        }</div>
+      </div>
+    `;
       },
     },
+
     colors: ["#54C4A7", "#EB5C45"], // Green for paid, red for unpaid
   };
   //--------------------------------------------------------TableData----------------------------------------------------//
@@ -149,7 +179,8 @@ const StatutoryPayments = () => {
             <div className="p-2 mb-2 flex gap-2">
               <span
                 className="text-subtitle cursor-pointer"
-                onClick={() => handleViewModal(params.data)}>
+                onClick={() => handleViewModal(params.data)}
+              >
                 <MdOutlineRemoveRedEye />
               </span>
             </div>
@@ -171,27 +202,65 @@ const StatutoryPayments = () => {
     setViewDetails(rowData);
     setViewModalOpen(true);
   };
+
+  const handleMonthChange = (monthLabel) => {
+    setSelectedMonthLabel(monthLabel);
+
+    const monthData = statutoryRaw.filter((item) => {
+      const itemMonth = dayjs(item.dueDate).format("MMM-YYYY");
+      return itemMonth === monthLabel;
+    });
+
+    setSelectedMonthData(monthData);
+  };
+
+  const grandTotal = useMemo(() => {
+    return statutoryRaw.reduce(
+      (sum, item) => sum + (item.projectedAmount || 0),
+      0
+    );
+  }, [statutoryRaw]);
+
+  const currentMonthTotal = useMemo(() => {
+    return selectedMonthData.reduce(
+      (sum, item) => sum + (item.projectedAmount || 0),
+      0
+    );
+  }, [selectedMonthData]);
+
   //--------------------------------------------------------TableData----------------------------------------------------//
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection border title={"Statutory Payments FY 2024-25"}>
+      <WidgetSection
+        border
+        title={"Statutory Payments FY 2024-25"}
+        TitleAmount={`INR ${inrFormat(grandTotal)}`}
+      >
         <BarGraph data={barGraphData} options={barGraphOptions} />
       </WidgetSection>
       {/* <YearlyGraph title={"Statutory Payments".toUpperCase()} /> */}
 
-      <WidgetSection title={"Statutory Payments FY 2024-25"} border>
+      <WidgetSection
+        title={"Statutory Payments FY 2024-25"}
+        border
+        // titleLabel={`Month: ${selectedMonthLabel || "N/A"}`}
+        TitleAmount={`INR ${inrFormat(currentMonthTotal)}`}
+      >
         <YearWiseTable
           data={formattedRows}
           dateColumn={"dueDate"}
           columns={kraColumn}
+          onMonthChange={handleMonthChange}
         />
       </WidgetSection>
+
       {viewDetails && (
         <MuiModal
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
-          title="Statutory Payment Detail">
+          title="Statutory Payment Detail"
+        >
           <div className="space-y-3">
             <div className="font-bold">General Information</div>
             <DetalisFormatted

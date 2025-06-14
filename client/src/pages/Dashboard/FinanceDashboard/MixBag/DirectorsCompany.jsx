@@ -1,108 +1,52 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const DirectorsCompany = () => {
   const location = useLocation();
+  const axios = useAxiosPrivate();
   const navigate = useNavigate();
+  
 
-  const folderData = [
-    {
-      id: 1,
-      title: "Abrar Shaikh",
-      files: [
-        {
-          id: 1,
-          label: "Passport",
-          link: "link here",
-          uploadedDate: "2024-04-01",
-          lastModified: "2024-06-01",
-        },
-        {
-          id: 2,
-          label: "License",
-          link: "link here",
-          uploadedDate: "2024-04-10",
-          lastModified: "2024-06-01",
-        },
-        {
-          id: 3,
-          label: "Aadhar",
-          link: "link here",
-          uploadedDate: "2024-04-20",
-          lastModified: "2024-06-01",
-        },
-      ],
+  const { data: kycDetails, isLoading } = useQuery({
+    queryKey: ["directorsCompany"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/get-kyc");
+      return response.data.data;
     },
-    {
-      id: 2,
-      title: "Kashif Shaikh",
-      files: [
-        {
-          id: 1,
-          label: "Passport",
-          link: "link here",
-          uploadedDate: "2024-04-05",
-          lastModified: "2024-06-01",
-        },
-        {
-          id: 2,
-          label: "License",
-          link: "link here",
-          uploadedDate: "2024-04-15",
-          lastModified: "2024-06-01",
-        },
-      ],
-    },
-    {
-      id: 3,
-      title: "Nasreen Shaikh",
-      files: [
-        {
-          id: 1,
-          label: "Passport",
-          link: "link here",
-          uploadedDate: "2024-03-25",
-          lastModified: "2024-06-01",
-        },
-        {
-          id: 2,
-          label: "License",
-          link: "link here",
-          uploadedDate: "2024-04-05",
-          lastModified: "2024-06-01",
-        },
-      ],
-    },
-    {
-      id: 4,
-      title: "Kabir Shaikh",
-      files: [
-        {
-          id: 1,
-          label: "Passport",
-          link: "link here",
-          uploadedDate: "2024-04-08",
-          lastModified: "2024-06-01",
-        },
-        {
-          id: 2,
-          label: "License",
-          link: "link here",
-          uploadedDate: "2024-04-18",
-          lastModified: "2024-06-01",
-        },
-      ],
-    },
-  ];
+  });
 
-  const tableData = folderData.map((person, index) => ({
-    srno: index + 1,
-    name: person.title,
-    documentCount: person.files.length,
-    id: person.id,
-    files: person.files,
-  }));
+  const tableData = React.useMemo(() => {
+    if (!kycDetails) return [];
+
+    const result = [];
+
+    // Add company row
+    result.push({
+      id: "company",
+      srno: 1,
+      name: "Company",
+      files: kycDetails.companyKyc || [],
+      documentCount: kycDetails.companyKyc?.length || 0,
+    });
+
+    // Add directors
+    kycDetails.directorKyc?.forEach((director, index) => {
+      result.push({
+        id: `director-${index}`,
+        srno: index + 2,
+        name: director.nameOfDirector,
+        files: director.documents || [],
+        documentCount: director.documents?.length || 0,
+      });
+    });
+
+    console.log("result : ", result);
+    return result;
+  }, [kycDetails]);
 
   const columns = [
     { field: "srno", headerName: "Sr No", width: 100 },
@@ -116,8 +60,8 @@ const DirectorsCompany = () => {
           onClick={() =>
             navigate(
               location.pathname.includes("mix-bag")
-                ? `/app/dashboard/finance-dashboard/mix-bag/company-KYC/${params.data.id}`
-                : `/app/company-KYC/${params.data.id}`,
+                ? `/app/dashboard/finance-dashboard/mix-bag/directors-company-KYC/${params.data.name}`
+                : `/app/company-KYC/${params.data.name}`,
               {
                 state: {
                   files: params.data.files,
@@ -137,14 +81,17 @@ const DirectorsCompany = () => {
 
   return (
     <div className="p-4">
-      <AgTable
-        columns={columns}
-        data={[]}
-        tableTitle={"COMPANY KYC"}
-        tableHeight={400}
-        hideFilter
-        search
-      />
+      <PageFrame>
+        <AgTable
+          columns={columns}
+          data={tableData}
+          tableTitle=" DIRECTORS & COMPANY KYC"
+          tableHeight={400}
+          hideFilter
+          search
+          loading={isLoading}
+        />
+      </PageFrame>
     </div>
   );
 };

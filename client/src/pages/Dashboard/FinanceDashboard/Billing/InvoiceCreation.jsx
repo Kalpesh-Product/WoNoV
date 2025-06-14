@@ -16,6 +16,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { queryClient } from "../../../../main";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 
 const InvoiceCreation = () => {
   const navigate = useNavigate();
@@ -189,7 +190,7 @@ const InvoiceCreation = () => {
     id: item._id,
     clientName: item?.client?.clientName || "N/A",
     invoiceName: item?.invoice?.name || "N/A",
-    uploadDate: dayjs(item?.invoiceUploadedAt).format("DD-MM-YYYY"),
+    uploadDate: (item?.invoiceUploadedAt),
     status: item?.paidStatus || item?.paymentStatus ? "Paid" : "Unpaid",
     ...item,
   }));
@@ -197,13 +198,14 @@ const InvoiceCreation = () => {
   return (
     <div className="flex flex-col gap-4">
       <PageFrame>
-        <AgTable
+        <YearWiseTable
           data={rows}
           columns={invoiceCreationColumns}
           search
+          dateColumn={"uploadDate"}
           tableTitle="Client-Invoice"
           buttonTitle="Add Invoice"
-          handleClick={() => setViewAddTemplateModal(true)}
+          handleSubmit={() => setViewAddTemplateModal(true)}
         />
       </PageFrame>
 
