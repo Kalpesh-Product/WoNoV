@@ -38,12 +38,12 @@ const Vendor = () => {
   }, []);
 
   const department = usePageDepartment();
-  let departmentName = department.name
+  let departmentName = department?.name || ""
 
-  if(department.name === "Administration"){
+  if(department?.name === "Administration"){
     departmentName = "Admin"
   }
-  if(department.name === "Tech"){
+  if(department?.name === "Tech"){
     departmentName = "Frontend"
   }
 
