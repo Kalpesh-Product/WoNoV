@@ -4,35 +4,71 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
 import PrimaryButton from "../PrimaryButton";
+import { useMutation } from "@tanstack/react-query";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 
 const ViewVendor = () => {
+ const axios = useAxiosPrivate()
+ const initialValuesRef = React.useRef({});
   const { control, handleSubmit, reset, setValue, getValues } = useForm();
 
   const [isEditing, setIsEditing] = useState(false);
   const location = useLocation();
   const { state } = location;
  
+    const { mutate: updateVendor, isPending } = useMutation({
+      mutationFn: async (data) => {
+
+        const response = await axios.patch(`/api/vendors/update-vendor/${data.vendorMongoId}`, {
+          ...data
+        });
+  
+        return response.data;
+      },
+      onSuccess: function (data) {
+        toast.success(data.message);
+      },
+      onError: function (data) {
+        
+        toast.error(data.response.data.message);
+      },
+    });
+
 
   useEffect(() => {
+    
     if (state) {
+      
       const mapping = {
-        vendorName: state.vendorName,
-        address: state.address,
-        state: state.state,
-        country: state.country,
-        pinCode: state.address?.match(/\b\d{6}\b/)?.[0] || "",
-        gst: "N/A", // assuming GST is not provided
-        email: "N/A", // assuming Email is not provided
-        registrationType: "regular", // default/fallback
-        assesseeOT: state.assesseeOfOtherTerritory ? "Yes" : "No",
-        eCommerceOperator: state.isEcommerceOperator ? "Yes" : "No",
-        deemedExporter: state.isDeemedExporter ? "Yes" : "No",
-        partyName: state.vendorName,
-        gstIn: "N/A", // assuming GSTIN is not provided
-        isTransporter: state.isTransporter ? "Yes" : "No",
-      };
+vendorMongoId: state.vendorMongoId,
+  vendorID: state.vendorID,
+  vendorName: state.vendorName,
+  address: state.address,
+  state: state.state,
+  city: state.city,
+  country: state.country,
+  pinCode: state.pinCode || state.address?.match(/\b\d{6}\b/)?.[0] || "",
+  email: state.email,
+  mobile: state.mobile,
+  gstIn: state.gstIn || "N/A",
+  gst: state.gstIn || "N/A",
+  partyType: state.partyType,
+  registrationType: "regular", // default/fallback
+  company: state.company,
+  companyName: state.companyName,
+  departmentId: state.departmentId,
+  panIdNo: state.panIdNo,
+  onboardingDate: state.onboardingDate,
+  status: state.status,
+  bankName: state.bankName,
+  branchName: state.branchName,
+  ifscCode: state.ifscCode,
+  nameOnAccount: state.nameOnAccount,
+  accountNumber: state.accountNumber,
+  id: state.id,
+       };
       reset(mapping);
-
+  initialValuesRef.current = mapping;
     }
   }, [state, setValue]);
 
@@ -41,10 +77,29 @@ const ViewVendor = () => {
     setIsEditing(!isEditing);
   };
 
-  const onSubmit = (data) => {
-    setIsEditing(!isEditing);
-    toast.success("Vendor details updated successfully");
-  };
+  const getUpdatedFields = (newData, originalData) => {
+  const updated = {};
+   const keyMap = {
+    vendorName: "name",
+   };
+  for (const key in newData) {
+    if (newData[key] !== originalData[key]) {
+
+     const mappedKey = keyMap[key] || key;
+      updated[mappedKey] = newData[key];
+
+    }
+  }
+  return updated;
+};
+
+const onSubmit = (data) => {
+  setIsEditing(false);
+  const updatedFields = getUpdatedFields(data, initialValuesRef.current);
+  
+  updateVendor({ vendorMongoId: data.vendorMongoId, ...updatedFields });
+};
+
 
   const handleReset = () => {
     reset();
@@ -52,19 +107,20 @@ const ViewVendor = () => {
 
   const mailingFields = [
     "vendorName",
-     "email",
-    "mobileNo",
+    "email",
+    "mobile",
     "address",
     "country",
     "state",
     "city",
     "pinCode",
     "panIdNo",
-    "companyName"
+    "companyName",
+    "status"
   ];
 
   const gstFields = [
-      "partyName",
+      "partyType",
       "gstIn",
   ];
 
@@ -73,7 +129,7 @@ const ViewVendor = () => {
     "bankName",
     "branchName",
     "nameOnAccount",
-    "AccountNumber",
+    "accountNumber",
   ]
 
   return (
@@ -253,6 +309,13 @@ const ViewVendor = () => {
 
                 </div>
               </div>
+             {
+                isEditing  &&   <div className="flex justify-center items-center">
+          
+              <PrimaryButton type={"submit"} title={"Submit"} />
+          </div>
+             }
+
             </form>
           </div>
         </div>

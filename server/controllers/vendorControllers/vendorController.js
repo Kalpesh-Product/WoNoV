@@ -17,7 +17,7 @@ const onboardVendor = async (req, res, next) => {
     const {
       name,
       email,
-      mobileNo,
+      mobile,
       address,
       departmentId,
       state,
@@ -27,7 +27,7 @@ const onboardVendor = async (req, res, next) => {
       panIdNo,
       gstIn,
       partyType,
-      bankIFSC,
+      ifscCode,
       bankName,
       branchName,
       nameOnAccount,
@@ -35,7 +35,7 @@ const onboardVendor = async (req, res, next) => {
       companyName,
     } = req.body;
 
-    if (!name || !email || !mobileNo || !departmentId) {
+    if (!name || !email || !mobile || !departmentId) {
       throw new CustomError(
         "Missing required fields",
         logPath,
@@ -48,7 +48,7 @@ const onboardVendor = async (req, res, next) => {
       email,
       panIdNo,
       gstIn,
-      bankIFSC,
+      ifscCode,
       bankName,
       branchName,
       nameOnAccount,
@@ -120,7 +120,7 @@ const onboardVendor = async (req, res, next) => {
     const newVendor = new Vendor({
       name,
       email,
-      mobileNo,
+      mobile,
       address,
       departmentId, // Validated department
       company, // Use the company from the companyDoc
@@ -131,7 +131,7 @@ const onboardVendor = async (req, res, next) => {
       panIdNo,
       gstIn,
       partyType,
-      bankIFSC,
+      ifscCode,
       bankName,
       branchName,
       nameOnAccount,
@@ -198,7 +198,7 @@ const updateVendor = async (req, res, next) => {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);
     }
 
-    const vendor = await Vendor.findById(vendorId);
+    const vendor = await Vendor.findById({ _id: vendorId });
     if (!vendor) {
       throw new CustomError(
         "Vendor not found",
@@ -271,7 +271,6 @@ const updateVendor = async (req, res, next) => {
 
     return res.status(200).json({
       message: "Vendor updated successfully",
-      vendor: updatedVendor,
     });
   } catch (error) {
     if (error instanceof CustomError) {
@@ -296,7 +295,10 @@ const fetchVendors = async (req, res, next) => {
     }
     return res.status(200).json(vendors);
   }
-  vendors = await Vendor.find({ company }).lean().exec();
+  vendors = await Vendor.find({ company })
+    .populate({ path: "departmentId" })
+    .lean()
+    .exec();
   return res.status(200).json(vendors);
 };
 

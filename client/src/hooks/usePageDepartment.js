@@ -22,7 +22,6 @@ const usePageDepartment = () => {
     dept.name.toLowerCase().includes(section)
   );
 
-  console.log("res", department);
   return department;
 };
 

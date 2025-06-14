@@ -26,7 +26,7 @@ const vendorSchema = new mongoose.Schema(
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
     },
-    phone: {
+    mobile: {
       type: String,
       minlength: 7,
       maxlength: 20,
@@ -51,7 +51,7 @@ const vendorSchema = new mongoose.Schema(
     panIdNo: { type: String },
     gstIn: { type: String },
     partyType: { type: String },
-    bankIFSC: { type: String },
+    ifscCode: { type: String },
     bankName: { type: String },
     branchName: { type: String },
     nameOnAccount: { type: String },

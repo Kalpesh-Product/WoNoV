@@ -11,6 +11,7 @@ import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import humanDate from "../../../../utils/humanDateForamt";
 import dayjs from "dayjs";
+import { Chip } from "@mui/material";
 
 const Collections = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -53,7 +54,33 @@ const [selectedMonthLabel, setSelectedMonthLabel] = useState("");
       flex: 1,
       cellRenderer: (params) => `${inrFormat(params.value)}`,
     },
-    { field: "rentStatus", headerName: "Status", flex: 1 },
+     {
+          field: "status",
+          headerName: "Status",
+          flex: 1,
+          cellRenderer: (params) => {
+          
+            const statusColorMap = {
+             Paid: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+             Unpaid: { backgroundColor: "#FFEBEE", color: "#B71C1C" }, // Light red bg, dark red font
+            };
+    
+            const { backgroundColor, color } = statusColorMap[params.data.rentStatus] || {
+              backgroundColor: "gray",
+              color: "white",
+            };
+    
+            return (
+              <Chip
+                label={params.data.rentStatus}
+                style={{
+                  backgroundColor,
+                  color,
+                }}
+              />
+            );
+          },
+        },
   ];
 
   const sortedData = useMemo(() => {

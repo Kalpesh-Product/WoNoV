@@ -177,53 +177,85 @@ const getMembersByUnit = async (req, res, next) => {
       .lean()
       .exec();
 
-    if (!members || members.length === 0) {
-      return res.status(200).json({ members: [], message: "No members found" });
-    }
+    const clearImage = clients[0].unit.clearImage;
+    const occupiedImage = clients[0].unit.occupiedImage;
+    const totalDesks = clients[0].unit?.openDesks + clients[0].unit?.cabinDesks;
 
-    const clientMap = new Map();
-
-    members.forEach((member) => {
-      if (!member.client.isActive) return;
-
-      const clientName = member.client?.clientName || "Unknown";
-      const memberName = member.employeeName || "Unnamed";
-      const formattedDate = formatDate(member.dob);
-
-      if (!clientMap.has(clientName)) {
-        clientMap.set(clientName, {
-          client: clientName,
-          occupiedDesks: 0,
-          memberDetails: [],
+    const clientDetails = clients.map((client) => {
+      let transformedMembers = [];
+      if (members || members.length > 0) {
+        const memberDetails = members.find((member) => {
+          return member.client._id.toString() === client._id.toString();
         });
+        if (memberDetails) {
+          transformedMembers = {
+            member: memberDetails.employeeName || "Unknown",
+            date: formatDate(memberDetails.dob),
+            email: memberDetails.email,
+            mobileNo: memberDetails.mobileNo,
+          };
+        }
       }
 
-      const clientEntry = clientMap.get(clientName);
-      clientEntry.occupiedDesks =
-        member.client.openDesks + member.client.cabinDesks;
-      clientEntry.memberDetails.push({
-        member: memberName,
-        date: formattedDate,
-        email: member.email,
-        mobileNo: member.mobileNo,
-      });
+      return {
+        client: client.clientName,
+        occupiedDesks: client.openDesks + client.cabinDesks,
+        memberDetails: transformedMembers,
+      };
     });
 
-    const clientDetails = Array.from(clientMap.values());
-
-    const totalDesks = members[0].unit?.openDesks + members[0].unit?.cabinDesks;
-    const clearImage = members[0].unit.clearImage;
-    const occupiedImage = members[0].unit.occupiedImage;
-
-    const transformMembersData = {
+    const transformedClients = {
       clearImage,
       occupiedImage,
       totalDesks,
       totalOccupiedDesks,
       clientDetails,
     };
+    return res.status(200).json(transformedClients);
 
-    return res.status(200).json(transformMembersData);
+    // const clientMap = new Map();
+
+    // members.forEach((member) => {
+    //   if (!member.client.isActive) return;
+
+    //   const clientName = member.client?.clientName || "Unknown";
+    //   const memberName = member.employeeName || "Unnamed";
+    //   const formattedDate = formatDate(member.dob);
+
+    //   if (!clientMap.has(clientName)) {
+    //     clientMap.set(clientName, {
+    //       client: clientName,
+    //       occupiedDesks: 0,
+    //       memberDetails: [],
+    //     });
+    //   }
+
+    //   const clientEntry = clientMap.get(clientName);
+    //   clientEntry.occupiedDesks =
+    //     member.client.openDesks + member.client.cabinDesks;
+    //   clientEntry.memberDetails.push({
+    //     member: memberName,
+    //     date: formattedDate,
+    //     email: member.email,
+    //     mobileNo: member.mobileNo,
+    //   });
+    // });
+
+    // const clientDetails = Array.from(clientMap.values());
+
+    // const totalDesks = members[0].unit?.openDesks + members[0].unit?.cabinDesks;
+    // const clearImage = members[0].unit.clearImage;
+    // const occupiedImage = members[0].unit.occupiedImage;
+
+    // const transformMembersData = {
+    //   clearImage,
+    //   occupiedImage,
+    //   totalDesks,
+    //   totalOccupiedDesks,
+    //   clientDetails,
+    // };
+
+    // return res.status(200).json(transformMembersData);
   } catch (error) {
     next(error);
   }
