@@ -109,11 +109,15 @@ const UserDetails = () => {
 
   const mutation = useMutation({
     mutationFn: async (updatedData) => {
-      return axios.patch(`/api/users/update/${empId}`, updatedData);
+      return axios.patch(`/api/users/update-single-user`, updatedData);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      toast.success(data.message || "User details updated successfully!");
       setEditMode(false);
     },
+    onError: (error) =>{
+      toast.error(error.message || "Failed to update user details");
+    }
   });
 
   const onSubmit = (data) => {
