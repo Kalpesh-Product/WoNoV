@@ -5,6 +5,10 @@ const {
   getInvoices,
   updatePaymentStatus,
 } = require("../controllers/financeControllers/financeControllers");
+const {
+  addLandlordDocument,
+  getLandlordDocuments,
+} = require("../controllers/financeControllers/landlordControllers");
 const upload = require("../config/multerConfig");
 
 router.get("/income-expense", getIncomeAndExpanse);
@@ -15,4 +19,10 @@ router.post(
   upload.single("client-invoice"),
   uploadClientInvoice
 );
+router.post(
+  "/add-landlord-agreement",
+  upload.single("agreement"),
+  addLandlordDocument
+);
+router.get("/get-landlord-agreements", getLandlordDocuments);
 module.exports = router;

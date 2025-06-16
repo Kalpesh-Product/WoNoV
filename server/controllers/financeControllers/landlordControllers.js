@@ -53,7 +53,7 @@ const addLandlordDocument = async (req, res, next) => {
 
 const getLandlordDocuments = async (req, res, next) => {
   try {
-    const landlord = await Landlord.find().select("documents name");
+    const landlord = await Landlord.find();
 
     if (!landlord) {
       return res.status(404).json({ message: "Landlord not found" });
