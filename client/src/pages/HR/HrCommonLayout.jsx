@@ -10,7 +10,8 @@ const HrCommonLayout = () => {
   const tabs = [
     { label: "Attendance", path: "attendance" },
     { label: "Leaves", path: "leaves" },
-    // { label: "Agreements", path: "agreements" },
+    { label: "Agreements", path: "agreements" },
+    { label: "Company Handbook", path: "companyHandbook" },
     // { label: "Payslips", path: "payslips" },
   ];
 

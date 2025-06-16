@@ -154,7 +154,7 @@ const Leaves = () => {
     return formatLeaveData(leaves);
   }, [leaves, isLoading]);
 
-  console.log("leavesData", leavessData);
+  
   const months = leavesData.monthlyData.map((entry) => entry.month);
 
   const leaveCounts = useMemo(() => {

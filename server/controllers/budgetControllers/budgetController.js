@@ -47,6 +47,15 @@ const requestBudget = async (req, res, next) => {
       );
     }
 
+    if (!req.file) {
+      throw new CustomError(
+        "Voucher is required",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     if (!mongoose.Types.ObjectId.isValid(departmentId)) {
       throw new CustomError(
         "Invalid department Id provided",
@@ -98,7 +107,7 @@ const requestBudget = async (req, res, next) => {
       budgetApproval,
       l1Approval,
       srNo,
-      particulars : JSON.parse(particulars),
+      particulars: JSON.parse(particulars),
       gstIn: gstIn || "",
     };
 

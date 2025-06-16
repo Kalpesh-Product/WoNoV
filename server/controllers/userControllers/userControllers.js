@@ -421,15 +421,13 @@ const updateProfile = async (req, res, next) => {
     const updateData = req.body;
     const newProfilePicture = req.file;
 
-    console.log("update", updateData);
-
     // Allowed top-level fields
     const allowedFields = [
       "firstName",
       "middleName",
-      "password",
       "lastName",
       "phone",
+      "dateOfBirth",
     ];
     const filteredUpdateData = {};
 

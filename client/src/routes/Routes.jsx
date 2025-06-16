@@ -345,6 +345,7 @@ import ViewVendor from "../components/vendor/ViewVendor";
 import SalesDataCard from "../pages/Dashboard/SalesDashboard/SalesData/SalesDataCard";
 import DepartmentInvoice from "../pages/Dashboard/FinanceDashboard/Billing/DepartmentInvoice";
 import MonthlyInvoiceCommon from "../components/Pages/MonthlyInvoiceCommon";
+import CompanyHandbook from "../pages/Dashboard/HrDashboard/Complaince/CompanyHandbook";
 import UserDetails from "../pages/Profile/UserDetails";
 
 export const routes = createBrowserRouter([
@@ -1675,6 +1676,10 @@ export const routes = createBrowserRouter([
                       {
                         path: "agreements",
                         element: <HrCommonAgreements />,
+                      },
+                      {
+                        path: "companyHandbook",
+                        element: <CompanyHandbook />,
                       },
                       {
                         path: "payslips",
