@@ -50,8 +50,7 @@ const DepartmentInvoice = () => {
             onClick={() => {
               setViewDetails(params.data);
               setViewModal(true);
-            }}
-          >
+            }}>
             <MdOutlineRemoveRedEye />
           </span>
          
@@ -124,9 +123,9 @@ const DepartmentInvoice = () => {
             setViewModal(false);
             setViewDetails(null);
           }}
-          title="Invoice Details"
-        >
+          title="Invoice Details">
           <div className="space-y-3">
+            <div></div>
             <DetalisFormatted
               title="Expense Name"
               detail={viewDetails.expanseName || "-"}
@@ -195,8 +194,7 @@ const DepartmentInvoice = () => {
                     href={viewDetails.invoiceLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary underline"
-                  >
+                    className="text-primary underline">
                     {viewDetails.invoiceName}
                   </a>
                 ) : (
@@ -277,8 +275,7 @@ const DepartmentInvoice = () => {
                         href={viewDetails.finance.voucher.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary underline"
-                      >
+                        className="text-primary underline">
                         {viewDetails.finance.voucher.name}
                       </a>
                     ) : (

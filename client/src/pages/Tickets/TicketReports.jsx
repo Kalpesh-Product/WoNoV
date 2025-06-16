@@ -148,29 +148,37 @@ const TicketReports = () => {
       <MuiModal
         open={detailsModal}
         onClose={() => setDetailsModal(false)}
-        title={"Ticket Detials"}
-      >
+        title={"Ticket Details"}>
         {!isLoading && selectedMeeting ? (
-          <div className="w-full grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="w-full grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
               title={"Ticket"}
               detail={selectedMeeting?.ticket || ""}
+            />
+            <DetalisFormatted
+              title={"Description"}
+              detail={selectedMeeting?.description || ""}
+            />
+
+            <DetalisFormatted
+              title={"Raised By"}
+              detail={`${selectedMeeting?.raisedBy}`}
+            />
+            <DetalisFormatted
+              title={"Raised At"}
+              detail={`${selectedMeeting?.date || "N/A"}`}
             />
             <DetalisFormatted
               title={"Raised To Department"}
               detail={selectedMeeting?.raisedToDepartment || ""}
             />
             <DetalisFormatted
-              title={"Raised By"}
-              detail={`${selectedMeeting?.raisedBy}`}
-            />
-            <DetalisFormatted
-              title={"Description"}
-              detail={selectedMeeting?.description || ""}
-            />
-            <DetalisFormatted
               title={"Status"}
               detail={selectedMeeting?.status || ""}
+            />
+            <DetalisFormatted
+              title={"Priority"}
+              detail={selectedMeeting?.priority || ""}
             />
             <DetalisFormatted
               title={"Assignees"}
@@ -187,11 +195,15 @@ const TicketReports = () => {
               title={"Accepted By"}
               detail={selectedMeeting.acceptedBy || "None"}
             />
-
             <DetalisFormatted
+              title={"Accepted At"}
+              detail={selectedMeeting.date || "N/A"}
+            />
+
+            {/* <DetalisFormatted
               title={"Rejected By"}
               detail={selectedMeeting?.rejectedBy || "None"}
-            />
+            /> */}
             {selectedMeeting.reason ? (
               <DetalisFormatted
                 title={"Reason"}
