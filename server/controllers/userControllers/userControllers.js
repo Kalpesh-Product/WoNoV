@@ -421,15 +421,13 @@ const updateProfile = async (req, res, next) => {
     const updateData = req.body;
     const newProfilePicture = req.file;
 
-    console.log("update", updateData);
-
     // Allowed top-level fields
     const allowedFields = [
       "firstName",
       "middleName",
-      "password",
       "lastName",
       "phone",
+      "dateOfBirth",
     ];
     const filteredUpdateData = {};
 
@@ -809,7 +807,10 @@ const getEmployeePoliciesByEmpId = async (req, res) => {
   const { employeeId } = req.params;
 
   try {
-    const employee = await UserData.findOne({ empId: employeeId }, { policies: 1, firstName: 1, lastName: 1, empId: 1 });
+    const employee = await UserData.findOne(
+      { empId: employeeId },
+      { policies: 1, firstName: 1, lastName: 1, empId: 1 }
+    );
 
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
@@ -835,5 +836,5 @@ module.exports = {
   getAssignees,
   checkPassword,
   updatePassword,
-  getEmployeePoliciesByEmpId
+  getEmployeePoliciesByEmpId,
 };
