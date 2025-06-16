@@ -354,6 +354,7 @@ const SupportTickets = ({ title, departmentId }) => {
             key={rows.length}
             data={rows}
             columns={recievedTicketsColumns}
+            search
           />
         ) : (
           <>
