@@ -254,8 +254,8 @@ const MeetingRoomCredits = ({ pageTitle }) => {
         onClose={() => setDetailsModal(false)}
         title={"Meeting Details"}>
         {selectedMeeting ? (
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-            <DetalisFormatted
+          <div className="w-full grid grid-cols-1 md:grid-cols-1 gap-4">
+            {/* <DetalisFormatted
               title="Agenda"
               detail={selectedMeeting?.agenda || "N/A"}
             />
@@ -270,7 +270,149 @@ const MeetingRoomCredits = ({ pageTitle }) => {
             <DetalisFormatted
               title="Location"
               detail={selectedMeeting?.location || "N/A"}
+            /> */}
+            <div className="font-bold">Basic Info</div>
+            <DetalisFormatted
+              title="Title"
+              detail={selectedMeeting?.title || "Title"}
             />
+            <DetalisFormatted
+              title="Agenda"
+              detail={selectedMeeting.agenda || "N/A"}
+            />
+            <DetalisFormatted
+              title="Date"
+              detail={humanDate(selectedMeeting?.date)}
+            />
+            <DetalisFormatted
+              title="Time"
+              detail={`${humanTime(selectedMeeting.startTime)} - ${humanTime(
+                selectedMeeting.endTime
+              )}`}
+            />
+            <DetalisFormatted
+              title="Duration"
+              detail={selectedMeeting.duration || "N/A"}
+            />
+            <DetalisFormatted
+              title="Status"
+              detail={selectedMeeting.meetingStatus || "N/A"}
+            />
+            <DetalisFormatted
+              title="Type"
+              detail={selectedMeeting.meetingType || "N/A"}
+            />
+            <DetalisFormatted
+              title="Company"
+              detail={selectedMeeting.client || "N/A"}
+            />
+            {/* fffff */}
+
+            {/* <DetalisFormatted
+                          title={"Booked By"}
+                          detail={
+                            selectedMeeting?.bookedBy ||
+                            selectedMeeting?.clientBookedBy ||
+                            "N/A"
+                          }
+                        />
+                        <DetalisFormatted
+                          title={"Client Name"}
+                          detail={selectedMeeting?.client}
+                        />
+                        <DetalisFormatted
+                          title={"Date"}
+                          detail={humanDate(selectedMeeting?.date)}
+                        />
+                        <DetalisFormatted
+                          title={"Start Time"}
+                          detail={humanTime(selectedMeeting?.startTime)}
+                        />
+                        <DetalisFormatted
+                          title={"End Time"}
+                          detail={humanTime(selectedMeeting?.endTime)}
+                        />
+                        {selectedMeeting.extendTime && (
+                          <DetalisFormatted
+                            title={"Extended Time"}
+                            detail={humanTime(selectedMeeting?.extendTime)}
+                          />
+                        )} */}
+            <br />
+            <div className="font-bold">People Involved</div>
+            {/* <div className="col-span-1 ">
+                          <DetalisFormatted
+                            title={"Participants"}
+                            detail={selectedMeeting?.participants.map((item) => (
+                              <span>{`${item.firstName || item.employeeName || "unknown"} ${
+                                item.lastName || ""
+                              }`}</span>
+                            ))}
+                          />
+                        </div>
+                        <DetalisFormatted
+                          title={"House Keeping Status"}
+                          detail={selectedMeeting?.housekeepingStatus}
+                        /> */}
+
+            {/* dddd */}
+
+            {selectedMeeting.participants?.length > 0 && (
+              <DetalisFormatted
+                title="Participants"
+                detail={selectedMeeting.participants
+                  .map((p) => {
+                    return p.firstName
+                      ? `${p.firstName} ${p.lastName}`
+                      : p.employeeName
+                      ? p.employeeName
+                      : null;
+                  })
+                  .join(", ")}
+              />
+            )}
+
+            <DetalisFormatted
+              title="Booked By"
+              detail={selectedMeeting.bookedBy}
+            />
+            <DetalisFormatted
+              title="Receptionist"
+              // detail={selectedMeeting.receptionist}
+              detail={`N/A`}
+            />
+            <DetalisFormatted
+              title="Department"
+              detail={selectedMeeting.department || "Top Management"}
+            />
+
+            <br />
+            <div className="font-bold">Venue Details</div>
+            {/* <DetalisFormatted
+                          title={"Room Name"}
+                          detail={selectedMeeting?.roomName}
+                          upperCase
+                        /> */}
+
+            {/* vvvv */}
+            <DetalisFormatted title="Room" detail={selectedMeeting.roomName} />
+            <DetalisFormatted
+              title="Location"
+              detail={`${selectedMeeting.location?.unitNo} (${selectedMeeting.location?.unitName})`}
+            />
+            <DetalisFormatted
+              title="Building"
+              detail={selectedMeeting.location?.building?.buildingName}
+            />
+            <DetalisFormatted
+              title="Housekeeping Status"
+              detail={selectedMeeting.housekeepingStatus}
+            />
+
+            {/* <DetalisFormatted
+                          title={"Department"}
+                          detail={selectedMeeting?.department}
+                        /> */}
           </div>
         ) : (
           <CircularProgress />
