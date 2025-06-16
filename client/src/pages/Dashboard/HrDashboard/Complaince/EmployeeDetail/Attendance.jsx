@@ -338,6 +338,10 @@ const Attendance = () => {
         {!isLoading ? (
           <WidgetSection layout={1} title={`${name}'s Attendance Table`} border>
             <MonthWiseTable
+            buttonTitle={"Correction Request"}
+              handleSubmit={() => {
+              setOpenModal(true);
+            }}
               data={
                 !isLoading
                   ? attendance?.map((record, index) => ({

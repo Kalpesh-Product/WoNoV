@@ -535,7 +535,7 @@ const CompanyHandbook = () => {
                 Based Lifestyle Subscription Platform in India targeted to
                 become a National Destination Based Lifestyle Subscription
                 Platform by the end of this decade due to our first mover
-                advantage
+                advantage.
               </p>
             </div>
           </div>

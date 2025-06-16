@@ -610,10 +610,11 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
         value: "N/A",
         route: "finance",
       },
-      { title: "Exit Head Count", value: "2" },
+      { title: "Exit Head Count", value: "2", route:"employee/view-employees"},
       {
         title: "Per Sq. Ft.",
         value: `INR ${inrFormat(totalUtilised / totalSqft)}`,
+        route:"finance"
       },
     ],
   };
