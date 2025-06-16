@@ -47,9 +47,9 @@ const requestBudget = async (req, res, next) => {
       );
     }
 
-    if (!req.file) {
+    if (expanseType === "Reimbursement" && !req.file) {
       throw new CustomError(
-        "Voucher is required",
+        "Voucher file isn't uploaded",
         logPath,
         logAction,
         logSourceKey
@@ -409,7 +409,7 @@ const approveFinanceBudget = async (req, res, next) => {
       modeOfPayment,
       chequeNo,
       chequeDate,
-      amount,
+      advanceAmount,
       expectedDateInvoice,
       particulars,
     } = req.body;
@@ -420,7 +420,7 @@ const approveFinanceBudget = async (req, res, next) => {
       modeOfPayment,
       chequeNo,
       chequeDate,
-      amount,
+      advanceAmount,
       expectedDateInvoice,
     };
 
@@ -502,7 +502,7 @@ const approveFinanceBudget = async (req, res, next) => {
       fSrNo,
       chequeNo,
       chequeDate,
-      amount,
+      advanceAmount,
       expectedDateInvoice,
       modeOfPayment,
       particulars: JSON.parse(particulars),
@@ -531,7 +531,7 @@ const approveFinanceBudget = async (req, res, next) => {
         fSrNo,
         chequeNo,
         chequeDate,
-        amount,
+        advanceAmount,
         expectedDateInvoice,
         modeOfPayment,
         particulars,
