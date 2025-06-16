@@ -91,6 +91,10 @@ const budgetSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  isOnlyBudget: {
+    type: Boolean,
+  },
+  includesBudget: Boolean,
   budgetApproval: {
     type: Boolean,
     default: false,
