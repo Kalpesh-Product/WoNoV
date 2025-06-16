@@ -11,6 +11,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
 
 const TicketReports = () => {
   const { auth } = useAuth();
@@ -46,7 +47,12 @@ const TicketReports = () => {
   const kraColumn = [
     { field: "id", headerName: "Sr No", flex: 1 },
     { field: "ticket", headerName: "Ticket", flex: 1 },
-    { field: "createdAt", headerName: "Date", flex: 1 },
+    {
+      field: "createdAt",
+      headerName: "Date",
+      flex: 1,
+      cellRenderer: (params) => humanDate(params.value),
+    },
     { field: "raisedToDepartment", headerName: "Raised To", flex: 1 },
     { field: "raisedBy", headerName: "Raised By", flex: 1 },
     {
@@ -78,7 +84,8 @@ const TicketReports = () => {
               onClick={() => {
                 handleSelectedMeeting(params.data);
               }}
-              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
+              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+            >
               <span className="text-subtitle">
                 <MdOutlineRemoveRedEye />
               </span>
@@ -94,8 +101,10 @@ const TicketReports = () => {
       <PageFrame>
         <div>
           {!isLoading ? (
-            <AgTable
+            <YearWiseTable
               search={true}
+              exportData={true}
+              dateFilter={true}
               tableTitle={"Ticket Reports"}
               data={[
                 ...ticketsData.map((item, index) => ({
@@ -112,8 +121,8 @@ const TicketReports = () => {
                       (assignee) => `${assignee.firstName} ${assignee.lastName}`
                     ) || "",
                   company: item.company?.companyName,
-                  createdAt: dayjs(item.createdAt).format("DD-MM-YYYY") || "",
-                  updatedAt: humanDate(item.updatedAt) || "",
+                  createdAt: item.createdAt || "",
+                  updatedAt: item.updatedAt || "",
                   acceptedBy: `${item.acceptedBy?.firstName || ""} ${
                     item.acceptedBy?.lastName || ""
                   }`,
@@ -123,7 +132,7 @@ const TicketReports = () => {
                   reason: item.reject?.reason,
                 })),
               ]}
-              exportData
+              dateColumn={"createdAt"}
               columns={kraColumn}
             />
           ) : (
@@ -139,7 +148,8 @@ const TicketReports = () => {
       <MuiModal
         open={detailsModal}
         onClose={() => setDetailsModal(false)}
-        title={"Ticket Detials"}>
+        title={"Ticket Detials"}
+      >
         {!isLoading && selectedMeeting ? (
           <div className="w-full grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
             <DetalisFormatted

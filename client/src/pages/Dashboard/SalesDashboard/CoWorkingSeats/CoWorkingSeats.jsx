@@ -443,7 +443,6 @@ const CoWorkingSeats = () => {
         <YearWiseTable
           data={tableData}
           columns={columns}
-          s
           formatDate={false}
           formatTime={false}
           dateColumn="date"
