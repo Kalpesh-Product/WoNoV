@@ -106,7 +106,7 @@ const PendingApprovals = () => {
                     },
                   },
                   {
-                    label: "Review",
+                    label: "Approve",
                     onClick: () => {
                       dispatch(setVoucherDetails(params.data)); // dispatching to redux
                       setSelectedBudget(params.data);
@@ -153,7 +153,7 @@ const PendingApprovals = () => {
         <MuiModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
-          title={"Reject request"}
+          title={"Invoice Details"}
         >
           {modalType === "reject" && (
             <form
@@ -236,6 +236,7 @@ const PendingApprovals = () => {
               <DetalisFormatted
                 title="Invoice Link"
                 detail={
+             
                   <a
                     href={selectedBudget.invoice?.link}
                     target="_blank"
@@ -244,6 +245,7 @@ const PendingApprovals = () => {
                   >
                     View Invoice
                   </a>
+                  
                 }
               />
               <DetalisFormatted

@@ -468,12 +468,12 @@ const FinanceDashboard = () => {
   const pieMonthlyPayoutData = [
     {
       label: "Paid",
-      value: paidClients.reduce((sum, client) => sum + client.amount, 0),
+      value: Math.round(paidClients.reduce((sum, client) => sum + client.amount, 0)),
       clients: paidClients,
     },
     {
       label: "Unpaid",
-      value: unpaidClients.reduce((sum, client) => sum + client.amount, 0),
+      value: Math.round(unpaidClients.reduce((sum, client) => sum + client.amount, 0)),
       clients: unpaidClients,
     },
   ];
@@ -681,10 +681,16 @@ const FinanceDashboard = () => {
   );
 
   const statutoryDonutSeries = [
-    approvedPayments.reduce((sum, item) => sum + item.actualAmount, 0),
-    pendingPayments.reduce((sum, item) => sum + item.actualAmount, 0),
+ Math.round(
+  approvedPayments.reduce((sum, item) => sum + Number(item.actualAmount || 0), 0)
+), Math.round(
+  pendingPayments.reduce((sum, item) => sum + Number(item.actualAmount || 0), 0)
+)
+
+
   ];
 
+  console.log("statuto",statutoryDonutSeries)
   const statutoryDonutLabels = ["Approved", "Pending"];
   const statutoryDonutColors = ["#4CAF50", "#FF9800"];
   const statutoryTooltipValues = statutoryDonutSeries.map(

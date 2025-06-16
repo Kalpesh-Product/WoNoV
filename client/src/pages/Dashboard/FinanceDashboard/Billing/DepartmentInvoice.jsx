@@ -54,18 +54,7 @@ const DepartmentInvoice = () => {
           >
             <MdOutlineRemoveRedEye />
           </span>
-          <ThreeDotMenu
-            rowId={params.data.id}
-            menuItems={[
-              {
-                label: "View",
-                onClick: () => {
-                  setViewDetails(params.data);
-                  setViewModal(true);
-                },
-              },
-            ]}
-          />
+         
         </div>
       ),
     },
