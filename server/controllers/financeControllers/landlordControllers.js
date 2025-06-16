@@ -59,7 +59,7 @@ const getLandlordDocuments = async (req, res, next) => {
       return res.status(404).json({ message: "Landlord not found" });
     }
 
-    res.status(200).json();
+    res.status(200).json(landlord);
   } catch (error) {
     next(error);
   }
