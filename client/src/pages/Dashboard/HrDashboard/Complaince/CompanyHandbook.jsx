@@ -8,10 +8,17 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import Access from "../../../Access/Access";
+import { useLocation } from "react-router-dom";
+import usePageDepartment from "../../../../hooks/usePageDepartment";
+import useAuth from "../../../../hooks/useAuth";
 
 const CompanyHandbook = () => {
   const [generalDoc, setGeneralDoc] = useState(null); // initially null
   const axios = useAxiosPrivate();
+  const {pathname} = useLocation()
+  const isProfile = pathname.includes("profile/HR/companyHandbook")
+  const {auth} =  useAuth()
+  const departments = auth.user.departments
   const { data: companyDocuments = {}, isLoading: isDocumentsLoading } =
     useQuery({
       queryKey: ["companyDocuments", generalDoc],
@@ -256,7 +263,7 @@ const CompanyHandbook = () => {
     },
     {
       id: 9,
-      title: "Administartion & Front Office",
+      title: "Administration & Front Office",
       content: (
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
@@ -284,7 +291,7 @@ const CompanyHandbook = () => {
     },
     {
       id: 10,
-      title: "Service & Maintainance",
+      title: "Service & Maintenance",
       content: (
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
@@ -367,6 +374,20 @@ const CompanyHandbook = () => {
       ),
     },
   ];
+
+  const profileAccordion = accordionData.filter((data)=> 
+  departments.some((dept)=> {
+    console.log("deptname",dept.name.toLowerCase())
+    console.log("title",data.title.toLowerCase())
+    if(dept.name === "IT" && data.title === "Kaffe Kitchen") return
+    if(dept.name === "HR" && data.title === "Human Resource & EA") return true
+   
+    return  data.title.toLowerCase().includes(dept.name.toLowerCase())
+
+  }))
+
+  const filteredAccordionData = isProfile ? profileAccordion : accordionData
+
   const accordionDataGeneral = [
     {
       id: 1,
@@ -568,8 +589,8 @@ const CompanyHandbook = () => {
               Departments
             </span>
           </div>
-          {accordionData.map((item) => (
-            <Accordion
+          {filteredAccordionData.map((item) => 
+          <Accordion
               sx={{ boxShadow: "none", border: "1px solid #d1d5db" }}
               key={item.id}
             >
@@ -585,8 +606,8 @@ const CompanyHandbook = () => {
               <AccordionDetails sx={{ padding: "1rem" }}>
                 <span className="text-content">{item.content}</span>
               </AccordionDetails>
-            </Accordion>
-          ))}
+            </Accordion>         
+)}
         </div>
       </div>
       <div></div>
