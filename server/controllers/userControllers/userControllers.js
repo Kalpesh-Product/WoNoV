@@ -304,10 +304,10 @@ const fetchSingleUser = async (req, res) => {
       middleName: user.middleName || "",
       lastName: user.lastName || "",
       gender: user.gender || "",
-      dob: user.dateOfBirth ? formatDate(user.dateOfBirth) : "",
+      dob: user.dateOfBirth ? user.dateOfBirth : "",
       employeeID: user.empId || "",
       mobilePhone: user.phone || "",
-      startDate: user.startDate ? formatDate(user.startDate) : "",
+      startDate: user.startDate ? user.startDate : "",
       workLocation: user.workLocation || "",
       employeeType: user.employeeType?.name || "",
       department: user.departments?.[0]?.name || "",
@@ -809,7 +809,10 @@ const getEmployeePoliciesByEmpId = async (req, res) => {
   const { employeeId } = req.params;
 
   try {
-    const employee = await UserData.findOne({ empId: employeeId }, { policies: 1, firstName: 1, lastName: 1, empId: 1 });
+    const employee = await UserData.findOne(
+      { empId: employeeId },
+      { policies: 1, firstName: 1, lastName: 1, empId: 1 }
+    );
 
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
@@ -835,5 +838,5 @@ module.exports = {
   getAssignees,
   checkPassword,
   updatePassword,
-  getEmployeePoliciesByEmpId
+  getEmployeePoliciesByEmpId,
 };
