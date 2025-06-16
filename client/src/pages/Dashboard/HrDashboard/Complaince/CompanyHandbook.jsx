@@ -506,7 +506,7 @@ const CompanyHandbook = () => {
     <div className="flex flex-col gap-4">
       <div className="flex">
         <div className="w-full shadow-md p-4 rounded-md">
-          <div className="h-80 w-full flex flex-col gap-4">
+          <div className="h-96 w-full flex flex-col gap-4">
             <img
               className="w-full  object-contain  h-[30%]"
               src={biznestLogo}
