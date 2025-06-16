@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { CircularProgress } from "@mui/material";
+import MuiModal from "../../../../components/MuiModal";
+import { Controller, useForm } from "react-hook-form";
 
 const LandlordAgreements = () => {
   const location = useLocation();
@@ -17,10 +19,10 @@ const LandlordAgreements = () => {
         const response = await axios.get(
           "/api/finance/get-landlord-agreements"
         );
-        return response.data || []; // Fallback to empty array
+        return response.data || [];
       } catch (error) {
         console.error("Failed to fetch landlord agreements:", error);
-        return []; // Prevent crash if request fails
+        return [];
       }
     },
   });
@@ -40,7 +42,7 @@ const LandlordAgreements = () => {
               ? item.documents.length
               : 0,
             files: item?.documents || [],
-            id: item?.id || "",
+            id: item?._id || "",
           };
         })
     : [];
@@ -63,6 +65,7 @@ const LandlordAgreements = () => {
                 state: {
                   files: params.data.files || [],
                   name: params.data.name || "Unnamed",
+                  id: params.data.id,
                 },
               }
             )
