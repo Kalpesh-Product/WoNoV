@@ -95,6 +95,10 @@ const HrCommonAttendance = () => {
             tableTitle={`Attendance Table`}
             dateColumn={"date"}
             columns={attendanceColumns}
+            buttonTitle={"Correction Request"}
+                handleSubmit={() => {
+              setOpenModal(true);
+            }}
             data={
               attendance.length > 0
                 ? attendance.map((record, index) => ({

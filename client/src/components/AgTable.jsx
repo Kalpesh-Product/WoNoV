@@ -14,6 +14,9 @@ import PrimaryButton from "./PrimaryButton";
 import SecondaryButton from "./SecondaryButton";
 import { MdFilterAlt, MdFilterAltOff } from "react-icons/md";
 import { IoIosSearch } from "react-icons/io";
+import { DateRange } from "react-date-range";
+import { addDays, isSameDay } from "date-fns";
+import { Popover } from "@mui/material";
 
 const AgTableComponent = React.memo(
   ({
@@ -31,7 +34,9 @@ const AgTableComponent = React.memo(
     tableHeight,
     enableCheckbox, // ✅ New prop to enable checkboxes
     getRowStyle,
-    checkAll
+    checkAll,
+    dateColumn,
+    enableDateFilter = false,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -43,6 +48,30 @@ const AgTableComponent = React.memo(
 
     const tableRef = useRef(null); // ✅ Reference to track table visibility
     const gridRef = useRef(null);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [dateRange, setDateRange] = useState([
+      {
+        startDate: null,
+        endDate: null,
+        key: "selection",
+      },
+    ]);
+
+    const availableDates = useMemo(() => {
+      if (!dateColumn) return [];
+      return data
+        .map((item) => item[dateColumn])
+        .filter(Boolean)
+        .map((d) => new Date(d).setHours(0, 0, 0, 0));
+    }, [data, dateColumn]);
+
+    const disabledDayFn = (date) => {
+      const dayTime = date.setHours(0, 0, 0, 0);
+      return !availableDates.includes(dayTime);
+    };
+
+    const isDisabled = (date) =>
+  !availableDates.includes(date.setHours(0, 0, 0, 0));
 
     const tableRefCurrent = tableRef.current;
 
@@ -64,10 +93,40 @@ const AgTableComponent = React.memo(
     }, [tableRefCurrent]);
 
     useEffect(() => {
-      if (data && data.length > 0) {
-        setFilteredData(data);
+      let result = data;
+
+      // Apply text filters
+      result = result.filter((row) => {
+        return Object.keys(appliedFilters).every((field) => {
+          const filterValue = appliedFilters[field]?.toLowerCase();
+          return (
+            !filterValue ||
+            row[field]?.toString().toLowerCase().includes(filterValue)
+          );
+        });
+      });
+
+      // Apply search
+      if (searchQuery) {
+        result = result.filter((row) =>
+          Object.values(row).some((value) =>
+            value?.toString().toLowerCase().includes(searchQuery)
+          )
+        );
       }
-    }, [data]);
+
+      // Apply date filter
+      const start = dateRange[0]?.startDate;
+      const end = dateRange[0]?.endDate;
+      if (enableDateFilter && dateColumn && start && end) {
+        result = result.filter((row) => {
+          const rowDate = new Date(row[dateColumn]);
+          return rowDate >= start && rowDate <= addDays(end, 1);
+        });
+      }
+
+      setFilteredData(result);
+    }, [data, appliedFilters, searchQuery, dateRange]);
 
     const defaultColDef = {
       resizable: true,
@@ -160,34 +219,35 @@ const AgTableComponent = React.memo(
 
     return (
       <div className="border-b-[1px] border-borderGray">
-        {tableTitle && (
-          <div className="flex items-center justify-between pb-4">
+        <div
+          className={`flex items-center ${
+            tableTitle ? "justify-between" : "justify-end"
+          } w-full pb-4`}
+        >
+          {tableTitle && (
             <span className="font-pmedium text-title text-primary uppercase">
               {tableTitle}
             </span>
-            <div className="flex items-center gap-4">
-              {exportData ? (
-                <PrimaryButton
-                  title={"Export"}
-                  handleSubmit={() => {
-                    if (gridRef.current) {
-                      gridRef.current.api.exportDataAsCsv({
-                        fileName: `${tableTitle || "table-data"}.csv`,
-                      });
-                    }
-                  }}
-                />
-              ) : (
-                ""
-              )}
-              {buttonTitle ? (
-                <PrimaryButton title={buttonTitle} handleSubmit={handleClick} />
-              ) : (
-                ""
-              )}
-            </div>
+          )}
+          <div className="flex items-center gap-4">
+            {exportData && (
+              <PrimaryButton
+                title={"Export"}
+                handleSubmit={() => {
+                  if (gridRef.current) {
+                    gridRef.current.api.exportDataAsCsv({
+                      fileName: `${tableTitle || "table-data"}.csv`,
+                    });
+                  }
+                }}
+              />
+            )}
+            {buttonTitle && (
+              <PrimaryButton title={buttonTitle} handleSubmit={handleClick} />
+            )}
           </div>
-        )}
+        </div>
+
         <div className="flex justify-between items-center py-2">
           {search ? (
             <TextField
@@ -206,6 +266,31 @@ const AgTableComponent = React.memo(
           ) : (
             <></>
           )}
+          {enableDateFilter && (
+            <>
+              <PrimaryButton
+                title={"📅 Filter by Date"}
+                handleSubmit={(e) => setAnchorEl(e.currentTarget)}
+              />
+              <Popover
+                open={Boolean(anchorEl)}
+                anchorEl={anchorEl}
+                onClose={() => setAnchorEl(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+                transformOrigin={{ vertical: "top", horizontal: "center" }}
+              >
+                <DateRange
+                  ranges={dateRange}
+                  onChange={(item) => setDateRange([item.selection])}
+                  disabledDay={isDisabled}
+                  moveRangeOnFirstSelection={false}
+                  editableDateInputs={true}
+                  showDateDisplay={false}
+                />
+              </Popover>
+            </>
+          )}
+
           {hideFilter ? (
             ""
           ) : (
@@ -230,6 +315,7 @@ const AgTableComponent = React.memo(
             </div>
           )}
         </div>
+
         <div className="flex gap-2">
           {Object.keys(appliedFilters).map((field) =>
             appliedFilters[field] ? (

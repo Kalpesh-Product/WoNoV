@@ -222,7 +222,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
         <span className="text-subtitle">{title}</span>
       </div>
       <div className="w-full">
-        <AgTable data={rows} columns={recievedTicketsColumns} />
+        <AgTable data={rows} columns={recievedTicketsColumns} search />
         <MuiModal
           open={openView}
           onClose={() => setOpenView(false)}

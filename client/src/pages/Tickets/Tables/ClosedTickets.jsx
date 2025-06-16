@@ -117,6 +117,7 @@ const ClosedTickets = ({ title, departmentId }) => {
             data={rows}
             columns={recievedTicketsColumns}
             noRowsOverlayMessage="No tickets to display."
+            search
           />
         )}
       </div>

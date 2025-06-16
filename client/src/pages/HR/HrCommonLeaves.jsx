@@ -23,6 +23,7 @@ import MonthWiseTable from "../../components/Tables/MonthWiseTable";
 
 const HrCommonLeaves = () => {
   const { auth } = useAuth();
+  const id = auth.user.empId
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const {
@@ -70,32 +71,29 @@ const HrCommonLeaves = () => {
     },
   });
 
-  const { mutate: correctionPost, isPending: correctionPending } = useMutation({
-    mutationFn: async (data) => {
-      const response = await axios.post("/api/leaves/request-leave", {
-        ...data,
-        empId: auth.user.empId,
-      });
-      return response.data;
-    },
-    onSuccess: function (data) {
-      setOpenModal(false);
-      toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: ["leaves"] });
-      reset();
-    },
-    onError: function (error) {
-      toast.error(error.response.data.message);
-    },
-  });
+   const { mutate: leaveRequest, isPending: leaveRequestPending } = useMutation({
+      mutationFn: async (data) => {
+        const response = await axios.post("/api/leaves/request-leave", {
+          ...data,
+          empId: id,
+        });
+        return response.data;
+      },
+      onSuccess: function (data) {
+        setOpenModal(false);
+        toast.success(data.message);
+        queryClient.invalidateQueries({ queryKey: ["leaves"] });
+        reset();
+      },
+      onError: function (error) {
+        toast.error(error.response.data.message);
+      },
+    });
 
   const onSubmit = (data) => {
-    correctionPost(data);
+    leaveRequest(data);
   };
 
-  useEffect(() => {
-    console.log("leaves", leaves);
-  }, [leaves]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -111,6 +109,10 @@ const HrCommonLeaves = () => {
               tableHeight={300}
               dateColumn={"fromDate"}
               columns={leavesColumn}
+              buttonTitle={"Add Requested Leave"}
+               handleSubmit={() => {
+              setOpenModal(true);
+            }}
               data={
                 isLoading
                   ? [
@@ -267,8 +269,8 @@ const HrCommonLeaves = () => {
               <PrimaryButton
                 title={"Submit"}
                 type={"submit"}
-                isLoading={correctionPending}
-                disabled={correctionPending}
+                isLoading={leaveRequestPending}
+                disabled={leaveRequestPending}
               />
             </div>
           </form>

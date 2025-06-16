@@ -345,6 +345,10 @@ import ViewVendor from "../components/vendor/ViewVendor";
 import SalesDataCard from "../pages/Dashboard/SalesDashboard/SalesData/SalesDataCard";
 import DepartmentInvoice from "../pages/Dashboard/FinanceDashboard/Billing/DepartmentInvoice";
 import MonthlyInvoiceCommon from "../components/Pages/MonthlyInvoiceCommon";
+import CompanyHandbook from "../pages/Dashboard/HrDashboard/Complaince/CompanyHandbook";
+import UserDetails from "../pages/Profile/UserDetails";
+import LandlordAgreementData from "../pages/Dashboard/FinanceDashboard/MixBag/LandlordAgreementData";
+import ClientAgreementData from "../pages/Dashboard/FinanceDashboard/MixBag/ClientAgreementData";
 
 export const routes = createBrowserRouter([
   {
@@ -504,8 +508,16 @@ export const routes = createBrowserRouter([
                         element: <LandlordAgreements />,
                       },
                       {
+                        path: "mix-bag/landlord-agreements/:name",
+                        element: <LandlordAgreementData />,
+                      },
+                      {
                         path: "mix-bag/client-agreements",
                         element: <ClientAgreements />,
+                      },
+                      {
+                        path: "mix-bag/client-agreements/:name",
+                        element: <ClientAgreementData />,
                       },
                       {
                         path: "directors-company-KYC",
@@ -1649,7 +1661,7 @@ export const routes = createBrowserRouter([
                 children: [
                   {
                     path: "my-profile",
-                    element: <MyProfile />,
+                    element: <UserDetails />,
                   },
                   {
                     path: "change-password",
@@ -1674,6 +1686,10 @@ export const routes = createBrowserRouter([
                       {
                         path: "agreements",
                         element: <HrCommonAgreements />,
+                      },
+                      {
+                        path: "companyHandbook",
+                        element: <CompanyHandbook />,
                       },
                       {
                         path: "payslips",
