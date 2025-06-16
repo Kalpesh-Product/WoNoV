@@ -345,6 +345,7 @@ import ViewVendor from "../components/vendor/ViewVendor";
 import SalesDataCard from "../pages/Dashboard/SalesDashboard/SalesData/SalesDataCard";
 import DepartmentInvoice from "../pages/Dashboard/FinanceDashboard/Billing/DepartmentInvoice";
 import MonthlyInvoiceCommon from "../components/Pages/MonthlyInvoiceCommon";
+import UserDetails from "../pages/Profile/UserDetails";
 
 export const routes = createBrowserRouter([
   {
@@ -1649,7 +1650,7 @@ export const routes = createBrowserRouter([
                 children: [
                   {
                     path: "my-profile",
-                    element: <MyProfile />,
+                    element: <UserDetails />,
                   },
                   {
                     path: "change-password",
