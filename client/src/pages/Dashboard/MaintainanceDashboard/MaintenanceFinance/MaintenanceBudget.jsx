@@ -12,7 +12,7 @@ import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
@@ -24,10 +24,12 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 import { useNavigate } from "react-router-dom";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
+import usePageDepartment from "../../../../hooks/usePageDepartment";
 
 const Maintenance = () => {
   const axios = useAxiosPrivate();
   const [isReady, setIsReady] = useState(false);
+  const department = usePageDepartment()
 
   const [openModal, setOpenModal] = useState(false);
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
@@ -35,7 +37,7 @@ const Maintenance = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/budget/company-budget?departmentId=6798bafbe469e809084e24a7` // IT Department ID
+          `/api/budget/company-budget?${department?._id}`  
         );
         const budgets = response.data.allBudgets;
         return Array.isArray(budgets) ? budgets : [];
@@ -45,6 +47,27 @@ const Maintenance = () => {
       }
     },
   });
+
+  const { mutate: requestBudget, isPending: requestBudgetPending } =
+      useMutation({
+        mutationFn: async (data) => {
+          const response = await axios.post(
+            `/api/budget/request-budget/${department._id}`,
+            {
+              ...data,
+            }
+          );
+          return response.data;
+        },
+        onSuccess: function (data) {
+          setOpenModal(false);
+          toast.success(data.message);
+          reset();
+        },
+        onError: function (error) {
+          toast.error(error.response.data.message);
+        },
+      });
 
   const budgetBar = useMemo(() => {
     if (isHrLoading || !Array.isArray(hrFinance)) return null;
@@ -161,8 +184,8 @@ const Maintenance = () => {
   });
 
   const onSubmit = (data) => {
+     requestBudget(data);
     setOpenModal(false);
-    toast.success("Budget Requested succesfully");
     reset();
   };
 
@@ -344,6 +367,23 @@ const Maintenance = () => {
               )}
             />
 
+ {/* Payment Type */}
+ <Controller
+            name="paymentType"
+            control={control}
+            rules={{ required: "Payment type is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Payment Type
+                  </MenuItem>
+                  <MenuItem value="One Time">One Time</MenuItem>
+                  <MenuItem value="Recurring">Recurring</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
             {/* Amount */}
             <Controller
               name="amount"
@@ -406,4 +446,3 @@ const Maintenance = () => {
 };
 
 export default Maintenance;
-//
