@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import AgTable from "../../components/AgTable";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { Chip, CircularProgress } from "@mui/material";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
@@ -96,9 +97,10 @@ const MeetingReports = () => {
       <PageFrame>
         <div>
           {!isMyMeetingsPending ? (
-            <AgTable
+            <YearWiseTable
               search={true}
               exportData
+              dateColumn={"date"}
               tableTitle={"Meetings Reports"}
               data={[
                 ...myMeetings.map((item, index) => ({
@@ -111,7 +113,7 @@ const MeetingReports = () => {
                   buildingName: item.location?.building?.buildingName,
                   meetingType: item.meetingType,
                   housekeepingStatus: item.housekeepingStatus,
-                  date: dayjs(item.date).format("DD-MM-YYYY"),
+                  date: (item.date),
                   startTime: item.startTime,
                   endTime: item.endTime,
                   duration: item.duration,

@@ -170,7 +170,7 @@ const AgTableComponent = React.memo(
           </>
         )}
 
-        <div className="flex justify-between items-center py-2">
+        <div className={`flex ${search ? "justify-between" : "justify-end"}  items-center py-2`}>
           {search ? (
             <TextField
               label="Search"

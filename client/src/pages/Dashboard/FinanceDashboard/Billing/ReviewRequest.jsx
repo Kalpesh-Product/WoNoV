@@ -67,7 +67,7 @@ const ReviewRequest = () => {
       queryFn: async () => {
         try {
           const response = await axios.get(
-            `/api/budget/company-budget?departmentId=${department._id}`
+            `/api/budget/company-budget?departmentId=${department?._id}`
           );
           const budgets = response.data.allBudgets;
           return Array.isArray(budgets) ? budgets : [];
@@ -163,7 +163,7 @@ const onUpload = async () => {
   formData.append("modeOfPayment", values.modeOfPayment || "");
   formData.append("chequeNo", values.chequeNo || "");
   formData.append("chequeDate", values.chequeDate || "");
-  formData.append("amount", values.amount?.toString() || "0");
+  formData.append("advanceAmount", values.advanceAmount?.toString() || "0");
   formData.append("expectedDateInvoice", values.expectedDateInvoice || "");
   formData.append("particulars", JSON.stringify(values.particulars || []));
 
@@ -757,7 +757,7 @@ const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
               <tbody>
                 <tr>
                   <td className={cellClasses}>Amount (Rs)</td>
-                  <td className={cellClasses}>{values.amount}</td>
+                  <td className={cellClasses}>{values.advanceAmount}</td>
                 </tr>
                 <tr>
                   <td className={cellClasses}>

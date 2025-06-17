@@ -184,9 +184,10 @@ const JobApplicationList = () => {
         <MuiModal
           open={openModal}
           onClose={() => setOpenModal(false)}
-          title={"View Job Application Details"}>
+          title={"Job Application Details"}>
           {!isJobApplicationPending && jobApplications ? (
             <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
+              <div className="font-bold">Personal Details</div>
               <DetalisFormatted
                 title="Name"
                 detail={viewApplicationDetails?.name}
@@ -207,10 +208,35 @@ const JobApplicationList = () => {
                 title="Location"
                 detail={viewApplicationDetails?.location}
               />
+              <br />
+              <div className="font-bold">Experience & Availability</div>
               <DetalisFormatted
                 title="Experience (Years)"
                 detail={viewApplicationDetails?.experienceInYears}
               />
+
+              <DetalisFormatted
+                title="Current Monthly Salary"
+                detail={viewApplicationDetails?.currentMonthlySalary}
+              />
+              <DetalisFormatted
+                title="Expected Monthly Salary"
+                detail={viewApplicationDetails?.expectedMonthlySalary}
+              />
+              <DetalisFormatted
+                title="Joining Time (Days)"
+                detail={viewApplicationDetails?.howSoonYouCanJoinInDays}
+              />
+              <DetalisFormatted
+                title="Willing to Relocate to Goa"
+                detail={viewApplicationDetails?.willRelocateToGoa}
+              />
+              <DetalisFormatted
+                title="Willing to Bootstrap"
+                detail={viewApplicationDetails?.willingToBootstrap}
+              />
+              <br />
+              <div className="font-bold">Professional Details</div>
               <DetalisFormatted
                 title="LinkedIn Profile"
                 detail={
@@ -232,26 +258,6 @@ const JobApplicationList = () => {
                 }
               />
               <DetalisFormatted
-                title="Current Monthly Salary"
-                detail={viewApplicationDetails?.currentMonthlySalary}
-              />
-              <DetalisFormatted
-                title="Expected Monthly Salary"
-                detail={viewApplicationDetails?.expectedMonthlySalary}
-              />
-              <DetalisFormatted
-                title="Joining Time (Days)"
-                detail={viewApplicationDetails?.howSoonYouCanJoinInDays}
-              />
-              <DetalisFormatted
-                title="Willing to Relocate to Goa"
-                detail={viewApplicationDetails?.willRelocateToGoa}
-              />
-              <DetalisFormatted
-                title="Who Are You As a Person?"
-                detail={viewApplicationDetails?.whoAreYouAsPerson}
-              />
-              <DetalisFormatted
                 title="Skill Sets for Job"
                 detail={viewApplicationDetails?.skillSetsForJob}
               />
@@ -260,13 +266,16 @@ const JobApplicationList = () => {
                 detail={viewApplicationDetails?.whyShouldWeConsiderYou}
               />
               <DetalisFormatted
-                title="Willing to Bootstrap"
-                detail={viewApplicationDetails?.willingToBootstrap}
+                title="Who Are You As a Person?"
+                detail={viewApplicationDetails?.whoAreYouAsPerson}
               />
+
               <DetalisFormatted
                 title="Message"
                 detail={viewApplicationDetails?.message}
               />
+              <br />
+              <div className="font-bold">Application Info</div>
               <DetalisFormatted
                 title="Resume Link"
                 detail={

@@ -344,10 +344,6 @@ const fetchLandlordPayments = async (req, res, next) => {
   }
 };
 
-//Problem Statement: Should I add voucher file in Finance collections or Budget collection
-//Will there be a voucher file uploaded
-//Fetch all approved budgets in voucher table
-
 const approveBudget = async (req, res, next) => {
   const logPath = "budget/BudgetLog";
   const logAction = "Approve Budget";

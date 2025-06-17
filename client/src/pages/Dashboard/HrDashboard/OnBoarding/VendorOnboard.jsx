@@ -63,8 +63,8 @@ const VendorOnboard = () => {
       toast.success(data.message);
     },
     onError: function (data) {
-      if(!department){
-         toast.error("Unauthorized, department doesn't match");
+      if (!department) {
+        toast.error("Unauthorized, department doesn't match");
       }
       toast.error(data.response.data.message);
     },
@@ -399,7 +399,7 @@ const VendorOnboard = () => {
                       />
                     )}
                   />
-          
+
                   <Controller
                     name="panIdNo"
                     control={control}
