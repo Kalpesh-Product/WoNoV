@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
@@ -33,7 +33,7 @@ const DepartmentInvoice = () => {
   });
 
   const invoiceCreationColumns = [
-    { headerName: "Sr. No", field: "srNo", width: 100 },
+    { headerName: "Sr No", field: "srNo", width: 100 },
     { headerName: "Department", field: "department", flex: 1 },
     { headerName: "Invoice Name", field: "invoiceName", flex: 1 },
     { headerName: "GSTIN", field: "gstIn", flex: 1 },
@@ -101,6 +101,7 @@ const DepartmentInvoice = () => {
       unit: unit,
     };
   });
+
 
   return (
     <div className="flex flex-col gap-4">

@@ -253,6 +253,8 @@ const DeptWiseBudget = () => {
     ); // Replace with Skeleton if you have one
   }
 
+
+
   return (
     <div className="flex flex-col gap-8">
       <YearlyGraph
