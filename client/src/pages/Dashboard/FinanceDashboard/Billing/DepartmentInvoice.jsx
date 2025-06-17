@@ -53,7 +53,6 @@ const DepartmentInvoice = () => {
             }}>
             <MdOutlineRemoveRedEye />
           </span>
-         
         </div>
       ),
     },
@@ -66,7 +65,6 @@ const DepartmentInvoice = () => {
     const building = unit.building || {};
     const departmentName = item.department?.name || "-";
 
-    
     return {
       ...item,
 
@@ -126,7 +124,7 @@ const DepartmentInvoice = () => {
           }}
           title="Invoice Details">
           <div className="space-y-3">
-            <div></div>
+            <div className="font-bold">Invoice Summary</div>
             <DetalisFormatted
               title="Expense Name"
               detail={viewDetails.expanseName || "-"}
