@@ -348,7 +348,24 @@ const fetchWeeklyUnits = async (req, res, next) => {
       .populate({
         path: "location",
         select: "unitName unitNo",
-        populate: { path: "building", select: "buildingName" },
+        populate: [
+          { path: "building", select: "buildingName" },
+          {
+            path: "adminLead",
+            select: "firstName middleName lastName departments",
+            populate: { path: "departments", select: "name" },
+          },
+          {
+            path: "maintenanceLead",
+            select: "firstName middleName lastName departments",
+            populate: { path: "departments", select: "name" },
+          },
+          {
+            path: "itLead",
+            select: "firstName middleName lastName departments",
+            populate: { path: "departments", select: "name" },
+          },
+        ],
       });
 
     const transformedData = weeklySchedules.map((schedule) => ({
@@ -434,12 +451,33 @@ const fetchPrimaryUnits = async (req, res, next) => {
       manager = `${foundManager.firstName} ${foundManager.lastName}`;
     }
 
+    const filteredUsers = foundUsers.map((user) => {
+      const dept =
+        name === "Administration"
+          ? "adminLead"
+          : name === "Maintenance"
+          ? "maintenanceLead"
+          : name === "IT"
+          ? "itLead"
+          : "";
+
+      const primaryUnit = units.find((unit) => {
+        return unit[dept] && unit[dept]._id.toString() === user._id.toString();
+      });
+
+      return {
+        ...user._doc,
+        primaryUnit: primaryUnit ? primaryUnit : {},
+        manager,
+      };
+    });
+
     const transformedData = units.map((unit) => ({
       ...unit._doc,
       manager,
     }));
 
-    res.status(200).json(transformedData);
+    res.status(200).json(filteredUsers);
   } catch (error) {
     next(error);
   }

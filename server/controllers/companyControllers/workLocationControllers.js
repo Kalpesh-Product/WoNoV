@@ -373,7 +373,27 @@ const fetchUnits = async (req, res, next) => {
     }
 
     locations = await Unit.find({ company })
-      .populate("building", "_id buildingName fullAddress")
+      .populate([
+        {
+          path: "building",
+          select: "_id buildingName fullAddress",
+        },
+        {
+          path: "adminLead",
+          select: "firstName middleName lastName departments",
+          populate: { path: "departments", select: "name" },
+        },
+        {
+          path: "maintenanceLead",
+          select: "firstName middleName lastName departments",
+          populate: { path: "departments", select: "name" },
+        },
+        {
+          path: "itLead",
+          select: "firstName middleName lastName departments",
+          populate: { path: "departments", select: "name" },
+        },
+      ])
       .lean()
       .exec();
 
