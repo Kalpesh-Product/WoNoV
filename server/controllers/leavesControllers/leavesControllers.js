@@ -55,11 +55,6 @@ const requestLeave = async (req, res, next) => {
       );
     }
 
-    // console.log("Leave type", leaveType);
-    // console.log("start date", startDate);
-    // console.log("end Date", endDate);
-    // console.log("Curr Date", currDate);
-
     // Ensure the leave starts in the future
     if (
       leaveType === "Privileged" &&

@@ -28,7 +28,7 @@ const YearWiseTable = ({
   onMonthChange,
   exportData,
   dropdownColumns = [],
-  dateFilter
+  dateFilter,
 }) => {
   const lastEmittedMonthRef = useRef(null);
   const fiscalMap = useMemo(() => {
@@ -201,7 +201,6 @@ const YearWiseTable = ({
         hideFilter={filteredData.length <= 9}
         search={filteredData.length >= 10}
         dateColumn={dateColumn}
-        enableDateFilter={dateFilter}
       />
     </div>
   );
