@@ -269,6 +269,7 @@ const PerformanceMonthly = () => {
           {!isCompletedLoading ? (
             <WidgetSection padding layout={1}>
               <MonthWiseTable
+              exportData={true}
                 tableTitle={`COMPLETED - MONTHLY KPA`}
                 key={completedEntries.length}
                 data={[
