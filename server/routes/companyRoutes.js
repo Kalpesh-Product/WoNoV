@@ -36,6 +36,7 @@ const {
   addUnit,
   fetchUnits,
   fetchBuildings,
+  assignPrimaryUnit,
 } = require("../controllers/companyControllers/workLocationControllers");
 const {
   createDepartment,
@@ -57,6 +58,7 @@ router.post("/add-leave-type", addLeaveType);
 router.post("/add-building", addBuilding);
 router.get("/buildings", fetchBuildings);
 router.post("/add-unit", addUnit);
+router.patch("/assign-primary-unit", assignPrimaryUnit);
 router.get("/fetch-units", fetchUnits);
 router.post("/bulk-add-locations", upload.single("units"), bulkInsertUnits);
 router.get("/get-company-data", getCompanyData);

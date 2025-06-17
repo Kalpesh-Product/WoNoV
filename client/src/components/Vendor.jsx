@@ -102,7 +102,7 @@ const Vendor = () => {
 
   const vendorColumns = [
     {
-      headerName: "S.No",
+      headerName: "Sr No",
       valueGetter: (params) => params.node.rowIndex + 1,
       width: 80,
     },
@@ -134,8 +134,8 @@ const Vendor = () => {
       width: 130,
       cellRenderer: (params) => (
         <Chip
-          label={params.value}
-          color={params.value === "Active" ? "success" : "default"}
+          label={params.value === "Inactive" ? "Inactive" : "Active"}
+          color={params.value === "Inactive" ? "default" : "success"}
           size="small"
         />
       ),

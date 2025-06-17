@@ -35,6 +35,7 @@ const websiteRoutes = require("./routes/websiteTemplatesRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const administrationRoutes = require("./routes/administrationRoutes");
 const financeRoutes = require("./routes/financeRoutes");
+const weeklyUnitRoutes = require("./routes/weeklyUnitRoutes");
 const getLogs = require("./controllers/logController");
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -85,6 +86,7 @@ app.use("/api/visitors", verifyJwt, visitorRoutes);
 app.use("/api/inventory", verifyJwt, inventoryRoutes);
 app.use("/api/administration", verifyJwt, administrationRoutes);
 app.use("/api/finance", verifyJwt, financeRoutes);
+app.use("/api/weekly-unit", verifyJwt, weeklyUnitRoutes);
 app.use("/api/logs/:path", verifyJwt, getLogs);
 
 app.all("*", (req, res) => {

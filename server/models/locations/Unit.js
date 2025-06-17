@@ -44,6 +44,18 @@ const unitSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    adminLead: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
+    itLead: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
+    maintenanceLead: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
   },
   { timestamps: true }
 );
