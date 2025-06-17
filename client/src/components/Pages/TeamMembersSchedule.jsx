@@ -140,7 +140,7 @@ const TeamMembersSchedule = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/administration/fetch-weekly-unit/${department._id}`
+          `/api/weekly-unit/get-primary-units?id=${department?._id}&name=${department?.name}`
         );
         return response.data;
       } catch (error) {
@@ -275,9 +275,9 @@ const TeamMembersSchedule = () => {
               return {
                 ...assignee,
                 srNo: index + 1,
-                name: `${assignee.employee.id.firstName} ${assignee.employee.id.lastName}`,
-                unitNo: assignee.location.unitNo,
-                substitutions: assignee.substitutions,
+                name: `${assignee.firstName} ${assignee.lastName}`,
+                // unitNo: assignee.location.unitNo,
+                // substitutions: assignee.substitutions,
               };
             })}
             columns={memberColumns}
