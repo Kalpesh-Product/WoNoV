@@ -26,7 +26,9 @@ const YearWiseTable = ({
   key,
   initialMonth, // ✅ NEW PROP
   onMonthChange,
+  exportData,
   dropdownColumns = [],
+  dateFilter
 }) => {
   const lastEmittedMonthRef = useRef(null);
   const fiscalMap = useMemo(() => {
@@ -122,12 +124,12 @@ const YearWiseTable = ({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center w-full justify-between">
-      <span className="text-title text-primary font-pmedium uppercase">
-        {tableTitle}
-      </span>
+        <span className="text-title text-primary font-pmedium uppercase">
+          {tableTitle}
+        </span>
         {buttonTitle && (
           <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
-        )}  
+        )}
       </div>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 w-full justify-center">
@@ -186,6 +188,7 @@ const YearWiseTable = ({
       <AgTable
         key={key}
         enableCheckbox={checkbox}
+        exportData={exportData}
         dropdownColumns={dropdownColumns}
         checkAll={checkAll}
         tableHeight={tableHeight ? tableHeight : 300}
@@ -197,6 +200,8 @@ const YearWiseTable = ({
         }))}
         hideFilter={filteredData.length <= 9}
         search={filteredData.length >= 10}
+        dateColumn={dateColumn}
+        enableDateFilter={dateFilter}
       />
     </div>
   );

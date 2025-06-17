@@ -22,6 +22,44 @@ const AccessGrant = () => {
 
   const departments = [
     {
+      departmentId: "finance",
+      departmentName: "Finance",
+      modules: [
+        {
+          name: "Budgets",
+          submodules: [
+            {
+              submoduleName: "Manage Budgets",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "View Expenses",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      departmentId: "sales",
+      departmentName: "Sales",
+      modules: [
+        {
+          name: "Budgets",
+          submodules: [
+            {
+              submoduleName: "Manage Budgets",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "View Expenses",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+    {
       departmentId: "hr",
       departmentName: "HR",
       modules: [
@@ -61,19 +99,20 @@ const AccessGrant = () => {
         },
       ],
     },
+
     {
-      departmentId: "finance",
-      departmentName: "Finance",
+      departmentId: "frontend",
+      departmentName: "Frontend",
       modules: [
         {
-          name: "Budgets",
+          name: "UI",
           submodules: [
             {
-              submoduleName: "Manage Budgets",
+              submoduleName: "UI Updates",
               grantedActions: ["View", "Edit"],
             },
             {
-              submoduleName: "View Expenses",
+              submoduleName: "Frontend Testing",
               grantedActions: ["View"],
             },
           ],
@@ -81,8 +120,221 @@ const AccessGrant = () => {
       ],
     },
     {
-      departmentId: "frontend",
-      departmentName: "Frontend",
+      departmentId: "admin",
+      departmentName: "Admin",
+      modules: [
+        {
+          name: "UI",
+          submodules: [
+            {
+              submoduleName: "UI Updates",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "Frontend Testing",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      departmentId: "maintenance",
+      departmentName: "Maintenance",
+      modules: [
+        {
+          name: "UI",
+          submodules: [
+            {
+              submoduleName: "UI Updates",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "Frontend Testing",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      departmentId: "it",
+      departmentName: "IT",
+      modules: [
+        {
+          name: "UI",
+          submodules: [
+            {
+              submoduleName: "UI Updates",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "Frontend Testing",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      departmentId: "cafe",
+      departmentName: "Cafe",
+      modules: [
+        {
+          name: "UI",
+          submodules: [
+            {
+              submoduleName: "UI Updates",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "Frontend Testing",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+  const appsSection = [
+    {
+      departmentId: "tickets",
+      departmentName: "Tickets",
+      modules: [
+        {
+          name: "UI",
+          submodules: [
+            {
+              submoduleName: "UI Updates",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "Frontend Testing",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      departmentId: "meetings",
+      departmentName: "Meetings",
+      modules: [
+        {
+          name: "UI",
+          submodules: [
+            {
+              submoduleName: "UI Updates",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "Frontend Testing",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      departmentId: "tasks",
+      departmentName: "Tasks",
+      modules: [
+        {
+          name: "UI",
+          submodules: [
+            {
+              submoduleName: "UI Updates",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "Frontend Testing",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      departmentId: "performance",
+      departmentName: "Performance",
+      modules: [
+        {
+          name: "UI",
+          submodules: [
+            {
+              submoduleName: "UI Updates",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "Frontend Testing",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      departmentId: "visitors",
+      departmentName: "Visitors",
+      modules: [
+        {
+          name: "UI",
+          submodules: [
+            {
+              submoduleName: "UI Updates",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "Frontend Testing",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+  const generalSection = [
+    {
+      departmentId: "calendar",
+      departmentName: "Calendar",
+      modules: [
+        {
+          name: "UI",
+          submodules: [
+            {
+              submoduleName: "UI Updates",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "Frontend Testing",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      departmentId: "access",
+      departmentName: "Access",
+      modules: [
+        {
+          name: "UI",
+          submodules: [
+            {
+              submoduleName: "UI Updates",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "Frontend Testing",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      departmentId: "profile",
+      departmentName: "Profile",
       modules: [
         {
           name: "UI",
@@ -128,8 +380,14 @@ const AccessGrant = () => {
                 height: "100%",
                 fontSize: "5rem",
               }}
-              src={user.email === "abrar@biznest.co.in" ? Abrar : undefined}>
-              {user.email !== "abrar@biznest.co.in" && user.name?.charAt(0)}
+              // src={user.email === "abrar@biznest.co.in" ? Abrar : undefined}>
+            >
+              {auth?.user?.profilePicture?.url ? (
+                // <img src={Abrar} alt="" />
+                <img src={auth?.user?.profilePicture?.url} alt="" />
+              ) : (
+                auth.user.firstName.charAt(0)
+              )}
             </Avatar>
           </div>
           <div className="flex flex-col gap-6">
@@ -178,8 +436,47 @@ const AccessGrant = () => {
       {/* Department Cards */}
       <div className="mt-6">
         <h2 className="text-title font-pmedium">Grant Access To</h2>
+        <br />
+        <br />
+        <div className="font-bold">Department Modules</div>
         <div className="grid grid-cols-3 gap-4 mt-4">
           {departments.map((department) => (
+            <div
+              key={department.departmentId}
+              className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
+                selectedDepartment?.departmentId === department.departmentId
+                  ? "border-default border-primary"
+                  : ""
+              }`}
+              // onClick={() => setSelectedDepartment(department)}
+            >
+              <span className="text-subtitle">{department.departmentName}</span>
+            </div>
+          ))}
+        </div>
+        <br />
+        <br />
+        <div className="font-bold">Apps</div>
+        <div className="grid grid-cols-3 gap-4 mt-4">
+          {appsSection.map((department) => (
+            <div
+              key={department.departmentId}
+              className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
+                selectedDepartment?.departmentId === department.departmentId
+                  ? "border-default border-primary"
+                  : ""
+              }`}
+              // onClick={() => setSelectedDepartment(department)}
+            >
+              <span className="text-subtitle">{department.departmentName}</span>
+            </div>
+          ))}
+        </div>
+        <br />
+        <br />
+        <div className="font-bold">General</div>
+        <div className="grid grid-cols-3 gap-4 mt-4">
+          {generalSection.map((department) => (
             <div
               key={department.departmentId}
               className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
