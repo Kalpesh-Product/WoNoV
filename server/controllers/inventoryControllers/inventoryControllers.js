@@ -1,7 +1,15 @@
+const { default: mongoose } = require("mongoose");
 const Inventory = require("../../models/inventory/Inventory");
+const CustomError = require("../../utils/customErrorlogs");
+const { createLog } = require("../../utils/moduleLogs");
 
 // Create Inventory Item
 const createInventory = async (req, res) => {
+  const logPath = "inventory/InventoryLog";
+  const logAction = "Add inventory";
+  const logSourceKey = "inventory";
+  const { user, ip, company } = req;
+
   try {
     const {
       department,
@@ -15,6 +23,15 @@ const createInventory = async (req, res) => {
       closingInventoryUnits,
       category,
     } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid) {
+      throw new CustomError(
+        "Invalid department Id provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
 
     const inventory = new Inventory({
       company: req.company, // coming from token
@@ -31,10 +48,27 @@ const createInventory = async (req, res) => {
     });
 
     const saved = await inventory.save();
-    res.status(201).json(saved);
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Meeting added successfully and updated room status",
+      status: "Success",
+      user: user,
+      ip: ip,
+      company: company,
+      sourceKey: logSourceKey,
+      sourceId: saved._id,
+      changes: inventory,
+    });
+
+    return res.status(201).json(saved);
   } catch (error) {
-    console.error("Create Inventory Error:", error);
-    res.status(500).json({ message: "Failed to create inventory", error });
+    error instanceof CustomError
+      ? next(error)
+      : next(
+          new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        );
   }
 };
 
@@ -64,13 +98,12 @@ const getInventories = async (req, res) => {
     if (category) query.category = category;
 
     const inventories = await Inventory.find(query).populate("department");
-    res.status(200).json(inventories);
+    return res.status(200).json(inventories);
   } catch (error) {
     console.error("Fetch Inventory Error:", error);
     res.status(500).json({ message: "Failed to fetch inventory", error });
   }
 };
-
 
 // Update Inventory
 const updateInventory = async (req, res) => {
@@ -95,7 +128,6 @@ const updateInventory = async (req, res) => {
     res.status(500).json({ message: "Failed to update inventory", error });
   }
 };
-
 
 module.exports = {
   createInventory,
