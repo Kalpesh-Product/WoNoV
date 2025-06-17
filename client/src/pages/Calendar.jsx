@@ -81,7 +81,13 @@ const Calender = () => {
       endTime: meeting.endTime,
       subject: meeting.subject,
       department: meeting.department,
-      participants: meeting.participants,
+      participants: meeting.participants?.map((p) =>
+        p.employeeName
+          ? p.employeeName
+          : p.firstname
+          ? `${p.firstName} ${p.lastName}`
+          : p.name
+      ),
       meetingStatus: meeting.meetingStatus,
       housekeepingStatus: meeting.housekeepingStatus,
       location: meeting.location,
@@ -118,6 +124,7 @@ const Calender = () => {
   const todaysEvents = getTodaysEvents();
 
   const handleEventClick = (clickInfo) => {
+    console.log("an event", clickInfo);
     const event = clickInfo.event;
     const type = event.extendedProps?.type.toLowerCase();
 
@@ -226,12 +233,14 @@ const Calender = () => {
                       return (
                         <div
                           key={index}
-                          className="flex gap-2 items-center mb-2">
+                          className="flex gap-2 items-center mb-2"
+                        >
                           <div
                             className="w-3 h-3 rounded-full mr-2"
                             style={{
                               backgroundColor: colors[event.extendedProps.type],
-                            }}></div>
+                            }}
+                          ></div>
                           <div className="flex flex-col">
                             <span className="text-content font-medium">
                               {event.title}
@@ -287,7 +296,8 @@ const Calender = () => {
                   "birthday"
                 ? "Birthday Details"
                 : ""
-            }>
+            }
+          >
             {drawerMode === "view" && selectedEvent && (
               <div>
                 <div className="flex flex-col gap-2">
@@ -424,8 +434,8 @@ const Calender = () => {
                         <span>:</span>
                         <span className="text-content   w-full justify-start pl-4">
                           {selectedEvent.extendedProps.participants
-                            .map((p) => `${p.firstName} ${p.lastName}`)
-                            .join(", ")}
+                            .map((p) => p)
+                            .join(",")}
                         </span>
                       </span>
                     </div>
