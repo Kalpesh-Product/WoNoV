@@ -18,12 +18,11 @@ import PageFrame from "./Pages/PageFrame";
 import { useQueryClient } from "@tanstack/react-query";
 import humanDate from "../utils/humanDateForamt";
 
-
 const Vendor = () => {
   const { auth } = useAuth();
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
-   const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const { control, handleSubmit, reset } = useForm();
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
@@ -33,21 +32,20 @@ const Vendor = () => {
   const [selectedCity, setSelectedCity] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
- 
+
   useEffect(() => {
     setCountries(Country.getAllCountries());
   }, []);
 
   const department = usePageDepartment();
-  let departmentName = department?.name || ""
+  let departmentName = department?.name || "";
 
-  if(department?.name === "Administration"){
-    departmentName = "Admin"
+  if (department?.name === "Administration") {
+    departmentName = "Admin";
   }
-  if(department?.name === "Tech"){
-    departmentName = "Frontend"
+  if (department?.name === "Tech") {
+    departmentName = "Frontend";
   }
-
 
   // Fetch states when a country is selected
   const handleCountryChange = (countryCode) => {
@@ -65,7 +63,6 @@ const Vendor = () => {
 
   const { mutate: vendorDetails, isPending } = useMutation({
     mutationFn: async (data) => {
-     
       const response = await axios.post(`/api/vendors/onboard-vendor`, {
         ...data,
         departmentId: department._id,
@@ -76,13 +73,13 @@ const Vendor = () => {
     onSuccess: function (data) {
       toast.success(data.message);
       queryClient.invalidateQueries({
-    queryKey: ["vendors", department._id],
-  });
+        queryKey: ["vendors", department._id],
+      });
     },
     onError: function (data) {
-          if(!department){
-                 toast.error("Unauthorized, department doesn't match");
-              }
+      if (!department) {
+        toast.error("Unauthorized, department doesn't match");
+      }
       toast.error(data.response.data.message);
     },
   });
@@ -92,14 +89,13 @@ const Vendor = () => {
     isPending: isVendorFetchingPending,
     error,
   } = useQuery({
-    queryKey: ["vendors",department?._id],
-    enabled: !! department?._id,
+    queryKey: ["vendors", department?._id],
+    enabled: !!department?._id,
     queryFn: async function () {
-      
       const response = await axios.get(
         `/api/vendors/get-vendors/${department._id}`
       );
-    
+
       return response.data;
     },
   });
@@ -167,32 +163,33 @@ const Vendor = () => {
     },
   ];
 
-  const rows =
-   isVendorFetchingPending ? [] : data.map((vendor, index) => ({
+  const rows = isVendorFetchingPending
+    ? []
+    : data.map((vendor, index) => ({
         id: index + 1,
-        vendorMongoId:vendor._id,
+        vendorMongoId: vendor._id,
         vendorID: vendor._id.slice(-4).toUpperCase(),
         vendorName: vendor.name,
-    address: vendor.address,
-    state: vendor.state,
-    country: vendor.country,
-    partyType: vendor.partyType,
-    status: vendor.status,
-    departmentId: vendor.departmentId,
-    company: vendor.company,
-    email: vendor.email,
-    mobile: vendor.mobile,
-    companyName: vendor.companyName,
-    onboardingDate: humanDate(vendor.onboardingDate),
-    city: vendor.city,
-    pinCode: vendor.pinCode,
-    panIdNo: vendor.panIdNo,
-    gstIn: vendor.gstIn,
-    ifscCode: vendor.ifscCode,
-    bankName: vendor.bankName,
-    branchName: vendor.branchName,
-    nameOnAccount: vendor.nameOnAccount,
-    accountNumber: vendor.accountNumber,
+        address: vendor.address,
+        state: vendor.state,
+        country: vendor.country,
+        partyType: vendor.partyType,
+        status: vendor.status,
+        departmentId: vendor.departmentId,
+        company: vendor.company,
+        email: vendor.email,
+        mobile: vendor.mobile,
+        companyName: vendor.companyName,
+        onboardingDate: humanDate(vendor.onboardingDate),
+        city: vendor.city,
+        pinCode: vendor.pinCode,
+        panIdNo: vendor.panIdNo,
+        gstIn: vendor.gstIn,
+        ifscCode: vendor.ifscCode,
+        bankName: vendor.bankName,
+        branchName: vendor.branchName,
+        nameOnAccount: vendor.nameOnAccount,
+        accountNumber: vendor.accountNumber,
       })) || [];
 
   const onSubmit = (data) => {
@@ -213,7 +210,7 @@ const Vendor = () => {
             </span>
           </div>
           <form onSubmit={handleSubmit(onSubmit)} className="">
-            <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 gap-4">
               <div>
                 {/* Section: Basic Information */}
                 <div className="py-4 border-b-default border-borderGray">
@@ -221,7 +218,7 @@ const Vendor = () => {
                     Basic Information
                   </span>
                 </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-4 gap-4 p-4">
                   <Controller
                     name="name"
                     control={control}
@@ -388,45 +385,6 @@ const Vendor = () => {
                       />
                     )}
                   />
-                  <Controller
-                    name="panIdNo"
-                    control={control}
-                    defaultValue=""
-                    rules={{
-                      pattern: {
-                        value: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
-                        message: "Invalid PAN (e.g., ABCDE1234F)",
-                      },
-                    }}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="PAN ID No"
-                        fullWidth
-                        error={!!error}
-                        helperText={error?.message}
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="companyName"
-                    control={control}
-                    defaultValue=""
-                    rules={{ required: "Company Name is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Company Name"
-                        fullWidth
-                        error={!!error}
-                        helperText={error?.message}
-                      />
-                    )}
-                  />
-              
-                  
                 </div>
               </div>
               <div>
@@ -436,7 +394,7 @@ const Vendor = () => {
                     Other Information
                   </span>
                 </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4">
                   {/* <Controller
                   name="assesseeOfOtherTerritory"
                   control={control}
@@ -514,10 +472,28 @@ const Vendor = () => {
                         size="small"
                         displayEmpty
                         error={!!error}>
-                        <MenuItem value="" disabled>Party Type</MenuItem>
+                        <MenuItem value="" disabled>
+                          Party Type
+                        </MenuItem>
                         <MenuItem value="Domestic">Domestic</MenuItem>
                         <MenuItem value="International">International</MenuItem>
                       </Select>
+                    )}
+                  />
+                  <Controller
+                    name="companyName"
+                    control={control}
+                    defaultValue=""
+                    rules={{ required: "Company Name is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Company Name"
+                        fullWidth
+                        error={!!error}
+                        helperText={error?.message}
+                      />
                     )}
                   />
 
@@ -543,6 +519,27 @@ const Vendor = () => {
                       />
                     )}
                   />
+                  <Controller
+                    name="panIdNo"
+                    control={control}
+                    defaultValue=""
+                    rules={{
+                      pattern: {
+                        value: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
+                        message: "Invalid PAN (e.g., ABCDE1234F)",
+                      },
+                    }}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="PAN ID No"
+                        fullWidth
+                        error={!!error}
+                        helperText={error?.message}
+                      />
+                    )}
+                  />
                 </div>
                 {/* Section: Bank Information */}
                 <div className="py-4 border-b-default border-borderGray">
@@ -550,7 +547,7 @@ const Vendor = () => {
                     Bank Information
                   </span>
                 </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4 p-4">
                   <Controller
                     name="ifscCode"
                     control={control}
@@ -669,30 +666,77 @@ const Vendor = () => {
         title="Vendor Details">
         <div className="flex flex-col gap-3">
           <>
-  <DetalisFormatted title="Vendor ID" detail={selectedVendor?.vendorID} />
-  <DetalisFormatted title="Vendor Name" detail={selectedVendor?.vendorName} />
-  <DetalisFormatted title="Address" detail={selectedVendor?.address} />
-  <DetalisFormatted title="City" detail={selectedVendor?.city} />
-  <DetalisFormatted title="State" detail={selectedVendor?.state} />
-  <DetalisFormatted title="Country" detail={selectedVendor?.country} />
-  <DetalisFormatted title="Pin Code" detail={selectedVendor?.pinCode} />
-  <DetalisFormatted title="Party Type" detail={selectedVendor?.partyType} />
-  <DetalisFormatted title="Status" detail={selectedVendor?.status} />
-  <DetalisFormatted title="Department ID" detail={selectedVendor?.departmentId} />
-  <DetalisFormatted title="Company ID" detail={selectedVendor?.company} />
-  <DetalisFormatted title="Company Name" detail={selectedVendor?.companyName} />
-  <DetalisFormatted title="Email" detail={selectedVendor?.email} />
-  <DetalisFormatted title="Mobile" detail={selectedVendor?.mobile} />
-  <DetalisFormatted title="Onboarding Date" detail={selectedVendor?.onboardingDate} />
-  <DetalisFormatted title="PAN ID No" detail={selectedVendor?.panIdNo} />
-  <DetalisFormatted title="GSTIN" detail={selectedVendor?.gstIn} />
-  <DetalisFormatted title="IFSC Code" detail={selectedVendor?.ifscCode} />
-  <DetalisFormatted title="Bank Name" detail={selectedVendor?.bankName} />
-  <DetalisFormatted title="Branch Name" detail={selectedVendor?.branchName} />
-  <DetalisFormatted title="Name on Account" detail={selectedVendor?.nameOnAccount} />
-  <DetalisFormatted title="Account Number" detail={selectedVendor?.accountNumber} />
-</>
-
+            <DetalisFormatted
+              title="Vendor ID"
+              detail={selectedVendor?.vendorID}
+            />
+            <DetalisFormatted
+              title="Vendor Name"
+              detail={selectedVendor?.vendorName}
+            />
+            <DetalisFormatted
+              title="Address"
+              detail={selectedVendor?.address}
+            />
+            <DetalisFormatted title="City" detail={selectedVendor?.city} />
+            <DetalisFormatted title="State" detail={selectedVendor?.state} />
+            <DetalisFormatted
+              title="Country"
+              detail={selectedVendor?.country}
+            />
+            <DetalisFormatted
+              title="Pin Code"
+              detail={selectedVendor?.pinCode}
+            />
+            <DetalisFormatted
+              title="Party Type"
+              detail={selectedVendor?.partyType}
+            />
+            <DetalisFormatted title="Status" detail={selectedVendor?.status} />
+            <DetalisFormatted
+              title="Department ID"
+              detail={selectedVendor?.departmentId}
+            />
+            <DetalisFormatted
+              title="Company ID"
+              detail={selectedVendor?.company}
+            />
+            <DetalisFormatted
+              title="Company Name"
+              detail={selectedVendor?.companyName}
+            />
+            <DetalisFormatted title="Email" detail={selectedVendor?.email} />
+            <DetalisFormatted title="Mobile" detail={selectedVendor?.mobile} />
+            <DetalisFormatted
+              title="Onboarding Date"
+              detail={selectedVendor?.onboardingDate}
+            />
+            <DetalisFormatted
+              title="PAN ID No"
+              detail={selectedVendor?.panIdNo}
+            />
+            <DetalisFormatted title="GSTIN" detail={selectedVendor?.gstIn} />
+            <DetalisFormatted
+              title="IFSC Code"
+              detail={selectedVendor?.ifscCode}
+            />
+            <DetalisFormatted
+              title="Bank Name"
+              detail={selectedVendor?.bankName}
+            />
+            <DetalisFormatted
+              title="Branch Name"
+              detail={selectedVendor?.branchName}
+            />
+            <DetalisFormatted
+              title="Name on Account"
+              detail={selectedVendor?.nameOnAccount}
+            />
+            <DetalisFormatted
+              title="Account Number"
+              detail={selectedVendor?.accountNumber}
+            />
+          </>
         </div>
       </MuiModal>
     </div>

@@ -439,30 +439,32 @@ const HrDashboard = () => {
     { id: "start", label: "Date", align: "left" },
     { id: "day", label: "Day", align: "left" },
   ];
-//------------------Birthdays----------//
+  //------------------Birthdays----------//
 
-const getUpcomingBirthdays = (employeeList) => {
-  const today = dayjs();
+  const getUpcomingBirthdays = (employeeList) => {
+    const today = dayjs();
 
-  return employeeList
-    .map((emp) => {
-      const birthDate = dayjs(emp.dateOfBirth);
+    return employeeList
+      .map((emp) => {
+        const birthDate = dayjs(emp.dateOfBirth);
 
-      return {
-        title: `${emp.firstName} ${emp.lastName}`,
-        start: birthDate
-          .year(today.year()) // keep the year consistent
-          .format("YYYY-MM-DD"),
-      };
-    })
-    .filter((item) => {
-      const birthday = dayjs(item.start);
-      return birthday.month() === today.month(); // filter only current month
-    });
-};
-const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data);
+        return {
+          title: `${emp.firstName} ${emp.lastName}`,
+          start: birthDate
+            .year(today.year()) // keep the year consistent
+            .format("YYYY-MM-DD"),
+        };
+      })
+      .filter((item) => {
+        const birthday = dayjs(item.start);
+        return birthday.month() === today.month(); // filter only current month
+      });
+  };
+  const birthdays = getUpcomingBirthdays(
+    usersQuery.isLoading ? [] : usersQuery.data
+  );
 
-//------------------Birthdays----------//
+  //------------------Birthdays----------//
 
   const columns2 = [
     { id: "id", label: "Sr No", align: "left" },
@@ -475,7 +477,9 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
     queryKey: ["holidayEvents"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/events/all-events?thisMonth=true");
+        const response = await axios.get(
+          "/api/events/all-events?thisMonth=true"
+        );
         const filteredEvents = response.data.filter(
           (event) => event.extendedProps.type !== "birthday"
         );
@@ -590,7 +594,11 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
     .reduce((sum, item) => (item.sqft || 0) + sum, 0);
   //--------------------UnitData -----------------------//
   //--------------------New Data card data -----------------------//
-  console.log(hrFinance.filter((item)=>item.expanseType === 'salary').reduce((sum,item)=>(((item.actualAmount || 0)+sum)/12),0));
+  console.log(
+    hrFinance
+      .filter((item) => item.expanseType === "salary")
+      .reduce((sum, item) => ((item.actualAmount || 0) + sum) / 12, 0)
+  );
   const HrExpenses = {
     cardTitle: "Expenses",
     // timePeriod: "FY 2024-25",
@@ -610,11 +618,15 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
         value: "N/A",
         route: "finance",
       },
-      { title: "Exit Head Count", value: "2", route:"employee/view-employees"},
+      {
+        title: "Exit Head Count",
+        value: "2",
+        route: "employee/view-employees",
+      },
       {
         title: "Per Sq. Ft.",
         value: `INR ${inrFormat(totalUtilised / totalSqft)}`,
-        route:"finance"
+        route: "finance",
       },
     ],
   };
@@ -630,7 +642,7 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
       },
       {
         title: "Average Salary",
-        value: "",
+        value: "INR 0",
         route: "employee/view-employees",
       },
       {
@@ -720,8 +732,7 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection normalCase layout={1} padding>
             <YearlyGraph
               data={expenseRawSeries}
@@ -778,8 +789,7 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <YearlyGraph
             data={tasksData}
             options={tasksOptions}
@@ -795,7 +805,7 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
       layout: 2,
       heading: "Site Visitor Analytics",
       widgets: [
-        <WidgetSection title={"Employee Gender Distribution"} border >
+        <WidgetSection title={"Employee Gender Distribution"} border>
           <PieChartMui
             percent={true} // Enable percentage display
             title={"Gender Distribution"}
@@ -805,7 +815,7 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
             // width={"100%"}
           />
         </WidgetSection>,
-        <WidgetSection layout={1} border title={"City Wise Employees"} >
+        <WidgetSection layout={1} border title={"City Wise Employees"}>
           {!usersQuery.isLoading ? (
             <PieChartMui
               percent={true} // Enable percentage display
@@ -827,7 +837,7 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
             Title="Current Months Birthday List"
             columns={columns}
             rows={[
-              ...[ ...birthdays].map((bd, index) => {
+              ...[...birthdays].map((bd, index) => {
                 const date = dayjs(bd.start);
                 return {
                   id: index + 1,
@@ -868,16 +878,16 @@ const birthdays = getUpcomingBirthdays(usersQuery.isLoading? []:usersQuery.data)
   return (
     <>
       <div>
-      <div className="flex flex-col gap-4">
-        {hrWidgets.map((widget,index)=>(
-          <LazyDashboardWidget
-          key={index}
-          layout={widget.layout}
-          widgets={widget.widgets}
-          />
-        ))}
+        <div className="flex flex-col gap-4">
+          {hrWidgets.map((widget, index) => (
+            <LazyDashboardWidget
+              key={index}
+              layout={widget.layout}
+              widgets={widget.widgets}
+            />
+          ))}
+        </div>
       </div>
-    </div>
     </>
   );
 };

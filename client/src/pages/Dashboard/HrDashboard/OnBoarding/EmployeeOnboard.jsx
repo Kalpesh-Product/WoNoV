@@ -56,91 +56,94 @@ const EmployeeOnboard = () => {
                 </span>
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-                <Controller
-                  name="firstName"
-                  control={control}
-                  rules={{ required: "First Name is Required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="First Name"
-                      fullWidth
-                      helperText={errors?.firstName?.message}
-                      error={!!errors.firstName}
-                    />
-                  )}
-                />
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4  ">
+                  <Controller
+                    name="firstName"
+                    control={control}
+                    rules={{ required: "First Name is Required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="First Name"
+                        fullWidth
+                        helperText={errors?.firstName?.message}
+                        error={!!errors.firstName}
+                      />
+                    )}
+                  />
 
-                <Controller
-                  name="middleName"
-                  control={control}
-                  rules={{ required: "Middle Name is Required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Middle Name"
-                      fullWidth
-                      helperText={errors?.middleName?.message}
-                      error={!!errors.middleName}
-                    />
-                  )}
-                />
-                <Controller
-                  name="lastName"
-                  control={control}
-                  rules={{ required: "Last Name is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Last Name"
-                      fullWidth
-                      helperText={errors?.lastName?.message}
-                      error={!!errors.lastName}
-                    />
-                  )}
-                />
+                  <Controller
+                    name="middleName"
+                    control={control}
+                    rules={{ required: "Middle Name is Required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Middle Name"
+                        fullWidth
+                        helperText={errors?.middleName?.message}
+                        error={!!errors.middleName}
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="lastName"
+                    control={control}
+                    rules={{ required: "Last Name is required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Last Name"
+                        fullWidth
+                        helperText={errors?.lastName?.message}
+                        error={!!errors.lastName}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4  ">
+                  <Controller
+                    name="gender"
+                    control={control}
+                    rules={{ required: "Gender is required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Gender"
+                        select
+                        fullWidth
+                        helperText={errors?.gender?.message}
+                        error={!!errors.gender}>
+                        <MenuItem value="" disabled>
+                          Select a Gender
+                        </MenuItem>
+                        <MenuItem value="male">Male</MenuItem>
+                        <MenuItem value="female">Female</MenuItem>
+                      </TextField>
+                    )}
+                  />
 
-                <Controller
-                  name="gender"
-                  control={control}
-                  rules={{ required: "Gender is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Gender"
-                      select
-                      fullWidth
-                      helperText={errors?.gender?.message}
-                      error={!!errors.gender}>
-                      <MenuItem value="" disabled>
-                        Select a Gender
-                      </MenuItem>
-                      <MenuItem value="male">Male</MenuItem>
-                      <MenuItem value="female">Female</MenuItem>
-                    </TextField>
-                  )}
-                />
-
-                <Controller
-                  name="dob"
-                  control={control}
-                  rules={{ required: "Date of Birth is required" }}
-                  render={({ field }) => (
-                    <DesktopDatePicker
-                      inputFormat=""
-                      slotProps={{ textField: { size: "small" } }}
-                      label="Date of Birth"
-                      {...field}
-                      renderInput={(params) => (
-                        <TextField fullWidth {...params} />
-                      )}
-                    />
-                  )}
-                />
+                  <Controller
+                    name="dob"
+                    control={control}
+                    rules={{ required: "Date of Birth is required" }}
+                    render={({ field }) => (
+                      <DesktopDatePicker
+                        inputFormat=""
+                        slotProps={{ textField: { size: "small" } }}
+                        label="Date of Birth"
+                        {...field}
+                        renderInput={(params) => (
+                          <TextField fullWidth {...params} />
+                        )}
+                      />
+                    )}
+                  />
+                </div>
                 <Controller
                   name="mobilePhone"
                   control={control}
@@ -162,6 +165,113 @@ const EmployeeOnboard = () => {
                     />
                   )}
                 />
+                <Controller
+                  name="email"
+                  control={control}
+                  rules={{ required: "Email is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Email"
+                      fullWidth
+                      helperText={errors?.lastName?.message}
+                      error={!!errors.lastName}
+                    />
+                  )}
+                />
+              </div>
+            </div>
+            <div>
+              {/* Section: Home Address Information */}
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">
+                  Home Address Information
+                </span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                <Controller
+                  name="addressLine1"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Address Line 1"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="addressLine2"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Address Line 2"
+                      fullWidth
+                    />
+                  )}
+                />
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 ">
+                  <Controller
+                    name="country"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Country"
+                        fullWidth
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="state"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="State"
+                        fullWidth
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="city"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="City"
+                        fullWidth
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="pinCode"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Pin Code"
+                        fullWidth
+                      />
+                    )}
+                  />
+                </div>
               </div>
             </div>
             <div>
@@ -173,58 +283,60 @@ const EmployeeOnboard = () => {
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
                 {/* Start Date - Date Picker */}
-                <Controller
-                  name="startDate"
-                  control={control}
-                  rules={{ required: "Start Date is required" }}
-                  render={({ field }) => (
-                    <DesktopDatePicker
-                      inputFormat="DD/MM/YYYY"
-                      label="Start Date"
-                      {...field}
-                      slotProps={{
-                        textField: {
-                          size: "small",
-                          fullWidth: true,
-                          error: !!errors.startDate,
-                          helperText: errors?.startDate?.message,
-                        },
-                      }}
-                    />
-                  )}
-                />
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4 ">
+                  <Controller
+                    name="startDate"
+                    control={control}
+                    rules={{ required: "Start Date is required" }}
+                    render={({ field }) => (
+                      <DesktopDatePicker
+                        inputFormat="DD/MM/YYYY"
+                        label="Start Date"
+                        {...field}
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                            error: !!errors.startDate,
+                            helperText: errors?.startDate?.message,
+                          },
+                        }}
+                      />
+                    )}
+                  />
 
-                <Controller
-                  name="workLocation"
-                  control={control}
-                  rules={{ required: "Work Location is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Work Location"
-                      fullWidth
-                      helperText={errors?.workLocation?.message}
-                      error={!!errors.workLocation}
-                    />
-                  )}
-                />
+                  <Controller
+                    name="workLocation"
+                    control={control}
+                    rules={{ required: "Work Location is required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Work Location"
+                        fullWidth
+                        helperText={errors?.workLocation?.message}
+                        error={!!errors.workLocation}
+                      />
+                    )}
+                  />
 
-                <Controller
-                  name="employeeType"
-                  control={control}
-                  rules={{ required: "Employee Type is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Employee Type"
-                      fullWidth
-                      helperText={errors?.employeeType?.message}
-                      error={!!errors.employeeType}
-                    />
-                  )}
-                />
+                  <Controller
+                    name="employeeType"
+                    control={control}
+                    rules={{ required: "Employee Type is required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Employee Type"
+                        fullWidth
+                        helperText={errors?.employeeType?.message}
+                        error={!!errors.employeeType}
+                      />
+                    )}
+                  />
+                </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <Controller
@@ -259,38 +371,39 @@ const EmployeeOnboard = () => {
                     )}
                   />
                 </div>
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 ">
+                  <Controller
+                    name="jobTitle"
+                    control={control}
+                    rules={{ required: "Job Title is required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Job Title"
+                        fullWidth
+                        helperText={errors?.jobTitle?.message}
+                        error={!!errors.jobTitle}
+                      />
+                    )}
+                  />
 
-                <Controller
-                  name="jobTitle"
-                  control={control}
-                  rules={{ required: "Job Title is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Job Title"
-                      fullWidth
-                      helperText={errors?.jobTitle?.message}
-                      error={!!errors.jobTitle}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="jobDescription"
-                  control={control}
-                  rules={{ required: "Job Description is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Job Description"
-                      fullWidth
-                      helperText={errors?.jobDescription?.message}
-                      error={!!errors.jobDescription}
-                    />
-                  )}
-                />
+                  <Controller
+                    name="jobDescription"
+                    control={control}
+                    rules={{ required: "Job Description is required" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Job Description"
+                        fullWidth
+                        helperText={errors?.jobDescription?.message}
+                        error={!!errors.jobDescription}
+                      />
+                    )}
+                  />
+                </div>
               </div>
             </div>
             <div>
@@ -370,123 +483,7 @@ const EmployeeOnboard = () => {
                 </div>
               </div>
             </div>
-            <div>
-              {/* Section: KYC Information */}
-              <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">KYC</span>
-              </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                <Controller
-                  name="aadharID"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Aadhar ID"
-                      fullWidth
-                    />
-                  )}
-                />
 
-                <Controller
-                  name="pan"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField {...field} size="small" label="PAN" fullWidth />
-                  )}
-                />
-
-                <Controller
-                  name="pfAcNo"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="PF A/c No"
-                      fullWidth
-                    />
-                  )}
-                />
-              </div>
-            </div>
-            <div>
-              {/* Section: Home Address Information */}
-              <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">
-                  Home Address Information
-                </span>
-              </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                <Controller
-                  name="addressLine1"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Address Line 1"
-                      fullWidth
-                    />
-                  )}
-                />
-                <Controller
-                  name="addressLine2"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Address Line 2"
-                      fullWidth
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="state"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="State"
-                      fullWidth
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="city"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField {...field} size="small" label="City" fullWidth />
-                  )}
-                />
-
-                <Controller
-                  name="pinCode"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Pin Code"
-                      fullWidth
-                    />
-                  )}
-                />
-              </div>
-            </div>
             <div>
               {/* Section: Payroll Information */}
               <div className="py-4 border-b-default border-borderGray">
@@ -652,6 +649,50 @@ const EmployeeOnboard = () => {
                       {...field}
                       size="small"
                       label="AccountNumber"
+                      fullWidth
+                    />
+                  )}
+                />
+              </div>
+            </div>
+            <div>
+              {/* Section: KYC Information */}
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">KYC</span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                <Controller
+                  name="aadharID"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Aadhar ID"
+                      fullWidth
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="pan"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField {...field} size="small" label="PAN" fullWidth />
+                  )}
+                />
+
+                <Controller
+                  name="pfAcNo"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="PF A/c No"
                       fullWidth
                     />
                   )}
