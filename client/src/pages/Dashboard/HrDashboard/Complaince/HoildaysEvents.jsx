@@ -1,5 +1,5 @@
 import { useState } from "react";
-import AgTable from "../../../../components/AgTable";
+import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -19,7 +19,7 @@ const HoildaysEvents = ({ title }) => {
   const [localEvents, setLocalEvents] = useState([]);
 
   const columns = [
-    { field: "id", headerName: "SR No", width: 100 },
+    { field: "srNo", headerName: "SR No", width: 100 },
     { field: "title", headerName: "Holiday", flex: 1 },
     { field: "day", headerName: "Day" },
     { field: "start", headerName: "Date" },
@@ -36,12 +36,12 @@ const HoildaysEvents = ({ title }) => {
 
   const combinedEvents = [...holidayEvents, ...localEvents].map(
     (holiday, index) => {
-      const date = dayjs(holiday.start);
+      const date = (holiday.start);
       return {
         id: index + 1,
         title: holiday.title,
         day: date.format("dddd"), // e.g., "Monday"
-        start: date.format("DD-MM-YYYY"),
+        start: date,
       };
     }
   );
@@ -66,9 +66,10 @@ const HoildaysEvents = ({ title }) => {
           <span className="text-title font-pmedium text-primary">{title}</span>
         </div>
 
-        <AgTable
+        <YearWiseTable
           key={combinedEvents.length}
           search={true}
+          dateColumn={"start"}
           tableTitle={"Holidays"}
           columns={columns}
           buttonTitle="Add Holiday"

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -62,6 +62,7 @@ const VoucherForm = () => {
     pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
     pdf.save("Voucher_Form.pdf");
   };
+
 
   return (
     <div className="flex flex-col gap-4">

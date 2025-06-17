@@ -121,8 +121,7 @@ const HrPayment = () => {
                           fontSize: "0.875rem",
                           fontWeight: "bold",
                           textTransform: "capitalize",
-                        }}
-                      >
+                        }}>
                         {status}
                       </span>
                     }
@@ -147,8 +146,9 @@ const HrPayment = () => {
                     <div key={index} className="flex gap-2 items-start mb-2">
                       <div
                         className="w-3 h-3 rounded-full mt-[0.3rem]"
-                        style={{ backgroundColor: event.backgroundColor }}
-                      ></div>
+                        style={{
+                          backgroundColor: event.backgroundColor,
+                        }}></div>
                       <div className="flex flex-col">
                         <span className="text-content font-medium">
                           {event.title}
@@ -207,36 +207,35 @@ const HrPayment = () => {
           selectedEvent
             ? statusColorMap[selectedEvent.extendedProps.status]
             : ""
-        }
-      >
+        }>
         {selectedEvent && (
           <div>
             <div className="flex flex-col gap-2">
               <span className="text-content flex items-center">
                 <span className="w-[50%]">Title</span>
                 <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4">
+                <span className="text-content w-full justify-start pl-4">
                   {selectedEvent.title}
                 </span>
               </span>
               <span className="text-content flex items-center">
                 <span className="w-[50%]">Date</span>
                 <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4">
+                <span className="text-content  w-full justify-start pl-4">
                   {dayjs(selectedEvent.start).format("YYYY-MM-DD")}
                 </span>
               </span>
               <span className="text-content flex items-center">
                 <span className="w-[50%]">Status</span>
                 <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4 capitalize">
+                <span className="text-content  w-full justify-start pl-4 capitalize">
                   {selectedEvent.extendedProps.status}
                 </span>
               </span>
               <span className="text-content flex items-center">
                 <span className="w-[50%]">Projected Amount</span>
                 <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4">
+                <span className="text-content  w-full justify-start pl-4">
                   {selectedEvent.extendedProps?.projectedAmount}
                   &nbsp;INR
                 </span>
@@ -244,7 +243,7 @@ const HrPayment = () => {
               <span className="text-content flex items-center">
                 <span className="w-[50%]">Actual Amount</span>
                 <span>:</span>
-                <span className="text-content font-pmedium w-full justify-start pl-4">
+                <span className="text-content  w-full justify-start pl-4">
                   {selectedEvent.extendedProps?.actualAmount || 0}
                   &nbsp;INR
                 </span>
