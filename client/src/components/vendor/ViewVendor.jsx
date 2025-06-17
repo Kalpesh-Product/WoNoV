@@ -1,7 +1,8 @@
-import { Avatar, Button, Chip, TextField } from "@mui/material";
+import { Avatar, Button, Chip, MenuItem, Select, TextField } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { Country, State, City } from "country-state-city";
 import { useLocation } from "react-router-dom";
 import PrimaryButton from "../PrimaryButton";
 import { useMutation } from "@tanstack/react-query";
@@ -10,6 +11,12 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 const ViewVendor = () => {
  const axios = useAxiosPrivate()
  const initialValuesRef = React.useRef({});
+   const [countries, setCountries] = useState([]);
+   const [states, setStates] = useState([]);
+   const [cities, setCities] = useState([]);
+   const [selectedCountry, setSelectedCountry] = useState("");
+   const [selectedState, setSelectedState] = useState("");
+   const [selectedCity, setSelectedCity] = useState("");
   const { control, handleSubmit, reset, setValue, getValues } = useForm();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -67,6 +74,14 @@ vendorMongoId: state.vendorMongoId,
   accountNumber: state.accountNumber,
   id: state.id,
        };
+
+        const statesList = State.getStatesOfCountry(state.country);
+    const citiesList = City.getCitiesOfState(state.country, state.state);
+    setStates(statesList);
+    setCities(citiesList);
+    setSelectedCountry(state.country);
+    setSelectedState(state.state);
+    setSelectedCity(state.city);
       reset(mapping);
   initialValuesRef.current = mapping;
     }
@@ -100,6 +115,20 @@ const onSubmit = (data) => {
   updateVendor({ vendorMongoId: data.vendorMongoId, ...updatedFields });
 };
 
+ // Fetch states when a country is selected
+  const handleCountryChange = (countryCode) => {
+    setSelectedCountry(countryCode);
+    setStates(State.getStatesOfCountry(countryCode));
+  };
+  const handleStateChange = (state) => {
+    setSelectedState(state);
+    setCities(City.getCitiesOfState(selectedCountry, state));
+  };
+  const handleCityChange = (city) => {
+    setSelectedCity(city);
+    // setCities(City.getCitiesOfState(city));
+  };
+
 
   const handleReset = () => {
     reset();
@@ -110,9 +139,6 @@ const onSubmit = (data) => {
     "email",
     "mobile",
     "address",
-    "country",
-    "state",
-    "city",
     "pinCode",
     "panIdNo",
     "companyName",
@@ -120,7 +146,6 @@ const onSubmit = (data) => {
   ];
 
   const gstFields = [
-      "partyType",
       "gstIn",
   ];
 
@@ -131,6 +156,12 @@ const onSubmit = (data) => {
     "nameOnAccount",
     "accountNumber",
   ]
+
+   useEffect(() => {
+      setCountries(Country.getAllCountries());
+    
+    }, []);
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -168,7 +199,7 @@ const onSubmit = (data) => {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                  <div className="grid grid-cols sm:grid-cols-1 lg:grid-cols-1 gap-4 p-4">
                     {mailingFields.map((fieldKey) => (
                       <div key={fieldKey}>
                         {isEditing ? (
@@ -208,7 +239,115 @@ const onSubmit = (data) => {
                       </div>
                     ))}
                   </div>
+                  <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4"> 
+
+                    {
+                      isEditing ? 
+                      <>
+                       <Controller
+                    name="country"
+                    control={control}
+                    defaultValue=""
+                    render={({ field, fieldState: { error } }) => (
+                      <Select
+                        {...field}
+                        fullWidth
+                        displayEmpty
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleCountryChange(e.target.value);
+                        }}
+                        size="small"
+                        error={!!error}>
+                        <MenuItem value="">Select Country</MenuItem>
+                        {countries.map((country) => (
+                          <MenuItem
+                            key={country.isoCode}
+                            value={country.isoCode}>
+                            {country.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    )}
+                  />
+                               <Controller
+                                      name="state"
+                                      control={control}
+                                      defaultValue=""
+  
+                                      render={({ field, fieldState: { error } }) => (
+                                        <Select
+                                          {...field}
+                                          fullWidth
+                                          displayEmpty
+                                          onChange={(e) => {
+                                            field.onChange(e);
+                                            handleStateChange(e.target.value);
+                                          }}
+                                          size="small"
+                                          disabled={!selectedCountry}
+                                          error={!!error}>
+                                          <MenuItem value="">Select State</MenuItem>
+                                          {states.map((state) => (
+                                            <MenuItem key={state.isoCode} value={state.isoCode}>
+                                              {state.name}
+                                            </MenuItem>
+                                          ))}
+                                        </Select>
+                                      )}
+                                    />
+                                    <Controller
+                                      name="city"
+                                      control={control}
+                                      defaultValue=""
+                                      render={({ field, fieldState: { error } }) => (
+                                        <Select
+                                          {...field}
+                                          fullWidth
+                                          displayEmpty
+                                          onChange={(e) => {
+                                            field.onChange(e);
+                  
+                                            handleCityChange(e.target.value);
+                                          }}
+                                          size="small"
+                                          disabled={!selectedState}
+                                          error={!!error}>
+                                          <MenuItem value="">Select City</MenuItem>
+                                          {cities.map((city) => (
+                                            <MenuItem key={city.isoCode} value={city.name}>
+                                              {city.name}
+                                            </MenuItem>
+                                          ))}
+                                        </Select>
+                                      )}
+                                    />
+                                    </> : 
+                                    ["country","state","city"].map((fieldKey)=>
+                                      <div className="py-2 flex justify-between items-start gap-2">
+                            <div className="w-[100%] justify-start flex">
+                              <span className="font-pmedium text-gray-600 text-content">
+                                {fieldKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase())}
+                              </span>
+                            </div>
+                            <div>
+                              <span>:</span>
+                            </div>
+                            <div className="w-full">
+                              <span className="text-gray-500">
+                                {getValues(fieldKey)}
+                              </span>
+                            </div>
+                          </div>
+                          )
+                    }
+                  
+                  </div>
                 </div>
+
+                
 
                 <div>
                   <div className="pb-4 border-b-default border-borderGray">
@@ -256,7 +395,46 @@ const onSubmit = (data) => {
                         )}
                       </div>
                     ))}
+                  
+                       {isEditing ? (
+                          <Controller
+                                             name="partyType"
+                                             control={control}
+                                             defaultValue=""
+                                             rules={{ required: "Party Type is required" }}
+                                             render={({ field, fieldState: { error } }) => (
+                                               <Select
+                                                 {...field}
+                                                 size="small"
+                                                 displayEmpty
+                                                 error={!!error}>
+                                                 <MenuItem value="" disabled>Party Type</MenuItem>
+                                                 <MenuItem value="Domestic">Domestic</MenuItem>
+                                                 <MenuItem value="International">International</MenuItem>
+                                               </Select>
+                                             )}
+                                           />
+                        ) : (
+                          <div className="py-2 flex justify-between items-start gap-2">
+                            <div className="w-[35%] justify-start flex">
+                              <span className="font-pmedium text-gray-600 text-content">
+                                Party Type
+                              </span>
+                            </div>
+                            <div>
+                              <span>:</span>
+                            </div>
+                            <div className="w-full">
+                              <span className="text-gray-500">
+                                {state.partyType}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                     
                   </div>
+
+                  
 
                 </div>
 

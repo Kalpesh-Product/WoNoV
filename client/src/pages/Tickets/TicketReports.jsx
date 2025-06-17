@@ -104,7 +104,6 @@ const TicketReports = () => {
             <YearWiseTable
               search={true}
               exportData={true}
-              dateFilter={true}
               tableTitle={"Ticket Reports"}
               data={[
                 ...ticketsData.map((item, index) => ({
@@ -148,7 +147,8 @@ const TicketReports = () => {
       <MuiModal
         open={detailsModal}
         onClose={() => setDetailsModal(false)}
-        title={"Ticket Details"}>
+        title={"Ticket Details"}
+      >
         {!isLoading && selectedMeeting ? (
           <div className="w-full grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted

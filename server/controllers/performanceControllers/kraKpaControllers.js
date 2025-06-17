@@ -10,8 +10,6 @@ const createDeptBasedTask = async (req, res, next) => {
   const logPath = "performances/PerformanceLog";
   const logAction = "Create Task";
   const logSourceKey = "kraKpaRoles";
-
-  console.log("error");
   try {
     const { task, taskType, department, dueDate, assignedDate, kpaDuration } =
       req.body;

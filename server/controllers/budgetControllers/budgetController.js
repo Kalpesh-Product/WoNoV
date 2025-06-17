@@ -47,9 +47,9 @@ const requestBudget = async (req, res, next) => {
       );
     }
 
-    if (!req.file) {
+    if (expanseType === "Reimbursement" && !req.file) {
       throw new CustomError(
-        "Voucher is required",
+        "Voucher file isn't uploaded",
         logPath,
         logAction,
         logSourceKey
@@ -323,7 +323,6 @@ const fetchLandlordPayments = async (req, res, next) => {
 
     if (unit) {
       const foundUnit = await Unit.findOne({ unitNo: unit });
-      console.log(foundUnit);
 
       if (!foundUnit) {
         return res.status(400).json({ message: "No unit found" });
@@ -410,7 +409,7 @@ const approveFinanceBudget = async (req, res, next) => {
       modeOfPayment,
       chequeNo,
       chequeDate,
-      amount,
+      advanceAmount,
       expectedDateInvoice,
       particulars,
     } = req.body;
@@ -421,7 +420,7 @@ const approveFinanceBudget = async (req, res, next) => {
       modeOfPayment,
       chequeNo,
       chequeDate,
-      amount,
+      advanceAmount,
       expectedDateInvoice,
     };
 
@@ -503,7 +502,7 @@ const approveFinanceBudget = async (req, res, next) => {
       fSrNo,
       chequeNo,
       chequeDate,
-      amount,
+      advanceAmount,
       expectedDateInvoice,
       modeOfPayment,
       particulars: JSON.parse(particulars),
@@ -532,7 +531,7 @@ const approveFinanceBudget = async (req, res, next) => {
         fSrNo,
         chequeNo,
         chequeDate,
-        amount,
+        advanceAmount,
         expectedDateInvoice,
         modeOfPayment,
         particulars,
