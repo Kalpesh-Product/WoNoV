@@ -323,7 +323,6 @@ const fetchLandlordPayments = async (req, res, next) => {
 
     if (unit) {
       const foundUnit = await Unit.findOne({ unitNo: unit });
-      console.log(foundUnit);
 
       if (!foundUnit) {
         return res.status(400).json({ message: "No unit found" });
