@@ -351,6 +351,8 @@ import LandlordAgreementData from "../pages/Dashboard/FinanceDashboard/MixBag/La
 import ClientAgreementData from "../pages/Dashboard/FinanceDashboard/MixBag/ClientAgreementData";
 import TeamMembersSchedule from "../components/Pages/TeamMembersSchedule";
 import MaintenanceMixBag from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag";
+import ItMixBag from "../pages/Dashboard/ItDashboard/itMixBag/itMixBag";
+import TeamMemberDetails from "../components/Pages/TeamMemberDetails";
 
 export const routes = createBrowserRouter([
   {
@@ -757,8 +759,8 @@ export const routes = createBrowserRouter([
                         element: <TeamMembersSchedule />,
                       },
                       {
-                        path: "team-members-schedule/:id",
-                        element: <AdminTeamMembersCalendar />,
+                        path: "mix-bag/team-members-schedule/:name",
+                        element: <TeamMemberDetails />,
                       },
                       {
                         path: "housekeeping-members-schedule",
@@ -947,9 +949,9 @@ export const routes = createBrowserRouter([
                         path: "mix-bag/team-members-schedule",
                         element: <TeamMembersSchedule />,
                       },
-                      {
-                        path: "team-members-schedule/:id",
-                        element: <AdminTeamMembersCalendar />,
+                       {
+                        path: "mix-bag/team-members-schedule/:name",
+                        element: <TeamMemberDetails />,
                       },
                       {
                         path: "data",
@@ -1109,7 +1111,7 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "mix-bag",
-                        element: <MaintenanceMixBag />,
+                        element: <ItMixBag />,
                       },
                       {
                         path: "team-members-schedule",
@@ -1120,8 +1122,8 @@ export const routes = createBrowserRouter([
                         element: <TeamMembersSchedule />,
                       },
                       {
-                        path: "team-members-schedule/:id",
-                        element: <AdminTeamMembersCalendar />,
+                        path: "mix-bag/team-members-schedule/:name",
+                        element: <TeamMemberDetails />,
                       },
                       {
                         path: "settings",

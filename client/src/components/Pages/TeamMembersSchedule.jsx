@@ -196,7 +196,19 @@ const TeamMembersSchedule = () => {
   //----------------------------------------API---------------------------------------//
   const memberColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "name", headerName: "Name" },
+    {
+      field: "name",
+      headerName: "Name",
+      cellRenderer: (params) => (
+        <span
+          role="button"
+          onClick={() => navigate(`${params.value}`)}
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value}
+        </span>
+      ),
+    },
     { field: "manager", headerName: "Manager" },
     { field: "unitNo", headerName: "Unit", flex: "1" },
     {
