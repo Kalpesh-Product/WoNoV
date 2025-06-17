@@ -67,6 +67,7 @@ const DepartmentInvoice = () => {
     const building = unit.building || {};
     const departmentName = item.department?.name || "-";
 
+    
     return {
       ...item,
 
@@ -92,7 +93,7 @@ const DepartmentInvoice = () => {
         chequeDate: finance.chequeDate || null,
         approvedAt: finance.approvedAt || null,
         expectedDateInvoice: finance.expectedDateInvoice || null,
-        amount: finance.amount || 0,
+        advanceAmount: finance.advanceAmount || 0,
         voucher: finance.voucher || null,
         particulars: Array.isArray(finance.particulars)
           ? finance.particulars
@@ -266,8 +267,8 @@ const DepartmentInvoice = () => {
                   }
                 />
                 <DetalisFormatted
-                  title="Amount"
-                  detail={`₹${viewDetails.finance.amount || 0}`}
+                  title="Advance Amount"
+                  detail={`₹${viewDetails.finance.advanceAmount || 0}`}
                 />
                 <DetalisFormatted
                   title="Voucher File"

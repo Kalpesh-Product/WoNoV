@@ -54,7 +54,7 @@ const VoucherCreation = () => {
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "voucherName", headerName: "Voucher Name", flex: 1 },
     { field: "modeOfPayment", headerName: "Mode of Payment", flex: 1 },
-    { field: "amount", headerName: "Amount", flex: 1 },
+    { field: "advanceAmount", headerName: "Advance Amount", flex: 1 },
     { field: "chequeNo", headerName: "Cheque No", flex: 1 },
     { field: "chequeDate", headerName: "Cheque Date", flex: 1 },
     { field: "approvedAt", headerName: "Approved Date", flex: 1, cellRenderer : (params)=>(humanDate(params.value)) },
@@ -87,7 +87,7 @@ const VoucherCreation = () => {
             voucherName: item.finance?.voucher?.name || "-",
             voucherLink: item.finance?.voucher?.link || "-",
             modeOfPayment: item.finance?.modeOfPayment || "-",
-            amount: item.finance?.amount ?? "-",
+            advanceAmount: item.finance?.advanceAmount ?? "-",
             chequeNo: item.finance?.chequeNo || "-",
             chequeDate: item.finance?.chequeDate
               ? dayjs(item.finance.chequeDate).format("DD MMM YYYY")

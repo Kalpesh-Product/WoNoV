@@ -55,7 +55,7 @@ const ReviewRequest = () => {
       modeOfPayment: "",
       chequeNo: "",
       chequeDate: null,
-      amount: 0,
+      advanceAmount: 0,
       expectedDateInvoice: null,
       particulars: [],
     },
@@ -404,7 +404,7 @@ const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
             />
           ))}
 
-          {["chequeNo", "amount"].map((fieldName) => (
+          {["chequeNo", "advanceAmount"].map((fieldName) => (
             <Controller
               key={fieldName}
               name={fieldName}
