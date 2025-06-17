@@ -1,108 +1,51 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { CircularProgress } from "@mui/material";
+import MuiModal from "../../../../components/MuiModal";
+import { Controller, useForm } from "react-hook-form";
 
 const LandlordAgreements = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const axios = useAxiosPrivate();
 
-  const folderData = [
-    {
-      id: 1,
-      title: "Abrar Shaikh",
-      files: [
-        {
-          id: 1,
-          label: "Passport",
-          link: "link here",
-          uploadedDate: "2024-04-01",
-          lastModified: "2024-06-01",
-        },
-        {
-          id: 2,
-          label: "License",
-          link: "link here",
-          uploadedDate: "2024-04-10",
-          lastModified: "2024-06-01",
-        },
-        {
-          id: 3,
-          label: "Aadhar",
-          link: "link here",
-          uploadedDate: "2024-04-20",
-          lastModified: "2024-06-01",
-        },
-      ],
+  const { data: landlordData = [], isLoading } = useQuery({
+    queryKey: ["landlord-agreements"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          "/api/finance/get-landlord-agreements"
+        );
+        return response.data || [];
+      } catch (error) {
+        console.error("Failed to fetch landlord agreements:", error);
+        return [];
+      }
     },
-    {
-      id: 2,
-      title: "Kashif Shaikh",
-      files: [
-        {
-          id: 1,
-          label: "Passport",
-          link: "link here",
-          uploadedDate: "2024-04-05",
-          lastModified: "2024-06-01",
-        },
-        {
-          id: 2,
-          label: "License",
-          link: "link here",
-          uploadedDate: "2024-04-15",
-          lastModified: "2024-06-01",
-        },
-      ],
-    },
-    {
-      id: 3,
-      title: "Nasreen Shaikh",
-      files: [
-        {
-          id: 1,
-          label: "Passport",
-          link: "link here",
-          uploadedDate: "2024-03-25",
-          lastModified: "2024-06-01",
-        },
-        {
-          id: 2,
-          label: "License",
-          link: "link here",
-          uploadedDate: "2024-04-05",
-          lastModified: "2024-06-01",
-        },
-      ],
-    },
-    {
-      id: 4,
-      title: "Kabir Shaikh",
-      files: [
-        {
-          id: 1,
-          label: "Passport",
-          link: "link here",
-          uploadedDate: "2024-04-08",
-          lastModified: "2024-06-01",
-        },
-        {
-          id: 2,
-          label: "License",
-          link: "link here",
-          uploadedDate: "2024-04-18",
-          lastModified: "2024-06-01",
-        },
-      ],
-    },
-  ];
+  });
 
-  const tableData = folderData.map((person, index) => ({
-    srno: index + 1,
-    name: person.title,
-    documentCount: person.files.length,
-    id: person.id,
-    files: person.files,
-  }));
+  const tableData = Array.isArray(landlordData)
+    ? landlordData
+        .slice()
+        .sort((a, b) => (a?.name || "").localeCompare(b?.name))
+        .map((item, index) => {
+          const rawName = item?.name || "Unnamed";
+          const safeName = rawName.replace(/\//g, ""); // Remove all slashes
+
+          return {
+            srno: index + 1,
+            name: safeName,
+            documentCount: Array.isArray(item?.documents)
+              ? item.documents.length
+              : 0,
+            files: item?.documents || [],
+            id: item?._id || "",
+          };
+        })
+    : [];
 
   const columns = [
     { field: "srno", headerName: "Sr No", width: 100 },
@@ -116,18 +59,20 @@ const LandlordAgreements = () => {
           onClick={() =>
             navigate(
               location.pathname.includes("mix-bag")
-                ? `/app/dashboard/finance-dashboard/mix-bag/company-KYC/${params.data.id}`
-                : `/app/company-KYC/${params.data.id}`,
+                ? `/app/dashboard/finance-dashboard/mix-bag/landlord-agreements/${params.data.name}`
+                : `/app/landlord-agreements/${params.data.name}`,
               {
                 state: {
-                  files: params.data.files,
-                  name: params.data.name,
+                  files: params.data.files || [],
+                  name: params.data.name || "Unnamed",
+                  id: params.data.id,
                 },
               }
             )
           }
-          className="text-primary underline cursor-pointer">
-          {params.value}
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value || "Unnamed"}
         </span>
       ),
     },
@@ -136,14 +81,22 @@ const LandlordAgreements = () => {
 
   return (
     <div className="p-4">
-      <AgTable
-        columns={columns}
-        data={[]}
-        tableTitle={"Landlord Agreements"}
-        tableHeight={400}
-        hideFilter
-        search
-      />
+      {!isLoading ? (
+        <>
+          <AgTable
+            columns={columns}
+            data={tableData}
+            tableTitle="Landlord Agreements"
+            tableHeight={400}
+            hideFilter
+            search
+          />
+        </>
+      ) : (
+        <div className="h-72 place-items-center">
+          <CircularProgress />
+        </div>
+      )}
     </div>
   );
 };

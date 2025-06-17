@@ -273,7 +273,7 @@ const HrAttendance = () => {
   });
 
   const columns = [
-    { field: "srno", headerName: "SR No", width: 80, pinned: "left" },
+    { field: "srNo", headerName: "SR No", width: 80, pinned: "left" },
     { field: "empId", headerName: "Employee ID", width: 130, pinned: "left" },
     {
       field: "empName",
@@ -362,7 +362,7 @@ const HrAttendance = () => {
         {!isLoading ? (
           isMonthWithinFY ? (
             <AgTable
-              data={tableData}
+              data={tableData.map((data,index)=> ({srNo: index+1,...data}))}
               columns={columns}
               search={true}
               searchColumn="empName"

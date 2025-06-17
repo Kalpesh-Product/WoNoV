@@ -58,7 +58,7 @@ const HrCommonAgreements = () => {
           search={true}
           tableTitle={"Agreement List"}
           tableHeight={300}
-          buttonTitle={"Add Agreement"}
+        
           data={[
             ...agreements.map((agreement, index) => ({
               id: index + 1,  

@@ -156,7 +156,7 @@ const AddVisitor = () => {
     <div className=" p-4">
       <PageFrame>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 gap-4">
             <div>
               {/* Section: Basic Information */}
               <div className="py-4 border-b-default border-borderGray">
@@ -164,7 +164,7 @@ const AddVisitor = () => {
                   Visitor Details
                 </span>
               </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-4 gap-4 p-4 ">
                 <Controller
                   name="visitorType"
                   control={control}
@@ -301,7 +301,7 @@ const AddVisitor = () => {
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">To Meet</span>
               </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4 p-4 ">
                 <Controller
                   name="clientCompany"
                   control={control}
@@ -429,7 +429,7 @@ const AddVisitor = () => {
                 <div className="py-4 border-b-default border-borderGray">
                   <span className="text-subtitle font-pmedium">Timings</span>
                 </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
                   {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <Controller
                     name="dateOfVisit"

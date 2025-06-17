@@ -43,7 +43,8 @@ const ManageTickets = () => {
 
   const ticketsFilteredData = {
     openTickets: ticketsData.filter((item) => item.status === "Open").length,
-    recievedTickets: ticketsData.filter((item) => item.status !== "Escalated").length,
+    recievedTickets: ticketsData.filter((item) => item.status !== "Escalated")
+      .length,
     closedTickets: ticketsData.filter((item) => item.status === "Closed")
       .length,
     pendingTickets: ticketsData.filter((item) => item.status === "Pending")
@@ -60,12 +61,12 @@ const ManageTickets = () => {
       .length,
   };
 
-  console.log("Tickets data : ",ticketsFilteredData)
+  console.log("Tickets data : ", ticketsFilteredData);
 
   const widgets = [
     {
       layout: 2,
-      widgets: [       
+      widgets: [
         <WidgetSection
           key="department"
           border
@@ -75,8 +76,7 @@ const ManageTickets = () => {
           TitleAmount={String(ticketsFilteredData.recievedTickets).padStart(
             2,
             "0"
-          )}
-        >
+          )}>
           <TicketCard
             title={"Open"}
             titleColor={"#1E3D73"}
@@ -105,11 +105,10 @@ const ManageTickets = () => {
           layout={3}
           title={"Personal Pending Tickets :"}
           titleDataColor={"black"}
-              TitleAmount={String(ticketsFilteredData.acceptedTickets).padStart(
+          TitleAmount={String(ticketsFilteredData.acceptedTickets).padStart(
             2,
             "0"
-          )}
-        >
+          )}>
           <TicketCard
             title={"Accepted Tickets"}
             data={ticketsFilteredData.acceptedTickets}
@@ -210,21 +209,20 @@ const ManageTickets = () => {
     <div>
       {/* Widgets */}
       {!isLoading ? (
-
-      <div>
-        {widgets.map((widget, index) => (
-          <div key={index}>
-            <WidgetSection layout={widget.layout}>
-              {widget.widgets}
-            </WidgetSection>
-          </div>
-        ))}
-      </div>
+        <div>
+          {widgets.map((widget, index) => (
+            <div key={index}>
+              <WidgetSection layout={widget.layout}>
+                {widget.widgets}
+              </WidgetSection>
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="h-72 flex justify-center items-center">
           <CircularProgress />
         </div>
-      ) }
+      )}
 
       {/* Tabs */}
       <div className="p-4">
@@ -247,8 +245,7 @@ const ManageTickets = () => {
               backgroundColor: "#1E3D73",
               color: "white",
             },
-          }}
-        >
+          }}>
           {tabItems.map((tab, index) => (
             <Tab
               key={index}

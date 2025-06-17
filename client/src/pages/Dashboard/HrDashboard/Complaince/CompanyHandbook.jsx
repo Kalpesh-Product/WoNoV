@@ -8,10 +8,17 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import Access from "../../../Access/Access";
+import { useLocation } from "react-router-dom";
+import usePageDepartment from "../../../../hooks/usePageDepartment";
+import useAuth from "../../../../hooks/useAuth";
 
 const CompanyHandbook = () => {
   const [generalDoc, setGeneralDoc] = useState(null); // initially null
   const axios = useAxiosPrivate();
+  const {pathname} = useLocation()
+  const isProfile = pathname.includes("profile/HR/companyHandbook")
+  const {auth} =  useAuth()
+  const departments = auth.user.departments
   const { data: companyDocuments = {}, isLoading: isDocumentsLoading } =
     useQuery({
       queryKey: ["companyDocuments", generalDoc],
@@ -256,7 +263,7 @@ const CompanyHandbook = () => {
     },
     {
       id: 9,
-      title: "Administartion & Front Office",
+      title: "Administration & Front Office",
       content: (
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
@@ -284,7 +291,7 @@ const CompanyHandbook = () => {
     },
     {
       id: 10,
-      title: "Service & Maintainance",
+      title: "Service & Maintenance",
       content: (
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
@@ -367,6 +374,20 @@ const CompanyHandbook = () => {
       ),
     },
   ];
+
+  const profileAccordion = accordionData.filter((data)=> 
+  departments.some((dept)=> {
+    console.log("deptname",dept.name.toLowerCase())
+    console.log("title",data.title.toLowerCase())
+    if(dept.name === "IT" && data.title === "Kaffe Kitchen") return
+    if(dept.name === "HR" && data.title === "Human Resource & EA") return true
+   
+    return  data.title.toLowerCase().includes(dept.name.toLowerCase())
+
+  }))
+
+  const filteredAccordionData = isProfile ? profileAccordion : accordionData
+
   const accordionDataGeneral = [
     {
       id: 1,
@@ -485,7 +506,7 @@ const CompanyHandbook = () => {
     <div className="flex flex-col gap-4">
       <div className="flex">
         <div className="w-full shadow-md p-4 rounded-md">
-          <div className="h-80 w-full flex flex-col gap-4">
+          <div className="h-96 w-full flex flex-col gap-4">
             <img
               className="w-full  object-contain  h-[30%]"
               src={biznestLogo}
@@ -514,7 +535,7 @@ const CompanyHandbook = () => {
                 Based Lifestyle Subscription Platform in India targeted to
                 become a National Destination Based Lifestyle Subscription
                 Platform by the end of this decade due to our first mover
-                advantage
+                advantage.
               </p>
             </div>
           </div>
@@ -568,8 +589,8 @@ const CompanyHandbook = () => {
               Departments
             </span>
           </div>
-          {accordionData.map((item) => (
-            <Accordion
+          {filteredAccordionData.map((item) => 
+          <Accordion
               sx={{ boxShadow: "none", border: "1px solid #d1d5db" }}
               key={item.id}
             >
@@ -585,8 +606,8 @@ const CompanyHandbook = () => {
               <AccordionDetails sx={{ padding: "1rem" }}>
                 <span className="text-content">{item.content}</span>
               </AccordionDetails>
-            </Accordion>
-          ))}
+            </Accordion>         
+)}
         </div>
       </div>
       <div></div>

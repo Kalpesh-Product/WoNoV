@@ -217,15 +217,13 @@ const RaiseTicket = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewTicketDetails(params.data)}
-          >
+            onClick={() => handleViewTicketDetails(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
       ),
     },
   ];
-
 
   return (
     <div className="p-4 flex flex-col gap-4">
@@ -236,91 +234,96 @@ const RaiseTicket = () => {
         <div>
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid lg:grid-cols-2 md:grid-cols-2 sm:grid-cols-1 gap-4">
-              <Controller
-                name="department"
-                control={control}
-                rules={{ required: "Department is required" }}
-                render={({ field }) => (
-                  <>
-                    <TextField
-                      {...field}
-                      select
-                      label={"Department"}
-                      error={!!errors.department}
-                      helperText={errors.department?.message}
-                      size="small"
-                      onChange={(e) => {
-                        field.onChange(e.target.value);
-                        handleDepartmentSelect(e.target.value);
-                      }}
-                    >
-                      <MenuItem value="" disabled>
-                        Select Department
-                      </MenuItem>
-                      {departmentLoading ? (
-                        <CircularProgress color="black" />
-                      ) : (
-                        // fetchedDepartments?.map((dept) => (
-                        //   <MenuItem value={dept.department._id}>
-                        //     {dept.department.name}
-                        //   </MenuItem>
-                        // ))
-                        fetchedDepartments
-                          ?.filter(
-                            (dept) =>
-                              dept.department.name !== "Cafe" &&
-                              dept.department.name !== "Marketing"
-                          )
-                          .map((dept) => (
-                            <MenuItem
-                              key={dept.department._id}
-                              value={dept.department._id}
-                            >
-                              {dept.department.name}
-                            </MenuItem>
-                          ))
-                      )}
-                      <MenuItem value="Cafe" disabled>
-                        Cafe
-                      </MenuItem>
-                      <MenuItem value="Marketing" disabled>
-                        Marketing
-                      </MenuItem>
-                    </TextField>
-                  </>
-                )}
-              />
-
-              <Controller
-                name="ticketTitle"
-                control={control}
-                rules={{ required: "Please select an Issue" }}
-                render={({ field }) => (
-                  <>
-                    <TextField
-                      {...field}
-                      size="small"
-                      select
-                      label="Issue"
-                      helperText={errors.ticketTitle?.message}
-                      error={!!errors.ticketTitle}
-                      disabled={!watchFields.department}
-                    >
-                      <MenuItem value="">Select Ticket Title</MenuItem>
-                      {ticketIssues.length > 0 ? (
-                        ticketIssues.map((issue) => (
-                          <MenuItem key={issue._id} value={issue.title}>
-                            {issue.title}
+              {/* First div */}
+              <div className="flex flex-col gap-4">
+                <div className="">
+                  <Controller
+                    name="department"
+                    control={control}
+                    rules={{ required: "Department is required" }}
+                    render={({ field }) => (
+                      <>
+                        <TextField
+                          fullWidth
+                          {...field}
+                          select
+                          label={"Department"}
+                          error={!!errors.department}
+                          helperText={errors.department?.message}
+                          size="small"
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                            handleDepartmentSelect(e.target.value);
+                          }}>
+                          <MenuItem value="" disabled>
+                            Select Department
                           </MenuItem>
-                        ))
-                      ) : (
-                        <MenuItem disabled>No Issues Available</MenuItem>
-                      )}
-                    </TextField>
-                  </>
-                )}
-              />
-              {/* {watchFields.ticketTitle === getOtherTicketId() && (
+                          {departmentLoading ? (
+                            <CircularProgress color="black" />
+                          ) : (
+                            // fetchedDepartments?.map((dept) => (
+                            //   <MenuItem value={dept.department._id}>
+                            //     {dept.department.name}
+                            //   </MenuItem>
+                            // ))
+                            fetchedDepartments
+                              ?.filter(
+                                (dept) =>
+                                  dept.department.name !== "Cafe" &&
+                                  dept.department.name !== "Marketing"
+                              )
+                              .map((dept) => (
+                                <MenuItem
+                                  key={dept.department._id}
+                                  value={dept.department._id}>
+                                  {dept.department.name}
+                                </MenuItem>
+                              ))
+                          )}
+                          <MenuItem value="Cafe" disabled>
+                            Cafe
+                          </MenuItem>
+                          <MenuItem value="Marketing" disabled>
+                            Marketing
+                          </MenuItem>
+                        </TextField>
+                      </>
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <Controller
+                    name="ticketTitle"
+                    control={control}
+                    rules={{ required: "Please select an Issue" }}
+                    render={({ field }) => (
+                      <>
+                        <TextField
+                          fullWidth
+                          {...field}
+                          size="small"
+                          select
+                          label="Issue"
+                          helperText={errors.ticketTitle?.message}
+                          error={!!errors.ticketTitle}
+                          disabled={!watchFields.department}>
+                          <MenuItem value="">Select Ticket Title</MenuItem>
+                          {ticketIssues.length > 0 ? (
+                            ticketIssues.map((issue) => (
+                              <MenuItem key={issue._id} value={issue.title}>
+                                {issue.title}
+                              </MenuItem>
+                            ))
+                          ) : (
+                            <MenuItem disabled>No Issues Available</MenuItem>
+                          )}
+                        </TextField>
+                      </>
+                    )}
+                  />
+                </div>
+                {/* {watchFields.ticketTitle === getOtherTicketId() && (
                 <Controller
                   name="newIssue"
                   control={control}
@@ -346,112 +349,116 @@ const RaiseTicket = () => {
                   )}
                 />
               )} */}
-              <Controller
-                name="message"
-                rules={{ required: "Please specify your message" }}
-                control={control}
-                render={({ field }) => (
-                  <>
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Message"
-                      error={!!errors.message}
-                      helperText={errors.message?.message}
-                      fullWidth
-                    />
-                  </>
-                )}
-              />
-              <Controller
-                name="image"
-                control={control}
-                render={({ field: { onChange, value } }) => (
-                  <Box className="flex flex-col gap-2">
-                    {/* File Input */}
-                    <input
-                      ref={imageRef}
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      id="image-upload"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          onChange(file);
+                <div>
+                  <Controller
+                    name="image"
+                    control={control}
+                    render={({ field: { onChange, value } }) => (
+                      <Box className="flex flex-col gap-2">
+                        {/* File Input */}
+                        <input
+                          ref={imageRef}
+                          type="file"
+                          accept="image/*"
+                          hidden
+                          id="image-upload"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              onChange(file);
 
-                          setPreview(URL.createObjectURL(file)); // Set preview
-                          imageRef.current.value = null;
-                        }
-                      }}
-                    />
+                              setPreview(URL.createObjectURL(file)); // Set preview
+                              imageRef.current.value = null;
+                            }
+                          }}
+                        />
 
-                    {/* Clickable TextField */}
-                    <TextField
-                      size="small"
-                      variant="outlined"
-                      fullWidth
-                      label="Upload Image"
-                      value={value ? value.name : ""}
-                      placeholder="Choose a file..."
-                      InputProps={{
-                        readOnly: true,
-                        endAdornment: (
-                          <IconButton
-                            color="primary"
-                            component="label"
-                            htmlFor="image-upload"
-                          >
-                            <LuImageUp />
-                          </IconButton>
-                        ),
-                      }}
-                    />
-
-                    {/* Image Preview & Delete Icon */}
-                    {preview && (
-                      <>
-                        <span
-                          className="underline text-primary text-content cursor-pointer"
-                          onClick={() => setOpenModal(true)}
-                        >
-                          Preview
-                        </span>
-                        <MuiModal
-                          open={openModal}
-                          onClose={() => setOpenModal(false)}
-                          title={"Preview File"}
-                        >
-                          <div>
-                            <div className="flex flex-col">
+                        {/* Clickable TextField */}
+                        <TextField
+                          size="small"
+                          variant="outlined"
+                          fullWidth
+                          label="Upload Image"
+                          value={value ? value.name : ""}
+                          placeholder="Choose a file..."
+                          InputProps={{
+                            readOnly: true,
+                            endAdornment: (
                               <IconButton
-                                color="error"
-                                onClick={() => {
-                                  onChange(null);
-                                  setPreview(null);
-                                }}
-                              >
-                                <MdDelete />
+                                color="primary"
+                                component="label"
+                                htmlFor="image-upload">
+                                <LuImageUp />
                               </IconButton>
-                              <div className="p-2 border-default border-borderGray rounded-md">
-                                <Avatar
-                                  src={preview}
-                                  alt="Preview"
-                                  sx={{
-                                    width: "100%",
-                                    height: "100%",
-                                    borderRadius: 2,
-                                  }}
-                                />
+                            ),
+                          }}
+                        />
+
+                        {/* Image Preview & Delete Icon */}
+                        {preview && (
+                          <>
+                            <span
+                              className="underline text-primary text-content cursor-pointer"
+                              onClick={() => setOpenModal(true)}>
+                              Preview
+                            </span>
+                            <MuiModal
+                              open={openModal}
+                              onClose={() => setOpenModal(false)}
+                              title={"Preview File"}>
+                              <div>
+                                <div className="flex flex-col">
+                                  <IconButton
+                                    color="error"
+                                    onClick={() => {
+                                      onChange(null);
+                                      setPreview(null);
+                                    }}>
+                                    <MdDelete />
+                                  </IconButton>
+                                  <div className="p-2 border-default border-borderGray rounded-md">
+                                    <Avatar
+                                      src={preview}
+                                      alt="Preview"
+                                      sx={{
+                                        width: "100%",
+                                        height: "100%",
+                                        borderRadius: 2,
+                                      }}
+                                    />
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        </MuiModal>
-                      </>
+                            </MuiModal>
+                          </>
+                        )}
+                      </Box>
                     )}
-                  </Box>
-                )}
-              />
+                  />
+                </div>
+              </div>
+              {/* Second Div */}
+              <div>
+                <Controller
+                  name="message"
+                  rules={{ required: "Please specify your message" }}
+                  control={control}
+                  render={({ field }) => (
+                    <>
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Message"
+                        error={!!errors.message}
+                        helperText={errors.message?.message}
+                        fullWidth
+                        multiline
+                        rows={6} // ← Change this number to increase/decrease height
+                      />
+                    </>
+                  )}
+                />
+              </div>
             </div>
 
             <div className="flex align-middle mt-5 mb-5 items-center justify-center">
@@ -467,7 +474,7 @@ const RaiseTicket = () => {
       </div>
       <div className="rounded-md bg-white p-4 border-2 ">
         <div className="flex flex-row justify-between mb-4">
-          <div className="text-[20px]">My tickets</div>
+          <div className="text-[20px]">My Tickets</div>
         </div>
         <div className=" w-full">
           {ticketsLoading ? (
@@ -504,17 +511,8 @@ const RaiseTicket = () => {
       <MuiModal
         open={viewDetails && viewTicketDetails}
         onClose={() => setViewDetails(false)}
-        title={"View Ticket Details"}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-          <DetalisFormatted
-            title="Raised By"
-            detail={viewTicketDetails?.raisedBy}
-          />
-          <DetalisFormatted
-            title="Raised To"
-            detail={viewTicketDetails?.raisedTo}
-          />
+        title={"Ticket Details"}>
+        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
           <DetalisFormatted
             title="Ticket Title"
             detail={viewTicketDetails?.ticketTitle}
@@ -523,6 +521,19 @@ const RaiseTicket = () => {
             title="Description"
             detail={viewTicketDetails?.description}
           />
+          <DetalisFormatted
+            title="Raised By"
+            detail={viewTicketDetails?.raisedBy}
+          />
+          <DetalisFormatted
+            title="Raised At"
+            detail={viewTicketDetails?.date || "N/A"}
+          />
+          <DetalisFormatted
+            title="Raised To Department"
+            detail={viewTicketDetails?.raisedTo}
+          />
+
           <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
           <DetalisFormatted
             title="Priority"
