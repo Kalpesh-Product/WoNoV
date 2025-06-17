@@ -290,6 +290,7 @@ const getCompanyData = async (req, res, next) => {
 
           const manager = await UserData.findOne({
             role: { $in: [dep.admin] },
+            isActive: true,
           }).select("firstName lastName role");
 
           return {

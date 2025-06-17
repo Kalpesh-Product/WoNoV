@@ -345,6 +345,7 @@ const DailyTasks = () => {
           {!isCompletedLoading ? (
             <WidgetSection padding layout={1}>
               <DateWiseTable
+                exportData={true}
                 key={completedEntries.length}
                 tableTitle={`MY COMPLETED TASKS`}
                 data={completedData}

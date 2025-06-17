@@ -6,25 +6,13 @@ import { IoIosSearch } from "react-icons/io";
 import { TextField } from "@mui/material";
 import Card from "../../../components/Card";
 
-const AdminMixBag = () => {
+const MaintenanceMixBag = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const routes = [
     {
       title: "Team Members Schedule",
-      route: "/app/dashboard/admin-dashboard/mix-bag/team-members-schedule",
-    },
-    {
-      title: "Housekeeping Members Schedule",
-      route: "#",
-    },
-    {
-      title: "Holidays & Events",
-      route: "#",
-    },
-    {
-      title: "Client Members",
-      route: "#",
+      route: "/app/dashboard/maintenance-dashboard/mix-bag/team-members-schedule",
     },
   ];
 
@@ -72,4 +60,4 @@ const AdminMixBag = () => {
   );
 };
 
-export default AdminMixBag;
+export default MaintenanceMixBag;

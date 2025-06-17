@@ -224,6 +224,99 @@ const addUnit = async (req, res, next) => {
   }
 };
 
+const assignPrimaryUnit = async (req, res, next) => {
+  const logPath = "hr/HrLog";
+  const logAction = "Add Unit";
+  const logSourceKey = "unit";
+  const { user, ip, company } = req;
+  const { unitId, employeeId, departmentName } = req.body;
+
+  try {
+    if (!unitId || !employeeId || !departmentName) {
+      throw new CustomError(
+        "Missing required fields",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(unitId)) {
+      throw new CustomError(
+        "Invalid unit ID provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(employeeId)) {
+      throw new CustomError(
+        "Invalid employee ID provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const existingUnit = await Unit.findById(unitId);
+    if (!existingUnit) {
+      throw new CustomError("Unit not found", logPath, logAction, logSourceKey);
+    }
+
+    const dept =
+      departmentName === "Administration"
+        ? "adminLead"
+        : departmentName === "Maintenance"
+        ? "maintenanceLead"
+        : departmentName === "IT"
+        ? "itLead"
+        : "";
+
+    const updatedUnit = await Unit.findByIdAndUpdate(
+      { _id: unitId },
+      { [dept]: employeeId },
+      { new: true }
+    );
+
+    if (!updatedUnit) {
+      throw new CustomError(
+        "Failed to assign primary unit",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Primary unit assigned successfully",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: updatedUnit._id,
+      changes: {
+        [dept]: employeeId,
+      },
+    });
+
+    return res.status(200).json({
+      message: "Primary unit assigned successfully",
+    });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
+  }
+};
+
 const fetchUnits = async (req, res, next) => {
   const { company } = req;
   const { unitId, deskCalculated } = req.query;
@@ -280,7 +373,27 @@ const fetchUnits = async (req, res, next) => {
     }
 
     locations = await Unit.find({ company })
-      .populate("building", "_id buildingName fullAddress")
+      .populate([
+        {
+          path: "building",
+          select: "_id buildingName fullAddress",
+        },
+        {
+          path: "adminLead",
+          select: "firstName middleName lastName departments",
+          populate: { path: "departments", select: "name" },
+        },
+        {
+          path: "maintenanceLead",
+          select: "firstName middleName lastName departments",
+          populate: { path: "departments", select: "name" },
+        },
+        {
+          path: "itLead",
+          select: "firstName middleName lastName departments",
+          populate: { path: "departments", select: "name" },
+        },
+      ])
       .lean()
       .exec();
 
@@ -478,4 +591,5 @@ module.exports = {
   bulkInsertUnits,
   uploadUnitImage,
   fetchBuildings,
+  assignPrimaryUnit,
 };

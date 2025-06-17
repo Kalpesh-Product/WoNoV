@@ -308,6 +308,7 @@ const TasksViewDepartment = () => {
               <WidgetSection padding>
                 <DateWiseTable
                   tableTitle={`COMPLETED TASKS`}
+                  exportData={true}
                   key={completedTasks.length}
                   data={
                     completedTasksFetchPending

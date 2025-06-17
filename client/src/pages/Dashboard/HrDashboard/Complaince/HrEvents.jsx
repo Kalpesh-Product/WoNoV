@@ -62,10 +62,6 @@ const HrEvents = ({ title }) => {
   return (
     <PageFrame>
       <div>
-        <div className="flex justify-between items-center pb-4">
-          <span className="text-title font-pmedium text-primary">{title}</span>
-        </div>
-
         <AgTable
           key={combinedEvents.length}
           search={true}
@@ -79,7 +75,8 @@ const HrEvents = ({ title }) => {
         <MuiModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
-          title="Add Event">
+          title="Add Event"
+        >
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <TextField

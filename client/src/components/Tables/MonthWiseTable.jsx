@@ -17,6 +17,7 @@ const MonthWiseTable = ({
   checkAll,
   key,
   onMonthChange,
+  exportData
 }) => {
 
 
@@ -127,6 +128,7 @@ const MonthWiseTable = ({
       <AgTable
         key={key}
         enableCheckbox={checkbox}
+        exportData={exportData}
         checkAll={checkAll}
         tableHeight={300}
         columns={formattedColumns}

@@ -16,6 +16,7 @@ const DateWiseTable = ({
   checkAll,
   key,
   formatTime = false,
+  exportData,
 }) => {
   const { ref } = useRefWithInitialRerender;
 
@@ -126,6 +127,7 @@ const DateWiseTable = ({
         key={key}
         tableHeight={350}
         enableCheckbox={checkbox}
+        exportData={exportData}
         checkAll={checkAll}
         columns={formattedColumns}
         data={filteredData.map((item, index) => ({ ...item, srno: index + 1 }))}

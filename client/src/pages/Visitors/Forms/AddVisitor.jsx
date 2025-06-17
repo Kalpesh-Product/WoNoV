@@ -166,39 +166,6 @@ const AddVisitor = () => {
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-4 gap-4 p-4 ">
                 <Controller
-                  name="visitorType"
-                  control={control}
-                  rules={{ required: "Visitor type is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      select
-                      label="Select Visitor Type"
-                      error={!!errors.visitorType}
-                      helperText={errors.visitorType?.message}>
-                      <MenuItem value="" disabled>
-                        Select Visitor Type
-                      </MenuItem>
-                      <MenuItem value="Walk In">Walk In</MenuItem>
-                      <MenuItem value="Scheduled">Scheduled</MenuItem>
-                    </TextField>
-                  )}
-                />
-                <Controller
-                  name="visitorComapany"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      fullWidth
-                      label={"Visitor company"}
-                    />
-                  )}
-                />
-
-                <Controller
                   name="firstName"
                   control={control}
                   rules={{ required: "First Name is required" }}
@@ -277,6 +244,39 @@ const AddVisitor = () => {
                       <MenuItem value="male">Male</MenuItem>
                       <MenuItem value="female">Female</MenuItem>
                     </TextField>
+                  )}
+                />
+
+                <Controller
+                  name="visitorType"
+                  control={control}
+                  rules={{ required: "Visitor type is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      select
+                      label="Select Visitor Type"
+                      error={!!errors.visitorType}
+                      helperText={errors.visitorType?.message}>
+                      <MenuItem value="" disabled>
+                        Select Visitor Type
+                      </MenuItem>
+                      <MenuItem value="Walk In">Walk In</MenuItem>
+                      <MenuItem value="Scheduled">Scheduled</MenuItem>
+                    </TextField>
+                  )}
+                />
+                <Controller
+                  name="visitorComapany"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      fullWidth
+                      label={"Visitor company"}
+                    />
                   )}
                 />
 

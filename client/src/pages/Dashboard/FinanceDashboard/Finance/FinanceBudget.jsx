@@ -6,19 +6,11 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import {
-  FormControl,
-  MenuItem,
-  Select,
-  TextField,
-} from "@mui/material";
+import { FormControl, MenuItem, Select, TextField } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { toast } from "sonner";
-import {
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
@@ -30,6 +22,14 @@ const FinanceBudget = () => {
   const { auth } = useAuth();
   const location = useLocation();
   const department = usePageDepartment();
+  const departmentAccess = [
+    "67b2cf85b9b6ed5cedeb9a2e",
+    "6798bab9e469e809084e249e",
+  ];
+
+  const isTop = auth.user.departments.some((item) => {
+    return departmentAccess.includes(item._id.toString());
+  });
 
   const [openModal, setOpenModal] = useState(false);
   const { control, handleSubmit, reset, watch } = useForm({
@@ -312,20 +312,23 @@ const FinanceBudget = () => {
         titleAmount={`INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`}
       />
 
-      <div className="flex justify-end">
-        <PrimaryButton
-          title={"Request Budget"}
-          padding="px-5 py-2"
-          fontSize="text-base"
-          handleSubmit={() => setOpenModal(true)}
-        />
-      </div>
+      {!isTop && (
+        <div className="flex justify-end">
+          <PrimaryButton
+            title={"Request Budget"}
+            padding="px-5 py-2"
+            fontSize="text-base"
+            handleSubmit={() => setOpenModal(true)}
+          />
+        </div>
+      )}
 
       <AllocatedBudget financialData={financialData} />
       <MuiModal
         title="Request Budget"
         open={openModal}
-        onClose={() => setOpenModal(false)}>
+        onClose={() => setOpenModal(false)}
+      >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Expense Name */}
           <Controller

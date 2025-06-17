@@ -685,7 +685,7 @@ const MaintainanceDashboard = () => {
           title="Finance"
           route={"/app/dashboard/maintenance-dashboard/finance"}
         />,
-        <Card icon={<MdFormatListBulleted />} title="Mix-Bag" />,
+        <Card icon={<MdFormatListBulleted />} title="Mix-Bag" route={"/app/dashboard/maintenance-dashboard/mix-bag"} />,
         <Card
           icon={<SiGoogleadsense />}
           title="Data"
