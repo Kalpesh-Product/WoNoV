@@ -34,7 +34,7 @@ const createInventory = async (req, res) => {
     }
 
     const inventory = new Inventory({
-      company: req.company, // coming from token
+      company: req.company,
       department,
       itemName,
       openingInventoryUnits,
@@ -74,8 +74,7 @@ const createInventory = async (req, res) => {
 
 const getInventories = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { department, category } = req.query;
+    const { department, category, id } = req.query;
 
     if (id) {
       // Fetch a single inventory item by ID

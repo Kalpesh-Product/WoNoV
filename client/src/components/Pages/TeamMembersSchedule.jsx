@@ -1,36 +1,37 @@
-import { useEffect, useState } from "react";
-import AgTable from "../../../components/AgTable";
-import PrimaryButton from "../../../components/PrimaryButton";
-import MuiModal from "../../../components/MuiModal";
+import { useEffect, useState, useMemo } from "react";
+import AgTable from "../../components/AgTable";
+import PrimaryButton from "../../components/PrimaryButton";
+import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { CircularProgress, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
-import useAuth from "../../../hooks/useAuth";
+import useAuth from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { DateRange } from "react-date-range";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
-import DetalisFormatted from "../../../components/DetalisFormatted";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import DetalisFormatted from "../../components/DetalisFormatted";
 import { HiOutlinePencilSquare } from "react-icons/hi2";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-import humanDate from "../../../utils/humanDateForamt";
-import { queryClient } from "../../../main";
-import PageFrame from "../../../components/Pages/PageFrame";
-import usePageDepartment from "../../../hooks/usePageDepartment";
+import humanDate from "../../utils/humanDateForamt";
+import { queryClient } from "../../main";
+import PageFrame from "../../components/Pages/PageFrame";
+import usePageDepartment from "../../hooks/usePageDepartment";
 
-const AdminTeamMembersSchedule = () => {
+const TeamMembersSchedule = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  useEffect(() => console.log(selectedUser), [selectedUser]);
   const [selectionRange, setSelectionRange] = useState({
     startDate: new Date(),
     endDate: new Date(),
     key: "selection",
   });
-  const department = usePageDepartment()
+  const department = usePageDepartment();
   const {
     handleSubmit,
     control,
@@ -45,6 +46,56 @@ const AdminTeamMembersSchedule = () => {
       endDate: new Date(),
     },
   });
+
+  const {
+    handleSubmit: handleAddPrimary,
+    control: primaryControl,
+    reset: primaryReset,
+    watch,
+    formState: { errors: primaryErrors },
+  } = useForm({
+    defaultValues: {
+      unitId: "",
+      empId: "",
+      location: "",
+    },
+  });
+  const selectedLocation = watch("location");
+  console.log("Selected loc : ", selectedLocation);
+  const selectedUnit = watch("unitId");
+  const {
+    data: units = [],
+    isLoading: locationsLoading,
+    error: locationsError,
+  } = useQuery({
+    queryKey: ["units"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
+
+      return response.data;
+    },
+  });
+
+  const selectedUnitId = useMemo(() => {
+    if (!selectedUnit || !selectedLocation) return null;
+    const unit = units.find(
+      (unit) =>
+        unit.unitNo === selectedUnit &&
+        unit.building?.buildingName === selectedLocation // use ?. here too
+    );
+    return unit ? unit._id : null;
+  }, [selectedUnit, selectedLocation, units]);
+
+  const uniqueBuildings = Array.from(
+    new Map(
+      units.length > 0
+        ? units.map((loc) => [
+            loc.building?._id ?? `unknown-${loc.unitNo}`,
+            loc.building?.buildingName ?? "Unknown Building",
+          ])
+        : []
+    ).entries()
+  );
 
   const {
     handleSubmit: updateUser,
@@ -73,7 +124,6 @@ const AdminTeamMembersSchedule = () => {
     queryKey: ["employees"],
     queryFn: async () => {
       try {
-      
         const response = await axios.get(`/api/users/fetch-users`, {
           params: {
             deptId: department._id,
@@ -89,9 +139,8 @@ const AdminTeamMembersSchedule = () => {
     queryKey: ["unitAssignees"],
     queryFn: async () => {
       try {
-       
         const response = await axios.get(
-          `/api/administration/fetch-weekly-unit/${department._id}`
+          `/api/weekly-unit/get-primary-units?id=${department?._id}&name=${department?.name}`
         );
         return response.data;
       } catch (error) {
@@ -104,10 +153,9 @@ const AdminTeamMembersSchedule = () => {
     useMutation({
       mutationKey: ["assignMember"],
       mutationFn: async (data) => {
-      
         const response = await axios.post(
           "/api/administration/assign-weekly-unit",
-          {...data,department:department?._id}
+          { ...data, department: department?._id }
         );
         return response.data;
       },
@@ -122,10 +170,45 @@ const AdminTeamMembersSchedule = () => {
       },
     });
 
+  const { mutate: assignPrimary, isPending: isAssignPrimary } = useMutation({
+    mutationKey: ["assignPrimary"],
+    mutationFn: async (data) => {
+      const response = await axios.patch("/api/company/", {
+        ...data,
+        unitId: selectedUnitId,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "PRIMARY ASSIGNED");
+      setIsModalOpen(false);
+      primaryReset();
+    },
+    onError: (error) => {
+      toast.error(error.message || "CHECK LOG");
+    },
+  });
+
+  const onSubmit = (data) => {
+    if (!data) return;
+    assignPrimary(data);
+  };
   //----------------------------------------API---------------------------------------//
   const memberColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "name", headerName: "Name" },
+    {
+      field: "name",
+      headerName: "Name",
+      cellRenderer: (params) => (
+        <span
+          role="button"
+          onClick={() => navigate(`${params.value}`)}
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value}
+        </span>
+      ),
+    },
     { field: "manager", headerName: "Manager" },
     { field: "unitNo", headerName: "Unit", flex: "1" },
     {
@@ -135,12 +218,14 @@ const AdminTeamMembersSchedule = () => {
         <div className="flex items-center gap-4 py-2">
           <span
             onClick={() => handleViewUser(params.data)}
-            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
+            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
+          >
             <MdOutlineRemoveRedEye />
           </span>
           <span
             onClick={() => handleEditUser(params.data)}
-            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
+            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
+          >
             <HiOutlinePencilSquare />
           </span>
         </div>
@@ -161,6 +246,7 @@ const AdminTeamMembersSchedule = () => {
   };
   const handleEditUser = (user) => {
     setModalMode("edit");
+    setSelectedUser(user);
     setIsModalOpen(true);
   };
   const handleFormSubmit = (data) => {
@@ -185,14 +271,14 @@ const AdminTeamMembersSchedule = () => {
             search={true}
             tableTitle={"Team Members Schedule"}
             buttonTitle={"Assign Member"}
-            data={unitAssignees.map((assignee,index)=>{
+            data={unitAssignees.map((assignee, index) => {
               return {
                 ...assignee,
-                srNo:index+1,
-                name: `${assignee.employee.id.firstName} ${assignee.employee.id.lastName}`,
-                unitNo: assignee.location.unitNo,
-                substitutions : assignee.substitutions
-              }
+                srNo: index + 1,
+                name: `${assignee.firstName} ${assignee.lastName}`,
+                // unitNo: assignee.location.unitNo,
+                // substitutions: assignee.substitutions,
+              };
             })}
             columns={memberColumns}
             handleClick={handleAddUser}
@@ -207,12 +293,14 @@ const AdminTeamMembersSchedule = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={"Assign Substitute"}>
+        title={`Assign primary Unit`}
+      >
         {modalMode === "add" && (
           <div>
             <form
               onSubmit={handleSubmit(handleFormSubmit)}
-              className="flex flex-col gap-4">
+              className="flex flex-col gap-4"
+            >
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <Controller
@@ -227,7 +315,8 @@ const AdminTeamMembersSchedule = () => {
                         size="small"
                         select
                         error={!!errors.employee}
-                        helperText={errors.employee?.message}>
+                        helperText={errors.employee?.message}
+                      >
                         <MenuItem value="" disabled>
                           Select a Member
                         </MenuItem>
@@ -264,7 +353,8 @@ const AdminTeamMembersSchedule = () => {
                         fullWidth
                         error={!!errors.location}
                         helperText={errors.unitId?.message}
-                        select>
+                        select
+                      >
                         <MenuItem value="" disabled>
                           Select Unit
                         </MenuItem>
@@ -346,7 +436,8 @@ const AdminTeamMembersSchedule = () => {
                   {selectedUser.substitutions?.map((sub, index) => (
                     <div
                       key={sub.substitute?._id}
-                      className="flex flex-col gap-2 border border-borderGray rounded-2xl p-4">
+                      className="flex flex-col gap-2 border border-borderGray rounded-2xl p-4"
+                    >
                       <h4 className="text-subtitle font-pmedium text-primary mb-2">
                         Substitute {index + 1}
                       </h4>
@@ -383,24 +474,105 @@ const AdminTeamMembersSchedule = () => {
         )}
         {modalMode === "edit" && selectedUser && (
           <>
-            <form onSubmit={""}>
-              <div className="border border-borderGray rounded-2xl overflow-hidden shadow-sm">
-                <DateRange
-                  ranges={[
-                    {
-                      startDate: new Date(selectedUser.startDate),
-                      endDate: new Date(selectedUser.endDate),
-                      key: "selection",
-                    },
-                  ]}
-                  onChange={() => {
-                    "";
-                  }}
-                  editableDateInputs={false}
-                  showDateDisplay={false}
-                  moveRangeOnFirstSelection={false}
-                />
-              </div>
+            <form
+              onSubmit={handleAddPrimary(onSubmit)}
+              className="grid grid-cols-1 gap-4"
+            >
+              <Controller
+                name="location"
+                control={primaryControl}
+                render={({ field }) => (
+                  <TextField
+                    select
+                    {...field}
+                    size="small"
+                    label="Select Location"
+                  >
+                    <MenuItem value="" disabled>
+                      Select Building
+                    </MenuItem>
+                    {locationsLoading ? (
+                      <MenuItem disabled>
+                        <CircularProgress size={20} />
+                      </MenuItem>
+                    ) : locationsError ? (
+                      <MenuItem disabled>Error fetching units</MenuItem>
+                    ) : (
+                      uniqueBuildings.map(([id, name]) => (
+                        <MenuItem key={id} value={name}>
+                          {name}
+                        </MenuItem>
+                      ))
+                    )}
+                  </TextField>
+                )}
+              />
+              <Controller
+                name="unitId"
+                control={primaryControl}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    select
+                    size="small"
+                    label="Select Unit"
+                    disabled={!selectedLocation}
+                    value={field.value}
+                    onChange={(event) => field.onChange(event.target.value)}
+                  >
+                    <MenuItem value="">Select Unit</MenuItem>
+
+                    {units
+                      .filter(
+                        (unit) =>
+                          unit.building &&
+                          unit.building.buildingName === selectedLocation
+                      )
+                      .map((unit) => (
+                        <MenuItem key={unit._id} value={unit._id}>
+                          {unit.unitNo}
+                        </MenuItem>
+                      ))}
+                  </TextField>
+                )}
+              />
+
+              <Controller
+                name="employee"
+                rules={{ required: "Select a Member" }}
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Select Member"
+                    fullWidth
+                    size="small"
+                    select
+                    error={!!errors.employee}
+                    helperText={errors.employee?.message}
+                  >
+                    <MenuItem value="" disabled>
+                      Select a Member
+                    </MenuItem>
+                    {!isEmployeesLoading ? (
+                      employees.map((item) => (
+                        <MenuItem key={item._id} value={item._id}>
+                          {item.firstName} {item.lastName}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <CircularProgress />
+                    )}
+                  </TextField>
+                )}
+              />
+
+              <PrimaryButton
+                type={"submit"}
+                title={"Submit"}
+                isLoading={isAssignPrimary}
+                disabled={isAssignPrimary}
+              />
             </form>
           </>
         )}
@@ -408,4 +580,4 @@ const AdminTeamMembersSchedule = () => {
     </div>
   );
 };
-export default AdminTeamMembersSchedule;
+export default TeamMembersSchedule;

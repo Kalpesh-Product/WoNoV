@@ -512,7 +512,7 @@ const RaiseTicket = () => {
         open={viewDetails && viewTicketDetails}
         onClose={() => setViewDetails(false)}
         title={"Ticket Details"}>
-        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4 overflow-y-auto max-h-[70vh]">
           <DetalisFormatted
             title="Ticket Title"
             detail={viewTicketDetails?.ticketTitle}
@@ -548,7 +548,7 @@ const RaiseTicket = () => {
             detail={viewTicketDetails?.acceptedAt}
           />
           {viewTicketDetails.image && (
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-1">
               <img
                 src={viewTicketDetails.image}
                 alt="Ticket Attachment"

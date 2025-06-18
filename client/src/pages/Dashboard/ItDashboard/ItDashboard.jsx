@@ -23,7 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 const ItDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
 
-   const axios = useAxiosPrivate();
+  const axios = useAxiosPrivate();
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
     queryKey: ["it-budget"],
     queryFn: async () => {
@@ -166,7 +166,6 @@ const ItDashboard = () => {
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
-
 
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -513,7 +512,11 @@ const ItDashboard = () => {
           title="Finance"
           route={"/app/dashboard/IT-dashboard/finance"}
         />,
-        <Card icon={<MdFormatListBulleted />} title="Mix-Bag" />,
+        <Card
+          icon={<MdFormatListBulleted />}
+          title="Mix-Bag"
+          route={"/app/dashboard/it-dashboard/mix-bag"}
+        />,
         <Card
           icon={<SiGoogleadsense />}
           title="Data"
@@ -559,11 +562,7 @@ const ItDashboard = () => {
           data={""}
           description={"Monthly Expense"}
         />,
-        <DataCard
-          data={""}
-          title={"Average"}
-          description={"Yearly Expense"}
-        />,
+        <DataCard data={""} title={"Average"} description={"Yearly Expense"} />,
       ],
     },
     {
@@ -588,10 +587,7 @@ const ItDashboard = () => {
       layout: 2,
       widgets: [
         <WidgetSection border title={"Unit Wise IT Expenses"}>
-          <PieChartMui
-            data={[]}
-            options={[]}
-          />
+          <PieChartMui data={[]} options={[]} />
         </WidgetSection>,
         <WidgetSection border title={"Biometrics Gender Data"}>
           <PieChartMui data={[]} options={[]} />
@@ -603,10 +599,7 @@ const ItDashboard = () => {
       layout: 2,
       widgets: [
         <WidgetSection border title={"Client-Wise Complaints"}>
-          <PieChartMui
-            data={[]}
-            options={[]}
-          />
+          <PieChartMui data={[]} options={[]} />
         </WidgetSection>,
         <WidgetSection border title={"Type Of IT Complaints"}>
           <DonutChart
@@ -626,17 +619,13 @@ const ItDashboard = () => {
           scroll
           rowsToDisplay={4}
           Title={"Top 10 High Priority Due Tasks"}
-          rows={[
-           
-          ]}
+          rows={[]}
           columns={priorityTasksColumns}
         />,
         <MuiTable
           key={executiveTimings.length}
           Title={"Weekly Executive Shift Timing"}
-          rows={[
-            
-          ]}
+          rows={[]}
           columns={executiveTimingsColumns}
           scroll
           rowsToDisplay={4}

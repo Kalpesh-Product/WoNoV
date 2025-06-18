@@ -41,28 +41,8 @@ const CheckAvailability = () => {
     },
   });
 
-  // const selectedUnitId = useMemo(() => {
-  //   if (!selectedUnit || !selectedLocation) return null;
-
-  //   const unit = units.find(
-  //     (unit) =>
-  //       unit.unitNo === selectedUnit &&
-  //       unit.building.buildingName === selectedLocation
-  //   );
-  //   return unit._id;
-  // }, [selectedUnit, selectedLocation, units]);
-
   const selectedUnitId = useMemo(() => {
     if (!selectedUnit || !selectedLocation) return null;
-
-    // const unit = units.find(
-    //   (unit) =>
-    //     unit.unitNo === selectedUnit &&
-    //     unit.building.buildingName === selectedLocation
-    // );
-
-    // return unit ? unit._id : null; // Fix: prevent null._id error
-
     const unit = units.find(
       (unit) =>
         unit.unitNo === selectedUnit &&
@@ -71,16 +51,6 @@ const CheckAvailability = () => {
     return unit ? unit._id : null;
   }, [selectedUnit, selectedLocation, units]);
 
-  // const uniqueBuildings = Array.from(
-  //   new Map(
-  //     units.length > 0
-  //       ? units.map((loc) => [
-  //           loc.building._id, // use building._id as unique key
-  //           loc.building.buildingName,
-  //         ])
-  //       : []
-  //   ).entries()
-  // );
 
   const uniqueBuildings = Array.from(
     new Map(
@@ -93,8 +63,6 @@ const CheckAvailability = () => {
     ).entries()
   );
 
-  const floors = ["501(A)", "501(B)", "601(A)", "601(B)", "701(A)", "701(B)"];
-
   const onSubmit = (data) => {
     const { location, floor } = data;
     navigate(
@@ -106,10 +74,6 @@ const CheckAvailability = () => {
       }
     );
   };
-
-  useEffect(() => {
-    console.log("unit", selectedUnitId);
-  }, [selectedUnit]);
 
   return (
     <div className="border-default border-borderGray p-4 rounded-md text-center">

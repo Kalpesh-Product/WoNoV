@@ -1,31 +1,20 @@
 import { useState } from "react";
-import WidgetSection from "../../../components/WidgetSection";
+import WidgetSection from "../../../../components/WidgetSection";
 import { FaExternalLinkAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
 import { TextField } from "@mui/material";
-import Card from "../../../components/Card";
+import Card from "../../../../components/Card";
 
-const AdminMixBag = () => {
+const ItMixBag = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const routes = [
     {
       title: "Team Members Schedule",
-      route: "/app/dashboard/admin-dashboard/mix-bag/team-members-schedule",
+      route: "/app/dashboard/it-dashboard/mix-bag/team-members-schedule",
     },
-    {
-      title: "Housekeeping Members Schedule",
-      route: "#",
-    },
-    {
-      title: "Holidays & Events",
-      route: "#",
-    },
-    {
-      title: "Client Members",
-      route: "#",
-    },
+
   ];
 
   const handleSearch = (event) => {
@@ -72,4 +61,4 @@ const AdminMixBag = () => {
   );
 };
 
-export default AdminMixBag;
+export default ItMixBag;

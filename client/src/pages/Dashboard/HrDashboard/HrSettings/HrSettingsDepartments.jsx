@@ -67,19 +67,19 @@ const HrSettingsDepartments = () => {
         );
       },
     },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-            <span className="text-content text-primary hover:underline cursor-pointer">
-              Make Inactive
-            </span>
-          </div>
-        </>
-      ),
-    },
+    // {
+    //   field: "actions",
+    //   headerName: "Actions",
+    //   cellRenderer: (params) => (
+    //     <>
+    //       <div className="p-2 mb-2 flex gap-2">
+    //         <span className="text-content text-primary hover:underline cursor-pointer">
+    //           Make Inactive
+    //         </span>
+    //       </div>
+    //     </>
+    //   ),
+    // },
   ];
   const rows = [
     {

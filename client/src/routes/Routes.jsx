@@ -349,6 +349,10 @@ import CompanyHandbook from "../pages/Dashboard/HrDashboard/Complaince/CompanyHa
 import UserDetails from "../pages/Profile/UserDetails";
 import LandlordAgreementData from "../pages/Dashboard/FinanceDashboard/MixBag/LandlordAgreementData";
 import ClientAgreementData from "../pages/Dashboard/FinanceDashboard/MixBag/ClientAgreementData";
+import TeamMembersSchedule from "../components/Pages/TeamMembersSchedule";
+import MaintenanceMixBag from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag";
+import ItMixBag from "../pages/Dashboard/ItDashboard/itMixBag/itMixBag";
+import TeamMemberDetails from "../components/Pages/TeamMemberDetails";
 
 export const routes = createBrowserRouter([
   {
@@ -748,11 +752,15 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "team-members-schedule",
-                        element: <AdminTeamMembersSchedule />,
+                        element: <TeamMembersSchedule />,
                       },
                       {
-                        path: "team-members-schedule/:id",
-                        element: <AdminTeamMembersCalendar />,
+                        path: "mix-bag/team-members-schedule",
+                        element: <TeamMembersSchedule />,
+                      },
+                      {
+                        path: "mix-bag/team-members-schedule/:name",
+                        element: <TeamMemberDetails />,
                       },
                       {
                         path: "housekeeping-members-schedule",
@@ -930,6 +938,22 @@ export const routes = createBrowserRouter([
                         ],
                       },
                       {
+                        path: "mix-bag",
+                        element: <MaintenanceMixBag />,
+                      },
+                      {
+                        path: "team-members-schedule",
+                        element: <TeamMembersSchedule />,
+                      },
+                      {
+                        path: "mix-bag/team-members-schedule",
+                        element: <TeamMembersSchedule />,
+                      },
+                       {
+                        path: "mix-bag/team-members-schedule/:name",
+                        element: <TeamMemberDetails />,
+                      },
+                      {
                         path: "data",
                         element: <MaintenanceData />,
                         children: [
@@ -1084,6 +1108,22 @@ export const routes = createBrowserRouter([
                             element: <ItMonthlyInvoice />,
                           },
                         ],
+                      },
+                      {
+                        path: "mix-bag",
+                        element: <ItMixBag />,
+                      },
+                      {
+                        path: "team-members-schedule",
+                        element: <TeamMembersSchedule />,
+                      },
+                      {
+                        path: "mix-bag/team-members-schedule",
+                        element: <TeamMembersSchedule />,
+                      },
+                      {
+                        path: "mix-bag/team-members-schedule/:name",
+                        element: <TeamMemberDetails />,
                       },
                       {
                         path: "settings",

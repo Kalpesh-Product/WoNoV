@@ -227,6 +227,7 @@ const PerformanceKra = () => {
             <WidgetSection padding layout={1}>
               <DateWiseTable
                 formatTime
+               
                 key={departmentKra.length}
                 checkbox={showCheckBox}
                 buttonTitle={"Add Daily KRA"}
@@ -259,6 +260,7 @@ const PerformanceKra = () => {
                 <DateWiseTable
                   formatTime
                   tableTitle={`COMPLETED - DAILY KRA`}
+                   exportData={true}
                   checkAll={false}
                   key={completedEntries.length}
                   data={completedEntries.map((item, index) => ({
