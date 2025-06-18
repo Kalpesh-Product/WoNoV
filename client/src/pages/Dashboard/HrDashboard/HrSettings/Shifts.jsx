@@ -108,6 +108,25 @@ const Shifts = () => {
         );
       },
     },
+    {
+      field: "actions",
+      headerName: "Actions",
+      cellRenderer: (params) => (
+        <>
+          <div className="p-2 mb-2 flex gap-2">
+            <span className="text-content text-primary hover:underline cursor-pointer">
+                  Make Inactive
+                </span>
+            {/* <span
+              onClick={() => handleEdit(params.data)}
+              className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
+            >
+              <HiOutlinePencilSquare />
+            </span> */}
+          </div>
+        </>
+      ),
+    },
   ];
   return (
     <PageFrame>
@@ -132,11 +151,13 @@ const Shifts = () => {
           <MuiModal
             title={"Add Shift"}
             open={openModal}
-            onClose={() => setOpenModal(false)}>
+            onClose={() => setOpenModal(false)}
+          >
             <div>
               <form
                 onSubmit={handleSubmit(onSubmit)}
-                className="flex flex-col gap-4">
+                className="flex flex-col gap-4"
+              >
                 <Controller
                   name="shiftName"
                   control={control}

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from "react";
+import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import WidgetSection from "../../../components/WidgetSection";
 import Card from "../../../components/Card";
 import { LuHardDriveUpload } from "react-icons/lu";
@@ -30,6 +30,7 @@ import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardW
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const dispatch = useDispatch();
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
 
   useEffect(() => {
@@ -91,19 +92,52 @@ const HrDashboard = () => {
 
   //-------------------HR Expense graph start--------------------//
 
-  const expenseRawSeries = [
-    {
-      name: "Expense",
-      group: "FY 2024-25",
-      data: hrBarData?.utilisedBudget,
-    },
-    {
-      name: "Expense",
-      group: "FY 2025-26",
-      data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    },
-  ];
+  const expenseRawSeries = useMemo(() => {
+    // Initialize monthly buckets
+    const months = Array.from({ length: 12 }, (_, index) =>
+      dayjs(`2024-04-01`).add(index, "month").format("MMM")
+    );
 
+    const fyData = {
+      "FY 2024-25": Array(12).fill(0),
+      "FY 2025-26": Array(12).fill(0),
+    };
+
+    hrFinance.forEach((item) => {
+      const date = dayjs(item.dueDate);
+      const year = date.year();
+      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+
+      if (year === 2024 && monthIndex >= 3) {
+        // Apr 2024 to Dec 2024 (month 3 to 11)
+        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+      } else if (year === 2025) {
+        if (monthIndex <= 2) {
+          // Jan to Mar 2025 (months 0–2)
+          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+        } else if (monthIndex >= 3) {
+          // Apr 2025 to Dec 2025 (months 3–11)
+          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+        }
+      } else if (year === 2026 && monthIndex <= 2) {
+        // Jan to Mar 2026
+        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+      }
+    });
+
+    return [
+      {
+        name: "total",
+        group: "FY 2024-25",
+        data: fyData["FY 2024-25"],
+      },
+      {
+        name: "total",
+        group: "FY 2025-26",
+        data: fyData["FY 2025-26"],
+      },
+    ];
+  }, [hrFinance]);
   const expenseOptions = {
     chart: {
       type: "bar",
@@ -161,7 +195,7 @@ const HrDashboard = () => {
       },
     },
     yaxis: {
-      // max: 3000000,
+      max: 5000000,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
         formatter: (val) => `${Math.round(val / 100000)}`,
@@ -570,8 +604,16 @@ const HrDashboard = () => {
     },
   };
 
+  const budgetBar = useMemo(() => {
+    if (isHrFinanceLoading || !Array.isArray(hrFinance)) return null;
+    return transformBudgetData(hrFinance);
+  }, [isHrFinanceLoading, hrFinance]);
+
   const totalUtilised =
-    hrBarData?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+    budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
+      (acc, val) => acc + val,
+      0
+    ) || 0;
 
   const lastUtilisedValue = hrBarData?.utilisedBudget?.at(-1) || 0;
 
@@ -732,17 +774,17 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection normalCase layout={1} padding>
             <YearlyGraph
               data={expenseRawSeries}
               responsiveResize
               chartId={"bargraph-hr-expense"}
               options={expenseOptions}
-              title={"BIZ Nest HR DEPARTMENT EXPENSE"}
-              titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
-                "en-IN"
-              )}`}
+              title={`BIZ Nest HR DEPARTMENT EXPENSE`}
+              titleAmount={`INR ${inrFormat(totalUtilised)}`}
+              onYearChange={setSelectedFiscalYear}
             />
           </WidgetSection>
         </Suspense>,
@@ -789,7 +831,8 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <YearlyGraph
             data={tasksData}
             options={tasksOptions}

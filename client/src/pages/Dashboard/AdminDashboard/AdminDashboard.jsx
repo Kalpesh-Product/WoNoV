@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from "react";
+import React, { Suspense, useEffect, useState, useMemo } from "react";
 import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
@@ -26,10 +26,12 @@ import { transformBudgetData } from "../../../utils/transformBudgetData";
 import { Box, Skeleton } from "@mui/material";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import useAuth from "../../../hooks/useAuth";
+import { inrFormat } from "../../../utils/currencyFormat";
 dayjs.extend(customParseFormat);
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
+    const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
 
 
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
@@ -52,19 +54,62 @@ const AdminDashboard = () => {
     0
   );
 
+
+const expenseRawSeries = useMemo(() => {
+  // Initialize monthly buckets
+  const months = Array.from({ length: 12 }, (_, index) =>
+    dayjs(`2024-04-01`).add(index, "month").format("MMM")
+  );
+
+  const fyData = {
+    "FY 2024-25": Array(12).fill(0),
+    "FY 2025-26": Array(12).fill(0),
+  };
+
+  hrFinance.forEach((item) => {
+    const date = dayjs(item.dueDate);
+    const year = date.year();
+    const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+
+    if (year === 2024 && monthIndex >= 3) {
+      // Apr 2024 to Dec 2024 (month 3 to 11)
+      fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+    } else if (year === 2025) {
+      if (monthIndex <= 2) {
+        // Jan to Mar 2025 (months 0–2)
+        fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+      } else if (monthIndex >= 3) {
+        // Apr 2025 to Dec 2025 (months 3–11)
+        fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+      }
+    } else if (year === 2026 && monthIndex <= 2) {
+      // Jan to Mar 2026
+      fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+    }
+  });
+
+  return [
+    {
+      name: "total",
+      group: "FY 2024-25",
+      data: fyData["FY 2024-25"],
+    },
+    {
+      name: "total",
+      group: "FY 2025-26",
+      data: fyData["FY 2025-26"],
+    },
+  ];
+}, [hrFinance]);
+
+
   const expenseOptions = {
     chart: {
       type: "bar",
-      animations: { enabled: false },
       toolbar: { show: false },
 
-      stacked: true,
+      stacked: false,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
-      events: {
-        dataPointSelection: () => {
-          navigate("finance/budget");
-        },
-      },
     },
     colors: ["#54C4A7", "#EB5C45"],
     plotOptions: {
@@ -80,21 +125,8 @@ const AdminDashboard = () => {
     },
     dataLabels: {
       enabled: true,
-      // formatter: (val) => inrFormat(val),
-      // formatter: (val) => {
-      //   const scaled = val / 100000; // Scale from actual to "xx.xx" format
-      //   return scaled.toFixed(2); // Keep two digits after decimal
-      // },
-      // formatter: (val) => {
-      //   const scaled = Math.round((val / 100000) * 100) / 100;
-      //   return Number.isInteger(scaled) ? scaled.toFixed(0) : scaled.toFixed(2);
-      // },
-
-      // formatter: (val) => {
-      //   return val.toLocaleString("en-IN"); // Formats number with commas (Indian style)
-      // },
       formatter: (val) => {
-        return Math.round(val).toLocaleString("en-IN");
+        return inrFormat(val);
       },
 
       style: {
@@ -103,16 +135,12 @@ const AdminDashboard = () => {
       },
       offsetY: -22,
     },
-    xaxis: {
-      title: {
-        text: "  ",
-      },
-    },
+
     yaxis: {
-      // max: 3000000,
+      max: 1000000,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => `${Math.round(val / 100000)}`,
+        formatter: (val) => `${val / 100000}`,
       },
     },
     fill: {
@@ -125,51 +153,39 @@ const AdminDashboard = () => {
 
     tooltip: {
       enabled: false,
-      // y: {
-      //   formatter: (val, { seriesIndex, dataPointIndex }) => {
-      //     const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
-      //     // return `${rawData} Tasks`;
-      //     return `HR Expense: INR ${rawData.toLocaleString("en-IN")}`;
-      //   },
-      // },
       custom: function ({ series, seriesIndex, dataPointIndex }) {
         const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
         // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
         //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
         //     </div>`;
         return `
-            <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
-        
-              <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
-                <div><strong>HR Expense:</strong></div>
-                <div style="width: 10px;"></div>
-             <div style="text-align: left;">INR ${Math.round(
-               rawData
-             ).toLocaleString("en-IN")}</div>
-
+              <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
+          
+                <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
+                  <div><strong>Finance Expense:</strong></div>
+                  <div style="width: 10px;"></div>
+               <div style="text-align: left;">INR ${Math.round(
+                 rawData
+               ).toLocaleString("en-IN")}</div>
+  
+                </div>
+       
               </div>
-     
-            </div>
-          `;
+            `;
       },
     },
   };
 
-  const expenseRawSeries = [
-    {
-      name: "Expense",
-      group: "FY 2024-25",
-      data: hrBarData?.utilisedBudget,
-    },
-    {
-      name: "Expense",
-      group: "FY 2025-26",
-      data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    },
-  ];
+    const budgetBar = useMemo(() => {
+      if (isHrFinanceLoading || !Array.isArray(hrFinance)) return null;
+      return transformBudgetData(isHrFinanceLoading ? [] : hrFinance);
+    }, [isHrFinanceLoading, hrFinance]);
 
-  const totalUtilised =
-    hrBarData?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+ const totalUtilised =
+    budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
+      (acc, val) => acc + val,
+      0
+    ) || 0;
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
@@ -883,6 +899,7 @@ const AdminDashboard = () => {
               responsiveResize
               chartId={"bargraph-hr-expense"}
               options={expenseOptions}
+              onYearChange={setSelectedFiscalYear}
               title={"BIZ Nest ADMIN DEPARTMENT EXPENSE"}
               titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
                 "en-IN"

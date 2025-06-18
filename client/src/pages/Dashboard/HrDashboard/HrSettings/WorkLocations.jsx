@@ -88,7 +88,6 @@ const WorkLocations = () => {
     },
   });
 
-  console.log("WORK LOCATIONS : ", workLocations);
 
   const departmentsColumn = [
     { field: "id", headerName: "Sr No" },

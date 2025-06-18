@@ -1,28 +1,87 @@
 import { useLocation } from "react-router-dom";
 import useAuth from "./useAuth";
+import useAxiosPrivate from "./useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
 
 const usePageDepartment = () => {
   const { auth } = useAuth();
   const location = useLocation();
+  const axios = useAxiosPrivate();
 
-  const pathSegments = location.pathname.split("/").filter(Boolean);
+  // Fetch departments
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(
+        "api/company/get-company-data?field=selectedDepartments"
+      );
+      return response.data?.selectedDepartments || [];
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      return [];
+    }
+  };
+
+  const { data: fetchedDepartments = [], isPending: departmentLoading } =
+    useQuery({
+      queryKey: ["fetchedDepartments"],
+      queryFn: fetchDepartments,
+      staleTime: 5 * 60 * 1000, // optional: avoid frequent refetching
+    });
+
+  const pathSegments = location?.pathname?.split("/")?.filter(Boolean) || [];
   const dashboardSegment = pathSegments.find((segment) =>
-    segment.endsWith("-dashboard")
+    segment?.endsWith("-dashboard")
   );
 
-  let section = dashboardSegment?.split("-")[0].toLowerCase();
-  console.log("Section from hook", section)
+  let section = dashboardSegment?.split("-")?.[0]?.toLowerCase?.() || "";
 
-  // ✅ Temporary override: treat "frontend" as "tech"
+  // Fallback for undefined section
+  if (!section) {
+    console.warn("usePageDepartment: Unable to determine section from path.");
+    return null;
+  }
+
+  // Temporary override
   if (section === "frontend") {
     section = "tech";
   }
 
-  const department = auth?.user?.departments?.find((dept) =>
-    dept.name.toLowerCase().includes(section)
+  const userDepartments = auth?.user?.departments || [];
+
+  // Top Management logic
+  const isTopManagement = userDepartments?.some(
+    (dept) =>
+      dept?._id === "67b2cf85b9b6ed5cedeb9a2e" &&
+      dept?.name?.toLowerCase() === "top management"
   );
 
-  return department;
+  if (isTopManagement && Array.isArray(fetchedDepartments)) {
+    const matchedDept = fetchedDepartments.find((deptObj) =>
+      deptObj?.department?.name?.toLowerCase()?.includes(section)
+    );
+
+    if (matchedDept?.department) {
+      return matchedDept.department;
+    } else {
+      console.warn(
+        `usePageDepartment: Top Management user but no matching department found in fetchedDepartments for section "${section}"`
+      );
+    }
+  }
+
+  // Regular user logic
+  const matchedUserDept = userDepartments.find((dept) =>
+    dept?.name?.toLowerCase()?.includes(section)
+  );
+
+  if (matchedUserDept) {
+    return matchedUserDept;
+  } else {
+    console.warn(
+      `usePageDepartment: No matching department found in userDepartments for section "${section}"`
+    );
+    return null; // fallback if nothing matches
+  }
 };
 
 export default usePageDepartment;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import WidgetSection from "../WidgetSection";
 import BarGraph from "./BarGraph";
 import SecondaryButton from "../SecondaryButton";
@@ -17,11 +17,15 @@ const YearlyGraph = ({
   secondParam = false,
   chartHeight,
   currentYear,
+   onYearChange,
 }) => {
   const fiscalYears = ["FY 2024-25", "FY 2025-26"];
   const [selectedYearIndex, setSelectedYearIndex] = useState(currentYear ? 1 : 0);
   const selectedYear = fiscalYears[selectedYearIndex];
 
+  useEffect(() => {
+    if (onYearChange) onYearChange(selectedYear);
+  }, [selectedYear, onYearChange]);
   const yearCategories = {
     "FY 2024-25": [
       "Apr-24",

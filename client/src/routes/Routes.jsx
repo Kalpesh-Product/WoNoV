@@ -353,6 +353,7 @@ import TeamMembersSchedule from "../components/Pages/TeamMembersSchedule";
 import MaintenanceMixBag from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag";
 import ItMixBag from "../pages/Dashboard/ItDashboard/itMixBag/itMixBag";
 import TeamMemberDetails from "../components/Pages/TeamMemberDetails";
+import BudgetPage from "../components/Pages/BudgetPage";
 
 export const routes = createBrowserRouter([
   {
@@ -457,7 +458,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "budget",
-                            element: <FrontendBudget />,
+                            element: <BudgetPage />,
                           },
                           {
                             path: "payment-schedule",
@@ -670,7 +671,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "budget",
-                            element: <FinanceBudget />,
+                            element: <BudgetPage />,
                           },
                           {
                             path: "voucher",
@@ -734,7 +735,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "budget",
-                            element: <AdminBudget />,
+                            element: <BudgetPage />,
                           },
                           {
                             path: "payment-schedule",
@@ -925,7 +926,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "budget",
-                            element: <MaintenanceBudget />,
+                            element: <BudgetPage />,
                           },
                           {
                             path: "payment-schedule",
@@ -1067,7 +1068,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "budget",
-                            element: <ItBudget />,
+                            element: <BudgetPage />,
                           },
                           {
                             path: "payment-schedule",
@@ -1218,7 +1219,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "budget",
-                            element: <SalesBudget />,
+                            element: <BudgetPage />,
                           },
                           {
                             path: "payment-schedule",
@@ -1614,7 +1615,7 @@ export const routes = createBrowserRouter([
                           {
                             path: "budget",
                             index: true,
-                            element: <HrBudget />,
+                            element: <BudgetPage />,
                           },
                           {
                             path: "payment-schedule",

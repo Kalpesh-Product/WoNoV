@@ -81,38 +81,7 @@ const HrSettingsDepartments = () => {
     //   ),
     // },
   ];
-  const rows = [
-    {
-      srno: "1",
-      id: 1,
-      departmentName: "Tech",
-      status: "Active",
-    },
-    {
-      srno: "2",
-      id: 2,
-      departmentName: "Finance",
-      status: "Active",
-    },
-    {
-      srno: "3",
-      id: 3,
-      departmentName: "Sales",
-      status: "Inactive",
-    },
-    {
-      srno: "4",
-      id: 4,
-      departmentName: "Cafe",
-      status: "Active",
-    },
-    {
-      srno: "5",
-      id: 5,
-      departmentName: "IT",
-      status: "Inactive",
-    },
-  ];
+ 
 
   return (
     <div className="flex flex-col gap-8">
