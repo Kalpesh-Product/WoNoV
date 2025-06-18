@@ -1,16 +1,20 @@
 import React, { useState } from "react";
 import AgTable from "../../../../components/AgTable";
-import { Chip, TextField } from "@mui/material";
+import { Chip, IconButton, TextField } from "@mui/material";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import MuiModal from "../../../../components/MuiModal";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import { LuImageUp } from "react-icons/lu";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 const HrSOP = () => {
   const [openModal, setOpenModal] = useState(false);
   const [sopName, setSopName] = useState("");
   const axios = useAxiosPrivate();
+   const { handleSubmit, control, reset } = useForm();
 
   const { data: sops = [], refetch } = useQuery({
     queryKey: ["sops"],
@@ -26,32 +30,70 @@ const HrSOP = () => {
     },
   });
 
-  const handleAddSOP = async () => {
-    try {
-      await axios.post("/api/company/add-sop", {
-        name: sopName,
-        isActive: true,
-      });
-      setOpenModal(false);
-      setSopName("");
-      refetch(); // Refetch to update the list
-    } catch (error) {
-      console.error("Error adding SOP:", error);
-    }
-  };
+    const queryClient = useQueryClient();
+
+const addSopMutation = useMutation({
+  mutationFn: async (formData) => {
+    const response = await axios.post("/api/company/upload-company-document", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+  onSuccess: () => {
+    toast.success("Sop added successfully");
+    queryClient.invalidateQueries(["sops"]);
+    reset();  
+    setOpenModal(false);
+  },
+  onError: (error) => {
+    toast.error(error.response?.data?.message || "Failed to add policy");
+  },
+});
+
+  // const handleAddSOP = async () => {
+  //   try {
+  //     await axios.post("/api/company/add-sop", {
+  //       name: sopName,
+  //       isActive: true,
+  //     });
+  //     setOpenModal(false);
+  //     setSopName("");
+  //     refetch(); // Refetch to update the list
+  //   } catch (error) {
+  //     console.error("Error adding SOP:", error);
+  //   }
+  // };
+
+  const handleAddSop = (data) => {
+  const formData = new FormData();
+  formData.append("documentName", sopName);
+  formData.append("type","sop");
+  formData.append("document", data.file);
+  addSopMutation.mutate(formData);
+  setOpenModal(false);
+};
 
   const departmentsColumn = [
     { field: "id", headerName: "Sr No" },
     {
       field: "sopname",
       headerName: "SOP NAME",
-      cellRenderer: (params) => (
-        <div>
-          <span className="text-primary cursor-pointer hover:underline">
-            {params.value}
-          </span>
-        </div>
-      ),
+           cellRenderer: (params) => {
+          const rowData = params.data;
+    return (
+      <a
+        href={rowData.sopLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary cursor-pointer hover:underline"
+      >
+        {params.value}
+      </a>
+    )
+  
+  },
       flex: 1,
     },
     {
@@ -99,6 +141,7 @@ const HrSOP = () => {
             id: index + 1,
             sopname: sop.name,
             status: sop.isActive,
+            sopLink:sop.documentLink
           }))}
           handleClick={() => setOpenModal(true)}
           columns={departmentsColumn}
@@ -108,6 +151,8 @@ const HrSOP = () => {
           open={openModal}
           onClose={() => setOpenModal(false)}
           title="Add New SOP">
+            <form onSubmit={handleSubmit(handleAddSop)}>
+
           <div className="flex flex-col gap-4">
             <TextField
               label="SOP Name"
@@ -116,8 +161,49 @@ const HrSOP = () => {
               value={sopName}
               onChange={(e) => setSopName(e.target.value)}
             />
-            <PrimaryButton title="Add SOP" onClick={handleAddSOP} />
+
+ <Controller
+  name="file"
+  control={control}
+  defaultValue={null}
+  render={({ field: { onChange, value } }) => (
+    <>
+      <input
+        id="image-upload"
+        type="file"
+        accept=".png,.jpg,.jpeg,.pdf"
+        hidden
+        onChange={(e) => onChange(e.target.files[0])}
+      />
+      <TextField
+        size="small"
+        variant="outlined"
+        fullWidth
+        label="Upload policy"
+        value={value ? value.name : ""}
+        placeholder="Choose a file..."
+        InputProps={{
+          readOnly: true,
+          endAdornment: (
+            <IconButton
+              color="primary"
+              component="label"
+              htmlFor="image-upload"
+            >
+              <LuImageUp />
+            </IconButton>
+          ),
+        }}
+      />
+    </>
+  )}
+/>
+
+           
+
+            <PrimaryButton title="Add SOP" type="submit"  />
           </div>
+          </form>
         </MuiModal>
       </div>
     </PageFrame>

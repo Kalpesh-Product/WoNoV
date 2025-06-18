@@ -108,6 +108,24 @@ const Shifts = () => {
         );
       },
     },
+     {
+          field: "actions",
+          headerName: "Actions",
+          cellRenderer: (params) => (
+            <>
+              <div className="p-2 mb-2 flex gap-2">
+                {/* <span className="text-content text-primary hover:underline cursor-pointer">
+                  Make Inactive
+                </span> */}
+                <span
+                            onClick={() => handleEdit(params.data)}
+                            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
+                            <HiOutlinePencilSquare />
+                          </span>
+              </div>
+            </>
+          ),
+        },
   ];
   return (
     <PageFrame>

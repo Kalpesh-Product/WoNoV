@@ -379,6 +379,98 @@ const fetchWeeklyUnits = async (req, res, next) => {
   }
 };
 
+const fetchTeamMembersSchedule = async (req, res, next) => {
+  try {
+    const { id, department } = req.query;
+    const { company } = req;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid user Id provided" });
+    }
+
+    const foundUsers = await UserData.find({
+      departments: { $in: [department] },
+      isActive: true,
+    })
+      .populate([
+        {
+          path: "role",
+          select: "roleTitle",
+        },
+        { path: "departments", select: "name" },
+      ])
+      .select("firstName middleName lastName");
+
+    if (foundUsers.length < 0) {
+      return res.status(400).json({
+        message: "User not found",
+      });
+    }
+
+    const foundManager = foundUsers.find((user) => {
+      const foundDepartment = user.departments.find((dept) => {
+        return dept._id.toString() === department.toString();
+      });
+
+      const userRole = user.role.find((role) => {
+        return (
+          role.roleTitle.startsWith(
+            foundDepartment ? foundDepartment.name : ""
+          ) && role.roleTitle.endsWith("Admin")
+        );
+      });
+      return userRole;
+    });
+
+    let manager = "N/A";
+    if (foundManager) {
+      manager = `${foundManager.firstName} ${foundManager.lastName}`;
+    }
+
+    const weeklySchedules = await WeeklySchedule.find({
+      company,
+      "employee.id": id,
+    })
+      .populate({
+        path: "employee.id",
+        select: "firstName lastName departments",
+        populate: { path: "departments" },
+      })
+      .populate("substitutions.substitute", "firstName lastName")
+      .populate({
+        path: "location",
+        select: "unitName unitNo",
+        populate: [
+          { path: "building", select: "buildingName" },
+          {
+            path: "adminLead",
+            select: "firstName middleName lastName departments",
+            populate: { path: "departments", select: "name" },
+          },
+          {
+            path: "maintenanceLead",
+            select: "firstName middleName lastName departments",
+            populate: { path: "departments", select: "name" },
+          },
+          {
+            path: "itLead",
+            select: "firstName middleName lastName departments",
+            populate: { path: "departments", select: "name" },
+          },
+        ],
+      });
+
+    const transformedData = weeklySchedules.map((schedule) => ({
+      ...schedule._doc,
+      manager,
+    }));
+
+    res.status(200).json(transformedData);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const fetchPrimaryUnits = async (req, res, next) => {
   try {
     const { id, name } = req.query;
@@ -391,6 +483,7 @@ const fetchPrimaryUnits = async (req, res, next) => {
     }
     const foundUsers = await UserData.find({
       departments: { $in: [id] },
+      isActive: true,
     })
       .populate([
         {
@@ -489,4 +582,5 @@ module.exports = {
   addSubstitute,
   fetchWeeklyUnits,
   fetchPrimaryUnits,
+  fetchTeamMembersSchedule,
 };

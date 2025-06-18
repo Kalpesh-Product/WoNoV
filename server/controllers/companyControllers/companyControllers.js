@@ -474,6 +474,62 @@ const getCompanyAttandances = async (req, res, next) => {
   }
 };
 
+const updateCompanySubItem = async (req, res) => {
+  const { user, company, ip } = req;
+  const logPath = "hr/HrLog";
+  const logAction = "Update Company Data";
+  const logSourceKey = "companyData";
+  try {
+    const { type, itemId, name, isActive } = req.body;
+    if (!company || !type || !itemId)
+      return res
+        .status(400)
+        .json({ message: "company, type, and itemId are required" });
+
+    if (!["policies", "sop", "shifts", "employeeTypes"].includes(type)) {
+      throw new CustomError(
+        "Invalid document type. Allowed values: sop, policy, shift,employeeTypes",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const foundCompany = await Company.findById(company);
+    if (!foundCompany)
+      return res.status(404).json({ message: "Company not found" });
+
+    let item,
+      updated = false;
+
+    const typeMap = {
+      sop: "sop",
+      policies: "policies",
+      shifts: "shifts",
+      employeeTypes: "employeeTypes",
+    };
+
+    const key = typeMap[type];
+
+    item = foundCompany[key].id(itemId);
+    if (item) {
+      if (name !== undefined) item.name = name;
+      if (isActive !== undefined) item.isActive = isActive;
+      updated = true;
+    }
+
+    if (!updated)
+      return res.status(404).json({ message: `${type} item not found` });
+
+    await foundCompany.save();
+    res.status(200).json({ message: `${type} updated successfully` });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
 module.exports = {
   addCompany,
   addCompanyLogo,
@@ -483,4 +539,5 @@ module.exports = {
   getCompanyLogo,
   getHierarchy,
   getCompanyAttandances,
+  updateCompanySubItem,
 };

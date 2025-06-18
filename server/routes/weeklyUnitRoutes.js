@@ -6,6 +6,7 @@ const {
   fetchWeeklyUnits,
   addSubstitute,
   fetchPrimaryUnits,
+  fetchTeamMembersSchedule,
 } = require("../controllers/weeklyScheduleControllers/WeeklyScheduleController");
 
 router.post("/assign-weekly-unit", assignWeeklyUnit);
@@ -13,5 +14,6 @@ router.patch("/update-weekly-unit", updateWeeklyUnit);
 router.patch("/add-substitute", addSubstitute);
 router.get("/fetch-weekly-unit/:department", fetchWeeklyUnits);
 router.get("/get-primary-units", fetchPrimaryUnits);
+router.get("/get-member-units", fetchTeamMembersSchedule);
 
 module.exports = router;
