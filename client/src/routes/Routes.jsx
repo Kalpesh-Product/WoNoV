@@ -351,7 +351,7 @@ import LandlordAgreementData from "../pages/Dashboard/FinanceDashboard/MixBag/La
 import ClientAgreementData from "../pages/Dashboard/FinanceDashboard/MixBag/ClientAgreementData";
 import TeamMembersSchedule from "../components/Pages/TeamMembersSchedule";
 import MaintenanceMixBag from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag";
-import ItMixBag from "../pages/Dashboard/ItDashboard/itMixBag/itMixBag";
+import ItMixBag from "../pages/Dashboard/ItDashboard/itMixBag/ItMixBag";
 import TeamMemberDetails from "../components/Pages/TeamMemberDetails";
 import BudgetPage from "../components/Pages/BudgetPage";
 
