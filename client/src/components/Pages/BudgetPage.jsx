@@ -1,56 +1,122 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
-import WidgetSection from "../../../../components/WidgetSection";
-import PrimaryButton from "../../../../components/PrimaryButton";
-import DataCard from "../../../../components/DataCard";
-import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
-import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
-import MuiModal from "../../../../components/MuiModal";
+import PrimaryButton from "../../components/PrimaryButton";
+import AllocatedBudget from "../../components/Tables/AllocatedBudget";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { FormControl, MenuItem, Select, TextField } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
-import { inrFormat } from "../../../../utils/currencyFormat";
-import { transformBudgetData } from "../../../../utils/transformBudgetData";
-import YearlyGraph from "../../../../components/graphs/YearlyGraph";
+import { inrFormat } from "../../utils/currencyFormat";
+import { transformBudgetData } from "../../utils/transformBudgetData";
+import YearlyGraph from "../../components/graphs/YearlyGraph";
+import useAuth from "../../hooks/useAuth";
+import usePageDepartment from "../../hooks/usePageDepartment";
 
-const DeptWiseBudgetDetails = () => {
+const BudgetPage = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const location = useLocation();
+  const department = usePageDepartment();
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const departmentAccess = [
+    "67b2cf85b9b6ed5cedeb9a2e",
+    "6798bab9e469e809084e249e",
+  ];
+
+  const isTop = auth.user.departments.some((item) => {
+    return departmentAccess.includes(item._id.toString());
+  });
+
   const [openModal, setOpenModal] = useState(false);
-  const { control, handleSubmit, reset } = useForm({
+  const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: {
       expanseName: "",
       expanseType: "",
+      paymentType: "",
+      building: "",
+      unitId: "",
       projectedAmount: null,
       dueDate: "",
-    },
-  });
-  const deptId = location.state?.deptId;
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
-  const deptName = location.state?.deptName;
-  console.log("dEPST", deptName);
-  const { data: departmentBudget = [], isPending: isBudgetLoading } = useQuery({
-    queryKey: ["departmentBudget"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get(
-          `/api/budget/company-budget?departmentId=${deptId}`
-        );
-        const budgets = response.data.allBudgets;
-        return Array.isArray(budgets) ? budgets : [];
-      } catch (error) {
-        console.error("Error fetching budget:", error);
-        return [];
-      }
+      typeOfBudget: "Direct Budget",
     },
   });
 
+  const selectedBuilding = watch("building");
+
+const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+  queryKey: ["departmentBudget", department?._id],
+  queryFn: async () => {
+    const response = await axios.get(
+      `/api/budget/company-budget?departmentId=${department._id}`
+    );
+    const budgets = response.data.allBudgets;
+    return Array.isArray(budgets) ? budgets : [];
+  },
+  enabled: !!department?._id, // <- ✅ prevents firing until department is ready
+});
+
+
+  const {
+    data: units = [],
+    isLoading: locationsLoading,
+    error: locationsError,
+  } = useQuery({
+    queryKey: ["units"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
+
+      return response.data;
+    },
+  });
+
+  // const uniqueBuildings = Array.from(
+  //   new Map(
+  //     units.length > 0
+  //       ? units.map((loc) => [
+  //           loc.building._id, // use building._id as unique key
+  //           loc.building.buildingName,
+  //         ])
+  //       : []
+  //   ).entries()
+  // );
+  const uniqueBuildings = Array.from(
+    new Map(
+      units.length > 0
+        ? units
+            .filter((loc) => loc.building && loc.building._id)
+            .map((loc) => [loc.building._id, loc.building.buildingName])
+        : []
+    ).entries()
+  );
+
+  const { mutate: requestBudget, isPending: requestBudgetPending } =
+    useMutation({
+      mutationFn: async (data) => {
+        const response = await axios.post(
+          `/api/budget/request-budget/${department._id}`,
+          {
+            ...data,
+          }
+        );
+        return response.data;
+      },
+      onSuccess: function (data) {
+        setOpenModal(false);
+        toast.success(data.message);
+        reset();
+      },
+      onError: function (error) {
+        toast.error(error.response.data.message);
+      },
+    });
+
   // Transform data into the required format
-  const groupedData = departmentBudget.reduce((acc, item) => {
+  const groupedData = hrFinance.reduce((acc, item) => {
     const month = dayjs(item.dueDate).format("MMMM YYYY"); // Extracting month and year
 
     if (!acc[month]) {
@@ -80,10 +146,11 @@ const DeptWiseBudgetDetails = () => {
       expanseName: item.expanseName,
       department: item.department,
       expanseType: item.expanseType,
-      projectedAmount: item.projectedAmount,
+      projectedAmount: item?.projectedAmount?.toFixed(2),
       actualAmount: inrFormat(item?.actualAmount || 0),
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       status: item.status,
+      invoiceAttached: item.invoiceAttached,
     });
 
     return acc;
@@ -95,12 +162,12 @@ const DeptWiseBudgetDetails = () => {
       const transoformedRows = data.tableData.rows.map((row, index) => ({
         ...row,
         srNo: index + 1,
-        projectedAmount: Number(row.projectedAmount).toLocaleString("en-IN", {
-          maximumFractionDigits: 0,
-        }),
+        projectedAmount: Number(
+          row.projectedAmount?.toLocaleString("en-IN").replace(/,/g, "")
+        ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
       }));
       const transformedCols = [
-        { field: "srNo", headerName: "SR NO", flex: 1 },
+        { field: "srNo", headerName: "SR NO", width: 100 },
         ...data.tableData.columns,
       ];
 
@@ -118,8 +185,8 @@ const DeptWiseBudgetDetails = () => {
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
   const onSubmit = (data) => {
+    requestBudget(data);
     setOpenModal(false);
-    toast.success("Budget Requested succesfully");
     reset();
   };
 
@@ -130,63 +197,64 @@ const DeptWiseBudgetDetails = () => {
   // const [openModal, setOpenModal] = useState(false);
 
   const budgetBar = useMemo(() => {
-    if (isBudgetLoading || !Array.isArray(departmentBudget)) return null;
-    return transformBudgetData(departmentBudget);
-  }, [isBudgetLoading, departmentBudget]);
+    if (isHrLoading || !Array.isArray(hrFinance)) return null;
+    return transformBudgetData(hrFinance);
+  }, [isHrLoading, hrFinance]);
 
   useEffect(() => {
-    if (!isBudgetLoading) {
+    if (!isHrLoading) {
       const timer = setTimeout(() => setIsReady(true), 1000);
       return () => clearTimeout(timer); // Cleanup on unmount
     }
-  }, [isBudgetLoading]);
+  }, [isHrLoading]);
 
-  const expenseRawSeries = useMemo(() => {
-    // Initialize monthly buckets
-    const months = Array.from({ length: 12 }, (_, index) =>
-      dayjs(`2024-04-01`).add(index, "month").format("MMM")
-    );
+const expenseRawSeries = useMemo(() => {
+  // Initialize monthly buckets
+  const months = Array.from({ length: 12 }, (_, index) =>
+    dayjs(`2024-04-01`).add(index, "month").format("MMM")
+  );
 
-    const fyData = {
-      "FY 2024-25": Array(12).fill(0),
-      "FY 2025-26": Array(12).fill(0),
-    };
+  const fyData = {
+    "FY 2024-25": Array(12).fill(0),
+    "FY 2025-26": Array(12).fill(0),
+  };
 
-    departmentBudget.forEach((item) => {
-      const date = dayjs(item.dueDate);
-      const year = date.year();
-      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+  hrFinance.forEach((item) => {
+    const date = dayjs(item.dueDate);
+    const year = date.year();
+    const monthIndex = date.month(); // 0 = Jan, 11 = Dec
 
-      if (year === 2024 && monthIndex >= 3) {
-        // Apr 2024 to Dec 2024 (month 3 to 11)
-        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-      } else if (year === 2025) {
-        if (monthIndex <= 2) {
-          // Jan to Mar 2025 (months 0–2)
-          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-        } else if (monthIndex >= 3) {
-          // Apr 2025 to Dec 2025 (months 3–11)
-          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
-        }
-      } else if (year === 2026 && monthIndex <= 2) {
-        // Jan to Mar 2026
-        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+    if (year === 2024 && monthIndex >= 3) {
+      // Apr 2024 to Dec 2024 (month 3 to 11)
+      fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+    } else if (year === 2025) {
+      if (monthIndex <= 2) {
+        // Jan to Mar 2025 (months 0–2)
+        fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+      } else if (monthIndex >= 3) {
+        // Apr 2025 to Dec 2025 (months 3–11)
+        fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
       }
-    });
+    } else if (year === 2026 && monthIndex <= 2) {
+      // Jan to Mar 2026
+      fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+    }
+  });
 
-    return [
-      {
-        name: "total",
-        group: "FY 2024-25",
-        data: fyData["FY 2024-25"],
-      },
-      {
-        name: "total",
-        group: "FY 2025-26",
-        data: fyData["FY 2025-26"],
-      },
-    ];
-  }, [departmentBudget]);
+  return [
+    {
+      name: "total",
+      group: "FY 2024-25",
+      data: fyData["FY 2024-25"],
+    },
+    {
+      name: "total",
+      group: "FY 2025-26",
+      data: fyData["FY 2025-26"],
+    },
+  ];
+}, [hrFinance]);
+
 
   const expenseOptions = {
     chart: {
@@ -261,11 +329,10 @@ const DeptWiseBudgetDetails = () => {
     },
   };
 
-  const totalUtilised =
-    budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
-      (acc, val) => acc + val,
-      0
-    ) || 0;
+const totalUtilised =
+  budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+
+
   const navigate = useNavigate();
   // BUDGET NEW END
 
@@ -274,55 +341,23 @@ const DeptWiseBudgetDetails = () => {
       <YearlyGraph
         data={expenseRawSeries}
         options={expenseOptions}
-        title={`BIZ Nest ${deptName.toUpperCase()} DEPARTMENT EXPENSE`}
-        titleAmount={`INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`}
+        title={`BIZ Nest ${department?.name} DEPARTMENT EXPENSE`}
+        titleAmount={`INR ${inrFormat(totalUtilised)}`}
         onYearChange={setSelectedFiscalYear}
       />
 
-      {/* <div>
-        <WidgetSection layout={3} padding>
-          <DataCard
-            data={"INR 50,00,000"}
-            title={"Projected"}
-            description={`Current Month: ${new Date().toLocaleString(
-              "default",
-              {
-                month: "short",
-              }
-            )}-25`}
+      {!isTop && (
+        <div className="flex justify-end">
+          <PrimaryButton
+            title={"Request Budget"}
+            padding="px-5 py-2"
+            fontSize="text-base"
+            handleSubmit={() => setOpenModal(true)}
           />
-          <DataCard
-            data={"INR 45,00,000"}
-            title={"Actual"}
-            description={`Current Month: ${new Date().toLocaleString(
-              "default",
-              {
-                month: "short",
-              }
-            )}-25`}
-          />
-          <DataCard
-            data={"INR 12,000"}
-            title={"Requested"}
-            description={`Current Month: ${new Date().toLocaleString(
-              "default",
-              {
-                month: "short",
-              }
-            )}-25`}
-          />
-        </WidgetSection>
-      </div>
+        </div>
+      )}
 
-      <div className="flex justify-end">
-        <PrimaryButton
-          title={"Request Budget"}
-          padding="px-5 py-2"
-          fontSize="text-base"
-        />
-      </div> */}
-
-      <AllocatedBudget financialData={financialData} noInvoice />
+      <AllocatedBudget financialData={financialData} />
       <MuiModal
         title="Request Budget"
         open={openModal}
@@ -359,6 +394,74 @@ const DeptWiseBudgetDetails = () => {
                   </MenuItem>
                   <MenuItem value="Internal">Internal</MenuItem>
                   <MenuItem value="External">External</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          {/* Payment Type */}
+          <Controller
+            name="paymentType"
+            control={control}
+            rules={{ required: "Payment type is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Payment Type
+                  </MenuItem>
+                  <MenuItem value="One Time">One Time</MenuItem>
+                  <MenuItem value="Recurring">Recurring</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          {/* Building */}
+          <Controller
+            name="building"
+            control={control}
+            rules={{ required: "Building is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Building
+                  </MenuItem>
+                  {locationsLoading
+                    ? []
+                    : uniqueBuildings.map((building) => (
+                        <MenuItem key={building[0]} value={building[1]}>
+                          {building[1]}
+                        </MenuItem>
+                      ))}
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          {/* Unit */}
+          <Controller
+            name="unitId"
+            control={control}
+            rules={{ required: "Unit is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Unit
+                  </MenuItem>
+                  {locationsLoading
+                    ? []
+                    : units.map((unit) =>
+                        unit.building.buildingName === selectedBuilding ? (
+                          <MenuItem key={unit._id} value={unit._id}>
+                            {unit.unitNo}
+                          </MenuItem>
+                        ) : (
+                          <></>
+                        )
+                      )}
                 </Select>
               </FormControl>
             )}
@@ -414,34 +517,6 @@ const DeptWiseBudgetDetails = () => {
               </LocalizationProvider>
             )}
           />
-
-          {/* Due Date */}
-          <Controller
-            name="dueDate"
-            control={control}
-            rules={{ required: "Due date is required" }}
-            render={({ field, fieldState }) => (
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  {...field}
-                  label="Due Date"
-                  format="DD-MM-YYYY"
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(date) =>
-                    field.onChange(date ? date.toISOString() : null)
-                  }
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      size: "small",
-                      error: !!fieldState.error,
-                      helperText: fieldState.error?.message,
-                    },
-                  }}
-                />
-              </LocalizationProvider>
-            )}
-          />
           <div className="flex justify-center items-center">
             {/* Submit Button */}
             <PrimaryButton type={"submit"} title={"Submit"} />
@@ -452,4 +527,4 @@ const DeptWiseBudgetDetails = () => {
   );
 };
 
-export default DeptWiseBudgetDetails;
+export default BudgetPage;
