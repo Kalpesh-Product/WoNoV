@@ -8,7 +8,7 @@ import {
   FormControlLabel,
   IconButton,
 } from "@mui/material";
-import useAxiosPrivate from "../../../../hojoks/useAxiosPrivate";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import MuiModal from "../../../../components/MuiModal";
 import PrimaryButton from "../../../../components/PrimaryButton";
