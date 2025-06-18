@@ -4,6 +4,7 @@ import PermissionsTable from "../../components/PermissionsTable";
 import useAuth from "../../hooks/useAuth";
 import { toast } from "sonner";
 import Abrar from "../../assets/abrar.jpeg";
+import PageFrame from "./../../components/Pages/PageFrame";
 
 const AccessGrant = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -436,74 +437,82 @@ const AccessGrant = () => {
       {/* Department Cards */}
       <div className="mt-6">
         <h2 className="text-title font-pmedium">Grant Access To</h2>
-        <br />
-        <br />
-        <div className="font-bold">Department Modules</div>
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          {departments.map((department) => (
-            <div
-              key={department.departmentId}
-              className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
-                selectedDepartment?.departmentId === department.departmentId
-                  ? "border-default border-primary"
-                  : ""
-              }`}
-              // onClick={() => setSelectedDepartment(department)}
-            >
-              <span className="text-subtitle">{department.departmentName}</span>
-            </div>
-          ))}
-        </div>
-        <br />
-        <br />
-        <div className="font-bold">Apps</div>
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          {appsSection.map((department) => (
-            <div
-              key={department.departmentId}
-              className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
-                selectedDepartment?.departmentId === department.departmentId
-                  ? "border-default border-primary"
-                  : ""
-              }`}
-              // onClick={() => setSelectedDepartment(department)}
-            >
-              <span className="text-subtitle">{department.departmentName}</span>
-            </div>
-          ))}
-        </div>
-        <br />
-        <br />
-        <div className="font-bold">General</div>
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          {generalSection.map((department) => (
-            <div
-              key={department.departmentId}
-              className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
-                selectedDepartment?.departmentId === department.departmentId
-                  ? "border-default border-primary"
-                  : ""
-              }`}
-              // onClick={() => setSelectedDepartment(department)}
-            >
-              <span className="text-subtitle">{department.departmentName}</span>
-            </div>
-          ))}
-        </div>
 
-        {/* Permissions Table */}
-        {selectedDepartment && (
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold">
-              {selectedDepartment.departmentName} Permissions
-            </h3>
-            <PermissionsTable
-              key={selectedDepartment.departmentId}
-              modules={selectedDepartment.modules}
-              onPermissionChange={handlePermissionUpdate}
-            />
+        <br />
+        <PageFrame>
+          <div className="font-bold">Department Modules</div>
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            {departments.map((department) => (
+              <div
+                key={department.departmentId}
+                className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
+                  selectedDepartment?.departmentId === department.departmentId
+                    ? "border-default border-primary"
+                    : ""
+                }`}
+                // onClick={() => setSelectedDepartment(department)}
+              >
+                <span className="text-subtitle">
+                  {department.departmentName}
+                </span>
+              </div>
+            ))}
           </div>
-        )}
+          <br />
+          <br />
+          <div className="font-bold">Apps</div>
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            {appsSection.map((department) => (
+              <div
+                key={department.departmentId}
+                className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
+                  selectedDepartment?.departmentId === department.departmentId
+                    ? "border-default border-primary"
+                    : ""
+                }`}
+                // onClick={() => setSelectedDepartment(department)}
+              >
+                <span className="text-subtitle">
+                  {department.departmentName}
+                </span>
+              </div>
+            ))}
+          </div>
+          <br />
+          <br />
+          <div className="font-bold">General</div>
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            {generalSection.map((department) => (
+              <div
+                key={department.departmentId}
+                className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
+                  selectedDepartment?.departmentId === department.departmentId
+                    ? "border-default border-primary"
+                    : ""
+                }`}
+                // onClick={() => setSelectedDepartment(department)}
+              >
+                <span className="text-subtitle">
+                  {department.departmentName}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Permissions Table */}
+          {selectedDepartment && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold">
+                {selectedDepartment.departmentName} Permissions
+              </h3>
+              <PermissionsTable
+                key={selectedDepartment.departmentId}
+                modules={selectedDepartment.modules}
+                onPermissionChange={handlePermissionUpdate}
+              />
+            </div>
+          )}
+        </PageFrame>
       </div>
     </div>
   );
