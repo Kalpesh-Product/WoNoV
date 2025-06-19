@@ -194,51 +194,51 @@ const AllocatedBudget = ({
     return data?.projectedAmount || 0;
   }, [filteredMonths, selectedMonthIndex, groupedData]);
 
-const enhancedColumns = useMemo(() => {
-  const baseColumns = [...monthDataForSelectedType.columns];
+  const enhancedColumns = useMemo(() => {
+    const baseColumns = [...monthDataForSelectedType.columns];
 
-  if (!noInvoice) {
-    baseColumns.push({
-      field: "actions",
-      headerName: "Actions",
-      pinned: "right",
-      cellRenderer: (params) => {
-        const invoiceAttached =
-          params.data.invoiceAttached === true ||
-          params.data.invoiceAttached === "true";
-        const status = params.data.status;
+    if (!noInvoice) {
+      baseColumns.push({
+        field: "actions",
+        headerName: "Actions",
+        pinned: "right",
+        cellRenderer: (params) => {
+          const invoiceAttached =
+            params.data.invoiceAttached === true ||
+            params.data.invoiceAttached === "true";
+          const status = params.data.status;
 
-        const isApproved = status === "Approved";
-        const isRejected = status === "Rejected";
+          const isApproved = status === "Approved";
+          const isRejected = status === "Rejected";
 
-        return (
-          <div className="p-2">
-            {isApproved && !invoiceAttached ? (
-              <PrimaryButton
-                title="Upload Invoice"
-                externalStyles="p-2"
-                handleSubmit={() => {
-                  setSelectedRow(params.data);
-                  setUploadModalOpen(true);
-                }}
-              />
-            ) : (
-              <span className="text-content">
-                {invoiceAttached
-                  ? "Invoice Uploaded"
-                  : isRejected
-                  ? "Rejected"
-                  : ""}
-              </span>
-            )}
-          </div>
-        );
-      },
-    });
-  }
+          return (
+            <div className="p-2">
+              {isApproved && !invoiceAttached ? (
+                <PrimaryButton
+                  title="Upload Invoice"
+                  externalStyles="p-2"
+                  handleSubmit={() => {
+                    setSelectedRow(params.data);
+                    setUploadModalOpen(true);
+                  }}
+                />
+              ) : (
+                <span className="text-content">
+                  {invoiceAttached
+                    ? "Invoice Uploaded"
+                    : isRejected
+                    ? "Rejected"
+                    : ""}
+                </span>
+              )}
+            </div>
+          );
+        },
+      });
+    }
 
-  return baseColumns;
-}, [monthDataForSelectedType.columns, noInvoice]);
+    return baseColumns;
+  }, [monthDataForSelectedType.columns, noInvoice]);
 
   console.log("Enhanced columns : ", enhancedColumns);
 
@@ -249,8 +249,7 @@ const enhancedColumns = useMemo(() => {
       <WidgetSection
         title={"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"}
         TitleAmount={`INR ${inrFormat(totalProjectedAmountForFY)}`}
-        border
-      >
+        border>
         <div className="flex flex-col gap-4 rounded-md ">
           {!hideTitle ? (
             <div className="flex justify-between items-center">
@@ -360,8 +359,9 @@ const enhancedColumns = useMemo(() => {
             </div>
           ) : (
             <div className="h-96 flex justify-center items-center text-muted">
-              No data available for this category in{" "}
-              {monthDataForSelectedType.monthFormatted}
+              {/* No data available for this category in{" "}
+              {monthDataForSelectedType.monthFormatted} */}
+              No data available
             </div>
           )}
         </div>
@@ -370,12 +370,10 @@ const enhancedColumns = useMemo(() => {
       <MuiModal
         open={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
-        title="Upload Invoice"
-      >
+        title="Upload Invoice">
         <form
           onSubmit={handleSubmit((data) => onUpload(data, selectedRow))}
-          className="space-y-4"
-        >
+          className="space-y-4">
           <Controller
             name="invoiceImage"
             control={control}
