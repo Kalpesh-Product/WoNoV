@@ -168,7 +168,7 @@ const TeamMembersSchedule = () => {
     queryKey: ["employees"],
     queryFn: async () => {
       try {
-        const response = await axios.get(`/api/users/fetch-users`, {
+        const response = await axios.get("/api/users/fetch-users", {
           params: {
             deptId: department._id,
           },

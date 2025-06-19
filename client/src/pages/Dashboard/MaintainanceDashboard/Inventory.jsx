@@ -1,30 +1,39 @@
 import { useState } from "react";
-import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
-// import AssetModal from "./AssetModal";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
-import useAuth from "../../../hooks/useAuth";
-import dayjs from "dayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import PageFrame from "../../../components/Pages/PageFrame";
 import humanDate from "../../../utils/humanDateForamt";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import usePageDepartment from "../../../hooks/usePageDepartment";
 
-const MaintenanceInventory = () => {
-  const { auth } = useAuth();
+const maintainanceCategories = [
+  { id: 1, name: "Electrical" },
+  { id: 2, name: "Civil" },
+  { id: 3, name: "Plumbing" },
+  { id: 4, name: "HVAC" },
+  { id: 5, name: "Interiors design & Installations" },
+  { id: 6, name: "Utilities" },
+];
+
+const adminCategories = [
+  { id: 1, name: "HK Inventory" },
+  { id: 2, name: "Stationary" },
+  { id: 3, name: "First Aid" },
+];
+
+const Inventory = () => {
+  const department = usePageDepartment();
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
-  const [previewImage, setPreviewImage] = useState(null);
   const {
     handleSubmit,
     control,
@@ -49,7 +58,7 @@ const MaintenanceInventory = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "/api/inventory/get-inventories?department=6798bafbe469e809084e24a7"
+          `/api/inventory/get-inventories?department=${department._id}`
         );
         return response.data;
       } catch (error) {
@@ -61,11 +70,11 @@ const MaintenanceInventory = () => {
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationFn: async (formData) => {
       const response = await axios.post(
-        "/api/inventory/add-inventory",
+        "/api/inventory/add-inventory-item",
         formData,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
           },
         }
       );
@@ -94,22 +103,24 @@ const MaintenanceInventory = () => {
   };
 
   const handleFormSubmit = (data) => {
-  const formData = new FormData();
+    const formData = new FormData();
 
-  formData.append("itemName", data.itemName);
-  formData.append("department", data.department);
-  formData.append("openingInventoryUnits", data.openingInventoryUnits);
-  formData.append("openingPerUnitPrice", data.openingPerUnitPrice);
-  formData.append("openingInventoryValue", data.openingInventoryValue);
-  formData.append("newPurchaseUnits", data.newPurchaseUnits);
-  formData.append("newPurchasePerUnitPrice", data.newPurchasePerUnitPrice);
-  formData.append("newPurchaseInventoryValue", data.newPurchaseInventoryValue);
-  formData.append("closingInventoryUnits", data.closingInventoryUnits);
-  formData.append("category", data.category);
+    formData.append("itemName", data.itemName);
+    formData.append("department", department._id);
+    formData.append("openingInventoryUnits", data.openingInventoryUnits);
+    formData.append("openingPerUnitPrice", data.openingPerUnitPrice);
+    formData.append("openingInventoryValue", data.openingInventoryValue);
+    formData.append("newPurchaseUnits", data.newPurchaseUnits);
+    formData.append("newPurchasePerUnitPrice", data.newPurchasePerUnitPrice);
+    formData.append(
+      "newPurchaseInventoryValue",
+      data.newPurchaseInventoryValue
+    );
+    formData.append("closingInventoryUnits", data.closingInventoryUnits);
+    formData.append("category", data.category);
 
-  addAsset(formData);
-};
-
+    addAsset(formData);
+  };
 
   const inventoryColumns = [
     {
@@ -185,7 +196,10 @@ const MaintenanceInventory = () => {
       >
         {modalMode === "add" && (
           <div>
-            <form onSubmit={handleSubmit(handleFormSubmit)} className="grid grid-cols-2 gap-4">
+            <form
+              onSubmit={handleSubmit(handleFormSubmit)}
+              className="grid grid-cols-2 gap-4"
+            >
               <Controller
                 name="itemName"
                 control={control}
@@ -201,7 +215,6 @@ const MaintenanceInventory = () => {
                   />
                 )}
               />
-
 
               <Controller
                 name="openingInventoryUnits"
@@ -328,17 +341,41 @@ const MaintenanceInventory = () => {
                 rules={{ required: "Category required" }}
                 render={({ field }) => (
                   <TextField
-                  className="col-span-2"
+                    className="col-span-2"
                     {...field}
                     label="Category"
                     size="small"
                     fullWidth
+                    select
                     error={!!errors.category}
                     helperText={errors.category?.message}
-                  />
+                  >
+                    {/* Replace with your actual options */}
+                    <MenuItem value="">
+                      <em>Select category</em>
+                    </MenuItem>
+                    {department.name === "Administration"
+                      ? adminCategories.map((m) => (
+                          <MenuItem key={m.id} value={m.name}>
+                            {m.name}
+                          </MenuItem>
+                        ))
+                      : department.name === "Maintenance"
+                      ? maintainanceCategories.map((m) => (
+                          <MenuItem key={m.id} value={m.name}>
+                            {m.name}
+                          </MenuItem>
+                        ))
+                      : []}
+                  </TextField>
                 )}
               />
-              <PrimaryButton title="Add Inventory" className="w-full col-span-2" type="submit"/>
+
+              <PrimaryButton
+                title="Add Inventory"
+                className="w-full col-span-2"
+                type="submit"
+              />
             </form>
           </div>
         )}
@@ -412,4 +449,4 @@ const MaintenanceInventory = () => {
   );
 };
 
-export default MaintenanceInventory;
+export default Inventory;

@@ -4,7 +4,6 @@ const { createLog } = require("../../utils/moduleLogs");
 const WeeklySchedule = require("../../models/WeeklySchedule");
 const { default: mongoose } = require("mongoose");
 const Unit = require("../../models/locations/Unit");
-const Role = require("../../models/roles/Roles");
 
 const assignWeeklyUnit = async (req, res, next) => {
   const logPath = "administration/AdministrationLog";
@@ -73,7 +72,7 @@ const assignWeeklyUnit = async (req, res, next) => {
         .status(400)
         .json({
           message:
-            "Employee is already assigned to this location for the given",
+            "Employee is already assigned to this location",
         });
     }
 
