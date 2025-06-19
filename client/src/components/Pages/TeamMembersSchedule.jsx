@@ -31,6 +31,7 @@ const TeamMembersSchedule = () => {
     endDate: new Date(),
     key: "selection",
   });
+
   const department = usePageDepartment();
   const {
     handleSubmit,
