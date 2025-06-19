@@ -72,8 +72,14 @@ const MemberDetails = () => {
             Member Details
           </span>
         </div>
-        <div>
+        {/* <div>
           <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
+        </div> */}
+        <div>
+          <PrimaryButton
+            handleSubmit={handleEditToggle}
+            title={isEditing ? "Cancel" : "Edit"}
+          />
         </div>
       </div>
 
@@ -128,7 +134,7 @@ const MemberDetails = () => {
               {/* Section: Policies*/}
             </div>
 
-            <div className="flex items-center justify-center gap-2 py-4">
+            {/* <div className="flex items-center justify-center gap-2 py-4">
               <PrimaryButton
                 title={isEditing ? "Submit" : "Edit"}
                 handleSubmit={
@@ -137,6 +143,17 @@ const MemberDetails = () => {
               />
               {isEditing && (
                 <SecondaryButton title={"Reset"} handleSubmit={handleReset} />
+              )}
+            </div> */}
+            <div className="flex items-center justify-center gap-2 py-4">
+              {isEditing && (
+                <>
+                  <PrimaryButton
+                    title="Submit"
+                    handleSubmit={handleSubmit(onSubmit)}
+                  />
+                  <SecondaryButton title="Reset" handleSubmit={handleReset} />
+                </>
               )}
             </div>
           </form>
