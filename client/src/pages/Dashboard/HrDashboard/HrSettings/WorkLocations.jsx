@@ -51,7 +51,6 @@ const WorkLocations = () => {
     useMutation({
       mutationKey: ["mutateWorkLocation"],
       mutationFn: async (data) => {
-        console.log(data);
         const response = await axios.post("/api/company/add-building", {
           buildingName: data.workLocation,
           address: data.address,

@@ -1,8 +1,4 @@
-import BarGraph from "../../../components/graphs/BarGraph";
 import WidgetSection from "../../../components/WidgetSection";
-import AgTable from "../../../components/AgTable";
-import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
-import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";

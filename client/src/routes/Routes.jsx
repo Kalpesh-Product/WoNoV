@@ -194,7 +194,7 @@ import AdminBulkUpload from "../pages/Dashboard/AdminDashboard/AdminSettings/Adm
 import AdminSops from "../pages/Dashboard/AdminDashboard/AdminSettings/AdminSops";
 import AdminPolicies from "../pages/Dashboard/AdminDashboard/AdminSettings/AdminPolicies";
 import MaintenanceAnnualExpenses from "../pages/Dashboard/MaintainanceDashboard/MaintenanceAnnualExpenses";
-import MaintenanceInventory from "../pages/Dashboard/MaintainanceDashboard/MaintenanceInventory";
+import Inventory from "../pages/Dashboard/MaintainanceDashboard/Inventory";
 import MaintenanceFinance from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenanceFinance";
 import MaintenanceBudget from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenanceBudget";
 import MaintenancePayment from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenancePayment";
@@ -727,7 +727,7 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "inventory",
-                        element: <AdminInventory />,
+                        element: <Inventory />,
                       },
                       {
                         path: "finance",
@@ -918,7 +918,7 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "inventory",
-                        element: <MaintenanceInventory />,
+                        element: <Inventory />,
                       },
                       {
                         path: "finance",
@@ -1060,7 +1060,7 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "inventory",
-                        element: <ItInventory />,
+                        element: <Inventory />,
                       },
                       {
                         path: "finance",
