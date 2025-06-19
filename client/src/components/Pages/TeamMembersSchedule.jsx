@@ -39,6 +39,10 @@ const TeamMembersSchedule = () => {
     },
   ]);
 
+  useEffect(() => {
+    console.log("multiple : ", multipleRanges);
+  }, [multipleRanges]);
+
   const department = usePageDepartment();
   const {
     handleSubmit,
@@ -70,9 +74,6 @@ const TeamMembersSchedule = () => {
       location: "",
     },
   });
-  useEffect(() => {
-    console.log("Asdasda", selectedUser);
-  }, [selectedUser]);
 
   useEffect(() => {
     setPrimaryValue("location", selectedUser?.buildingName);
@@ -214,15 +215,38 @@ const TeamMembersSchedule = () => {
     );
 
     if (matchedSchedules.length) {
-      const ranges = matchedSchedules.map((item, idx) => ({
+      const detailedRanges = matchedSchedules.map((item, idx) => ({
+        key: `schedule-${idx}`,
         startDate: new Date(item.startDate),
         endDate: new Date(item.endDate),
-        key: `schedule-${idx}`,
+        employeeName: `${item.employee?.id?.firstName || "N/A"} ${
+          item.employee?.id?.lastName || ""
+        }`,
+        manager: item.manager || "N/A",
+        isActive: item.employee?.isActive ? "Active" : "Inactive",
       }));
 
-      setMultipleRanges(ranges); // <- new state variable for multiple ranges
+      setMultipleRanges(detailedRanges);
     }
   }, [unitSchedule, watchedUnitId]);
+
+  const getDisabledDatesSet = (ranges) => {
+    const disabledSet = new Set();
+
+    ranges.forEach(({ startDate, endDate }) => {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        disabledSet.add(new Date(d).toDateString()); // use toDateString to normalize
+      }
+    });
+
+    return disabledSet;
+  };
+  const disabledDatesSet = useMemo(
+    () => getDisabledDatesSet(multipleRanges),
+    [multipleRanges]
+  );
 
   const { mutate: assignMember, isPending: isAssignMemberPending } =
     useMutation({
@@ -364,7 +388,7 @@ const TeamMembersSchedule = () => {
           <AgTable
             key={unitAssignees.length}
             search={true}
-            tableTitle={"Team Members Schedule"}
+            tableTitle={"Weekly Rotation Schedule"}
             buttonTitle={"Assign Member"}
             data={unitsData}
             columns={unitColumns}
@@ -451,15 +475,78 @@ const TeamMembersSchedule = () => {
                     )}
                   />
                 </div>
-                <div className="col-span-2 w-full">
-                  <DateRange
-                    ranges={multipleRanges}
-                    onChange={() => {}}
-                    moveRangeOnFirstSelection={false}
-                    editableDateInputs={false}
-                    showDateDisplay={false}
-                    disabledDay={() => true}
-                  />
+                <div className="col-span-2 w-full ">
+                  {/* Show already scheduled ranges as compact badges */}
+                   <div className="my-4">
+                        <span className="text-subtitle text-primary font-pmedium">
+                          Assigned Details
+                        </span>
+                      </div>
+                  {/* Actual DateRange calendar */}
+                  {watchedUnitId ? (
+                    <>
+                      <div className="w-full max-w-full overflow-x-auto my-4">
+                        <div className="flex gap-4 min-w-max">
+                          {[...multipleRanges]
+                            .sort(
+                              (a, b) =>
+                                new Date(b.startDate) - new Date(a.startDate)
+                            )
+                            .map((range) => (
+                              <div
+                                key={range.key}
+                                className="min-w-[280px] p-4 rounded-xl border border-borderGray bg-gray-50 shadow-sm"
+                              >
+                                <div className="text-sm text-gray-500 mb-1">
+                                  <strong>Dates:</strong>{" "}
+                                  {range.startDate.toLocaleDateString("en-GB")}{" "}
+                                  - {range.endDate.toLocaleDateString("en-GB")}
+                                </div>
+                                <div className="text-sm text-gray-700">
+                                  <strong>Employee:</strong>{" "}
+                                  {range.employeeName}
+                                </div>
+                                <div className="text-sm text-gray-700">
+                                  <strong>Manager:</strong> {range.manager}
+                                </div>
+                                <div className="text-sm text-gray-700">
+                                  <strong>Status:</strong>{" "}
+                                  <span
+                                    className={`font-semibold ${
+                                      range.isActive === "Active"
+                                        ? "text-green-600"
+                                        : "text-red-500"
+                                    }`}
+                                  >
+                                    {range.isActive}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+
+                      <div className="my-4">
+                        <span className="text-subtitle text-primary font-pmedium">
+                          Assign a member
+                        </span>
+                      </div>
+                      <DateRange
+                        ranges={[selectionRange]}
+                        onChange={handleDateSelect}
+                        moveRangeOnFirstSelection={false}
+                        disabledDay={(date) =>
+                          disabledDatesSet.has(date.toDateString())
+                        }
+                      />
+                    </>
+                  ) : (
+                    <div className="h-10 flex justify-between items-center p-4 border-borderGray border-[1px] rounded-xl">
+                      <span className="text-content font-pregular">
+                        Kindly select a unit to display the weekly schedule.
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className=" w-full">
