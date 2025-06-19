@@ -381,10 +381,10 @@ const fetchWeeklyUnits = async (req, res, next) => {
 
 const fetchTeamMembersSchedule = async (req, res, next) => {
   try {
-    const { id, department } = req.query;
+    const { unitId, department } = req.query;
     const { company } = req;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(unitId)) {
       return res.status(400).json({ message: "Invalid user Id provided" });
     }
 
@@ -429,7 +429,7 @@ const fetchTeamMembersSchedule = async (req, res, next) => {
 
     const weeklySchedules = await WeeklySchedule.find({
       company,
-      "employee.id": id,
+      location: unitId,
     })
       .populate({
         path: "employee.id",

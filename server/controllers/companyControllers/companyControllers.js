@@ -480,11 +480,10 @@ const updateCompanySubItem = async (req, res) => {
   const logAction = "Update Company Data";
   const logSourceKey = "companyData";
   try {
-    const { type, itemId, name, isActive } = req.body;
-    if (!company || !type || !itemId)
-      return res
-        .status(400)
-        .json({ message: "company, type, and itemId are required" });
+    const { type, itemId, name, isActive, startTime, endTime, isDeleted } =
+      req.body;
+    if (!type || !itemId)
+      return res.status(400).json({ message: "type, and itemId are required" });
 
     if (!["policies", "sop", "shifts", "employeeTypes"].includes(type)) {
       throw new CustomError(
@@ -512,9 +511,22 @@ const updateCompanySubItem = async (req, res) => {
     const key = typeMap[type];
 
     item = foundCompany[key].id(itemId);
+    // console.log("isdeleted", itemId);
     if (item) {
       if (name !== undefined) item.name = name;
       if (isActive !== undefined) item.isActive = isActive;
+
+      if (isDeleted !== undefined) item.isDeleted = isDeleted;
+      if (type === "shifts") {
+        if (startTime) {
+          const parsedStartTime = new Date(startTime);
+          item.startTime = parsedStartTime;
+        }
+        if (endTime) {
+          const parsedEndTime = new Date(endTime);
+          item.endTime = parsedEndTime;
+        }
+      }
       updated = true;
     }
 
