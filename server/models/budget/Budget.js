@@ -78,7 +78,7 @@ const budgetSchema = new mongoose.Schema({
   },
   gstIn: {
     type: String,
-    match: [/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/],
+    // match: [/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/],
   },
   invoiceAttached: {
     type: Boolean,
@@ -126,18 +126,6 @@ const budgetSchema = new mongoose.Schema({
     fSrNo: {
       type: String,
     },
-    // debitEntries: [
-    //   {
-    //     particulars: { type: String, required: true },
-    //     amount: { type: Number, required: true },
-    //   },
-    // ],
-    // creditEntries: [
-    //   {
-    //     particulars: { type: String, required: true },
-    //     amount: { type: Number, required: true },
-    //   },
-    // ],
     voucher: {
       name: {
         type: String,
@@ -162,14 +150,9 @@ const budgetSchema = new mongoose.Schema({
       type: String,
       enum: ["Cash", "Cheque", "NEFT", "RTGS", "IMPS", "Credit Card", "ETC"],
     },
-
-    // chequeOrUTRNumber: String,
-    // chequeOrUTRDate: Date,
-
-    // Dates and other string inputs
     chequeNo: {
       type: String,
-      match: [/^[0-9]{6,9}$/],
+      // match: [/^[0-9]{6,9}$/],
     },
     chequeDate: Date,
     // Advance payment section

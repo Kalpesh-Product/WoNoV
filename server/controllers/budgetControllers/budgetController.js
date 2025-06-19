@@ -107,7 +107,7 @@ const requestBudget = async (req, res, next) => {
       budgetApproval,
       l1Approval,
       srNo,
-      particulars: JSON.parse(particulars),
+      particulars: particulars ? JSON.parse(particulars) : [],
       gstIn: gstIn || "",
     };
 

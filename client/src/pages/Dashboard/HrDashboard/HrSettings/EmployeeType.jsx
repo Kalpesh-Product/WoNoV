@@ -51,7 +51,7 @@ const EmployeeType = () => {
 
   const handleDelete = (item) => {
     const payload = {
-      type: "policies",
+      type: "employeeTypes",
       itemId: item._id,
       isDeleted: true,
     };
@@ -67,7 +67,8 @@ const EmployeeType = () => {
         const response = await axios.get(
           "/api/company/get-company-data/?field=employeeTypes"
         );
-        return response.data.employeeTypes;
+        const filteredEmployeeTypes = response.data.employeeTypes.filter((emp)=> !emp.isDeleted)
+        return filteredEmployeeTypes;
       } catch (error) {
         throw new Error(error.response.data.message);
       }
