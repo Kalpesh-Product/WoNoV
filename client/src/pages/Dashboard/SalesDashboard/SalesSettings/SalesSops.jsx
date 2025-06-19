@@ -14,18 +14,18 @@ const Sops = () => {
   ];
 
   const sopsUploadData = [
-    {
-      srNo: 1,
-      templateName: "Upload SOP",
-      uploadedBy: "Kalpesh Naik",
-      date: "01-03-2025",
-    },
-    {
-      srNo: 2,
-      templateName: "Upload SOP",
-      uploadedBy: "Kalpesh Naik",
-      date: "08-03-2025",
-    },
+    // {
+    //   srNo: 1,
+    //   templateName: "Upload SOP",
+    //   uploadedBy: "Kalpesh Naik",
+    //   date: "01-03-2025",
+    // },
+    // {
+    //   srNo: 2,
+    //   templateName: "Upload SOP",
+    //   uploadedBy: "Kalpesh Naik",
+    //   date: "08-03-2025",
+    // },
   ];
 
   return (
@@ -38,8 +38,7 @@ const Sops = () => {
             <>
               <div
                 className="space-y-2 border-default p-4  rounded-md"
-                key={index}
-              >
+                key={index}>
                 <div className="mb-2">
                   <span className="text-subtitle text-primary">{index}</span>
                 </div>
@@ -64,7 +63,7 @@ const Sops = () => {
       </div>
 
       <div>
-        <WidgetSection border title="Bulk Upload Data">
+        <WidgetSection border title="Upload SOPs">
           <AgTable
             data={sopsUploadData}
             columns={sopsUploadDataColumns}

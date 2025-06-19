@@ -64,7 +64,6 @@ const AdminTeamMembersSchedule = () => {
         const response = await axios.get("/api/company/fetch-units");
 
         const filteredUnits = response.data.filter((unit)=> unit.isOnlyBudget)
-        
         return filteredUnits;
       } catch (error) {
         console.error("Error fetching clients data:", error);
