@@ -372,7 +372,11 @@ const fetchUnits = async (req, res, next) => {
       return res.status(200).json(locations);
     }
 
-    locations = await Unit.find({ company })
+    locations = await Unit.find({
+      company,
+      isActive: true,
+      isOnlyBudget: false,
+    })
       .populate([
         {
           path: "building",
