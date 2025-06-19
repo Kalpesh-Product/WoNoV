@@ -127,7 +127,7 @@ const TeamMembersSchedule = () => {
               ? `${unit?.maintenanceLead?.firstName} ${unit?.maintenanceLead?.lastName}`
               : `${unit?.itLead?.firstName} ${unit?.itLead?.lastName}`,
         }));
-        console.log("book writer", department.name);
+        
         return formattedUnits;
       } catch (error) {
         console.error("Error fetching clients data:", error);

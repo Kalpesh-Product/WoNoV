@@ -347,7 +347,7 @@ const getTickets = async (req, res, next) => {
       let priority = "Low"; // Default
 
       if (department) {
-        const issue = department.ticketIssues.find(
+        const issue = department?.ticketIssues?.find(
           (issue) => issue.title === ticket.ticket
         );
         priority = issue?.priority || "High";
@@ -356,7 +356,7 @@ const getTickets = async (req, res, next) => {
       // If still "Low" or no match, look for "Other"
       if (!priority || priority === "Low") {
         const otherIssue = foundCompany.selectedDepartments
-          .flatMap((dept) => dept.ticketIssues)
+          .flatMap((dept) => dept?.ticketIssues)
           .find((issue) => issue.title === "Other");
 
         priority = otherIssue?.priority || "Low";
@@ -465,6 +465,11 @@ const getTeamMemberTickets = async (req, res, next) => {
           select: "firstName middleName lastName",
           populate: { path: "role", select: "roleTitle" },
         },
+        {
+          path: "closedBy",
+          select: "firstName middleName lastName",
+          populate: { path: "role", select: "roleTitle" },
+        },
       ])
       .select("-company")
       .lean();
@@ -544,6 +549,7 @@ const getAllTickets = async (req, res, next) => {
         },
         { path: "raisedToDepartment", select: "name" },
         { path: "acceptedBy", select: "firstName middleName lastName" },
+        { path: "closedBy", select: "firstName middleName lastName" },
         { path: "assignees", select: "firstName middleName lastName" },
       ])
       .lean()
@@ -568,7 +574,7 @@ const getAllTickets = async (req, res, next) => {
       let updatedTicket = { ...ticket };
 
       foundCompany.selectedDepartments.forEach((dept) => {
-        dept.ticketIssues.forEach((issue) => {
+        dept?.ticketIssues?.forEach((issue) => {
           if (issue.title.toLowerCase() === ticket.ticket.toLowerCase()) {
             updatedTicket.priority = issue.priority;
           }
@@ -907,6 +913,7 @@ const ticketData = async (req, res, next) => {
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
         { path: "acceptedBy", select: "firstName lastName email" },
+        { path: "closedBy", select: "firstName lastName email" },
         { path: "assignees", select: "firstName lastName email" },
         { path: "company", select: "companyName" },
         { path: "reject.rejectedBy", select: "firstName lastName email" },
@@ -928,7 +935,7 @@ const ticketData = async (req, res, next) => {
       let updatedTicket = { ...ticket };
 
       foundCompany.selectedDepartments.forEach((dept) => {
-        dept.ticketIssues.forEach((issue) => {
+        dept?.ticketIssues?.forEach((issue) => {
           if (issue.title.toLowerCase() === ticket.ticket.toLowerCase()) {
             updatedTicket.priority = issue.priority;
           }
@@ -1161,7 +1168,7 @@ const closeTicket = async (req, res, next) => {
 
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
-      { status: "Closed", closedAt: new Date() },
+      { status: "Closed", closedAt: new Date(), closedBy: user },
       { new: true }
     );
     if (!updatedTicket) {
@@ -1313,6 +1320,7 @@ const filterMyTickets = async (req, res, next) => {
         { path: "raisedToDepartment", select: "name" },
         { path: "reject.rejectedBy", select: "firstName lastName email" },
         { path: "acceptedBy", select: "firstName lastName email" },
+        { path: "closedBy", select: "firstName lastName email" },
       ])
       .lean()
       .exec();
@@ -1341,7 +1349,7 @@ const filterMyTickets = async (req, res, next) => {
       let priority = "Low"; // Default priority
 
       if (department) {
-        const issue = department.ticketIssues.find(
+        const issue = department?.ticketIssues?.find(
           (issue) => issue.title === ticket.ticket
         );
 
@@ -1351,7 +1359,7 @@ const filterMyTickets = async (req, res, next) => {
       // If the issue is not found, check for "Other" and assign its priority
       if (!priority || priority === "Low") {
         const otherIssue = foundCompany.selectedDepartments
-          .flatMap((dept) => dept.ticketIssues)
+          .flatMap((dept) => dept?.ticketIssues)
           .find((issue) => issue.title === "Other");
 
         priority = otherIssue?.priority || "Low";
@@ -1388,6 +1396,7 @@ const filterTodayTickets = async (req, res, next) => {
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
         { path: "acceptedBy", select: "firstName middleName lastName" },
+        { path: "closedBy", select: "firstName middleName lastName" },
       ])
       .lean()
       .exec();
@@ -1417,7 +1426,7 @@ const filterTodayTickets = async (req, res, next) => {
       let priority = "Low"; // Default priority
 
       if (department) {
-        const issue = department.ticketIssues.find(
+        const issue = department?.ticketIssues?.find(
           (issue) => issue.title === ticket.ticket
         );
 
@@ -1427,7 +1436,7 @@ const filterTodayTickets = async (req, res, next) => {
       // If the issue is not found, check for "Other" and assign its priority
       if (!priority || priority === "Low") {
         const otherIssue = foundCompany.selectedDepartments
-          .flatMap((dept) => dept.ticketIssues)
+          .flatMap((dept) => dept?.ticketIssues)
           .find((issue) => issue.title === "Other");
 
         priority = otherIssue?.priority || "Low";
