@@ -563,7 +563,7 @@ export const routes = createBrowserRouter([
                             element: <ViewVendor />,
                           },
                           {
-                            path: "finance-asset-list",
+                            path: "department-asset-list",
                             element: <FinanceAssetList />,
                           },
                           {

@@ -58,7 +58,7 @@ const MonthlyInvoiceCommon = () => {
           >
             <MdOutlineRemoveRedEye />
           </span>
-          <ThreeDotMenu
+          {/* <ThreeDotMenu
             rowId={params.data?.id}
             menuItems={[
               {
@@ -69,7 +69,7 @@ const MonthlyInvoiceCommon = () => {
                 },
               },
             ]}
-          />
+          /> */}
         </div>
       ),
     },

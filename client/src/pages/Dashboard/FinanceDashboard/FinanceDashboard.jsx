@@ -296,6 +296,7 @@ const FinanceDashboard = () => {
       colors: ["transparent"],
     },
     yaxis: {
+      max : 8000000,
       title: {
         text: "Amount In Lakhs (INR)",
       },

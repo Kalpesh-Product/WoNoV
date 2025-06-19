@@ -9,40 +9,56 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { toast } from "sonner";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { HiOutlinePencilSquare } from "react-icons/hi2";
 import { useEffect } from "react";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import { queryClient } from "../../../../main";
 
 const EmployeeType = () => {
   const [openModal, setOpenModal] = useState(false);
-   const [modalMode, setModalMode] = useState("add");
-   const [selectedItem, setSelectedItem] = useState(null);
-   const queryClient = useQueryClient();
+  const [modalMode, setModalMode] = useState("add");
+  const [selectedItem, setSelectedItem] = useState(null);
   const axios = useAxiosPrivate();
 
-  const { handleSubmit,reset,control,setValue } = useForm({
+  const { handleSubmit, reset, control, setValue } = useForm({
     defaultValues: {
       employeeType: "",
-      isActive:true
+      isActive: true,
     },
   });
 
- const handleAddType = () => {
-  setModalMode("add");
-  reset({
-    employeeType: "",
-    isActive: "true",
-  });
-  setOpenModal(true);
-};
+  const handleAddType = () => {
+    setModalMode("add");
+    reset({
+      employeeType: "",
+      isActive: "true",
+    });
+    setOpenModal(true);
+  };
+
+  const handleView = (item) => {
+    setModalMode("view");
+    setSelectedItem(item);
+    setOpenModal(true);
+  };
 
   const handleEdit = (item) => {
-  setModalMode("edit");
-  setSelectedItem(item);
-  setOpenModal(true);
- 
-};
+    setModalMode("edit");
+    setSelectedItem(item);
+    setOpenModal(true);
+  };
 
- 
+  const handleDelete = (item) => {
+    const payload = {
+      type: "policies",
+      itemId: item._id,
+      isDeleted: true,
+    };
+    setModalMode("delete");
+    setSelectedItem(item);
+    updateEmployeeTypeMutation.mutate(payload);
+  };
 
   const { data: employeeTypes = [] } = useQuery({
     queryKey: ["employeeTypes"],
@@ -58,44 +74,41 @@ const EmployeeType = () => {
     },
   });
 
-  
   const addEmployeeTypeMutation = useMutation({
-  mutationFn: async (payload) => {
-    const response = await axios.post(`/api/company/add-employee-type`, payload);
-    return response.data;
-  },
-  onSuccess: () => {
-    toast.success("Employee Type added");
-    queryClient.invalidateQueries(["employeeTypes"]);
-    setOpenModal(false);
-  },
-  onError: (error) => {
-    toast.error(error.response?.data?.message || "Addition failed");
-  },
-});
+    mutationFn: async (payload) => {
+      const response = await axios.post(
+        `/api/company/add-employee-type`,
+        payload
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Employee Type added");
+      queryClient.invalidateQueries(["employeeTypes"]);
+      setOpenModal(false);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Addition failed");
+    },
+  });
 
-
-const updateEmployeeTypeMutation = useMutation({
-  mutationFn: async (payload) => {
-  
-    const response = await axios.patch(
-      `/api/company/update-company-data`,
-      payload
-    );
-    return response.data;
-  },
-  onSuccess: () => {
-    toast.success("Employee Type updated");
-    queryClient.invalidateQueries(["employeeTypes"]);
-    setOpenModal(false);
-  },
-  onError: (error) => {
-    toast.error(error.response?.data?.message || "Update failed");
-  },
-});
-
-
-
+  const updateEmployeeTypeMutation = useMutation({
+    mutationFn: async (payload) => {
+      const response = await axios.patch(
+        `/api/company/update-company-data`,
+        payload
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Employee Type updated");
+      queryClient.invalidateQueries({ queryKey: ["employeeTypes"] });
+      setOpenModal(false);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Update failed");
+    },
+  });
 
   const departmentsColumn = [
     { field: "id", headerName: "Sr No" },
@@ -146,14 +159,23 @@ const updateEmployeeTypeMutation = useMutation({
       cellRenderer: (params) => (
         <>
           <div className="p-2 mb-2 flex gap-2">
-            {/* <span className="text-content text-primary hover:underline cursor-pointer">
-              Make Inactive
-            </span> */}
-            <span
-                        onClick={() => handleEdit(params.data)}
-                        className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
-                        <HiOutlinePencilSquare />
-                      </span>
+            <ThreeDotMenu
+              rowId={params.data.id}
+              menuItems={[
+                {
+                  label: "View",
+                  onClick: () => handleView(params.data),
+                },
+                {
+                  label: "Edit",
+                  onClick: () => handleEdit(params.data),
+                },
+                {
+                  label: "Delete",
+                  onClick: () => handleDelete(params.data),
+                },
+              ]}
+            />
           </div>
         </>
       ),
@@ -161,29 +183,29 @@ const updateEmployeeTypeMutation = useMutation({
   ];
 
   const onSubmit = (data) => {
- 
- 
-  if (modalMode === "edit") {
-     const payload = {
-    name: data.employeeType,
-    isActive: data.isActive === "true",
-    type:"employeeTypes",
-    itemId: selectedItem._id
+    if (modalMode === "edit") {
+      const payload = {
+        name: data.employeeType,
+        isActive: data.isActive === "true",
+        type: "employeeTypes",
+        itemId: selectedItem._id,
+      };
+      updateEmployeeTypeMutation.mutate(payload);
+    } else {
+      const payload = {
+        employeeType: data.employeeType,
+      };
+      addEmployeeTypeMutation.mutate(payload);
+    }
   };
-    updateEmployeeTypeMutation.mutate(payload);
-  } else {
- const payload = {
-  employeeType: data.employeeType
- }
-   addEmployeeTypeMutation.mutate(payload);
-  }
-};
 
-useEffect(()=>{
-  setValue("employeeType",selectedItem?.name)
-  setValue("isActive",selectedItem?.status)
-},[selectedItem])
-  
+  useEffect(() => {
+    if (modalMode === "edit" && selectedItem) {
+      setValue("employeeType", selectedItem?.name || "");
+      setValue("isActive", selectedItem?.status?.toString());
+    }
+  }, [modalMode, selectedItem, setValue]);
+
   return (
     <PageFrame>
       <div>
@@ -198,99 +220,77 @@ useEffect(()=>{
               id: index + 1,
               name: type.name,
               status: type.isActive,
-              _id:type._id
+              _id: type._id,
             })),
           ]}
           columns={departmentsColumn}
         />
 
-        <div>
-         {
-          modalMode === "add" && (
-             <MuiModal
-            open={openModal}
-           title={modalMode === "add" ? "Add Employee Type" : "Edit Employee Type"}
-            onClose={() => setOpenModal(false)}>
-           
-               <div>
-              <form
-                onSubmit={handleSubmit(onSubmit)}
-                className="flex flex-col gap-4">
-                <Controller
-                  name="employeeType"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Enter Employee Type"
-                      fullWidth
-                    />
-                  )}
-                />
-
-                <PrimaryButton
-                  title={"Add"}
-                  type="submit"
-                />
-              </form>
-            </div>
-             
-           
-          </MuiModal>
-          )
-         }
-
-          {
-            modalMode === "edit" && (
-                <MuiModal
-            open={openModal}
-           title={modalMode === "add" ? "Add Employee Type" : "Edit Employee Type"}
-            onClose={() => setOpenModal(false)}>
-           
-            <div>
-              <form
-                onSubmit={handleSubmit(onSubmit)}
-                className="flex flex-col gap-4">
-                <Controller
-                  name="employeeType"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Enter Employee Type"
-                      fullWidth
-                    />
-                  )}
-                />
-
-                 <Controller
-            name="isActive"
-            control={control}
-            render={({ field, fieldState }) => (
-              <FormControl fullWidth error={!!fieldState.error}>
-                <Select {...field} size="small" displayEmpty>
-                  <MenuItem value="" disabled>
-                   Select Active Status
-                  </MenuItem>
-                  <MenuItem value="true">Yes</MenuItem>
-                  <MenuItem value="false">No</MenuItem>
-                </Select>
-              </FormControl>
-            )}
-          />
-                <PrimaryButton
-                  title={"Update"}
-                   type="submit"
-                />
-              </form>
-            </div>
-           
-          </MuiModal>
-            )
+        <MuiModal
+          open={openModal}
+          title={
+            modalMode === "add"
+              ? "Add Employee Type"
+              : modalMode === "edit"
+              ? "Edit Employee Type"
+              : "Employee Type Details"
           }
-        </div>
+          onClose={() => setOpenModal(false)}
+        >
+          {modalMode === "view" ? (
+            <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[70vh]">
+              <DetalisFormatted
+                title="Employee Type"
+                detail={selectedItem?.name || "N/A"}
+              />
+              <DetalisFormatted
+                title="Status"
+                detail={selectedItem?.status ? "Active" : "Inactive"}
+              />
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="flex flex-col gap-4"
+            >
+              <Controller
+                name="employeeType"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Enter Employee Type"
+                    fullWidth
+                  />
+                )}
+              />
+
+              {modalMode === "edit" && (
+                <Controller
+                  name="isActive"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <FormControl fullWidth error={!!fieldState.error}>
+                      <Select {...field} size="small" displayEmpty>
+                        <MenuItem value="" disabled>
+                          Select Active Status
+                        </MenuItem>
+                        <MenuItem value="true">Yes</MenuItem>
+                        <MenuItem value="false">No</MenuItem>
+                      </Select>
+                    </FormControl>
+                  )}
+                />
+              )}
+
+              <PrimaryButton
+                title={modalMode === "add" ? "Add" : "Update"}
+                type="submit"
+              />
+            </form>
+          )}
+        </MuiModal>
       </div>
     </PageFrame>
   );

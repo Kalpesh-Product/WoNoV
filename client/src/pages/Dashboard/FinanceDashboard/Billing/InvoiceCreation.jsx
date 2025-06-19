@@ -159,23 +159,27 @@ const InvoiceCreation = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <div className="p-2  flex gap-2 items-center">
+        <div className="p-2 flex gap-2 items-center">
           <span
             className="text-subtitle cursor-pointer"
             onClick={() => {
               setViewDetails(params.data);
               setViewModal(true);
-            }}>
+            }}
+          >
             <MdOutlineRemoveRedEye />
           </span>
+
           <ThreeDotMenu
             rowId={params.data.id}
+            disabled={params.data.status === "Paid"} // ✅ Disable menu if Paid
             menuItems={[
               {
                 label: "Mark As Paid",
                 onClick: () => {
                   updateInvoice(params.data.id);
                 },
+                disabled: params.data.status === "Paid", // optional: extra safety
               },
             ]}
           />
@@ -189,7 +193,7 @@ const InvoiceCreation = () => {
     id: item._id,
     clientName: item?.client?.clientName || "N/A",
     invoiceName: item?.invoice?.name || "N/A",
-    uploadDate: (item?.invoiceUploadedAt),
+    uploadDate: item?.invoiceUploadedAt,
     status: item?.paidStatus || item?.paymentStatus ? "Paid" : "Unpaid",
     ...item,
   }));
@@ -216,7 +220,8 @@ const InvoiceCreation = () => {
             setViewModal(false);
             setViewDetails(null);
           }}
-          title="Invoice Details">
+          title="Invoice Details"
+        >
           <div className="space-y-3">
             <div className="font-bold">Invoice Information</div>
             <DetalisFormatted
@@ -235,7 +240,8 @@ const InvoiceCreation = () => {
                     href={viewDetails.invoice.link}
                     className="text-primary underline cursor-pointer"
                     target="_blank"
-                    rel="noreferrer">
+                    rel="noreferrer"
+                  >
                     View PDF
                   </a>
                 ) : (
@@ -266,10 +272,12 @@ const InvoiceCreation = () => {
         <MuiModal
           open={viewAddTemplateModal}
           onClose={() => setViewAddTemplateModal(false)}
-          title="Add New Invoice">
+          title="Add New Invoice"
+        >
           <form
             onSubmit={handleSubmit(onSubmitTemplate)}
-            className="flex flex-col gap-4 mt-2">
+            className="flex flex-col gap-4 mt-2"
+          >
             <Controller
               name="invoiceFile"
               control={control}
@@ -293,7 +301,8 @@ const InvoiceCreation = () => {
                   select
                   size="small"
                   fullWidth
-                  label="Select Client">
+                  label="Select Client"
+                >
                   <MenuItem value="" disabled>
                     Select Client
                   </MenuItem>

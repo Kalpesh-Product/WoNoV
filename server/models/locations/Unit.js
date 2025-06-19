@@ -40,6 +40,8 @@ const unitSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    isOnlyBudget: Boolean,
+    includesBudget: Boolean,
     isActive: {
       type: Boolean,
       default: true,

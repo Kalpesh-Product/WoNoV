@@ -71,6 +71,10 @@ const companySchema = new mongoose.Schema({
             type: Boolean,
             default: true,
           },
+          isDeleted: {
+            type: Boolean,
+            default: false,
+          },
         },
       ],
       sop: [
@@ -90,6 +94,10 @@ const companySchema = new mongoose.Schema({
           isActive: {
             type: Boolean,
             default: true,
+          },
+          isDeleted: {
+            type: Boolean,
+            default: false,
           },
         },
       ],
@@ -179,6 +187,10 @@ const companySchema = new mongoose.Schema({
         type: Boolean,
         default: true,
       },
+      isDeleted: {
+        type: Boolean,
+        default: false,
+      },
       leavesCount: [
         {
           leaveType: {
@@ -226,6 +238,10 @@ const companySchema = new mongoose.Schema({
         type: Boolean,
         default: true,
       },
+      isDeleted: {
+        type: Boolean,
+        default: false,
+      },
     },
   ],
   templates: [
@@ -262,6 +278,10 @@ const companySchema = new mongoose.Schema({
         type: Boolean,
         default: true,
       },
+      isDeleted: {
+        type: Boolean,
+        default: false,
+      },
     },
   ],
   sop: [
@@ -281,6 +301,10 @@ const companySchema = new mongoose.Schema({
       isActive: {
         type: Boolean,
         default: true,
+      },
+      isDeleted: {
+        type: Boolean,
+        default: false,
       },
     },
   ],

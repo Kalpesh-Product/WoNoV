@@ -128,7 +128,7 @@ const StatutoryPayments = () => {
         formatter: (val) => `${val}%`,
       },
       title: {
-        text: "Client Collection %",
+        text: "Statutory Payments %",
       },
     },
     legend: {

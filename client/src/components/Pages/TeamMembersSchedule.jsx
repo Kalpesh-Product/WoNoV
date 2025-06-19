@@ -25,7 +25,6 @@ const TeamMembersSchedule = () => {
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  useEffect(() => console.log(selectedUser), [selectedUser]);
   const [selectionRange, setSelectionRange] = useState({
     startDate: new Date(),
     endDate: new Date(),
@@ -61,7 +60,6 @@ const TeamMembersSchedule = () => {
     },
   });
   const selectedLocation = watch("location");
-  console.log("Selected loc : ", selectedLocation);
   const selectedUnit = watch("unitId");
   const {
     data: units = [],
@@ -113,7 +111,24 @@ const TeamMembersSchedule = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/company/fetch-units");
-        return response.data;
+        const formattedUnits = response.data.map((unit, index) => ({
+          ...unit,
+          srNo: index + 1,
+          unitNo: unit.unitNo,
+          unitName: unit.unitName,
+          buildingName: unit.building?.buildingName ?? "N/A",
+          sqft: unit.sqft,
+          openDesks: unit.openDesks,
+          cabinDesks: unit.cabinDesks,
+          lead:
+            department.name === "Administration"
+              ? `${unit?.adminLead?.firstName} ${unit?.adminLead?.lastName}`
+              : department.name === "Maintenance"
+              ? `${unit?.maintenanceLead?.firstName} ${unit?.maintenanceLead?.lastName}`
+              : `${unit?.itLead?.firstName} ${unit?.itLead?.lastName}`,
+        }));
+        console.log("book writer", department.name);
+        return formattedUnits;
       } catch (error) {
         console.error("Error fetching clients data:", error);
       }
@@ -194,23 +209,18 @@ const TeamMembersSchedule = () => {
     assignPrimary(data);
   };
   //----------------------------------------API---------------------------------------//
-  const memberColumns = [
+  const unitColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
+    { field: "unitNo", headerName: "Unit No", flex: 1 },
+    { field: "unitName", headerName: "Unit Name", flex: 1 },
+    { field: "buildingName", headerName: "Building", flex: 1 },
     {
-      field: "name",
-      headerName: "Name",
-      cellRenderer: (params) => (
-        <span
-          role="button"
-          onClick={() => navigate(`${params.value}`)}
-          className="text-primary underline cursor-pointer"
-        >
-          {params.value}
-        </span>
-      ),
+      field: "lead",
+      headerName: "Primary Lead",
+      cellRenderer: (params) => {
+        return params?.value !== "undefined undefined" ? params?.value : "-";
+      },
     },
-    { field: "manager", headerName: "Manager" },
-    { field: "unitNo", headerName: "Unit", flex: "1" },
     {
       field: "actions",
       headerName: "Actions",
@@ -271,16 +281,8 @@ const TeamMembersSchedule = () => {
             search={true}
             tableTitle={"Team Members Schedule"}
             buttonTitle={"Assign Member"}
-            data={unitAssignees.map((assignee, index) => {
-              return {
-                ...assignee,
-                srNo: index + 1,
-                name: `${assignee.firstName} ${assignee.lastName}`,
-                // unitNo: assignee.location.unitNo,
-                // substitutions: assignee.substitutions,
-              };
-            })}
-            columns={memberColumns}
+            data={unitsData}
+            columns={unitColumns}
             handleClick={handleAddUser}
           />
         ) : (

@@ -104,6 +104,7 @@ const LandlordPayments = () => {
       categories: [], // Injected via YearlyGraph
     },
     yaxis: {
+      max : 2000000,
       labels: {
         formatter: (val) => `${Math.round(val / 100000)}`,
       },

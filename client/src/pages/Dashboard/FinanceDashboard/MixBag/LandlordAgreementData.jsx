@@ -97,7 +97,21 @@ const LandlordAgreementData = () => {
 
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "document", headerName: "Document", flex: 1 },
+    {
+      field: "document",
+      headerName: "Document",
+      flex: 1,
+      cellRenderer: (params) => (
+        <span
+          role="button"
+          onClick={() => window.open(params.data.url, "_blank")}
+          className="underline text-primary cursor-pointer"
+        >
+          {params.value}
+        </span>
+      ),
+    },
+
     { field: "createdAt", headerName: "Created At" },
     { field: "updatedAt", headerName: "Updated At" },
     { field: "actions", headerName: "Actions" }, // Placeholder, if needed
@@ -108,6 +122,7 @@ const LandlordAgreementData = () => {
     document: item?.name || "Untitled Document",
     createdAt: item?.createdAt ? humanDate(item.createdAt) : "N/A",
     updatedAt: item?.updatedAt ? humanDate(item.updatedAt) : "N/A",
+    url: item?.url || "",
     actions: "-", // Add actual actions like view/download buttons here if needed
   }));
 

@@ -89,7 +89,7 @@ const ClientRevenue = () => {
           <AgTable
             search={true}
             searchColumn="Email"
-            data={rows}
+            data={[]}
             columns={viewEmployeeColumns}
           />
         </PageFrame>
