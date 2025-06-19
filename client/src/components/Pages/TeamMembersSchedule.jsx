@@ -25,7 +25,6 @@ const TeamMembersSchedule = () => {
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  useEffect(() => console.log(selectedUser), [selectedUser]);
   const [selectionRange, setSelectionRange] = useState({
     startDate: new Date(),
     endDate: new Date(),
@@ -62,7 +61,6 @@ const TeamMembersSchedule = () => {
     },
   });
   const selectedLocation = watch("location");
-  console.log("Selected loc : ", selectedLocation);
   const selectedUnit = watch("unitId");
   const {
     data: units = [],

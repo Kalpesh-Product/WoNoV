@@ -14,6 +14,6 @@ router.patch("/update-weekly-unit", updateWeeklyUnit);
 router.patch("/add-substitute", addSubstitute);
 router.get("/fetch-weekly-unit/:department", fetchWeeklyUnits);
 router.get("/get-primary-units", fetchPrimaryUnits);
-router.get("/get-member-units", fetchTeamMembersSchedule);
+router.get("/get-unit-schedule", fetchTeamMembersSchedule);
 
 module.exports = router;
