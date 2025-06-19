@@ -25,12 +25,12 @@ const TeamMembersSchedule = () => {
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  useEffect(() => console.log(selectedUser), [selectedUser]);
   const [selectionRange, setSelectionRange] = useState({
     startDate: new Date(),
     endDate: new Date(),
     key: "selection",
   });
+
   const department = usePageDepartment();
   const {
     handleSubmit,
@@ -61,7 +61,6 @@ const TeamMembersSchedule = () => {
     },
   });
   const selectedLocation = watch("location");
-  console.log("Selected loc : ", selectedLocation);
   const selectedUnit = watch("unitId");
   const {
     data: units = [],
@@ -284,7 +283,7 @@ const TeamMembersSchedule = () => {
                 ...assignee,
                 srNo: index + 1,
                 name: `${assignee.firstName} ${assignee.lastName}`,
-                // unitNo: assignee.location.unitNo,
+                unitNo: assignee.primaryUnit.unitNo,
                 // substitutions: assignee.substitutions,
               };
             })}

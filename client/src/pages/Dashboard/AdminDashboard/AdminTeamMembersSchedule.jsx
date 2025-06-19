@@ -30,7 +30,7 @@ const AdminTeamMembersSchedule = () => {
     endDate: new Date(),
     key: "selection",
   });
-  const department = usePageDepartment()
+  const department = usePageDepartment();
   const {
     handleSubmit,
     control,
@@ -62,7 +62,10 @@ const AdminTeamMembersSchedule = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/company/fetch-units");
-        return response.data;
+
+        const filteredUnits = response.data.filter((unit)=> unit.isOnlyBudget)
+      
+        return filteredUnits;
       } catch (error) {
         console.error("Error fetching clients data:", error);
       }
@@ -73,7 +76,6 @@ const AdminTeamMembersSchedule = () => {
     queryKey: ["employees"],
     queryFn: async () => {
       try {
-      
         const response = await axios.get(`/api/users/fetch-users`, {
           params: {
             deptId: department._id,
@@ -89,7 +91,6 @@ const AdminTeamMembersSchedule = () => {
     queryKey: ["unitAssignees"],
     queryFn: async () => {
       try {
-       
         const response = await axios.get(
           `/api/administration/fetch-weekly-unit/${department._id}`
         );
@@ -104,10 +105,9 @@ const AdminTeamMembersSchedule = () => {
     useMutation({
       mutationKey: ["assignMember"],
       mutationFn: async (data) => {
-      
         const response = await axios.post(
           "/api/administration/assign-weekly-unit",
-          {...data,department:department?._id}
+          { ...data, department: department?._id }
         );
         return response.data;
       },
@@ -135,12 +135,14 @@ const AdminTeamMembersSchedule = () => {
         <div className="flex items-center gap-4 py-2">
           <span
             onClick={() => handleViewUser(params.data)}
-            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
+            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
+          >
             <MdOutlineRemoveRedEye />
           </span>
           <span
             onClick={() => handleEditUser(params.data)}
-            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
+            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
+          >
             <HiOutlinePencilSquare />
           </span>
         </div>
@@ -185,14 +187,14 @@ const AdminTeamMembersSchedule = () => {
             search={true}
             tableTitle={"Team Members Schedule"}
             buttonTitle={"Assign Member"}
-            data={unitAssignees.map((assignee,index)=>{
+            data={unitAssignees.map((assignee, index) => {
               return {
                 ...assignee,
-                srNo:index+1,
+                srNo: index + 1,
                 name: `${assignee.employee.id.firstName} ${assignee.employee.id.lastName}`,
-                unitNo: assignee.location.unitNo,
-                substitutions : assignee.substitutions
-              }
+                unitNo: assignee.primaryUnit.unitNo,
+                substitutions: assignee.substitutions,
+              };
             })}
             columns={memberColumns}
             handleClick={handleAddUser}
@@ -207,12 +209,14 @@ const AdminTeamMembersSchedule = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={"Assign Substitute"}>
+        title={"Assign Substitute"}
+      >
         {modalMode === "add" && (
           <div>
             <form
               onSubmit={handleSubmit(handleFormSubmit)}
-              className="flex flex-col gap-4">
+              className="flex flex-col gap-4"
+            >
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <Controller
@@ -227,7 +231,8 @@ const AdminTeamMembersSchedule = () => {
                         size="small"
                         select
                         error={!!errors.employee}
-                        helperText={errors.employee?.message}>
+                        helperText={errors.employee?.message}
+                      >
                         <MenuItem value="" disabled>
                           Select a Member
                         </MenuItem>
@@ -264,7 +269,8 @@ const AdminTeamMembersSchedule = () => {
                         fullWidth
                         error={!!errors.location}
                         helperText={errors.unitId?.message}
-                        select>
+                        select
+                      >
                         <MenuItem value="" disabled>
                           Select Unit
                         </MenuItem>
@@ -346,7 +352,8 @@ const AdminTeamMembersSchedule = () => {
                   {selectedUser.substitutions?.map((sub, index) => (
                     <div
                       key={sub.substitute?._id}
-                      className="flex flex-col gap-2 border border-borderGray rounded-2xl p-4">
+                      className="flex flex-col gap-2 border border-borderGray rounded-2xl p-4"
+                    >
                       <h4 className="text-subtitle font-pmedium text-primary mb-2">
                         Substitute {index + 1}
                       </h4>

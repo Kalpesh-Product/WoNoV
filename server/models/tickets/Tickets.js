@@ -46,6 +46,10 @@ const ticketsSchema = new mongoose.Schema(
       },
     ],
     closedAt: Date,
+    closedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
     acceptedAt: Date,
     acceptedBy: {
       type: mongoose.Schema.Types.ObjectId,
