@@ -162,15 +162,44 @@ const AgTableComponent = React.memo(
       <div className="border-b-[1px] border-borderGray">
         {tableTitle && (
           <>
-            <div className="flex items-center justify-between pb-4">
-              <span className="font-pmedium text-title text-primary uppercase">
-                {tableTitle}
-              </span>
+            <div className="flex items-center justify-between ">
+              <div className="flex items-center justify-between pb-4">
+                <span className="font-pmedium text-title text-primary uppercase">
+                  {tableTitle}
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                {exportData ? (
+                  <PrimaryButton
+                    title={"Export"}
+                    handleSubmit={() => {
+                      if (gridRef.current) {
+                        gridRef.current.api.exportDataAsCsv({
+                          fileName: `${tableTitle || "table-data"}.csv`,
+                        });
+                      }
+                    }}
+                  />
+                ) : (
+                  ""
+                )}
+                {buttonTitle ? (
+                  <PrimaryButton
+                    title={buttonTitle}
+                    handleSubmit={handleClick}
+                  />
+                ) : (
+                  ""
+                )}
+              </div>
             </div>
           </>
         )}
 
-        <div className={`flex ${search ? "justify-between" : "justify-end"}  items-center py-2`}>
+        <div
+          className={`flex ${
+            search ? "justify-between" : "justify-end"
+          }  items-center py-2`}>
           {search ? (
             <TextField
               label="Search"
@@ -212,7 +241,7 @@ const AgTableComponent = React.memo(
                 </div>
               </div>
             )}
-            <div className="flex items-center gap-4">
+            {/* <div className="flex items-center gap-4">
               {exportData ? (
                 <PrimaryButton
                   title={"Export"}
@@ -232,7 +261,7 @@ const AgTableComponent = React.memo(
               ) : (
                 ""
               )}
-            </div>
+            </div> */}
           </div>
         </div>
         <div className="flex gap-2">
@@ -250,8 +279,7 @@ const AgTableComponent = React.memo(
         <MuiAside
           open={isFilterDrawerOpen}
           onClose={() => setFilterDrawerOpen(false)}
-          title="Advanced Filter"
-        >
+          title="Advanced Filter">
           {columns.map((column) =>
             dropdownColumns.includes(column.field) ? (
               <TextField
@@ -265,8 +293,7 @@ const AgTableComponent = React.memo(
                 value={filters[column.field] || ""}
                 onChange={(e) =>
                   handleFilterChange(column.field, e.target.value)
-                }
-              >
+                }>
                 <MenuItem value="">All</MenuItem>
                 {columnOptions[column.field]?.map((option) => (
                   <MenuItem key={option} value={option}>
@@ -296,8 +323,7 @@ const AgTableComponent = React.memo(
         <div
           ref={tableRef}
           className="ag-theme-quartz border-none w-full font-pregular"
-          style={{ height: tableHeight || 500 }}
-        >
+          style={{ height: tableHeight || 500 }}>
           <AgGridReact
             ref={gridRef}
             rowData={filteredData}
