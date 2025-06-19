@@ -39,16 +39,24 @@ const JobApplicationList = () => {
       headerName: "View Resume",
       cellRenderer: (params) => {
         const pdfPath = params.value;
-        return (
-          <a
-            href={pdfPath}
-            target="blank"
-            style={{ color: "blue", textDecoration: "underline" }}>
-            View Resume
-          </a>
-        );
+
+        if (pdfPath && pdfPath !== "Resume") {
+          return (
+            <a
+              href={pdfPath}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "blue", textDecoration: "underline" }}
+            >
+              View Resume
+            </a>
+          );
+        } else {
+          return <span>-</span>;
+        }
       },
     },
+
     {
       field: "actions",
       headerName: "Actions",
@@ -58,7 +66,8 @@ const JobApplicationList = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewApplicationDetails(params.data)}>
+            onClick={() => handleViewApplicationDetails(params.data)}
+          >
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -184,7 +193,8 @@ const JobApplicationList = () => {
         <MuiModal
           open={openModal}
           onClose={() => setOpenModal(false)}
-          title={"Job Application Details"}>
+          title={"Job Application Details"}
+        >
           {!isJobApplicationPending && jobApplications ? (
             <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
               <div className="font-bold">Personal Details</div>
@@ -250,7 +260,8 @@ const JobApplicationList = () => {
                         )}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ textDecoration: "underline" }}>
+                        style={{ textDecoration: "underline" }}
+                      >
                         LinkedIn Profile
                       </a>
                     </div>
@@ -287,7 +298,8 @@ const JobApplicationList = () => {
                         href={formatURL(viewApplicationDetails.resumeLink)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ textDecoration: "underline" }}>
+                        style={{ textDecoration: "underline" }}
+                      >
                         Resume
                       </a>
                     </div>
