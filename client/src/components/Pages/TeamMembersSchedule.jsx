@@ -284,7 +284,7 @@ const TeamMembersSchedule = () => {
                 ...assignee,
                 srNo: index + 1,
                 name: `${assignee.firstName} ${assignee.lastName}`,
-                // unitNo: assignee.location.unitNo,
+                unitNo: assignee.primaryUnit.unitNo,
                 // substitutions: assignee.substitutions,
               };
             })}
