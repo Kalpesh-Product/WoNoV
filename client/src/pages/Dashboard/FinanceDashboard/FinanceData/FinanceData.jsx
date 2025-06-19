@@ -8,7 +8,7 @@ const FinanceData = () => {
 
   // Map routes to tabs
   const tabs = [
-    { label: "Asset List", path: "finance-asset-list" },
+    { label: "Department Asset List", path: "department-asset-list" },
     { label: "Vendor", path: "vendor" },
     {
       label: "Monthly Invoice Reports",

@@ -118,6 +118,11 @@ const FrontendDashboard = () => {
 
       stacked: false,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
+      events: {
+        dataPointSelection: () => {
+          navigate("finance/budget");
+        },
+      },
     },
     colors: ["#54C4A7", "#EB5C45"],
     plotOptions: {
