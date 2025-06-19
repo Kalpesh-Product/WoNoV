@@ -7,6 +7,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import WidgetSection from "../WidgetSection";
 import { parseAmount } from "../../utils/parseAmount";
 import { inrFormat } from "../../utils/currencyFormat";
+import { useEffect } from "react";
 
 dayjs.extend(customParseFormat);
 
@@ -59,12 +60,44 @@ const MonthWiseAgTable = ({ financialData, passedColumns, title, amount }) => {
     };
   }, [filteredMonths, selectedMonthIndex]);
 
-  const monthTotal = monthData.rows
-    .map(
-      (item) =>
-        parseAmount(item.revenue) || item.totalAmount || item.invoiceAmount
-    )
-    .reduce((sum, item) => item + sum, 0);
+//   const parseAmount = (amount) => {
+//   if (!amount) return 0;
+//   if (typeof amount === "number") return amount;
+//   return parseFloat(amount.replace(/,/g, "")) || 0;
+// };
+
+// const monthTotal = monthData.rows
+//   .map((item) =>{
+//     console.log("item",parseAmount(item.revenue))
+//      return parseAmount(item.revenue) ||
+//      item.totalAmount ||
+//      item.invoiceAmount
+//   }
+   
+//   )
+//   .reduce((sum, item) => { console.log("total",item) 
+//     return sum + item
+//   }, 0);
+
+const parseAmount = (amount) => {
+  if (!amount) return 0;
+  if (typeof amount === "number") return amount;
+  return parseFloat(amount.replace(/,/g, "")) || 0;
+};
+
+const monthTotal = monthData.rows
+  .map((item) => {
+    const revenue = parseAmount(item.revenue);
+    const total = parseAmount(item.totalAmount);
+    const invoice = parseAmount(item.invoiceAmount);
+
+    // Prefer revenue > total > invoice
+    return revenue || total || invoice || 0;
+  })
+  .reduce((sum, item) => sum + item, 0);
+
+
+
   const columns = [
     { headerName: "Particulars", field: "particulars" },
     {
@@ -108,7 +141,7 @@ const MonthWiseAgTable = ({ financialData, passedColumns, title, amount }) => {
       <WidgetSection
         title={title}
         TitleAmount={amount || `INR ${inrFormat(monthTotal)}`}
-        border>
+         border>
         <div className="flex justify-center items-center space-x-2 px-4 pt-2 ">
           {/* Month Switcher */}
           {filteredMonths.length > 0 && (

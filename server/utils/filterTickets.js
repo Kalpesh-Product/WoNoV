@@ -39,6 +39,15 @@ async function fetchTickets(query, companyId) {
           },
         },
         {
+          path: "closedBy",
+          select: "firstName lastName",
+          populate: {
+            path: "departments",
+            select: "name",
+            model: "Department",
+          },
+        },
+        {
           path: "assignees",
           select: "firstName lastName",
           populate: {

@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import PrimaryButton from "../../components/PrimaryButton";
 import AllocatedBudget from "../../components/Tables/AllocatedBudget";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { FormControl, MenuItem, Select, TextField } from "@mui/material";
@@ -22,6 +22,7 @@ const BudgetPage = () => {
   const { auth } = useAuth();
   const location = useLocation();
   const department = usePageDepartment();
+  const queryClient = useQueryClient(); 
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
@@ -109,6 +110,8 @@ const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
         setOpenModal(false);
         toast.success(data.message);
         reset();
+        
+    queryClient.invalidateQueries(["departmentBudget"]); 
       },
       onError: function (error) {
         toast.error(error.response.data.message);

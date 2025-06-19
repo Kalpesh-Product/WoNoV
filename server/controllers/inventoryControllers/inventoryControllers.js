@@ -4,7 +4,7 @@ const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 
 // Create Inventory Item
-const createInventory = async (req, res) => {
+const createInventory = async (req, res, next) => {
   const logPath = "inventory/InventoryLog";
   const logAction = "Add inventory";
   const logSourceKey = "inventory";
@@ -23,6 +23,7 @@ const createInventory = async (req, res) => {
       closingInventoryUnits,
       category,
     } = req.body;
+    console.log(req.body);
 
     if (!mongoose.Types.ObjectId.isValid) {
       throw new CustomError(

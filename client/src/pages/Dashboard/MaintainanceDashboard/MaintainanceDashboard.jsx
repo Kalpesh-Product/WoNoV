@@ -132,7 +132,7 @@ const MaintainanceDashboard = () => {
     },
 
     yaxis: {
-      max: 1000000,
+      max: 200000,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
         formatter: (val) => `${val / 100000}`,

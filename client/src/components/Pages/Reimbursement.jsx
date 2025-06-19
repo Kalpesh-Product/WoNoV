@@ -199,7 +199,6 @@ const Reimbursement = () => {
       reset();
     },
     onError: (error) => {
-   
       toast.error(error.response.data.message);
     },
   });
@@ -237,8 +236,7 @@ const Reimbursement = () => {
                     size="small"
                     select
                     {...field}
-                    label="Select Location"
-                  >
+                    label="Select Location">
                     <MenuItem value="" disabled>
                       Select Building
                     </MenuItem>
@@ -438,8 +436,7 @@ const Reimbursement = () => {
                   {fields.map((item, index) => (
                     <li
                       key={index}
-                      className="flex justify-between items-center border-b py-1"
-                    >
+                      className="flex justify-between items-center border-b py-1">
                       <div className="flex flex-col">
                         <span>{item.particularName}</span>
                         <span className="font-medium text-gray-600">
@@ -450,8 +447,7 @@ const Reimbursement = () => {
                         type="button"
                         onClick={() => remove(index)}
                         className="text-red-500 hover:text-red-700"
-                        title="Delete"
-                      >
+                        title="Delete">
                         <MdDelete size={20} />
                       </button>
                     </li>
@@ -500,8 +496,7 @@ const Reimbursement = () => {
                   size="small"
                   label={"Invoice Attached"}
                   value={field.value ? "Yes" : "No"}
-                  onChange={(e) => field.onChange(e.target.value === "Yes")}
-                >
+                  onChange={(e) => field.onChange(e.target.value === "Yes")}>
                   {["Yes", "No"].map((opt) => (
                     <MenuItem key={opt} value={opt}>
                       {opt}
@@ -552,8 +547,7 @@ const Reimbursement = () => {
                     size="small"
                     label={label}
                     value={field.value ? "Yes" : "No"}
-                    onChange={(e) => field.onChange(e.target.value === "Yes")}
-                  >
+                    onChange={(e) => field.onChange(e.target.value === "Yes")}>
                     {["Yes", "No"].map((opt) => (
                       <MenuItem key={opt} value={opt}>
                         {opt}
