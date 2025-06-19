@@ -10,6 +10,7 @@ import MonthWiseAgTable from "../../../../components/Tables/MonthWiseAgTable";
 const IncomeDetails = () => {
   const axios = useAxiosPrivate();
   const [selectedYear, setSelectedYear] = useState("2024-25");
+  
 
   const { data: totalRevenue = [], isLoading: isTotalLoading } = useQuery({
     queryKey: ["totalRevenue"],
@@ -164,7 +165,7 @@ const IncomeDetails = () => {
           { headerName: "Vertical", field: "vertical", flex: 1 },
           { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
         ]}
-        amount={`INR ${inrFormat(totalAnnualRevenue)}`}
+        // amount={`INR ${inrFormat(totalAnnualRevenue)}`}
         financialData={financialDataForTable}
       />
     </div>
