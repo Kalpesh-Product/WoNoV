@@ -30,12 +30,22 @@ const TeamMembersSchedule = () => {
     endDate: new Date(),
     key: "selection",
   });
+
+  const [multipleRanges, setMultipleRanges] = useState([
+    {
+      startDate: new Date(),
+      endDate: new Date(),
+      key: "schedule-0",
+    },
+  ]);
+
   const department = usePageDepartment();
   const {
     handleSubmit,
     control,
     setValue,
     reset,
+    watch: assignWatch,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -181,6 +191,38 @@ const TeamMembersSchedule = () => {
       }
     },
   });
+
+  const watchedUnitId = assignWatch("location"); // this field holds selected unit _id
+
+  const { data: unitSchedule = [], isFetching: isUnitSchedulePending } =
+    useQuery({
+      queryKey: ["unitSchedule", watchedUnitId],
+      enabled: !!watchedUnitId,
+      queryFn: async () => {
+        const response = await axios.get(
+          `/api/weekly-unit/get-unit-schedule?unitId=${watchedUnitId}&department=${department?._id}`
+        );
+        return response.data;
+      },
+    });
+
+  useEffect(() => {
+    if (!unitSchedule || !unitSchedule.length) return;
+
+    const matchedSchedules = unitSchedule.filter(
+      (schedule) => schedule.location?._id === watchedUnitId
+    );
+
+    if (matchedSchedules.length) {
+      const ranges = matchedSchedules.map((item, idx) => ({
+        startDate: new Date(item.startDate),
+        endDate: new Date(item.endDate),
+        key: `schedule-${idx}`,
+      }));
+
+      setMultipleRanges(ranges); // <- new state variable for multiple ranges
+    }
+  }, [unitSchedule, watchedUnitId]);
 
   const { mutate: assignMember, isPending: isAssignMemberPending } =
     useMutation({
@@ -349,6 +391,37 @@ const TeamMembersSchedule = () => {
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <Controller
+                    name="location"
+                    rules={{ required: "Unit is required" }}
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label={"Select Unit"}
+                        size="small"
+                        fullWidth
+                        error={!!errors.location}
+                        helperText={errors.unitId?.message}
+                        select
+                      >
+                        <MenuItem value="" disabled>
+                          Select Unit
+                        </MenuItem>
+                        {!isUnitsPending ? (
+                          unitsData.map((item) => (
+                            <MenuItem key={item._id} value={item._id}>
+                              {item.unitNo}
+                            </MenuItem>
+                          ))
+                        ) : (
+                          <CircularProgress />
+                        )}
+                      </TextField>
+                    )}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Controller
                     name="employee"
                     rules={{ required: "Select a Member" }}
                     control={control}
@@ -380,40 +453,12 @@ const TeamMembersSchedule = () => {
                 </div>
                 <div className="col-span-2 w-full">
                   <DateRange
-                    ranges={[selectionRange]}
-                    onChange={handleDateSelect}
+                    ranges={multipleRanges}
+                    onChange={() => {}}
                     moveRangeOnFirstSelection={false}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Controller
-                    name="location"
-                    rules={{ required: "Unit is required" }}
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        label={"Select Unit"}
-                        size="small"
-                        fullWidth
-                        error={!!errors.location}
-                        helperText={errors.unitId?.message}
-                        select
-                      >
-                        <MenuItem value="" disabled>
-                          Select Unit
-                        </MenuItem>
-                        {!isUnitsPending ? (
-                          unitsData.map((item) => (
-                            <MenuItem key={item._id} value={item._id}>
-                              {item.unitNo}
-                            </MenuItem>
-                          ))
-                        ) : (
-                          <CircularProgress />
-                        )}
-                      </TextField>
-                    )}
+                    editableDateInputs={false}
+                    showDateDisplay={false}
+                    disabledDay={() => true}
                   />
                 </div>
               </div>
