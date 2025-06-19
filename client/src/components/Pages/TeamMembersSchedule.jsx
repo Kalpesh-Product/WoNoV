@@ -51,6 +51,7 @@ const TeamMembersSchedule = () => {
     control: primaryControl,
     reset: primaryReset,
     watch,
+    setValue: setPrimaryValue,
     formState: { errors: primaryErrors },
   } = useForm({
     defaultValues: {
@@ -59,6 +60,14 @@ const TeamMembersSchedule = () => {
       location: "",
     },
   });
+  useEffect(() => {
+    console.log("Asdasda", selectedUser);
+  }, [selectedUser]);
+
+  useEffect(() => {
+    setPrimaryValue("location", selectedUser?.buildingName);
+    setPrimaryValue("unitId", selectedUser?.unitNo);
+  }, [selectedUser]);
   const selectedLocation = watch("location");
   const selectedUnit = watch("unitId");
   const {
@@ -113,7 +122,7 @@ const TeamMembersSchedule = () => {
         const response = await axios.get("/api/company/fetch-units");
         const formattedUnits = response.data.map((unit, index) => ({
           ...unit,
-          srNo: index + 1,
+          mongoId: unit._id,
           unitNo: unit.unitNo,
           unitName: unit.unitName,
           buildingName: unit.building?.buildingName ?? "N/A",
@@ -127,10 +136,19 @@ const TeamMembersSchedule = () => {
               ? `${unit?.maintenanceLead?.firstName} ${unit?.maintenanceLead?.lastName}`
               : `${unit?.itLead?.firstName} ${unit?.itLead?.lastName}`,
         }));
-        console.log("book writer", department.name);
-        return formattedUnits;
+
+        const sortedUnits = formattedUnits.sort((a, b) =>
+          a.unitNo.localeCompare(b.unitNo, undefined, {
+            numeric: true,
+            sensitivity: "base",
+          })
+        );
+
+        // Re-assign Sr No after sorting
+        return sortedUnits.map((unit, idx) => ({ ...unit, srNo: idx + 1 }));
       } catch (error) {
         console.error("Error fetching clients data:", error);
+        return [];
       }
     },
   });
@@ -188,14 +206,15 @@ const TeamMembersSchedule = () => {
   const { mutate: assignPrimary, isPending: isAssignPrimary } = useMutation({
     mutationKey: ["assignPrimary"],
     mutationFn: async (data) => {
-      const response = await axios.patch("/api/company/", {
-        ...data,
-        unitId: selectedUnitId,
-      });
+      const response = await axios.patch(
+        "/api/company/assign-primary-unit",
+        data
+      );
       return response.data;
     },
     onSuccess: (data) => {
       toast.success(data.message || "PRIMARY ASSIGNED");
+      queryClient.invalidateQueries({ queryKey: ["unitsData"] });
       setIsModalOpen(false);
       primaryReset();
     },
@@ -205,13 +224,37 @@ const TeamMembersSchedule = () => {
   });
 
   const onSubmit = (data) => {
-    if (!data) return;
-    assignPrimary(data);
+    assignPrimary({
+      unitId: selectedUser._id,
+      location: selectedUser.building?._id,
+      departmentName: department?.name,
+      employeeId: data.employee,
+    });
   };
   //----------------------------------------API---------------------------------------//
   const unitColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "unitNo", headerName: "Unit No", flex: 1 },
+    {
+      field: "unitNo",
+      headerName: "Unit No",
+      flex: 1,
+      cellRenderer: (params) => (
+        <span
+          role="button"
+          onClick={() => {
+            navigate(`${params.value}`, {
+              state: {
+                id: params.data.mongoId,
+                name: params.value,
+              },
+            });
+          }}
+          className="underline text-primary cursor-pointer"
+        >
+          {params.value}
+        </span>
+      ),
+    },
     { field: "unitName", headerName: "Unit Name", flex: 1 },
     { field: "buildingName", headerName: "Building", flex: 1 },
     {
@@ -485,28 +528,12 @@ const TeamMembersSchedule = () => {
                 control={primaryControl}
                 render={({ field }) => (
                   <TextField
-                    select
                     {...field}
                     size="small"
+                    value={field.value}
+                    disabled
                     label="Select Location"
-                  >
-                    <MenuItem value="" disabled>
-                      Select Building
-                    </MenuItem>
-                    {locationsLoading ? (
-                      <MenuItem disabled>
-                        <CircularProgress size={20} />
-                      </MenuItem>
-                    ) : locationsError ? (
-                      <MenuItem disabled>Error fetching units</MenuItem>
-                    ) : (
-                      uniqueBuildings.map(([id, name]) => (
-                        <MenuItem key={id} value={name}>
-                          {name}
-                        </MenuItem>
-                      ))
-                    )}
-                  </TextField>
+                  />
                 )}
               />
               <Controller
@@ -515,10 +542,9 @@ const TeamMembersSchedule = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    select
                     size="small"
                     label="Select Unit"
-                    disabled={!selectedLocation}
+                    disabled
                     value={field.value}
                     onChange={(event) => field.onChange(event.target.value)}
                   >
@@ -542,7 +568,7 @@ const TeamMembersSchedule = () => {
               <Controller
                 name="employee"
                 rules={{ required: "Select a Member" }}
-                control={control}
+                control={primaryControl}
                 render={({ field }) => (
                   <TextField
                     {...field}
