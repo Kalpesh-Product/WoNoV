@@ -48,14 +48,22 @@ const usePageDepartment = () => {
 
   const userDepartments = auth?.user?.departments || [];
 
-  // Top Management logic
-  const isTopManagement = userDepartments?.some(
-    (dept) =>
-      dept?._id === "67b2cf85b9b6ed5cedeb9a2e" &&
-      dept?.name?.toLowerCase() === "top management"
+  const managementAccessDepartments = [
+    { _id: "67b2cf85b9b6ed5cedeb9a2e", name: "top management" },
+    { _id: "6798ba9de469e809084e2494", name: "tech" },
+    // Add more here as needed
+  ];
+
+  const isManagementAccess = userDepartments?.some((dept) =>
+    managementAccessDepartments.some(
+      (m) =>
+        m._id === dept?._id &&
+        dept?.name?.toLowerCase() === m.name.toLowerCase()
+    )
   );
 
-  if (isTopManagement && Array.isArray(fetchedDepartments)) {
+  if (isManagementAccess && Array.isArray(fetchedDepartments)) {
+
     const matchedDept = fetchedDepartments.find((deptObj) =>
       deptObj?.department?.name?.toLowerCase()?.includes(section)
     );

@@ -255,6 +255,11 @@ const expenseRawSeries = useMemo(() => {
   ];
 }, [hrFinance]);
 
+const maxExpenseValue = Math.max(
+  ...expenseRawSeries.flatMap((series) => series.data)
+);
+const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
+
 
   const expenseOptions = {
     chart: {
@@ -290,7 +295,7 @@ const expenseRawSeries = useMemo(() => {
     },
 
     yaxis: {
-      max: 5000000,
+      max: roundedMax,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
         formatter: (val) => `${val / 100000}`,

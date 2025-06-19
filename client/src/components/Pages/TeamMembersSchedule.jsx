@@ -200,9 +200,17 @@ const TeamMembersSchedule = () => {
       field: "name",
       headerName: "Name",
       cellRenderer: (params) => (
+
         <span
           role="button"
-          onClick={() => navigate(`${params.value}`)}
+          onClick={() =>
+            navigate(`${params.value}`, {
+              state: {
+                empId: params.data._id,
+                empDept: params.data?.departments,
+              },
+            })
+          }
           className="text-primary underline cursor-pointer"
         >
           {params.value}
