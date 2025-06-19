@@ -4,7 +4,6 @@ const { createLog } = require("../../utils/moduleLogs");
 const WeeklySchedule = require("../../models/WeeklySchedule");
 const { default: mongoose } = require("mongoose");
 const Unit = require("../../models/locations/Unit");
-const Role = require("../../models/roles/Roles");
 
 const assignWeeklyUnit = async (req, res, next) => {
   const logPath = "administration/AdministrationLog";
@@ -58,6 +57,23 @@ const assignWeeklyUnit = async (req, res, next) => {
 
     if (!foundUnit) {
       throw new CustomError("Unit not found", logPath, logAction, logSourceKey);
+    }
+
+    const isAlreadyAssigned = await WeeklySchedule.findOne({
+      "employee.id": foundUser._id,
+      startDate: { $lte: endDate },
+      endDate: { $gte: startDate },
+    })
+      .lean()
+      .exec();
+
+    if (isAlreadyAssigned) {
+      return res
+        .status(400)
+        .json({
+          message:
+            "Employee is already assigned to this location",
+        });
     }
 
     // Create a new WeeklyUnit document

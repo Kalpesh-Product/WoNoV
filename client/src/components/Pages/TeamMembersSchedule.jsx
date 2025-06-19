@@ -30,12 +30,26 @@ const TeamMembersSchedule = () => {
     endDate: new Date(),
     key: "selection",
   });
+
+  const [multipleRanges, setMultipleRanges] = useState([
+    {
+      startDate: new Date(),
+      endDate: new Date(),
+      key: "schedule-0",
+    },
+  ]);
+
+  useEffect(() => {
+    console.log("multiple : ", multipleRanges);
+  }, [multipleRanges]);
+
   const department = usePageDepartment();
   const {
     handleSubmit,
     control,
     setValue,
     reset,
+    watch: assignWatch,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -51,6 +65,7 @@ const TeamMembersSchedule = () => {
     control: primaryControl,
     reset: primaryReset,
     watch,
+    setValue: setPrimaryValue,
     formState: { errors: primaryErrors },
   } = useForm({
     defaultValues: {
@@ -59,6 +74,11 @@ const TeamMembersSchedule = () => {
       location: "",
     },
   });
+
+  useEffect(() => {
+    setPrimaryValue("location", selectedUser?.buildingName);
+    setPrimaryValue("unitId", selectedUser?.unitNo);
+  }, [selectedUser]);
   const selectedLocation = watch("location");
   const selectedUnit = watch("unitId");
   const {
@@ -113,7 +133,7 @@ const TeamMembersSchedule = () => {
         const response = await axios.get("/api/company/fetch-units");
         const formattedUnits = response.data.map((unit, index) => ({
           ...unit,
-          srNo: index + 1,
+          mongoId: unit._id,
           unitNo: unit.unitNo,
           unitName: unit.unitName,
           buildingName: unit.building?.buildingName ?? "N/A",
@@ -127,10 +147,19 @@ const TeamMembersSchedule = () => {
               ? `${unit?.maintenanceLead?.firstName} ${unit?.maintenanceLead?.lastName}`
               : `${unit?.itLead?.firstName} ${unit?.itLead?.lastName}`,
         }));
-        console.log("book writer", department.name);
-        return formattedUnits;
+
+        const sortedUnits = formattedUnits.sort((a, b) =>
+          a.unitNo.localeCompare(b.unitNo, undefined, {
+            numeric: true,
+            sensitivity: "base",
+          })
+        );
+
+        // Re-assign Sr No after sorting
+        return sortedUnits.map((unit, idx) => ({ ...unit, srNo: idx + 1 }));
       } catch (error) {
         console.error("Error fetching clients data:", error);
+        return [];
       }
     },
   });
@@ -139,7 +168,7 @@ const TeamMembersSchedule = () => {
     queryKey: ["employees"],
     queryFn: async () => {
       try {
-        const response = await axios.get(`/api/users/fetch-users`, {
+        const response = await axios.get("/api/users/fetch-users", {
           params: {
             deptId: department._id,
           },
@@ -163,6 +192,61 @@ const TeamMembersSchedule = () => {
       }
     },
   });
+
+  const watchedUnitId = assignWatch("location"); // this field holds selected unit _id
+
+  const { data: unitSchedule = [], isFetching: isUnitSchedulePending } =
+    useQuery({
+      queryKey: ["unitSchedule", watchedUnitId],
+      enabled: !!watchedUnitId,
+      queryFn: async () => {
+        const response = await axios.get(
+          `/api/weekly-unit/get-unit-schedule?unitId=${watchedUnitId}&department=${department?._id}`
+        );
+        return response.data;
+      },
+    });
+
+  useEffect(() => {
+    if (!unitSchedule || !unitSchedule.length) return;
+
+    const matchedSchedules = unitSchedule.filter(
+      (schedule) => schedule.location?._id === watchedUnitId
+    );
+
+    if (matchedSchedules.length) {
+      const detailedRanges = matchedSchedules.map((item, idx) => ({
+        key: `schedule-${idx}`,
+        startDate: new Date(item.startDate),
+        endDate: new Date(item.endDate),
+        employeeName: `${item.employee?.id?.firstName || "N/A"} ${
+          item.employee?.id?.lastName || ""
+        }`,
+        manager: item.manager || "N/A",
+        isActive: item.employee?.isActive ? "Active" : "Inactive",
+      }));
+
+      setMultipleRanges(detailedRanges);
+    }
+  }, [unitSchedule, watchedUnitId]);
+
+  const getDisabledDatesSet = (ranges) => {
+    const disabledSet = new Set();
+
+    ranges.forEach(({ startDate, endDate }) => {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        disabledSet.add(new Date(d).toDateString()); // use toDateString to normalize
+      }
+    });
+
+    return disabledSet;
+  };
+  const disabledDatesSet = useMemo(
+    () => getDisabledDatesSet(multipleRanges),
+    [multipleRanges]
+  );
 
   const { mutate: assignMember, isPending: isAssignMemberPending } =
     useMutation({
@@ -188,14 +272,15 @@ const TeamMembersSchedule = () => {
   const { mutate: assignPrimary, isPending: isAssignPrimary } = useMutation({
     mutationKey: ["assignPrimary"],
     mutationFn: async (data) => {
-      const response = await axios.patch("/api/company/", {
-        ...data,
-        unitId: selectedUnitId,
-      });
+      const response = await axios.patch(
+        "/api/company/assign-primary-unit",
+        data
+      );
       return response.data;
     },
     onSuccess: (data) => {
       toast.success(data.message || "PRIMARY ASSIGNED");
+      queryClient.invalidateQueries({ queryKey: ["unitsData"] });
       setIsModalOpen(false);
       primaryReset();
     },
@@ -205,13 +290,37 @@ const TeamMembersSchedule = () => {
   });
 
   const onSubmit = (data) => {
-    if (!data) return;
-    assignPrimary(data);
+    assignPrimary({
+      unitId: selectedUser._id,
+      location: selectedUser.building?._id,
+      departmentName: department?.name,
+      employeeId: data.employee,
+    });
   };
   //----------------------------------------API---------------------------------------//
   const unitColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "unitNo", headerName: "Unit No", flex: 1 },
+    {
+      field: "unitNo",
+      headerName: "Unit No",
+      flex: 1,
+      cellRenderer: (params) => (
+        <span
+          role="button"
+          onClick={() => {
+            navigate(`${params.value}`, {
+              state: {
+                id: params.data.mongoId,
+                name: params.value,
+              },
+            });
+          }}
+          className="underline text-primary cursor-pointer"
+        >
+          {params.value}
+        </span>
+      ),
+    },
     { field: "unitName", headerName: "Unit Name", flex: 1 },
     { field: "buildingName", headerName: "Building", flex: 1 },
     {
@@ -279,7 +388,7 @@ const TeamMembersSchedule = () => {
           <AgTable
             key={unitAssignees.length}
             search={true}
-            tableTitle={"Team Members Schedule"}
+            tableTitle={"Weekly Rotation Schedule"}
             buttonTitle={"Assign Member"}
             data={unitsData}
             columns={unitColumns}
@@ -304,6 +413,37 @@ const TeamMembersSchedule = () => {
               className="flex flex-col gap-4"
             >
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Controller
+                    name="location"
+                    rules={{ required: "Unit is required" }}
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label={"Select Unit"}
+                        size="small"
+                        fullWidth
+                        error={!!errors.location}
+                        helperText={errors.unitId?.message}
+                        select
+                      >
+                        <MenuItem value="" disabled>
+                          Select Unit
+                        </MenuItem>
+                        {!isUnitsPending ? (
+                          unitsData.map((item) => (
+                            <MenuItem key={item._id} value={item._id}>
+                              {item.unitNo}
+                            </MenuItem>
+                          ))
+                        ) : (
+                          <CircularProgress />
+                        )}
+                      </TextField>
+                    )}
+                  />
+                </div>
                 <div className="col-span-2">
                   <Controller
                     name="employee"
@@ -335,43 +475,78 @@ const TeamMembersSchedule = () => {
                     )}
                   />
                 </div>
-                <div className="col-span-2 w-full">
-                  <DateRange
-                    ranges={[selectionRange]}
-                    onChange={handleDateSelect}
-                    moveRangeOnFirstSelection={false}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Controller
-                    name="location"
-                    rules={{ required: "Unit is required" }}
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        label={"Select Unit"}
-                        size="small"
-                        fullWidth
-                        error={!!errors.location}
-                        helperText={errors.unitId?.message}
-                        select
-                      >
-                        <MenuItem value="" disabled>
-                          Select Unit
-                        </MenuItem>
-                        {!isUnitsPending ? (
-                          unitsData.map((item) => (
-                            <MenuItem key={item._id} value={item._id}>
-                              {item.unitNo}
-                            </MenuItem>
-                          ))
-                        ) : (
-                          <CircularProgress />
-                        )}
-                      </TextField>
-                    )}
-                  />
+                <div className="col-span-2 w-full ">
+                  {/* Show already scheduled ranges as compact badges */}
+                   <div className="my-4">
+                        <span className="text-subtitle text-primary font-pmedium">
+                          Assigned Details
+                        </span>
+                      </div>
+                  {/* Actual DateRange calendar */}
+                  {watchedUnitId ? (
+                    <>
+                      <div className="w-full max-w-full overflow-x-auto my-4">
+                        <div className="flex gap-4 min-w-max">
+                          {[...multipleRanges]
+                            .sort(
+                              (a, b) =>
+                                new Date(b.startDate) - new Date(a.startDate)
+                            )
+                            .map((range) => (
+                              <div
+                                key={range.key}
+                                className="min-w-[280px] p-4 rounded-xl border border-borderGray bg-gray-50 shadow-sm"
+                              >
+                                <div className="text-sm text-gray-500 mb-1">
+                                  <strong>Dates:</strong>{" "}
+                                  {range.startDate.toLocaleDateString("en-GB")}{" "}
+                                  - {range.endDate.toLocaleDateString("en-GB")}
+                                </div>
+                                <div className="text-sm text-gray-700">
+                                  <strong>Employee:</strong>{" "}
+                                  {range.employeeName}
+                                </div>
+                                <div className="text-sm text-gray-700">
+                                  <strong>Manager:</strong> {range.manager}
+                                </div>
+                                <div className="text-sm text-gray-700">
+                                  <strong>Status:</strong>{" "}
+                                  <span
+                                    className={`font-semibold ${
+                                      range.isActive === "Active"
+                                        ? "text-green-600"
+                                        : "text-red-500"
+                                    }`}
+                                  >
+                                    {range.isActive}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+
+                      <div className="my-4">
+                        <span className="text-subtitle text-primary font-pmedium">
+                          Assign a member
+                        </span>
+                      </div>
+                      <DateRange
+                        ranges={[selectionRange]}
+                        onChange={handleDateSelect}
+                        moveRangeOnFirstSelection={false}
+                        disabledDay={(date) =>
+                          disabledDatesSet.has(date.toDateString())
+                        }
+                      />
+                    </>
+                  ) : (
+                    <div className="h-10 flex justify-between items-center p-4 border-borderGray border-[1px] rounded-xl">
+                      <span className="text-content font-pregular">
+                        Kindly select a unit to display the weekly schedule.
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className=" w-full">
@@ -485,28 +660,12 @@ const TeamMembersSchedule = () => {
                 control={primaryControl}
                 render={({ field }) => (
                   <TextField
-                    select
                     {...field}
                     size="small"
+                    value={field.value}
+                    disabled
                     label="Select Location"
-                  >
-                    <MenuItem value="" disabled>
-                      Select Building
-                    </MenuItem>
-                    {locationsLoading ? (
-                      <MenuItem disabled>
-                        <CircularProgress size={20} />
-                      </MenuItem>
-                    ) : locationsError ? (
-                      <MenuItem disabled>Error fetching units</MenuItem>
-                    ) : (
-                      uniqueBuildings.map(([id, name]) => (
-                        <MenuItem key={id} value={name}>
-                          {name}
-                        </MenuItem>
-                      ))
-                    )}
-                  </TextField>
+                  />
                 )}
               />
               <Controller
@@ -515,10 +674,9 @@ const TeamMembersSchedule = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    select
                     size="small"
                     label="Select Unit"
-                    disabled={!selectedLocation}
+                    disabled
                     value={field.value}
                     onChange={(event) => field.onChange(event.target.value)}
                   >
@@ -542,7 +700,7 @@ const TeamMembersSchedule = () => {
               <Controller
                 name="employee"
                 rules={{ required: "Select a Member" }}
-                control={control}
+                control={primaryControl}
                 render={({ field }) => (
                   <TextField
                     {...field}

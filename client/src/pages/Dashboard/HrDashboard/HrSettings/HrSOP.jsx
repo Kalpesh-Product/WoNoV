@@ -153,8 +153,7 @@ const HrSOP = () => {
           href={params.data.sopLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary cursor-pointer hover:underline"
-        >
+          className="text-primary cursor-pointer hover:underline">
           {params.value}
         </a>
       ),
@@ -232,8 +231,7 @@ const HrSOP = () => {
             : modalType === "delete"
             ? "Confirm Delete"
             : "Add New SOP"
-        }
-      >
+        }>
         {modalType === "delete" ? (
           <div className="space-y-4">
             <p>Are you sure you want to delete this SOP?</p>
@@ -253,8 +251,7 @@ const HrSOP = () => {
             onSubmit={handleSubmit(
               modalType === "edit" ? handleUpdateName : handleAddSop
             )}
-            className="flex flex-col gap-4"
-          >
+            className="flex flex-col gap-4">
             <Controller
               name="sopName"
               control={control}
@@ -299,8 +296,7 @@ const HrSOP = () => {
                           <IconButton
                             color="primary"
                             component="label"
-                            htmlFor="image-upload"
-                          >
+                            htmlFor="image-upload">
                             <LuImageUp />
                           </IconButton>
                         ),

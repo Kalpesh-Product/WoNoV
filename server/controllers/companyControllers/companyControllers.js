@@ -511,7 +511,7 @@ const updateCompanySubItem = async (req, res) => {
     const key = typeMap[type];
 
     item = foundCompany[key].id(itemId);
-    // console.log("isdeleted", itemId);
+    console.log("isdeleted", foundCompany[key].id(itemId));
     if (item) {
       if (name !== undefined) item.name = name;
       if (isActive !== undefined) item.isActive = isActive;
