@@ -825,6 +825,27 @@ const MaintainanceDashboard = () => {
         />,
       ],
     },
+       {
+      layout: 2,
+      widgets: [
+        <MuiTable
+          key={priorityTasks.length}
+          scroll
+          rowsToDisplay={4}
+          Title={"Top 10 High Priority Due Tasks"}
+          rows={transformedTasks}
+          columns={priorityTasksColumns}
+        />,
+        <MuiTable
+          key={executiveTimings.length}
+          Title={"Weekly Executive Shift Timing"}
+          rows={transformedWeeklyShifts}
+          columns={executiveTimingsColumns}
+          scroll
+          rowsToDisplay={4}
+        />,
+      ],
+    },
 
     {
       layout: 2,
@@ -866,27 +887,7 @@ const MaintainanceDashboard = () => {
         </WidgetSection>,
       ],
     },
-    {
-      layout: 2,
-      widgets: [
-        <MuiTable
-          key={priorityTasks.length}
-          scroll
-          rowsToDisplay={4}
-          Title={"Top 10 High Priority Due Tasks"}
-          rows={transformedTasks}
-          columns={priorityTasksColumns}
-        />,
-        <MuiTable
-          key={executiveTimings.length}
-          Title={"Weekly Executive Shift Timing"}
-          rows={transformedWeeklyShifts}
-          columns={executiveTimingsColumns}
-          scroll
-          rowsToDisplay={4}
-        />,
-      ],
-    },
+ 
   ];
 
   return (

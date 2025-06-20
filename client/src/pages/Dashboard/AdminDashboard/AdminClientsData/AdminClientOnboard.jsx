@@ -157,7 +157,7 @@ const AdminClientOnboard = () => {
 
   return (
     <PageFrame>
-      <div className="h-[65vh] overflow-y-auto">
+      <div className="">
         <form onSubmit={handleSubmit(onSubmit)} className="">
           <div className="flex gap-4">
             <Select
