@@ -354,6 +354,8 @@ import MaintenanceMixBag from "../pages/Dashboard/MaintainanceDashboard/Maintena
 import ItMixBag from "../pages/Dashboard/ItDashboard/itMixBag/ItMixBag";
 import TeamMemberDetails from "../components/Pages/TeamMemberDetails";
 import BudgetPage from "../components/Pages/BudgetPage";
+import AnnualExpense from "../components/Pages/AnnualExpense";
+import MaintenancOfficesNew from "../pages/Dashboard/MaintainanceDashboard/MaintenanceOffices/MaintenanceOfficesNew";
 
 export const routes = createBrowserRouter([
   {
@@ -723,7 +725,7 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "annual-expenses",
-                        element: <AdminAnnualExpenses />,
+                        element: <AnnualExpense />,
                       },
                       {
                         path: "inventory",
@@ -914,7 +916,8 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "annual-expenses",
-                        element: <MaintenanceAnnualExpenses />,
+                        element: <AnnualExpense />,
+                        // element: <MaintenanceAnnualExpenses />,
                       },
                       {
                         path: "inventory",
@@ -950,7 +953,7 @@ export const routes = createBrowserRouter([
                         path: "mix-bag/team-members-schedule",
                         element: <TeamMembersSchedule />,
                       },
-                       {
+                      {
                         path: "mix-bag/team-members-schedule/:name",
                         element: <TeamMemberDetails />,
                       },
@@ -973,6 +976,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "amc-records",
                             element: <MaintenanceAmcRecords />,
+                          },
+                           {
+                            path: "monthly-invoice-reports",
+                            element: <MonthlyInvoiceCommon />,
                           },
                           {
                             path: "monthly-invoice-reports",
@@ -1008,10 +1015,10 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "maintenance-offices",
-                        element: <MaintenanceOffices />,
+                        element: <MaintenancOfficesNew />,
                       },
                       {
-                        path: "maintenance-offices/maintenance-offices-layout/:client",
+                        path: "maintenance-offices/:client",
                         element: <MaintenanceOfficesLayout />,
                         children: [
                           {
@@ -1056,7 +1063,7 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "annual-expenses",
-                        element: <ItAnnualExpenses />,
+                        element: <AnnualExpense />,
                       },
                       {
                         path: "inventory",

@@ -1,41 +1,28 @@
-import React, { useEffect, useMemo, useState } from "react";
-import BarGraph from "../../../../components/graphs/BarGraph";
-import {
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  TextField,
-} from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
-import AgTable from "../../../../components/AgTable";
-import WidgetSection from "../../../../components/WidgetSection";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
-import { Controller, useForm } from "react-hook-form";
-import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import useAuth from "../../../../hooks/useAuth";
-import usePageDepartment from "../../../../hooks/usePageDepartment";
+import PrimaryButton from "../../components/PrimaryButton";
+import AllocatedBudget from "../../components/Tables/AllocatedBudget";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import YearlyGraph from "../../../../components/graphs/YearlyGraph";
-import PrimaryButton from "../../../../components/PrimaryButton";
-import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
-import MuiModal from "../../../../components/MuiModal";
+import MuiModal from "../../components/MuiModal";
+import { Controller, useForm } from "react-hook-form";
+import { FormControl, MenuItem, Select, TextField } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { transformBudgetData } from "../../../../utils/transformBudgetData";
-import { inrFormat } from "../../../../utils/currencyFormat";
 import { toast } from "sonner";
+import { useLocation, useNavigate } from "react-router-dom";
+import { inrFormat } from "../../utils/currencyFormat";
+import { transformBudgetData } from "../../utils/transformBudgetData";
+import YearlyGraph from "../../components/graphs/YearlyGraph";
+import useAuth from "../../hooks/useAuth";
+import usePageDepartment from "../../hooks/usePageDepartment";
 
-const MaintenanceExpenses = () => {
+const AnnualExpense = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const location = useLocation();
   const department = usePageDepartment();
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient(); 
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
@@ -62,17 +49,18 @@ const MaintenanceExpenses = () => {
 
   const selectedBuilding = watch("building");
 
-  const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
-    queryKey: ["departmentBudget", department?._id],
-    queryFn: async () => {
-      const response = await axios.get(
-        `/api/budget/company-budget?departmentId=${department._id}`
-      );
-      const budgets = response.data.allBudgets;
-      return Array.isArray(budgets) ? budgets : [];
-    },
-    enabled: !!department?._id, // <- ✅ prevents firing until department is ready
-  });
+const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+  queryKey: ["departmentBudget", department?._id],
+  queryFn: async () => {
+    const response = await axios.get(
+      `/api/budget/company-budget?departmentId=${department._id}`
+    );
+    const budgets = response.data.allBudgets;
+    return Array.isArray(budgets) ? budgets : [];
+  },
+  enabled: !!department?._id,  
+});
+
 
   const {
     data: units = [],
@@ -122,8 +110,8 @@ const MaintenanceExpenses = () => {
         setOpenModal(false);
         toast.success(data.message);
         reset();
-
-        queryClient.invalidateQueries(["departmentBudget"]);
+        
+    queryClient.invalidateQueries(["departmentBudget"]); 
       },
       onError: function (error) {
         toast.error(error.response.data.message);
@@ -223,57 +211,58 @@ const MaintenanceExpenses = () => {
     }
   }, [isHrLoading]);
 
-  const expenseRawSeries = useMemo(() => {
-    // Initialize monthly buckets
-    const months = Array.from({ length: 12 }, (_, index) =>
-      dayjs(`2024-04-01`).add(index, "month").format("MMM")
-    );
-
-    const fyData = {
-      "FY 2024-25": Array(12).fill(0),
-      "FY 2025-26": Array(12).fill(0),
-    };
-
-    hrFinance.forEach((item) => {
-      const date = dayjs(item.dueDate);
-      const year = date.year();
-      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
-
-      if (year === 2024 && monthIndex >= 3) {
-        // Apr 2024 to Dec 2024 (month 3 to 11)
-        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-      } else if (year === 2025) {
-        if (monthIndex <= 2) {
-          // Jan to Mar 2025 (months 0–2)
-          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-        } else if (monthIndex >= 3) {
-          // Apr 2025 to Dec 2025 (months 3–11)
-          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
-        }
-      } else if (year === 2026 && monthIndex <= 2) {
-        // Jan to Mar 2026
-        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
-      }
-    });
-
-    return [
-      {
-        name: "total",
-        group: "FY 2024-25",
-        data: fyData["FY 2024-25"],
-      },
-      {
-        name: "total",
-        group: "FY 2025-26",
-        data: fyData["FY 2025-26"],
-      },
-    ];
-  }, [hrFinance]);
-
-  const maxExpenseValue = Math.max(
-    ...expenseRawSeries.flatMap((series) => series.data)
+const expenseRawSeries = useMemo(() => {
+  // Initialize monthly buckets
+  const months = Array.from({ length: 12 }, (_, index) =>
+    dayjs(`2024-04-01`).add(index, "month").format("MMM")
   );
-  const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
+
+  const fyData = {
+    "FY 2024-25": Array(12).fill(0),
+    "FY 2025-26": Array(12).fill(0),
+  };
+
+  hrFinance.forEach((item) => {
+    const date = dayjs(item.dueDate);
+    const year = date.year();
+    const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+
+    if (year === 2024 && monthIndex >= 3) {
+      // Apr 2024 to Dec 2024 (month 3 to 11)
+      fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+    } else if (year === 2025) {
+      if (monthIndex <= 2) {
+        // Jan to Mar 2025 (months 0–2)
+        fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+      } else if (monthIndex >= 3) {
+        // Apr 2025 to Dec 2025 (months 3–11)
+        fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+      }
+    } else if (year === 2026 && monthIndex <= 2) {
+      // Jan to Mar 2026
+      fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+    }
+  });
+
+  return [
+    {
+      name: "total",
+      group: "FY 2024-25",
+      data: fyData["FY 2024-25"],
+    },
+    {
+      name: "total",
+      group: "FY 2025-26",
+      data: fyData["FY 2025-26"],
+    },
+  ];
+}, [hrFinance]);
+
+const maxExpenseValue = Math.max(
+  ...expenseRawSeries.flatMap((series) => series.data)
+);
+const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
+
 
   const expenseOptions = {
     chart: {
@@ -331,54 +320,41 @@ const MaintenanceExpenses = () => {
         //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
         //     </div>`;
         return `
-               <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
-           
-                 <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
-                   <div><strong>Finance Expense:</strong></div>
-                   <div style="width: 10px;"></div>
-                <div style="text-align: left;">INR ${Math.round(
-                  rawData
-                ).toLocaleString("en-IN")}</div>
-   
-                 </div>
-        
-               </div>
-             `;
+              <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
+          
+                <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
+                  <div><strong>Finance Expense:</strong></div>
+                  <div style="width: 10px;"></div>
+               <div style="text-align: left;">INR ${Math.round(
+                 rawData
+               ).toLocaleString("en-IN")}</div>
+  
+                </div>
+       
+              </div>
+            `;
       },
     },
   };
 
-  const totalUtilised =
-    budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
-      (acc, val) => acc + val,
-      0
-    ) || 0;
+const totalUtilised =
+  budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+
 
   const navigate = useNavigate();
   // BUDGET NEW END
 
   return (
-    <div className="flex flex-col gap-8">
-      <YearlyGraph
+    <div className="flex flex-col gap-8 p-4">
+      {/* <YearlyGraph
         data={expenseRawSeries}
         options={expenseOptions}
         title={`BIZ Nest ${department?.name} DEPARTMENT EXPENSE`}
         titleAmount={`INR ${inrFormat(totalUtilised)}`}
         onYearChange={setSelectedFiscalYear}
-      />
+      /> */}
 
-      {!isTop && (
-        <div className="flex justify-end">
-          <PrimaryButton
-            title={"Request Budget"}
-            padding="px-5 py-2"
-            fontSize="text-base"
-            handleSubmit={() => setOpenModal(true)}
-          />
-        </div>
-      )}
-
-      <AllocatedBudget financialData={financialData} />
+      <AllocatedBudget financialData={financialData} annaualExpense={true}/>
       <MuiModal
         title="Request Budget"
         open={openModal}
@@ -548,4 +524,4 @@ const MaintenanceExpenses = () => {
   );
 };
 
-export default MaintenanceExpenses;
+export default AnnualExpense;

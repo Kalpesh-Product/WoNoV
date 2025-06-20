@@ -28,10 +28,14 @@ import humanTime from "../../utils/humanTime";
 import dayjs from "dayjs";
 import { useEffect } from "react";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
+import usePageDepartment from "../../hooks/usePageDepartment";
+import { useLocation, useSearchParams } from "react-router-dom";
 
 const TasksDashboard = () => {
   const axios = useAxiosPrivate();
+
   const { auth } = useAuth();
+  const department = usePageDepartment()
   const monthOrder = [
     "April",
     "May",
@@ -46,7 +50,6 @@ const TasksDashboard = () => {
     "February",
     "March",
   ];
-
   //-------------------Tasks graph ---------------------//
   const normalizeDataByMonth = (tasks) => {
     const fyBuckets = {};
@@ -125,7 +128,7 @@ const TasksDashboard = () => {
     queryKey: ["allTasks"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/tasks/get-all-tasks");
+        const response = await axios.get(`/api/tasks/get-all-tasks`);
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -518,7 +521,6 @@ const TasksDashboard = () => {
 
   const departments = Object.values(departmentMap);
 
-  console.log("deptt", departments);
   const totalAllocated = financialMonths.map((_, index) =>
     departments.reduce((sum, dept) => sum + dept.tasksAllocated[index], 0)
   );

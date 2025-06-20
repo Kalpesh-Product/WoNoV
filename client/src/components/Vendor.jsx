@@ -123,7 +123,8 @@ const Vendor = () => {
               `/app/dashboard/${departmentName}-dashboard/data/vendor/${params.data.vendorName}`,
               { state: params.data }
             )
-          }>
+          }
+        >
           {params.value}
         </span>
       ),
@@ -152,7 +153,8 @@ const Vendor = () => {
                 setOpenModal(true);
                 setSelectedVendor(params.data);
               }}
-              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
+              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+            >
               <span className="text-subtitle">
                 <MdOutlineRemoveRedEye />
               </span>
@@ -169,7 +171,9 @@ const Vendor = () => {
         id: index + 1,
         vendorMongoId: vendor._id,
         vendorID: vendor._id.slice(-4).toUpperCase(),
-        vendorName: vendor.name,
+        vendorName: vendor.name?.includes("/")
+          ? vendor.name.split("/").join("-")
+          : vendor.name,
         address: vendor.address,
         state: vendor.state,
         country: vendor.country,
@@ -298,12 +302,14 @@ const Vendor = () => {
                           handleCountryChange(e.target.value);
                         }}
                         size="small"
-                        error={!!error}>
+                        error={!!error}
+                      >
                         <MenuItem value="">Select Country</MenuItem>
                         {countries.map((country) => (
                           <MenuItem
                             key={country.isoCode}
-                            value={country.isoCode}>
+                            value={country.isoCode}
+                          >
                             {country.name}
                           </MenuItem>
                         ))}
@@ -326,7 +332,8 @@ const Vendor = () => {
                         }}
                         size="small"
                         disabled={!selectedCountry}
-                        error={!!error}>
+                        error={!!error}
+                      >
                         <MenuItem value="">Select State</MenuItem>
                         {states.map((state) => (
                           <MenuItem key={state.isoCode} value={state.isoCode}>
@@ -353,7 +360,8 @@ const Vendor = () => {
                         }}
                         size="small"
                         disabled={!selectedState}
-                        error={!!error}>
+                        error={!!error}
+                      >
                         <MenuItem value="">Select City</MenuItem>
                         {cities.map((city) => (
                           <MenuItem key={city.isoCode} value={city.name}>
@@ -471,7 +479,8 @@ const Vendor = () => {
                         {...field}
                         size="small"
                         displayEmpty
-                        error={!!error}>
+                        error={!!error}
+                      >
                         <MenuItem value="" disabled>
                           Party Type
                         </MenuItem>
@@ -663,7 +672,8 @@ const Vendor = () => {
           setOpenModal(false);
           setSelectedVendor(null);
         }}
-        title="Vendor Details">
+        title="Vendor Details"
+      >
         <div className="flex flex-col gap-3">
           <>
             <DetalisFormatted
@@ -693,14 +703,14 @@ const Vendor = () => {
               detail={selectedVendor?.partyType}
             />
             <DetalisFormatted title="Status" detail={selectedVendor?.status} />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title="Department ID"
               detail={selectedVendor?.departmentId}
             />
             <DetalisFormatted
               title="Company ID"
               detail={selectedVendor?.company}
-            />
+            /> */}
             <DetalisFormatted
               title="Company Name"
               detail={selectedVendor?.companyName}

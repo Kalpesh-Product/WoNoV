@@ -21,9 +21,11 @@ import { transformBudgetData } from "../../../utils/transformBudgetData";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
+import usePageDepartment from "../../../hooks/usePageDepartment";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
+  const department = usePageDepartment()
   const axios = useAxiosPrivate();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
@@ -40,6 +42,21 @@ const MaintainanceDashboard = () => {
       }
     },
   });
+
+   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
+    queryKey: ["tasks"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/tasks/get-tasks?dept=${department._id}`
+        );
+        return response.data?.allBudgets;
+      } catch (error) {
+        throw new Error("Error fetching data");
+      }
+    },
+  });
+
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
@@ -668,8 +685,7 @@ const MaintainanceDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection normalCase layout={1} padding>
             <YearlyGraph
               data={expenseRawSeries}
@@ -754,7 +770,7 @@ const MaintainanceDashboard = () => {
           description={"Expense Per Sq. Ft."}
         />,
         <DataCard
-          route={"maintenance-assets"}
+          // route={"maintenance-assets"}
           title={"Total"}
           data={""}
           description={"Assets Under Management"}

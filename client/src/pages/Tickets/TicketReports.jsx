@@ -12,6 +12,7 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
+import humanTime from "../../utils/humanTime";
 
 const TicketReports = () => {
   const { auth } = useAuth();
@@ -125,6 +126,12 @@ const TicketReports = () => {
                   acceptedBy: `${item.acceptedBy?.firstName || ""} ${
                     item.acceptedBy?.lastName || ""
                   }`,
+                  closedBy: item?.closedBy
+                    ? `${item.closedBy.firstName} ${item.closedBy.lastName}`
+                    : "None",
+                  closedAt: item.closedAt
+                    ? humanTime(item.closedAt)
+                    : "None",
                   rejectedBy: `${item.reject?.rejectedBy?.firstName || ""} ${
                     item.reject?.rejectedBy?.lastName || ""
                   }`,
@@ -198,6 +205,10 @@ const TicketReports = () => {
             <DetalisFormatted
               title={"Accepted At"}
               detail={selectedMeeting.date || "N/A"}
+            />
+            <DetalisFormatted
+              title="Closed by"
+              detail={selectedMeeting?.closedBy}
             />
 
             {/* <DetalisFormatted

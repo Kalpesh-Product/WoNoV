@@ -68,12 +68,9 @@ const assignWeeklyUnit = async (req, res, next) => {
       .exec();
 
     if (isAlreadyAssigned) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Employee is already assigned to this location",
-        });
+      return res.status(400).json({
+        message: "Employee is already assigned to this location",
+      });
     }
 
     // Create a new WeeklyUnit document
@@ -277,7 +274,67 @@ const addSubstitute = async (req, res, next) => {
       (sub) => sub.isActive
     );
     if (lastActiveIndex !== -1) {
-      schedule.substitutions[lastActiveIndex].isActive = false;
+      // const substitute = schedule.substitutions[lastActiveIndex];
+      // substitute.endDate = parsedFromDate;
+
+      // if (
+      //   substitute.fromDate.getTime() === parsedFromDate.getTime() &&
+      //   substitute.toDate.getTime() === parsedToDate.getTime()
+      // ) {
+      //   substitute.isActive = false;
+      // }
+
+      const parsedFromDate = new Date(fromDate);
+      const parsedToDate = new Date(toDate);
+
+      // Deactivate or modify existing active substitutions that overlap
+      schedule.substitutions.forEach((sub) => {
+        if (sub.isActive) {
+          const subFrom = new Date(sub.fromDate);
+          const subTo = new Date(sub.toDate);
+
+          const isExactMatch =
+            subFrom.getTime() === parsedFromDate.getTime() &&
+            subTo.getTime() === parsedToDate.getTime();
+
+          const isOverlap = parsedFromDate <= subTo && parsedToDate >= subFrom; // checks overlap
+
+          if (isExactMatch) {
+            sub.isActive = false;
+          } else if (isOverlap) {
+            const subEndBeforeNew = new Date(parsedFromDate);
+            subEndBeforeNew.setDate(subEndBeforeNew.getDate() - 1);
+
+            const subStartAfterNew = new Date(parsedToDate);
+            subStartAfterNew.setDate(subStartAfterNew.getDate() + 1);
+
+            const originalSubTo = new Date(sub.toDate); // backup original end
+
+            // Case: overlap in middle → split into two entries
+            if (sub.fromDate < parsedFromDate && originalSubTo > parsedToDate) {
+              // Modify current to be first half
+              sub.toDate = subEndBeforeNew;
+
+              // Push second half as a new substitution
+              schedule.substitutions.push({
+                substitute: sub.substitute,
+                fromDate: subStartAfterNew,
+                toDate: originalSubTo,
+                isActive: true,
+              });
+            } else {
+              // Simple overlap: just trim the date range
+              if (sub.fromDate < parsedFromDate) {
+                sub.toDate = subEndBeforeNew;
+              } else if (sub.toDate > parsedToDate) {
+                sub.fromDate = subStartAfterNew;
+              } else {
+                sub.isActive = false;
+              }
+            }
+          }
+        }
+      });
     }
 
     schedule.substitutions.push({
@@ -446,6 +503,7 @@ const fetchTeamMembersSchedule = async (req, res, next) => {
     const weeklySchedules = await WeeklySchedule.find({
       company,
       location: unitId,
+      department,
     })
       .populate({
         path: "employee.id",

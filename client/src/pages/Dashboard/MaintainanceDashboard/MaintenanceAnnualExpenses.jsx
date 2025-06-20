@@ -221,7 +221,7 @@ const MaintenanceAnnualExpenses = () => {
           search={true}
           searchColumn={"Asset Number"}
           tableTitle={"Annual Expenses"}
-          buttonTitle={"Add Expense"}
+          // buttonTitle={"Add Expense"}
           data={[]}
           columns={assetColumns}
           handleClick={handleAddAsset}

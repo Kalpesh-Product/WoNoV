@@ -16,7 +16,7 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import PageFrame from "../../../../components/Pages/PageFrame";
 
-const MaintenanceAssetList = () => {
+const MaintenanceAssetList = (disabled) => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
@@ -258,6 +258,7 @@ const MaintenanceAssetList = () => {
           searchColumn={"Asset Number"}
           tableTitle={"Asset List"}
           buttonTitle={"Add Asset"}
+          disabled={disabled}
           data={[]}
           columns={assetColumns}
           handleClick={handleAddAsset}

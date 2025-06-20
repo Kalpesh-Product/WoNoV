@@ -14,24 +14,24 @@ const Policies = () => {
   ];
 
   const policiesUploadData = [
-    {
-      srNo: 1,
-      templateName: "Upload Policies",
-      uploadedBy: "Machindranath Parkar",
-      date: "01-03-2025",
-    },
-    {
-      srNo: 2,
-      templateName: "Upload Policies",
-      uploadedBy: "Machindranath Parkar",
-      date: "08-03-2025",
-    },
-    {
-      srNo: 3,
-      templateName: "Upload Policies",
-      uploadedBy: "Machindranath Parkar",
-      date: "15-03-2025",
-    },
+    // {
+    //   srNo: 1,
+    //   templateName: "Upload Policies",
+    //   uploadedBy: "Machindranath Parkar",
+    //   date: "01-03-2025",
+    // },
+    // {
+    //   srNo: 2,
+    //   templateName: "Upload Policies",
+    //   uploadedBy: "Machindranath Parkar",
+    //   date: "08-03-2025",
+    // },
+    // {
+    //   srNo: 3,
+    //   templateName: "Upload Policies",
+    //   uploadedBy: "Machindranath Parkar",
+    //   date: "15-03-2025",
+    // },
   ];
 
   return (
@@ -47,8 +47,7 @@ const Policies = () => {
             <>
               <div
                 className="space-y-2 border-default p-4  rounded-md"
-                key={index}
-              >
+                key={index}>
                 <div className="mb-2">
                   <span className="text-subtitle text-primary">{index}</span>
                 </div>

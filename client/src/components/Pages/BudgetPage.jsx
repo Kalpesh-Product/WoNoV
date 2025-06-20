@@ -134,7 +134,7 @@ const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
             { field: "expanseName", headerName: "Expense Name", flex: 1 },
             // { field: "department", headerName: "Department", flex: 200 },
             { field: "expanseType", headerName: "Expense Type", flex: 1 },
-            { field: "projectedAmount", headerName: "Amount", flex: 1 },
+            { field: "projectedAmount", headerName: "Amount (INR)", flex: 1 },
             { field: "dueDate", headerName: "Due Date", flex: 1 },
             { field: "status", headerName: "Status", flex: 1 },
           ],
@@ -170,7 +170,7 @@ const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
         ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
       }));
       const transformedCols = [
-        { field: "srNo", headerName: "SR NO", width: 100 },
+        { field: "srNo", headerName: "Sr No", width: 100 },
         ...data.tableData.columns,
       ];
 

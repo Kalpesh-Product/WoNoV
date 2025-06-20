@@ -12,6 +12,9 @@ const AdminClientsData = () => {
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
   const clientsData = useSelector((state) => state.sales.clientsData);
+  console.log("Clients : ", clientsData);
+
+  
 
   useEffect(() => {
     const fetchSourceIfEmpty = async () => {
@@ -29,6 +32,7 @@ const AdminClientsData = () => {
   }, [clientsData, dispatch]);
 
   const handleClickRow = (clientData) => {
+    console.log("clientData : ", clientData);
     dispatch(setSelectedClient(clientData));
     navigate(
       `/app/dashboard/admin-dashboard/client-members/client-members-data/${clientData.clientName}`
@@ -52,7 +56,7 @@ const AdminClientsData = () => {
         </span>
       ),
     },
-    { field: "hoPocEmail", headerName: "Email", flex: 1 },
+    { field: "localPocEmail", headerName: "Email", flex: 1 },
     { field: "totalMeetingCredits", headerName: "Credits" },
     // {
     //   field: "status",
@@ -150,6 +154,7 @@ const AdminClientsData = () => {
                 totalDesks: item.totalDesks,
                 ratePerOpenDesk: item.ratePerOpenDesk,
                 ratePerCabinDesk: item.ratePerCabinDesk,
+                members : item.members,
                 annualIncrement: item.annualIncrement,
                 perDeskMeetingCredits: item.perDeskMeetingCredits,
                 totalMeetingCredits: item.totalMeetingCredits,
