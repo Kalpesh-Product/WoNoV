@@ -3,9 +3,13 @@ import { Outlet, useNavigate } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import { Chip } from "@mui/material";
 import PageFrame from "../../../components/Pages/PageFrame";
+import { useSelector } from "react-redux";
 
 const AdminClientMembers = () => {
   const navigate = useNavigate();
+   const selectedClient = useSelector((state) => state.client.selectedClient);
+
+   console.log("selectedClient : ", selectedClient)
 
   const viewEmployeeColumns = [
     { field: "srno", headerName: "SR No" },

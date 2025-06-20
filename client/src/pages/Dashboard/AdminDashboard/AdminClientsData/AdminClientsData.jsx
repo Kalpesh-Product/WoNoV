@@ -12,6 +12,7 @@ const AdminClientsData = () => {
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
   const clientsData = useSelector((state) => state.sales.clientsData);
+  
 
   useEffect(() => {
     const fetchSourceIfEmpty = async () => {
@@ -29,6 +30,7 @@ const AdminClientsData = () => {
   }, [clientsData, dispatch]);
 
   const handleClickRow = (clientData) => {
+    console.log("clientData : ", clientData);
     dispatch(setSelectedClient(clientData));
     navigate(
       `/app/dashboard/admin-dashboard/client-members/client-members-data/${clientData.clientName}`
