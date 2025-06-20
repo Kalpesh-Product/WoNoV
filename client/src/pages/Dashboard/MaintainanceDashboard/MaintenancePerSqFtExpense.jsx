@@ -144,7 +144,7 @@ const MaintenancePerSqFtExpense = () => {
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      <WidgetSection layout={1} border padding title={"maintenance offices"} TitleAmount={`INR 0`}>
+      <WidgetSection layout={1} border padding title={"maintenance expense per sq. ft"} TitleAmount={`INR 0`}>
         <NormalBarGraph data={[]} options={expenseOptions} />
       </WidgetSection>
       <PageFrame>
@@ -152,7 +152,7 @@ const MaintenancePerSqFtExpense = () => {
           data={tableData}
           columns={columns}
           search
-          tableTitle="Maintenance Offices"
+          tableTitle="maintenance expense per sq. ft"
         />
       </PageFrame>
     </div>
