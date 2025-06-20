@@ -22,10 +22,11 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import usePageDepartment from "../../../hooks/usePageDepartment";
+import humanTime from "../../../utils/humanTime";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
-  const department = usePageDepartment()
+  const department = usePageDepartment();
   const axios = useAxiosPrivate();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
@@ -43,33 +44,34 @@ const MaintainanceDashboard = () => {
     },
   });
 
-   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
+  const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["tasks"],
     queryFn: async () => {
       try {
         const response = await axios.get(
           `/api/tasks/get-tasks?dept=${department._id}`
         );
-        return response.data?.allBudgets;
+        return response.data;
       } catch (error) {
         throw new Error("Error fetching data");
       }
     },
   });
 
-   const { data: weeklySchedule = [], isLoading: isWeeklyScheduleLoading } = useQuery({
-    queryKey: ["weeklySchedule"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get(
-          `/api/weekly-unit/fetch-weekly-unit/${department._id}`
-        );
-        return response.data?.allBudgets;
-      } catch (error) {
-        throw new Error("Error fetching data");
-      }
-    },
-  });
+  const { data: weeklySchedule = [], isLoading: isWeeklyScheduleLoading } =
+    useQuery({
+      queryKey: ["weeklySchedule"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            `/api/weekly-unit/fetch-weekly-unit/6798bae6e469e809084e24a4`
+          );
+          return response.data;
+        } catch (error) {
+          throw new Error("Error fetching data");
+        }
+      },
+    });
 
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
@@ -508,6 +510,16 @@ const MaintainanceDashboard = () => {
   };
   //----------------------------------------------------------------------------------------------------------//
 
+  const transformedTasks = tasks.map((task,index) => {
+ 
+    return {
+      id:index+1,
+      taskName: task.taskName,
+      status: task.status,
+      endTime: humanTime(task.dueTime),
+    }
+});
+
   const priorityTasks = [
     { taskName: "Check Lights", type: "Daily", endTime: "12:00 PM" },
     {
@@ -537,12 +549,13 @@ const MaintainanceDashboard = () => {
     { id: "id", label: "Sr No", align: "left" },
     { id: "taskName", label: "Task Name", align: "left" },
     {
-      id: "type",
-      label: "Type",
+      id: "status",
+      label: "Status",
       renderCell: (data) => {
+       
         return (
           <>
-            <Chip sx={{ color: "#1E3D73" }} label={data.type} />
+            <Chip sx={{ color: "#1E3D73" }} label={data.status} />
           </>
         );
       },
@@ -688,6 +701,20 @@ const MaintainanceDashboard = () => {
 
   //----------------------------------------------------------------------------------------------------------//
 
+  const transformedWeeklyShifts = useMemo(() => {
+    if (isWeeklyScheduleLoading || !weeklySchedule.length) return [];
+
+    return weeklySchedule.map((emp, index) => ({
+      srNo: index + 1,
+      id: index + 1,
+      name: `${emp.employee.id.firstName} ${emp.employee.id.lastName}`,
+      startTime: humanTime(emp.startDate),
+      endTime: humanTime(emp.endDate),
+      building: emp.location.building.buildingName,
+      unitNo: emp.location.unitNo,
+    }));
+  }, [weeklySchedule, isWeeklyScheduleLoading]);
+
   const techWidgets = [
     {
       layout: 1,
@@ -699,7 +726,8 @@ const MaintainanceDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection normalCase layout={1} padding>
             <YearlyGraph
               data={expenseRawSeries}
@@ -846,13 +874,13 @@ const MaintainanceDashboard = () => {
           scroll
           rowsToDisplay={4}
           Title={"Top 10 High Priority Due Tasks"}
-          rows={[]}
+          rows={transformedTasks}
           columns={priorityTasksColumns}
         />,
         <MuiTable
           key={executiveTimings.length}
           Title={"Weekly Executive Shift Timing"}
-          rows={[]}
+          rows={transformedWeeklyShifts}
           columns={executiveTimingsColumns}
           scroll
           rowsToDisplay={4}
