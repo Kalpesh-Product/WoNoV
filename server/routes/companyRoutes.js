@@ -14,6 +14,11 @@ const {
 } = require("../controllers/companyControllers/companyControllers");
 
 const {
+  addNewHouseKeepingMember,
+  getHouseKeepingStaff,
+} = require("../controllers/companyControllers/houseKeepingController");
+
+const {
   uploadCompanyDocument,
   getCompanyDocuments,
   uploadDepartmentDocument,
@@ -78,6 +83,9 @@ router.post(
 
 router.post("/add-job-application", createJobApplication);
 router.get("/get-job-applications", getJobApplications);
+
+router.post("/add-housekeeping-member", addNewHouseKeepingMember);
+router.get("housekeeping-members", getHouseKeepingStaff);
 
 router.post(
   "/upload-company-document",

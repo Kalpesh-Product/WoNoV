@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
@@ -12,6 +12,7 @@ import PageFrame from "../../../components/Pages/PageFrame";
 import humanDate from "../../../utils/humanDateForamt";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import usePageDepartment from "../../../hooks/usePageDepartment";
+import { queryClient } from "../../../main";
 
 const maintainanceCategories = [
   { id: 1, name: "Electrical" },
@@ -82,6 +83,7 @@ const Inventory = () => {
     },
     onSuccess: () => {
       toast.success("Inventory added successfully!");
+      queryClient.invalidateQueries(["maintainance-inventory"]);
       setIsModalOpen(false);
     },
     onError: (error) => {
@@ -351,9 +353,7 @@ const Inventory = () => {
                     helperText={errors.category?.message}
                   >
                     {/* Replace with your actual options */}
-                    <MenuItem value="">
-                      <em>Select category</em>
-                    </MenuItem>
+                    <MenuItem value="">Select category</MenuItem>
                     {department.name === "Administration"
                       ? adminCategories.map((m) => (
                           <MenuItem key={m.id} value={m.name}>

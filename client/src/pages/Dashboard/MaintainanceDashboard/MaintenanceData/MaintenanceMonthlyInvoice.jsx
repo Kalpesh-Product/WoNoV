@@ -229,7 +229,7 @@ const MaintenanceMonthlyInvoice = () => {
           search={true}
           searchColumn={"Asset Number"}
           tableTitle={"Monthly Invoice Reports"}
-          buttonTitle={"Add Invoice"}
+          // buttonTitle={"Add Invoice"}
           data={[]}
           columns={invoiceColumns}
           handleClick={handleAddAsset}
