@@ -668,8 +668,7 @@ const MaintainanceDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection normalCase layout={1} padding>
             <YearlyGraph
               data={expenseRawSeries}
@@ -754,7 +753,7 @@ const MaintainanceDashboard = () => {
           description={"Expense Per Sq. Ft."}
         />,
         <DataCard
-          route={"maintenance-assets"}
+          // route={"maintenance-assets"}
           title={"Total"}
           data={""}
           description={"Assets Under Management"}

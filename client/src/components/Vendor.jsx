@@ -693,14 +693,14 @@ const Vendor = () => {
               detail={selectedVendor?.partyType}
             />
             <DetalisFormatted title="Status" detail={selectedVendor?.status} />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title="Department ID"
               detail={selectedVendor?.departmentId}
             />
             <DetalisFormatted
               title="Company ID"
               detail={selectedVendor?.company}
-            />
+            /> */}
             <DetalisFormatted
               title="Company Name"
               detail={selectedVendor?.companyName}

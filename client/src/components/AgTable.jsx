@@ -32,6 +32,7 @@ const AgTableComponent = React.memo(
     enableCheckbox, // ✅ New prop to enable checkboxes
     getRowStyle,
     checkAll,
+    disabled,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -187,6 +188,7 @@ const AgTableComponent = React.memo(
                   <PrimaryButton
                     title={buttonTitle}
                     handleSubmit={handleClick}
+                    disabled={disabled}
                   />
                 ) : (
                   ""
