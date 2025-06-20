@@ -35,6 +35,7 @@ const AllocatedBudget = ({
   hideTitle,
   noInvoice = false,
   noFilter = false,
+  annaualExpense = false
 }) => {
   const axios = useAxiosPrivate();
   const [selectedTab, setSelectedTab] = useState(0);
@@ -240,14 +241,13 @@ const AllocatedBudget = ({
     return baseColumns;
   }, [monthDataForSelectedType.columns, noInvoice]);
 
-  console.log("Enhanced columns : ", enhancedColumns);
 
   if (isLoading) return <CircularProgress />;
 
   return (
     <>
       <WidgetSection
-        title={"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"}
+        title={annaualExpense ? "Annaul Expenses" :"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"}
         TitleAmount={`INR ${inrFormat(totalProjectedAmountForFY)}`}
         border>
         <div className="flex flex-col gap-4 rounded-md ">

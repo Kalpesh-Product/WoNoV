@@ -46,6 +46,9 @@ const ClosedTickets = ({ title, departmentId }) => {
             : "",
           acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
           closedAt: ticket.closedAt ? humanTime(ticket.closedAt) : "-",
+          closedBy: ticket?.closedBy
+            ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
+            : "None",
           priority: ticket.priority,
           image: ticket.image ? ticket.image.url : null,
         }));
@@ -93,7 +96,8 @@ const ClosedTickets = ({ title, departmentId }) => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewTicketDetails(params.data)}>
+            onClick={() => handleViewTicketDetails(params.data)}
+          >
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -126,7 +130,8 @@ const ClosedTickets = ({ title, departmentId }) => {
       <MuiModal
         open={openModal && viewTicketDetails}
         onClose={() => setOpenModal(false)}
-        title={"View Ticket Details"}>
+        title={"View Ticket Details"}
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
           <DetalisFormatted
             title="Ticket Title"
@@ -164,6 +169,10 @@ const ClosedTickets = ({ title, departmentId }) => {
           <DetalisFormatted
             title="Accepted at"
             detail={viewTicketDetails?.acceptedAt}
+          />
+          <DetalisFormatted
+            title="Closed by"
+            detail={viewTicketDetails?.closedBy}
           />
           <DetalisFormatted
             title="Closed at"

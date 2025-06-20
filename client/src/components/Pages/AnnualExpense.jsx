@@ -17,7 +17,7 @@ import YearlyGraph from "../../components/graphs/YearlyGraph";
 import useAuth from "../../hooks/useAuth";
 import usePageDepartment from "../../hooks/usePageDepartment";
 
-const BudgetPage = () => {
+const AnnualExpense = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const location = useLocation();
@@ -58,7 +58,7 @@ const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     const budgets = response.data.allBudgets;
     return Array.isArray(budgets) ? budgets : [];
   },
-  enabled: !!department?._id, // <- ✅ prevents firing until department is ready
+  enabled: !!department?._id,  
 });
 
 
@@ -346,26 +346,15 @@ const totalUtilised =
 
   return (
     <div className="flex flex-col gap-8">
-      <YearlyGraph
+      {/* <YearlyGraph
         data={expenseRawSeries}
         options={expenseOptions}
         title={`BIZ Nest ${department?.name} DEPARTMENT EXPENSE`}
         titleAmount={`INR ${inrFormat(totalUtilised)}`}
         onYearChange={setSelectedFiscalYear}
-      />
+      /> */}
 
-      {!isTop && (
-        <div className="flex justify-end">
-          <PrimaryButton
-            title={"Request Budget"}
-            padding="px-5 py-2"
-            fontSize="text-base"
-            handleSubmit={() => setOpenModal(true)}
-          />
-        </div>
-      )}
-
-      <AllocatedBudget financialData={financialData} />
+      <AllocatedBudget financialData={financialData} annaualExpense={true}/>
       <MuiModal
         title="Request Budget"
         open={openModal}
@@ -535,4 +524,4 @@ const totalUtilised =
   );
 };
 
-export default BudgetPage;
+export default AnnualExpense;

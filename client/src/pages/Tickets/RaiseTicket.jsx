@@ -496,8 +496,14 @@ const RaiseTicket = () => {
                 acceptedBy: ticket?.acceptedBy
                   ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
                   : "None",
+                closedBy: ticket?.closedBy
+                  ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
+                  : "None",
                 acceptedAt: ticket.acceptedAt
                   ? humanTime(ticket.acceptedAt)
+                  : "None",
+                closedAt: ticket.closedAt
+                  ? humanTime(ticket.closedAt)
                   : "None",
                 priority: ticket.priority,
                 image: ticket.image ? ticket.image.url : null,
@@ -546,6 +552,10 @@ const RaiseTicket = () => {
           <DetalisFormatted
             title="Accepted at"
             detail={viewTicketDetails?.acceptedAt}
+          />
+          <DetalisFormatted
+            title="Closed by"
+            detail={viewTicketDetails?.closedBy}
           />
           {viewTicketDetails.image && (
             <div className="lg:col-span-1">
