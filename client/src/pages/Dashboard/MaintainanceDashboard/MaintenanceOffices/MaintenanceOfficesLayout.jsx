@@ -155,7 +155,7 @@ const MaintenanceOfficesLayout = () => {
       </div>
 
       {tabIndex === 0 && (
-        <div className="py-4 text-center">
+        <div className=" text-center">
           <div
             onClick={() => setImageOpen(true)}
             className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg"

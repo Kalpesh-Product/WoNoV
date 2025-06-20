@@ -358,7 +358,7 @@ const MaintenanceExpenses = () => {
   // BUDGET NEW END
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 p-4">
       <YearlyGraph
         data={expenseRawSeries}
         options={expenseOptions}
@@ -367,7 +367,7 @@ const MaintenanceExpenses = () => {
         onYearChange={setSelectedFiscalYear}
       />
 
-      {!isTop && (
+      {/* {!isTop && (
         <div className="flex justify-end">
           <PrimaryButton
             title={"Request Budget"}
@@ -376,7 +376,7 @@ const MaintenanceExpenses = () => {
             handleSubmit={() => setOpenModal(true)}
           />
         </div>
-      )}
+      )} */}
 
       <AllocatedBudget financialData={financialData} />
       <MuiModal

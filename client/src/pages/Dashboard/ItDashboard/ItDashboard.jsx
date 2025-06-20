@@ -20,9 +20,13 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
+import usePageDepartment from "../../../hooks/usePageDepartment";
+import humanDate from "../../../utils/humanDateForamt";
+import humanTime from "../../../utils/humanTime";
 
 const ItDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
+  const department = usePageDepartment()
    const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const axios = useAxiosPrivate();
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
@@ -39,6 +43,35 @@ const ItDashboard = () => {
       }
     },
   });
+
+    const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
+      queryKey: ["tasks"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            `/api/tasks/get-tasks?dept=${department._id}`
+          );
+          return response.data;
+        } catch (error) {
+          throw new Error("Error fetching data");
+        }
+      },
+    });
+  
+    const { data: weeklySchedule = [], isLoading: isWeeklyScheduleLoading } =
+      useQuery({
+        queryKey: ["weeklySchedule"],
+        queryFn: async () => {
+          try {
+            const response = await axios.get(
+              `/api/weekly-unit/fetch-weekly-unit/${department._id}`
+            );
+            return response.data;
+          } catch (error) {
+            throw new Error("Error fetching data");
+          }
+        },
+      });
 
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
@@ -349,12 +382,12 @@ const ItDashboard = () => {
     { id: "id", label: "Sr No", align: "left" },
     { id: "taskName", label: "Task Name", align: "left" },
     {
-      id: "type",
-      label: "Type",
+      id: "status",
+      label: "Status",
       renderCell: (data) => {
         return (
           <>
-            <Chip sx={{ color: "#1E3D73" }} label={data.type} />
+            <Chip sx={{ color: "#1E3D73" }} label={data.status} />
           </>
         );
       },
@@ -427,8 +460,8 @@ const ItDashboard = () => {
     { id: "name", label: "Name", align: "left" },
     { id: "building", label: "Building", align: "left" },
     { id: "unitNo", label: "Unit No", align: "left" },
-    { id: "startTime", label: "Start Time", align: "left" },
-    { id: "endTime", label: "End Time", align: "left" },
+    { id: "startDate", label: "Start Date", align: "left" },
+    { id: "endDate", label: "End Date", align: "left" },
   ];
   //----------------------------------------------------------------------------------------------------------//
   const clientComplaints = [
@@ -480,7 +513,32 @@ const ItDashboard = () => {
   );
   const complaintCounts = complaintTypes.map((item) => item.count);
   const complaintTypeLabels = complaintTypes.map((item) => item.type);
-  //----------------------------------------------------------------------------------------------------------//
+
+    const transformedWeeklyShifts = useMemo(() => {
+      if (isWeeklyScheduleLoading || !weeklySchedule.length) return [];
+  
+      return weeklySchedule.map((emp, index) => ({
+        srNo: index + 1,
+        id: index + 1,
+        name: `${emp.employee.id.firstName} ${emp.employee.id.lastName}`,
+        startDate: humanDate(emp.startDate),
+        endDate: humanDate(emp.endDate),
+        building: emp.location.building.buildingName,
+        unitNo: emp.location.unitNo,
+      }));
+    }, [weeklySchedule, isWeeklyScheduleLoading]);
+  
+    const transformedTasks = tasks.map((task, index) => {
+      return {
+        id: index + 1,
+        taskName: task.taskName,
+        status: task.status,
+        endTime: humanTime(task.dueTime),
+      };
+    });
+
+  //
+  // ----------------------------------------------------------------------------------------------------------//
 
   const techWidgets = [
     {
@@ -636,13 +694,13 @@ const ItDashboard = () => {
           scroll
           rowsToDisplay={4}
           Title={"Top 10 High Priority Due Tasks"}
-          rows={[]}
+          rows={transformedTasks}
           columns={priorityTasksColumns}
         />,
         <MuiTable
           key={executiveTimings.length}
           Title={"Weekly Executive Shift Timing"}
-          rows={[]}
+          rows={transformedWeeklyShifts}
           columns={executiveTimingsColumns}
           scroll
           rowsToDisplay={4}

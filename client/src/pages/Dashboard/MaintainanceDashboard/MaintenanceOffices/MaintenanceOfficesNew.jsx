@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import AgTable from "../../../../components/AgTable";
 import { useNavigate } from "react-router-dom";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import WidgetSection from "../../../../components/WidgetSection";
+import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 
 const MaintenancOfficesNew = () => {
   const axios = useAxiosPrivate();
@@ -55,7 +57,6 @@ const MaintenancOfficesNew = () => {
       rawClients: group.clients,
     }));
 
-  // Define columns
   const columns = [
     { headerName: "SR NO", field: "srNo", width: 100 },
     {
@@ -68,7 +69,7 @@ const MaintenancOfficesNew = () => {
           onClick={() => {
             navigate(
               `/app/dashboard/maintenance-dashboard/maintenance-offices/${params.value}`,
-              { state: { unitId: params.data.unitId, unitName : params.value } }
+              { state: { unitId: params.data.unitId, unitName: params.value } }
             );
           }}
           className="text-primary underline cursor-pointer"
@@ -81,8 +82,70 @@ const MaintenancOfficesNew = () => {
     { headerName: "Clients Count", field: "clientsCount" },
   ];
 
+  // Step 1: Prepare chartData
+  const chartData = tableData.map((unit) => ({
+    unitNo: unit.unitNo,
+    occupied: unit.clientsCount,
+  }));
+
+
+  const maxY = Math.max(...chartData.map((item) => item.occupied), 5);
+  const roundedMax = Math.ceil(maxY / 5) * 5;
+
+
+  const inrFormat = (val) => val.toLocaleString("en-IN");
+
+  const barGraphSeries = [
+    {
+      name: "Clients",
+      data: chartData.map((item) => item.occupied),
+    },
+  ];
+  const totalOffices = chartData.reduce((sum,item)=>(item.occupied + sum),0)
+
+  const expenseOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      stacked: false,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+    },
+    colors: ["#54C4A7"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "30%",
+        borderRadius: 5,
+        dataLabels: { position: "top" },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => inrFormat(val),
+      style: { fontSize: "12px", colors: ["#000"] },
+      offsetY: -22,
+    },
+    yaxis: {
+      max: roundedMax,
+      title: { text: "Client Count" },
+    },
+    xaxis: {
+      categories: chartData.map((item) => item.unitNo),
+    },
+    fill: {
+      opacity: 1,
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
+  };
+
   return (
-    <div className="p-4">
+    <div className="p-4 flex flex-col gap-4">
+      <WidgetSection layout={1} border padding title={"maintenance offices"} TitleAmount={`Total clients: ${totalOffices}`}>
+        <NormalBarGraph data={barGraphSeries} options={expenseOptions} />
+      </WidgetSection>
       <PageFrame>
         <AgTable
           data={tableData}

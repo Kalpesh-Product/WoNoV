@@ -356,6 +356,9 @@ import TeamMemberDetails from "../components/Pages/TeamMemberDetails";
 import BudgetPage from "../components/Pages/BudgetPage";
 import AnnualExpense from "../components/Pages/AnnualExpense";
 import MaintenancOfficesNew from "../pages/Dashboard/MaintainanceDashboard/MaintenanceOffices/MaintenanceOfficesNew";
+import PaymentScheduleCommon from "../components/Pages/PaymentScheduleCommon";
+import ItOfficesNew from "../pages/Dashboard/ItDashboard/ItOffices/ItOfficessNew";
+import AdminOfficesNew from "../pages/Dashboard/AdminDashboard/AdminOffices/AdminOfficesNew";
 
 export const routes = createBrowserRouter([
   {
@@ -464,7 +467,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "payment-schedule",
-                            element: <FrontendPayment />,
+                            element: <PaymentScheduleCommon />,
                           },
                           {
                             path: "voucher",
@@ -689,7 +692,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "payment-schedule",
-                            element: <PaymentSchedule />,
+                            element: <PaymentScheduleCommon />,
                           },
                           {
                             path: "collections",
@@ -741,7 +744,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "payment-schedule",
-                            element: <AdminPayment />,
+                            element: <PaymentScheduleCommon />,
                           },
                           {
                             path: "voucher",
@@ -868,7 +871,7 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "admin-offices",
-                        element: <AdminOffices />,
+                        element: <AdminOfficesNew />,
                       },
                       {
                         path: "admin-offices/:client",
@@ -933,7 +936,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "payment-schedule",
-                            element: <MaintenancePayment />,
+                            element: <PaymentScheduleCommon />,
                           },
                           {
                             path: "voucher",
@@ -1079,7 +1082,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "payment-schedule",
-                            element: <ItPayment />,
+                            element: <PaymentScheduleCommon />,
                           },
                           {
                             path: "voucher",
@@ -1161,7 +1164,7 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "it-offices",
-                        element: <ItOffices />,
+                        element: <ItOfficesNew />,
                       },
                       {
                         path: "it-offices/it-offices-layout/:client",
@@ -1230,7 +1233,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "payment-schedule",
-                            element: <SalesPayment />,
+                            element: <PaymentScheduleCommon />,
                           },
                           {
                             path: "voucher",
@@ -1626,7 +1629,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "payment-schedule",
-                            element: <HrPayment />,
+                            element: <PaymentScheduleCommon />,
                           },
                           {
                             path: "voucher",

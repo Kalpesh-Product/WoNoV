@@ -1,742 +1,528 @@
-import React, { useState } from "react";
-import BarGraph from "../../../components/graphs/BarGraph";
-import {
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
-import AgTable from "../../../components/AgTable";
-import WidgetSection from "../../../components/WidgetSection";
+import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
+import PrimaryButton from "../../../components/PrimaryButton";
+import AllocatedBudget from "../../../components/Tables/AllocatedBudget";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import MuiModal from "../../../components/MuiModal";
+import { Controller, useForm } from "react-hook-form";
+import { FormControl, MenuItem, Select, TextField } from "@mui/material";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { toast } from "sonner";
+import { useLocation, useNavigate } from "react-router-dom";
 import { inrFormat } from "../../../utils/currencyFormat";
+import { transformBudgetData } from "../../../utils/transformBudgetData";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import useAuth from "../../../hooks/useAuth";
+import usePageDepartment from "../../../hooks/usePageDepartment";
 
 const AdminExecutiveExpenses = () => {
-  //Proper columns only in April
-  let mockBusinessRevenueData = [
-    {
-      month: "April",
-      domains: [
-        {
-          name: "ST-701A",
-          revenue: 0,
-          clients: [
-            {
-              client: "Zomato",
-              representative: "John Doe",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-15",
-              actualRevenue: 5200,
-            },
-            {
-              client: "Uber",
-              representative: "Jane Smith",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-10",
-              actualRevenue: 4300,
-            },
-            {
-              client: "Ola",
-              representative: "Alice Johnson",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-05",
-              actualRevenue: 3700,
-            },
-            {
-              client: "Swiggy",
-              representative: "Priya Mehta",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-21",
-              actualRevenue: 4600,
-            },
-            {
-              client: "Dunzo",
-              representative: "Arjun Verma",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-10",
-              actualRevenue: 3900,
-            },
-            {
-              client: "Grofers",
-              representative: "Meena Rao",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-01",
-              actualRevenue: 4100,
-            },
-            {
-              client: "Blinkit",
-              representative: "Karan Shah",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-18",
-              actualRevenue: 4400,
-            },
-            {
-              client: "BigBasket",
-              representative: "Ravi Nair",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-28",
-              actualRevenue: 4800,
-            },
-          ],
-        },
-        {
-          name: "ST-701B",
-          revenue: 0,
-          clients: [
-            {
-              client: "PhonePe",
-              representative: "Henry Ford",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-11",
-              actualRevenue: 4600,
-            },
-            {
-              client: "Snapdeal",
-              representative: "Chris Blue",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-12",
-              actualRevenue: 4200,
-            },
-            {
-              client: "Paytm",
-              representative: "Rachel Black",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-02",
-              actualRevenue: 4800,
-            },
-            {
-              client: "Myntra",
-              representative: "Chloe Grey",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-20",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Ajio",
-              representative: "Neha Verma",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-10",
-              actualRevenue: 4700,
-            },
-            {
-              client: "Meesho",
-              representative: "Yash Shah",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-16",
-              actualRevenue: 4300,
-            },
-            {
-              client: "JioMart",
-              representative: "Deepak Reddy",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-17",
-              actualRevenue: 4500,
-            },
-            {
-              client: "Reliance Trends",
-              representative: "Ritika Sharma",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-26",
-              actualRevenue: 4900,
-            },
-          ],
-        },
-        {
-          name: "ST-601A",
-          revenue: 0,
-          clients: [
-            {
-              client: "Tata Cliq",
-              representative: "Ananya Rao",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-12",
-              actualRevenue: 5200,
-            },
-            {
-              client: "Lenskart",
-              representative: "Rohit Sen",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-04-18",
-              actualRevenue: 5100,
-            },
-            {
-              client: "Pepperfry",
-              representative: "Kiran Das",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-05-10",
-              actualRevenue: 5300,
-            },
-            {
-              client: "Boat",
-              representative: "Kavya Nair",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-19",
-              actualRevenue: 4900,
-            },
-            {
-              client: "Croma",
-              representative: "Varun Kapoor",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-15",
-              actualRevenue: 4700,
-            },
-            {
-              client: "Decathlon",
-              representative: "Simran Kaur",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-20",
-              actualRevenue: 5100,
-            },
-            {
-              client: "FirstCry",
-              representative: "Amit Jain",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-27",
-              actualRevenue: 4600,
-            },
-            {
-              client: "Beardo",
-              representative: "Vikas Malhotra",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-08",
-              actualRevenue: 4900,
-            },
-          ],
-        },
-        {
-          name: "ST-601B",
-          revenue: 0,
-          clients: [
-            {
-              client: "PharmEasy",
-              representative: "Sanya Gill",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-22",
-              actualRevenue: 4700,
-            },
-            {
-              client: "1mg",
-              representative: "Kunal Bhat",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-10",
-              actualRevenue: 4500,
-            },
-            {
-              client: "Tanishq",
-              representative: "Divya Joshi",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-01",
-              actualRevenue: 4800,
-            },
-            {
-              client: "Tata Motors",
-              representative: "Rohan Yadav",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-13",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Hero",
-              representative: "Mehul Desai",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-26",
-              actualRevenue: 4600,
-            },
-            {
-              client: "Maruti",
-              representative: "Shruti Iyer",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-07",
-              actualRevenue: 4900,
-            },
-            {
-              client: "Mahindra",
-              representative: "Nikita Jain",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-18",
-              actualRevenue: 4700,
-            },
-            {
-              client: "Oppo",
-              representative: "Rahul Khanna",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-24",
-              actualRevenue: 4600,
-            },
-          ],
-        },
-        {
-          name: "ST-501A",
-          revenue: 0,
-          clients: [
-            {
-              client: "Vivo",
-              representative: "Sneha Pillai",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-13",
-              actualRevenue: 4600,
-            },
-            {
-              client: "Realme",
-              representative: "Arjun Patel",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-03",
-              actualRevenue: 4800,
-            },
-            {
-              client: "Samsung",
-              representative: "Tanya Roy",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-30",
-              actualRevenue: 5100,
-            },
-            {
-              client: "OnePlus",
-              representative: "Aditya Singh",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-08",
-              actualRevenue: 5200,
-            },
-            {
-              client: "Apple",
-              representative: "Siddharth Mehra",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-12",
-              actualRevenue: 6300,
-            },
-            {
-              client: "Dell",
-              representative: "Shreya Naik",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-16",
-              actualRevenue: 5400,
-            },
-            {
-              client: "HP",
-              representative: "Gaurav Shah",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-22",
-              actualRevenue: 4900,
-            },
-            {
-              client: "Lenovo",
-              representative: "Tanvi Agarwal",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-21",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "May",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 15000,
-          clients: [
-            {
-              client: "Client I",
-              representative: "Grace Orange",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-11",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client J",
-              representative: "Hank Purple",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-09",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client K",
-              representative: "Isabel Cyan",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-04-14",
-              actualRevenue: 4000,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 9000,
-          clients: [
-            {
-              client: "Client L",
-              representative: "Jack Gray",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-28",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client M",
-              representative: "Kara Silver",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-07",
-              actualRevenue: 4000,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 14000,
-          clients: [
-            {
-              client: "Client N",
-              representative: "Leo Gold",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-05-20",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client O",
-              representative: "Mia Platinum",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-06-08",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client P",
-              representative: "Noah Bronze",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-07-15",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "June",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 18000,
-          clients: [
-            {
-              client: "Client Q",
-              representative: "Olivia Rose",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-01-30",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client R",
-              representative: "Peter Brown",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-02-18",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client S",
-              representative: "Quincy Black",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-26",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 10000,
-          clients: [
-            {
-              client: "Client T",
-              representative: "Rachel Violet",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-04-12",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client U",
-              representative: "Sam Indigo",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-05-07",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 13000,
-          clients: [
-            {
-              client: "Client V",
-              representative: "Tina Lilac",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-06-05",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client W",
-              representative: "Umar Yellow",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-07-08",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Client X",
-              representative: "Victor Pink",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-08-15",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "July",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 20000,
-          clients: [
-            {
-              client: "Client Y",
-              representative: "Wendy Red",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-03-10",
-              actualRevenue: 8000,
-            },
-            {
-              client: "Client Z",
-              representative: "Xavier Green",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-04-14",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client AA",
-              representative: "Yara Blue",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-05-16",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 11000,
-          clients: [
-            {
-              client: "Client AB",
-              representative: "Zane Orange",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-06-20",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client AC",
-              representative: "Adam Gray",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-07-10",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 16000,
-          clients: [
-            {
-              client: "Client AD",
-              representative: "Betty Silver",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-08-25",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client AE",
-              representative: "Charlie Platinum",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-09-14",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client AF",
-              representative: "David Bronze",
-              adminLead: "Anne Fernandes",
-              registerDate: "2024-10-05",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
+  const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+  const location = useLocation();
+  const department = usePageDepartment();
+  const queryClient = useQueryClient();
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const departmentAccess = [
+    "67b2cf85b9b6ed5cedeb9a2e",
+    "6798bab9e469e809084e249e",
   ];
 
-  //Calulation of total revenue of each unit
-  mockBusinessRevenueData = mockBusinessRevenueData.map((data) => ({
-    ...data,
-    domains: data.domains.map((domain) => ({
-      ...domain,
-      revenue: domain.clients.reduce(
-        (acc, curr) => acc + curr.actualRevenue,
-        0
-      ),
-    })),
-  }));
+  const isTop = auth.user.departments.some((item) => {
+    return departmentAccess.includes(item._id.toString());
+  });
 
-  const [selectedMonth, setSelectedMonth] = useState(
-    mockBusinessRevenueData[0].month
-  ); // Default to first month
+  const [openModal, setOpenModal] = useState(false);
+  const { control, handleSubmit, reset, watch } = useForm({
+    defaultValues: {
+      expanseName: "",
+      expanseType: "",
+      paymentType: "",
+      building: "",
+      unitId: "",
+      projectedAmount: null,
+      dueDate: "",
+      typeOfBudget: "Direct Budget",
+    },
+  });
 
-  // Function to update selected month
-  const handleMonthChange = (event) => {
-    setSelectedMonth(event.target.value);
-  };
+  const selectedBuilding = watch("building");
 
-  // Filter data based on selected month
-  const selectedMonthData = mockBusinessRevenueData.find(
-    (data) => data.month === selectedMonth
+  const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+    queryKey: ["departmentBudget", department?._id],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/budget/company-budget?departmentId=${department._id}`
+      );
+      const budgets = response.data.allBudgets;
+      return Array.isArray(budgets) ? budgets : [];
+    },
+    enabled: !!department?._id,
+  });
+
+  const {
+    data: units = [],
+    isLoading: locationsLoading,
+    error: locationsError,
+  } = useQuery({
+    queryKey: ["units"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
+
+      return response.data;
+    },
+  });
+
+  // const uniqueBuildings = Array.from(
+  //   new Map(
+  //     units.length > 0
+  //       ? units.map((loc) => [
+  //           loc.building._id, // use building._id as unique key
+  //           loc.building.buildingName,
+  //         ])
+  //       : []
+  //   ).entries()
+  // );
+  const uniqueBuildings = Array.from(
+    new Map(
+      units.length > 0
+        ? units
+            .filter((loc) => loc.building && loc.building._id)
+            .map((loc) => [loc.building._id, loc.building.buildingName])
+        : []
+    ).entries()
   );
 
-  if (selectedMonthData) {
-    selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
-      const updatedClients = domain.clients.map((client, index) => ({
-        ...client,
-        srNo: index + 1,
-        registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
-        adminLead: client.adminLead,
-        actualRevenue: Number(client.actualRevenue).toLocaleString("en-IN"),
-      }));
-      return { ...domain, clients: updatedClients };
-    });
-  }
-
-  // Prepare Bar Graph Data
-  const graphData = [
-    {
-      name: "Expense",
-      data: selectedMonthData.domains.map((domain) => domain.revenue),
-    },
-  ];
-
-  // Graph Options
-  const options = {
-    chart: {
-      type: "bar",
-      stacked: false,
-      fontFamily: "Poppins-Regular",
-      toolbar: false,
-    },
-    xaxis: {
-      categories: selectedMonthData.domains.map((domain) => domain.name),
-    },
-    yaxis: { title: { text: "Revenue (INR)" } },
-    plotOptions: {
-      bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
-    },
-    tooltip: {
-      y: {
-        formatter: (val) => `INR ${inrFormat(val)}`,
+  const { mutate: requestBudget, isPending: requestBudgetPending } =
+    useMutation({
+      mutationFn: async (data) => {
+        const response = await axios.post(
+          `/api/budget/request-budget/${department._id}`,
+          {
+            ...data,
+          }
+        );
+        return response.data;
       },
-    },
-    legend: { position: "top" },
-     colors: ["#54C4A7", "#EB5C45"],
+      onSuccess: function (data) {
+        setOpenModal(false);
+        toast.success(data.message);
+        reset();
+
+        queryClient.invalidateQueries(["departmentBudget"]);
+      },
+      onError: function (error) {
+        toast.error(error.response.data.message);
+      },
+    });
+
+  // Transform data into the required format
+  const groupedData = hrFinance.reduce((acc, item) => {
+    const month = dayjs(item.dueDate).format("MMMM YYYY"); // Extracting month and year
+
+    if (!acc[month]) {
+      acc[month] = {
+        month,
+        latestDueDate: item.dueDate, // Store latest due date for sorting
+        projectedAmount: 0,
+        amount: 0,
+        tableData: {
+          rows: [],
+          columns: [
+            { field: "expanseName", headerName: "Expense Name", flex: 1 },
+            // { field: "department", headerName: "Department", flex: 200 },
+            { field: "expanseType", headerName: "Expense Type", flex: 1 },
+            { field: "projectedAmount", headerName: "Amount (INR)", flex: 1 },
+            { field: "dueDate", headerName: "Due Date", flex: 1 },
+            { field: "status", headerName: "Status", flex: 1 },
+          ],
+        },
+      };
+    }
+
+    acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
+    acc[month].amount += item?.actualAmount; // Summing the total amount per month
+    acc[month].tableData.rows.push({
+      id: item._id,
+      expanseName: item.expanseName,
+      department: item.department,
+      expanseType: item.expanseType,
+      projectedAmount: item?.projectedAmount?.toFixed(2),
+      actualAmount: inrFormat(item?.actualAmount || 0),
+      dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
+      status: item.status,
+      invoiceAttached: item.invoiceAttached,
+    });
+
+    return acc;
+  }, {});
+
+  // Data array for rendering the Accordion
+  const financialData = Object.values(groupedData)
+    .map((data, index) => {
+      const transoformedRows = data.tableData.rows.map((row, index) => ({
+        ...row,
+        srNo: index + 1,
+        projectedAmount: Number(
+          row.projectedAmount?.toLocaleString("en-IN").replace(/,/g, "")
+        ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+      }));
+      const transformedCols = [
+        { field: "srNo", headerName: "Sr No", width: 100 },
+        ...data.tableData.columns,
+      ];
+
+      return {
+        ...data,
+        projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        tableData: {
+          ...data.tableData,
+          rows: transoformedRows,
+          columns: transformedCols,
+        },
+      };
+    })
+    .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
+
+  const onSubmit = (data) => {
+    requestBudget(data);
+    setOpenModal(false);
+    reset();
   };
 
-  return (
-    <div className="p-4 flex flex-col gap-4">
-      {/* Month Selection Dropdown */}
-      <div className="mb-4 flex">
-        <FormControl size="small">
-          <InputLabel>Select Month</InputLabel>
-          <Select
-            label="Select Month"
-            value={selectedMonth}
-            onChange={handleMonthChange}
-            sx={{ width: "200px" }}>
-            {mockBusinessRevenueData.map((data) => (
-              <MenuItem key={data.month} value={data.month}>
-                {data.month}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </div>
+  // BUDGET NEW START
 
-      {/* Bar Graph Component */}
-      <WidgetSection layout={1} title={"Executive Expense"} border>
-        <BarGraph data={[]} options={[]} height={400} />
-      </WidgetSection>
+  const [isReady, setIsReady] = useState(false);
 
-      {/* Accordion Section for Domain-wise Revenue Breakdown */}
-      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
-          <div className="flex justify-between items-center w-full px-4 py-2">
-            <span className="text-sm text-muted font-pmedium text-title">
-              LOCATION
-            </span>
-            <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              EXPENSE
-            </span>
-          </div>
-        </div>
-        {selectedMonthData.domains.map((domain, index) => {
-          return (
-            <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}>
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium">
-                    {domain.name}
-                  </span>
-                  <span className="text-subtitle font-pmedium">
-                    {/* INR {domain.revenue.toLocaleString()} */}
-                  </span>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
-                <AgTable
-                  data={[]}
-                  hideFilter
-                  columns={[
-                    { headerName: "Sr No", field: "srNo", flex: 1 },
-                    { headerName: "Client", field: "client", flex: 1 },
-                    {
-                      headerName: "Representative",
-                      field: "representative",
-                      flex: 1,
-                    },
-                    {
-                      headerName: "Register Date",
-                      field: "registerDate",
-                      flex: 1,
-                    },
-                    { headerName: "Admin Lead", field: "adminLead", flex: 1 },
-                    {
-                      headerName: "Expense (INR)",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
-                  ]}
-                  tableHeight={300}
-                />
-                <div className="flex items-center gap-4 mt-4">
-                  <div className="flex items-center gap-4">
-                    <span className="text-primary font-pregular">
-                      Total Expense for {domain.name}:{" "}
-                    </span>
-                    <span className="text-black font-pmedium">
-                      {/* INR {domain.revenue.toLocaleString()} */}
-                    </span>{" "}
+  // const [openModal, setOpenModal] = useState(false);
+
+  const budgetBar = useMemo(() => {
+    if (isHrLoading || !Array.isArray(hrFinance)) return null;
+    return transformBudgetData(hrFinance);
+  }, [isHrLoading, hrFinance]);
+
+  useEffect(() => {
+    if (!isHrLoading) {
+      const timer = setTimeout(() => setIsReady(true), 1000);
+      return () => clearTimeout(timer); // Cleanup on unmount
+    }
+  }, [isHrLoading]);
+
+  const expenseRawSeries = useMemo(() => {
+    // Initialize monthly buckets
+    const months = Array.from({ length: 12 }, (_, index) =>
+      dayjs(`2024-04-01`).add(index, "month").format("MMM")
+    );
+
+    const fyData = {
+      "FY 2024-25": Array(12).fill(0),
+      "FY 2025-26": Array(12).fill(0),
+    };
+
+    hrFinance.forEach((item) => {
+      const date = dayjs(item.dueDate);
+      const year = date.year();
+      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+
+      if (year === 2024 && monthIndex >= 3) {
+        // Apr 2024 to Dec 2024 (month 3 to 11)
+        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+      } else if (year === 2025) {
+        if (monthIndex <= 2) {
+          // Jan to Mar 2025 (months 0–2)
+          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+        } else if (monthIndex >= 3) {
+          // Apr 2025 to Dec 2025 (months 3–11)
+          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+        }
+      } else if (year === 2026 && monthIndex <= 2) {
+        // Jan to Mar 2026
+        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+      }
+    });
+
+    return [
+      {
+        name: "total",
+        group: "FY 2024-25",
+        data: fyData["FY 2024-25"],
+      },
+      {
+        name: "total",
+        group: "FY 2025-26",
+        data: fyData["FY 2025-26"],
+      },
+    ];
+  }, [hrFinance]);
+
+  const maxExpenseValue = Math.max(
+    ...expenseRawSeries.flatMap((series) => series.data)
+  );
+  const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
+
+  const expenseOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+
+      stacked: false,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+    },
+    colors: ["#54C4A7", "#EB5C45"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+        borderRadiusApplication: "none",
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => {
+        return inrFormat(val);
+      },
+
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+      offsetY: -22,
+    },
+
+    yaxis: {
+      max: roundedMax,
+      title: { text: "Amount In Lakhs (INR)" },
+      labels: {
+        formatter: (val) => `${val / 100000}`,
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
+
+    tooltip: {
+      enabled: false,
+      custom: function ({ series, seriesIndex, dataPointIndex }) {
+        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
+        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
+        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
+        //     </div>`;
+        return `
+                <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
+            
+                  <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
+                    <div><strong>Finance Expense:</strong></div>
+                    <div style="width: 10px;"></div>
+                 <div style="text-align: left;">INR ${Math.round(
+                   rawData
+                 ).toLocaleString("en-IN")}</div>
+    
                   </div>
+         
                 </div>
-              </AccordionDetails>
-            </Accordion>
-          );
-        })}
-      </div>
+              `;
+      },
+    },
+  };
+
+  const totalUtilised =
+    budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
+      (acc, val) => acc + val,
+      0
+    ) || 0;
+
+  const navigate = useNavigate();
+  // BUDGET NEW END
+
+  return (
+    <div className="flex flex-col gap-8 p-4">
+      {/* <YearlyGraph
+          data={expenseRawSeries}
+          options={expenseOptions}
+          title={`BIZ Nest ${department?.name} DEPARTMENT EXPENSE`}
+          titleAmount={`INR ${inrFormat(totalUtilised)}`}
+          onYearChange={setSelectedFiscalYear}
+        /> */}
+
+      <AllocatedBudget
+        financialData={financialData}
+        newTitle="Admin Executive Expense"
+      />
+      <MuiModal
+        title="Request Budget"
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Expense Name */}
+          <Controller
+            name="expanseName"
+            control={control}
+            rules={{ required: "Expense name is required" }}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Expense Name"
+                fullWidth
+                size="small"
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+              />
+            )}
+          />
+
+          {/* Expense Type */}
+          <Controller
+            name="expanseType"
+            control={control}
+            rules={{ required: "Expense type is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Expense Type
+                  </MenuItem>
+                  <MenuItem value="Internal">Internal</MenuItem>
+                  <MenuItem value="External">External</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          {/* Payment Type */}
+          <Controller
+            name="paymentType"
+            control={control}
+            rules={{ required: "Payment type is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Payment Type
+                  </MenuItem>
+                  <MenuItem value="One Time">One Time</MenuItem>
+                  <MenuItem value="Recurring">Recurring</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          {/* Building */}
+          <Controller
+            name="building"
+            control={control}
+            rules={{ required: "Building is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Building
+                  </MenuItem>
+                  {locationsLoading
+                    ? []
+                    : uniqueBuildings.map((building) => (
+                        <MenuItem key={building[0]} value={building[1]}>
+                          {building[1]}
+                        </MenuItem>
+                      ))}
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          {/* Unit */}
+          <Controller
+            name="unitId"
+            control={control}
+            rules={{ required: "Unit is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Unit
+                  </MenuItem>
+                  {locationsLoading
+                    ? []
+                    : units.map((unit) =>
+                        unit.building.buildingName === selectedBuilding ? (
+                          <MenuItem key={unit._id} value={unit._id}>
+                            {unit.unitNo}
+                          </MenuItem>
+                        ) : (
+                          <></>
+                        )
+                      )}
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          {/* Amount */}
+          <Controller
+            name="projectedAmount"
+            control={control}
+            rules={{
+              required: "Amount is required",
+              pattern: {
+                value: /^[0-9]+(\.[0-9]{1,2})?$/,
+                message: "Enter a valid amount",
+              },
+            }}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Projected Amount"
+                fullWidth
+                size="small"
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+              />
+            )}
+          />
+
+          {/* Due Date */}
+          <Controller
+            name="dueDate"
+            control={control}
+            rules={{ required: "Due date is required" }}
+            render={({ field, fieldState }) => (
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  {...field}
+                  label="Due Date"
+                  format="DD-MM-YYYY"
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) =>
+                    field.onChange(date ? date.toISOString() : null)
+                  }
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      size: "small",
+                      error: !!fieldState.error,
+                      helperText: fieldState.error?.message,
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            )}
+          />
+          <div className="flex justify-center items-center">
+            {/* Submit Button */}
+            <PrimaryButton type={"submit"} title={"Submit"} />
+          </div>
+        </form>
+      </MuiModal>
     </div>
   );
 };
