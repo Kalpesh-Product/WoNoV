@@ -18,32 +18,28 @@ const Sops = () => {
       srNo: 1,
       templateName: "Upload SOP",
       uploadedBy: "Kalpesh Naik",
-      date: "01-03-2025"
+      date: "01-03-2025",
     },
     {
       srNo: 2,
       templateName: "Upload SOP",
       uploadedBy: "Kalpesh Naik",
-      date: "08-03-2025"
+      date: "08-03-2025",
     },
   ];
-  
 
   return (
     <div className=" flex flex-col gap-4">
-    <span className="text-title font-pmedium text-primary">
-      Upload SOP
-    </span>
-    <hr />
+      <span className="text-title font-pmedium text-primary">Upload SOP</span>
+      <hr />
 
       <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
         {uploadItems.map((index, item) => {
           return (
             <>
-                <div
+              <div
                 className="space-y-2 border-default p-4  rounded-md"
-                key={index}
-              >
+                key={index}>
                 <div className="mb-2">
                   <span className="text-subtitle text-primary">{index}</span>
                 </div>
