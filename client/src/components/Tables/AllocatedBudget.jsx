@@ -35,7 +35,8 @@ const AllocatedBudget = ({
   hideTitle,
   noInvoice = false,
   noFilter = false,
-  annaualExpense = false
+  annaualExpense = false,
+  newTitle
 }) => {
   const axios = useAxiosPrivate();
   const [selectedTab, setSelectedTab] = useState(0);
@@ -247,18 +248,12 @@ const AllocatedBudget = ({
   return (
     <>
       <WidgetSection
-        title={annaualExpense ? "Annual Expenses" :"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"}
+        title={annaualExpense ? "Annual Expenses" : newTitle ? newTitle :"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS" }
         TitleAmount={`INR ${inrFormat(totalProjectedAmountForFY)}`}
         border>
         <div className="flex flex-col gap-4 rounded-md ">
           {!hideTitle ? (
             <div className="flex justify-between items-center">
-              {/* <span className="text-title font-pmedium text-primary uppercase">
-                Actual Budget:
-              </span> */}
-              {/* <span className="text-title font-pmedium">
-                INR {inrFormat(totalProjectedAmountForFY)}
-              </span> */}
             </div>
           ) : (
             ""
@@ -266,34 +261,6 @@ const AllocatedBudget = ({
 
           <div className="flex items-center justify-between gap-4">
             <div className="w-1/3">
-              {/* {filteredMonths.length > 0 && !noFilter && (
-                <div>
-                  <FormControl fullWidth>
-                    <Autocomplete
-                      value={allTypes[selectedTab]}
-                      onChange={(e, newValue) => {
-                        const selectedIndex = allTypes.findIndex(
-                          (type) => type === newValue
-                        );
-                        setSelectedTab(selectedIndex);
-                      }}
-                      options={allTypes}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Select Category"
-                          size="small"
-                          fullWidth
-                        />
-                      )}
-                      getOptionLabel={(option) =>
-                        option === "External" ? "Vendor" : option
-                      }
-                      isOptionEqualToValue={(option, value) => option === value}
-                    />
-                  </FormControl>
-                </div>
-              )} */}
             </div>
             <div className="flex gap-4 justify-start items-center w-full ">
               <div className="">

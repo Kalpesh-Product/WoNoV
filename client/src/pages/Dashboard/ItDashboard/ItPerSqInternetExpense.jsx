@@ -1,703 +1,535 @@
-import React, { useState } from "react";
-import BarGraph from "../../../components/graphs/BarGraph";
-import {
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
-import AgTable from "../../../components/AgTable";
-import WidgetSection from "../../../components/WidgetSection";
+import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
+import PrimaryButton from "../../../components/PrimaryButton";
+import AllocatedBudget from "../../../components/Tables/AllocatedBudget";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import MuiModal from "../../../components/MuiModal";
+import { Controller, useForm } from "react-hook-form";
+import { FormControl, MenuItem, Select, TextField } from "@mui/material";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { toast } from "sonner";
+import { useLocation, useNavigate } from "react-router-dom";
 import { inrFormat } from "../../../utils/currencyFormat";
+import { transformBudgetData } from "../../../utils/transformBudgetData";
+import useAuth from "../../../hooks/useAuth";
+import usePageDepartment from "../../../hooks/usePageDepartment";
 
 const ItPerSqInternetExpense = () => {
-  const mockBusinessRevenueData = [
-    {
-      month: "April",
-      domains: [
-        {
-          name: "ST-701A",
-          totalSqFt: 2000,
-          revenue: 12000,
-          clients: [
-            {
-              client: "Zomato",
-              representative: "Rohan Mehta",
-              registerDate: "2024-01-15",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Uber",
-              representative: "Priya Sharma",
-              registerDate: "2024-02-10",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Ola",
-              representative: "Aditi Menon",
-              registerDate: "2024-03-05",
-              actualRevenue: 3000,
-            },
-            {
-              client: "Swiggy",
-              representative: "Arjun Patel",
-              registerDate: "2024-04-12",
-              actualRevenue: 4500,
-            },
-            {
-              client: "Amazon",
-              representative: "Neha Gupta",
-              registerDate: "2024-05-20",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Flipkart",
-              representative: "Vikram Singh",
-              registerDate: "2024-06-08",
-              actualRevenue: 5500,
-            },
-          ],
-        },
-        {
-          name: "ST-701B",
-          totalSqFt: 1600,
-          revenue: 8000,
-          clients: [
-            {
-              client: "Swiggy",
-              representative: "Ravi Kapoor",
-              registerDate: "2024-01-20",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Flipkart",
-              representative: "Neha Iyer",
-              registerDate: "2024-02-25",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Zomato",
-              representative: "Priya Sharma",
-              registerDate: "2024-03-15",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Uber",
-              representative: "Aditya Joshi",
-              registerDate: "2024-04-05",
-              actualRevenue: 4500,
-            },
-            {
-              client: "Amazon",
-              representative: "Ananya Reddy",
-              registerDate: "2024-05-12",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Ola",
-              representative: "Karan Malhotra",
-              registerDate: "2024-06-18",
-              actualRevenue: 3500,
-            },
-          ],
-        },
-        {
-          name: "ST-601A",
-          totalSqFt: 2200,
-          revenue: 15000,
-          clients: [
-            {
-              client: "Paytm",
-              representative: "Ravi Malhotra",
-              registerDate: "2024-02-08",
-              actualRevenue: 5000,
-            },
-            {
-              client: "BigBasket",
-              representative: "Sneha Kulkarni",
-              registerDate: "2024-03-12",
-              actualRevenue: 7000,
-            },
-            {
-              client: "BYJU'S",
-              representative: "Aditya Ghosh",
-              registerDate: "2024-04-05",
-              actualRevenue: 3000,
-            },
-            {
-              client: "Zomato",
-              representative: "Priya Verma",
-              registerDate: "2024-05-18",
-              actualRevenue: 4500,
-            },
-            {
-              client: "Swiggy",
-              representative: "Arjun Rao",
-              registerDate: "2024-06-22",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Ola",
-              representative: "Kiran Patel",
-              registerDate: "2024-07-10",
-              actualRevenue: 4000,
-            },
-          ],
-        },
-        {
-          name: "ST-601B",
-          totalSqFt: 2100,
-          revenue: 15000,
-          clients: [
-            {
-              client: "Paytm",
-              representative: "Ankit Verma",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000,
-            },
-            {
-              client: "BigBasket",
-              representative: "Sneha Reddy",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000,
-            },
-            {
-              client: "BYJU'S",
-              representative: "Vikram Das",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000,
-            },
-            {
-              client: "Zomato",
-              representative: "Priya Sharma",
-              registerDate: "2024-06-05",
-              actualRevenue: 4500,
-            },
-            {
-              client: "Ola",
-              representative: "Rahul Kapoor",
-              registerDate: "2024-07-15",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Swiggy",
-              representative: "Neha Gupta",
-              registerDate: "2024-08-20",
-              actualRevenue: 6000,
-            },
-          ],
-        },
-        {
-          name: "ST-501A",
-          totalSqFt: 1950,
-          revenue: 15000,
-          clients: [
-            {
-              client: "Paytm",
-              representative: "Ankit Verma",
-              registerDate: "2024-03-12",
-              actualRevenue: 5000,
-            },
-            {
-              client: "BigBasket",
-              representative: "Sneha Reddy",
-              registerDate: "2024-04-18",
-              actualRevenue: 7000,
-            },
-            {
-              client: "BYJU'S",
-              representative: "Vikram Das",
-              registerDate: "2024-05-10",
-              actualRevenue: 3000,
-            },
-            {
-              client: "Zomato",
-              representative: "Priya Sharma",
-              registerDate: "2024-06-05",
-              actualRevenue: 4500,
-            },
-            {
-              client: "Ola",
-              representative: "Rahul Kapoor",
-              registerDate: "2024-07-15",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Swiggy",
-              representative: "Neha Gupta",
-              registerDate: "2024-08-20",
-              actualRevenue: 6000,
-            },
-          ],
-        },
-      ],
-    },
-
-    {
-      month: "May",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 15000,
-          totalSqFt: 2100,
-          clients: [
-            {
-              client: "Infosys Ventures",
-              representative: "Ritika Nair",
-              registerDate: "2024-02-11",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Tata Innovations",
-              representative: "Harsh Vardhan",
-              registerDate: "2024-03-09",
-              actualRevenue: 5000,
-            },
-            {
-              client: "RedDot Labs",
-              representative: "Ishita Rao",
-              registerDate: "2024-04-14",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Wipro Digital",
-              representative: "Arjun Menon",
-              registerDate: "2024-05-22",
-              actualRevenue: 5500,
-            },
-            {
-              client: "TechMahindra Labs",
-              representative: "Priyanka Iyer",
-              registerDate: "2024-06-17",
-              actualRevenue: 4500,
-            },
-            {
-              client: "HCL Technologies",
-              representative: "Vikram Sethi",
-              registerDate: "2024-07-05",
-              actualRevenue: 6500,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 9000,
-          totalSqFt: 2120,
-          clients: [
-            {
-              client: "Himalayan Escapes",
-              representative: "Jignesh Patel",
-              registerDate: "2024-02-28",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Kerala Nomads",
-              representative: "Kavya Menon",
-              registerDate: "2024-03-07",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Goa Coastal Retreats",
-              representative: "Rohan Fernandes",
-              registerDate: "2024-04-15",
-              actualRevenue: 4500,
-            },
-            {
-              client: "Rajasthan Heritage Tours",
-              representative: "Priya Singh Rathore",
-              registerDate: "2024-05-22",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Andaman Dive Adventures",
-              representative: "Arjun Nair",
-              registerDate: "2024-06-18",
-              actualRevenue: 5500,
-            },
-            {
-              client: "North-East Explorers",
-              representative: "Meera Das",
-              registerDate: "2024-07-05",
-              actualRevenue: 4800,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 14000,
-          totalSqFt: 1970,
-          clients: [
-            {
-              client: "Zolo Living",
-              representative: "Lakshya Mehra",
-              registerDate: "2024-05-20",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Colive South",
-              representative: "Megha Joshi",
-              registerDate: "2024-06-08",
-              actualRevenue: 5000,
-            },
-            {
-              client: "StayAbode",
-              representative: "Nikhil Reddy",
-              registerDate: "2024-07-15",
-              actualRevenue: 3000,
-            },
-            {
-              client: "Stanza Living",
-              representative: "Aarav Sharma",
-              registerDate: "2024-08-10",
-              actualRevenue: 5500,
-            },
-            {
-              client: "Oxford Caps",
-              representative: "Ishita Patel",
-              registerDate: "2024-09-05",
-              actualRevenue: 4500,
-            },
-            {
-              client: "YourSpace",
-              representative: "Rohan Malhotra",
-              registerDate: "2024-10-18",
-              actualRevenue: 4000,
-            },
-          ],
-        },
-      ],
-    },
-
-    {
-      month: "June",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 18000,
-          totalSqFt: 2000,
-          clients: [
-            {
-              client: "Zomato",
-              representative: "Rajeev Mehta",
-              registerDate: "2024-01-30",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Paytm",
-              representative: "Nisha Reddy",
-              registerDate: "2024-02-18",
-              actualRevenue: 6000,
-            },
-            {
-              client: "BYJU'S",
-              representative: "Prakash Nair",
-              registerDate: "2024-03-26",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Swiggy",
-              representative: "Arjun Kapoor",
-              registerDate: "2024-04-15",
-              actualRevenue: 6500,
-            },
-            {
-              client: "Ola Cabs",
-              representative: "Priya Sharma",
-              registerDate: "2024-05-22",
-              actualRevenue: 5500,
-            },
-            {
-              client: "Flipkart",
-              representative: "Vikram Patel",
-              registerDate: "2024-06-10",
-              actualRevenue: 4500,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 10000,
-          totalSqFt: 1070,
-          clients: [
-            {
-              client: "OYO",
-              representative: "Rekha Sharma",
-              registerDate: "2024-04-12",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Nykaa",
-              representative: "Saurav Kapoor",
-              registerDate: "2024-05-07",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 13000,
-          totalSqFt: 3000,
-          clients: [
-            {
-              client: "Urban Company",
-              representative: "Tanvi Rao",
-              registerDate: "2024-06-05",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Delhivery",
-              representative: "Uday Singh",
-              registerDate: "2024-07-08",
-              actualRevenue: 4000,
-            },
-            {
-              client: "FreshToHome",
-              representative: "Vikas Shetty",
-              registerDate: "2024-08-15",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-
-    {
-      month: "July",
-      domains: [
-        {
-          name: "Co-Working",
-          revenue: 20000,
-          totalSqFt: 2000,
-          clients: [
-            {
-              client: "Swiggy",
-              representative: "Wasim Khan",
-              registerDate: "2024-03-10",
-              actualRevenue: 8000,
-            },
-            {
-              client: "CRED",
-              representative: "Xenia Batra",
-              registerDate: "2024-04-14",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Dunzo",
-              representative: "Yashika Jain",
-              registerDate: "2024-05-16",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Workation",
-          revenue: 11000,
-          totalSqFt: 1100,
-          clients: [
-            {
-              client: "MakeMyTrip",
-              representative: "Zaid Hussain",
-              registerDate: "2024-06-20",
-              actualRevenue: 6000,
-            },
-            {
-              client: "RedBus",
-              representative: "Aarav Menon",
-              registerDate: "2024-07-10",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          name: "Co-Living",
-          revenue: 16000,
-          totalSqFt: 1600,
-          clients: [
-            {
-              client: "NestAway",
-              representative: "Bhavana Patil",
-              registerDate: "2024-08-25",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Stanza Living",
-              representative: "Chirag Rao",
-              registerDate: "2024-09-14",
-              actualRevenue: 6000,
-            },
-            {
-              client: "NoBroker",
-              representative: "Deepika Sethi",
-              registerDate: "2024-10-05",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
+  const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+  const location = useLocation();
+  const department = usePageDepartment();
+  const queryClient = useQueryClient(); 
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const departmentAccess = [
+    "67b2cf85b9b6ed5cedeb9a2e",
+    "6798bab9e469e809084e249e",
   ];
 
-  const [selectedMonth, setSelectedMonth] = useState(
-    mockBusinessRevenueData[0].month
-  ); // Default to first month
+  const isTop = auth.user.departments.some((item) => {
+    return departmentAccess.includes(item._id.toString());
+  });
 
-  // Function to update selected month
-  const handleMonthChange = (event) => {
-    setSelectedMonth(event.target.value);
-  };
+  const [openModal, setOpenModal] = useState(false);
+  const { control, handleSubmit, reset, watch } = useForm({
+    defaultValues: {
+      expanseName: "",
+      expanseType: "",
+      paymentType: "",
+      building: "",
+      unitId: "",
+      projectedAmount: null,
+      dueDate: "",
+      typeOfBudget: "Direct Budget",
+    },
+  });
 
-  // Filter data based on selected month
-  const selectedMonthData = mockBusinessRevenueData.find(
-    (data) => data.month === selectedMonth
+  const selectedBuilding = watch("building");
+
+const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+  queryKey: ["departmentBudget", department?._id],
+  queryFn: async () => {
+    const response = await axios.get(
+      `/api/budget/company-budget?departmentId=${department._id}`
+    );
+    const budgets = response.data.allBudgets;
+    return Array.isArray(budgets) ? budgets.filter((item)=>item.expanseType === "INTERNET EXPENSES") : [];
+  },
+  enabled: !!department?._id, // <- ✅ prevents firing until department is ready
+});
+
+
+  const {
+    data: units = [],
+    isLoading: locationsLoading,
+    error: locationsError,
+  } = useQuery({
+    queryKey: ["units"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
+
+      return response.data;
+    },
+  });
+
+  // const uniqueBuildings = Array.from(
+  //   new Map(
+  //     units.length > 0
+  //       ? units.map((loc) => [
+  //           loc.building._id, // use building._id as unique key
+  //           loc.building.buildingName,
+  //         ])
+  //       : []
+  //   ).entries()
+  // );
+  const uniqueBuildings = Array.from(
+    new Map(
+      units.length > 0
+        ? units
+            .filter((loc) => loc.building && loc.building._id)
+            .map((loc) => [loc.building._id, loc.building.buildingName])
+        : []
+    ).entries()
   );
 
-  // Prepare Bar Graph Data
-  const graphData = [
-    {
-      name: "Internet Expense Per Sq. Ft.",
-      // data: selectedMonthData.domains.map((domain) => domain.revenue),
-      data: selectedMonthData.domains.map((domain) =>
-        inrFormat(Math.round((domain.revenue / domain.totalSqFt) * 2) / 2)
-      ),
-      // data: selectedMonthData.domains.map((domain) => domain.totalSqFt),
-      // data: selectedMonthData.domains.map((domain) => domain.clients),
-    },
-  ];
-
-  // Graph Options
-  const options = {
-    chart: {
-      type: "bar",
-      stacked: false,
-      fontFamily: "Poppins-Regular",
-      toolbar: false,
-    },
-    xaxis: {
-      categories: selectedMonthData.domains.map((domain) => domain.name),
-    },
-    yaxis: { title: { text: "" } },
-    plotOptions: {
-      bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
-    },
-    tooltip: {
-      y: {
-        formatter: (val) => `INR ${inrFormat(val)}`,
+  const { mutate: requestBudget, isPending: requestBudgetPending } =
+    useMutation({
+      mutationFn: async (data) => {
+        const response = await axios.post(
+          `/api/budget/request-budget/${department._id}`,
+          {
+            ...data,
+          }
+        );
+        return response.data;
       },
-    },
-    legend: { position: "top" },
-     colors: ["#54C4A7", "#EB5C45"],
+      onSuccess: function (data) {
+        setOpenModal(false);
+        toast.success(data.message);
+        reset();
+        
+    queryClient.invalidateQueries(["departmentBudget"]); 
+      },
+      onError: function (error) {
+        toast.error(error.response.data.message);
+      },
+    });
+
+  // Transform data into the required format
+  const groupedData = hrFinance.reduce((acc, item) => {
+    const month = dayjs(item.dueDate).format("MMMM YYYY"); // Extracting month and year
+
+    if (!acc[month]) {
+      acc[month] = {
+        month,
+        latestDueDate: item.dueDate, // Store latest due date for sorting
+        projectedAmount: 0,
+        amount: 0,
+        tableData: {
+          rows: [],
+          columns: [
+            { field: "expanseName", headerName: "Expense Name", flex: 1 },
+            // { field: "department", headerName: "Department", flex: 200 },
+            { field: "expanseType", headerName: "Expense Type", flex: 1 },
+            { field: "projectedAmount", headerName: "Amount (INR)", flex: 1 },
+            { field: "dueDate", headerName: "Due Date", flex: 1 },
+            { field: "status", headerName: "Status", flex: 1 },
+          ],
+        },
+      };
+    }
+
+    acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
+    acc[month].amount += item?.actualAmount; // Summing the total amount per month
+    acc[month].tableData.rows.push({
+      id: item._id,
+      expanseName: item.expanseName,
+      department: item.department,
+      expanseType: item.expanseType,
+      projectedAmount: item?.projectedAmount?.toFixed(2),
+      actualAmount: inrFormat(item?.actualAmount || 0),
+      dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
+      status: item.status,
+      invoiceAttached: item.invoiceAttached,
+    });
+
+    return acc;
+  }, {});
+
+  // Data array for rendering the Accordion
+  const financialData = Object.values(groupedData)
+    .map((data, index) => {
+      const transoformedRows = data.tableData.rows.map((row, index) => ({
+        ...row,
+        srNo: index + 1,
+        projectedAmount: Number(
+          row.projectedAmount?.toLocaleString("en-IN").replace(/,/g, "")
+        ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+      }));
+      const transformedCols = [
+        { field: "srNo", headerName: "Sr No", width: 100 },
+        ...data.tableData.columns,
+      ];
+
+      return {
+        ...data,
+        projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        tableData: {
+          ...data.tableData,
+          rows: transoformedRows,
+          columns: transformedCols,
+        },
+      };
+    })
+    .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
+
+  const onSubmit = (data) => {
+    requestBudget(data);
+    setOpenModal(false);
+    reset();
   };
 
+  // BUDGET NEW START
+
+  const [isReady, setIsReady] = useState(false);
+
+  // const [openModal, setOpenModal] = useState(false);
+
+  const budgetBar = useMemo(() => {
+    if (isHrLoading || !Array.isArray(hrFinance)) return null;
+    return transformBudgetData(hrFinance);
+  }, [isHrLoading, hrFinance]);
+
+  useEffect(() => {
+    if (!isHrLoading) {
+      const timer = setTimeout(() => setIsReady(true), 1000);
+      return () => clearTimeout(timer); // Cleanup on unmount
+    }
+  }, [isHrLoading]);
+
+const expenseRawSeries = useMemo(() => {
+  // Initialize monthly buckets
+  const months = Array.from({ length: 12 }, (_, index) =>
+    dayjs(`2024-04-01`).add(index, "month").format("MMM")
+  );
+
+  const fyData = {
+    "FY 2024-25": Array(12).fill(0),
+    "FY 2025-26": Array(12).fill(0),
+  };
+
+  hrFinance.forEach((item) => {
+    const date = dayjs(item.dueDate);
+    const year = date.year();
+    const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+
+    if (year === 2024 && monthIndex >= 3) {
+      // Apr 2024 to Dec 2024 (month 3 to 11)
+      fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+    } else if (year === 2025) {
+      if (monthIndex <= 2) {
+        // Jan to Mar 2025 (months 0–2)
+        fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+      } else if (monthIndex >= 3) {
+        // Apr 2025 to Dec 2025 (months 3–11)
+        fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+      }
+    } else if (year === 2026 && monthIndex <= 2) {
+      // Jan to Mar 2026
+      fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+    }
+  });
+
+  return [
+    {
+      name: "total",
+      group: "FY 2024-25",
+      data: fyData["FY 2024-25"],
+    },
+    {
+      name: "total",
+      group: "FY 2025-26",
+      data: fyData["FY 2025-26"],
+    },
+  ];
+}, [hrFinance]);
+
+const maxExpenseValue = Math.max(
+  ...expenseRawSeries.flatMap((series) => series.data)
+);
+const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
+
+
+  const expenseOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+
+      stacked: false,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+    },
+    colors: ["#54C4A7", "#EB5C45"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+        borderRadiusApplication: "none",
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => {
+        return inrFormat(val);
+      },
+
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+      offsetY: -22,
+    },
+
+    yaxis: {
+      max: roundedMax,
+      title: { text: "Amount In Lakhs (INR)" },
+      labels: {
+        formatter: (val) => `${val / 100000}`,
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
+
+    tooltip: {
+      enabled: false,
+      custom: function ({ series, seriesIndex, dataPointIndex }) {
+        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
+        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
+        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
+        //     </div>`;
+        return `
+              <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
+          
+                <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
+                  <div><strong>Finance Expense:</strong></div>
+                  <div style="width: 10px;"></div>
+               <div style="text-align: left;">INR ${Math.round(
+                 rawData
+               ).toLocaleString("en-IN")}</div>
+  
+                </div>
+       
+              </div>
+            `;
+      },
+    },
+  };
+
+const totalUtilised =
+  budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+
+
+  const navigate = useNavigate();
+  // BUDGET NEW END
+
   return (
-    <div className="p-4 flex flex-col gap-4">
-      {/* Month Selection Dropdown */}
-      <div className="mb-4 flex">
-        <FormControl size="small">
-          <InputLabel>Select Month</InputLabel>
-          <Select
-            label="Select Month"
-            value={selectedMonth}
-            onChange={handleMonthChange}
-            sx={{ width: "200px" }}>
-            {mockBusinessRevenueData.map((data) => (
-              <MenuItem key={data.month} value={data.month}>
-                {data.month}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </div>
+    <div className="flex flex-col gap-8 p-4">
+      {/* <YearlyGraph
+        data={expenseRawSeries}
+        options={expenseOptions}
+        title={`BIZ Nest ${department?.name} DEPARTMENT EXPENSE`}
+        titleAmount={`INR ${inrFormat(totalUtilised)}`}
+        onYearChange={setSelectedFiscalYear}
+      />
 
-      {/* Bar Graph Component */}
-      <WidgetSection layout={1} title={"Internet Expense Per Sq Ft"} border>
-        <BarGraph data={[]} options={options} height={400} />
-      </WidgetSection>
-
-      {/* Accordion Section for Domain-wise Revenue Breakdown */}
-      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
-          <div className="flex justify-between items-center w-full px-4 py-2">
-            <span className="text-sm text-muted font-pmedium text-title">
-              LOCATION
-            </span>
-            <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              TOTAL SQ.FT
-            </span>
-            <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              EXPENSE
-            </span>
-          </div>
+      {!isTop && (
+        <div className="flex justify-end">
+          <PrimaryButton
+            title={"Request Budget"}
+            padding="px-5 py-2"
+            fontSize="text-base"
+            handleSubmit={() => setOpenModal(true)}
+          />
         </div>
-        {selectedMonthData.domains.map((domain, index) => {
-          return (
-            <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}>
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium">
-                    {domain.name}
-                  </span>
-                  <span className="text-subtitle font-pmedium">
-                    {/* {domain.totalSqFt} */}
-                  </span>
-                  <span className="text-subtitle font-pmedium">
-                    {/* INR {domain.revenue.toLocaleString()} */}
-                  </span>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
-                <AgTable
-                  data={[]}
-                  hideFilter
-                  columns={[
-                    { headerName: "Sr No", field: "srNo", flex: 1 },
-                    { headerName: "Client", field: "client", flex: 1 },
-                    {
-                      headerName: "Representative",
-                      field: "representative",
-                      flex: 1,
-                    },
-                    {
-                      headerName: "Register Date",
-                      field: "registerDate",
-                      flex: 1,
-                    },
-                    {
-                      headerName: "Internet Expense (INR)",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
-                    {
-                      headerName: "Expense per Sq.Ft (INR)",
-                      field: "expensePerSqFt",
-                      flex: 1,
-                    },
-                  ]}
-                  tableHeight={300}
-                />
+      )} */}
 
-                <div className="flex items-center gap-4 mt-4">
-                  <div className="flex items-center gap-4">
-                    <span className="text-primary font-pregular">
-                      Total Expense for {domain.name}:{" "}
-                    </span>
-                    <span className="text-black font-pmedium">
-                      {/* INR {domain.revenue.toLocaleString()} */}
-                    </span>{" "}
-                  </div>
-                </div>
-              </AccordionDetails>
-            </Accordion>
-          );
-        })}
-      </div>
+      <AllocatedBudget financialData={financialData} newTitle={"INTERNET EXPENSES"}/>
+      <MuiModal
+        title="Request Budget"
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Expense Name */}
+          <Controller
+            name="expanseName"
+            control={control}
+            rules={{ required: "Expense name is required" }}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Expense Name"
+                fullWidth
+                size="small"
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+              />
+            )}
+          />
+
+          {/* Expense Type */}
+          <Controller
+            name="expanseType"
+            control={control}
+            rules={{ required: "Expense type is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Expense Type
+                  </MenuItem>
+                  <MenuItem value="Internal">Internal</MenuItem>
+                  <MenuItem value="External">External</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          {/* Payment Type */}
+          <Controller
+            name="paymentType"
+            control={control}
+            rules={{ required: "Payment type is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Payment Type
+                  </MenuItem>
+                  <MenuItem value="One Time">One Time</MenuItem>
+                  <MenuItem value="Recurring">Recurring</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          {/* Building */}
+          <Controller
+            name="building"
+            control={control}
+            rules={{ required: "Building is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Building
+                  </MenuItem>
+                  {locationsLoading
+                    ? []
+                    : uniqueBuildings.map((building) => (
+                        <MenuItem key={building[0]} value={building[1]}>
+                          {building[1]}
+                        </MenuItem>
+                      ))}
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          {/* Unit */}
+          <Controller
+            name="unitId"
+            control={control}
+            rules={{ required: "Unit is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Unit
+                  </MenuItem>
+                  {locationsLoading
+                    ? []
+                    : units.map((unit) =>
+                        unit.building.buildingName === selectedBuilding ? (
+                          <MenuItem key={unit._id} value={unit._id}>
+                            {unit.unitNo}
+                          </MenuItem>
+                        ) : (
+                          <></>
+                        )
+                      )}
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          {/* Amount */}
+          <Controller
+            name="projectedAmount"
+            control={control}
+            rules={{
+              required: "Amount is required",
+              pattern: {
+                value: /^[0-9]+(\.[0-9]{1,2})?$/,
+                message: "Enter a valid amount",
+              },
+            }}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Projected Amount"
+                fullWidth
+                size="small"
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+              />
+            )}
+          />
+
+          {/* Due Date */}
+          <Controller
+            name="dueDate"
+            control={control}
+            rules={{ required: "Due date is required" }}
+            render={({ field, fieldState }) => (
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  {...field}
+                  label="Due Date"
+                  format="DD-MM-YYYY"
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) =>
+                    field.onChange(date ? date.toISOString() : null)
+                  }
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      size: "small",
+                      error: !!fieldState.error,
+                      helperText: fieldState.error?.message,
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            )}
+          />
+          <div className="flex justify-center items-center">
+            {/* Submit Button */}
+            <PrimaryButton type={"submit"} title={"Submit"} />
+          </div>
+        </form>
+      </MuiModal>
     </div>
   );
 };

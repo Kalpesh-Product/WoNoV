@@ -33,7 +33,6 @@ const TeamMembersSchedule = () => {
 
   const [multipleRanges, setMultipleRanges] = useState([]);
 
-
   const department = usePageDepartment();
   const {
     handleSubmit,
@@ -258,7 +257,7 @@ const TeamMembersSchedule = () => {
               endDate: new Date(sub.toDate),
               employeeName: `${sub.substitute.firstName} ${sub.substitute.lastName} (Substitute)`,
               manager: manager || "Unknown",
-              isActive: "Active", 
+              isActive: "Active",
             });
           });
       });
@@ -447,7 +446,13 @@ const TeamMembersSchedule = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={`Assign primary Unit`}
+        title={`${
+          modalMode === "add"
+            ? "Assign weekly schedule"
+            : modalMode === "view"
+            ? "Schedule details"
+            : "Assign primary unit"
+        }`}
       >
         {modalMode === "add" && (
           <div>
