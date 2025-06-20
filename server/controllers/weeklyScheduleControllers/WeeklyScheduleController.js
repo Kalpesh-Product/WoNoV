@@ -280,14 +280,10 @@ const addSubstitute = async (req, res, next) => {
       const substitute = schedule.substitutions[lastActiveIndex];
       substitute.endDate = parsedFromDate;
 
-      console.log("from", substitute.fromDate, "==", parsedFromDate);
-      console.log("end", substitute.toDate, "==", parsedToDate);
-
       if (
         substitute.fromDate.getTime() === parsedFromDate.getTime() &&
         substitute.toDate.getTime() === parsedToDate.getTime()
       ) {
-        console.log("active");
         substitute.isActive = false;
       }
     }
