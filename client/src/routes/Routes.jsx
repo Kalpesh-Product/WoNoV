@@ -355,6 +355,7 @@ import ItMixBag from "../pages/Dashboard/ItDashboard/itMixBag/ItMixBag";
 import TeamMemberDetails from "../components/Pages/TeamMemberDetails";
 import BudgetPage from "../components/Pages/BudgetPage";
 import AnnualExpense from "../components/Pages/AnnualExpense";
+import MaintenancOfficesNew from "../pages/Dashboard/MaintainanceDashboard/MaintenanceOffices/MaintenanceOfficesNew";
 
 export const routes = createBrowserRouter([
   {
@@ -1014,10 +1015,10 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "maintenance-offices",
-                        element: <MaintenanceOffices />,
+                        element: <MaintenancOfficesNew />,
                       },
                       {
-                        path: "maintenance-offices/maintenance-offices-layout/:client",
+                        path: "maintenance-offices/:client",
                         element: <MaintenanceOfficesLayout />,
                         children: [
                           {
