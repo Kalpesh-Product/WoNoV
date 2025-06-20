@@ -1,3 +1,4 @@
+// Updated TeamMemberDetails with Edit Modal
 import React, { useEffect, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -6,142 +7,199 @@ import interactionPlugin from "@fullcalendar/interaction";
 import dayjs from "dayjs";
 import { useLocation } from "react-router-dom";
 import MuiModal from "../../components/MuiModal";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../hooks/usePageDepartment";
-import { Checkbox, CircularProgress, FormControlLabel } from "@mui/material";
+import { CircularProgress, MenuItem, TextField } from "@mui/material";
 import DetalisFormatted from "../DetalisFormatted";
 import PageFrame from "./PageFrame";
+import { Controller, useForm } from "react-hook-form";
+import PrimaryButton from "../../components/PrimaryButton";
+import { toast } from "sonner";
+import { DatePicker } from "@mui/x-date-pickers";
 
 const TeamMemberDetails = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [filters, setFilters] = useState({
-    employee: true,
-    substitute: true,
-  });
+  const [modalType, setModalType] = useState("view");
+  const [filters, setFilters] = useState({ employee: true, substitute: true });
 
   const department = usePageDepartment();
   const axios = useAxiosPrivate();
   const location = useLocation();
   const passedData = location.state;
-  // const passedData =  {
-  //   id:"67ed1a4b3ea0f84ec3068e5f",
-  //   name:"ST 701 A"
-  // };
+  const queryClient = useQueryClient();
 
   const [calendarEvents, setCalendarEvents] = useState([]);
 
-  const { data: unitSchedule = [], isPending: isUnitSchedulePending } =
-    useQuery({
-      queryKey: ["unitSchedule"],
-      queryFn: async () => {
-        try {
-          const response = await axios.get(
-            `/api/weekly-unit/get-unit-schedule?unitId=${passedData.id}&department=${department._id}`
-          );
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      weeklyScheduleId: "",
+      substitute: "",
+      fromDate: null,
+      toDate: null,
+    },
+  });
 
-          return response.data;
-        } catch (error) {
-          console.error("Error fetching clients data:", error);
-        }
-      },
-    });
+  const { data: unitSchedule = [] } = useQuery({
+    queryKey: ["unitSchedule"],
+    queryFn: async () => {
+      const res = await axios.get(
+        `/api/weekly-unit/get-unit-schedule?unitId=${passedData.id}&department=${department._id}`
+      );
+      return res.data;
+    },
+  });
 
-  // 🧠 Added defensive programming across the component
+  const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
+    queryKey: ["employees"],
+    queryFn: async () => {
+      const res = await axios.get("/api/users/fetch-users", {
+        params: { deptId: department._id },
+      });
+      return res.data;
+    },
+  });
 
-  useEffect(() => {
-    if (!Array.isArray(unitSchedule) || !unitSchedule.length) return;
+useEffect(() => {
+  if (!Array.isArray(unitSchedule) || !unitSchedule.length) return;
 
-    const allEvents = [];
+  const allEvents = [];
 
-    unitSchedule.forEach((schedule) => {
-      const empId = schedule?.employee?.id;
-      const empName = empId
-        ? `${empId.firstName ?? ""} ${empId.lastName ?? ""}`.trim()
-        : "Unknown";
+  unitSchedule.forEach((schedule) => {
+    const empId = schedule?.employee?.id;
+    const empName = empId
+      ? `${empId.firstName ?? ""} ${empId.lastName ?? ""}`.trim()
+      : "Unknown";
 
-      const unitName = schedule?.location?.unitName || "N/A";
-      const manager = schedule?.manager || "N/A";
+    const unitName = schedule?.location?.unitName || "N/A";
+    const manager = schedule?.manager || "N/A";
+    const start = dayjs(schedule?.startDate);
+    const end = dayjs(schedule?.endDate);
 
-      const start = dayjs(schedule?.startDate);
-      const end = dayjs(schedule?.endDate);
+    if (!start.isValid() || !end.isValid()) return;
 
-      if (!start.isValid() || !end.isValid()) return;
+    // 🟦 Show assigned employee (if enabled in filters)
+    if (filters.employee) {
+      for (
+        let current = start;
+        current.isSameOrBefore(end, "day");
+        current = current.add(1, "day")
+      ) {
+        allEvents.push({
+          title: empName,
+          start: current.format("YYYY-MM-DD"),
+          backgroundColor: "#3357FF",
+          borderColor: "#3357FF",
+          extendedProps: {
+            scheduleId: schedule._id,
+            employeeName: empName,
+            unit: unitName,
+            manager,
+            fromDate: schedule.startDate,
+            toDate: schedule.endDate,
+            isSubstitute: false,
+            substitutes: schedule?.substitutions || [],
+          },
+        });
+      }
+    }
 
-      if (filters.employee) {
+    // 🟦 Show active substitutes (if enabled in filters)
+    if (
+      filters.substitute &&
+      Array.isArray(schedule.substitutions) &&
+      schedule.substitutions.length
+    ) {
+      schedule.substitutions.forEach((sub) => {
+        if (!sub?.isActive) return;
+
+        const subName =
+          `${sub?.substitute?.firstName ?? ""} ${sub?.substitute?.lastName ?? ""}`.trim() ||
+          "Unknown Substitute";
+        const subStart = dayjs(sub?.fromDate);
+        const subEnd = dayjs(sub?.toDate);
+
+        if (!subStart.isValid() || !subEnd.isValid()) return;
+
         for (
-          let current = start;
-          current.isSameOrBefore(end, "day");
+          let current = subStart;
+          current.isSameOrBefore(subEnd, "day");
           current = current.add(1, "day")
         ) {
           allEvents.push({
-            title: empName,
+            title: subName,
             start: current.format("YYYY-MM-DD"),
-            backgroundColor: "#3357FF",
-            borderColor: "#3357FF",
+            backgroundColor: "#66b2ff", // lighter blue for substitute
+            borderColor: "#66b2ff",
             extendedProps: {
-              employeeName: empName,
+              scheduleId: schedule._id,
+              employeeName: subName,
               unit: unitName,
               manager,
-              isSubstitute: false,
-              substitutes: Array.isArray(schedule.substitutions)
-                ? schedule.substitutions
-                : [],
+              isSubstitute: true,
+              substitutes: [],
+              fromDate: sub.fromDate,
+              toDate: sub.toDate,
             },
           });
         }
-      }
+      });
+    }
+  });
 
-      if (filters.substitute && Array.isArray(schedule.substitutions)) {
-        schedule.substitutions.forEach((sub) => {
-          if (!sub?.isActive) return;
-
-          const subName =
-            `${sub?.substitute?.firstName ?? ""} ${
-              sub?.substitute?.lastName ?? ""
-            }`.trim() || "Unknown Substitute";
-
-          const subStart = dayjs(sub?.fromDate);
-          const subEnd = dayjs(sub?.toDate);
-
-          if (!subStart.isValid() || !subEnd.isValid()) return;
-
-          for (
-            let current = subStart;
-            current.isSameOrBefore(subEnd, "day");
-            current = current.add(1, "day")
-          ) {
-            allEvents.push({
-              title: subName,
-              start: current.format("YYYY-MM-DD"),
-              backgroundColor: "#66b2ff",
-              borderColor: "#66b2ff",
-              extendedProps: {
-                employeeName: subName,
-                unit: unitName,
-                manager,
-                isSubstitute: true,
-                substitutes: [],
-              },
-            });
-          }
-        });
-      }
-    });
-
-    setCalendarEvents(allEvents);
-  }, [unitSchedule, filters]);
+  setCalendarEvents(allEvents);
+}, [unitSchedule, filters]);
 
   const handleEventClick = (clickInfo) => {
     setSelectedEvent(clickInfo.event);
+    setModalType("view");
     setIsDrawerOpen(true);
   };
 
   const closeDrawer = () => {
     setIsDrawerOpen(false);
     setSelectedEvent(null);
+    reset();
   };
+
+  const { mutate: assignSubstitute, isPending } = useMutation({
+    mutationFn: async (data) => {
+      const res = await axios.patch("/api/weekly-unit/add-substitute", data);
+      return res.data;
+    },
+    onSuccess: (res) => {
+      toast.success(res.message || "Substitute assigned successfully!");
+      queryClient.invalidateQueries({ queryKey: ["unitSchedule"] });
+      closeDrawer();
+    },
+    onError: (err) => {
+      toast.error(err.message || "Something went wrong");
+    },
+  });
+
+  const onSubmit = (formData) => {
+    assignSubstitute({
+      weeklyScheduleId: formData.weeklyScheduleId,
+      substitute: formData.substitute,
+      fromDate: formData.fromDate,
+      toDate: formData.toDate,
+    });
+  };
+
+  useEffect(() => {
+    if (modalType === "edit" && selectedEvent) {
+      setValue("weeklyScheduleId", selectedEvent.extendedProps.scheduleId);
+      setValue("fromDate", dayjs(selectedEvent.extendedProps.fromDate));
+      setValue("toDate", dayjs(selectedEvent.extendedProps.toDate));
+    }
+  }, [modalType, selectedEvent]);
 
   return (
     <div className="flex flex-col gap-4 bg-white p-4">
@@ -149,7 +207,6 @@ const TeamMemberDetails = () => {
         <span className="text-title font-pmedium text-primary">
           {`${passedData?.name || "USER"} SCHEDULE`}
         </span>
-        {/* Calendar Section */}
 
         <div className="w-full h-full overflow-y-auto">
           <FullCalendar
@@ -168,73 +225,123 @@ const TeamMemberDetails = () => {
         </div>
       </PageFrame>
 
-      {/* Modal Section */}
       <MuiModal
         open={isDrawerOpen}
         onClose={closeDrawer}
         title="Schedule Details"
       >
-        {selectedEvent && (
+        {modalType === "view" && selectedEvent && (
           <div className="flex flex-col gap-2">
             <DetalisFormatted
               title="Employee"
-              detail={
-                selectedEvent.extendedProps?.employeeName
-                  ? `${selectedEvent.extendedProps.employeeName}${
-                      selectedEvent.extendedProps.isSubstitute
-                        ? " (Substitute)"
-                        : ""
-                    }`
-                  : "N/A"
-              }
+              detail={`${selectedEvent.extendedProps.employeeName}${
+                selectedEvent.extendedProps.isSubstitute ? " (Substitute)" : ""
+              }`}
             />
-
             <DetalisFormatted
               title="Date"
-              detail={
-                dayjs(selectedEvent.start).isValid()
-                  ? dayjs(selectedEvent.start).format("DD-MM-YYYY")
-                  : "Invalid Date"
-              }
+              detail={dayjs(selectedEvent.start).format("DD-MM-YYYY")}
             />
-
             <DetalisFormatted
               title="Unit"
-              detail={selectedEvent.extendedProps?.unit || "N/A"}
+              detail={selectedEvent.extendedProps.unit || "N/A"}
             />
-
             <DetalisFormatted
               title="Manager"
-              detail={selectedEvent.extendedProps?.manager || "N/A"}
+              detail={selectedEvent.extendedProps.manager || "N/A"}
+            />
+            <PrimaryButton
+              title="Assign Substitute"
+              handleSubmit={() => {
+                setModalType("edit");
+              }}
+            />
+          </div>
+        )}
+
+        {modalType === "edit" && (
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
+          >
+            <Controller
+              name="substitute"
+              control={control}
+              rules={{ required: "Substitute is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Select Substitute"
+                  size="small"
+                  fullWidth
+                  error={!!errors.substitute}
+                  helperText={errors.substitute?.message}
+                >
+                  <MenuItem value="" disabled>
+                    Select Substitute
+                  </MenuItem>
+                  {employees.map((emp) => (
+                    <MenuItem key={emp._id} value={emp._id}>
+                      {emp.firstName} {emp.lastName}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
             />
 
-            {Array.isArray(selectedEvent.extendedProps?.substitutes) &&
-              selectedEvent.extendedProps.substitutes.length > 0 && (
-                <div className="pt-2">
-                  <span className="font-semibold text-sm">Substitutes:</span>
-                  <ul className="list-disc pl-6">
-                    {selectedEvent.extendedProps.substitutes.map(
-                      (sub, index) => (
-                        <li key={index}>
-                          {sub?.substitute?.firstName ?? "?"}{" "}
-                          {sub?.substitute?.lastName ?? ""}
-                          {" ("}
-                          {dayjs(sub.fromDate).isValid()
-                            ? dayjs(sub.fromDate).format("MMM D")
-                            : "?"}
-                          {" - "}
-                          {dayjs(sub.toDate).isValid()
-                            ? dayjs(sub.toDate).format("MMM D")
-                            : "?"}
-                          {")"}
-                          {sub?.isActive && " - Active"}
-                        </li>
-                      )
-                    )}
-                  </ul>
-                </div>
+            <Controller
+              name="fromDate"
+              control={control}
+              rules={{ required: "From Date is required" }}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  label="From Date"
+                  format="DD-MM-YYYY"
+                  disablePast
+                  onChange={(date) => field.onChange(date)}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true,
+                      error: !!errors.fromDate,
+                      helperText: errors.fromDate?.message,
+                    },
+                  }}
+                />
               )}
-          </div>
+            />
+
+            <Controller
+              name="toDate"
+              control={control}
+              rules={{ required: "To Date is required" }}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  label="To Date"
+                  format="DD-MM-YYYY"
+                  disablePast
+                  onChange={(date) => field.onChange(date)}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true,
+                      error: !!errors.toDate,
+                      helperText: errors.toDate?.message,
+                    },
+                  }}
+                />
+              )}
+            />
+            <PrimaryButton
+              title="Assign"
+              type="submit"
+              isLoading={isPending}
+              disabled={isPending}
+            />
+          </form>
         )}
       </MuiModal>
     </div>

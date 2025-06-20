@@ -31,13 +31,7 @@ const TeamMembersSchedule = () => {
     key: "selection",
   });
 
-  const [multipleRanges, setMultipleRanges] = useState([
-    {
-      startDate: new Date(),
-      endDate: new Date(),
-      key: "schedule-0",
-    },
-  ]);
+  const [multipleRanges, setMultipleRanges] = useState([]);
 
   useEffect(() => {
     console.log("multiple : ", multipleRanges);
@@ -211,22 +205,70 @@ const TeamMembersSchedule = () => {
     if (!unitSchedule || !unitSchedule.length) return;
 
     const matchedSchedules = unitSchedule.filter(
-      (schedule) => schedule.location?._id === watchedUnitId
+      (schedule) =>
+        schedule.location?._id === watchedUnitId &&
+        schedule.employee?.id &&
+        schedule.startDate &&
+        schedule.endDate &&
+        !isNaN(new Date(schedule.startDate)) &&
+        !isNaN(new Date(schedule.endDate))
     );
 
     if (matchedSchedules.length) {
-      const detailedRanges = matchedSchedules.map((item, idx) => ({
-        key: `schedule-${idx}`,
-        startDate: new Date(item.startDate),
-        endDate: new Date(item.endDate),
-        employeeName: `${item.employee?.id?.firstName || "N/A"} ${
-          item.employee?.id?.lastName || ""
-        }`,
-        manager: item.manager || "N/A",
-        isActive: item.employee?.isActive ? "Active" : "Inactive",
-      }));
+      const detailedRanges = [];
+
+      matchedSchedules.forEach((item) => {
+        const {
+          employee,
+          startDate,
+          endDate,
+          manager,
+          substitutions = [],
+          _id,
+        } = item;
+
+        // Add original employee schedule
+        if (
+          employee?.id?.firstName &&
+          employee?.id?.lastName &&
+          !isNaN(new Date(startDate)) &&
+          !isNaN(new Date(endDate))
+        ) {
+          detailedRanges.push({
+            key: `main-${_id}`,
+            startDate: new Date(startDate),
+            endDate: new Date(endDate),
+            employeeName: `${employee.id.firstName} ${employee.id.lastName}`,
+            manager: manager || "Unknown",
+            isActive: employee.isActive ? "Active" : "Inactive",
+          });
+        }
+
+        // Add active substitutes
+        substitutions
+          .filter(
+            (sub) =>
+              sub?.isActive &&
+              sub?.substitute?.firstName &&
+              sub?.substitute?.lastName &&
+              !isNaN(new Date(sub.fromDate)) &&
+              !isNaN(new Date(sub.toDate))
+          )
+          .forEach((sub, index) => {
+            detailedRanges.push({
+              key: `sub-${_id}-${index}`,
+              startDate: new Date(sub.fromDate),
+              endDate: new Date(sub.toDate),
+              employeeName: `${sub.substitute.firstName} ${sub.substitute.lastName} (Substitute)`,
+              manager: manager || "Unknown",
+              isActive: "Active", 
+            });
+          });
+      });
 
       setMultipleRanges(detailedRanges);
+    } else {
+      setMultipleRanges([]);
     }
   }, [unitSchedule, watchedUnitId]);
 
@@ -351,6 +393,10 @@ const TeamMembersSchedule = () => {
       ),
     },
   ];
+
+  useEffect(() => {
+    console.log("Multiple : ", multipleRanges);
+  }, [multipleRanges]);
 
   //---------------------------------------Event Handlers------------------------------//
 
@@ -477,54 +523,65 @@ const TeamMembersSchedule = () => {
                 </div>
                 <div className="col-span-2 w-full ">
                   {/* Show already scheduled ranges as compact badges */}
-                   <div className="my-4">
+
+                  {/* Actual DateRange calendar */}
+                  {watchedUnitId ? (
+                    <>
+                      <div className="my-4">
                         <span className="text-subtitle text-primary font-pmedium">
                           Assigned Details
                         </span>
                       </div>
-                  {/* Actual DateRange calendar */}
-                  {watchedUnitId ? (
-                    <>
-                      <div className="w-full max-w-full overflow-x-auto my-4">
-                        <div className="flex gap-4 min-w-max">
-                          {[...multipleRanges]
-                            .sort(
-                              (a, b) =>
-                                new Date(b.startDate) - new Date(a.startDate)
-                            )
-                            .map((range) => (
-                              <div
-                                key={range.key}
-                                className="min-w-[280px] p-4 rounded-xl border border-borderGray bg-gray-50 shadow-sm"
-                              >
-                                <div className="text-sm text-gray-500 mb-1">
-                                  <strong>Dates:</strong>{" "}
-                                  {range.startDate.toLocaleDateString("en-GB")}{" "}
-                                  - {range.endDate.toLocaleDateString("en-GB")}
+
+                      {multipleRanges.length > 0 ? (
+                        <div className="w-full max-w-full overflow-x-auto my-4">
+                          <div className="flex gap-4 min-w-max">
+                            {[...multipleRanges]
+                              .sort(
+                                (a, b) =>
+                                  new Date(b.startDate) - new Date(a.startDate)
+                              )
+                              .map((range) => (
+                                <div
+                                  key={range.key}
+                                  className="min-w-[280px] p-4 rounded-xl border border-borderGray bg-gray-50 shadow-sm"
+                                >
+                                  <div className="text-sm text-gray-500 mb-1">
+                                    <strong>Dates:</strong>{" "}
+                                    {range.startDate.toLocaleDateString(
+                                      "en-GB"
+                                    )}{" "}
+                                    -{" "}
+                                    {range.endDate.toLocaleDateString("en-GB")}
+                                  </div>
+                                  <div className="text-sm text-gray-700">
+                                    <strong>Employee:</strong>{" "}
+                                    {range.employeeName}
+                                  </div>
+                                  <div className="text-sm text-gray-700">
+                                    <strong>Manager:</strong> {range.manager}
+                                  </div>
+                                  <div className="text-sm text-gray-700">
+                                    <strong>Status:</strong>{" "}
+                                    <span
+                                      className={`font-semibold ${
+                                        range.isActive === "Active"
+                                          ? "text-green-600"
+                                          : "text-red-500"
+                                      }`}
+                                    >
+                                      {range.isActive}
+                                    </span>
+                                  </div>
                                 </div>
-                                <div className="text-sm text-gray-700">
-                                  <strong>Employee:</strong>{" "}
-                                  {range.employeeName}
-                                </div>
-                                <div className="text-sm text-gray-700">
-                                  <strong>Manager:</strong> {range.manager}
-                                </div>
-                                <div className="text-sm text-gray-700">
-                                  <strong>Status:</strong>{" "}
-                                  <span
-                                    className={`font-semibold ${
-                                      range.isActive === "Active"
-                                        ? "text-green-600"
-                                        : "text-red-500"
-                                    }`}
-                                  >
-                                    {range.isActive}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
+                              ))}
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="flex justify-center items-center h-16 p-4 border-borderGray border-[1px] rounded-xl">
+                          <span>No members assigned currently.</span>
+                        </div>
+                      )}
 
                       <div className="my-4">
                         <span className="text-subtitle text-primary font-pmedium">
