@@ -1,360 +1,160 @@
-import React, { useState } from "react";
-import BarGraph from "../../../components/graphs/BarGraph";
-import {
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
+import React from "react";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
 import AgTable from "../../../components/AgTable";
+import { useNavigate } from "react-router-dom";
+import PageFrame from "../../../components/Pages/PageFrame";
 import WidgetSection from "../../../components/WidgetSection";
-import dayjs from "dayjs";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 
 const MaintenancePerSqFtExpense = () => {
-  const mockExpensePerSqFtData = [
-    {
-      month: "April",
-      domains: [
-        {
-          name: "Sunteck Kanaka - 5th Floor",
-          expense: 112500,
-          clients: [
-            {
-              buildingName: "Sunteck Kanaka",
-              unitNo: "501(A)",
-              occupant: "Nykaa",
-              squareFeet: 450,
-              actualExpense: 22000,
-              location: "ST-501A",
-            },
-            {
-              buildingName: "Sunteck Kanaka",
-              unitNo: "501(B)",
-              occupant: "Blinkit",
-              squareFeet: 550,
-              actualExpense: 27500,
-              location: "ST-501B",
-            },
-            {
-              buildingName: "Sunteck Kanaka",
-              unitNo: "501(A)",
-              occupant: "Flipkart",
-              squareFeet: 700,
-              actualExpense: 32000,
-              location: "ST-501A",
-            },
-            {
-              buildingName: "Sunteck Kanaka",
-              unitNo: "501(B)",
-              occupant: "Myntra",
-              squareFeet: 680,
-              actualExpense: 31000,
-              location: "ST-501B",
-            },
-          ],
-        },
-        {
-          name: "Sunteck Kanaka - 6th Floor",
-          expense: 121000,
-          clients: [
-            {
-              buildingName: "Sunteck Kanaka",
-              unitNo: "601(A)",
-              occupant: "Reliance Trends",
-              squareFeet: 750,
-              actualExpense: 35000,
-              location: "ST-601A",
-            },
-            {
-              buildingName: "Sunteck Kanaka",
-              unitNo: "602(B)",
-              occupant: "Tata Cliq",
-              squareFeet: 640,
-              actualExpense: 29000,
-              location: "ST-602B",
-            },
-            {
-              buildingName: "Sunteck Kanaka",
-              unitNo: "601(A)",
-              occupant: "Ajio",
-              squareFeet: 660,
-              actualExpense: 30000,
-              location: "ST-601A",
-            },
-            {
-              buildingName: "Sunteck Kanaka",
-              unitNo: "602(B)",
-              occupant: "Zivame",
-              squareFeet: 600,
-              actualExpense: 27000,
-              location: "ST-602B",
-            },
-          ],
-        },
-        {
-          name: "Sunteck Kanaka - 7th Floor",
-          expense: 152000,
-          clients: [
-            {
-              buildingName: "Sunteck Kanaka",
-              unitNo: "701(A)",
-              occupant: "Byju's",
-              squareFeet: 800,
-              actualExpense: 40000,
-              location: "ST-701A",
-            },
-            {
-              buildingName: "Sunteck Kanaka",
-              unitNo: "702(B)",
-              occupant: "Unacademy",
-              squareFeet: 780,
-              actualExpense: 39000,
-              location: "ST-702B",
-            },
-            {
-              buildingName: "Sunteck Kanaka",
-              unitNo: "701(A)",
-              occupant: "Toppr",
-              squareFeet: 720,
-              actualExpense: 36000,
-              location: "ST-701A",
-            },
-            {
-              buildingName: "Sunteck Kanaka",
-              unitNo: "702(B)",
-              occupant: "Khan Academy",
-              squareFeet: 750,
-              actualExpense: 37000,
-              location: "ST-702B",
-            },
-          ],
-        },
-        {
-          name: "Dempo Trade Centre - Ground Floor",
-          expense: 55000,
-          clients: [
-            {
-              buildingName: "Dempo Trade Centre",
-              unitNo: "002",
-              occupant: "Zomato",
-              squareFeet: 500,
-              actualExpense: 25000,
-              location: "DTC-002",
-            },
-            {
-              buildingName: "Dempo Trade Centre",
-              unitNo: "004",
-              occupant: "Swiggy",
-              squareFeet: 600,
-              actualExpense: 30000,
-              location: "DTC-004",
-            },
-          ],
-        },
-        {
-          name: "Dempo Trade Centre - 7th Floor",
-          expense: 148500,
-          clients: [
-            {
-              buildingName: "Dempo Trade Centre",
-              unitNo: "706",
-              occupant: "Vedantu",
-              squareFeet: 760,
-              actualExpense: 38000,
-              location: "DTC-706",
-            },
-            {
-              buildingName: "Dempo Trade Centre",
-              unitNo: "703",
-              occupant: "WhiteHat Jr",
-              squareFeet: 700,
-              actualExpense: 35000,
-              location: "DTC-703",
-            },
-            {
-              buildingName: "Dempo Trade Centre",
-              unitNo: "703",
-              occupant: "Simplilearn",
-              squareFeet: 780,
-              actualExpense: 39000,
-              location: "DTC-703",
-            },
-            {
-              buildingName: "Dempo Trade Centre",
-              unitNo: "706",
-              occupant: "UpGrad",
-              squareFeet: 740,
-              actualExpense: 36500,
-              location: "DTC-706",
-            },
-          ],
-        },
-      ],
+  const axios = useAxiosPrivate();
+  const navigate = useNavigate();
+
+  const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
+    queryKey: ["clientsData"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/co-working-clients");
+        const data = response.data.filter((item) => item.isActive);
+        return data;
+      } catch (error) {
+        console.error("Error fetching clients data:", error);
+      }
     },
-  ];
-  
+  });
 
-  
-  
-  
-  
-  
-  
-  const [selectedMonth, setSelectedMonth] = useState(
-    mockExpensePerSqFtData[0].month
-  ); // Default to first month
+  // Group by Unit Number
+  const groupedByUnits = clientsData.reduce((acc, item) => {
+    const unitNo = item.unit?.unitNo || "-";
 
-  // Function to update selected month
-  const handleMonthChange = (event) => {
-    setSelectedMonth(event.target.value);
-  };
-
-  // Filter data based on selected month
-  const selectedMonthData = mockExpensePerSqFtData.find(
-    (data) => data.month === selectedMonth
-  );
-
-
-  if (selectedMonthData) {
-    selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
-      const updatedClients = domain.clients.map((client, index) => {
-        const expense = Number(client.actualExpense);
-        const sqft = Number(client.squareFeet);
-        const expensePerSqFt = sqft ? expense / sqft : 0;
-  
-        return {
-          ...client,
-          srNo: index + 1,
-          actualExpense: expense, // Ensure number for calculations
-          expensePerSqFt: expensePerSqFt.toFixed(0), // Rounded value
-        };
-      });
-  
-      return {
-        ...domain,
-        clients: updatedClients,
+    if (!acc[unitNo]) {
+      acc[unitNo] = {
+        unitNo,
+        unitName: item.unit?.unitName || "-",
+        unitId: item.unit?._id,
+        clients: [],
+        buildingName: item.unit?.building?.buildingName,
       };
-    });
-  }
-  
-  
+    }
 
-  // Prepare Bar Graph Data
-  const graphData = [
+    acc[unitNo].clients.push(item);
+
+    return acc;
+  }, {});
+
+  const tableData = Object.values(groupedByUnits)
+    .sort((a, b) =>
+      a.unitNo.localeCompare(b.unitNo, undefined, { numeric: true })
+    )
+    .map((group, index) => ({
+      srNo: index + 1,
+      unitId: group.unitId,
+      unitNo: group.unitNo,
+      unitName: group.unitName,
+      buildingName: group.buildingName,
+      clientsCount: group.clients.length,
+      rawClients: group.clients,
+    }));
+
+  const columns = [
+    { headerName: "SR NO", field: "srNo", width: 100 },
     {
-      name: "Revenue",
-      data: selectedMonthData.domains.map((domain) => domain.expense),
+      headerName: "Unit No",
+      field: "unitNo",
+      flex: 1,
+      cellRenderer: (params) => (
+        <span
+          role="button"
+          // onClick={() => {
+          //   navigate(
+          //     `/app/dashboard/maintenance-dashboard/maintenance-offices/${params.value}`,
+          //     { state: { unitId: params.data.unitId, unitName: params.value } }
+          //   );
+          // }}
+          // className="text-primary underline cursor-pointer"
+        >
+          {params.value}
+        </span>
+      ),
     },
+    { headerName: "Building", field: "buildingName", flex: 1 },
+    { headerName: "Expense", field: "expense" },
   ];
 
-  // Graph Options
-  const options = {
-    chart: { type: "bar", toolbar: false, stacked: false, fontFamily: "Poppins-Regular"},
-    xaxis: {
-      categories: selectedMonthData.domains.map((domain) => domain.name),
+  // Step 1: Prepare chartData
+  const chartData = tableData.map((unit) => ({
+    unitNo: unit.unitNo,
+    occupied: unit.clientsCount,
+  }));
+
+
+  const maxY = Math.max(...chartData.map((item) => item.occupied), 5);
+  const roundedMax = Math.ceil(maxY / 5) * 5;
+
+
+  const inrFormat = (val) => val.toLocaleString("en-IN");
+
+  const barGraphSeries = [
+    {
+      name: "Clients",
+      data: chartData.map((item) => item.occupied),
     },
-    yaxis: { title: { text: "Expense (INR)" } },
+  ];
+  const totalOffices = chartData.reduce((sum,item)=>(item.occupied + sum),0)
+
+  const expenseOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      stacked: false,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+    },
+    colors: ["#54C4A7"],
     plotOptions: {
-      bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
+      bar: {
+        horizontal: false,
+        columnWidth: "30%",
+        borderRadius: 5,
+        dataLabels: { position: "top" },
+      },
     },
-    legend: { position: "top" },
-     colors: ["#54C4A7", "#EB5C45"],
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => inrFormat(val),
+      style: { fontSize: "12px", colors: ["#000"] },
+      offsetY: -22,
+    },
+    yaxis: {
+      max: roundedMax,
+      title: { text: "Amount in Lakhs" },
+    },
+    xaxis: {
+      categories: chartData.map((item) => item.unitNo),
+    },
+    fill: {
+      opacity: 1,
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
   };
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      {/* Month Selection Dropdown */}
-      <div className="mb-4 flex">
-        <FormControl size="small">
-          <InputLabel>Select Month</InputLabel>
-          <Select
-            label="Select Month"
-            value={selectedMonth}
-            onChange={handleMonthChange}
-            sx={{ width: "200px" }}>
-            {mockExpensePerSqFtData.map((data) => (
-              <MenuItem key={data.month} value={data.month}>
-                {data.month}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </div>
-
-      {/* Bar Graph Component */}
-      <WidgetSection layout={1} title={"Expense Per Sq Ft"} border>
-        <BarGraph data={[]} options={[]} height={400} />
+      <WidgetSection layout={1} border padding title={"maintenance offices"} TitleAmount={`INR 0`}>
+        <NormalBarGraph data={[]} options={expenseOptions} />
       </WidgetSection>
-
-      {/* Accordion Section for Domain-wise Revenue Breakdown */}
-      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-      <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
-          <div className="flex justify-between items-center w-full px-4 py-2">
-            <span className="text-sm text-muted font-pmedium text-title">
-              LOCATION
-            </span>
-            <span className="px-4 text-sm text-muted font-pmedium text-title flex items-center gap-1">
-              EXPENSE
-            </span>
-            
-          </div>
-        </div>
-        {selectedMonthData.domains.map((domain, index) => {
-          return (
-            <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}>
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium">
-                    {domain.name}
-                  </span>
-                  <span className="text-subtitle font-pmedium">
-                  {/* INR {Number(domain.expense).toLocaleString()} */}
-                  </span>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
-                <AgTable
-                  data={[]}
-                  hideFilter
-                  columns={[
-                    { headerName: "Sr No", field: "srNo", flex: 1 },
-                    { headerName: "Building Name", field: "buildingName", flex: 1 },
-                    { headerName: "Unit No", field: "unitNo", flex: 1 },
-                    { headerName: "Occupant", field: "occupant", flex: 1 },
-                    { headerName: "Square Feet", field: "squareFeet", flex: 1 },
-                    { headerName: "Actual Expense (INR)", field: "actualExpense", flex: 1 },
-                    {
-                      headerName: "Expense / Sq Ft (INR)",
-                      field: "expensePerSqFt",
-                      flex: 1,
-                      valueFormatter: (params) =>
-                        Number(params.value).toLocaleString("en-IN"),
-                    },
-                  ]}
-                  tableHeight={300}
-                />
-                <div className="flex items-center gap-4 mt-4">
-                  <div className="flex items-center gap-4">
-                    <span className="text-primary font-pregular">
-                      Total Expense for {domain.name}:{" "}
-                    </span>
-                    <span className="text-black font-pmedium">
-                    {/* INR {Number(domain.expense).toLocaleString()} */}
-                    </span>{" "}
-                  </div>
-                </div>
-              </AccordionDetails>
-            </Accordion>
-          );
-        })}
-      </div>
+      <PageFrame>
+        <YearWiseTable
+          data={tableData}
+          columns={columns}
+          search
+          tableTitle="Maintenance Offices"
+        />
+      </PageFrame>
     </div>
   );
 };

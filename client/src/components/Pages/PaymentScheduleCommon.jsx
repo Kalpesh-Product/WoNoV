@@ -12,15 +12,18 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 
-import MuiModal from "../../../../components/MuiModal";
+import MuiModal from "../MuiModal";
 import { useQuery } from "@tanstack/react-query";
-import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import humanDate from "../../../../utils/humanDateForamt";
-import DetalisFormatted from "../../../../components/DetalisFormatted";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import humanDate from "../../utils/humanDateForamt";
+import DetalisFormatted from "../DetalisFormatted";
+import usePageDepartment from "../../hooks/usePageDepartment";
+import { inrFormat } from "../../utils/currencyFormat";
 
-const PaymentSchedule = () => {
+const PaymentScheduleCommon = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const department = usePageDepartment()
 
   const closeDrawer = () => {
     setIsDrawerOpen(false);
@@ -29,11 +32,11 @@ const PaymentSchedule = () => {
   const axios = useAxiosPrivate();
 
   const { data: financePayment = [], isPending: isHrLoading } = useQuery({
-    queryKey: ["financePayment"],
+    queryKey: ["paymentSchedule"],
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/budget/company-budget?departmentId=6798bafbe469e809084e24a7`
+          `/api/budget/company-budget?departmentId=${department?._id}`
         );
         const budgets = response.data.allBudgets;
 
@@ -141,7 +144,8 @@ const PaymentSchedule = () => {
                           fontSize: "0.875rem",
                           fontWeight: "bold",
                           textTransform: "capitalize",
-                        }}>
+                        }}
+                      >
                         {status}
                       </span>
                     }
@@ -168,7 +172,8 @@ const PaymentSchedule = () => {
                         className="w-3 h-3 rounded-full mt-[0.3rem]"
                         style={{
                           backgroundColor: event.backgroundColor,
-                        }}></div>
+                        }}
+                      ></div>
                       <div className="flex flex-col">
                         <span className="text-content font-medium">
                           {event.title}
@@ -224,7 +229,8 @@ const PaymentSchedule = () => {
           selectedEvent
             ? statusColorMap[selectedEvent.extendedProps.status]
             : ""
-        }>
+        }
+      >
         {selectedEvent && (
           <div className="flex flex-col gap-3">
             <div className="font-bold">General Information</div>
@@ -239,12 +245,12 @@ const PaymentSchedule = () => {
               upperCase
             />
             <br />
-            <div className="font-bold">General Information</div>
+            <div className="font-bold">Financials</div>
             <DetalisFormatted
               title="Projected Amount"
               detail={
                 selectedEvent.extendedProps.projectedAmount
-                  ? `INR ${selectedEvent.extendedProps.projectedAmount}`
+                  ? `INR ${inrFormat(selectedEvent.extendedProps.projectedAmount)}`
                   : "Not Available"
               }
             />
@@ -252,7 +258,7 @@ const PaymentSchedule = () => {
               title="Actual Amount"
               detail={
                 selectedEvent.extendedProps.amount
-                  ? `INR ${selectedEvent.extendedProps.amount}`
+                  ? `INR ${inrFormat(selectedEvent.extendedProps.amount)}`
                   : "Not Available"
               }
             />
@@ -294,4 +300,4 @@ const PaymentSchedule = () => {
   );
 };
 
-export default PaymentSchedule;
+export default PaymentScheduleCommon;
