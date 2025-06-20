@@ -19,16 +19,17 @@ const AdminClientMembers = () => {
       headerName: "Member Name",
       cellRenderer: (params) => (
         <span
-          style={{
-            color: "#1E3D73",
-            textDecoration: "underline",
-            cursor: "pointer",
-          }}
-          onClick={() =>
-            navigate(
-              `/app/dashboard/admin-dashboard/admin-client-list/${params.data.clientID}/members/view-member/${params.data.memberID}`
-            )
-          }>
+          // style={{
+          //   color: "#1E3D73",
+          //   textDecoration: "underline",
+          //   cursor: "pointer",
+          // }}
+          // onClick={() =>
+          //   navigate(
+          //     `/app/dashboard/admin-dashboard/admin-client-list/${params.data.clientID}/members/view-member/${params.data.memberID}`
+          //   )
+          // }
+          >
           {params.value}
         </span>
       ),

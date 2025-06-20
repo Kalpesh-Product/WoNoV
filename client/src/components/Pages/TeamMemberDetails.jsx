@@ -216,9 +216,11 @@ const TeamMemberDetails = () => {
   return (
     <div className="flex flex-col gap-4 bg-white p-4">
       <PageFrame>
-        <span className="text-title font-pmedium text-primary">
-          {`${passedData?.name || "USER"} SCHEDULE`}
-        </span>
+        <div className="mb-4">
+          <span className="text-title font-pmedium text-primary ">
+            {`${passedData?.name || "USER"} SCHEDULE`}
+          </span>
+        </div>
 
         {isLoading || isFetching ? (
           <div className="w-full flex justify-center items-center p-4">

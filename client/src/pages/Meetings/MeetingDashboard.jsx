@@ -28,8 +28,8 @@ const MeetingDashboard = () => {
       return response.data;
     },
   });
-  
-  const { data: roomsData = [], isLoading:isRoomLoading } = useQuery({
+
+  const { data: roomsData = [], isLoading: isRoomLoading } = useQuery({
     queryKey: ["rooms"],
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-rooms");
@@ -37,7 +37,7 @@ const MeetingDashboard = () => {
     },
   });
 
-  const { data: holidaysData = [], isLoading:isHolidaysLoading } = useQuery({
+  const { data: holidaysData = [], isLoading: isHolidaysLoading } = useQuery({
     queryKey: ["holidays"],
     queryFn: async () => {
       const response = await axios.get("/api/events/get-holidays");
@@ -45,17 +45,17 @@ const MeetingDashboard = () => {
     },
   });
 
-   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
-      queryKey: ["visitors"],
-      queryFn: async () => {
-        try {
-          const response = await axios.get("/api/visitors/fetch-visitors");
-          return response.data;
-        } catch (error) {
-          throw new Error(error.response.data.message);
-        }
-      },
-    });
+  const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
+    queryKey: ["visitors"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/visitors/fetch-visitors");
+        return response.data;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
 
   // Function to calculate total duration in hours
   const calculateTotalDurationInHours = (meetings) => {
@@ -116,10 +116,7 @@ const MeetingDashboard = () => {
     },
   });
 
-
-  const totalMeetingsOccupancy = meetingsData.map((meeting)=>{
-    
-  })
+  const totalMeetingsOccupancy = meetingsData.map((meeting) => {});
 
   const meetingColumns = [
     { id: "id", label: "Sr No", align: "left" },
@@ -128,20 +125,20 @@ const MeetingDashboard = () => {
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
-    const fyStart = dayjs("2025-04-01");
-    const fyEnd = dayjs("2026-03-31");
+  const fyStart = dayjs("2025-04-01");
+  const fyEnd = dayjs("2026-03-31");
 
   const months = [];
-    const monthlyVisitorMap = {};
-  
-    for (let i = 0; i < 12; i++) {
-      const month = fyStart.add(i, "month");
-      const label = month.format("MMM-YY"); // e.g., "Apr-25"
-      months.push(label);
-      monthlyVisitorMap[label] = 0;
-    }
+  const monthlyVisitorMap = {};
 
-      const visitorCategories = Array.isArray(visitorsData)
+  for (let i = 0; i < 12; i++) {
+    const month = fyStart.add(i, "month");
+    const label = month.format("MMM-YY"); // e.g., "Apr-25"
+    months.push(label);
+    monthlyVisitorMap[label] = 0;
+  }
+
+  const visitorCategories = Array.isArray(visitorsData)
     ? visitorsData.map((item) => item.visitorType)
     : [];
 
@@ -156,27 +153,27 @@ const MeetingDashboard = () => {
       count,
     })
   );
-  
-    // Populate the map
-    visitorsData.forEach((visitor) => {
-      const visitDate = dayjs(visitor.dateOfVisit);
-      if (
-        visitDate.isAfter(fyStart.subtract(1, "day")) &&
-        visitDate.isBefore(fyEnd.add(1, "day"))
-      ) {
-        const label = visitDate.format("MMM-YY");
-        if (monthlyVisitorMap[label] !== undefined) {
-          monthlyVisitorMap[label]++;
-        }
+
+  // Populate the map
+  visitorsData.forEach((visitor) => {
+    const visitDate = dayjs(visitor.dateOfVisit);
+    if (
+      visitDate.isAfter(fyStart.subtract(1, "day")) &&
+      visitDate.isBefore(fyEnd.add(1, "day"))
+    ) {
+      const label = visitDate.format("MMM-YY");
+      if (monthlyVisitorMap[label] !== undefined) {
+        monthlyVisitorMap[label]++;
       }
-    });
-  
-    const externalGuestsData = [
-      {
-        name: "Visitors",
-        data: months.map((m) => monthlyVisitorMap[m]),
-      },
-    ];
+    }
+  });
+
+  const externalGuestsData = [
+    {
+      name: "Visitors",
+      data: months.map((m) => monthlyVisitorMap[m]),
+    },
+  ];
   // const externalGuestsData = [
   //   {
   //     name: "Guests Visited",
@@ -193,7 +190,7 @@ const MeetingDashboard = () => {
       },
     },
     xaxis: {
-     categories: months,
+      categories: months,
       title: {
         text: "",
       },
@@ -302,22 +299,21 @@ const MeetingDashboard = () => {
   // ];
 
   const availabilityRooms = [
-  { roomID: 1, roomName: "Arambol", status: "Available" },
-  { roomID: 2, roomName: "Atlantis", status: "Unavailable" },
-  { roomID: 3, roomName: "Baga", status: "Available" },
-  { roomID: 4, roomName: "Barber", status: "Unavailable" },
-  { roomID: 5, roomName: "Colosseum", status: "Available" },
-  { roomID: 6, roomName: "Hawaii", status: "Unavailable" },
-  { roomID: 7, roomName: "Library", status: "Available" },
-  { roomID: 8, roomName: "Madrid", status: "Unavailable" },
-  { roomID: 9, roomName: "Miami", status: "Available" },
-  { roomID: 10, roomName: "Nicolas", status: "Unavailable" },
-  { roomID: 11, roomName: "San Fransisco", status: "Available" },
-  { roomID: 12, roomName: "Vagator", status: "Unavailable" },
-  { roomID: 13, roomName: "Vatican", status: "Available" },
-  { roomID: 14, roomName: "Zurich", status: "Unavailable" },
-];
-
+    { roomID: 1, roomName: "Arambol", status: "Available" },
+    { roomID: 2, roomName: "Atlantis", status: "Unavailable" },
+    { roomID: 3, roomName: "Baga", status: "Available" },
+    { roomID: 4, roomName: "Barber", status: "Unavailable" },
+    { roomID: 5, roomName: "Colosseum", status: "Available" },
+    { roomID: 6, roomName: "Hawaii", status: "Unavailable" },
+    { roomID: 7, roomName: "Library", status: "Available" },
+    { roomID: 8, roomName: "Madrid", status: "Unavailable" },
+    { roomID: 9, roomName: "Miami", status: "Available" },
+    { roomID: 10, roomName: "Nicolas", status: "Unavailable" },
+    { roomID: 11, roomName: "San Fransisco", status: "Available" },
+    { roomID: 12, roomName: "Vagator", status: "Unavailable" },
+    { roomID: 13, roomName: "Vatican", status: "Available" },
+    { roomID: 14, roomName: "Zurich", status: "Unavailable" },
+  ];
 
   // 🔹 Process Data for Pie Chart
   const availableRooms = availabilityRooms.filter(
@@ -349,7 +345,8 @@ const MeetingDashboard = () => {
           `${RoomPieData[seriesIndex].label}: ${val} rooms`,
       },
     },
-    colors: ["#28a745", "#dc3545"], // Green for Available, Red for Unavailable
+    // colors: ["#28a745", "#dc3545"], // Green for Available, Red for Unavailable
+    colors: ["#54C4A7", "#EB5C45"],
   };
 
   // 🔹 Custom Legend Component
@@ -390,7 +387,7 @@ const MeetingDashboard = () => {
     "Mar-25",
   ];
 
-     // const monthMap = new Map()
+  // const monthMap = new Map()
   // const calculateBookedHoursPerMonth = meetingsData.map((meeting)=>{
 
   //   const date = new Date(meeting.startDate)
@@ -421,43 +418,41 @@ const MeetingDashboard = () => {
   };
 
   // Calculate percentage utilization
-//   const monthNames = [
-//   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-//   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-// ];
+  //   const monthNames = [
+  //   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  //   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  // ];
 
-// const monthMap = new Map();
+  // const monthMap = new Map();
 
-// meetingsData.forEach((meeting) => {
-//   const date = new Date(meeting.date);  
-//   const monthIndex = date.getMonth(); // 0 to 11
-//   const durationMinutes = parseInt(meeting.duration); // "60m" → 60
-//   const durationHours = durationMinutes / 60;
+  // meetingsData.forEach((meeting) => {
+  //   const date = new Date(meeting.date);
+  //   const monthIndex = date.getMonth(); // 0 to 11
+  //   const durationMinutes = parseInt(meeting.duration); // "60m" → 60
+  //   const durationHours = durationMinutes / 60;
 
-//   const current = monthMap.get(monthIndex) || 0;
-//   monthMap.set(monthIndex, current + durationHours);
+  //   const current = monthMap.get(monthIndex) || 0;
+  //   monthMap.set(monthIndex, current + durationHours);
 
-// });
+  // });
 
-// // Convert Map to object with month names
-// const monthlyBookedHours = {};
-// for (let [monthIndex, hours] of monthMap.entries()) {
-//   const monthName = monthNames[monthIndex];
-//   monthlyBookedHours[monthName] = hours;
-// }
+  // // Convert Map to object with month names
+  // const monthlyBookedHours = {};
+  // for (let [monthIndex, hours] of monthMap.entries()) {
+  //   const monthName = monthNames[monthIndex];
+  //   monthlyBookedHours[monthName] = hours;
+  // }
 
-//   const workinghoursPerDay = 10
-//   const workingDays = 24
-//   const totalBookableHours = roomsData.length * workinghoursPerDay * workingDays
+  //   const workinghoursPerDay = 10
+  //   const workingDays = 24
+  //   const totalBookableHours = roomsData.length * workinghoursPerDay * workingDays
 
-//   const data = Object.keys(monthlyBookedHours).map((month) => ({
-//     x: month,
-//     y: (monthlyBookedHours[month] / totalBookableHours) * 100,
-//   }));
+  //   const data = Object.keys(monthlyBookedHours).map((month) => ({
+  //     x: month,
+  //     y: (monthlyBookedHours[month] / totalBookableHours) * 100,
+  //   }));
 
-
-//   const averageBookingSeries = [{ name: "Booking Utilization", data }];
-
+  //   const averageBookingSeries = [{ name: "Booking Utilization", data }];
 
   // const averageBookingOptions = {
   //   chart: {
@@ -551,149 +546,169 @@ const MeetingDashboard = () => {
   //   // },
   // };
 
-const monthNames = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-];
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
 
-const currentYear = new Date().getFullYear();
-const start = new Date(currentYear, 3); // April 1 of current year
-const end = new Date(currentYear + 1, 3); // March 31 of next year
+  const currentYear = new Date().getFullYear();
+  const start = new Date(currentYear, 3); // April 1 of current year
+  const end = new Date(currentYear + 1, 3); // March 31 of next year
 
-const monthMap = new Map();
+  const monthMap = new Map();
 
-meetingsData.forEach((meeting) => {
-  const date = new Date(meeting.date);
-  if (date < start || date >= end) return; // Skip meetings outside Apr–Mar
+  meetingsData.forEach((meeting) => {
+    const date = new Date(meeting.date);
+    if (date < start || date >= end) return; // Skip meetings outside Apr–Mar
 
-  const monthIndex = date.getMonth(); // 0 to 11
-  const year = date.getFullYear().toString().slice(-2); // "24"
+    const monthIndex = date.getMonth(); // 0 to 11
+    const year = date.getFullYear().toString().slice(-2); // "24"
 
-  const label = `${monthNames[monthIndex]}-${year}`; // e.g., "Apr-24"
+    const label = `${monthNames[monthIndex]}-${year}`; // e.g., "Apr-24"
 
-  const durationMinutes = parseInt(meeting.duration); // "60m" → 60
-  const durationHours = durationMinutes / 60;
+    const durationMinutes = parseInt(meeting.duration); // "60m" → 60
+    const durationHours = durationMinutes / 60;
 
-  const current = monthMap.get(label) || 0;
-  monthMap.set(label, current + durationHours);
-});
+    const current = monthMap.get(label) || 0;
+    monthMap.set(label, current + durationHours);
+  });
 
-// Build full month range from Apr to Mar (12 months)
-const monthBookings = [];
-for (let i = 0; i < 12; i++) {
-  const date = new Date(currentYear, 3 + i); // Start from April
-  const monthLabel = date.toLocaleString("default", { month: "short" }) + "-" +
-                     date.getFullYear().toString().slice(-2);
-  monthBookings.push(monthLabel);
-}
+  // Build full month range from Apr to Mar (12 months)
+  const monthBookings = [];
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(currentYear, 3 + i); // Start from April
+    const monthLabel =
+      date.toLocaleString("default", { month: "short" }) +
+      "-" +
+      date.getFullYear().toString().slice(-2);
+    monthBookings.push(monthLabel);
+  }
 
-const monthlyBookedHours = {};
-for (let label of monthBookings) {
-  monthlyBookedHours[label] = monthMap.get(label) || 0;
-}
+  const monthlyBookedHours = {};
+  for (let label of monthBookings) {
+    monthlyBookedHours[label] = monthMap.get(label) || 0;
+  }
 
-const totalBookedHours = Object.values(monthlyBookedHours).reduce((acc, hours) => acc + hours, 0);
-const workinghoursPerDay = 1;
-const workingDays = 5;
-const totalBookableHours = roomsData.length * workinghoursPerDay * workingDays;
+  const totalBookedHours = Object.values(monthlyBookedHours).reduce(
+    (acc, hours) => acc + hours,
+    0
+  );
+  const workinghoursPerDay = 1;
+  const workingDays = 5;
+  const totalBookableHours =
+    roomsData.length * workinghoursPerDay * workingDays;
 
-const data = monthBookings.map((month) => ({
-  x: month,
-  y: (monthlyBookedHours[month] / totalBookableHours) * 100,
-}));
+  const data = monthBookings.map((month) => ({
+    x: month,
+    y: (monthlyBookedHours[month] / totalBookableHours) * 100,
+  }));
 
+  const averageBookingSeries = [{ name: "Booking Utilization", data }];
 
-const averageBookingSeries = [{ name: "Booking Utilization", data }];
+  const averageBookingOptions = {
+    chart: {
+      type: "bar",
+      toolbar: false,
+      fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: function (event, chartContext, config) {
+          const clickedMonthName =
+            config.w.config.xaxis.categories[config.dataPointIndex];
+          const [clickedMonth, clickedYearSuffix] = clickedMonthName.split("-");
 
-const averageBookingOptions = {
-  chart: {
-    type: "bar",
-    toolbar: false,
-    fontFamily: "Poppins-Regular",
-    events: {
-      dataPointSelection: function (event, chartContext, config) {
-        const clickedMonthName = config.w.config.xaxis.categories[config.dataPointIndex];
-        const [clickedMonth, clickedYearSuffix] = clickedMonthName.split("-");
+          const monthMeetings = meetingsData.filter((meeting) => {
+            const date = new Date(meeting.date);
+            const meetingMonthAbbr = date.toLocaleString("default", {
+              month: "short",
+            });
+            const meetingYearSuffix = date.getFullYear().toString().slice(-2);
 
-        const monthMeetings = meetingsData.filter((meeting) => {
-          const date = new Date(meeting.date);
-          const meetingMonthAbbr = date.toLocaleString("default", { month: "short" });
-          const meetingYearSuffix = date.getFullYear().toString().slice(-2);
+            return (
+              meetingMonthAbbr === clickedMonth &&
+              meetingYearSuffix === clickedYearSuffix
+            );
+          });
 
-          return (
-            meetingMonthAbbr === clickedMonth &&
-            meetingYearSuffix === clickedYearSuffix
+          if (monthMeetings.length === 0) return;
+
+          const month = new Date(monthMeetings[0].date).toLocaleString(
+            "default",
+            {
+              month: "long",
+            }
           );
-        });
+          const year = new Date(monthMeetings[0].date).getFullYear();
 
-        if (monthMeetings.length === 0) return;
-
-        const month = new Date(monthMeetings[0].date).toLocaleString("default", {
-          month: "long",
-        });
-        const year = new Date(monthMeetings[0].date).getFullYear();
-
-        navigate(`/app/meetings/${month}-${year}-meetings`, {
-          state: { meetings: monthMeetings },
-        });
+          navigate(`/app/meetings/${month}-${year}-meetings`, {
+            state: { meetings: monthMeetings },
+          });
+        },
       },
     },
-  },
-  xaxis: { categories: BookingMonths },
-  yaxis: {
-    max: 100,
-    title: { text: "Utilization (%)" },
-    labels: {
-      formatter: (value) => Math.round(value),
-    },
-  },
-  dataLabels: {
-    enabled: true,
-    formatter: (val) => Math.round(val) + "%",
-    style: {
-      fontSize: "11px",
-      colors: ["#ffff"],
-    },
-  },
-  plotOptions: {
-    bar: {
-      dataLabels: {
-        position: "top",
+    xaxis: { categories: BookingMonths },
+    yaxis: {
+      max: 100,
+      title: { text: "Utilization (%)" },
+      labels: {
+        formatter: (value) => Math.round(value),
       },
-      borderRadius: 5,
-      columnWidth: "40%",
     },
-  },
-  tooltip: {
-  enabled: true, // or false to disable
-  y: {
-    formatter: function (val) {
-      return `${(val/100)*totalBookableHours} hrs`; // Custom text, like "12 hrs"
-    }
-  },
-  x: {
-    formatter: function (val) {
-      return `Month: ${val}`; // Customizes "May-25"
-    }
-  },
-  //  custom: function({ series, seriesIndex, dataPointIndex, w }) {
-  //   const value = series[seriesIndex][dataPointIndex];
-  //   const monthKey = w.config.xaxis.categories[dataPointIndex];
-  //   const total = totalBookableHours || 0;
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => Math.round(val) + "%",
+      style: {
+        fontSize: "11px",
+        colors: ["#ffff"],
+      },
+    },
+    plotOptions: {
+      bar: {
+        dataLabels: {
+          position: "top",
+        },
+        borderRadius: 5,
+        columnWidth: "40%",
+      },
+    },
+    tooltip: {
+      enabled: true, // or false to disable
+      y: {
+        formatter: function (val) {
+          return `${(val / 100) * totalBookableHours} hrs`; // Custom text, like "12 hrs"
+        },
+      },
+      x: {
+        formatter: function (val) {
+          return `Month: ${val}`; // Customizes "May-25"
+        },
+      },
+      //  custom: function({ series, seriesIndex, dataPointIndex, w }) {
+      //   const value = series[seriesIndex][dataPointIndex];
+      //   const monthKey = w.config.xaxis.categories[dataPointIndex];
+      //   const total = totalBookableHours || 0;
 
-  //   return `
-  //     <div class="apexcharts-tooltip-title">Month: ${monthKey}</div>
-  //     <div class="apexcharts-tooltip-series-group">
-  //       <span class="apexcharts-tooltip-marker" style="background-color: #008FFB"></span>
-  //       Booking Utilization: <strong>${value} hrs</strong><br/>
-  //       <span class="apexcharts-tooltip-marker" style="background-color: #00E396"></span>
-  //       Total Bookable Hours: <strong>${total} hrs</strong>
-  //     </div>
-  //   `;
-  // }
-}
-};
-
+      //   return `
+      //     <div class="apexcharts-tooltip-title">Month: ${monthKey}</div>
+      //     <div class="apexcharts-tooltip-series-group">
+      //       <span class="apexcharts-tooltip-marker" style="background-color: #008FFB"></span>
+      //       Booking Utilization: <strong>${value} hrs</strong><br/>
+      //       <span class="apexcharts-tooltip-marker" style="background-color: #00E396"></span>
+      //       Total Bookable Hours: <strong>${total} hrs</strong>
+      //     </div>
+      //   `;
+      // }
+    },
+  };
 
   // const rooms = [
   //   "Baga",
@@ -720,27 +735,26 @@ const averageBookingOptions = {
   // };
 
   const bookedHours = meetingsData.reduce((acc, room) => {
-  const name = room.roomName;
-  const hours = parseInt(room.duration) / 60 || 0;
+    const name = room.roomName;
+    const hours = parseInt(room.duration) / 60 || 0;
 
-  if (acc[name]) {
-    acc[name] += hours;
-  } else {
-    acc[name] = hours;
-  }
+    if (acc[name]) {
+      acc[name] += hours;
+    } else {
+      acc[name] = hours;
+    }
 
-  return acc;
-}, {});
+    return acc;
+  }, {});
 
-const roomNames = roomsData.map(room => room.name).sort();
+  const roomNames = roomsData.map((room) => room.name).sort();
 
-const actualBookedHours = {};
-roomNames.forEach(name => {
-  actualBookedHours[name] = bookedHours[name] || 0;
-});
+  const actualBookedHours = {};
+  roomNames.forEach((name) => {
+    actualBookedHours[name] = bookedHours[name] || 0;
+  });
 
-const rooms = roomNames;
-
+  const rooms = roomNames;
 
   // Calculate occupancy percentage
   const processedRoomsData = Object.keys(actualBookedHours).map((room) => ({
@@ -812,67 +826,67 @@ const rooms = roomNames;
     "6PM-7PM",
     "7PM-8PM",
   ];
- 
-function getCurrentWeekDays() {
-  const today = new Date();
-  const day = today.getDay(); // 0 (Sun) to 6 (Sat)
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - ((day + 6) % 7)); // Move to Monday
-  monday.setHours(0, 0, 0, 0);
 
-  const weekDays = [];
+  function getCurrentWeekDays() {
+    const today = new Date();
+    const day = today.getDay(); // 0 (Sun) to 6 (Sat)
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - ((day + 6) % 7)); // Move to Monday
+    monday.setHours(0, 0, 0, 0);
 
-  for (let i = 0; i < 6; i++) {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + i);
-    date.setHours(0, 0, 0, 0);
-    weekDays.push(date);
+    const weekDays = [];
+
+    for (let i = 0; i < 6; i++) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      date.setHours(0, 0, 0, 0);
+      weekDays.push(date);
+    }
+
+    return weekDays;
   }
 
-  return weekDays;
-}
-
-// Convert Date to Time Slot Label (e.g., 10AM–11AM)
-function getTimeSlotLabel(date) {
-  const hour = date.getHours();
-  if (hour >= 8 && hour < 20) {
-    const ampm = hour < 12 ? "AM" : "PM";
-    const nextHour = hour + 1;
-    const nextAMPM = nextHour < 12 ? "AM" : "PM";
-    const start = hour % 12 === 0 ? 12 : hour % 12;
-    const end = nextHour % 12 === 0 ? 12 : nextHour % 12;
-    return `${start}${ampm}-${end}${nextAMPM}`;
+  // Convert Date to Time Slot Label (e.g., 10AM–11AM)
+  function getTimeSlotLabel(date) {
+    const hour = date.getHours();
+    if (hour >= 8 && hour < 20) {
+      const ampm = hour < 12 ? "AM" : "PM";
+      const nextHour = hour + 1;
+      const nextAMPM = nextHour < 12 ? "AM" : "PM";
+      const start = hour % 12 === 0 ? 12 : hour % 12;
+      const end = nextHour % 12 === 0 ? 12 : nextHour % 12;
+      return `${start}${ampm}-${end}${nextAMPM}`;
+    }
+    return null;
   }
-  return null;
-}
 
-  const weekdays = getCurrentWeekDays();  
+  const weekdays = getCurrentWeekDays();
 
   // Create a [timeSlot][dayIndex] matrix initialized with 0s
-  const matrix = Array(timeSlots.length).fill(null).map(() => Array(7).fill(0))
+  const matrix = Array(timeSlots.length)
+    .fill(null)
+    .map(() => Array(7).fill(0));
 
   meetingsData.forEach((meeting) => {
-
     const date = new Date(meeting.startTime);
     date.setSeconds(0, 0); // remove milliseconds
 
     // Match meeting to current week (Mon–Fri)
-   for (let i = 0; i < weekdays.length; i++) {
-  const weekDate = weekdays[i];
+    for (let i = 0; i < weekdays.length; i++) {
+      const weekDate = weekdays[i];
 
-  // Format both to YYYY-MM-DD for accurate day match
-  const meetingDayStr = date.toISOString().split("T")[0];
-  const weekDayStr = weekDate.toISOString().split("T")[0];
+      // Format both to YYYY-MM-DD for accurate day match
+      const meetingDayStr = date.toISOString().split("T")[0];
+      const weekDayStr = weekDate.toISOString().split("T")[0];
 
-  if (meetingDayStr === weekDayStr) {
-    const timeSlot = getTimeSlotLabel(date);
-    const slotIndex = timeSlots.indexOf(timeSlot);
-    if (slotIndex !== -1) {
-      matrix[slotIndex][i]++;
+      if (meetingDayStr === weekDayStr) {
+        const timeSlot = getTimeSlotLabel(date);
+        const slotIndex = timeSlots.indexOf(timeSlot);
+        if (slotIndex !== -1) {
+          matrix[slotIndex][i]++;
+        }
+      }
     }
-  }
-}
-
   });
 
   // Convert to heatmap format
@@ -880,10 +894,9 @@ function getTimeSlotLabel(date) {
     name: slot,
     data: days.map((day, dayIndex) => ({
       x: day,
-      y: (day !== "Sat" && day !== "Sun") ? matrix[slotIndex][dayIndex] : 0,
+      y: day !== "Sat" && day !== "Sun" ? matrix[slotIndex][dayIndex] : 0,
     })),
   }));
-
 
   const heatmapOptions = {
     chart: {
@@ -914,8 +927,7 @@ function getTimeSlotLabel(date) {
     },
   };
 
-
-  //Housekeeping status 
+  //Housekeeping status
 
   // const housekeepingMap = new Map()
 
@@ -931,7 +943,7 @@ function getTimeSlotLabel(date) {
   //   console.log("status",status)
   //   if(status === "Pending") housekeepingMap.cleaning += 1
   //   if(status === "Completed") housekeepingMap.clean += 1
-    
+
   // })
 
   // const housekeepingStatusSeries = housekeepingStatus.Object.values
@@ -939,18 +951,21 @@ function getTimeSlotLabel(date) {
   // console.log("series",housekeepingStatus)
 
   const housekeepingMap = {
-  cleaning: 0,
-  clean: 0
-};
+    cleaning: 0,
+    clean: 0,
+  };
 
-roomsData.forEach((room) => {
-  const status = room.housekeepingStatus || "Completed";
+  roomsData.forEach((room) => {
+    const status = room.housekeepingStatus || "Completed";
 
-  if (status === "Pending") housekeepingMap.cleaning += 1;
-  if (status === "Completed") housekeepingMap.clean += 1;
-});
+    if (status === "Pending") housekeepingMap.cleaning += 1;
+    if (status === "Completed") housekeepingMap.clean += 1;
+  });
 
-const housekeepingStatusSeries = [housekeepingMap.cleaning, housekeepingMap.clean];
+  const housekeepingStatusSeries = [
+    housekeepingMap.cleaning,
+    housekeepingMap.clean,
+  ];
 
   const meetingsWidgets = [
     {
@@ -1187,7 +1202,7 @@ const housekeepingStatusSeries = [housekeepingMap.cleaning, housekeepingMap.clea
           title={"Cleaning & Hygiene Status"}
           height={350}>
           <DonutChart
-            series= {housekeepingStatusSeries}
+            series={housekeepingStatusSeries}
             labels={["Cleaning", "Clean"]}
             colors={["#ffc107", "#28a745"]}
             centerLabel={"Meeting Rooms"}
