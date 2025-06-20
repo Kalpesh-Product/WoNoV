@@ -57,6 +57,20 @@ const MaintainanceDashboard = () => {
     },
   });
 
+   const { data: weeklySchedule = [], isLoading: isWeeklyScheduleLoading } = useQuery({
+    queryKey: ["weeklySchedule"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/weekly-unit/fetch-weekly-unit/${department._id}`
+        );
+        return response.data?.allBudgets;
+      } catch (error) {
+        throw new Error("Error fetching data");
+      }
+    },
+  });
+
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
