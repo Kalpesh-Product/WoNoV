@@ -8,6 +8,7 @@ import { useSelector } from "react-redux";
 
 const AdminClientDetails = () => {
   const selectedClient = useSelector((state) => state.client.selectedClient);
+  console.log("selectedClient : ", selectedClient);
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       clientName: "",
