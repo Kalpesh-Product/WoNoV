@@ -68,12 +68,9 @@ const assignWeeklyUnit = async (req, res, next) => {
       .exec();
 
     if (isAlreadyAssigned) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Employee is already assigned to this location",
-        });
+      return res.status(400).json({
+        message: "Employee is already assigned to this location",
+      });
     }
 
     // Create a new WeeklyUnit document
@@ -258,6 +255,9 @@ const addSubstitute = async (req, res, next) => {
       return res.status(400).json({ message: "Missing substitution fields" });
     }
 
+    const parsedFromDate = new Date(fromDate);
+    const parsedToDate = new Date(toDate);
+
     const schedule = await WeeklySchedule.findOne({
       _id: weeklyScheduleId,
       company,
@@ -277,7 +277,15 @@ const addSubstitute = async (req, res, next) => {
       (sub) => sub.isActive
     );
     if (lastActiveIndex !== -1) {
-      schedule.substitutions[lastActiveIndex].isActive = false;
+      const substitute = schedule.substitutions[lastActiveIndex];
+      substitute.endDate = parsedFromDate;
+
+      if (
+        substitute.fromDate.getTime() === parsedFromDate.getTime() &&
+        substitute.toDate.getTime() === parsedToDate.getTime()
+      ) {
+        substitute.isActive = false;
+      }
     }
 
     schedule.substitutions.push({

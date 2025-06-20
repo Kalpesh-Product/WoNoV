@@ -37,7 +37,7 @@ const MonthlyInvoiceCommon = () => {
   });
 
   const invoiceCreationColumns = [
-    { headerName: "Sr. No", field: "srNo", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
     { headerName: "Department", field: "department", flex: 1 },
     { headerName: "Expense Name", field: "expanseName", flex: 1 },
     { headerName: "Invoice Name", field: "invoiceName", flex: 1 },
@@ -294,7 +294,7 @@ const MonthlyInvoiceCommon = () => {
                   }
                 />
                 <DetalisFormatted
-                  title="Amount"
+                  title="Advance Amount"
                   detail={`₹${viewDetails.finance.amount || 0}`}
                 />
                 <DetalisFormatted

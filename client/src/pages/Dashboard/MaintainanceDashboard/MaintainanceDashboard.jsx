@@ -21,6 +21,7 @@ import { transformBudgetData } from "../../../utils/transformBudgetData";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
+import usePageDepartment from "../../../hooks/usePageDepartment";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();

@@ -257,9 +257,10 @@ const RecievedTickets = ({ title, departmentId }) => {
                 auth.user.role[0].roleTitle !== "Super Admin" 
                 ? [
                     {
-                      label: "Accept",
-                      onClick: () => handleOpenAssignModal(params.data.id),
-                    },
+                label: "Accept",
+                onClick: () => acceptMutate(params.data),
+                isLoading: isLoading,
+              },
                    
                   ]
                 : [])
