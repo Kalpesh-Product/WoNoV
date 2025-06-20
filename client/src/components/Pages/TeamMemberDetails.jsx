@@ -17,6 +17,7 @@ import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../components/PrimaryButton";
 import { toast } from "sonner";
 import { DatePicker } from "@mui/x-date-pickers";
+import { queryClient } from "../../main";
 
 const TeamMemberDetails = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -28,7 +29,9 @@ const TeamMemberDetails = () => {
   const axios = useAxiosPrivate();
   const location = useLocation();
   const passedData = location.state;
-  const queryClient = useQueryClient();
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["schedule"] });
+  }, []);
 
   const [calendarEvents, setCalendarEvents] = useState([]);
 
@@ -47,14 +50,19 @@ const TeamMemberDetails = () => {
     },
   });
 
-  const { data: unitSchedule = [] } = useQuery({
-    queryKey: ["unitSchedule"],
+  const {
+    data: unitSchedule = [],
+    isLoading,
+    isFetching,
+  } = useQuery({
+    queryKey: ["schedule"],
     queryFn: async () => {
       const res = await axios.get(
         `/api/weekly-unit/get-unit-schedule?unitId=${passedData.id}&department=${department._id}`
       );
       return res.data;
     },
+    refetchOnWindowFocus: false,
   });
 
   const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
@@ -67,95 +75,99 @@ const TeamMemberDetails = () => {
     },
   });
 
-useEffect(() => {
-  if (!Array.isArray(unitSchedule) || !unitSchedule.length) return;
-
-  const allEvents = [];
-
-  unitSchedule.forEach((schedule) => {
-    const empId = schedule?.employee?.id;
-    const empName = empId
-      ? `${empId.firstName ?? ""} ${empId.lastName ?? ""}`.trim()
-      : "Unknown";
-
-    const unitName = schedule?.location?.unitName || "N/A";
-    const manager = schedule?.manager || "N/A";
-    const start = dayjs(schedule?.startDate);
-    const end = dayjs(schedule?.endDate);
-
-    if (!start.isValid() || !end.isValid()) return;
-
-    // 🟦 Show assigned employee (if enabled in filters)
-    if (filters.employee) {
-      for (
-        let current = start;
-        current.isSameOrBefore(end, "day");
-        current = current.add(1, "day")
-      ) {
-        allEvents.push({
-          title: empName,
-          start: current.format("YYYY-MM-DD"),
-          backgroundColor: "#3357FF",
-          borderColor: "#3357FF",
-          extendedProps: {
-            scheduleId: schedule._id,
-            employeeName: empName,
-            unit: unitName,
-            manager,
-            fromDate: schedule.startDate,
-            toDate: schedule.endDate,
-            isSubstitute: false,
-            substitutes: schedule?.substitutions || [],
-          },
-        });
-      }
+  useEffect(() => {
+    if (!Array.isArray(unitSchedule) || !unitSchedule.length) {
+      setCalendarEvents([]);
+      return;
     }
 
-    // 🟦 Show active substitutes (if enabled in filters)
-    if (
-      filters.substitute &&
-      Array.isArray(schedule.substitutions) &&
-      schedule.substitutions.length
-    ) {
-      schedule.substitutions.forEach((sub) => {
-        if (!sub?.isActive) return;
+    const allEvents = [];
 
-        const subName =
-          `${sub?.substitute?.firstName ?? ""} ${sub?.substitute?.lastName ?? ""}`.trim() ||
-          "Unknown Substitute";
-        const subStart = dayjs(sub?.fromDate);
-        const subEnd = dayjs(sub?.toDate);
+    unitSchedule.forEach((schedule) => {
+      const empId = schedule?.employee?.id;
+      const empName = empId
+        ? `${empId.firstName ?? ""} ${empId.lastName ?? ""}`.trim()
+        : "Unknown";
 
-        if (!subStart.isValid() || !subEnd.isValid()) return;
+      const unitName = schedule?.location?.unitName || "N/A";
+      const manager = schedule?.manager || "N/A";
+      const start = dayjs(schedule?.startDate);
+      const end = dayjs(schedule?.endDate);
 
+      if (!start.isValid() || !end.isValid()) return;
+
+      // 🟦 Show assigned employee (if enabled in filters)
+      if (filters.employee) {
         for (
-          let current = subStart;
-          current.isSameOrBefore(subEnd, "day");
+          let current = start;
+          current.isSameOrBefore(end, "day");
           current = current.add(1, "day")
         ) {
           allEvents.push({
-            title: subName,
+            title: empName,
             start: current.format("YYYY-MM-DD"),
-            backgroundColor: "#66b2ff", // lighter blue for substitute
-            borderColor: "#66b2ff",
+            backgroundColor: "#3357FF",
+            borderColor: "#3357FF",
             extendedProps: {
               scheduleId: schedule._id,
-              employeeName: subName,
+              employeeName: empName,
               unit: unitName,
               manager,
-              isSubstitute: true,
-              substitutes: [],
-              fromDate: sub.fromDate,
-              toDate: sub.toDate,
+              fromDate: schedule.startDate,
+              toDate: schedule.endDate,
+              isSubstitute: false,
+              substitutes: schedule?.substitutions || [],
             },
           });
         }
-      });
-    }
-  });
+      }
 
-  setCalendarEvents(allEvents);
-}, [unitSchedule, filters]);
+      // 🟦 Show active substitutes (if enabled in filters)
+      if (
+        filters.substitute &&
+        Array.isArray(schedule.substitutions) &&
+        schedule.substitutions.length
+      ) {
+        schedule.substitutions.forEach((sub) => {
+          if (!sub?.isActive) return;
+
+          const subName =
+            `${sub?.substitute?.firstName ?? ""} ${
+              sub?.substitute?.lastName ?? ""
+            }`.trim() || "Unknown Substitute";
+          const subStart = dayjs(sub?.fromDate);
+          const subEnd = dayjs(sub?.toDate);
+
+          if (!subStart.isValid() || !subEnd.isValid()) return;
+
+          for (
+            let current = subStart;
+            current.isSameOrBefore(subEnd, "day");
+            current = current.add(1, "day")
+          ) {
+            allEvents.push({
+              title: subName,
+              start: current.format("YYYY-MM-DD"),
+              backgroundColor: "#66b2ff", // lighter blue for substitute
+              borderColor: "#66b2ff",
+              extendedProps: {
+                scheduleId: schedule._id,
+                employeeName: subName,
+                unit: unitName,
+                manager,
+                isSubstitute: true,
+                substitutes: [],
+                fromDate: sub.fromDate,
+                toDate: sub.toDate,
+              },
+            });
+          }
+        });
+      }
+    });
+
+    setCalendarEvents(allEvents);
+  }, [unitSchedule, filters]);
 
   const handleEventClick = (clickInfo) => {
     setSelectedEvent(clickInfo.event);
@@ -208,21 +220,27 @@ useEffect(() => {
           {`${passedData?.name || "USER"} SCHEDULE`}
         </span>
 
-        <div className="w-full h-full overflow-y-auto">
-          <FullCalendar
-            headerToolbar={{
-              left: "prev title next",
-              right: "dayGridMonth,timeGridWeek,timeGridDay",
-            }}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            events={calendarEvents}
-            contentHeight={425}
-            eventClick={handleEventClick}
-            dayMaxEvents={2}
-            eventDisplay="block"
-          />
-        </div>
+        {isLoading || isFetching ? (
+          <div className="w-full flex justify-center items-center p-4">
+            <CircularProgress size={24} />
+          </div>
+        ) : (
+          <div className="w-full h-full overflow-y-auto">
+            <FullCalendar
+              headerToolbar={{
+                left: "prev title next",
+                right: "dayGridMonth,timeGridWeek,timeGridDay",
+              }}
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              events={calendarEvents}
+              contentHeight={425}
+              eventClick={handleEventClick}
+              dayMaxEvents={2}
+              eventDisplay="block"
+            />
+          </div>
+        )}
       </PageFrame>
 
       <MuiModal

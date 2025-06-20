@@ -33,9 +33,6 @@ const TeamMembersSchedule = () => {
 
   const [multipleRanges, setMultipleRanges] = useState([]);
 
-  useEffect(() => {
-    console.log("multiple : ", multipleRanges);
-  }, [multipleRanges]);
 
   const department = usePageDepartment();
   const {

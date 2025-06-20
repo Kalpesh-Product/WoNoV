@@ -25,6 +25,7 @@ import usePageDepartment from "../../../hooks/usePageDepartment";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
+  const department = usePageDepartment()
   const axios = useAxiosPrivate();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
@@ -41,6 +42,21 @@ const MaintainanceDashboard = () => {
       }
     },
   });
+
+   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
+    queryKey: ["tasks"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/tasks/get-tasks?dept=${department._id}`
+        );
+        return response.data?.allBudgets;
+      } catch (error) {
+        throw new Error("Error fetching data");
+      }
+    },
+  });
+
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
