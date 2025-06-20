@@ -242,7 +242,7 @@ const PaymentSchedule = () => {
               upperCase
             />
             <br />
-            <div className="font-bold">General Information</div>
+            <div className="font-bold">Financials</div>
             <DetalisFormatted
               title="Projected Amount"
               detail={
