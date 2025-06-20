@@ -1,625 +1,160 @@
-import React, { useState } from "react";
-import BarGraph from "../../../../components/graphs/BarGraph";
-import {
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
 import AgTable from "../../../../components/AgTable";
-import WidgetSection from "../../../../components/WidgetSection";
 import { useNavigate } from "react-router-dom";
-import dayjs from "dayjs";
+import PageFrame from "../../../../components/Pages/PageFrame";
+import WidgetSection from "../../../../components/WidgetSection";
+import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 
 const AdminOffices = () => {
-  const navigate = useNavigate();
-
-  const mockBusinessRevenueData = [
-    {
-      "month": "April",
-      "domains": [
-        {
-          "name": "ST-701A",
-          "revenue": 22000,
-          "clients": [
-            {
-              "client": "Nykaa",
-              "representative": "Liam Green",
-              "registerDate": "2024-02-20",
-              "actualRevenue": 7061
-            },
-            {
-              "client": "Flipkart",
-              "representative": "Emily White",
-              "registerDate": "2024-02-20",
-              "actualRevenue": 6772
-            },
-            {
-              "client": "Uber",
-              "representative": "Jane Smith",
-              "registerDate": "2024-02-11",
-              "actualRevenue": 7458
-            },
-            {
-              "client": "BigBasket",
-              "representative": "Oliver Grey",
-              "registerDate": "2024-03-12",
-              "actualRevenue": 5371
-            }
-          ]
-        },
-        {
-          "name": "ST-701B",
-          "revenue": 26000,
-          "clients": [
-            {
-              "client": "Myntra",
-              "representative": "Chloe Grey",
-              "registerDate": "2024-02-12",
-              "actualRevenue": 4775
-            },
-            {
-              "client": "PhonePe",
-              "representative": "Henry Ford",
-              "registerDate": "2024-02-28",
-              "actualRevenue": 5378
-            },
-            {
-              "client": "Snapdeal",
-              "representative": "Chris Blue",
-              "registerDate": "2024-01-09",
-              "actualRevenue": 7274
-            },
-            {
-              "client": "Amazon",
-              "representative": "Michael Brown",
-              "registerDate": "2024-03-16",
-              "actualRevenue": 5388
-            },
-            {
-              "client": "Meesho",
-              "representative": "Yash Shah",
-              "registerDate": "2024-03-11",
-              "actualRevenue": 5476
-            }
-          ]
-        },
-        {
-          "name": "ST-601A",
-          "revenue": 19000,
-          "clients": [
-            {
-              "client": "PhonePe",
-              "representative": "Henry Ford",
-              "registerDate": "2024-01-07",
-              "actualRevenue": 6451
-            },
-            {
-              "client": "Snapdeal",
-              "representative": "Chris Blue",
-              "registerDate": "2024-02-09",
-              "actualRevenue": 5549
-            },
-            {
-              "client": "Nykaa",
-              "representative": "Liam Green",
-              "registerDate": "2024-02-10",
-              "actualRevenue": 7104
-            },
-            {
-              "client": "Lenskart",
-              "representative": "Rohit Sen",
-              "registerDate": "2024-03-17",
-              "actualRevenue": 7128
-            },
-            {
-              "client": "Apple",
-              "representative": "Siddharth Mehra",
-              "registerDate": "2024-03-27",
-              "actualRevenue": 5346
-            },
-            {
-              "client": "Dell",
-              "representative": "Shreya Naik",
-              "registerDate": "2024-03-16",
-              "actualRevenue": 6930
-            }
-          ]
-        },
-        {
-          "name": "ST-601B",
-          "revenue": 12000,
-          "clients": [
-            {
-              "client": "Flipkart",
-              "representative": "Emily White",
-              "registerDate": "2024-02-20",
-              "actualRevenue": 6407
-            },
-            {
-              "client": "Paytm",
-              "representative": "Rachel Black",
-              "registerDate": "2024-01-10",
-              "actualRevenue": 5981
-            },
-            {
-              "client": "Snapdeal",
-              "representative": "Chris Blue",
-              "registerDate": "2024-02-14",
-              "actualRevenue": 6845
-            },
-            {
-              "client": "Lenovo",
-              "representative": "Tanvi Agarwal",
-              "registerDate": "2024-03-11",
-              "actualRevenue": 6842
-            }
-          ]
-        },
-        {
-          "name": "ST-501A",
-          "revenue": 25000,
-          "clients": [
-            {
-              "client": "Swiggy",
-              "representative": "Sophie Turner",
-              "registerDate": "2024-01-19",
-              "actualRevenue": 5907
-            },
-            {
-              "client": "Ola",
-              "representative": "Alice Johnson",
-              "registerDate": "2024-02-14",
-              "actualRevenue": 6900
-            },
-            {
-              "client": "Flipkart",
-              "representative": "Emily White",
-              "registerDate": "2024-02-24",
-              "actualRevenue": 7219
-            },
-            {
-              "client": "Meesho",
-              "representative": "Yash Shah",
-              "registerDate": "2024-03-04",
-              "actualRevenue": 6620
-            },
-            {
-              "client": "Apple",
-              "representative": "Siddharth Mehra",
-              "registerDate": "2024-03-18",
-              "actualRevenue": 5209
-            }
-          ]
+  const axios = useAxiosPrivate();
+    const navigate = useNavigate();
+  
+    const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
+      queryKey: ["clientsData"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/sales/co-working-clients");
+          const data = response.data.filter((item) => item.isActive);
+          return data;
+        } catch (error) {
+          console.error("Error fetching clients data:", error);
         }
-      ]
-    },
-    {
-      month: "May",
-      domains: [
-        {
-          srNo: 1,
-          name: "Co-Working",
-          revenue: 10,
-          clients: [
-            {
-              client: "Client I",
-              representative: "Grace Orange",
-              registerDate: "2024-02-11",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client J",
-              representative: "Hank Purple",
-              registerDate: "2024-03-09",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client K",
-              representative: "Isabel Cyan",
-              registerDate: "2024-04-14",
-              actualRevenue: 4000,
-            },
-          ],
-        },
-        {
-          srNo: 2,
-          name: "Workation",
-          revenue: 9000,
-          clients: [
-            {
-              client: "Client L",
-              representative: "Jack Gray",
-              registerDate: "2024-02-28",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client M",
-              representative: "Kara Silver",
-              registerDate: "2024-03-07",
-              actualRevenue: 4000,
-            },
-          ],
-        },
-        {
-          srNo: 3,
-          name: "Co-Living",
-          revenue: 14000,
-          clients: [
-            {
-              client: "Client N",
-              representative: "Leo Gold",
-              registerDate: "2024-05-20",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client O",
-              representative: "Mia Platinum",
-              registerDate: "2024-06-08",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client P",
-              representative: "Noah Bronze",
-              registerDate: "2024-07-15",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "June",
-      domains: [
-        {
-          srNo: 1,
-          name: "Co-Working",
-          revenue: 18000,
-          clients: [
-            {
-              client: "Client Q",
-              representative: "Olivia Rose",
-              registerDate: "2024-01-30",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client R",
-              representative: "Peter Brown",
-              registerDate: "2024-02-18",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client S",
-              representative: "Quincy Black",
-              registerDate: "2024-03-26",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          srNo: 2,
-          name: "Workation",
-          revenue: 10000,
-          clients: [
-            {
-              client: "Client T",
-              representative: "Rachel Violet",
-              registerDate: "2024-04-12",
-              actualRevenue: 5000,
-            },
-            {
-              client: "Client U",
-              representative: "Sam Indigo",
-              registerDate: "2024-05-07",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          srNo: 3,
-          name: "Co-Living",
-          revenue: 13000,
-          clients: [
-            {
-              client: "Client V",
-              representative: "Tina Lilac",
-              registerDate: "2024-06-05",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client W",
-              representative: "Umar Yellow",
-              registerDate: "2024-07-08",
-              actualRevenue: 4000,
-            },
-            {
-              client: "Client X",
-              representative: "Victor Pink",
-              registerDate: "2024-08-15",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      month: "July",
-      domains: [
-        {
-          srNo: 1,
-          name: "Co-Working",
-          revenue: 20000,
-          clients: [
-            {
-              client: "Client Y",
-              representative: "Wendy Red",
-              registerDate: "2024-03-10",
-              actualRevenue: 8000,
-            },
-            {
-              client: "Client Z",
-              representative: "Xavier Green",
-              registerDate: "2024-04-14",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client AA",
-              representative: "Yara Blue",
-              registerDate: "2024-05-16",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          srNo: 2,
-          name: "Workation",
-          revenue: 11000,
-          clients: [
-            {
-              client: "Client AB",
-              representative: "Zane Orange",
-              registerDate: "2024-06-20",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client AC",
-              representative: "Adam Gray",
-              registerDate: "2024-07-10",
-              actualRevenue: 5000,
-            },
-          ],
-        },
-        {
-          srNo: 3,
-          name: "Co-Living",
-          revenue: 16000,
-          clients: [
-            {
-              client: "Client AD",
-              representative: "Betty Silver",
-              registerDate: "2024-08-25",
-              actualRevenue: 7000,
-            },
-            {
-              client: "Client AE",
-              representative: "Charlie Platinum",
-              registerDate: "2024-09-14",
-              actualRevenue: 6000,
-            },
-            {
-              client: "Client AF",
-              representative: "David Bronze",
-              registerDate: "2024-10-05",
-              actualRevenue: 3000,
-            },
-          ],
-        },
-      ],
-    },
-  ];
-
-  const [selectedMonth, setSelectedMonth] = useState(
-    mockBusinessRevenueData[0].month
-  ); // Default to first month
-
-  // Function to update selected month
-  const handleMonthChange = (event) => {
-    setSelectedMonth(event.target.value);
-  };
-
-  // Filter data based on selected month
-
-  const selectedMonthData = mockBusinessRevenueData.find(
-    (data) => data.month === selectedMonth
-  );
-
-  if (selectedMonthData) {
-    selectedMonthData.domains = selectedMonthData.domains.map((domain) => {
-      const updatedClients = domain.clients.map((client, index) => ({
-        ...client,
-        srNo: index + 1,
-        registerDate: dayjs(client.registerDate).format("DD-MM-YYYY"),
-        actualRevenue: Number(client.actualRevenue).toLocaleString("en-IN"),
-      }));
-      return { ...domain, clients: updatedClients };
+      },
     });
-  }
-
-  // Prepare Bar Graph Data
-  const graphData = [
-    {
-      name: "Offices",
-      data: selectedMonthData.domains.map((domain) => domain.clients.length),
-    },
-  ];
-
-  // Graph Options
-  const options = {
-    chart: {
-      type: "bar",
-      toolbar: false,
-      stacked: false,
-      fontFamily: "Poppins-Regular",
-    },
-    xaxis: {
-      categories: selectedMonthData.domains.map((domain) => domain.name),
-    },
-    yaxis: { title: { text: "Number Of Offices" } },
-    plotOptions: {
-      bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
-    },
-    legend: { position: "top" },
-     colors: ["#54C4A7", "#EB5C45"],
-  };
-
-  return (
-    <div className="p-4 flex flex-col gap-4">
-      {/* Month Selection Dropdown */}
-      <div className="mb-4 flex">
-        <FormControl size="small">
-          <InputLabel>Select Month</InputLabel>
-          <Select
-            label="Select Month"
-            value={selectedMonth}
-            onChange={handleMonthChange}
-            sx={{ width: "200px" }}>
-            {mockBusinessRevenueData.map((data) => (
-              <MenuItem key={data.month} value={data.month}>
-                {data.month}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+  
+    // Group by Unit Number
+    const groupedByUnits = clientsData.reduce((acc, item) => {
+      const unitNo = item.unit?.unitNo || "-";
+  
+      if (!acc[unitNo]) {
+        acc[unitNo] = {
+          unitNo,
+          unitName: item.unit?.unitName || "-",
+          unitId: item.unit?._id,
+          clients: [],
+          buildingName: item.unit?.building?.buildingName,
+        };
+      }
+  
+      acc[unitNo].clients.push(item);
+  
+      return acc;
+    }, {});
+  
+    const tableData = Object.values(groupedByUnits)
+      .sort((a, b) =>
+        a.unitNo.localeCompare(b.unitNo, undefined, { numeric: true })
+      )
+      .map((group, index) => ({
+        srNo: index + 1,
+        unitId: group.unitId,
+        unitNo: group.unitNo,
+        unitName: group.unitName,
+        buildingName: group.buildingName,
+        clientsCount: group.clients.length,
+        rawClients: group.clients,
+      }));
+  
+    const columns = [
+      { headerName: "SR NO", field: "srNo", width: 100 },
+      {
+        headerName: "Unit No",
+        field: "unitNo",
+        flex: 1,
+        cellRenderer: (params) => (
+          <span
+            role="button"
+            onClick={() => {
+              navigate(
+                `/app/dashboard/admin-dashboard/admin-offices/${params.value}`,
+                { state: { unitId: params.data.unitId, unitName: params.value } }
+              );
+            }}
+            className="text-primary underline cursor-pointer"
+          >
+            {params.value}
+          </span>
+        ),
+      },
+      { headerName: "Building", field: "buildingName", flex: 1 },
+      { headerName: "Clients Count", field: "clientsCount" },
+    ];
+  
+    // Step 1: Prepare chartData
+    const chartData = tableData.map((unit) => ({
+      unitNo: unit.unitNo,
+      occupied: unit.clientsCount,
+    }));
+  
+  
+    const maxY = Math.max(...chartData.map((item) => item.occupied), 5);
+    const roundedMax = Math.ceil(maxY / 5) * 5;
+  
+  
+    const inrFormat = (val) => val.toLocaleString("en-IN");
+  
+    const barGraphSeries = [
+      {
+        name: "Clients",
+        data: chartData.map((item) => item.occupied),
+      },
+    ];
+    const totalOffices = chartData.reduce((sum,item)=>(item.occupied + sum),0)
+  
+    const expenseOptions = {
+      chart: {
+        type: "bar",
+        toolbar: { show: false },
+        stacked: false,
+        fontFamily: "Poppins-Regular, Arial, sans-serif",
+      },
+      colors: ["#54C4A7"],
+      plotOptions: {
+        bar: {
+          horizontal: false,
+          columnWidth: "30%",
+          borderRadius: 5,
+          dataLabels: { position: "top" },
+        },
+      },
+      dataLabels: {
+        enabled: true,
+        formatter: (val) => inrFormat(val),
+        style: { fontSize: "12px", colors: ["#000"] },
+        offsetY: -22,
+      },
+      yaxis: {
+        max: roundedMax,
+        title: { text: "Client Count" },
+      },
+      xaxis: {
+        categories: chartData.map((item) => item.unitNo),
+      },
+      fill: {
+        opacity: 1,
+      },
+      legend: {
+        show: true,
+        position: "top",
+      },
+    };
+  
+    return (
+      <div className="p-4 flex flex-col gap-4">
+        <WidgetSection layout={1} border padding title={"Admin offices"} TitleAmount={`Total clients: ${totalOffices}`}>
+          <NormalBarGraph data={barGraphSeries} options={expenseOptions} />
+        </WidgetSection>
+        <PageFrame>
+          <AgTable
+            data={tableData}
+            columns={columns}
+            search
+            tableTitle="Admin Offices"
+          />
+        </PageFrame>
       </div>
-
-      {/* Bar Graph Component */}
-      <WidgetSection layout={1} title={"Admin Offices"} border>
-        <BarGraph data={[]} options={[]} height={400} />
-      </WidgetSection>
-
-      {/* Accordion Section for Domain-wise Revenue Breakdown */}
-      <div className="flex flex-col gap-2 border-default border-borderGray rounded-md p-4">
-        <div className="px-4 py-2 border-b-[1px] border-borderGray bg-gray-50">
-          <div className="flex justify-between items-center w-full px-4 py-2">
-            <span className="text-sm text-muted font-pmedium text-title">
-              LOCATION
-            </span>
-            <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
-            EXPENSE
-            </span>
-          </div>
-        </div>
-        {selectedMonthData.domains.map((domain, index) => {
-          return (
-            <Accordion key={index} className="py-4">
-              <AccordionSummary
-                expandIcon={<IoIosArrowDown />}
-                aria-controls={`panel-${index}-content`}
-                id={`panel-${index}-header`}>
-                <div className="flex justify-between items-center w-full px-4">
-                  <span className="text-subtitle font-pmedium  ">
-                    {domain.name}
-                  </span>
-                  <span className="text-subtitle font-pmedium">
-                    {/* INR {domain.revenue.toLocaleString()} */}
-                  </span>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
-                {/* Details Start */}
-                  <div className="flex justify-between items-center w-full p-4">
-                    <span
-                      className="text-subtitle font-pmedium underline text-primary
-                      cursor-pointer"
-                      onClick={() => {
-                        localStorage.setItem("client", domain.name);
-                        navigate(
-                          `/app/dashboard/admin-dashboard/admin-offices/${domain.name}`
-                        );
-                      }}>
-                      View Layout {domain.name}
-                    </span>
-                    {/* <span className="text-subtitle font-pmedium">
-                      {domain.revenue.toLocaleString()}
-                    </span> */}
-
-                  <div >
-                    <p className="text-subtitle text-primary ">
-                      <span className="font-bold">Admin Lead: </span>
-                      Machindranath Parkar
-                    </p>
-                  </div>
-                </div>
-                {/* Details End */}
-                <AgTable
-                  data={[]}
-                  hideFilter
-                  columns={[
-                    {
-                      header: "Sr No",
-                      field: "srNo",
-                      flex: 1,
-                      // cellRenderer: (params) => (
-                      //   <span
-                      //     style={{
-                      //       color: "#1E3D73",
-                      //       textDecoration: "underline",
-                      //       cursor: "pointer",
-                      //     }}
-                      //     onClick={() => {
-                      //       localStorage.setItem("client", params.data.client);
-                      //       navigate(
-                      //         `/app/dashboard/admin-dashboard/admin-offices/admin-offices-layout/${params.data.client}`
-                      //       );
-                      //     }}>
-                      //     {params.value}
-                      //   </span>
-                      // ),
-                    },
-                    {
-                      headerName: "Client",
-                      field: "client",
-                      flex: 1,
-                    },
-                    {
-                      headerName: "Representative",
-                      field: "representative",
-                      flex: 1,
-                    },
-                    {
-                      headerName: "Register Date",
-                      field: "registerDate",
-                      flex: 1,
-                    },
-                    {
-                      headerName: "Expense (INR)",
-                      field: "actualRevenue",
-                      flex: 1,
-                    },
-                  ]}
-                  tableHeight={300}
-                />
-                <div className="flex items-center gap-4 mt-4">
-                  <div className="flex items-center gap-4">
-                    <span className="text-primary font-pregular">
-                      Total Expense for {domain.name}:{" "}
-                    </span>
-                    <span className="text-black font-pmedium">
-                      INR {domain.revenue.toLocaleString()}
-                    </span>{" "}
-                  </div>
-                </div>
-              </AccordionDetails>
-            </Accordion>
-          );
-        })}
-      </div>
-    </div>
-  );
+    );
 };
 
 export default AdminOffices;
