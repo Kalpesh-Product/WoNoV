@@ -22,10 +22,10 @@ const createMember = async (req, res, next) => {
       emergencyName,
       emergencyNo,
       biometricStatus,
-      client 
+      client,
     } = req.body;
 
-    if (!name || !email || !dob || !phone || !client ) {
+    if (!name || !email || !dob || !phone || !client) {
       throw new CustomError(
         "Missing required fields",
         logPath,
@@ -54,15 +54,15 @@ const createMember = async (req, res, next) => {
     }
 
     const newMember = new CoworkingMembers({
-      name,
+      employeeName: name,
       designation,
       email,
-      phone,
+      mobileNo: phone,
       bloodGroup,
       dob,
       emergencyName,
       emergencyNo,
-      biznestDoj: new Date(),
+      dateOfJoining: new Date(),
       biometricStatus,
       client,
       company,
