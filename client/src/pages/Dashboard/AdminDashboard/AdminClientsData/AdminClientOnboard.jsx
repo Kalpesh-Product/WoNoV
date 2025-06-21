@@ -13,6 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { setClientData } from "../../../../redux/slices/salesSlice";
+import { queryClient } from "../../../../main";
 
 const AdminClientOnboard = () => {
   const dispatch = useDispatch();
@@ -158,6 +159,7 @@ const AdminClientOnboard = () => {
       },
       onSuccess: (data) => {
         toast.success(data.message);
+        queryClient.invalidateQueries({ queryKey: ["clientsData"] });
         reset();
       },
       onError: (error) => {
