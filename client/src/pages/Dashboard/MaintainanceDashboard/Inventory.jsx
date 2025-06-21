@@ -165,8 +165,7 @@ const Inventory = () => {
           onClick={() => {
             handleDetailsClick(params.data);
           }}
-          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
-        >
+          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center">
           <span className="text-subtitle">
             <MdOutlineRemoveRedEye />
           </span>
@@ -194,14 +193,12 @@ const Inventory = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === "view" ? "View Details" : "Add Inventory"}
-      >
+        title={modalMode === "view" ? "View Details" : "Add Inventory"}>
         {modalMode === "add" && (
           <div>
             <form
               onSubmit={handleSubmit(handleFormSubmit)}
-              className="grid grid-cols-2 gap-4"
-            >
+              className="grid grid-cols-2 gap-4">
               <Controller
                 name="itemName"
                 control={control}
@@ -350,8 +347,7 @@ const Inventory = () => {
                     fullWidth
                     select
                     error={!!errors.category}
-                    helperText={errors.category?.message}
-                  >
+                    helperText={errors.category?.message}>
                     {/* Replace with your actual options */}
                     <MenuItem value="">Select category</MenuItem>
                     {department.name === "Administration"
@@ -380,7 +376,7 @@ const Inventory = () => {
           </div>
         )}
         {modalMode === "view" && selectedAsset && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 px-2 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-3 px-2 py-4">
             {selectedAsset.image && (
               <div className="col-span-2 flex justify-center">
                 <img
@@ -390,6 +386,7 @@ const Inventory = () => {
                 />
               </div>
             )}
+            <div className="font-bold">Item Information</div>
             <DetalisFormatted
               title="Item Name"
               detail={selectedAsset.itemName || "N/A"}
@@ -399,45 +396,54 @@ const Inventory = () => {
               detail={selectedAsset.department?.name || "N/A"}
             />
             <DetalisFormatted
+              title="Date"
+              detail={humanDate(selectedAsset.date)}
+            />
+            <br />
+            <div className="font-bold">Inventory Units</div>
+            <DetalisFormatted
               title="Opening Units"
               detail={selectedAsset.openingInventoryUnits ?? "N/A"}
-            />
-            <DetalisFormatted
-              title="Opening Value (INR)"
-              detail={`INR ${selectedAsset.openingInventoryValue ?? "N/A"}`}
             />
             <DetalisFormatted
               title="New Purchase Units"
               detail={selectedAsset.newPurchaseUnits ?? "N/A"}
             />
             <DetalisFormatted
-              title="New Purchase Value"
-              detail={`INR ${selectedAsset.newPurchaseInventoryValue ?? "N/A"}`}
-            />
-            <DetalisFormatted
               title="Closing Units"
               detail={selectedAsset.closingInventoryUnits ?? "N/A"}
             />
+            <br />
+            <div className="font-bold">Inventory Value</div>
             <DetalisFormatted
-              title="Date"
-              detail={humanDate(selectedAsset.date)}
+              title="Opening Value (INR)"
+              detail={`INR ${selectedAsset.openingInventoryValue ?? "N/A"}`}
             />
+
             <DetalisFormatted
-              title="Brand"
-              detail={selectedAsset.brand || "N/A"}
+              title="New Purchase Value"
+              detail={`INR ${selectedAsset.newPurchaseInventoryValue ?? "N/A"}`}
             />
             <DetalisFormatted
               title="Price"
               detail={`INR ${selectedAsset.price ?? "N/A"}`}
             />
             <DetalisFormatted
-              title="Quantity"
-              detail={selectedAsset.quantity ?? "N/A"}
-            />
-            <DetalisFormatted
               title="Purchase Date"
               detail={humanDate(selectedAsset.purchaseDate)}
             />
+            <br />
+            <div className="font-bold">Additional Information</div>
+            <DetalisFormatted
+              title="Brand"
+              detail={selectedAsset.brand || "N/A"}
+            />
+
+            <DetalisFormatted
+              title="Quantity"
+              detail={selectedAsset.quantity ?? "N/A"}
+            />
+
             <DetalisFormatted
               title="Warranty (Months)"
               detail={selectedAsset.warranty ?? "N/A"}
