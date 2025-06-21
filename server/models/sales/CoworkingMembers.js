@@ -39,10 +39,6 @@ const coworkingMemberSchema = new mongoose.Schema(
     dateOfJoining: {
       type: Date,
     },
-    unit: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Unit",
-    },
     credits: {
       type: Number,
       default: 10,

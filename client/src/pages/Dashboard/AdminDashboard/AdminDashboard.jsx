@@ -881,7 +881,7 @@ const AdminDashboard = () => {
     },
   ];
 
-  const upComingClientAnniversary = clientAnniversaryData
+  const upComingClientAnniversary = clientsData
     .map((item, index) => {
       const doj = dayjs(item.dateOfJoin, "DD-MM-YYYY");
       const thisYearAnniversary = doj.set("year", today.year());
@@ -909,6 +909,8 @@ const AdminDashboard = () => {
       };
     })
     .filter((item) => item.isUpcoming);
+
+    console.log("data",clientsData)
 
   const upComingClientAnniversaryColumns = [
     { id: "srNo", label: "Sr No", align: "left" },
@@ -1243,7 +1245,7 @@ const AdminDashboard = () => {
           scroll
           rowsToDisplay={3}
           Title={"Upcoming Client Anniversaries"}
-          rows={[]}
+          rows={upComingClientAnniversary}
         />,
       ],
     },
