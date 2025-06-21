@@ -13,6 +13,7 @@ import humanDate from "../../../utils/humanDateForamt";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import { queryClient } from "../../../main";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const maintainanceCategories = [
   { id: 1, name: "Electrical" },
@@ -135,22 +136,27 @@ const Inventory = () => {
     {
       field: "openingInventoryUnits",
       headerName: "Opening Units",
+      cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "openingInventoryValue",
       headerName: "Opening Value (INR)",
+      cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "newPurchaseUnits",
       headerName: "New Purchase Units",
+      cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "newPurchaseInventoryValue",
       headerName: "New Purchase Value",
+      cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "closingInventoryUnits",
       headerName: "Closing Units",
+      cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "date",
@@ -165,7 +171,8 @@ const Inventory = () => {
           onClick={() => {
             handleDetailsClick(params.data);
           }}
-          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center">
+          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
+        >
           <span className="text-subtitle">
             <MdOutlineRemoveRedEye />
           </span>
@@ -193,12 +200,14 @@ const Inventory = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === "view" ? "View Details" : "Add Inventory"}>
+        title={modalMode === "view" ? "View Details" : "Add Inventory"}
+      >
         {modalMode === "add" && (
           <div>
             <form
               onSubmit={handleSubmit(handleFormSubmit)}
-              className="grid grid-cols-2 gap-4">
+              className="grid grid-cols-2 gap-4"
+            >
               <Controller
                 name="itemName"
                 control={control}
@@ -347,7 +356,8 @@ const Inventory = () => {
                     fullWidth
                     select
                     error={!!errors.category}
-                    helperText={errors.category?.message}>
+                    helperText={errors.category?.message}
+                  >
                     {/* Replace with your actual options */}
                     <MenuItem value="">Select category</MenuItem>
                     {department.name === "Administration"
@@ -417,16 +427,22 @@ const Inventory = () => {
             <div className="font-bold">Inventory Value</div>
             <DetalisFormatted
               title="Opening Value (INR)"
-              detail={`INR ${selectedAsset.openingInventoryValue ?? "N/A"}`}
+              detail={`INR ${
+                inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
+              }`}
             />
 
             <DetalisFormatted
               title="New Purchase Value"
-              detail={`INR ${selectedAsset.newPurchaseInventoryValue ?? "N/A"}`}
+              detail={`INR ${
+                inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
+              }`}
             />
             <DetalisFormatted
               title="Price"
-              detail={`INR ${selectedAsset.price ?? "N/A"}`}
+              detail={`INR ${
+                inrFormat(selectedAsset.newPurchasePerUnitPrice) ?? "N/A"
+              }`}
             />
             <DetalisFormatted
               title="Purchase Date"
