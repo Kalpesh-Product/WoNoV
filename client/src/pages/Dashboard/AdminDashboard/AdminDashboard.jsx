@@ -51,6 +51,21 @@ const AdminDashboard = () => {
       }
     },
   });
+
+  // const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
+  //     queryKey: ["clientsData"],
+  //     queryFn: async () => {
+  //       try {
+  //         const response = await axios.get("/api/sales/co-working-clients");
+  //         const data = response.data.filter((item)=>item.isActive)
+  //         dispatch(setClientData(data));
+  //         return data;
+  //       } catch (error) {
+  //         console.error("Error fetching clients data:", error);
+  //       }
+  //     },
+  //   });
+
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
@@ -904,6 +919,15 @@ const AdminDashboard = () => {
     { id: "upComingIn", label: "Upcoming in", align: "left" },
   ];
 
+   const executiveTimingsColumns = [
+    { id: "id", label: "Sr No", align: "left" },
+    { id: "name", label: "Name", align: "left" },
+    { id: "building", label: "Building", align: "left" },
+    { id: "unitNo", label: "Unit No", align: "left" },
+    { id: "startDate", label: "Start Date", align: "left" },
+    { id: "endDate", label: "End Date", align: "left" },
+  ];
+
   const utilisedData = [
     125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
     50000, 120000,
@@ -1070,6 +1094,15 @@ const AdminDashboard = () => {
       widgets: [
         <WidgetSection border title={"Total Desks Company Wise"}>
           <PieChartMui data={[]} options={[]} />
+          {/* {!isClientsDataPending ? (
+            <PieChartMui
+              data={totalDeskPercent}
+              options={clientsDesksPieOptions}
+              width={"100%"}
+            />
+          ) : (
+            <CircularProgress color="#1E3D73" />
+          )} */}
         </WidgetSection>,
         <WidgetSection border title={"Biometrics Gender Data"}>
           <PieChartMui data={[]} options={[]} />
@@ -1118,8 +1151,8 @@ const AdminDashboard = () => {
           scroll
           Title={"Executive Weekly Shift Table"}
           rowsToDisplay={3}
-          rows={[]}
-          columns={[]}
+          rows={transformedWeeklyShifts}
+          columns={executiveTimingsColumns}
         />,
         <MuiTable
           scroll
