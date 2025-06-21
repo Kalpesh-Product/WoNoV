@@ -9,49 +9,74 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import { setClientData } from "../../../../redux/slices/salesSlice";
 
 const AdminClientOnboard = () => {
+  const dispatch = useDispatch();
   const {
     control,
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
       clientName: "",
+      clientCompany: "",
       email: "",
       phone: "",
       service: "",
-      sector: "",
-      hoCity: "",
-      hoState: "",
-      unit: "",
-      cabinDesks: "",
-      ratePerCabinDesk: "20",
-      openDesks: "",
-      ratePerOpenDesk: "20",
-      annualIncrement: "",
-      perDeskMeetingCredits: "",
       totalMeetingCredits: "",
-      startDate: null,
-      endDate: null,
-      lockinPeriod: "",
-      rentDate: null,
-      nextIncrement: null,
       localPocName: "",
       localPocEmail: "",
       localPocPhone: "",
-      hOPocName: "",
-      hOPocEmail: "",
-      hOPocPhone: "",
     },
   });
-  const clientsData = useSelector((state) => state.sales.clientsData);
+
   const [selectedUnit, setSelectedUnit] = useState("");
+  const clientsData = useSelector((state) => state.sales.clientsData);
+  console.log("clients data", clientsData);
+
+  useEffect(() => {
+    const fetchSourceIfEmpty = async () => {
+      if (clientsData.length === 0) {
+        try {
+          const response = await axios.get("/api/sales/co-working-clients");
+          dispatch(setClientData(response.data));
+        } catch (error) {
+          console.error("Failed to fetch leads", error);
+        }
+      }
+    };
+
+    fetchSourceIfEmpty();
+  }, [clientsData, dispatch]);
+  const selectedCompany = watch("clientCompany");
+
+  useEffect(() => {
+    setValue(
+      "localPocEmail",
+      clientsData
+        .filter((item) => item._id === selectedCompany)
+        .map((item) => item.localPoc?.email)
+    );
+    setValue(
+      "localPocName",
+      clientsData
+        .filter((item) => item._id === selectedCompany)
+        .map((item) => item.localPoc?.name)
+    );
+    setValue(
+      "localPocPhone",
+      clientsData
+        .filter((item) => item._id === selectedCompany)
+        .map((item) => item.localPoc?.phone)
+    );
+  }, [selectedCompany]);
 
   //-----------------------------------------------------Calculation------------------------------------------------//
   const cabinDesks = useWatch({ control, name: "cabinDesks" });
@@ -89,6 +114,7 @@ const AdminClientOnboard = () => {
     const city = City.getCitiesOfState("IN", stateCode);
     setCities(city);
   };
+
   const {
     data: units = [],
     isLoading: isUnitsPending,
@@ -125,7 +151,6 @@ const AdminClientOnboard = () => {
     useMutation({
       mutationKey: "clientData",
       mutationFn: async (data) => {
-        console.log("Mutation Data : ", data);
         const response = await axios.post(
           `/api/sales/onboard-co-working-client`,
           data
@@ -149,17 +174,11 @@ const AdminClientOnboard = () => {
     reset();
   };
 
-  const [selectedValue, setSelectedValue] = useState("Coworking");
-
-  const handleChange = (event) => {
-    setSelectedValue(event.target.value);
-  };
-
   return (
     <PageFrame>
       <div className="">
         <form onSubmit={handleSubmit(onSubmit)} className="">
-          <div className="flex gap-4">
+          {/* <div className="flex gap-4">
             <Select
               value={selectedValue} // Use the state value here
               onChange={handleChange} // Update the state on change
@@ -177,7 +196,7 @@ const AdminClientOnboard = () => {
               <MenuItem value="Workation">Workation</MenuItem>
               <MenuItem value="Virtual Office">Virtual Office</MenuItem>
             </Select>
-          </div>
+          </div> */}
           <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
               {/* Section: Basic Information */}
@@ -188,6 +207,31 @@ const AdminClientOnboard = () => {
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
                 <Controller
+                  name="clientCompany"
+                  control={control}
+                  rules={{ required: "Client Company is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      select
+                      label="Client Company"
+                      error={!!errors.clientCompany}
+                      helperText={errors.clientCompany?.message}
+                      fullWidth
+                    >
+                      <MenuItem value="" disabled>
+                        Select a client
+                      </MenuItem>
+                      {clientsData.map((item) => (
+                        <MenuItem key={item._id} value={item._id}>
+                          {item.clientName || "Not present"}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+                <Controller
                   name="clientName"
                   control={control}
                   rules={{ required: "Client Name is required" }}
@@ -195,13 +239,14 @@ const AdminClientOnboard = () => {
                     <TextField
                       {...field}
                       size="small"
-                      label="Client Name"
+                      label="Member Name"
                       error={!!errors.clientName}
                       helperText={errors.clientName?.message}
                       fullWidth
                     />
                   )}
                 />
+
                 <Controller
                   name="email"
                   control={control}
@@ -245,7 +290,8 @@ const AdminClientOnboard = () => {
                       label="Service"
                       error={!!errors.service}
                       helperText={errors.service?.message}
-                      fullWidth>
+                      fullWidth
+                    >
                       <MenuItem value="" disabled>
                         Select a Service
                       </MenuItem>
@@ -261,7 +307,7 @@ const AdminClientOnboard = () => {
                     </TextField>
                   )}
                 />
-                <Controller
+                {/* <Controller
                   name="sector"
                   control={control}
                   rules={{ required: "Sector is required" }}
@@ -326,10 +372,10 @@ const AdminClientOnboard = () => {
                       ))}
                     </TextField>
                   )}
-                />
+                /> */}
               </div>
             </div>
-            <div>
+            {/* <div>
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">KYC</span>
               </div>
@@ -450,11 +496,11 @@ const AdminClientOnboard = () => {
                   />
                 </LocalizationProvider>
               </div>
-            </div>
+            </div> */}
             <div>
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">
-                  Points Of Contact
+                  Point Of Contact
                 </span>
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
@@ -466,6 +512,7 @@ const AdminClientOnboard = () => {
                     <TextField
                       {...field}
                       size="small"
+                      disabled={selectedCompany}
                       label="Local POC Name"
                       error={!!errors.localPocName}
                       helperText={errors.localPocName?.message}
@@ -476,12 +523,14 @@ const AdminClientOnboard = () => {
                 <Controller
                   name="localPocEmail"
                   control={control}
-                  rules={{ required: "Local POC Email is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Local POC Email"
+                      disabled={selectedCompany}
+                      value={field.value}
+                      onChange={field.onChange}
                       error={!!errors.localPocEmail}
                       helperText={errors.localPocEmail?.message}
                       fullWidth
@@ -496,7 +545,7 @@ const AdminClientOnboard = () => {
                     <TextField
                       {...field}
                       size="small"
-                      type="number"
+                      disabled={selectedCompany}
                       label="Local POC Phone"
                       error={!!errors.localPocPhone}
                       helperText={errors.localPocPhone?.message}
@@ -505,7 +554,7 @@ const AdminClientOnboard = () => {
                   )}
                 />
 
-                <Controller
+                {/* <Controller
                   name="hOPocName"
                   control={control}
                   rules={{ required: "HO POC Name is required" }}
@@ -550,7 +599,7 @@ const AdminClientOnboard = () => {
                       fullWidth
                     />
                   )}
-                />
+                /> */}
               </div>
             </div>
           </div>
