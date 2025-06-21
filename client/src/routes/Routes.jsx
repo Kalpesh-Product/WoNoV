@@ -1167,7 +1167,7 @@ export const routes = createBrowserRouter([
                         element: <ItOfficesNew />,
                       },
                       {
-                        path: "it-offices/it-offices-layout/:client",
+                        path: "it-offices/:client",
                         element: <ItOfficesLayout />,
                         children: [
                           {

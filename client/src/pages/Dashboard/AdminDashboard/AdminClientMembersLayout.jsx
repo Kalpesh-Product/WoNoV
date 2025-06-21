@@ -35,7 +35,7 @@ const AdminClientMembersLayout = () => {
   );
 
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className=" flex flex-col gap-4">
       <Tabs
         value={activeTab}
         variant="fullWidth"
