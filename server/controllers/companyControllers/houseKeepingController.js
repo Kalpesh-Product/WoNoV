@@ -1,11 +1,10 @@
 const HouseKeepingStaff = require("../../models/hr/HouseKeepingStaff");
 const Users = require("../../models/hr/UserData");
-const Department = require("../../models/Departments");
 
 const addNewHouseKeepingMember = async (req, res, next) => {
   try {
-    const { name, gender, manager, unit } = req.body;
-    if (!name || !gender || !manager || !unit) {
+    const { name, gender, manager } = req.body;
+    if (!name || !gender || !manager) {
       return res
         .status(400)
         .json({ message: "Please provide the valid details" });
@@ -42,7 +41,7 @@ const getHouseKeepingStaff = async (req, res, next) => {
 
     const managerRoleId = houseKeepingStaff[0].manager;
     const manager = await Users.findOne({
-      roleId: managerRoleId,
+      roleId: { $in: managerRoleId },
       isActive: true,
     })
       .lean()
