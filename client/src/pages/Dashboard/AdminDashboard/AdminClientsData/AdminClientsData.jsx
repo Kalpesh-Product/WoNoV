@@ -12,9 +12,6 @@ const AdminClientsData = () => {
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
   const clientsData = useSelector((state) => state.sales.clientsData);
-  console.log("Clients : ", clientsData);
-
-  
 
   useEffect(() => {
     const fetchSourceIfEmpty = async () => {

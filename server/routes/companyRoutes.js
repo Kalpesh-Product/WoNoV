@@ -85,7 +85,7 @@ router.post("/add-job-application", createJobApplication);
 router.get("/get-job-applications", getJobApplications);
 
 router.post("/add-housekeeping-member", addNewHouseKeepingMember);
-router.get("housekeeping-members", getHouseKeepingStaff);
+router.get("/housekeeping-members", getHouseKeepingStaff);
 
 router.post(
   "/upload-company-document",

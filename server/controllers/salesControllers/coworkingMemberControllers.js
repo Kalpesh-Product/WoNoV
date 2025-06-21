@@ -21,7 +21,6 @@ const createMember = async (req, res, next) => {
       dob,
       emergencyName,
       emergencyNo,
-      biznestDoj,
       biometricStatus,
       client,
     } = req.body;
@@ -35,7 +34,7 @@ const createMember = async (req, res, next) => {
       );
     }
 
-    const existing = await CoworkingClientMember.findOne({ email });
+    const existing = await CoworkingMembers.findOne({ email });
     if (existing) {
       throw new CustomError(
         "Client member already exists with this email",
@@ -54,16 +53,16 @@ const createMember = async (req, res, next) => {
       );
     }
 
-    const newMember = new CoworkingClientMember({
-      name,
+    const newMember = new CoworkingMembers({
+      employeeName: name,
       designation,
       email,
-      phone,
+      mobileNo: phone,
       bloodGroup,
       dob,
       emergencyName,
       emergencyNo,
-      biznestDoj,
+      dateOfJoining: new Date(),
       biometricStatus,
       client,
       company,
