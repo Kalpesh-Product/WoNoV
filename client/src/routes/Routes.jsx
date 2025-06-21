@@ -769,7 +769,7 @@ export const routes = createBrowserRouter([
                         element: <TeamMemberDetails />,
                       },
                       {
-                        path: "housekeeping-members-schedule",
+                        path: "mix-bag/housekeeping-members-schedule",
                         element: <HousekeepingTeamMembersSchedule />,
                       },
                       {

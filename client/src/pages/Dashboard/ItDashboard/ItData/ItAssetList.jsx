@@ -279,11 +279,11 @@ const ItAssetList = () => {
           key={assetsList.length}
           search={true}
           searchColumn={"Asset Number"}
-          tableTitle={"Asset List"}
+          // tableTitle={"Asset List"}
           buttonTitle={"Add Asset"}
           data={[]}
           columns={assetColumns}
-          handleClick={handleAddAsset}
+          // handleClick={handleAddAsset}
         />
       </PageFrame>
 
