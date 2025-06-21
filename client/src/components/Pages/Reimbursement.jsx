@@ -231,12 +231,16 @@ const Reimbursement = () => {
               <Controller
                 name="location"
                 control={control}
-                render={({ field }) => (
+                rules={{ required: "Location is required" }}
+                render={({ field, fieldState }) => (
                   <TextField
                     size="small"
                     select
                     {...field}
-                    label="Select Location">
+                    label="Select Location"
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  >
                     <MenuItem value="" disabled>
                       Select Building
                     </MenuItem>
@@ -256,17 +260,19 @@ const Reimbursement = () => {
                   </TextField>
                 )}
               />
-
               <Controller
                 name="unitId"
                 control={control}
-                render={({ field }) => (
+                rules={{ required: "Unit is required" }}
+                render={({ field, fieldState }) => (
                   <TextField
                     select
                     size="small"
                     label="Select Unit"
                     disabled={!selectedLocation}
-                    {...field} // ✅ handles value and onChange
+                    {...field}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
                   >
                     <MenuItem value="">Select Unit</MenuItem>
                     {locationsLoading ? (
@@ -304,32 +310,27 @@ const Reimbursement = () => {
                 label="Department"
                 value={department?.name || ""}
               />
-              {["srNo"].map((fieldName) => (
-                <Controller
-                  key={fieldName}
-                  name={fieldName}
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      fullWidth
-                      size="small"
-                      disabled
-                      label={fieldName
-                        .replace(/([A-Z])/g, " $1")
-                        .replace(/^./, (str) => str.toUpperCase())}
-                      {...field}
-                    />
-                  )}
-                />
-              ))}
+              <Controller
+                name="srNo"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    disabled
+                    label="Sr No"
+                    {...field}
+                  />
+                )}
+              />
 
+              {/* Reimbursement Date */}
               <Controller
                 name="reimbursementDate"
                 control={control}
                 rules={{
-                  required: "Date is required",
+                  required: "Reimbursement Date is required",
                   validate: (value) => {
-                    if (!value) return true; // already handled by required
                     const today = dayjs().startOf("day");
                     const selected = dayjs(value);
                     if (selected.isBefore(today)) {
@@ -353,6 +354,8 @@ const Reimbursement = () => {
                         textField: {
                           fullWidth: true,
                           size: "small",
+                          error: !!fieldState.error,
+                          helperText: fieldState.error?.message,
                         },
                       }}
                     />
@@ -360,17 +363,19 @@ const Reimbursement = () => {
                 )}
               />
 
-              {/* Render the rest of the fields */}
-
+              {/* Expense Name */}
               <Controller
                 name="expanseName"
                 control={control}
-                render={({ field }) => (
+                rules={{ required: "Expense Name is required" }}
+                render={({ field, fieldState }) => (
                   <TextField
                     {...field}
                     fullWidth
                     size="small"
                     label="Expense Name"
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
                   />
                 )}
               />
@@ -383,50 +388,63 @@ const Reimbursement = () => {
               <Controller
                 name="particularName"
                 control={control}
-                defaultValue=""
-                render={({ field }) => (
+                rules={{ required: "Particular name is required" }}
+                render={({ field, fieldState }) => (
                   <TextField
                     label="Particulars"
                     size="small"
                     fullWidth
                     {...field}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
                   />
                 )}
               />
               <Controller
                 name="particularAmount"
                 control={control}
-                defaultValue=""
-                render={({ field }) => (
+                rules={{
+                  required: "Amount is required",
+                  validate: (value) =>
+                    parseFloat(value) > 0 || "Amount must be greater than 0",
+                }}
+                render={({ field, fieldState }) => (
                   <TextField
                     label="Amount"
                     size="small"
                     type="number"
                     fullWidth
                     {...field}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
                   />
                 )}
               />
-              <div className="flex flex-col justify-center items-center">
-                {/* UI-only List of Added Particulars */}
 
+              <div className="flex flex-col justify-center items-center">
                 <PrimaryButton
                   title="Add"
-                  externalStyles={"w-1/4"}
+                  externalStyles="w-1/4"
                   handleSubmit={() => {
                     const { particularName, particularAmount } = watch();
-                    if (particularName && particularAmount) {
-                      append({
-                        particularName: particularName,
-                        particularAmount: parseFloat(particularAmount),
-                      });
-                      setValue("particularName", "");
-                      setValue("particularAmount", "");
+                    const amountValid = parseFloat(particularAmount) > 0;
+
+                    if (!particularName || !particularAmount || !amountValid) {
+                      // trigger validation manually
+                      return;
                     }
+
+                    append({
+                      particularName,
+                      particularAmount: parseFloat(particularAmount),
+                    });
+                    setValue("particularName", "");
+                    setValue("particularAmount", "");
                   }}
                 />
               </div>
             </div>
+
             {fields.length > 0 && (
               <div className="mt-4 border border-gray-300 rounded p-3 bg-gray-50">
                 <p className="text-sm font-semibold text-gray-800 mb-2">
@@ -436,7 +454,8 @@ const Reimbursement = () => {
                   {fields.map((item, index) => (
                     <li
                       key={index}
-                      className="flex justify-between items-center border-b py-1">
+                      className="flex justify-between items-center border-b py-1"
+                    >
                       <div className="flex flex-col">
                         <span>{item.particularName}</span>
                         <span className="font-medium text-gray-600">
@@ -447,7 +466,8 @@ const Reimbursement = () => {
                         type="button"
                         onClick={() => remove(index)}
                         className="text-red-500 hover:text-red-700"
-                        title="Delete">
+                        title="Delete"
+                      >
                         <MdDelete size={20} />
                       </button>
                     </li>
@@ -476,27 +496,44 @@ const Reimbursement = () => {
               </div>
             )}
           </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Controller
               name="gstIn"
               control={control}
-              render={({ field }) => (
-                <TextField label="GSTIN" size="small" fullWidth {...field} />
+              rules={{
+                pattern: {
+                  value:
+                    /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
+                  message: "Invalid GSTIN format",
+                },
+              }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  label="GSTIN"
+                  size="small"
+                  fullWidth
+                  {...field}
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                />
               )}
             />
 
             <Controller
-              name={"invoiceAttached"}
+              name="invoiceAttached"
               control={control}
-              render={({ field }) => (
+              rules={{ required: "Please select if invoice is attached" }}
+              render={({ field, fieldState }) => (
                 <TextField
                   select
                   fullWidth
                   size="small"
-                  label={"Invoice Attached"}
+                  label="Invoice Attached"
                   value={field.value ? "Yes" : "No"}
-                  onChange={(e) => field.onChange(e.target.value === "Yes")}>
+                  onChange={(e) => field.onChange(e.target.value === "Yes")}
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                >
                   {["Yes", "No"].map((opt) => (
                     <MenuItem key={opt} value={opt}>
                       {opt}
@@ -505,16 +542,25 @@ const Reimbursement = () => {
                 </TextField>
               )}
             />
+
             <Controller
               name="invoiceFile"
               control={control}
-              render={({ field }) => (
+              rules={{
+                validate: (value) =>
+                  watch("invoiceAttached") && !value
+                    ? "Please upload invoice file"
+                    : true,
+              }}
+              render={({ field, fieldState }) => (
                 <UploadFileInput
                   allowedExtensions={["pdf"]}
                   value={field.value}
                   onChange={field.onChange}
                   previewType="pdf"
-                  disabled={!watch("invoiceAttached")} // 🔒 Disable if not attached
+                  disabled={!watch("invoiceAttached")}
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
                 />
               )}
             />
@@ -522,32 +568,33 @@ const Reimbursement = () => {
             {[
               {
                 name: "emergencyApproval",
-                label: "Emergency Approval ",
-                values: options,
+                label: "Emergency Approval",
               },
               {
                 name: "budgetApproval",
                 label: "Budget Approval (Finance)",
-                values: options,
               },
               {
                 name: "l1Approval",
                 label: "L1 Authority Approval",
-                values: options,
               },
-            ].map(({ name, label, values }) => (
+            ].map(({ name, label }) => (
               <Controller
                 key={name}
                 name={name}
                 control={control}
-                render={({ field }) => (
+                rules={{ required: `Please select ${label.toLowerCase()}` }}
+                render={({ field, fieldState }) => (
                   <TextField
                     select
                     fullWidth
                     size="small"
                     label={label}
                     value={field.value ? "Yes" : "No"}
-                    onChange={(e) => field.onChange(e.target.value === "Yes")}>
+                    onChange={(e) => field.onChange(e.target.value === "Yes")}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  >
                     {["Yes", "No"].map((opt) => (
                       <MenuItem key={opt} value={opt}>
                         {opt}
@@ -558,10 +605,11 @@ const Reimbursement = () => {
               />
             ))}
           </div>
+
           <div className="place-items-center">
             <PrimaryButton
               title="Preview"
-              externalStyles={"w-1/4"}
+              externalStyles="w-1/4"
               handleSubmit={() => setOpenPreview(true)}
             />
           </div>
