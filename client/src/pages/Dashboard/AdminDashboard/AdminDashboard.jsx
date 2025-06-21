@@ -34,7 +34,7 @@ dayjs.extend(customParseFormat);
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
-  const department = usePageDepartment()
+  const department = usePageDepartment();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
 
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
@@ -53,17 +53,17 @@ const AdminDashboard = () => {
   });
 
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
-      queryKey: ["clientsData"],
-      queryFn: async () => {
-        try {
-          const response = await axios.get("/api/sales/co-working-clients");
-          const data = response.data.filter((item)=>item.isActive)
-          return data;
-        } catch (error) {
-          console.error("Error fetching clients data:", error);
-        }
-      },
-    });
+    queryKey: ["clientsData"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/co-working-clients");
+        const data = response.data.filter((item) => item.isActive);
+        return data;
+      } catch (error) {
+        console.error("Error fetching clients data:", error);
+      }
+    },
+  });
 
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
@@ -186,7 +186,7 @@ const AdminDashboard = () => {
     },
 
     yaxis: {
-      max: 1000000,
+      max: 600000,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
         formatter: (val) => `${val / 100000}`,
@@ -780,31 +780,60 @@ const AdminDashboard = () => {
     { id: "company", label: "Company", align: "left" },
   ];
 
-  const today = dayjs();
+  const today = dayjs.utc().startOf("day");
   const cutOff = today.add(15, "day");
 
-  const upcomingBirthdays = clientMemberBirthdays
-    .map((item) => {
-      const dob = dayjs(item.dateOfBirth, "YYYY-MM-DD");
-      const thisYearBirthday = dob.set("year", today.year());
+  // const upcomingBirthdays = clientsData
+  //   .map((item) => {
+  //     const dob = dayjs(item.dateOfBirth, "YYYY-MM-DD");
+  //     const thisYearBirthday = dob.set("year", today.year());
 
-      const birthday = thisYearBirthday.isBefore(today)
-        ? thisYearBirthday.add(1, "year")
-        : thisYearBirthday;
+  //     const birthday = thisYearBirthday.isBefore(today)
+  //       ? thisYearBirthday.add(1, "year")
+  //       : thisYearBirthday;
 
-      const doj = dayjs(item.dateOfJoin, "YYYY-MM-DD");
-      const completedYears = today.diff(doj, "year");
-      const upComingIn = birthday.diff(today, "days");
+  //     const doj = dayjs(item.dateOfJoin, "YYYY-MM-DD");
+  //     const completedYears = today.diff(doj, "year");
+  //     const upComingIn = birthday.diff(today, "days");
 
-      return {
-        ...item,
-        dateOfBirth: dayjs(item.dateOfBirth, "YYYY-MM-DD").format("DD-MM-YYYY"),
-        upComingIn: `${upComingIn} days`,
-        isUpcoming:
-          birthday.isBefore(cutOff) &&
-          birthday.isAfter(today.subtract(1, "day")),
-      };
-    })
+  //     return {
+  //       ...item,
+  //       dateOfBirth: dayjs(item.dateOfBirth, "YYYY-MM-DD").format("DD-MM-YYYY"),
+  //       upComingIn: `${upComingIn} days`,
+  //       isUpcoming:
+  //         birthday.isBefore(cutOff) &&
+  //         birthday.isAfter(today.subtract(1, "day")),
+  //     };
+  //   })
+  //   .filter((item) => item.isUpcoming);
+
+  const upcomingBirthdays = clientsData
+    .flatMap((client) =>
+      (client.members || [])
+        .filter((member) => member.dob && dayjs(member.dob).isValid())
+        .map((member) => {
+          const dob = dayjs.utc(member.dob).startOf("day");
+          const thisYearBirthday = dob.set("year", today.year());
+
+          const birthday = thisYearBirthday.isBefore(today)
+            ? thisYearBirthday.add(1, "year")
+            : thisYearBirthday;
+
+          const birthdayStart = birthday.startOf("day");
+          const upComingIn = birthdayStart.diff(today, "day");
+
+          return {
+            company: client.clientName,
+            name: member.employeeName,
+            email: member.email,
+            dateOfBirth: dob.format("DD-MM-YYYY"),
+            upComingIn: upComingIn === 0 ? "Today" : `${upComingIn} days`,
+            isUpcoming:
+              birthdayStart.isBefore(cutOff) &&
+              birthdayStart.isAfter(today.subtract(1, "day")),
+          };
+        })
+    )
     .filter((item) => item.isUpcoming);
 
   //-----------------------------------------------------------------------------------------------------------------//
@@ -881,22 +910,70 @@ const AdminDashboard = () => {
     },
   ];
 
+  // const upComingClientAnniversary = clientsData
+  //   .map((item, index) => {
+  //     const doj = dayjs(item.dateOfJoin, "DD-MM-YYYY");
+  //     const thisYearAnniversary = doj.set("year", today.year());
+  //     const anniversary = thisYearAnniversary.isBefore(today)
+  //       ? thisYearAnniversary.add(1, "year")
+  //       : thisYearAnniversary;
+
+  //     const completedYears = today.diff(doj, "year");
+  //     const upComingInDays = anniversary.diff(today, "day");
+
+  //     return {
+  //       srNo: index + 1,
+  //       client: item.client,
+  //       dateOfJoin: item.dateOfJoin,
+  //       completedYears: completedYears,
+  //       upComingIn:
+  //         upComingInDays === 0
+  //           ? "Today"
+  //           : upComingInDays === 1
+  //           ? "Tomorrow"
+  //           : `${upComingInDays} days`,
+  //       isUpcoming:
+  //         anniversary.isBefore(cutOff) &&
+  //         anniversary.isAfter(today.subtract(1, "day")),
+  //     };
+  //   })
+  //   .filter((item) => item.isUpcoming);
+
+  const calculateCompletedTime = (startDate) => {
+    const start = dayjs(startDate);
+    const today = dayjs();
+    const totalMonths = today.diff(start, "month", true);
+
+    if (totalMonths < 1) {
+      const totalDays = today.diff(start, "day");
+      return `${totalDays} Days`;
+    } else if (totalMonths < 12) {
+      return `${Math.floor(totalMonths)} Months`;
+    } else {
+      const years = totalMonths / 12;
+      return `${years.toFixed(1)} Years`;
+    }
+  };
+
   const upComingClientAnniversary = clientsData
+    .filter((item) => !!item.startDate)
     .map((item, index) => {
-      const doj = dayjs(item.dateOfJoin, "DD-MM-YYYY");
+      const doj = dayjs.utc(item.startDate).startOf("day");
+
       const thisYearAnniversary = doj.set("year", today.year());
+
       const anniversary = thisYearAnniversary.isBefore(today)
         ? thisYearAnniversary.add(1, "year")
         : thisYearAnniversary;
 
-      const completedYears = today.diff(doj, "year");
-      const upComingInDays = anniversary.diff(today, "day");
+      const completedYears = calculateCompletedTime(item.startDate);
 
+      const upComingInDays = anniversary.diff(today, "day");
       return {
         srNo: index + 1,
-        client: item.client,
-        dateOfJoin: item.dateOfJoin,
-        completedYears: completedYears,
+        client: item.clientName,
+        dateOfJoin: doj.format("DD-MM-YYYY"),
+        completedYears,
         upComingIn:
           upComingInDays === 0
             ? "Today"
@@ -910,17 +987,15 @@ const AdminDashboard = () => {
     })
     .filter((item) => item.isUpcoming);
 
-    console.log("data",clientsData)
-
   const upComingClientAnniversaryColumns = [
     { id: "srNo", label: "Sr No", align: "left" },
-    { id: "client", label: "Client", align: "left" },
+    { id: "client", label: "Company", align: "left" },
     { id: "dateOfJoin", label: "Date of Join", align: "left" },
     { id: "completedYears", label: "Completed Years", align: "left" },
     { id: "upComingIn", label: "Upcoming in", align: "left" },
   ];
 
-   const executiveTimingsColumns = [
+  const executiveTimingsColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "name", label: "Name", align: "left" },
     { id: "building", label: "Building", align: "left" },
@@ -962,7 +1037,7 @@ const AdminDashboard = () => {
     };
   });
 
-   let simplifiedClientsPie = [];
+  let simplifiedClientsPie = [];
 
   if (!isClientsDataPending && Array.isArray(clientsData)) {
     let otherTotalDesks = 0;
@@ -1148,6 +1223,45 @@ const AdminDashboard = () => {
     {
       layout: 2,
       widgets: [
+        <MuiTable
+          scroll
+          Title={"Weekly Executive Shift Timing"}
+          rowsToDisplay={3}
+          rows={transformedWeeklyShifts}
+          columns={executiveTimingsColumns}
+        />,
+        <MuiTable
+          scroll
+          Title={"Upcoming Events List"}
+          rowsToDisplay={3}
+          rows={[]}
+          columns={upcomingEventsColumns}
+        />,
+        <MuiTable
+          columns={clientMemberBirthdaysColumns}
+          scroll
+          rowsToDisplay={3}
+          Title={"Upcoming Client Member Birthdays"}
+          rows={upcomingBirthdays.map((item, index) => ({
+            ...item,
+            srNo: index + 1,
+          }))}
+        />,
+        <MuiTable
+          columns={upComingClientAnniversaryColumns}
+          scroll
+          rowsToDisplay={3}
+          Title={"Upcoming Client Anniversaries"}
+          rows={upComingClientAnniversary.map((item, index) => ({
+            ...item,
+            srNo: index + 1,
+          }))}
+        />,
+      ],
+    },
+    {
+      layout: 2,
+      widgets: [
         <WidgetSection border title={"Unit Wise Due Tasks"}>
           <PieChartMui data={[]} options={[]} />
         </WidgetSection>,
@@ -1181,29 +1295,29 @@ const AdminDashboard = () => {
         </WidgetSection>,
       ],
     },
-    {
-      layout: 2,
-      widgets: [
-        <WidgetSection border title={"Overall Gender Data"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-        <WidgetSection border title={"Biometrics Gender Data"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-      ],
-    },
-    {
-      layout: 2,
-      widgets: [
-        <WidgetSection border title={"Department Gender Data"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
+    // {
+    //   layout: 2,
+    //   widgets: [
+    //     <WidgetSection border title={"Overall Gender Data"}>
+    //       <PieChartMui data={[]} options={[]} />
+    //     </WidgetSection>,
+    //     <WidgetSection border title={"Biometrics Gender Data"}>
+    //       <PieChartMui data={[]} options={[]} />
+    //     </WidgetSection>,
+    //   ],
+    // },
+    // {
+    //   layout: 2,
+    //   widgets: [
+    //     <WidgetSection border title={"Department Gender Data"}>
+    //       <PieChartMui data={[]} options={[]} />
+    //     </WidgetSection>,
 
-        <WidgetSection border title={"House Keeping Staff Gender Data"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-      ],
-    },
+    //     <WidgetSection border title={"House Keeping Staff Gender Data"}>
+    //       <PieChartMui data={[]} options={[]} />
+    //     </WidgetSection>,
+    //   ],
+    // },
     {
       layout: 1,
       widgets: [
@@ -1213,39 +1327,6 @@ const AdminDashboard = () => {
           scroll
           rows={[]}
           columns={houseKeepingMemberColumns}
-        />,
-      ],
-    },
-    {
-      layout: 2,
-      widgets: [
-        <MuiTable
-          scroll
-          Title={"Executive Weekly Shift Table"}
-          rowsToDisplay={3}
-          rows={transformedWeeklyShifts}
-          columns={executiveTimingsColumns}
-        />,
-        <MuiTable
-          scroll
-          Title={"Upcoming Events List"}
-          rowsToDisplay={3}
-          rows={[]}
-          columns={upcomingEventsColumns}
-        />,
-        <MuiTable
-          columns={clientMemberBirthdaysColumns}
-          scroll
-          rowsToDisplay={3}
-          Title={"Upcoming Client Member Birthdays"}
-          rows={[]}
-        />,
-        <MuiTable
-          columns={upComingClientAnniversaryColumns}
-          scroll
-          rowsToDisplay={3}
-          Title={"Upcoming Client Anniversaries"}
-          rows={upComingClientAnniversary}
         />,
       ],
     },

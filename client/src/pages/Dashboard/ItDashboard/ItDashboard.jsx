@@ -73,6 +73,22 @@ const ItDashboard = () => {
         },
       });
 
+
+    const { data: tickets = [], isLoading: isTicketsLoading } =
+      useQuery({
+        queryKey: ["ticketIssues"],
+        queryFn: async () => {
+          try {
+            const response = await axios.get(
+              `/api/tickets/department-tickets/${department._id}`
+            );
+            return response.data;
+          } catch (error) {
+            throw new Error("Error fetching data");
+          }
+        },
+      });
+
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
@@ -165,7 +181,7 @@ const ItDashboard = () => {
     },
 
     yaxis: {
-      max: 1000000,
+      max: 600000,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
         formatter: (val) => `${val / 100000}`,
@@ -497,12 +513,30 @@ const ItDashboard = () => {
   };
 
   //----------------------------------------------------------------------------------------------------------//
-  const complaintTypes = [
-    { type: "WiFi", count: 8 },
-    { type: "Assets", count: 12 },
-    { type: "Biometrics", count: 6 },
-    { type: "Others", count: 12 },
-  ];
+  // const complaintTypes = [
+  //   { type: "WiFi", count: 8 },
+  //   { type: "Assets", count: 12 },
+  //   { type: "Biometrics", count: 6 },
+  //   { type: "Others", count: 12 },
+  // ];
+
+const complaintMap = {};
+
+tickets.forEach((ticket) => {
+  const type = ticket.ticket.trim(); // use exact ticket name as type
+
+  if (!complaintMap[type]) {
+    complaintMap[type] = 0;
+  }
+
+  complaintMap[type]++;
+});
+
+const complaintTypes = Object.entries(complaintMap).map(([type, count]) => ({
+  type,
+  count,
+}));
+
 
   const totalComplaintTypes = complaintTypes.reduce(
     (sum, item) => sum + item.count,
@@ -640,6 +674,27 @@ const ItDashboard = () => {
         <DataCard data={""} title={"Average"} description={"Yearly Expense"} />,
       ],
     },
+     {
+      layout: 2,
+      widgets: [
+        <MuiTable
+          key={priorityTasks.length}
+          scroll
+          rowsToDisplay={4}
+          Title={"Top 10 High Priority Due Tasks"}
+          rows={transformedTasks}
+          columns={priorityTasksColumns}
+        />,
+        <MuiTable
+          key={executiveTimings.length}
+          Title={"Weekly Executive Shift Timing"}
+          rows={transformedWeeklyShifts}
+          columns={executiveTimingsColumns}
+          scroll
+          rowsToDisplay={4}
+        />,
+      ],
+    },
     {
       layout: 2,
       widgets: [
@@ -679,34 +734,14 @@ const ItDashboard = () => {
         <WidgetSection border title={"Type Of IT Complaints"}>
           <DonutChart
             centerLabel={``}
-            labels={[]}
-            series={[]}
+            labels={complaintTypeLabels}
+            series={donutComplaintTypeData}
             tooltipValue={complaintCounts}
           />
         </WidgetSection>,
       ],
     },
-    {
-      layout: 2,
-      widgets: [
-        <MuiTable
-          key={priorityTasks.length}
-          scroll
-          rowsToDisplay={4}
-          Title={"Top 10 High Priority Due Tasks"}
-          rows={transformedTasks}
-          columns={priorityTasksColumns}
-        />,
-        <MuiTable
-          key={executiveTimings.length}
-          Title={"Weekly Executive Shift Timing"}
-          rows={transformedWeeklyShifts}
-          columns={executiveTimingsColumns}
-          scroll
-          rowsToDisplay={4}
-        />,
-      ],
-    },
+   
   ];
 
   return (

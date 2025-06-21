@@ -6,8 +6,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import {
   Button,
   CircularProgress,
@@ -16,8 +14,6 @@ import {
   TextField,
 } from "@mui/material";
 import { toast } from "sonner";
-import useAuth from "../../../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { HiOutlinePencilSquare } from "react-icons/hi2";
 import DetalisFormatted from "../../../components/DetalisFormatted";
@@ -51,124 +47,6 @@ const HousekeepingTeamMembersSchedule = () => {
     },
   });
 
-  const unitAssignees = [
-    {
-      employee: {
-        id: {
-          _id: "emp001",
-          firstName: "Gunaraj",
-          lastName: "",
-        },
-        isActive: true,
-        isReassigned: false,
-      },
-      location: {
-        _id: "loc001",
-        unitNo: "5B",
-        unitName: "5th B Wing",
-        building: {
-          _id: "bld001",
-          buildingName: "Sunteck Kanaka",
-        },
-      },
-      startDate: "2025-04-07T00:00:00.000Z",
-      endDate: "2025-04-12T00:00:00.000Z",
-      manager: "Machindranath Parkar",
-    },
-    {
-      employee: {
-        id: {
-          _id: "emp001",
-          firstName: "Gunaraj",
-          lastName: "",
-        },
-        isActive: true,
-        isReassigned: false,
-      },
-      location: {
-        _id: "loc002",
-        unitNo: "6A",
-        unitName: "6th A Wing",
-        building: {
-          _id: "bld001",
-          buildingName: "Sunteck Kanaka",
-        },
-      },
-      startDate: "2025-04-07T00:00:00.000Z",
-      endDate: "2025-04-12T00:00:00.000Z",
-      manager: "Machindranath Parkar",
-    },
-    {
-      employee: {
-        id: {
-          _id: "emp002",
-          firstName: "Shamim",
-          lastName: "",
-        },
-        isActive: true,
-        isReassigned: false,
-      },
-      location: {
-        _id: "loc003",
-        unitNo: "7A",
-        unitName: "7th A Wing",
-        building: {
-          _id: "bld001",
-          buildingName: "Sunteck Kanaka",
-        },
-      },
-      startDate: "2025-04-07T00:00:00.000Z",
-      endDate: "2025-04-12T00:00:00.000Z",
-      manager: "Machindranath Parkar",
-    },
-    {
-      employee: {
-        id: {
-          _id: "emp003",
-          firstName: "Shreya",
-          lastName: "",
-        },
-        isActive: true,
-        isReassigned: false,
-      },
-      location: {
-        _id: "loc004",
-        unitNo: "7B",
-        unitName: "7th B Wing",
-        building: {
-          _id: "bld001",
-          buildingName: "Sunteck Kanaka",
-        },
-      },
-      startDate: "2025-04-07T00:00:00.000Z",
-      endDate: "2025-04-12T00:00:00.000Z",
-      manager: "Machindranath Parkar",
-    },
-    {
-      employee: {
-        id: {
-          _id: "emp004",
-          firstName: "Farida",
-          lastName: "",
-        },
-        isActive: true,
-        isReassigned: false,
-      },
-      location: {
-        _id: "loc005",
-        unitNo: "DTC GF",
-        unitName: "DTC Grd Floor",
-        building: {
-          _id: "bld001",
-          buildingName: "Sunteck Kanaka",
-        },
-      },
-      startDate: "2025-04-07T00:00:00.000Z",
-      endDate: "2025-04-12T00:00:00.000Z",
-      manager: "Machindranath Parkar",
-    },
-  ];
-
   // const { data: unitAssignees = [], isLoading: isUnitAssignees } = useQuery({
   //   queryKey: ["unitAssignees"],
   //   queryFn: async () => {
@@ -182,6 +60,20 @@ const HousekeepingTeamMembersSchedule = () => {
   //     }
   //   },
   // });
+
+  const { data: houseKeepingData, isPending: isHouseKeepingPending } = useQuery(
+    {
+      queryKey: ["housekeeping-staff"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/company/housekeeping-members");
+          return response.data;
+        } catch (error) {
+          toast.error(error.message);
+        }
+      },
+    }
+  );
 
   const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
     queryKey: ["employees"],
@@ -235,28 +127,41 @@ const HousekeepingTeamMembersSchedule = () => {
 
   const memberColumns = [
     { field: "id", headerName: "Sr No", width: 100 },
-    { field: "name", headerName: "Name" },
-    { field: "manager", headerName: "Manager" },
-    { field: "unitNo", headerName: "Unit", flex: "1" },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <div className="flex items-center gap-4 py-2">
-          <span
-            onClick={() => handleViewUser(params.data)}
-            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
-            <MdOutlineRemoveRedEye />
-          </span>
-          <span
-            onClick={() => handleEditUser(params.data)}
-            className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1">
-            <HiOutlinePencilSquare />
-          </span>
-        </div>
-      ),
-    },
+    { field: "name", headerName: "Name", flex: 1 },
+    { field: "gender", headerName: "Gender", flex: 1 },
+    { field: "manager", headerName: "Manager Name", flex: 1 },
+    // {
+    //   field: "actions",
+    //   headerName: "Actions",
+    //   cellRenderer: (params) => (
+    //     <div className="flex items-center gap-4 py-2">
+    //       <span
+    //         onClick={() => handleViewUser(params.data)}
+    //         className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
+    //       >
+    //         <MdOutlineRemoveRedEye />
+    //       </span>
+    //       <span
+    //         onClick={() => handleEditUser(params.data)}
+    //         className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
+    //       >
+    //         <HiOutlinePencilSquare />
+    //       </span>
+    //     </div>
+    //   ),
+    // },
   ];
+
+  const transformedData = houseKeepingData?.map((member, index) => ({
+    id: index + 1,
+    _id: member._id,
+    name: member.name || "N/A",
+    gender: member.gender || "N/A",
+    manager:
+      member.manager?.firstName && member.manager?.lastName
+        ? `${member.manager.firstName} ${member.manager.lastName}`
+        : "N/A",
+  }));
 
   const handleAddUser = () => {
     setModalMode("add");
@@ -289,13 +194,13 @@ const HousekeepingTeamMembersSchedule = () => {
   return (
     <div className="p-4">
       <PageFrame>
-        {unitAssignees.length > 0 ? (
+        {houseKeepingData?.length > 0 ? (
           <AgTable
-            key={unitAssignees.length}
+            key={houseKeepingData.length}
             search={true}
             tableTitle={"Housekeeping Members Schedule"}
-            buttonTitle={"Assign Member"}
-            data={[]}
+            // buttonTitle={"Assign Member"}
+            data={transformedData}
             columns={memberColumns}
             handleClick={handleAddUser}
           />
@@ -309,12 +214,14 @@ const HousekeepingTeamMembersSchedule = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={"Assign Substitute"}>
+        title={"Assign Substitute"}
+      >
         {modalMode === "add" && (
           <div>
             <form
               onSubmit={handleSubmit(handleFormSubmit)}
-              className="flex flex-col gap-4">
+              className="flex flex-col gap-4"
+            >
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <Controller
@@ -329,7 +236,8 @@ const HousekeepingTeamMembersSchedule = () => {
                         size="small"
                         select
                         error={!!errors.employee}
-                        helperText={errors.employee?.message}>
+                        helperText={errors.employee?.message}
+                      >
                         <MenuItem value="" disabled>
                           Select a Member
                         </MenuItem>
@@ -366,7 +274,8 @@ const HousekeepingTeamMembersSchedule = () => {
                         fullWidth
                         error={!!errors.location}
                         helperText={errors.unitId?.message}
-                        select>
+                        select
+                      >
                         <MenuItem value="" disabled>
                           Select Unit
                         </MenuItem>
@@ -448,7 +357,8 @@ const HousekeepingTeamMembersSchedule = () => {
                   {selectedUser.substitutions.map((sub, index) => (
                     <div
                       key={sub.substitutionId}
-                      className="flex flex-col gap-2 border border-borderGray rounded-2xl p-4">
+                      className="flex flex-col gap-2 border border-borderGray rounded-2xl p-4"
+                    >
                       <h4 className="text-subtitle font-pmedium text-primary mb-2">
                         Substitute {index + 1}
                       </h4>

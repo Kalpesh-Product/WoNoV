@@ -67,7 +67,6 @@ const ItAmcRecords = () => {
     },
   });
 
-  console.log(vendorDetials);
 
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
@@ -283,6 +282,7 @@ const ItAmcRecords = () => {
           searchColumn={"Asset Number"}
           tableTitle={"AMC Records"}
           buttonTitle={"Add Record"}
+          disabled={true}
           data={[]}
           columns={assetColumns}
           handleClick={handleAddAsset}

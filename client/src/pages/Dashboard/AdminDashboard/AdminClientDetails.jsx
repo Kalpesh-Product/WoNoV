@@ -8,7 +8,6 @@ import { useSelector } from "react-redux";
 
 const AdminClientDetails = () => {
   const selectedClient = useSelector((state) => state.client.selectedClient);
-  console.log("selectedClient : ", selectedClient);
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       clientName: "",
@@ -110,9 +109,9 @@ const AdminClientDetails = () => {
             Client Details
           </span>
         </div>
-        <div>
+        {/* <div>
           <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
-        </div>
+        </div> */}
       </div>
 
       <div className="h-[51vh] overflow-y-auto">
@@ -128,7 +127,7 @@ const AdminClientDetails = () => {
                 </div>
 
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {["clientName", "service", "sector", "hoCity", "hoState"].map(
+                  {["clientName", "service", "sector", "hoCity", "hoState", "unitNo",].map(
                     (fieldKey) => (
                       <div key={fieldKey}>
                         {isEditing ? (
@@ -171,118 +170,6 @@ const AdminClientDetails = () => {
                 </div>
               </div>
 
-              {/* Section: Company Details */}
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Company Details
-                  </span>
-                </div>
-
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {[
-                    "unitNo",
-                    "cabinDesks",
-                    "ratePerCabinDesk",
-                    "openDesks",
-                    "ratePerOpenDesk",
-                  ].map((fieldKey) => (
-                    <div key={fieldKey}>
-                      {isEditing ? (
-                        <Controller
-                          name={fieldKey}
-                          control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              fullWidth
-                            />
-                          )}
-                        />
-                      ) : (
-                        <div className="py-2 flex justify-between items-start gap-2">
-                          <div className="w-[100%] justify-start flex">
-                            <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </span>{" "}
-                          </div>
-                          <div className="">
-                            <span>:</span>
-                          </div>
-                          <div className="w-full">
-                            <span className="text-gray-500">
-                              {control._defaultValues[fieldKey]}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Company Details
-                  </span>
-                </div>
-
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {[
-                    "annualIncrement",
-                    "perDeskMeetingCredits",
-                    "totalMeetingCredits",
-                    "startDate",
-                    "endDate",
-                    "lockinPeriod",
-                    "rentDate",
-                    "nextIncrement",
-                  ].map((fieldKey) => (
-                    <div key={fieldKey}>
-                      {isEditing ? (
-                        <Controller
-                          name={fieldKey}
-                          control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              fullWidth
-                            />
-                          )}
-                        />
-                      ) : (
-                        <div className="py-2 flex justify-between items-start gap-2">
-                          <div className="w-[100%] justify-start flex">
-                            <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </span>{" "}
-                          </div>
-                          <div className="">
-                            <span>:</span>
-                          </div>
-                          <div className="w-full">
-                            <span className="text-gray-500">
-                              {control._defaultValues[fieldKey]}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
               <div>
                 <div className="py-4 border-b-default border-borderGray">
                   <span className="text-subtitle font-pmedium">
@@ -340,7 +227,7 @@ const AdminClientDetails = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-2 py-4">
+            {/* <div className="flex items-center justify-center gap-2 py-4">
               <PrimaryButton
                 title={isEditing ? "Submit" : "Edit"}
                 handleSubmit={
@@ -350,7 +237,7 @@ const AdminClientDetails = () => {
               {isEditing && (
                 <SecondaryButton title={"Reset"} handleSubmit={handleReset} />
               )}
-            </div>
+            </div> */}
           </form>
         </div>
       </div>
