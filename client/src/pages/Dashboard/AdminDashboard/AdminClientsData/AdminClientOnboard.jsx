@@ -148,7 +148,7 @@ const AdminClientOnboard = () => {
 
   const { mutate: mutateClientData, isPending: isMutateClientPending } =
     useMutation({
-      mutationKey: "clientData",
+      mutationKey: "clientMemberData",
       mutationFn: async (data) => {
         const response = await axios.post(
           `/api/sales/onboard-co-working-member`,
