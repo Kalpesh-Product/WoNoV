@@ -52,6 +52,12 @@ const WeeklyScheduleSchema = new mongoose.Schema(
         toDate: {
           type: Date,
         },
+        startTime: {
+          type: Date,
+        },
+        endTime: {
+          type: Date,
+        },
         isActive: {
           type: Boolean,
         },
