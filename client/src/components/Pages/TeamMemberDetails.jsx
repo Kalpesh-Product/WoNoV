@@ -188,7 +188,7 @@ const TeamMemberDetails = () => {
     },
     onSuccess: (res) => {
       toast.success(res.message || "Substitute assigned successfully!");
-      queryClient.invalidateQueries({ queryKey: ["unitSchedule"] });
+      queryClient.invalidateQueries({ queryKey: ["schedule"] });
       closeDrawer();
     },
     onError: (err) => {
