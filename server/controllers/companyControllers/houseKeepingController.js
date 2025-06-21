@@ -39,7 +39,6 @@ const getHouseKeepingStaff = async (req, res, next) => {
       .exec();
 
     const managerRoleId = houseKeepingStaff[0].manager._id.toString();
-    console.log(managerRoleId)
     const manager = await Users.findOne({
       role: managerRoleId,
       isActive: true,
