@@ -41,7 +41,7 @@ const getHouseKeepingStaff = async (req, res, next) => {
 
     const managerRoleId = houseKeepingStaff[0].manager;
     const manager = await Users.findOne({
-      roleId: managerRoleId,
+      roleId: { $in: managerRoleId },
       isActive: true,
     })
       .lean()
