@@ -23,7 +23,7 @@ import { useSidebar } from "../../../context/SideBarContext";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
-import { Box, Skeleton } from "@mui/material";
+import { Box, CircularProgress, Skeleton } from "@mui/material";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import useAuth from "../../../hooks/useAuth";
 import { inrFormat } from "../../../utils/currencyFormat";
@@ -51,6 +51,20 @@ const AdminDashboard = () => {
       }
     },
   });
+
+  const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
+      queryKey: ["clientsData"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/sales/co-working-clients");
+          const data = response.data.filter((item)=>item.isActive)
+          return data;
+        } catch (error) {
+          console.error("Error fetching clients data:", error);
+        }
+      },
+    });
+
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
@@ -904,6 +918,15 @@ const AdminDashboard = () => {
     { id: "upComingIn", label: "Upcoming in", align: "left" },
   ];
 
+   const executiveTimingsColumns = [
+    { id: "id", label: "Sr No", align: "left" },
+    { id: "name", label: "Name", align: "left" },
+    { id: "building", label: "Building", align: "left" },
+    { id: "unitNo", label: "Unit No", align: "left" },
+    { id: "startDate", label: "Start Date", align: "left" },
+    { id: "endDate", label: "End Date", align: "left" },
+  ];
+
   const utilisedData = [
     125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
     50000, 120000,
@@ -936,6 +959,78 @@ const AdminDashboard = () => {
       endTime: humanTime(task.dueTime),
     };
   });
+
+   let simplifiedClientsPie = [];
+
+  if (!isClientsDataPending && Array.isArray(clientsData)) {
+    let otherTotalDesks = 0;
+
+    simplifiedClientsPie = clientsData.reduce((acc, item) => {
+      const { clientName: companyName, totalDesks } = item;
+
+      if (totalDesks < 15) {
+        otherTotalDesks += totalDesks;
+        return acc;
+      }
+
+      acc.push({ companyName, totalDesks });
+      return acc;
+    }, []);
+
+    if (otherTotalDesks > 0) {
+      simplifiedClientsPie.push({
+        companyName: "Other",
+        totalDesks: otherTotalDesks,
+      });
+    }
+  }
+
+  const totalClientsDesks = simplifiedClientsPie.reduce(
+    (sum, item) => sum + item.totalDesks,
+    0
+  );
+
+  const totalDeskPercent = simplifiedClientsPie.map((item) => ({
+    label: `${item.companyName} ${(
+      (item.totalDesks / totalClientsDesks) *
+      100
+    ).toFixed(1)}%`,
+    value: item.totalDesks,
+  }));
+  const clientsDesksPieOptions = {
+    labels: simplifiedClientsPie.map((item) => {
+      const label = item?.companyName ? `${item.companyName}` : "Unknown";
+      return label.length > 10 ? label.slice(0, 15) + "..." : label;
+    }),
+    chart: {
+      fontFamily: "Poppins-Regular",
+      toolbar: false,
+    },
+    colors: [
+      "#0F172A", // deep navy blue
+      "#1E293B", // dark slate blue
+      "#1D4ED8", // vibrant blue (slightly electric)
+      "#2563EB", // crisp blue
+      "#3B82F6", // standard vivid blue
+      "#0284C7", // cyan-leaning blue
+      "#0369A1", // oceanic deep blue
+      "#0EA5E9", // bright cool blue
+      "#3A60B5", // bold steel blue
+      "#4C51BF", // indigo-tinged blue
+    ],
+
+    tooltip: {
+      y: {
+        formatter: (val) => {
+          return `${val} Desks`; // Explicitly return the formatted value
+        },
+      },
+    },
+    legend: {
+      position: "right",
+    },
+  };
+
   //-----------------------------------------------------------------------------------------------------------------//
   const techWidgets = [
     {
@@ -1069,7 +1164,15 @@ const AdminDashboard = () => {
       layout: 2,
       widgets: [
         <WidgetSection border title={"Total Desks Company Wise"}>
-          <PieChartMui data={[]} options={[]} />
+          {!isClientsDataPending ? (
+            <PieChartMui
+              data={totalDeskPercent}
+              options={clientsDesksPieOptions}
+              width={"100%"}
+            />
+          ) : (
+            <CircularProgress color="#1E3D73" />
+          )}
         </WidgetSection>,
         <WidgetSection border title={"Biometrics Gender Data"}>
           <PieChartMui data={[]} options={[]} />
@@ -1118,8 +1221,8 @@ const AdminDashboard = () => {
           scroll
           Title={"Executive Weekly Shift Table"}
           rowsToDisplay={3}
-          rows={[]}
-          columns={[]}
+          rows={transformedWeeklyShifts}
+          columns={executiveTimingsColumns}
         />,
         <MuiTable
           scroll

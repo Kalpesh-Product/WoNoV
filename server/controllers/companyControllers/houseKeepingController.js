@@ -1,5 +1,6 @@
 const HouseKeepingStaff = require("../../models/hr/HouseKeepingStaff");
 const Users = require("../../models/hr/UserData");
+const Department = require("../../models/Departments");
 
 const addNewHouseKeepingMember = async (req, res, next) => {
   try {
@@ -15,6 +16,7 @@ const addNewHouseKeepingMember = async (req, res, next) => {
       gender,
       manager,
       unit,
+      department: "6798bae6e469e809084e24a4",
     });
 
     const savedHouseKeepingStaff = await newHouseKeepingStaff.save();
@@ -33,6 +35,7 @@ const getHouseKeepingStaff = async (req, res, next) => {
       .populate([
         { path: "unit", select: "unitNo unitName" },
         { path: "manager", select: "roleTitle" },
+        { path: "department", select: "name" },
       ])
       .lean()
       .exec();

@@ -52,6 +52,7 @@ const {
 const {
   getMembersByUnit,
   getMemberByClient,
+  createMember,
 } = require("../controllers/salesControllers/coworkingMemberControllers");
 const {
   getVirtualOfficeRevenue,
@@ -62,6 +63,7 @@ const getConsolidatedRevenue = require("../controllers/salesControllers/consolid
 
 //Coworking routes
 router.post("/onboard-co-working-client", createCoworkingClient);
+router.post("/onboard-co-working-member", createMember);
 router.get("/co-working-clients", getCoworkingClients);
 router.patch("/update-co-working-clients", updateCoworkingClient);
 router.get("/co-working-members", getMembersByUnit);
