@@ -81,7 +81,7 @@ const AdminPolicies = () => {
       <div>
         <WidgetSection border title="SOPs Data">
           <AgTable
-            data={policiesUploadData}
+            data={[]}
             columns={policiesUploadDataColumns}
             search={true}
           />

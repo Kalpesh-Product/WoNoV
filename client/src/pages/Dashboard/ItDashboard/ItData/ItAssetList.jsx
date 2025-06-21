@@ -280,6 +280,7 @@ const ItAssetList = () => {
           search={true}
           searchColumn={"Asset Number"}
           tableTitle={"Asset List"}
+          disabled={true}
           buttonTitle={"Add Asset"}
           data={[]}
           columns={assetColumns}

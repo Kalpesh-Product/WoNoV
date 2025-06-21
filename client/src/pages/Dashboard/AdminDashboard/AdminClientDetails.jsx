@@ -109,9 +109,9 @@ const AdminClientDetails = () => {
             Client Details
           </span>
         </div>
-        <div>
+        {/* <div>
           <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
-        </div>
+        </div> */}
       </div>
 
       <div className="h-[51vh] overflow-y-auto">
@@ -227,7 +227,7 @@ const AdminClientDetails = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-2 py-4">
+            {/* <div className="flex items-center justify-center gap-2 py-4">
               <PrimaryButton
                 title={isEditing ? "Submit" : "Edit"}
                 handleSubmit={
@@ -237,7 +237,7 @@ const AdminClientDetails = () => {
               {isEditing && (
                 <SecondaryButton title={"Reset"} handleSubmit={handleReset} />
               )}
-            </div>
+            </div> */}
           </form>
         </div>
       </div>
