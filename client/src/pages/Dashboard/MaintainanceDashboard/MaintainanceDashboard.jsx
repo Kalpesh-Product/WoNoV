@@ -23,6 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import humanTime from "../../../utils/humanTime";
+import humanDate from "../../../utils/humanDateForamt";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -64,7 +65,7 @@ const MaintainanceDashboard = () => {
       queryFn: async () => {
         try {
           const response = await axios.get(
-            `/api/weekly-unit/fetch-weekly-unit/6798bae6e469e809084e24a4`
+            `/api/weekly-unit/fetch-weekly-unit/${department._id}`
           );
           return response.data;
         } catch (error) {
@@ -644,8 +645,8 @@ const MaintainanceDashboard = () => {
     { id: "name", label: "Name", align: "left" },
     { id: "building", label: "Building", align: "left" },
     { id: "unitNo", label: "Unit No", align: "left" },
-    { id: "startTime", label: "Start Time", align: "left" },
-    { id: "endTime", label: "End Time", align: "left" },
+    { id: "startDate", label: "Start Date", align: "left" },
+    { id: "endDate", label: "End Date", align: "left" },
   ];
   //----------------------------------------------------------------------------------------------------------//
   const clientComplaints = [
@@ -708,8 +709,8 @@ const MaintainanceDashboard = () => {
       srNo: index + 1,
       id: index + 1,
       name: `${emp.employee.id.firstName} ${emp.employee.id.lastName}`,
-      startTime: humanTime(emp.startDate),
-      endTime: humanTime(emp.endDate),
+      startDate: humanDate(emp.startDate),
+      endDate: humanDate(emp.endDate),
       building: emp.location.building.buildingName,
       unitNo: emp.location.unitNo,
     }));

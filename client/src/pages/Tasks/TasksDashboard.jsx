@@ -35,7 +35,7 @@ const TasksDashboard = () => {
   const axios = useAxiosPrivate();
 
   const { auth } = useAuth();
-  const department = usePageDepartment()
+  const department = usePageDepartment();
   const monthOrder = [
     "April",
     "May",
@@ -360,7 +360,8 @@ const TasksDashboard = () => {
         `${((val / totalTasks) * 100).toFixed(0)}%`;
       },
     },
-    colors: ["#00ba09", "#ff4545"],
+    // colors: ["#00ba09", "#ff4545"],
+    colors: ["#54C4A7", "#EB5C45"],
   };
 
   // const completedTasks = allTasksQuery.isLoading

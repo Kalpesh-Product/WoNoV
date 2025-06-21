@@ -27,12 +27,15 @@ import { Box, Skeleton } from "@mui/material";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import useAuth from "../../../hooks/useAuth";
 import { inrFormat } from "../../../utils/currencyFormat";
+import usePageDepartment from "../../../hooks/usePageDepartment";
+import humanDate from "../../../utils/humanDateForamt";
+import humanTime from "../../../utils/humanTime";
 dayjs.extend(customParseFormat);
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
-    const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
-
+  const department = usePageDepartment()
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
 
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
     queryKey: ["maintainance-budget"],
@@ -48,60 +51,102 @@ const AdminDashboard = () => {
       }
     },
   });
+
+  // const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
+  //     queryKey: ["clientsData"],
+  //     queryFn: async () => {
+  //       try {
+  //         const response = await axios.get("/api/sales/co-working-clients");
+  //         const data = response.data.filter((item)=>item.isActive)
+  //         dispatch(setClientData(data));
+  //         return data;
+  //       } catch (error) {
+  //         console.error("Error fetching clients data:", error);
+  //       }
+  //     },
+  //   });
+
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
     0
   );
 
-
-const expenseRawSeries = useMemo(() => {
-  // Initialize monthly buckets
-  const months = Array.from({ length: 12 }, (_, index) =>
-    dayjs(`2024-04-01`).add(index, "month").format("MMM")
-  );
-
-  const fyData = {
-    "FY 2024-25": Array(12).fill(0),
-    "FY 2025-26": Array(12).fill(0),
-  };
-
-  hrFinance.forEach((item) => {
-    const date = dayjs(item.dueDate);
-    const year = date.year();
-    const monthIndex = date.month(); // 0 = Jan, 11 = Dec
-
-    if (year === 2024 && monthIndex >= 3) {
-      // Apr 2024 to Dec 2024 (month 3 to 11)
-      fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-    } else if (year === 2025) {
-      if (monthIndex <= 2) {
-        // Jan to Mar 2025 (months 0–2)
-        fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-      } else if (monthIndex >= 3) {
-        // Apr 2025 to Dec 2025 (months 3–11)
-        fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+  const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
+    queryKey: ["tasks"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/tasks/get-tasks?dept=${department._id}`
+        );
+        return response.data;
+      } catch (error) {
+        throw new Error("Error fetching data");
       }
-    } else if (year === 2026 && monthIndex <= 2) {
-      // Jan to Mar 2026
-      fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
-    }
+    },
   });
 
-  return [
-    {
-      name: "total",
-      group: "FY 2024-25",
-      data: fyData["FY 2024-25"],
-    },
-    {
-      name: "total",
-      group: "FY 2025-26",
-      data: fyData["FY 2025-26"],
-    },
-  ];
-}, [hrFinance]);
+  const { data: weeklySchedule = [], isLoading: isWeeklyScheduleLoading } =
+    useQuery({
+      queryKey: ["weeklySchedule"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            `/api/weekly-unit/fetch-weekly-unit/${department._id}`
+          );
+          return response.data;
+        } catch (error) {
+          throw new Error("Error fetching data");
+        }
+      },
+    });
 
+  const expenseRawSeries = useMemo(() => {
+    // Initialize monthly buckets
+    const months = Array.from({ length: 12 }, (_, index) =>
+      dayjs(`2024-04-01`).add(index, "month").format("MMM")
+    );
+
+    const fyData = {
+      "FY 2024-25": Array(12).fill(0),
+      "FY 2025-26": Array(12).fill(0),
+    };
+
+    hrFinance.forEach((item) => {
+      const date = dayjs(item.dueDate);
+      const year = date.year();
+      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+
+      if (year === 2024 && monthIndex >= 3) {
+        // Apr 2024 to Dec 2024 (month 3 to 11)
+        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+      } else if (year === 2025) {
+        if (monthIndex <= 2) {
+          // Jan to Mar 2025 (months 0–2)
+          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+        } else if (monthIndex >= 3) {
+          // Apr 2025 to Dec 2025 (months 3–11)
+          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+        }
+      } else if (year === 2026 && monthIndex <= 2) {
+        // Jan to Mar 2026
+        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+      }
+    });
+
+    return [
+      {
+        name: "total",
+        group: "FY 2024-25",
+        data: fyData["FY 2024-25"],
+      },
+      {
+        name: "total",
+        group: "FY 2025-26",
+        data: fyData["FY 2025-26"],
+      },
+    ];
+  }, [hrFinance]);
 
   const expenseOptions = {
     chart: {
@@ -181,12 +226,12 @@ const expenseRawSeries = useMemo(() => {
     },
   };
 
-    const budgetBar = useMemo(() => {
-      if (isHrFinanceLoading || !Array.isArray(hrFinance)) return null;
-      return transformBudgetData(isHrFinanceLoading ? [] : hrFinance);
-    }, [isHrFinanceLoading, hrFinance]);
+  const budgetBar = useMemo(() => {
+    if (isHrFinanceLoading || !Array.isArray(hrFinance)) return null;
+    return transformBudgetData(isHrFinanceLoading ? [] : hrFinance);
+  }, [isHrFinanceLoading, hrFinance]);
 
- const totalUtilised =
+  const totalUtilised =
     budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
       (acc, val) => acc + val,
       0
@@ -874,6 +919,15 @@ const expenseRawSeries = useMemo(() => {
     { id: "upComingIn", label: "Upcoming in", align: "left" },
   ];
 
+   const executiveTimingsColumns = [
+    { id: "id", label: "Sr No", align: "left" },
+    { id: "name", label: "Name", align: "left" },
+    { id: "building", label: "Building", align: "left" },
+    { id: "unitNo", label: "Unit No", align: "left" },
+    { id: "startDate", label: "Start Date", align: "left" },
+    { id: "endDate", label: "End Date", align: "left" },
+  ];
+
   const utilisedData = [
     125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
     50000, 120000,
@@ -884,6 +938,28 @@ const expenseRawSeries = useMemo(() => {
     60000, 110000,
   ];
 
+  const transformedWeeklyShifts = useMemo(() => {
+    if (isWeeklyScheduleLoading || !weeklySchedule.length) return [];
+
+    return weeklySchedule.map((emp, index) => ({
+      srNo: index + 1,
+      id: index + 1,
+      name: `${emp.employee.id.firstName} ${emp.employee.id.lastName}`,
+      startDate: humanDate(emp.startDate),
+      endDate: humanDate(emp.endDate),
+      building: emp.location.building.buildingName,
+      unitNo: emp.location.unitNo,
+    }));
+  }, [weeklySchedule, isWeeklyScheduleLoading]);
+
+  const transformedTasks = tasks.map((task, index) => {
+    return {
+      id: index + 1,
+      taskName: task.taskName,
+      status: task.status,
+      endTime: humanTime(task.dueTime),
+    };
+  });
   //-----------------------------------------------------------------------------------------------------------------//
   const techWidgets = [
     {
@@ -1018,6 +1094,15 @@ const expenseRawSeries = useMemo(() => {
       widgets: [
         <WidgetSection border title={"Total Desks Company Wise"}>
           <PieChartMui data={[]} options={[]} />
+          {/* {!isClientsDataPending ? (
+            <PieChartMui
+              data={totalDeskPercent}
+              options={clientsDesksPieOptions}
+              width={"100%"}
+            />
+          ) : (
+            <CircularProgress color="#1E3D73" />
+          )} */}
         </WidgetSection>,
         <WidgetSection border title={"Biometrics Gender Data"}>
           <PieChartMui data={[]} options={[]} />
@@ -1054,9 +1139,7 @@ const expenseRawSeries = useMemo(() => {
           Title={"Newly Joined House Keeping Members"}
           rowsToDisplay={4}
           scroll
-          rows={[
-            
-          ]}
+          rows={[]}
           columns={houseKeepingMemberColumns}
         />,
       ],
@@ -1068,16 +1151,14 @@ const expenseRawSeries = useMemo(() => {
           scroll
           Title={"Executive Weekly Shift Table"}
           rowsToDisplay={3}
-          rows={[]}
-          columns={[]}
+          rows={transformedWeeklyShifts}
+          columns={executiveTimingsColumns}
         />,
         <MuiTable
           scroll
           Title={"Upcoming Events List"}
           rowsToDisplay={3}
-          rows={[
-            
-          ]}
+          rows={[]}
           columns={upcomingEventsColumns}
         />,
         <MuiTable
@@ -1085,18 +1166,14 @@ const expenseRawSeries = useMemo(() => {
           scroll
           rowsToDisplay={3}
           Title={"Upcoming Client Member Birthdays"}
-          rows={[
-         
-          ]}
+          rows={[]}
         />,
         <MuiTable
           columns={upComingClientAnniversaryColumns}
           scroll
           rowsToDisplay={3}
           Title={"Upcoming Client Anniversaries"}
-          rows={[
-          
-          ]}
+          rows={[]}
         />,
       ],
     },

@@ -1,14 +1,13 @@
 import React from "react";
-import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
-import AgTable from "../../../components/AgTable";
+import AgTable from "../../../../components/AgTable";
 import { useNavigate } from "react-router-dom";
-import PageFrame from "../../../components/Pages/PageFrame";
-import WidgetSection from "../../../components/WidgetSection";
-import YearWiseTable from "../../../components/Tables/YearWiseTable";
-import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
+import PageFrame from "../../../../components/Pages/PageFrame";
+import WidgetSection from "../../../../components/WidgetSection";
+import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 
-const MaintenancePerSqFtExpense = () => {
+const AdminOfficesNew = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
 
@@ -67,20 +66,20 @@ const MaintenancePerSqFtExpense = () => {
       cellRenderer: (params) => (
         <span
           role="button"
-          // onClick={() => {
-          //   navigate(
-          //     `/app/dashboard/maintenance-dashboard/maintenance-offices/${params.value}`,
-          //     { state: { unitId: params.data.unitId, unitName: params.value } }
-          //   );
-          // }}
-          // className="text-primary underline cursor-pointer"
+          onClick={() => {
+            navigate(
+              `/app/dashboard/admin-dashboard/admin-offices/${params.value}`,
+              { state: { unitId: params.data.unitId, unitName: params.value } }
+            );
+          }}
+          className="text-primary underline cursor-pointer"
         >
           {params.value}
         </span>
       ),
     },
     { headerName: "Building", field: "buildingName", flex: 1 },
-    { headerName: "Expense", field: "expense" },
+    { headerName: "Clients Count", field: "clientsCount" },
   ];
 
   // Step 1: Prepare chartData
@@ -128,7 +127,7 @@ const MaintenancePerSqFtExpense = () => {
     },
     yaxis: {
       max: roundedMax,
-      title: { text: "Amount in Lakhs" },
+      title: { text: "Client Count" },
     },
     xaxis: {
       categories: chartData.map((item) => item.unitNo),
@@ -144,19 +143,19 @@ const MaintenancePerSqFtExpense = () => {
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      <WidgetSection layout={1} border padding title={"maintenance expense per sq. ft"} TitleAmount={`INR 0`}>
-        <NormalBarGraph data={[]} options={expenseOptions} />
+      <WidgetSection layout={1} border padding title={"admin offices"} TitleAmount={`Total clients: ${totalOffices}`}>
+        <NormalBarGraph data={barGraphSeries} options={expenseOptions} />
       </WidgetSection>
       <PageFrame>
-        <YearWiseTable
+        <AgTable
           data={tableData}
           columns={columns}
           search
-          tableTitle="maintenance expense per sq. ft"
+          tableTitle="Admin Offices"
         />
       </PageFrame>
     </div>
   );
 };
 
-export default MaintenancePerSqFtExpense;
+export default AdminOfficesNew;
