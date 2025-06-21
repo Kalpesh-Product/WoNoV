@@ -14,6 +14,10 @@ const houseKeepingSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Role",
   },
+  department: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Department",
+  },
 });
 
 const HouseKeepingStaff = mongoose.model(
