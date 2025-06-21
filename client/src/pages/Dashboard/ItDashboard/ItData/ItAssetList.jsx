@@ -284,7 +284,7 @@ const ItAssetList = () => {
           buttonTitle={"Add Asset"}
           data={[]}
           columns={assetColumns}
-          handleClick={handleAddAsset}
+          // handleClick={handleAddAsset}
         />
       </PageFrame>
 

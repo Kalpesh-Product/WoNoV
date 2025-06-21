@@ -32,16 +32,15 @@ const getHouseKeepingStaff = async (req, res, next) => {
   try {
     const houseKeepingStaff = await HouseKeepingStaff.find()
       .populate([
-        { path: "unit", select: "unitNo unitName" },
         { path: "manager", select: "roleTitle" },
         { path: "department", select: "name" },
       ])
       .lean()
       .exec();
 
-    const managerRoleId = houseKeepingStaff[0].manager;
+    const managerRoleId = houseKeepingStaff[0].manager._id.toString();
     const manager = await Users.findOne({
-      roleId: { $in: managerRoleId },
+      role: managerRoleId,
       isActive: true,
     })
       .lean()
