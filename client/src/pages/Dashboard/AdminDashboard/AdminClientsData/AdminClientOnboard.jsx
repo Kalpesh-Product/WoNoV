@@ -25,12 +25,11 @@ const AdminClientOnboard = () => {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      clientName: "",
-      clientCompany: "",
+      client: "",
+      name: "",
       email: "",
       phone: "",
-      service: "",
-      totalMeetingCredits: "",
+      dob: null,
       localPocName: "",
       localPocEmail: "",
       localPocPhone: "",
@@ -55,7 +54,7 @@ const AdminClientOnboard = () => {
 
     fetchSourceIfEmpty();
   }, [clientsData, dispatch]);
-  const selectedCompany = watch("clientCompany");
+  const selectedCompany = watch("client");
 
   useEffect(() => {
     setValue(
@@ -152,7 +151,7 @@ const AdminClientOnboard = () => {
       mutationKey: "clientData",
       mutationFn: async (data) => {
         const response = await axios.post(
-          `/api/sales/onboard-co-working-client`,
+          `/api/sales/onboard-co-working-member`,
           data
         );
         return response.data;
@@ -207,7 +206,7 @@ const AdminClientOnboard = () => {
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
                 <Controller
-                  name="clientCompany"
+                  name="client"
                   control={control}
                   rules={{ required: "Client Company is required" }}
                   render={({ field }) => (
@@ -216,8 +215,8 @@ const AdminClientOnboard = () => {
                       size="small"
                       select
                       label="Client Company"
-                      error={!!errors.clientCompany}
-                      helperText={errors.clientCompany?.message}
+                      error={!!errors.client}
+                      helperText={errors.client?.message}
                       fullWidth
                     >
                       <MenuItem value="" disabled>
@@ -232,7 +231,7 @@ const AdminClientOnboard = () => {
                   )}
                 />
                 <Controller
-                  name="clientName"
+                  name="name"
                   control={control}
                   rules={{ required: "Client Name is required" }}
                   render={({ field }) => (
@@ -240,8 +239,8 @@ const AdminClientOnboard = () => {
                       {...field}
                       size="small"
                       label="Member Name"
-                      error={!!errors.clientName}
-                      helperText={errors.clientName?.message}
+                      error={!!errors.name}
+                      helperText={errors.name?.message}
                       fullWidth
                     />
                   )}
@@ -277,34 +276,20 @@ const AdminClientOnboard = () => {
                     />
                   )}
                 />
-
                 <Controller
-                  name="service"
+                  name="dob"
                   control={control}
-                  rules={{ required: "Service is required" }}
+                  rules={{ required: "Date of Birth is required" }}
                   render={({ field }) => (
-                    <TextField
+                    <DatePicker
                       {...field}
-                      size="small"
-                      select
-                      label="Service"
-                      error={!!errors.service}
-                      helperText={errors.service?.message}
+                      label="Date of Birth"
+                      format="DD-MM-YYYY"
+                      error={!!errors.dob}
+                      helperText={errors.dob?.message}
                       fullWidth
-                    >
-                      <MenuItem value="" disabled>
-                        Select a Service
-                      </MenuItem>
-                      {!isServicesPending ? (
-                        services.map((item) => (
-                          <MenuItem key={item._id} value={item._id}>
-                            {item.serviceName}
-                          </MenuItem>
-                        ))
-                      ) : (
-                        <CircularProgress color="#1E3D73" />
-                      )}
-                    </TextField>
+                      slotProps={{ textField: { size: "small" } }}
+                    />
                   )}
                 />
                 {/* <Controller
