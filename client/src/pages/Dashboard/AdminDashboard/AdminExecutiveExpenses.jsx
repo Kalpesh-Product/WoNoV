@@ -355,7 +355,7 @@ const AdminExecutiveExpenses = () => {
         /> */}
 
       <AllocatedBudget
-        financialData={financialData}
+        financialData={[]}
         newTitle="Admin Executive Expense"
       />
       <MuiModal

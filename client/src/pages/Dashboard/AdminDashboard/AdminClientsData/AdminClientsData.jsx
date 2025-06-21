@@ -6,31 +6,25 @@ import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import { useQuery } from "@tanstack/react-query";
 
 const AdminClientsData = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
-  const clientsData = useSelector((state) => state.sales.clientsData);
-  console.log("Clients : ", clientsData);
-
-  
-
-  useEffect(() => {
-    const fetchSourceIfEmpty = async () => {
-      if (clientsData.length === 0) {
-        try {
-          const response = await axios.get("/api/sales/co-working-clients");
-          dispatch(setClientData(response.data));
-        } catch (error) {
-          console.error("Failed to fetch leads", error);
-        }
+  const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
+    queryKey: ["clientsData"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/co-working-clients");
+        const data = response.data.filter((item) => item.isActive);
+        dispatch(setClientData(data));
+        return data;
+      } catch (error) {
+        console.error("Error fetching clients data:", error);
       }
-    };
-
-    fetchSourceIfEmpty();
-  }, [clientsData, dispatch]);
-
+    },
+  });
   const handleClickRow = (clientData) => {
     console.log("clientData : ", clientData);
     dispatch(setSelectedClient(clientData));
@@ -51,7 +45,8 @@ const AdminClientsData = () => {
             textDecoration: "underline",
             cursor: "pointer",
           }}
-          onClick={() => handleClickRow(params.data)}>
+          onClick={() => handleClickRow(params.data)}
+        >
           {params.value}
         </span>
       ),
@@ -125,7 +120,9 @@ const AdminClientsData = () => {
     }));
   };
 
-  const transformedData = transformClientsGroupedByMonth(clientsData);
+  const transformedData = transformClientsGroupedByMonth(
+    isClientsDataPending ? [] : clientsData
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -154,7 +151,7 @@ const AdminClientsData = () => {
                 totalDesks: item.totalDesks,
                 ratePerOpenDesk: item.ratePerOpenDesk,
                 ratePerCabinDesk: item.ratePerCabinDesk,
-                members : item.members,
+                members: item.members,
                 annualIncrement: item.annualIncrement,
                 perDeskMeetingCredits: item.perDeskMeetingCredits,
                 totalMeetingCredits: item.totalMeetingCredits,

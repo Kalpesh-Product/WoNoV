@@ -13,6 +13,7 @@ import humanDate from "../../../utils/humanDateForamt";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import { queryClient } from "../../../main";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const maintainanceCategories = [
   { id: 1, name: "Electrical" },
@@ -135,22 +136,27 @@ const Inventory = () => {
     {
       field: "openingInventoryUnits",
       headerName: "Opening Units",
+      cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "openingInventoryValue",
       headerName: "Opening Value (INR)",
+      cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "newPurchaseUnits",
       headerName: "New Purchase Units",
+      cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "newPurchaseInventoryValue",
       headerName: "New Purchase Value",
+      cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "closingInventoryUnits",
       headerName: "Closing Units",
+      cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "date",
@@ -380,7 +386,7 @@ const Inventory = () => {
           </div>
         )}
         {modalMode === "view" && selectedAsset && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 px-2 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-3 px-2 py-4">
             {selectedAsset.image && (
               <div className="col-span-2 flex justify-center">
                 <img
@@ -390,6 +396,7 @@ const Inventory = () => {
                 />
               </div>
             )}
+            <div className="font-bold">Item Information</div>
             <DetalisFormatted
               title="Item Name"
               detail={selectedAsset.itemName || "N/A"}
@@ -399,45 +406,60 @@ const Inventory = () => {
               detail={selectedAsset.department?.name || "N/A"}
             />
             <DetalisFormatted
+              title="Date"
+              detail={humanDate(selectedAsset.date)}
+            />
+            <br />
+            <div className="font-bold">Inventory Units</div>
+            <DetalisFormatted
               title="Opening Units"
               detail={selectedAsset.openingInventoryUnits ?? "N/A"}
-            />
-            <DetalisFormatted
-              title="Opening Value (INR)"
-              detail={`INR ${selectedAsset.openingInventoryValue ?? "N/A"}`}
             />
             <DetalisFormatted
               title="New Purchase Units"
               detail={selectedAsset.newPurchaseUnits ?? "N/A"}
             />
             <DetalisFormatted
-              title="New Purchase Value"
-              detail={`INR ${selectedAsset.newPurchaseInventoryValue ?? "N/A"}`}
-            />
-            <DetalisFormatted
               title="Closing Units"
               detail={selectedAsset.closingInventoryUnits ?? "N/A"}
             />
+            <br />
+            <div className="font-bold">Inventory Value</div>
             <DetalisFormatted
-              title="Date"
-              detail={humanDate(selectedAsset.date)}
+              title="Opening Value (INR)"
+              detail={`INR ${
+                inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
+              }`}
             />
+
             <DetalisFormatted
-              title="Brand"
-              detail={selectedAsset.brand || "N/A"}
+              title="New Purchase Value"
+              detail={`INR ${
+                inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
+              }`}
             />
             <DetalisFormatted
               title="Price"
-              detail={`INR ${selectedAsset.price ?? "N/A"}`}
-            />
-            <DetalisFormatted
-              title="Quantity"
-              detail={selectedAsset.quantity ?? "N/A"}
+              detail={`INR ${
+                inrFormat(selectedAsset.newPurchasePerUnitPrice) ?? "N/A"
+              }`}
             />
             <DetalisFormatted
               title="Purchase Date"
               detail={humanDate(selectedAsset.purchaseDate)}
             />
+            <br />
+            <div className="font-bold">Additional Information</div>
+            <DetalisFormatted
+              title="Brand"
+              detail={selectedAsset.brand || "N/A"}
+            />
+
+            <DetalisFormatted
+              title="Quantity"
+              detail={selectedAsset.quantity ?? "N/A"}
+            />
+
             <DetalisFormatted
               title="Warranty (Months)"
               detail={selectedAsset.warranty ?? "N/A"}

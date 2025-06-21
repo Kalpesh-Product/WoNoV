@@ -82,7 +82,7 @@ const AdminSops = () => {
       <div>
               <WidgetSection border title="SOPs Data">
           <AgTable
-            data={sopsUploadData}
+            data={[]}
             columns={sopsUploadDataColumns}
             search={true}
           />

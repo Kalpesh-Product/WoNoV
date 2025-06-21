@@ -196,6 +196,9 @@ const TeamMembersSchedule = () => {
         return response.data;
       },
     });
+  useEffect(() => {
+    setMultipleRanges([]);
+  }, [watchedUnitId]);
 
   useEffect(() => {
     if (!unitSchedule || !unitSchedule.length) return;
@@ -390,9 +393,6 @@ const TeamMembersSchedule = () => {
     },
   ];
 
-  useEffect(() => {
-    console.log("Multiple : ", multipleRanges);
-  }, [multipleRanges]);
 
   //---------------------------------------Event Handlers------------------------------//
 
