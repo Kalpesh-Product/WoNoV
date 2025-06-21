@@ -11,18 +11,12 @@ const addNewHouseKeepingMember = async (req, res, next) => {
         .json({ message: "Please provide the valid details" });
     }
 
-    const adminDepartment = await Department.findOne({
-      name: "6798bae6e469e809084e24a4",
-    })
-      .lean()
-      .exec();
-
     const newHouseKeepingStaff = new HouseKeepingStaff({
       name,
       gender,
       manager,
       unit,
-      department: adminDepartment._id,
+      department: "6798bae6e469e809084e24a4",
     });
 
     const savedHouseKeepingStaff = await newHouseKeepingStaff.save();
