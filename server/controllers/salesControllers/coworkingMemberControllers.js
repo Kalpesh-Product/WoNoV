@@ -23,9 +23,10 @@ const createMember = async (req, res, next) => {
       emergencyNo,
       biometricStatus,
       client,
+      credits,
     } = req.body;
 
-    if (!name || !email || !dob || !phone || !client) {
+    if (!name || !email || !dob || !phone || !client || !credits) {
       throw new CustomError(
         "Missing required fields",
         logPath,
@@ -66,6 +67,7 @@ const createMember = async (req, res, next) => {
       biometricStatus,
       client,
       company,
+      credits,
     });
 
     const savedMember = await newMember.save();
