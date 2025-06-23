@@ -7,175 +7,7 @@ const { PDFDocument } = require("pdf-lib");
 const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
 const Payslip = require("../../models/Payslip");
 const Company = require("../../models/hr/Company");
-
-// const generatePayroll = async (req, res, next) => {
-//   const logPath = "hr/HrLog";
-//   const logAction = "Generate Payroll";
-//   const logSourceKey = "payroll";
-//   const { user, ip, company } = req;
-//   try {
-//     const { totalSalary, reimbursment } = req.body;
-//     const { userId } = req.params;
-//     const file = req.file;
-
-//     if (!totalSalary || !userId) {
-//       throw new CustomError(
-//         "Missing required fields",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     if (!req.file) {
-//       throw new CustomError(
-//         "Payslip required",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     if (!mongoose.Types.ObjectId.isValid(userId)) {
-//       throw new CustomError(
-//         "Invalid user ID",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     const foundUser = await User.findOne({ _id: userId }).lean().exec();
-//     if (!foundUser) {
-//       throw new CustomError(
-//         "No such user found",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     const foundCompany = await Company.findById({ _id: company }).lean().exec();
-
-//     if (!foundCompany) {
-//       throw new CustomError(
-//         "Company not found",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     //Upload payslip
-//     const allowedMimeTypes = [
-//       "application/pdf",
-//       "application/msword",
-//       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-//     ];
-
-//     if (!allowedMimeTypes.includes(file.mimetype)) {
-//       throw new CustomError(
-//         "Invalid file type",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     let processedBuffer = file.buffer;
-//     const originalFilename = file.originalname;
-
-//     if (file.mimetype === "application/pdf") {
-//       const pdfDoc = await PDFDocument.load(file.buffer);
-//       pdfDoc.setTitle(originalFilename.split(".")[0] || "Untitled");
-//       processedBuffer = await pdfDoc.save();
-//     }
-
-//     const response = await handleDocumentUpload(
-//       processedBuffer,
-//       `${foundCompany.companyName}/payrolls/${foundUser.empId}`,
-//       originalFilename
-//     );
-
-//     if (!response.public_id) {
-//       throw new CustomError(
-//         "Failed to upload payslip",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     const payslip = {
-//       name: originalFilename,
-//       link: response.secure_url,
-//       id: response.public_id,
-//     };
-
-//     const employeePayslips = await Payslip({ employee: userId });
-
-//     const payslips = employeePayslips.payslips || [];
-
-//     payslips.push(payslip);
-//     const newPayslip = new Payslip({
-//       employee: userId,
-//       payslips,
-//     });
-
-//     const savedPayslip = await newPayslip.save();
-
-//     if (!savedPayslip) {
-//       throw new CustomError(
-//         "Failed to save payslip",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     const newPayroll = new Payroll({
-//       employee: userId,
-//       reimbursment: reimbursment || 0,
-//       totalSalary,
-//       payslip: savedPayslip._id,
-//       status: "Completed",
-//     });
-
-//     const savedPayroll = await newPayroll.save();
-
-//     if (!savedPayroll) {
-//       throw new CustomError(
-//         "Failed to save payroll",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     await createLog({
-//       path: logPath,
-//       action: logAction,
-//       remarks: "Payroll generated successfully",
-//       status: "Success",
-//       user: user,
-//       ip: ip,
-//       company: company,
-//       sourceKey: logSourceKey,
-//       sourceId: savedPayroll._id,
-//       changes: newPayroll,
-//     });
-
-//     return res.status(200).json({ message: "Payroll generated successfully" });
-//   } catch (error) {
-//     if (error instanceof CustomError) {
-//       next(error);
-//     } else {
-//       next(
-//         new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-//       );
-//     }
-//   }
-// };
+const { startOfMonth, isSameMonth, parseISO } = require("date-fns");
 
 const generatePayroll = async (req, res, next) => {
   const logPath = "hr/HrLog";
@@ -379,4 +211,82 @@ const generatePayroll = async (req, res, next) => {
   }
 };
 
-module.exports = { generatePayroll };
+const fetchPayrolls = async (req, res, next) => {
+  try {
+    const currentMonthStart = startOfMonth(new Date());
+
+    // Fetch all users
+    const allUsers = await User.find({})
+      .populate("departments")
+      .populate("role")
+      .select("firstName lastName empId email departments role")
+      .lean();
+
+    // Fetch all payrolls
+    const allPayrolls = await Payroll.find({}).populate("payslip").lean();
+
+    const payrollMap = {};
+
+    for (const payroll of allPayrolls) {
+      const empId = payroll.employee.toString();
+
+      if (!payrollMap[empId]) {
+        payrollMap[empId] = [];
+      }
+
+      payrollMap[empId].push({
+        month: payroll.month,
+        totalSalary: payroll.salary,
+        reimbursment: payroll.reimbursment,
+        deductions: payroll.deductions,
+        status: payroll.status || "Completed",
+        payslip: payroll.payslip
+          ? {
+              payslipName: payroll.payslip.payslipName,
+              payslipLink: payroll.payslip.payslipLink,
+              earnings: payroll.payslip.earnings,
+              createdAt: payroll.payslip.createdAt,
+            }
+          : null,
+      });
+    }
+
+    // Build response per user
+    const transformedResponse = allUsers.map((user) => {
+      const userId = user._id.toString();
+      const userPayrolls = payrollMap[userId] || [];
+
+      // Check if current month already exists
+      const hasCurrentMonth = userPayrolls.some((entry) =>
+        isSameMonth(startOfMonth(new Date(entry.month)), currentMonthStart)
+      );
+
+      if (!hasCurrentMonth) {
+        userPayrolls.push({
+          month: currentMonthStart,
+          totalSalary: 0,
+          reimbursment: 0,
+          deductions: [],
+          status: "Pending",
+          payslip: null,
+        });
+      }
+
+      return {
+        employeeId: userId,
+        name: `${user.firstName} ${user.lastName}`,
+        empId: user.empId,
+        email: user.email,
+        departments: user.departments,
+        role: user.role,
+        months: userPayrolls,
+      };
+    });
+
+    res.status(200).json(transformedResponse);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { generatePayroll, fetchPayrolls };
