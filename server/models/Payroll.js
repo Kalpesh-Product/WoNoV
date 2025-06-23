@@ -1,19 +1,44 @@
 const mongoose = require("mongoose");
 const payrollSchema = new mongoose.Schema(
   {
-    empoloyee: {
+    employee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
+      required: true,
     },
-    totalSalary: {
+    month: {
+      type: Date,
+      required: true,
+    },
+    //calculated salary
+    salary: {
       type: Number,
       required: true,
     },
+    deductions: [
+      {
+        name: {
+          type: String,
+        },
+        amount: {
+          type: Number,
+        },
+      },
+    ],
     reimbursment: Number,
+    payslip: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payslip",
+      required: true,
+    },
     status: {
       type: String,
       enum: ["Completed", "Pending", "Rejected"],
       default: "Pending",
+    },
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
     },
   },
   { timestamps: true }

@@ -6,24 +6,36 @@ const payslipSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    month: {
+      type: Date,
+      // required: true,
+    },
     earnings: {
       basicPay: {
         type: Number,
-        required: true,
-      },
-      month: {
-        type: Date,
-        required: true,
+        // required: true,
       },
       hra: {
         type: Number,
-        required: true,
+        // required: true,
       },
-      deductions: Number,
       netPay: {
         type: Number,
-        required: true,
+        // required: true,
       },
+    },
+    payslipName: {
+      type: String,
+    },
+    payslipLink: {
+      type: String,
+    },
+    payslipId: {
+      type: String,
+    },
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
     },
   },
   {
