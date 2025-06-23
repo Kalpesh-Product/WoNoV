@@ -167,26 +167,26 @@ const requestLeave = async (req, res, next) => {
 
     // Success log with details of the leave request
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Leave request sent successfully",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: newLeave._id,
-      changes: {
-        fromDate,
-        toDate,
-        leaveType: updatedLeaveType ? updatedLeaveType : leaveType,
-        leavePeriod,
-        hours,
-        description,
-        requester: foundUser._id,
-      },
-    });
+    // await createLog({
+    //   path: logPath,
+    //   action: logAction,
+    //   remarks: "Leave request sent successfully",
+    //   status: "Success",
+    //   user,
+    //   ip,
+    //   company,
+    //   sourceKey: logSourceKey,
+    //   sourceId: newLeave._id,
+    //   changes: {
+    //     fromDate,
+    //     toDate,
+    //     leaveType: updatedLeaveType ? updatedLeaveType : leaveType,
+    //     leavePeriod,
+    //     hours,
+    //     description,
+    //     requester: foundUser._id,
+    //   },
+    // });
 
     return res.status(201).json({ message: "Leave request sent" });
   } catch (error) {
@@ -333,21 +333,21 @@ const approveLeave = async (req, res, next) => {
       );
     }
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Leave approved successfully",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: leaveId,
-      changes: {
-        status: "Approved",
-        approvedBy: user,
-      },
-    });
+    // await createLog({
+    //   path: logPath,
+    //   action: logAction,
+    //   remarks: "Leave approved successfully",
+    //   status: "Success",
+    //   user,
+    //   ip,
+    //   company,
+    //   sourceKey: logSourceKey,
+    //   sourceId: leaveId,
+    //   changes: {
+    //     status: "Approved",
+    //     approvedBy: user,
+    //   },
+    // });
 
     return res.status(200).json({ message: "Leave request Approved" });
   } catch (error) {
@@ -397,21 +397,21 @@ const rejectLeave = async (req, res, next) => {
       );
     }
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Leave rejected successfully",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: leaveId,
-      changes: {
-        status: "Rejected",
-        approvedBy: user,
-      },
-    });
+    // await createLog({
+    //   path: logPath,
+    //   action: logAction,
+    //   remarks: "Leave rejected successfully",
+    //   status: "Success",
+    //   user,
+    //   ip,
+    //   company,
+    //   sourceKey: logSourceKey,
+    //   sourceId: leaveId,
+    //   changes: {
+    //     status: "Rejected",
+    //     approvedBy: user,
+    //   },
+    // });
 
     return res.status(200).json({ message: "Leave request rejected" });
   } catch (error) {
