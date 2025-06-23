@@ -55,20 +55,6 @@ const requestLeave = async (req, res, next) => {
       );
     }
 
-    // Ensure the leave starts in the future
-    if (
-      leaveType === "Privileged" &&
-      (startDate.getDate() < currDate.getDate() ||
-        endDate.getDate() < currDate.getDate())
-    ) {
-      throw new CustomError(
-        "Please select future date",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
     //Check the leave period and no. of leaves taken are correct
     // const isSameDay = endDate.getDate() === startDate.getDate();
 
@@ -321,16 +307,12 @@ const approveLeave = async (req, res, next) => {
     const leaveId = req.params.id;
 
     if (!mongoose.Types.ObjectId.isValid(leaveId)) {
-      await createLog(
-        path,
-        action,
+      throw new CustomError(
         "Invalid Leave Id provided",
-        "Failed",
-        user,
-        ip,
-        company
+        logPath,
+        logAction,
+        logSourceKey
       );
-      return res.status(400).json({ message: "Invalid Leave Id provided" });
     }
 
     const updatedLeave = await Leave.findOneAndUpdate(
@@ -343,37 +325,31 @@ const approveLeave = async (req, res, next) => {
     );
 
     if (!updatedLeave) {
-      await createLog(
-        path,
-        action,
-        "Couldn't approve the leave request",
-        "Failed",
-        user,
-        ip,
-        company
+      throw new CustomError(
+        "Failed to approve the leave request",
+        logPath,
+        logAction,
+        logSourceKey
       );
-      return res
-        .status(400)
-        .json({ message: "Couldn't approve the leave request" });
     }
 
-    // Success log
-    await createLog(
-      path,
-      action,
-      "Leave approved successfully",
-      "Success",
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Leave approved successfully",
+      status: "Success",
       user,
       ip,
       company,
-      updatedLeave._id,
-      {
+      sourceKey: logSourceKey,
+      sourceId: leaveId,
+      changes: {
         status: "Approved",
         approvedBy: user,
-      }
-    );
+      },
+    });
 
-    return res.status(200).json({ message: "Leave Approved" });
+    return res.status(200).json({ message: "Leave request Approved" });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);
@@ -395,16 +371,12 @@ const rejectLeave = async (req, res, next) => {
     const leaveId = req.params.id;
 
     if (!mongoose.Types.ObjectId.isValid(leaveId)) {
-      await createLog(
-        path,
-        action,
+      throw new CustomError(
         "Invalid Leave Id provided",
-        "Failed",
-        user,
-        ip,
-        company
+        logPath,
+        logAction,
+        logSourceKey
       );
-      return res.status(400).json({ message: "Invalid Leave Id provided" });
     }
 
     const updatedLeave = await Leave.findOneAndUpdate(
@@ -417,46 +389,31 @@ const rejectLeave = async (req, res, next) => {
     );
 
     if (!updatedLeave) {
-      await createLog(
-        path,
-        action,
-        "No such leave exists",
-        "Failed",
-        user,
-        ip,
-        company
+      throw new CustomError(
+        "Failed to reject leave request",
+        logPath,
+        logAction,
+        logSourceKey
       );
-      return res.status(400).json({ message: "No such leave exists" });
     }
 
-    await createLog(
-      path,
-      action,
-      "Leave rejected successfully",
-      "Success",
-      user,
-      ip,
-      company,
-      updatedLeave._id,
-      {
-        status: "Rejected",
-        rejectedBy: user,
-      }
-    );
     await createLog({
       path: logPath,
       action: logAction,
       remarks: "Leave rejected successfully",
       status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
+      user,
+      ip,
+      company,
       sourceKey: logSourceKey,
-      sourceId: updatedLeave._id,
-      changes: { status: "Rejected", rejectedBy: user },
+      sourceId: leaveId,
+      changes: {
+        status: "Rejected",
+        approvedBy: user,
+      },
     });
 
-    return res.status(200).json({ message: "Leave rejected" });
+    return res.status(200).json({ message: "Leave request rejected" });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);

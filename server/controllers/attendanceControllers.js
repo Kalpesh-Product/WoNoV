@@ -589,6 +589,132 @@ const correctAttendance = async (req, res, next) => {
   }
 };
 
+const approveCorrectionRequest = async (req, res, next) => {
+  const logPath = "hr/hrLog";
+  const logAction = "Approve Correction Request";
+  const logSourceKey = "attendance";
+  const { user, ip, company } = req;
+  try {
+    const { attendanceId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(attendanceId)) {
+      throw new CustomError(
+        "Invalid attendance Id provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const updatedAttendance = await Attendance.findOneAndUpdate(
+      { _id: attendanceId },
+      {
+        $set: { status: "Approved", approvedBy: user },
+        $unset: { rejectedBy: "" },
+      },
+      { new: true }
+    );
+
+    if (!updatedAttendance) {
+      throw new CustomError(
+        "Failed to approve the correction request",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Correction request approved successfully",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: attendanceId,
+      changes: {
+        status: "Approved",
+        approvedBy: user,
+      },
+    });
+
+    return res.status(200).json({ message: "Correction request Approved" });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
+  }
+};
+
+const rejectCorrectionRequest = async (req, res, next) => {
+  const logPath = "hr/hrLog";
+  const logAction = "Reject Correction Request";
+  const logSourceKey = "attendance";
+  const { user, ip, company } = req;
+  try {
+    const { attendanceId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(attendanceId)) {
+      throw new CustomError(
+        "Invalid attendance Id provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const updatedAttendance = await Attendance.findOneAndUpdate(
+      { _id: attendanceId },
+      {
+        $set: { status: "Rejected", rejectedBy: user },
+        $unset: { approvedBy: "" },
+      },
+      { new: true }
+    );
+
+    if (!updatedAttendance) {
+      throw new CustomError(
+        "Failed to reject the correction request",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Correction request rejected successfully",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: attendanceId,
+      changes: {
+        status: "Rejected",
+        approvedBy: user,
+      },
+    });
+
+    return res.status(200).json({ message: "Correction request Rejected" });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
+  }
+};
+
 const bulkInsertAttendance = async (req, res, next) => {
   try {
     if (!req.file) {
@@ -678,5 +804,7 @@ module.exports = {
   getAllAttendance,
   getAttendance,
   correctAttendance,
+  approveCorrectionRequest,
+  rejectCorrectionRequest,
   bulkInsertAttendance,
 };
