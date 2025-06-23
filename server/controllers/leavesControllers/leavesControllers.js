@@ -328,16 +328,16 @@ const approveLeave = async (req, res, next) => {
     const leaveId = req.params.id;
 
     if (!mongoose.Types.ObjectId.isValid(leaveId)) {
-      await createLog(
-        path,
-        action,
-        "Invalid Leave Id provided",
-        "Failed",
-        user,
-        ip,
-        company
-      );
-      return res.status(400).json({ message: "Invalid Leave Id provided" });
+      // await createLog(
+      //   path,
+      //   action,
+      //   "Invalid Leave Id provided",
+      //   "Failed",
+      //   user,
+      //   ip,
+      //   company
+      // );
+      // return res.status(400).json({ message: "Invalid Leave Id provided" });
     }
 
     const updatedLeave = await Leave.findOneAndUpdate(
@@ -349,40 +349,40 @@ const approveLeave = async (req, res, next) => {
       { new: true }
     );
 
-    if (!updatedLeave) {
-      await createLog(
-        // path,
-        // action,
-        logPath,
-        logAction,
-        "Couldn't approve the leave request",
-        "Failed",
-        user,
-        ip,
-        company
-      );
-      return res
-        .status(400)
-        .json({ message: "Couldn't approve the leave request" });
-    }
+    // if (!updatedLeave) {
+    //   await createLog(
+    //     // path,
+    //     // action,
+    //     logPath,
+    //     logAction,
+    //     "Couldn't approve the leave request",
+    //     "Failed",
+    //     user,
+    //     ip,
+    //     company
+    //   );
+    //   return res
+    //     .status(400)
+    //     .json({ message: "Couldn't approve the leave request" });
+    // }
 
     // Success log
-    await createLog(
-      // path,
-      // action,
-      logPath,
-      logAction,
-      "Leave approved successfully",
-      "Success",
-      user,
-      ip,
-      company,
-      updatedLeave._id,
-      {
-        status: "Approved",
-        approvedBy: user,
-      }
-    );
+    // await createLog(
+    //   // path,
+    //   // action,
+    //   logPath,
+    //   logAction,
+    //   "Leave approved successfully",
+    //   "Success",
+    //   user,
+    //   ip,
+    //   company,
+    //   updatedLeave._id,
+    //   {
+    //     status: "Approved",
+    //     approvedBy: user,
+    //   }
+    // );
 
     return res.status(200).json({ message: "Leave Approved" });
   } catch (error) {
@@ -405,20 +405,20 @@ const rejectLeave = async (req, res, next) => {
   try {
     const leaveId = req.params.id;
 
-    if (!mongoose.Types.ObjectId.isValid(leaveId)) {
-      await createLog(
-        // path,
-        // action,
-        logPath,
-        logAction,
-        "Invalid Leave Id provided",
-        "Failed",
-        user,
-        ip,
-        company
-      );
-      return res.status(400).json({ message: "Invalid Leave Id provided" });
-    }
+    // if (!mongoose.Types.ObjectId.isValid(leaveId)) {
+    //   await createLog(
+    //     // path,
+    //     // action,
+    //     logPath,
+    //     logAction,
+    //     "Invalid Leave Id provided",
+    //     "Failed",
+    //     user,
+    //     ip,
+    //     company
+    //   );
+    //   return res.status(400).json({ message: "Invalid Leave Id provided" });
+    // }
 
     const updatedLeave = await Leave.findOneAndUpdate(
       { _id: leaveId },
@@ -429,49 +429,49 @@ const rejectLeave = async (req, res, next) => {
       { new: true }
     );
 
-    if (!updatedLeave) {
-      await createLog(
-        // path,
-        // action,
-        logPath,
-        logAction,
-        "No such leave exists",
-        "Failed",
-        user,
-        ip,
-        company
-      );
-      return res.status(400).json({ message: "No such leave exists" });
-    }
+    // if (!updatedLeave) {
+    //   await createLog(
+    //     // path,
+    //     // action,
+    //     logPath,
+    //     logAction,
+    //     "No such leave exists",
+    //     "Failed",
+    //     user,
+    //     ip,
+    //     company
+    //   );
+    //   return res.status(400).json({ message: "No such leave exists" });
+    // }
 
-    await createLog(
-      // path,
-      // action,
-      logPath,
-      logAction,
-      "Leave rejected successfully",
-      "Success",
-      user,
-      ip,
-      company,
-      updatedLeave._id,
-      {
-        status: "Rejected",
-        rejectedBy: user,
-      }
-    );
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Leave rejected successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: updatedLeave._id,
-      changes: { status: "Rejected", rejectedBy: user },
-    });
+    // await createLog(
+    //   // path,
+    //   // action,
+    //   logPath,
+    //   logAction,
+    //   "Leave rejected successfully",
+    //   "Success",
+    //   user,
+    //   ip,
+    //   company,
+    //   updatedLeave._id,
+    //   {
+    //     status: "Rejected",
+    //     rejectedBy: user,
+    //   }
+    // );
+    // await createLog({
+    //   path: logPath,
+    //   action: logAction,
+    //   remarks: "Leave rejected successfully",
+    //   status: "Success",
+    //   user: user,
+    //   ip: ip,
+    //   company: company,
+    //   sourceKey: logSourceKey,
+    //   sourceId: updatedLeave._id,
+    //   changes: { status: "Rejected", rejectedBy: user },
+    // });
 
     return res.status(200).json({ message: "Leave rejected" });
   } catch (error) {
