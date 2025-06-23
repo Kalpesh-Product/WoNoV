@@ -28,14 +28,19 @@ const HrPayroll = () => {
   const [selectedVisitor, setSelectedVisitor] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
 
-  const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
-    queryKey: ["visitors"],
+  const { data: employees, isLoading } = useQuery({
+    queryKey: ["employees"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/visitors/fetch-visitors");
-        return response.data;
+        const response = await axios.get("/api/users/fetch-users");
+        const filteredData = response.data.filter(
+          (employee) => employee.isActive
+        );
+        return filteredData;
       } catch (error) {
-        throw new Error(error.response.data.message);
+        throw new Error(
+          error.response?.data?.message || "Failed to fetch employees"
+        );
       }
     },
   });
@@ -69,8 +74,8 @@ const HrPayroll = () => {
   };
 
   const payrollColumn = [
-    { field: "id", headerName: "Sr No" },
-    { field: "payrollId", headerName: "Employee ID" },
+    { field: "srNo", headerName: "Sr No", width: 100 },
+    { field: "empId", headerName: "Employee ID" },
     {
       field: "employeeName",
       headerName: "Employee Name",
@@ -85,21 +90,23 @@ const HrPayroll = () => {
             navigate(
               `/app/dashboard/HR-dashboard/finance/payroll/view-payroll/${params.data.payrollId}`
             )
-          }>
-          {params.value}
+          }
+        >
+          {params.data.firstName || "Null"} {params.data.lastName || "Nill"}
         </span>
       ),
     },
     { field: "email", headerName: "Employee Email" },
-    { field: "department", headerName: "Department" },
+    { field: "departmentName", headerName: "Department" },
     // { field: "date", headerName: "Date" },
     // { field: "role", headerName: "Role" },
     // { field: "time", headerName: "Time" },
     { field: "totalSalary", headerName: "Total Salary (INR)" },
     // { field: "reimbursment", headerName: "Total Salary" },
     {
-      field: "status",
+      field: "isActive",
       headerName: "Status",
+      pinned: "right",
       cellRenderer: (params) => {
         const statusColorMap = {
           Completed: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
@@ -136,18 +143,19 @@ const HrPayroll = () => {
     //     </>
     //   ),
     // },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <div className="p-2">
-          <PrimaryButton
-            title={"View"}
-            handleSubmit={() => handleDetailsClick(params.data)}
-          />
-        </div>
-      ),
-    },
+    // {
+    //   field: "actions",
+    //   headerName: "Actions",
+
+    //   cellRenderer: (params) => (
+    //     <div className="p-2">
+    //       <PrimaryButton
+    //         title={"View"}
+    //         handleSubmit={() => handleDetailsClick(params.data)}
+    //       />
+    //     </div>
+    //   ),
+    // },
   ];
   const handleDetailsClick = (asset) => {
     setSelectedVisitor(asset);
@@ -175,106 +183,38 @@ const HrPayroll = () => {
     }
   };
 
-  // const rows = [
-  //   {
-  //     id: 1,
-  //     payrollId: "PAY001",
-  //     employeeName: "Aiwinraj KS",
-  //     role: "Software Engineer",
-  //     date: "2025-01-01",
-  //     time: "10:00 AM",
-  //     totalSalary: " 45,000",
-  //     reimbursment: 5000,
-  //     status: "Completed",
-  //     email: "aiwinraj.wono@gmail.com",
-  //     department: "Tech",
-  //   },
-  //   {
-  //     id: 2,
-  //     payrollId: "PAY002",
-  //     employeeName: "Kalpesh Naik",
-  //     role: "Project Manager",
-  //     date: "2025-01-15",
-  //     time: "11:00 AM",
-  //     totalSalary: " 95,000",
-  //     reimbursment: 8000,
-  //     status: "Pending",
-  //     email: "kalpesh@biznest.co.in",
-  //     department: "Tech",
-  //   },
-  //   {
-  //     id: 3,
-  //     payrollId: "PAY003",
-  //     employeeName: "Sankalp Kalangutkar",
-  //     role: "HR Manager",
-  //     date: "2025-02-01",
-  //     time: "09:30 AM",
-  //     totalSalary: " 45,000",
-  //     reimbursment: 7000,
-  //     status: "Completed",
-  //     email: "sankalp.wono@gmail.com",
-  //     department: "Tech",
-  //   },
-  //   {
-  //     id: 4,
-  //     payrollId: "PAY004",
-  //     employeeName: "Allan Silveira",
-  //     role: "QA Analyst",
-  //     date: "2025-02-15",
-  //     time: "02:00 PM",
-  //     totalSalary: " 45,000",
-  //     reimbursment: 4500,
-  //     status: "Pending",
-  //     email: "allan.wono@gmail.com",
-  //     department: "Tech",
-  //   },
-  //   // {
-  //   //   id: 5,
-  //   //   payrollId: "PAY005",
-  //   //   employeeName: "Anushri",
-  //   //   role: "Business Analyst",
-  //   //   date: "2025-03-01",
-  //   //   time: "01:30 PM",
-  //   //   totalSalary: 95000,
-  //   //   reimbursment: 6000,
-  //   //   status: "Completed",
-  //   // },
-  //   {
-  //     id: 5,
-  //     payrollId: "PAY007",
-  //     employeeName: "Muskan Dodmani",
-  //     role: "Business Analyst",
-  //     date: "2025-03-01",
-  //     time: "01:30 PM",
-  //     totalSalary: " 45,000",
-  //     reimbursment: 6000,
-  //     status: "Completed",
-  //     email: "muskan.wono@gmail.com",
-  //     department: "Tech",
-  //   },
-  // ];
-
+  const tableData = isLoading
+    ? []
+    : employees.map((item) => ({
+        ...item,
+        id: item._id,
+        departmentName: item.departments?.map((item) => item.name),
+        departmentId: item.departments?.map((item) => item._id[0]),
+      }));
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
         <div>
           <AgTable
             search={true}
+            checkAll
+            enableCheckbox
             searchColumn={"Employee Name"}
             tableTitle={""}
-            data={[]}
+            data={tableData}
             columns={payrollColumn}
           />
           <MuiModal
             open={isModalOpen}
             onClose={() => setIsModalOpen(false)}
-            title={"Employee Details"}>
+            title={"Employee Details"}
+          >
             <div className="flex flex-col gap-4">
               <div className="flex justify-end">
                 <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
               </div>
               <form>
-                {!isVisitorsData ? (
+                {!isLoading ? (
                   <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* First Name */}
                     {isEditing ? (
