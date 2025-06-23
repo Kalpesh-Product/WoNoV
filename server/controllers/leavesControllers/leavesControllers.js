@@ -55,20 +55,6 @@ const requestLeave = async (req, res, next) => {
       );
     }
 
-    // Ensure the leave starts in the future
-    if (
-      leaveType === "Privileged" &&
-      (startDate.getDate() < currDate.getDate() ||
-        endDate.getDate() < currDate.getDate())
-    ) {
-      throw new CustomError(
-        "Please select future date",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
     //Check the leave period and no. of leaves taken are correct
     // const isSameDay = endDate.getDate() === startDate.getDate();
 
