@@ -127,141 +127,60 @@ const Leaves = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: (params) => (
-        <div className="flex items-center gap-2">
-          {/* <div
-            role="button"
-            // onClick={() => handleViewTicket(params.data)}
-            className="p-2 rounded-full hover:bg-borderGray cursor-pointer">
-            <MdOutlineRemoveRedEye />
-          </div> */}
-          {/* <ThreeDotMenu
-            rowId={params.data.id}
-            menuItems={[
-              // Conditionally add "Accept"
-              ...(auth.user.role.length > 0 &&
-                (auth.user.role[0].roleTitle !== "Master Admin" &&
-                auth.user.role[0].roleTitle !== "Super Admin"
+      cellRenderer: (params) => {
+        // ✅ Do not render ThreeDotMenu if status is Approved or Rejected
+        if (["Approved", "Rejected"].includes(params.data.status)) return null;
+
+        return (
+          <div className="flex items-center gap-2">
+            <ThreeDotMenu
+              rowId={params.data.id}
+              menuItems={[
+                ...(auth.user.role.length > 0 &&
+                (auth.user.role[0].roleTitle === "Master Admin" ||
+                  auth.user.role[0].roleTitle === "Super Admin" ||
+                  auth.user.role[0].roleTitle.endsWith("Admin"))
                   ? [
-                      {
-                        label: "Accept",
-                        // onClick: () => acceptMutate(params.data),
-                        isLoading: isLoading,
-                      },
+                      ...(params.data.status === "Rejected"
+                        ? [
+                            {
+                              label: "Approve",
+                              onClick: () => approveLeave(params.data._id),
+                              isLoading: isApproving,
+                            },
+                          ]
+                        : []),
+                      ...(params.data.status === "Approved"
+                        ? [
+                            {
+                              label: "Reject",
+                              onClick: () => rejectLeave(params.data._id),
+                              isLoading: isRejecting,
+                            },
+                          ]
+                        : []),
+                      ...(params.data.status !== "Approved" &&
+                      params.data.status !== "Rejected"
+                        ? [
+                            {
+                              label: "Approve",
+                              onClick: () => approveLeave(params.data._id),
+                              isLoading: isApproving,
+                            },
+                            {
+                              label: "Reject",
+                              onClick: () => rejectLeave(params.data._id),
+                              isLoading: isRejecting,
+                            },
+                          ]
+                        : []),
                     ]
-                  : [])),
-              // {
-              //   label: "Accept",
-              //   onClick: () => acceptMutate(params.data),
-              //   isLoading: isLoading,
-              // },
-              // Conditionally add "Assign"
-              ...(auth.user.role.length > 0 &&
-              (auth.user.role[0].roleTitle === "Master Admin" ||
-                auth.user.role[0].roleTitle === "Super Admin" ||
-                auth.user.role[0].roleTitle.endsWith("Admin"))
-                ? [
-                    // {
-                    //   label: "Assign",
-                    //   // onClick: () => handleOpenAssignModal(params.data.id),
-                    // },
-                    {
-                      label: "Reject",
-                      // onClick: () => handleRejectClick(params.data), // ✅ open modal
-                    },
-                  ]
-                : []),
-            ]}
-          /> */}
-
-          {/* <ThreeDotMenu
-            rowId={params.data.id}
-            menuItems={[
-              // ...(auth.user.role.length > 0 &&
-              //   (auth.user.role[0].roleTitle !== "Master Admin" &&
-              //   auth.user.role[0].roleTitle !== "Super Admin"
-              //     ? [
-              //         {
-              //           label: "Approve",
-              //           onClick: () => approveLeave(params.data._id),
-              //           isLoading: isApproving,
-              //         },
-              //       ]
-              //     : [])),
-              ...(auth.user.role.length > 0 &&
-              (auth.user.role[0].roleTitle === "Master Admin" ||
-                auth.user.role[0].roleTitle === "Super Admin" ||
-                auth.user.role[0].roleTitle.endsWith("Admin"))
-                ? [
-                    {
-                      label: "Approve",
-                      onClick: () => approveLeave(params.data._id),
-                      isLoading: isApproving,
-                    },
-                  ]
-                : []),
-              ...(auth.user.role.length > 0 &&
-              (auth.user.role[0].roleTitle === "Master Admin" ||
-                auth.user.role[0].roleTitle === "Super Admin" ||
-                auth.user.role[0].roleTitle.endsWith("Admin"))
-                ? [
-                    {
-                      label: "Reject",
-                      onClick: () => rejectLeave(params.data._id),
-                      isLoading: isRejecting,
-                    },
-                  ]
-                : []),
-            ]}
-          /> */}
-
-          <ThreeDotMenu
-            rowId={params.data.id}
-            menuItems={[
-              ...(auth.user.role.length > 0 &&
-              (auth.user.role[0].roleTitle === "Master Admin" ||
-                auth.user.role[0].roleTitle === "Super Admin" ||
-                auth.user.role[0].roleTitle.endsWith("Admin"))
-                ? [
-                    ...(params.data.status === "Rejected"
-                      ? [
-                          {
-                            label: "Approve",
-                            onClick: () => approveLeave(params.data._id),
-                            isLoading: isApproving,
-                          },
-                        ]
-                      : []),
-                    ...(params.data.status === "Approved"
-                      ? [
-                          {
-                            label: "Reject",
-                            onClick: () => rejectLeave(params.data._id),
-                            isLoading: isRejecting,
-                          },
-                        ]
-                      : []),
-                    ...(params.data.status !== "Approved" &&
-                    params.data.status !== "Rejected"
-                      ? [
-                          {
-                            label: "Approve",
-                            onClick: () => approveLeave(params.data._id),
-                            isLoading: isApproving,
-                          },
-                          {
-                            label: "Reject",
-                            onClick: () => rejectLeave(params.data._id),
-                            isLoading: isRejecting,
-                          },
-                        ]
-                      : []),
-                  ]
-                : []),
-            ]}
-          />
-        </div>
-      ),
+                  : []),
+              ]}
+            />
+          </div>
+        );
+      },
     },
   ];
 
