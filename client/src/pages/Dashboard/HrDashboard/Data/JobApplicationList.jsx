@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import AgTable from "../../../../components/AgTable";
+import MonthWiseTable from "../../../../components/Tables/MonthWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import humanDate from "../../../../utils/humanDateForamt";
@@ -8,6 +8,7 @@ import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { CircularProgress } from "@mui/material";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import {inrFormat} from "../../../../utils/currencyFormat";
 
 const JobApplicationList = () => {
   const axios = useAxiosPrivate();
@@ -26,36 +27,36 @@ const JobApplicationList = () => {
   });
 
   const leavesColumn = [
-    { field: "srno", headerName: "SR No", width: 100 },
-    { field: "dateOfBirth", headerName: "Date" },
-    { field: "name", headerName: "Name" },
-    { field: "jobPosition", headerName: "Job Position" },
-    { field: "location", headerName: "Location" },
-    { field: "mobileNumber", headerName: "Mobile" },
-    { field: "email", headerName: "Email" },
+    { field: "srNo", headerName: "SR No", width: 100 },
+    { field: "finalSubmissionDate", headerName: "Submission Date" },
+    { field: "name", headerName: "Name", flex : 1 },
+    { field: "jobPosition", headerName: "Job Position", flex : 1 },
+    // { field: "location", headerName: "Location" },
+    // { field: "mobileNumber", headerName: "Mobile" },
+    // { field: "email", headerName: "Email" },
     // { field: "submissiondate", headerName: "Submit Date" },
-    {
-      field: "resumeLink",
-      headerName: "View Resume",
-      cellRenderer: (params) => {
-        const pdfPath = params.value;
+    // {
+    //   field: "resumeLink",
+    //   headerName: "View Resume",
+    //   cellRenderer: (params) => {
+    //     const pdfPath = params.value;
 
-        if (pdfPath && pdfPath !== "Resume") {
-          return (
-            <a
-              href={pdfPath}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "blue", textDecoration: "underline" }}
-            >
-              View Resume
-            </a>
-          );
-        } else {
-          return <span>-</span>;
-        }
-      },
-    },
+    //     if (pdfPath && pdfPath !== "Resume") {
+    //       return (
+    //         <a
+    //           href={pdfPath}
+    //           target="_blank"
+    //           rel="noopener noreferrer"
+    //            className="text-primary underline cursor-pointer"
+    //         >
+    //           View Resume
+    //         </a>
+    //       );
+    //     } else {
+    //       return <span>-</span>;
+    //     }
+    //   },
+    // },
 
     {
       field: "actions",
@@ -72,69 +73,6 @@ const JobApplicationList = () => {
           </span>
         </div>
       ),
-    },
-  ];
-
-  const rows = [
-    {
-      srno: "1",
-      jobposition: "Jr Network Engineer",
-      name: "vivek parte",
-      email: "vivekparte43@gmail.com",
-      dateofbirth: "20/03/2025",
-      mobilenumber: "1234523678",
-      location: "Maharashtra",
-      submissiondate: "03-01-2024",
-      SubmissionTime: "17.35.56",
-      ResumeLink: "/aiwin_resume.pdf",
-    },
-    {
-      srno: "2",
-      jobposition: "Jr Network Engineer",
-      name: "Vivek Bhartu",
-      email: "vivekparte43@gmail.com",
-      dateofbirth: "20/03/2025",
-      mobilenumber: "1234523678",
-      location: "Maharashtra",
-      submissiondate: "03-01-2024",
-      SubmissionTime: "17.35.56",
-      ResumeLink: "/aiwin_resume.pdf",
-    },
-    {
-      srno: "3",
-      jobposition: "Jr Network Engineer",
-      name: "Parth Negi",
-      email: "vivekparte43@gmail.com",
-      dateofbirth: "20/03/2025",
-      mobilenumber: "1234523678",
-      location: "Maharashtra",
-      submissiondate: "03-01-2024",
-      SubmissionTime: "17.35.56",
-      ResumeLink: "/aiwin_resume.pdf",
-    },
-    {
-      srno: "4",
-      jobposition: "Jr Network Engineer",
-      name: "karan Mehra",
-      email: "vivekparte43@gmail.com",
-      dateofbirth: "10/02/2025",
-      mobilenumber: "1234523678",
-      location: "Maharashtra",
-      submissiondate: "03-01-2024",
-      SubmissionTime: "17.35.56",
-      ResumeLink: "/aiwin_resume.pdf",
-    },
-    {
-      srno: "5",
-      jobposition: "Jr Network Engineer",
-      name: "Siddhesh Bhagat",
-      email: "vivekparte43@gmail.com",
-      dateofbirth: "08/02/2025",
-      mobilenumber: "1234523678",
-      location: "Maharashtra",
-      submissiondate: "03-01-2024",
-      SubmissionTime: "17.35.56",
-      ResumeLink: "/aiwin_resume.pdf",
     },
   ];
 
@@ -174,19 +112,27 @@ const JobApplicationList = () => {
   return (
     <PageFrame>
       <div>
-        <AgTable
+        <MonthWiseTable
+          dateColumn={"finalSubmissionDate"}
           search={true}
           searchColumn={"Job Position"}
           tableTitle={"Job Applications"}
           data={
             isJobApplicationPending
               ? []
-              : jobApplications.map((job, index) => ({
-                  ...job,
-                  srno: index + 1,
-                  dateOfBirth: humanDate(job.dateOfBirth),
-                  jobPosition: job.jobPosition == "" ? "-" : job.jobPosition,
-                }))
+              : jobApplications
+                  .slice()
+                  .sort(
+                    (a, b) =>
+                      new Date(a.finalSubmissionDate) -
+                      new Date(b.finalSubmissionDate)
+                  )
+                  .map((job) => ({
+                    ...job,
+
+                    finalSubmissionDate: job.finalSubmissionDate,
+                    jobPosition: job.jobPosition == "" ? "-" : job.jobPosition,
+                  }))
           }
           columns={leavesColumn}
         />
@@ -227,11 +173,11 @@ const JobApplicationList = () => {
 
               <DetalisFormatted
                 title="Current Monthly Salary"
-                detail={viewApplicationDetails?.currentMonthlySalary}
+                detail={inrFormat(viewApplicationDetails?.currentMonthlySalary)}
               />
               <DetalisFormatted
                 title="Expected Monthly Salary"
-                detail={viewApplicationDetails?.expectedMonthlySalary}
+                detail={inrFormat(viewApplicationDetails?.expectedMonthlySalary)}
               />
               <DetalisFormatted
                 title="Joining Time (Days)"
@@ -255,6 +201,7 @@ const JobApplicationList = () => {
                   ) : (
                     <div>
                       <a
+                        className="text-primary underline cursor-pointer"
                         href={formatURL(
                           viewApplicationDetails.linkedInProfileUrl
                         )}
@@ -295,6 +242,7 @@ const JobApplicationList = () => {
                   ) : (
                     <div>
                       <a
+                       className="text-primary underline cursor-pointer"
                         href={formatURL(viewApplicationDetails.resumeLink)}
                         target="_blank"
                         rel="noopener noreferrer"

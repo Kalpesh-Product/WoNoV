@@ -32,6 +32,7 @@ const HrDashboard = () => {
   const dispatch = useDispatch();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
+  console.log("tasks raw : ", tasksRawData);
 
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -259,12 +260,54 @@ const HrDashboard = () => {
             })),
           }));
           dispatch(setTasksData(formattedData));
-          return formattedData;
+          return response.data;
         } catch (error) {
           console.error(error);
         }
       },
     });
+
+  function getFiscalYearDateRange(fyString) {
+    // Example: "FY 2024-25"
+    const [startYearStr, endYearStr] = fyString.replace("FY ", "").split("-");
+    const startYear = parseInt(startYearStr);
+    const endYear = parseInt("20" + endYearStr); // Handles "25" as 2025
+
+    const startDate = new Date(`${startYear}-04-01T00:00:00.000Z`);
+    const endDate = new Date(`${endYear}-03-31T23:59:59.999Z`);
+
+    return { startDate, endDate };
+  }
+
+  function getTasksForSelectedFiscalYear(departments, selectedFiscalYear) {
+    if (selectedFiscalYear === "FY 2024-25") {
+      return []; // Override to show zero tasks for FY 2024-25
+    }
+
+    const { startDate, endDate } = getFiscalYearDateRange(selectedFiscalYear);
+    const filteredTasks = [];
+
+    departments.forEach((dept) => {
+      dept.tasks?.forEach((task) => {
+        const dueDate = new Date(task.dueDate);
+        if (dueDate >= startDate && dueDate <= endDate) {
+          filteredTasks.push({
+            ...task,
+            department: dept.department,
+          });
+        }
+      });
+    });
+
+    return filteredTasks;
+  }
+
+  console.log("selected :", selectedFiscalYear);
+  const tasksForSelectedYear = getTasksForSelectedFiscalYear(
+    departmentTasks,
+    selectedFiscalYear
+  );
+  console.log("Filtered tasks:", tasksForSelectedYear);
 
   // Month names in financial year order (Apr to Mar)
   const fyMonths = [
@@ -837,9 +880,10 @@ const HrDashboard = () => {
             data={tasksData}
             options={tasksOptions}
             title={"ANNUAL KPA VS ACHIEVEMENTS"}
-            titleAmount={`TOTAL TASKS : ${totalTasksCount || 0}`}
+            titleAmount={`TOTAL TASKS : ${tasksForSelectedYear.length || 0}`}
             secondParam
             currentYear={true}
+            onYearChange={setSelectedFiscalYear}
           />
         </Suspense>,
       ],

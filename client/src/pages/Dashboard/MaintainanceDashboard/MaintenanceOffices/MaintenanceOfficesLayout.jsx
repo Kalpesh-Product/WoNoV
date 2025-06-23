@@ -33,10 +33,9 @@ const MaintenanceOfficesLayout = () => {
   };
   const location = useLocation();
   const unit = location.state?.unitId || "";
-  const {unitName} = location.state;
+  const { unitName } = location.state;
+  console.log("state : ", unitName)
   const params = new URLSearchParams(location.search);
-  const locationParam = params.get("location") || "Unknown Location";
-  const floorParam = params.get("floor") || "Unknown Floor";
   const axios = useAxiosPrivate();
 
   const formatUnitDisplay = (unitNo, buildingName = "") => {
@@ -157,8 +156,8 @@ const MaintenanceOfficesLayout = () => {
       {tabIndex === 0 && (
         <div className=" text-center">
           <div
-            onClick={() => setImageOpen(true)}
-            className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg"
+            // onClick={() => setImageOpen(true)}
+            className="h-[32rem] w-full p-4 border border-borderGray rounded-lg"
           >
             <img
               src={unitDetails?.occupiedImage?.url || occupiedImage}
@@ -172,8 +171,8 @@ const MaintenanceOfficesLayout = () => {
       {tabIndex === 1 && (
         <div className="py-4 text-center">
           <div
-            onClick={() => setClearedImageOpen(true)}
-            className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg"
+            // onClick={() => setClearedImageOpen(true)}
+            className="h-[32rem] w-full  p-4 border border-borderGray rounded-lg"
           >
             <img
               src={unitDetails?.clearImage?.url || clearedImagePreview}
@@ -185,10 +184,30 @@ const MaintenanceOfficesLayout = () => {
       )}
 
       <WidgetSection layout={4} padding>
-        <DataCard data={totalDesks} title="Total Desks" description="Last Month : Apr-25" />
-        <DataCard data={totalActualOccupied} title="Occupied Desks" description="Last Month : Apr-25" />
-        <DataCard data={occupancyPercent} title="Occupancy %" description="Last Month : Apr-25" />
-        <DataCard data={totalDesks - totalActualOccupied} title="Free Desks" description="Last Month : Apr-25" />
+        <DataCard
+          data={totalDesks}
+          title="Total Desks"
+          description="Last Month : Apr-25"
+          route="#"
+        />
+        <DataCard
+          data={totalActualOccupied}
+          title="Occupied Desks"
+          description="Last Month : Apr-25"
+          route="#"
+        />
+        <DataCard
+          data={occupancyPercent}
+          title="Occupancy %"
+          description="Last Month : Apr-25"
+          route="#"
+        />
+        <DataCard
+          data={totalDesks - totalActualOccupied}
+          title="Free Desks"
+          description="Last Month : Apr-25"
+          route="#"
+        />
       </WidgetSection>
 
       <WidgetSection
@@ -240,7 +259,9 @@ const MaintenanceOfficesLayout = () => {
           data={{
             ...viewDetails,
             date: viewDetails?.date
-              ? dayjs(new Date(viewDetails.date.split("-").reverse().join("-"))).format("DD-MM-YYYY")
+              ? dayjs(
+                  new Date(viewDetails.date.split("-").reverse().join("-"))
+                ).format("DD-MM-YYYY")
               : "-",
           }}
           title="member details"
@@ -281,7 +302,11 @@ const MaintenanceOfficesLayout = () => {
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
             <MdUploadFile className="text-4xl text-gray-500" />
             <span className="text-gray-500">Click to upload</span>
-            <input type="file" className="hidden" onChange={handleClearedFileChange} />
+            <input
+              type="file"
+              className="hidden"
+              onChange={handleClearedFileChange}
+            />
           </label>
           {clearedFile && (
             <div className="mt-4 text-gray-700">

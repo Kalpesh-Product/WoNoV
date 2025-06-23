@@ -359,6 +359,7 @@ import MaintenancOfficesNew from "../pages/Dashboard/MaintainanceDashboard/Maint
 import PaymentScheduleCommon from "../components/Pages/PaymentScheduleCommon";
 import ItOfficesNew from "../pages/Dashboard/ItDashboard/ItOffices/ItOfficessNew";
 import AdminOfficesNew from "../pages/Dashboard/AdminDashboard/AdminOffices/AdminOfficesNew";
+import PayrollReports from "../pages/Dashboard/HrDashboard/Data/PayrollReports";
 
 export const routes = createBrowserRouter([
   {
@@ -980,7 +981,7 @@ export const routes = createBrowserRouter([
                             path: "amc-records",
                             element: <MaintenanceAmcRecords />,
                           },
-                           {
+                          {
                             path: "monthly-invoice-reports",
                             element: <MonthlyInvoiceCommon />,
                           },
@@ -1611,6 +1612,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "monthly-invoice-reports",
                             element: <MonthlyInvoiceCommon />,
+                          },
+                          {
+                            path: "payroll-reports",
+                            element: <PayrollReports />,
                           },
                           {
                             path: "vendor/:id",

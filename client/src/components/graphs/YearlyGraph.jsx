@@ -63,6 +63,7 @@ const YearlyGraph = ({
   } else {
     filteredData = data.filter((item) => item.group === selectedYear);
   }
+  
 
   const updatedOptions = {
     ...options,
