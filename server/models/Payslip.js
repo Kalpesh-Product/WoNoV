@@ -33,6 +33,10 @@ const payslipSchema = new mongoose.Schema(
     payslipId: {
       type: String,
     },
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+    },
   },
   {
     timestamps: true,

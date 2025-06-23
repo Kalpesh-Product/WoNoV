@@ -8,6 +8,8 @@ const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
 const Payslip = require("../../models/Payslip");
 const Company = require("../../models/hr/Company");
 const { startOfMonth, isSameMonth, parseISO } = require("date-fns");
+const Leave = require("../../models/hr/Leaves");
+const Attendance = require("../../models/hr/Attendance");
 
 const generatePayroll = async (req, res, next) => {
   const logPath = "hr/HrLog";
@@ -163,6 +165,7 @@ const generatePayroll = async (req, res, next) => {
         payslipName: originalFilename,
         payslipLink: uploadResponse.secure_url,
         payslipId: uploadResponse.public_id,
+        company,
       });
 
       const savedPayslip = await payslip.save();
@@ -176,6 +179,7 @@ const generatePayroll = async (req, res, next) => {
         deductions,
         payslip: savedPayslip._id,
         status: "Completed",
+        company,
       });
 
       const savedPayroll = await payroll.save();
@@ -212,11 +216,13 @@ const generatePayroll = async (req, res, next) => {
 };
 
 const fetchPayrolls = async (req, res, next) => {
+  const { company } = req;
+
   try {
     const currentMonthStart = startOfMonth(new Date());
 
     // Fetch all users
-    const allUsers = await User.find({})
+    const allUsers = await User.find({ company })
       .populate("departments")
       .populate("role")
       .select("firstName lastName empId email departments role")
@@ -289,4 +295,37 @@ const fetchPayrolls = async (req, res, next) => {
   }
 };
 
-module.exports = { generatePayroll, fetchPayrolls };
+const fetchUserPayroll = async (req, res, next) => {
+  const { company } = req;
+  const { userId } = req.params;
+  try {
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID provided" });
+    }
+
+    const attendances = await Attendance.find({ user: userId }).populate({
+      path: "user",
+      select: "firstName lastName empId email departments role",
+      populate: [{ path: "departments" }, { path: "role" }],
+    });
+
+    const leaves = await Leave.find({ takenBy: userId }).populate({
+      path: "takenBy",
+      select: "firstName lastName empId email departments role",
+      populate: [{ path: "departments" }, { path: "role" }],
+    });
+
+    const paymentBreakup = {
+      basicPay: 28000,
+      pf: 4000,
+    };
+
+    const transformedResponse = { attendances, leaves, paymentBreakup };
+
+    res.status(200).json(transformedResponse);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { generatePayroll, fetchPayrolls, fetchUserPayroll };

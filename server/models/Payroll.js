@@ -36,6 +36,10 @@ const payrollSchema = new mongoose.Schema(
       enum: ["Completed", "Pending", "Rejected"],
       default: "Pending",
     },
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+    },
   },
   { timestamps: true }
 );
