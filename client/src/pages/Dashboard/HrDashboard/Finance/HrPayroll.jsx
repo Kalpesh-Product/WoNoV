@@ -20,6 +20,7 @@ import MuiModal from "../../../../components/MuiModal";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
+import WidgetSection from "../../../../components/WidgetSection";
 
 const HrPayroll = () => {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ const HrPayroll = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/payroll/get-payrolls");
-       
+
         return response.data;
       } catch (error) {
         throw new Error(
@@ -73,7 +74,6 @@ const HrPayroll = () => {
     setIsEditing(!isEditing);
   };
 
-
   const handleDetailsClick = (asset) => {
     setSelectedVisitor(asset);
     setModalMode("view");
@@ -100,7 +100,7 @@ const HrPayroll = () => {
     }
   };
 
-    const payrollColumn = [
+  const payrollColumn = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "empId", headerName: "Employee ID" },
     {
@@ -128,7 +128,11 @@ const HrPayroll = () => {
     // { field: "month", headerName: "Date" },
     // { field: "role", headerName: "Role" },
     // { field: "time", headerName: "Time" },
-    { field: "totalSalary", headerName: "Total Salary (INR)", cellRenderer : (params)=>(inrFormat(params.value)) },
+    {
+      field: "totalSalary",
+      headerName: "Total Salary (INR)",
+      cellRenderer: (params) => inrFormat(params.value),
+    },
     // { field: "reimbursment", headerName: "Total Salary" },
     {
       field: "status",
@@ -187,199 +191,212 @@ const HrPayroll = () => {
 
   const tableData = isLoading
     ? []
-    : payrollData.map((item) => ({
-        ...item,
-        id: item.employeeId,
-        employeeName: item.name,
-        status : item.months?.map((item)=>item.status),
-        totalSalary : item.months?.map((item)=>item.totalSalary),
-        departmentName : item.departments?.map((item)=>((item.name || "null"))),
-        month : item.months?.map((item)=>item.month)
-      }));
+    : payrollData
+        .map((item) => ({
+          ...item,
+          id: item.employeeId,
+          employeeName: item.name,
+          status: item.months?.map((item) => item.status),
+          totalSalary: item.months?.map((item) => item.totalSalary),
+          departmentName: item.departments?.map((item) => item.name || "null"),
+          month: item.months?.map((item) => item.month),
+        }))
+        .sort((a, b) =>
+          a.employeeName?.localeCompare(b.employeeName, undefined, {
+            sensitivity: "base",
+          })
+        );
+
+  const handleBatchAction = async (selectedRows) => {
+    console.log(selectedRows);
+  };
+
   return (
     <div className="flex flex-col gap-8">
-      <PageFrame>
-        <div>
-          <YearWiseTable
-            search={true}
-            dateColumn={"month"}
-            checkAll
-            enableCheckbox
-            searchColumn={"Employee Name"}
-            tableTitle={""}
-            data={tableData}
-            columns={payrollColumn}
-          />
-          <MuiModal
-            open={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            title={"Employee Details"}
-          >
-            <div className="flex flex-col gap-4">
-              <div className="flex justify-end">
-                <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
-              </div>
-              <form>
-                {!isLoading ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
-                    {/* First Name */}
-                    {isEditing ? (
-                      <Controller
-                        name="firstName"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="First Name"
-                            fullWidth
-                          />
-                        )}
-                      />
-                    ) : (
-                      <DetalisFormatted
-                        title="First Name"
-                        // detail={selectedVisitor.firstName}
-                        detail="Aiwinraj"
-                      />
-                    )}
+      <WidgetSection layout={1} title={"Employee payroll"} border>
+        <YearWiseTable
+          search={true}
+          dateColumn={"month"}
+          checkAll={true}
+          checkbox
+          batchButton={"Generate"}
+          searchColumn={"Employee Name"}
+          tableTitle={""}
+          handleBatchAction={handleBatchAction}
+          data={tableData}
+          columns={payrollColumn}
+          exportData={true}
+        />
+        <MuiModal
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={"Employee Details"}
+        >
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-end">
+              <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
+            </div>
+            <form>
+              {!isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* First Name */}
+                  {isEditing ? (
+                    <Controller
+                      name="firstName"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="First Name"
+                          fullWidth
+                        />
+                      )}
+                    />
+                  ) : (
+                    <DetalisFormatted
+                      title="First Name"
+                      // detail={selectedVisitor.firstName}
+                      detail="Aiwinraj"
+                    />
+                  )}
 
-                    {/* Last Name */}
-                    {isEditing ? (
-                      <Controller
-                        name="lastName"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Last Name"
-                            fullWidth
-                          />
-                        )}
-                      />
-                    ) : (
-                      <DetalisFormatted
-                        title="Last Name"
-                        // detail={selectedVisitor.lastName}
-                        detail="KS"
-                      />
-                    )}
+                  {/* Last Name */}
+                  {isEditing ? (
+                    <Controller
+                      name="lastName"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Last Name"
+                          fullWidth
+                        />
+                      )}
+                    />
+                  ) : (
+                    <DetalisFormatted
+                      title="Last Name"
+                      // detail={selectedVisitor.lastName}
+                      detail="KS"
+                    />
+                  )}
 
-                    {/* Address */}
-                    {isEditing ? (
-                      <Controller
-                        name="address"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Role"
-                            fullWidth
-                          />
-                        )}
-                      />
-                    ) : (
-                      <DetalisFormatted
-                        title="Role"
-                        // detail={selectedVisitor.address}
-                        detail="Associate Software Engineer"
-                      />
-                    )}
+                  {/* Address */}
+                  {isEditing ? (
+                    <Controller
+                      name="address"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Role"
+                          fullWidth
+                        />
+                      )}
+                    />
+                  ) : (
+                    <DetalisFormatted
+                      title="Role"
+                      // detail={selectedVisitor.address}
+                      detail="Associate Software Engineer"
+                    />
+                  )}
 
-                    {/* Phone Number */}
-                    {isEditing ? (
-                      <Controller
-                        name="phoneNumber"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Total Salary (INR)"
-                            type="tel"
-                            fullWidth
-                          />
-                        )}
-                      />
-                    ) : (
-                      <DetalisFormatted
-                        title="Total Salary (INR)"
-                        // detail={selectedVisitor.phoneNumber}
-                        detail=" 40,000"
-                      />
-                    )}
+                  {/* Phone Number */}
+                  {isEditing ? (
+                    <Controller
+                      name="phoneNumber"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Total Salary (INR)"
+                          type="tel"
+                          fullWidth
+                        />
+                      )}
+                    />
+                  ) : (
+                    <DetalisFormatted
+                      title="Total Salary (INR)"
+                      // detail={selectedVisitor.phoneNumber}
+                      detail=" 40,000"
+                    />
+                  )}
 
-                    {/* Email */}
-                    {isEditing ? (
-                      <Controller
-                        name="email"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Email"
-                            type="email"
-                            fullWidth
-                          />
-                        )}
-                      />
-                    ) : (
-                      <DetalisFormatted
-                        title="Email"
-                        // detail={selectedVisitor.email}
-                        detail="aiwinraj.wono@gmail.com"
-                      />
-                    )}
+                  {/* Email */}
+                  {isEditing ? (
+                    <Controller
+                      name="email"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Email"
+                          type="email"
+                          fullWidth
+                        />
+                      )}
+                    />
+                  ) : (
+                    <DetalisFormatted
+                      title="Email"
+                      // detail={selectedVisitor.email}
+                      detail="aiwinraj.wono@gmail.com"
+                    />
+                  )}
 
-                    {/* Purpose of Visit */}
-                    {isEditing ? (
-                      <Controller
-                        name="purposeOfVisit"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Employee ID"
-                            fullWidth
-                          />
-                        )}
-                      />
-                    ) : (
-                      <DetalisFormatted
-                        title="Employee ID"
-                        // detail={selectedVisitor.purposeOfVisit}
-                        detail="EMP007"
-                      />
-                    )}
+                  {/* Purpose of Visit */}
+                  {isEditing ? (
+                    <Controller
+                      name="purposeOfVisit"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Employee ID"
+                          fullWidth
+                        />
+                      )}
+                    />
+                  ) : (
+                    <DetalisFormatted
+                      title="Employee ID"
+                      // detail={selectedVisitor.purposeOfVisit}
+                      detail="EMP007"
+                    />
+                  )}
 
-                    {/* To Meet */}
-                    {isEditing ? (
-                      <Controller
-                        name="toMeet"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Tenure"
-                            fullWidth
-                          />
-                        )}
-                      />
-                    ) : (
-                      <DetalisFormatted
-                        title="Tenure"
-                        // detail={selectedVisitor?.toMeet}
-                        detail="36 Months"
-                      />
-                    )}
+                  {/* To Meet */}
+                  {isEditing ? (
+                    <Controller
+                      name="toMeet"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Tenure"
+                          fullWidth
+                        />
+                      )}
+                    />
+                  ) : (
+                    <DetalisFormatted
+                      title="Tenure"
+                      // detail={selectedVisitor?.toMeet}
+                      detail="36 Months"
+                    />
+                  )}
 
-                    {/* Check In */}
-                    {/* {isEditing ? (
+                  {/* Check In */}
+                  {/* {isEditing ? (
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Controller
                       name="checkIn"
@@ -403,15 +420,14 @@ const HrPayroll = () => {
                     detail={selectedVisitor.checkIn}
                   />
                 )} */}
-                  </div>
-                ) : (
-                  []
-                )}
-              </form>
-            </div>
-          </MuiModal>
-        </div>
-      </PageFrame>
+                </div>
+              ) : (
+                []
+              )}
+            </form>
+          </div>
+        </MuiModal>
+      </WidgetSection>
     </div>
   );
 };
