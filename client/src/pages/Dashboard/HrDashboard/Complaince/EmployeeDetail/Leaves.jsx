@@ -174,7 +174,7 @@ const Leaves = () => {
             ]}
           /> */}
 
-          <ThreeDotMenu
+          {/* <ThreeDotMenu
             rowId={params.data.id}
             menuItems={[
               // ...(auth.user.role.length > 0 &&
@@ -210,6 +210,52 @@ const Leaves = () => {
                       onClick: () => rejectLeave(params.data._id),
                       isLoading: isRejecting,
                     },
+                  ]
+                : []),
+            ]}
+          /> */}
+
+          <ThreeDotMenu
+            rowId={params.data.id}
+            menuItems={[
+              ...(auth.user.role.length > 0 &&
+              (auth.user.role[0].roleTitle === "Master Admin" ||
+                auth.user.role[0].roleTitle === "Super Admin" ||
+                auth.user.role[0].roleTitle.endsWith("Admin"))
+                ? [
+                    ...(params.data.status === "Rejected"
+                      ? [
+                          {
+                            label: "Approve",
+                            onClick: () => approveLeave(params.data._id),
+                            isLoading: isApproving,
+                          },
+                        ]
+                      : []),
+                    ...(params.data.status === "Approved"
+                      ? [
+                          {
+                            label: "Reject",
+                            onClick: () => rejectLeave(params.data._id),
+                            isLoading: isRejecting,
+                          },
+                        ]
+                      : []),
+                    ...(params.data.status !== "Approved" &&
+                    params.data.status !== "Rejected"
+                      ? [
+                          {
+                            label: "Approve",
+                            onClick: () => approveLeave(params.data._id),
+                            isLoading: isApproving,
+                          },
+                          {
+                            label: "Reject",
+                            onClick: () => rejectLeave(params.data._id),
+                            isLoading: isRejecting,
+                          },
+                        ]
+                      : []),
                   ]
                 : []),
             ]}
