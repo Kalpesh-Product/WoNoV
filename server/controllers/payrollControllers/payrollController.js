@@ -1,5 +1,5 @@
 const { default: mongoose } = require("mongoose");
-const Payroll = require("../../models/Payroll");
+const Payroll = require("../../models/payrolls/Payroll");
 const User = require("../../models/hr/UserData");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
@@ -12,7 +12,7 @@ const Leave = require("../../models/hr/Leaves");
 const Attendance = require("../../models/hr/Attendance");
 
 const generatePayroll = async (req, res, next) => {
-  const logPath = "hr/HrLog";
+  const logPath = "payrolls/PayrollLog";
   const logAction = "Bulk Payroll Generation";
   const logSourceKey = "payroll";
   const { user, ip, company } = req;
@@ -222,7 +222,7 @@ const fetchPayrolls = async (req, res, next) => {
     const currentMonthStart = startOfMonth(new Date());
 
     // Fetch all users
-    const allUsers = await User.find({ company })
+    const allUsers = await User.find({ company, isActive: true })
       .populate("departments")
       .populate("role")
       .select("firstName lastName empId email departments role")
