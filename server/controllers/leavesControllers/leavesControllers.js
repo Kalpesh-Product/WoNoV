@@ -351,8 +351,10 @@ const approveLeave = async (req, res, next) => {
 
     if (!updatedLeave) {
       await createLog(
-        path,
-        action,
+        // path,
+        // action,
+        logPath,
+        logAction,
         "Couldn't approve the leave request",
         "Failed",
         user,
@@ -366,8 +368,10 @@ const approveLeave = async (req, res, next) => {
 
     // Success log
     await createLog(
-      path,
-      action,
+      // path,
+      // action,
+      logPath,
+      logAction,
       "Leave approved successfully",
       "Success",
       user,
@@ -403,8 +407,10 @@ const rejectLeave = async (req, res, next) => {
 
     if (!mongoose.Types.ObjectId.isValid(leaveId)) {
       await createLog(
-        path,
-        action,
+        // path,
+        // action,
+        logPath,
+        logAction,
         "Invalid Leave Id provided",
         "Failed",
         user,
@@ -425,8 +431,10 @@ const rejectLeave = async (req, res, next) => {
 
     if (!updatedLeave) {
       await createLog(
-        path,
-        action,
+        // path,
+        // action,
+        logPath,
+        logAction,
         "No such leave exists",
         "Failed",
         user,
@@ -437,8 +445,10 @@ const rejectLeave = async (req, res, next) => {
     }
 
     await createLog(
-      path,
-      action,
+      // path,
+      // action,
+      logPath,
+      logAction,
       "Leave rejected successfully",
       "Success",
       user,

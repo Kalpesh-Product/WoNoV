@@ -24,6 +24,8 @@ import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import MonthWiseTable from "../../../../../components/Tables/MonthWiseTable";
 import PageFrame from "../../../../../components/Pages/PageFrame";
+import ThreeDotMenu from "../../../../../components/ThreeDotMenu";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const Leaves = () => {
   const axios = useAxiosPrivate();
@@ -46,6 +48,7 @@ const Leaves = () => {
   });
   const [openModal, setOpenModal] = useState(false);
   const name = localStorage.getItem("employeeName") || "Employee";
+  const { auth } = useAuth();
 
   const { data: leaves = [], isLoading } = useQuery({
     queryKey: ["leaves"],
@@ -78,6 +81,40 @@ const Leaves = () => {
     },
   });
 
+  // Approve & Reject Leave Mutations START
+
+  const { mutate: approveLeave, isPending: isApproving } = useMutation({
+    mutationFn: async (leaveId) => {
+      console.log("Leave ID for approval", leaveId);
+      const res = await axios.patch(`/api/leaves/approve-leave/${leaveId}`);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Leave Approved");
+      queryClient.invalidateQueries({ queryKey: ["leaves"] });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Approval failed");
+      console.log(error.response.data.message);
+    },
+  });
+
+  const { mutate: rejectLeave, isPending: isRejecting } = useMutation({
+    mutationFn: async (leaveId) => {
+      const res = await axios.patch(`/api/leaves/reject-leave/${leaveId}`);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Leave Rejected");
+      queryClient.invalidateQueries({ queryKey: ["leaves"] });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Rejection failed");
+    },
+  });
+
+  // Approve & Reject Leave Mutations END
+
   const leavesColumn = [
     { field: "srNo", headerName: "Sr No" },
     { field: "fromDate", headerName: "From Date" },
@@ -87,6 +124,87 @@ const Leaves = () => {
     { field: "hours", headerName: "Hours" },
     { field: "description", headerName: "Description" },
     { field: "status", headerName: "Status" },
+    {
+      field: "actions",
+      headerName: "Actions",
+      cellRenderer: (params) => (
+        <div className="flex items-center gap-2">
+          {/* <div
+            role="button"
+            // onClick={() => handleViewTicket(params.data)}
+            className="p-2 rounded-full hover:bg-borderGray cursor-pointer">
+            <MdOutlineRemoveRedEye />
+          </div> */}
+          {/* <ThreeDotMenu
+            rowId={params.data.id}
+            menuItems={[
+              // Conditionally add "Accept"
+              ...(auth.user.role.length > 0 &&
+                (auth.user.role[0].roleTitle !== "Master Admin" &&
+                auth.user.role[0].roleTitle !== "Super Admin"
+                  ? [
+                      {
+                        label: "Accept",
+                        // onClick: () => acceptMutate(params.data),
+                        isLoading: isLoading,
+                      },
+                    ]
+                  : [])),
+              // {
+              //   label: "Accept",
+              //   onClick: () => acceptMutate(params.data),
+              //   isLoading: isLoading,
+              // },
+              // Conditionally add "Assign"
+              ...(auth.user.role.length > 0 &&
+              (auth.user.role[0].roleTitle === "Master Admin" ||
+                auth.user.role[0].roleTitle === "Super Admin" ||
+                auth.user.role[0].roleTitle.endsWith("Admin"))
+                ? [
+                    // {
+                    //   label: "Assign",
+                    //   // onClick: () => handleOpenAssignModal(params.data.id),
+                    // },
+                    {
+                      label: "Reject",
+                      // onClick: () => handleRejectClick(params.data), // ✅ open modal
+                    },
+                  ]
+                : []),
+            ]}
+          /> */}
+
+          <ThreeDotMenu
+            rowId={params.data.id}
+            menuItems={[
+              ...(auth.user.role.length > 0 &&
+                (auth.user.role[0].roleTitle !== "Master Admin" &&
+                auth.user.role[0].roleTitle !== "Super Admin"
+                  ? [
+                      {
+                        label: "Approve",
+                        onClick: () => approveLeave(params.data._id),
+                        isLoading: isApproving,
+                      },
+                    ]
+                  : [])),
+              ...(auth.user.role.length > 0 &&
+              (auth.user.role[0].roleTitle === "Master Admin" ||
+                auth.user.role[0].roleTitle === "Super Admin" ||
+                auth.user.role[0].roleTitle.endsWith("Admin"))
+                ? [
+                    {
+                      label: "Reject",
+                      onClick: () => rejectLeave(params.data._id),
+                      isLoading: isRejecting,
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        </div>
+      ),
+    },
   ];
 
   const leavesData = {
@@ -154,7 +272,6 @@ const Leaves = () => {
     return formatLeaveData(leaves);
   }, [leaves, isLoading]);
 
-  
   const months = leavesData.monthlyData.map((entry) => entry.month);
 
   const leaveCounts = useMemo(() => {
@@ -249,10 +366,21 @@ const Leaves = () => {
             handleSubmit={() => {
               setOpenModal(true);
             }}
+            // data={[
+            //   ...leaves.map((leave, index) => ({
+            //     fromDate: leave.fromDate,
+            //     toDate: humanDate(leave.toDate),
+            //     leaveType: leave.leaveType,
+            //     leavePeriod: leave.leavePeriod,
+            //     hours: leave.hours,
+            //     description: leave.description,
+            //     status: leave.status,
+            //   })),
+            // ]}
             data={[
               ...leaves.map((leave, index) => ({
-             
-                fromDate: (leave.fromDate),
+                _id: leave._id, // ✅ this is needed for Approve/Reject
+                fromDate: leave.fromDate,
                 toDate: humanDate(leave.toDate),
                 leaveType: leave.leaveType,
                 leavePeriod: leave.leavePeriod,
@@ -270,13 +398,11 @@ const Leaves = () => {
         open={openModal}
         onClose={() => {
           setOpenModal(false);
-        }}
-      >
+        }}>
         <div>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4"
-          >
+            className="flex flex-col gap-4">
             <Controller
               name="fromDate"
               control={control}
@@ -342,8 +468,7 @@ const Leaves = () => {
                   fullWidth
                   select
                   label="Leave type"
-                  size="small"
-                >
+                  size="small">
                   {leaveType.map((type) => (
                     <MenuItem key={leaveType.length} value={type}>
                       {type}
@@ -363,8 +488,7 @@ const Leaves = () => {
                   fullWidth
                   select
                   label="Leave period"
-                  size="small"
-                >
+                  size="small">
                   {leavePeriod.map((period) => (
                     <MenuItem key={leavePeriod.length} value={period}>
                       {period}
