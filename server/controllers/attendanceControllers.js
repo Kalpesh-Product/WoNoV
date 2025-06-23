@@ -428,7 +428,7 @@ const getAttendance = async (req, res, next) => {
 const correctAttendance = async (req, res, next) => {
   const { user, ip, company } = req;
   const { targetedDay, inTime, outTime, empId } = req.body;
-  const logPath = "hr/HrLog";
+  const logPath = "hr/hrLog";
   const logAction = "Correct Attendance";
   const logSourceKey = "attendance";
 

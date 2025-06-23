@@ -9,7 +9,7 @@ const Company = require("../../models/hr/Company");
 const CustomError = require("../../utils/customErrorlogs");
 
 const requestLeave = async (req, res, next) => {
-  const logPath = "hr/HrLog";
+  const logPath = "hr/hrLog";
   const logAction = "Request Leave";
   const logSourceKey = "leave";
   const { user, ip, company } = req;
@@ -146,13 +146,6 @@ const requestLeave = async (req, res, next) => {
       if (leaveType === "Privileged") {
         takenLeaveHours += abruptLeaveHours;
       }
-
-      // console.log("single", singleLeaveHours);
-      // console.log("partial", partialLeaveHours);
-      // console.log("multiple", multipleLeaveHours);
-      // console.log("abrupt", abruptLeaveHours);
-      // console.log("takenLeaveHours", takenLeaveHours);
-      // console.log("grantedLeaveHours", grantedLeaveHours);
 
       if (takenLeaveHours > grantedLeaveHours) {
         throw new CustomError(
@@ -320,7 +313,7 @@ const fetchUserLeaves = async (req, res, next) => {
 };
 
 const approveLeave = async (req, res, next) => {
-  const logPath = "hr/HrLog";
+  const logPath = "hr/hrLog";
   const logAction = "Approve Leave Request";
   const logSourceKey = "leave";
   const { user, ip, company } = req;
@@ -393,7 +386,7 @@ const approveLeave = async (req, res, next) => {
 };
 
 const rejectLeave = async (req, res, next) => {
-  const logPath = "hr/HrLog";
+  const logPath = "hr/hrLog";
   const logAction = "Reject Leave Request";
   const logSourceKey = "leave";
   const { user, ip, company } = req;
