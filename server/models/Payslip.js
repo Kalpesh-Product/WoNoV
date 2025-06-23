@@ -4,7 +4,7 @@ const payslipSchema = new mongoose.Schema(
   {
     employee: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "UserData",
     },
     month: {
       type: Date,

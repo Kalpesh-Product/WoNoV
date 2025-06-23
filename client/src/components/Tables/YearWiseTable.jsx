@@ -29,6 +29,8 @@ const YearWiseTable = ({
   exportData,
   dropdownColumns = [],
   dateFilter,
+  handleBatchAction,
+  batchButton,
 }) => {
   const lastEmittedMonthRef = useRef(null);
   const fiscalMap = useMemo(() => {
@@ -124,9 +126,6 @@ const YearWiseTable = ({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center w-full justify-between">
-        <span className="text-title text-primary font-pmedium uppercase">
-          {tableTitle}
-        </span>
         {buttonTitle && (
           <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
         )}
@@ -191,6 +190,7 @@ const YearWiseTable = ({
         exportData={exportData}
         dropdownColumns={dropdownColumns}
         checkAll={checkAll}
+        tableTitle={tableTitle}
         tableHeight={tableHeight ? tableHeight : 300}
         columns={formattedColumns}
         data={filteredData.map((item, index) => ({
@@ -201,6 +201,8 @@ const YearWiseTable = ({
         hideFilter={filteredData.length <= 9}
         search={filteredData.length >= 10}
         dateColumn={dateColumn}
+        handleBatchAction={handleBatchAction}
+        batchButton={batchButton}
       />
     </div>
   );

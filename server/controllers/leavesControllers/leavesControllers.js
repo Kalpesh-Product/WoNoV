@@ -9,7 +9,7 @@ const Company = require("../../models/hr/Company");
 const CustomError = require("../../utils/customErrorlogs");
 
 const requestLeave = async (req, res, next) => {
-  const logPath = "hr/HrLog";
+  const logPath = "hr/hrLog";
   const logAction = "Request Leave";
   const logSourceKey = "leave";
   const { user, ip, company } = req;
@@ -49,20 +49,6 @@ const requestLeave = async (req, res, next) => {
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       throw new CustomError(
         "Invalid date format",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    // Ensure the leave starts in the future
-    if (
-      leaveType === "Privileged" &&
-      (startDate.getDate() < currDate.getDate() ||
-        endDate.getDate() < currDate.getDate())
-    ) {
-      throw new CustomError(
-        "Please select future date",
         logPath,
         logAction,
         logSourceKey
@@ -147,13 +133,6 @@ const requestLeave = async (req, res, next) => {
         takenLeaveHours += abruptLeaveHours;
       }
 
-      // console.log("single", singleLeaveHours);
-      // console.log("partial", partialLeaveHours);
-      // console.log("multiple", multipleLeaveHours);
-      // console.log("abrupt", abruptLeaveHours);
-      // console.log("takenLeaveHours", takenLeaveHours);
-      // console.log("grantedLeaveHours", grantedLeaveHours);
-
       if (takenLeaveHours > grantedLeaveHours) {
         throw new CustomError(
           "Can't request more leaves",
@@ -188,26 +167,26 @@ const requestLeave = async (req, res, next) => {
 
     // Success log with details of the leave request
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Leave request sent successfully",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: newLeave._id,
-      changes: {
-        fromDate,
-        toDate,
-        leaveType: updatedLeaveType ? updatedLeaveType : leaveType,
-        leavePeriod,
-        hours,
-        description,
-        requester: foundUser._id,
-      },
-    });
+    // await createLog({
+    //   path: logPath,
+    //   action: logAction,
+    //   remarks: "Leave request sent successfully",
+    //   status: "Success",
+    //   user,
+    //   ip,
+    //   company,
+    //   sourceKey: logSourceKey,
+    //   sourceId: newLeave._id,
+    //   changes: {
+    //     fromDate,
+    //     toDate,
+    //     leaveType: updatedLeaveType ? updatedLeaveType : leaveType,
+    //     leavePeriod,
+    //     hours,
+    //     description,
+    //     requester: foundUser._id,
+    //   },
+    // });
 
     return res.status(201).json({ message: "Leave request sent" });
   } catch (error) {
@@ -320,7 +299,7 @@ const fetchUserLeaves = async (req, res, next) => {
 };
 
 const approveLeave = async (req, res, next) => {
-  const logPath = "hr/HrLog";
+  const logPath = "hr/hrLog";
   const logAction = "Approve Leave Request";
   const logSourceKey = "leave";
   const { user, ip, company } = req;
@@ -328,16 +307,12 @@ const approveLeave = async (req, res, next) => {
     const leaveId = req.params.id;
 
     if (!mongoose.Types.ObjectId.isValid(leaveId)) {
-      await createLog(
-        path,
-        action,
+      throw new CustomError(
         "Invalid Leave Id provided",
-        "Failed",
-        user,
-        ip,
-        company
+        logPath,
+        logAction,
+        logSourceKey
       );
-      return res.status(400).json({ message: "Invalid Leave Id provided" });
     }
 
     const updatedLeave = await Leave.findOneAndUpdate(
@@ -350,37 +325,31 @@ const approveLeave = async (req, res, next) => {
     );
 
     if (!updatedLeave) {
-      await createLog(
-        path,
-        action,
-        "Couldn't approve the leave request",
-        "Failed",
-        user,
-        ip,
-        company
+      throw new CustomError(
+        "Failed to approve the leave request",
+        logPath,
+        logAction,
+        logSourceKey
       );
-      return res
-        .status(400)
-        .json({ message: "Couldn't approve the leave request" });
     }
 
-    // Success log
-    await createLog(
-      path,
-      action,
-      "Leave approved successfully",
-      "Success",
-      user,
-      ip,
-      company,
-      updatedLeave._id,
-      {
-        status: "Approved",
-        approvedBy: user,
-      }
-    );
+    // await createLog({
+    //   path: logPath,
+    //   action: logAction,
+    //   remarks: "Leave approved successfully",
+    //   status: "Success",
+    //   user,
+    //   ip,
+    //   company,
+    //   sourceKey: logSourceKey,
+    //   sourceId: leaveId,
+    //   changes: {
+    //     status: "Approved",
+    //     approvedBy: user,
+    //   },
+    // });
 
-    return res.status(200).json({ message: "Leave Approved" });
+    return res.status(200).json({ message: "Leave request Approved" });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);
@@ -393,7 +362,7 @@ const approveLeave = async (req, res, next) => {
 };
 
 const rejectLeave = async (req, res, next) => {
-  const logPath = "hr/HrLog";
+  const logPath = "hr/hrLog";
   const logAction = "Reject Leave Request";
   const logSourceKey = "leave";
   const { user, ip, company } = req;
@@ -402,16 +371,12 @@ const rejectLeave = async (req, res, next) => {
     const leaveId = req.params.id;
 
     if (!mongoose.Types.ObjectId.isValid(leaveId)) {
-      await createLog(
-        path,
-        action,
+      throw new CustomError(
         "Invalid Leave Id provided",
-        "Failed",
-        user,
-        ip,
-        company
+        logPath,
+        logAction,
+        logSourceKey
       );
-      return res.status(400).json({ message: "Invalid Leave Id provided" });
     }
 
     const updatedLeave = await Leave.findOneAndUpdate(
@@ -424,46 +389,31 @@ const rejectLeave = async (req, res, next) => {
     );
 
     if (!updatedLeave) {
-      await createLog(
-        path,
-        action,
-        "No such leave exists",
-        "Failed",
-        user,
-        ip,
-        company
+      throw new CustomError(
+        "Failed to reject leave request",
+        logPath,
+        logAction,
+        logSourceKey
       );
-      return res.status(400).json({ message: "No such leave exists" });
     }
 
-    await createLog(
-      path,
-      action,
-      "Leave rejected successfully",
-      "Success",
-      user,
-      ip,
-      company,
-      updatedLeave._id,
-      {
-        status: "Rejected",
-        rejectedBy: user,
-      }
-    );
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Leave rejected successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: updatedLeave._id,
-      changes: { status: "Rejected", rejectedBy: user },
-    });
+    // await createLog({
+    //   path: logPath,
+    //   action: logAction,
+    //   remarks: "Leave rejected successfully",
+    //   status: "Success",
+    //   user,
+    //   ip,
+    //   company,
+    //   sourceKey: logSourceKey,
+    //   sourceId: leaveId,
+    //   changes: {
+    //     status: "Rejected",
+    //     approvedBy: user,
+    //   },
+    // });
 
-    return res.status(200).json({ message: "Leave rejected" });
+    return res.status(200).json({ message: "Leave request rejected" });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);
