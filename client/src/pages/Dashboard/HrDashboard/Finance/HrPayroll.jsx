@@ -18,6 +18,8 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import MuiModal from "../../../../components/MuiModal";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import { inrFormat } from "../../../../utils/currencyFormat";
+import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 
 const HrPayroll = () => {
   const navigate = useNavigate();
@@ -28,15 +30,13 @@ const HrPayroll = () => {
   const [selectedVisitor, setSelectedVisitor] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
 
-  const { data: employees, isLoading } = useQuery({
-    queryKey: ["employees"],
+  const { data: payrollData, isLoading } = useQuery({
+    queryKey: ["payrollData"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/users/fetch-users");
-        const filteredData = response.data.filter(
-          (employee) => employee.isActive
-        );
-        return filteredData;
+        const response = await axios.get("/api/payroll/get-payrolls");
+       
+        return response.data;
       } catch (error) {
         throw new Error(
           error.response?.data?.message || "Failed to fetch employees"
@@ -73,7 +73,34 @@ const HrPayroll = () => {
     setIsEditing(!isEditing);
   };
 
-  const payrollColumn = [
+
+  const handleDetailsClick = (asset) => {
+    setSelectedVisitor(asset);
+    setModalMode("view");
+    setIsModalOpen(true);
+  };
+
+  const handleAddAsset = () => {
+    setModalMode("add");
+    setSelectedVisitor(null);
+    setIsModalOpen(true);
+  };
+
+  const handleSumit = async (assetData) => {
+    if (modalMode === "add") {
+      try {
+      } catch (error) {
+        console.error("Error adding asset:", error);
+      }
+    } else if (modalMode === "edit") {
+      try {
+      } catch (error) {
+        console.error("Error updating asset:", error);
+      }
+    }
+  };
+
+    const payrollColumn = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "empId", headerName: "Employee ID" },
     {
@@ -92,19 +119,19 @@ const HrPayroll = () => {
             )
           }
         >
-          {params.data.firstName || "Null"} {params.data.lastName || "Nill"}
+          {params.value}
         </span>
       ),
     },
     { field: "email", headerName: "Employee Email" },
     { field: "departmentName", headerName: "Department" },
-    // { field: "date", headerName: "Date" },
+    // { field: "month", headerName: "Date" },
     // { field: "role", headerName: "Role" },
     // { field: "time", headerName: "Time" },
-    { field: "totalSalary", headerName: "Total Salary (INR)" },
+    { field: "totalSalary", headerName: "Total Salary (INR)", cellRenderer : (params)=>(inrFormat(params.value)) },
     // { field: "reimbursment", headerName: "Total Salary" },
     {
-      field: "isActive",
+      field: "status",
       headerName: "Status",
       pinned: "right",
       cellRenderer: (params) => {
@@ -157,46 +184,25 @@ const HrPayroll = () => {
     //   ),
     // },
   ];
-  const handleDetailsClick = (asset) => {
-    setSelectedVisitor(asset);
-    setModalMode("view");
-    setIsModalOpen(true);
-  };
-
-  const handleAddAsset = () => {
-    setModalMode("add");
-    setSelectedVisitor(null);
-    setIsModalOpen(true);
-  };
-
-  const handleSumit = async (assetData) => {
-    if (modalMode === "add") {
-      try {
-      } catch (error) {
-        console.error("Error adding asset:", error);
-      }
-    } else if (modalMode === "edit") {
-      try {
-      } catch (error) {
-        console.error("Error updating asset:", error);
-      }
-    }
-  };
 
   const tableData = isLoading
     ? []
-    : employees.map((item) => ({
+    : payrollData.map((item) => ({
         ...item,
-        id: item._id,
-        departmentName: item.departments?.map((item) => item.name),
-        departmentId: item.departments?.map((item) => item._id[0]),
+        id: item.employeeId,
+        employeeName: item.name,
+        status : item.months?.map((item)=>item.status),
+        totalSalary : item.months?.map((item)=>item.totalSalary),
+        departmentName : item.departments?.map((item)=>((item.name || "null"))),
+        month : item.months?.map((item)=>item.month)
       }));
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
         <div>
-          <AgTable
+          <YearWiseTable
             search={true}
+            dateColumn={"month"}
             checkAll
             enableCheckbox
             searchColumn={"Employee Name"}
