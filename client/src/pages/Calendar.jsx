@@ -124,7 +124,6 @@ const Calender = () => {
   const todaysEvents = getTodaysEvents();
 
   const handleEventClick = (clickInfo) => {
-    console.log("an event", clickInfo);
     const event = clickInfo.event;
     const type = event.extendedProps?.type.toLowerCase();
 
@@ -151,11 +150,6 @@ const Calender = () => {
       description: "",
     });
   };
-
-  useEffect(() => {
-    console.log("meeting", selectedEvent);
-  }, []);
-
   return (
     <div className="flex w-[70%] md:w-full">
       {!isMeetingsLoading && !isEventsPending ? (

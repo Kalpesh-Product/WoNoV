@@ -112,7 +112,6 @@ const EscalatedTickets = ({ title, departmentId }) => {
       field: "tickets",
       headerName: "Tickets",
       cellRenderer: (params) => {
-        console.log(params.value);
         const statusColorMap = {
           "Assigned Ticket": { backgroundColor: "#ffbac2", color: "#ed0520" }, // Light orange bg, dark orange font
           "Ticket Accepted": { backgroundColor: "#90EE90", color: "#02730a" }, // Light green bg, dark green font

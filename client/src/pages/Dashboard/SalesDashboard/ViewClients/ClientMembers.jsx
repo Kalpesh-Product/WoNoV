@@ -9,7 +9,6 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 const ClientMembers = () => {
   const navigate = useNavigate();
   const selectedClient = useSelector((state) => state.client.selectedClient);
-  console.log("ASKDJAHSJKDHA", selectedClient);
 
   const viewEmployeeColumns = [
     { field: "srno", headerName: "SR No" },

@@ -154,7 +154,7 @@ const Templates = () => {
                         "_"
                       ); // sanitize filename
                       const fileName = `${safeName}.${extension}`;
-                      console.log(fileName);
+                  
 
                       const downloadUrl = template.documentLink.replace(
                         "/upload/",

@@ -26,10 +26,10 @@ const Approvals = () => {
   const handleConfirmAction = () => {
     if (selectedAction === "approve") {
       // Implement your approve logic here
-      console.log(`Asset ${selectedAsset.assetNumber} approved!`);
+    
     } else if (selectedAction === "reject") {
       // Implement your reject logic here
-      console.log(`Asset ${selectedAsset.assetNumber} rejected!`);
+
     }
 
     // Close the dialog after action

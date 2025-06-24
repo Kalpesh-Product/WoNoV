@@ -57,9 +57,6 @@ const MeetingSettings = () => {
     }
   }, [selectedRoom, resetEditForm]);
 
-  useEffect(() => {
-    console.log("Location selected:", selectedRoom);
-  }, [selectedRoom]);
 
   const handleOpenEditModal = (room) => {
     setSelectedRoom(room);

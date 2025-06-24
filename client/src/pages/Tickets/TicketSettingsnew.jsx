@@ -57,7 +57,6 @@ const Row = ({ row, onApprove, onReject }) => {
     );
 
     setTicketIssues(selectedDept?.ticketIssues || []);
-    console.log("TICKET ISSUES", ticketIssues);
   }, [fetchedDepartments, auth.user.departments]);
 
   const {
@@ -86,7 +85,6 @@ const Row = ({ row, onApprove, onReject }) => {
   };
 
   const onSubmit = (data) => {
-    console.log("data ticket:", data);
     onApprove({
       ...data,
       title: row.ticket,

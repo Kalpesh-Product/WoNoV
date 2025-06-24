@@ -86,7 +86,7 @@ const TasksViewDepartment = () => {
   const { mutate: updateDailyKra, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateDailyTasks"],
     mutationFn: async (data) => {
-      console.log("tasks", data);
+
       const response = await axios.patch(
         `/api/tasks/update-task-status/${data}`
       );

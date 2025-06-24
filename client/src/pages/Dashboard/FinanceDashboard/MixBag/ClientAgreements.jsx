@@ -3,6 +3,7 @@ import AgTable from "../../../../components/AgTable";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { CircularProgress } from "@mui/material";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const ClientAgreements = () => {
   const location = useLocation();
@@ -14,7 +15,7 @@ const ClientAgreements = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/sales/co-working-clients");
-        const data = response.data.filter((item)=>item.isActive)
+        const data = response.data.filter((item) => item.isActive);
         return data;
       } catch (error) {
         console.error("Error fetching clients data:", error);
@@ -22,29 +23,27 @@ const ClientAgreements = () => {
     },
   });
 
-const tableData = Array.isArray(clientsData)
-  ? clientsData
-      .slice()
-      .sort((a, b) =>
-        (a?.clientName || "").localeCompare(b?.clientName || "")
-      )
-      .map((item, index) => {
-        const rawName = item?.clientName || "Unnamed";
-        const safeName = rawName.replace(/\//g, ""); // Remove all slashes
+  const tableData = Array.isArray(clientsData)
+    ? clientsData
+        .slice()
+        .sort((a, b) =>
+          (a?.clientName || "").localeCompare(b?.clientName || "")
+        )
+        .map((item, index) => {
+          const rawName = item?.clientName || "Unnamed";
+          const safeName = rawName.replace(/\//g, ""); // Remove all slashes
 
-        return {
-          srno: index + 1,
-          name: safeName,
-          documentCount: Array.isArray(item?.documents)
-            ? item.documents.length
-            : 0,
-          files: item?.documents || [],
-          id: item?.id || "",
-        };
-      })
-  : [];
-
-
+          return {
+            srno: index + 1,
+            name: safeName,
+            documentCount: Array.isArray(item?.documents)
+              ? item.documents.length
+              : 0,
+            files: item?.documents || [],
+            id: item?.id || "",
+          };
+        })
+    : [];
 
   const columns = [
     { field: "srno", headerName: "Sr No", width: 100 },
@@ -79,22 +78,24 @@ const tableData = Array.isArray(clientsData)
 
   return (
     <div className="p-4">
-      {!isClientsDataPending ? (
-        <>
-          <AgTable
-            columns={columns}
-            data={tableData}
-            tableTitle="Client Agreements"
-            tableHeight={400}
-            hideFilter
-            search
-          />
-        </>
-      ) : (
-        <div className="h-72 place-items-center">
-          <CircularProgress />
-        </div>
-      )}
+      <PageFrame>
+        {!isClientsDataPending ? (
+          <>
+            <AgTable
+              columns={columns}
+              data={tableData}
+              tableTitle="Client Agreements"
+              tableHeight={400}
+              hideFilter
+              search
+            />
+          </>
+        ) : (
+          <div className="h-72 place-items-center">
+            <CircularProgress />
+          </div>
+        )}
+      </PageFrame>
     </div>
   );
 };

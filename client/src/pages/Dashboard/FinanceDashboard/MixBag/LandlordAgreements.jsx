@@ -6,6 +6,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { CircularProgress } from "@mui/material";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const LandlordAgreements = () => {
   const location = useLocation();
@@ -81,6 +82,8 @@ const LandlordAgreements = () => {
 
   return (
     <div className="p-4">
+      <PageFrame>
+
       {!isLoading ? (
         <>
           <AgTable
@@ -97,6 +100,7 @@ const LandlordAgreements = () => {
           <CircularProgress />
         </div>
       )}
+      </PageFrame>
     </div>
   );
 };

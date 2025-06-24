@@ -31,9 +31,7 @@ const MeetingReports = () => {
     setSelectedMeeting(meeting);
     setOpenModal(true);
   };
-  useEffect(() => {
-    console.log("Selected Meeting : ", selectedMeeting);
-  }, [selectedMeeting]);
+
   const meetingReportsColumn = [
     { field: "srNo", headerName: "Sr No" },
     { field: "roomName", headerName: "Room Name" },

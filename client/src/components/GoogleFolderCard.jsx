@@ -23,7 +23,7 @@ const GoogleFolderCard = ({ title, routeId, files }) => {
       </div>
       <ThreeDotMenu
         menuItems={[
-          { label: "Rename", onClick: () => console.log("Just a menu") },
+          { label: "Rename" },
         ]}
       />
     </div>

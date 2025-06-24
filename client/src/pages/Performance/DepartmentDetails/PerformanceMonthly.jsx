@@ -94,8 +94,7 @@ const PerformanceMonthly = () => {
   const { mutate: updateMonthlyKpa, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateMonthlyKpa"],
     mutationFn: async (data) => {
-      console.log("Data inside query", data);
-      console.log("Data inside query", data);
+
       const response = await axios.patch(
         `/api/performance/update-status/${data}/KPA`
       );

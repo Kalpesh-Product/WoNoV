@@ -653,10 +653,10 @@ const ProjectCard = ({ project }) => {
       return axios.patch(`/api/tasks/update-project/${project.id}`);
     },
     onSuccess: () => {
-      console.log("Project updated");
+  //
     },
     onError: (error) => {
-      console.log(error.response?.data?.message || "Failed to fetch project");
+  //
     },
   });
 
@@ -733,10 +733,10 @@ const ProjectMenu = ({ project }) => {
       return axios.patch(`/api/tasks/update-project/${project.id}`);
     },
     onSuccess: () => {
-      console.log("Project updated");
+     //
     },
     onError: (error) => {
-      console.log(error.response?.data?.message || "Failed to fetch project");
+      //
     },
   });
 

@@ -36,8 +36,6 @@ const ViewVendors = () => {
 
     }
   }, [state, setValue]);
-
-  console.log("Inside data",state);
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
   };

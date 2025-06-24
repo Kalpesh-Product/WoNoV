@@ -91,6 +91,7 @@ const PayrollReports = () => {
         <MonthWiseTable
           data={isLoading ? [] : transformedData}
           columns={payrollColumns}
+          exportData={true}
           tableTitle={"Payroll Reports"}
         />
       </PageFrame>

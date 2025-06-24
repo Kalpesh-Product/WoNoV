@@ -226,7 +226,6 @@ const HrPayroll = () => {
     },
   });
   const handleBatchAction = async (selectedRows) => {
-    console.log("selectedRows : ", selectedRows);
     const preparedData = await Promise.all(
       selectedRows.map(async (item) => {
         const monthData = item.months?.[0] || {};
@@ -240,7 +239,6 @@ const HrPayroll = () => {
           departmentName: item.departmentName?.[0],
           empId: item.empId,
         };
-        console.log("payload to form : ", payload);
 
         const html = ReactDOMServer.renderToStaticMarkup(
           <PayslipTemplate data={payload} />
@@ -293,12 +291,9 @@ const HrPayroll = () => {
     });
 
     // ✅ (Optional) Log to confirm
-    console.log("FormData:");
     for (let [key, value] of formData.entries()) {
       if (key === "metadata") {
-        console.log(key, JSON.parse(value));
       } else {
-        console.log(key, value.name); // Show file name
       }
     }
 

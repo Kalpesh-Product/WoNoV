@@ -29,7 +29,6 @@ const HrEvents = ({ title }) => {
     queryKey: ["holidayEvents"],
     queryFn: async () => {
       const response = await axios.get("/api/events/all-events");
-      console.log(response.data);
       return response.data;
     },
   });

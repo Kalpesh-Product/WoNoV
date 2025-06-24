@@ -32,7 +32,6 @@ const HrDashboard = () => {
   const dispatch = useDispatch();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
-  console.log("tasks raw : ", tasksRawData);
 
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -301,13 +300,10 @@ const HrDashboard = () => {
 
     return filteredTasks;
   }
-
-  console.log("selected :", selectedFiscalYear);
   const tasksForSelectedYear = getTasksForSelectedFiscalYear(
     departmentTasks,
     selectedFiscalYear
   );
-  console.log("Filtered tasks:", tasksForSelectedYear);
 
   // Month names in financial year order (Apr to Mar)
   const fyMonths = [
@@ -679,11 +675,6 @@ const HrDashboard = () => {
     .reduce((sum, item) => (item.sqft || 0) + sum, 0);
   //--------------------UnitData -----------------------//
   //--------------------New Data card data -----------------------//
-  console.log(
-    hrFinance
-      .filter((item) => item.expanseType === "salary")
-      .reduce((sum, item) => ((item.actualAmount || 0) + sum) / 12, 0)
-  );
   const HrExpenses = {
     cardTitle: "Expenses",
     // timePeriod: "FY 2024-25",

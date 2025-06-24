@@ -39,7 +39,6 @@ const AdminClientOnboard = () => {
 
   const [selectedUnit, setSelectedUnit] = useState("");
   const clientsData = useSelector((state) => state.sales.clientsData);
-  console.log("clients data", clientsData);
 
   useEffect(() => {
     const fetchSourceIfEmpty = async () => {

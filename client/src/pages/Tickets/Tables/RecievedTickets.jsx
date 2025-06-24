@@ -168,7 +168,6 @@ const RecievedTickets = ({ title, departmentId }) => {
   };
 
   const handleRejectSubmit = () => {
-    console.log("Rejection reason:", selectedTicket);
     if (!rejectionReason.trim()) {
       toast.error("Please specify a rejection reason.");
       return;

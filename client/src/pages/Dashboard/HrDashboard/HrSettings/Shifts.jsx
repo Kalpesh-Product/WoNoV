@@ -81,8 +81,7 @@ const Shifts = () => {
 
   const updateMutation = useMutation({
     mutationFn: async (payload) => {
-    
-      console.log("update mutation")
+
       const response = await axios.patch("/api/company/update-company-data", payload);
       return response.data;
     },
@@ -122,7 +121,6 @@ const Shifts = () => {
 
    const onSubmit = (data) => {
     if (modalMode === "edit") {
-      console.log("data",data)
       const payload = {
         type: "shifts",
         itemId: selectedItem._id,

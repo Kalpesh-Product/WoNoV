@@ -116,7 +116,7 @@ const DailyTasks = () => {
   const { mutate: updateMonthlyKpa, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateMyTasks"],
     mutationFn: async (data) => {
-      console.log("mark done", data);
+    
       const response = await axios.patch(
         `/api/tasks/update-task-status/${data}`
       );
@@ -187,7 +187,7 @@ const DailyTasks = () => {
       field: "actions",
       pinned: "right",
       cellRenderer: (params) => {
-        console.log(params.node);
+
         return (
           <div
             role="button"

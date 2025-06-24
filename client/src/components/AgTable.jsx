@@ -37,7 +37,6 @@ const AgTableComponent = React.memo(
     isRowSelectable,
     batchButton,
   }) => {
-    console.log("batch passed : ", batchButton);
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
     const [filters, setFilters] = useState({});
@@ -166,7 +165,7 @@ const AgTableComponent = React.memo(
       <div className="border-b-[1px] border-borderGray">
 
           <div className=" flex gap-4 items-center">
-            <div className={`flex items-center ${tableTitle ? "justify-between" : "justify-end w-full"} `}>
+            <div className={`flex items-center ${tableTitle ? "justify-between w-full items-center" : "justify-end w-full"} `}>
               <div className="flex items-center justify-between pb-4">
                 <span className="font-pmedium text-title text-primary uppercase">
                   {tableTitle}

@@ -1,50 +1,89 @@
 import React from "react";
 import AgTable from "../../components/AgTable";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import useAuth from "../../hooks/useAuth";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
+import { toast } from "sonner";
 
 const HrCommonPayslips = () => {
+  const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+
+  const { data = [], isLoading } = useQuery({
+    queryKey: ["payslips"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/payslip/get-payslips/${auth?.user?._id}`
+        );
+        return response.data || [];
+      } catch (error) {
+        console.warn("Failed to fetch payslips:", error.message);
+        return []; // fallback return to avoid crashes
+      }
+    },
+  });
+
   const payslipColumns = [
-    { field: "payslips", headerName: "Payslip" ,flex:1},
+    { field: "srNo", headerName: "SrNo", width: 100 },
+    {
+      field: "month",
+      headerName: "Month",
+      flex: 1,
+      cellRenderer: (params) =>
+        params.value
+          ? new Date(params.value).toLocaleDateString("default", {
+              month: "long",
+              year: "numeric",
+            })
+          : "N/A",
+    },
     {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-          <span className="text-primary hover:underline text-content cursor-pointer">
-              View Payslip
-            </span>
-          </div>
-        </>
+        <div className="p-2 mb-2 flex gap-2">
+          <span
+            role="button"
+            onClick={() => {
+              const link = params.data?.payslipLink;
+              if (link) {
+                window.open(link, "_blank");
+              } else {
+                toast.error("No payslip link available.");
+              }
+            }}
+            className="text-primary hover:underline text-content cursor-pointer"
+          >
+            View Payslip
+          </span>
+        </div>
       ),
     },
   ];
 
-  const rows = [
-    {
-        id: 1,
-        payslips: "Dec, 2024",
-    },
-    {
-        id: 2,
-        payslips: "Nov, 2024",
-    },
-    {
-        id: 3,
-        payslips: "Oct, 2024",
-    },
-];
+  const tableData = Array.isArray(data)
+    ? data.map((item, index) => ({
+        id: item._id || index,
+        month: item.month,
+        payslipLink: item.payslipLink,
+        srNo: index + 1,
+      }))
+    : [];
 
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <AgTable
-        key={rows.length}
+        <YearWiseTable
+          key={tableData.length}
           search={true}
           tableHeight={300}
-          searchColumn={"payslips"}
+          searchColumn={"month"}
           tableTitle={"Payslips"}
-          data={rows}
+          data={tableData}
           columns={payslipColumns}
+          isLoading={isLoading}
         />
       </div>
     </div>

@@ -61,7 +61,6 @@ const ManageTickets = () => {
       .length,
   };
 
-  console.log("Tickets data : ", ticketsFilteredData);
 
   const widgets = [
     {

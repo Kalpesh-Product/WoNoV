@@ -354,7 +354,7 @@ const AccessGrant = () => {
   ];
 
   const handlePermissionUpdate = (updatedPermissions) => {
-    console.log("Updated Permissions:", updatedPermissions);
+  //asdasd
   };
 
   const handleSavePermissions = () => {

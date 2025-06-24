@@ -85,7 +85,6 @@ const Leaves = () => {
 
   const { mutate: approveLeave, isPending: isApproving } = useMutation({
     mutationFn: async (leaveId) => {
-      console.log("Leave ID for approval", leaveId);
       const res = await axios.patch(`/api/leaves/approve-leave/${leaveId}`);
       return res.data;
     },
@@ -95,7 +94,6 @@ const Leaves = () => {
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Approval failed");
-      console.log(error.response.data.message);
     },
   });
 

@@ -84,7 +84,6 @@ const AdminClientDetails = () => {
     }
   }, [selectedClient, reset]);
 
-  console.log(selectedClient);
 
   const [isEditing, setIsEditing] = useState(false);
 

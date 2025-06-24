@@ -19,10 +19,8 @@ const TeamMember = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/tasks/get-team-tasks");
-        console.log("Get Team Tasks:", response.data);
         return response.data;
       } catch (error) {
-        console.log("Get Team Tasks Error:", error.response.data.message);
         throw new Error(error.response.data.message);
       }
     },

@@ -100,7 +100,6 @@ const MeetingRoomCredits = ({ pageTitle }) => {
   };
 
   const handleViewDetails = (meeting) => {
-    console.log("meetings", meeting);
     setSelectedMeeting(meeting);
     setDetailsModal(true);
   };

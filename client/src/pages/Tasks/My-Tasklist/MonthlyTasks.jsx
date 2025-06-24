@@ -78,7 +78,7 @@ const MonthlyTasks = () => {
           tableTitle={"Monthly Tasks"}
           data={rows}
           columns={dailyTaskColumns}
-          handleClick={() => console.log("Button clicked")}
+          // handleClick={() => console.log("Button clicked")}
           enableCheckbox
         />
       </div>

@@ -377,8 +377,6 @@ const CompanyHandbook = () => {
 
   const profileAccordion = accordionData.filter((data)=> 
   departments.some((dept)=> {
-    console.log("deptname",dept.name.toLowerCase())
-    console.log("title",data.title.toLowerCase())
     if(dept.name === "IT" && data.title === "Kaffe Kitchen") return
     if(dept.name === "HR" && data.title === "Human Resource & EA") return true
    

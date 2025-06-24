@@ -34,7 +34,6 @@ const MaintenanceOfficesLayout = () => {
   const location = useLocation();
   const unit = location.state?.unitId || "";
   const { unitName } = location.state;
-  console.log("state : ", unitName)
   const params = new URLSearchParams(location.search);
   const axios = useAxiosPrivate();
 

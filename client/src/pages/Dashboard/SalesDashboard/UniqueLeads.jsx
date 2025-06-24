@@ -32,8 +32,6 @@ const UniqueLeads = () => {
   const axios = useAxiosPrivate();
 
   const leadsData = useSelector((state) => state?.sales?.leadsData);
-  console.log(leadsData);
-
   const [searchParams] = useSearchParams();
   const queryMonth = searchParams.get("month");
   const [modalOpen, setModalOpen] = useState(false);
