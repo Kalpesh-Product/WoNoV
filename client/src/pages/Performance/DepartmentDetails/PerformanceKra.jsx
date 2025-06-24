@@ -103,6 +103,7 @@ const PerformanceKra = () => {
     },
     onError: (error) => {
       toast.success("KRA updated");
+      reset();
       // toast.error(error.message || "Error Updating");
     },
   });
