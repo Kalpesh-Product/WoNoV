@@ -9,7 +9,7 @@ const Company = require("../../models/hr/Company");
 const CustomError = require("../../utils/customErrorlogs");
 
 const requestLeave = async (req, res, next) => {
-  const logPath = "hr/hrLog";
+  const logPath = "hr/HrLog";
   const logAction = "Request Leave";
   const logSourceKey = "leave";
   const { user, ip, company } = req;
@@ -299,7 +299,7 @@ const fetchUserLeaves = async (req, res, next) => {
 };
 
 const approveLeave = async (req, res, next) => {
-  const logPath = "hr/hrLog";
+  const logPath = "hr/HrLog";
   const logAction = "Approve Leave Request";
   const logSourceKey = "leave";
   const { user, ip, company } = req;
@@ -362,7 +362,7 @@ const approveLeave = async (req, res, next) => {
 };
 
 const rejectLeave = async (req, res, next) => {
-  const logPath = "hr/hrLog";
+  const logPath = "hr/HrLog";
   const logAction = "Reject Leave Request";
   const logSourceKey = "leave";
   const { user, ip, company } = req;
