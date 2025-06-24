@@ -17,7 +17,7 @@ const generatePayroll = async (req, res, next) => {
   const logSourceKey = "payroll";
   const { user, ip, company } = req;
 
-  //payroll = [{userId,totalSalary,deductions:[],month}]
+  //payrolls = [{userId,totalSalary,deductions:[],month}]
   try {
     const payrolls = JSON.parse(req.body.payrolls);
     const files = req.files || [];
@@ -54,7 +54,7 @@ const generatePayroll = async (req, res, next) => {
 
       const file = files[i];
 
-      if (!userId || !month || !totalSalary) {
+      if (!userId || !month || isNaN(totalSalary)) {
         throw new CustomError(
           `Missing required fields in payroll ${i + 1}`,
           logPath,
