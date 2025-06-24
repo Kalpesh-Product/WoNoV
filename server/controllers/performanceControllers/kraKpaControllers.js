@@ -1,9 +1,6 @@
 const { default: mongoose } = require("mongoose");
-const UserData = require("../../models/hr/UserData");
 const kraKpaRole = require("../../models/performances/kraKpaRole");
 const kraKpaTask = require("../../models/performances/kraKpaTask");
-const CustomError = require("../../utils/customErrorlogs");
-const { createLog } = require("../../utils/moduleLogs");
 
 const createDeptBasedTask = async (req, res, next) => {
   const { user, ip, company } = req;
