@@ -44,7 +44,6 @@ const LandlordAgreementData = () => {
     : [];
 
   const landlordId = landlordData.map((item) => item._id);
-  console.log(landlordId[0]);
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (formData) => {

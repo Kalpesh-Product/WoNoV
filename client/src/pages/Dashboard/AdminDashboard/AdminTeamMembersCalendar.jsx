@@ -17,7 +17,6 @@ const AdminTeamMembersCalendar = () => {
 
   useEffect(() => {
     if (passedData?.startDate && passedData?.endDate) {
-      console.log(passedData)
       const start = dayjs(passedData.startDate);
       const end = dayjs(passedData.endDate);
 

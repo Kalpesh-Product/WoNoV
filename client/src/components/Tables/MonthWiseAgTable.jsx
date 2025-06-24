@@ -66,19 +66,6 @@ const MonthWiseAgTable = ({ financialData, passedColumns, title, amount }) => {
 //   return parseFloat(amount.replace(/,/g, "")) || 0;
 // };
 
-// const monthTotal = monthData.rows
-//   .map((item) =>{
-//     console.log("item",parseAmount(item.revenue))
-//      return parseAmount(item.revenue) ||
-//      item.totalAmount ||
-//      item.invoiceAmount
-//   }
-   
-//   )
-//   .reduce((sum, item) => { console.log("total",item) 
-//     return sum + item
-//   }, 0);
-
 const parseAmount = (amount) => {
   if (!amount) return 0;
   if (typeof amount === "number") return amount;

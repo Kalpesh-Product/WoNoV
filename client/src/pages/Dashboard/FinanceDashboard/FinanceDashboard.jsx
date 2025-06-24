@@ -296,7 +296,7 @@ const FinanceDashboard = () => {
       colors: ["transparent"],
     },
     yaxis: {
-      max : 8000000,
+      max: 8000000,
       title: {
         text: "Amount In Lakhs (INR)",
       },
@@ -469,12 +469,16 @@ const FinanceDashboard = () => {
   const pieMonthlyPayoutData = [
     {
       label: "Paid",
-      value: Math.round(paidClients.reduce((sum, client) => sum + client.amount, 0)),
+      value: Math.round(
+        paidClients.reduce((sum, client) => sum + client.amount, 0)
+      ),
       clients: paidClients,
     },
     {
       label: "Unpaid",
-      value: Math.round(unpaidClients.reduce((sum, client) => sum + client.amount, 0)),
+      value: Math.round(
+        unpaidClients.reduce((sum, client) => sum + client.amount, 0)
+      ),
       clients: unpaidClients,
     },
   ];
@@ -490,11 +494,7 @@ const FinanceDashboard = () => {
           // Perform navigation or logic
           if (selectedCategory) {
             // Example: navigate or log the label/value
-            console.log(
-              "Selected:",
-              selectedCategory.label,
-              selectedCategory.value
-            );
+
             // Replace with actual navigation logic
             navigate(`finance`);
           }
@@ -682,16 +682,20 @@ const FinanceDashboard = () => {
   );
 
   const statutoryDonutSeries = [
- Math.round(
-  approvedPayments.reduce((sum, item) => sum + Number(item.actualAmount || 0), 0)
-), Math.round(
-  pendingPayments.reduce((sum, item) => sum + Number(item.actualAmount || 0), 0)
-)
-
-
+    Math.round(
+      approvedPayments.reduce(
+        (sum, item) => sum + Number(item.actualAmount || 0),
+        0
+      )
+    ),
+    Math.round(
+      pendingPayments.reduce(
+        (sum, item) => sum + Number(item.actualAmount || 0),
+        0
+      )
+    ),
   ];
 
-  console.log("statuto",statutoryDonutSeries)
   const statutoryDonutLabels = ["Approved", "Pending"];
   const statutoryDonutColors = ["#4CAF50", "#FF9800"];
   const statutoryTooltipValues = statutoryDonutSeries.map(
@@ -793,6 +797,7 @@ const FinanceDashboard = () => {
   ];
 
   const marchPaymentColumns = [
+    { id: "srNo", label: "Sr No",width: 100},
     { id: "expanseName", label: "Expense Name", width: 200 },
     { id: "expanseType", label: "Type", width: 150 },
     {
@@ -942,7 +947,7 @@ const FinanceDashboard = () => {
         <MuiTable
           Title="Payouts Mar-25"
           columns={marchPaymentColumns}
-          rows={march2025Payments}
+          rows={march2025Payments.map((item,index)=> ({srNo:index+1,...item}))}
           rowKey="_id"
           scroll={true}
           rowsToDisplay={march2025Payments.length}

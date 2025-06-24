@@ -398,7 +398,7 @@ const MeetingDashboard = () => {
   //   }
 
   // })
-  // console.log("bookedHours",calculateBookedHoursPerMonth)
+
 
   // const totalBookableHours = 1980;
   // Example booked hours data per month
@@ -940,7 +940,6 @@ const MeetingDashboard = () => {
 
   //   const status = room.housekeepingStatus || "Pending"
 
-  //   console.log("status",status)
   //   if(status === "Pending") housekeepingMap.cleaning += 1
   //   if(status === "Completed") housekeepingMap.clean += 1
 
@@ -948,7 +947,6 @@ const MeetingDashboard = () => {
 
   // const housekeepingStatusSeries = housekeepingStatus.Object.values
 
-  // console.log("series",housekeepingStatus)
 
   const housekeepingMap = {
     cleaning: 0,

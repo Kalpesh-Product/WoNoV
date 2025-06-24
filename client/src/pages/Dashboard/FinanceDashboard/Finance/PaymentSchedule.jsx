@@ -94,10 +94,7 @@ const PaymentSchedule = () => {
     statusFilters.includes(event.extendedProps.status)
   );
 
-  console.log("Filtered", filteredEvents);
-
   const handleEventClick = (clickInfo) => {
-    console.log("ASDADS", clickInfo.event);
     setSelectedEvent(clickInfo.event);
     setIsDrawerOpen(true);
   };

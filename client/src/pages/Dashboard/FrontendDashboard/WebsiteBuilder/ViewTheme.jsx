@@ -127,7 +127,6 @@ const ViewTheme = () => {
   ];
   const location = useLocation();
   const { templateName, pageName, tag, link } = location.state;
-  console.log(link);
 
   const navigate = useNavigate();
 

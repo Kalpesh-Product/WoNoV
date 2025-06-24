@@ -43,8 +43,6 @@ const DirectorsCompany = () => {
         documentCount: director.documents?.length || 0,
       });
     });
-
-    console.log("result : ", result);
     return result;
   }, [kycDetails]);
 

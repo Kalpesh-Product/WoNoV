@@ -59,7 +59,7 @@ const UserDetails = () => {
       }, 1000); // delay of 1000ms = 1 second
       if (response.data.profilePicture?.url) {
         setPreviewUrl(response.data.profilePicture.url);
-        console.log("Updated preview URL:", response.data.profilePicture.url);
+
       }
     } catch (error) {
       console.error("Upload Error:", error);

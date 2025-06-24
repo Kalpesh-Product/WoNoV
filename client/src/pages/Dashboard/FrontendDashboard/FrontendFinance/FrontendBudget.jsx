@@ -30,7 +30,6 @@ const FrontendBudget = () => {
   const axios = useAxiosPrivate();
   const [isReady, setIsReady] = useState(false);
   const budget = usePageDepartment()
-  console.log("Budget in frontend : ",budget)
 
   const [openModal, setOpenModal] = useState(false);
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({

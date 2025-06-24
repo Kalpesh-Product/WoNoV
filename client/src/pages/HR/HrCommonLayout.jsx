@@ -12,7 +12,7 @@ const HrCommonLayout = () => {
     { label: "Leaves", path: "leaves" },
     { label: "Agreements", path: "agreements" },
     { label: "Company Handbook", path: "companyHandbook" },
-    // { label: "Payslips", path: "payslips" },
+    { label: "Payslips", path: "payslips" },
   ];
 
   // Redirect to "attendance" if at "/app/HR"

@@ -41,10 +41,6 @@ const VoucherCreation = () => {
   });
 
   const onSubmitTemplate = (data) => {
-    console.log("Template Submitted:", {
-      ...data,
-      file: data.file?.name,
-    });
     toast.success("Template Added!");
     setViewVoucherModal(false);
     reset();

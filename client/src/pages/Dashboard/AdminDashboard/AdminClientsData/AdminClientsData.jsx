@@ -26,7 +26,6 @@ const AdminClientsData = () => {
     },
   });
   const handleClickRow = (clientData) => {
-    console.log("clientData : ", clientData);
     dispatch(setSelectedClient(clientData));
     navigate(
       `/app/dashboard/admin-dashboard/client-members/client-members-data/${clientData.clientName}`

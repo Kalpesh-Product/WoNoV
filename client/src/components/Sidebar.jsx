@@ -180,7 +180,6 @@ const canAccessVisitors = userDeptIds.some((id) =>
     },
   ];
 
-  console.log(auth.user.departments.map((item)=>item.name)[0])
   const userDepartments = auth.user.departments.map((item) => item.name);
 
   // First, attempt to filter submenus based on user departments

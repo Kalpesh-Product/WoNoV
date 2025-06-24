@@ -11,7 +11,6 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 const HrDepartmentTasks = () => {
   const location = useLocation();
   const { month, department, tasks, year } = location.state || {};
-  console.log("month", month);
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
   const fullMonthNames = {
     Jan: "January",
@@ -260,8 +259,6 @@ const HrDepartmentTasks = () => {
       fyMonths[(new Date(year, month - 1, day).getMonth() + 9) % 12];
     return taskMonth === selectedMonth;
   });
-
-  console.log("FILTERED DATATASA : ", tasksData);
 
   return (
     <div className="flex flex-col gap-4">

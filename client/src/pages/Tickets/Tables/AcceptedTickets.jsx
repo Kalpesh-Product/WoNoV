@@ -170,8 +170,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
     if (!selectedTicketId) return;
     getSupport({ ticketId: selectedTicketId, reason: data.reason });
   };
-  const onEscalate = (ticketDetails) => {
-    console.log(ticketDetails);
+  const onEscalate = (ticketDetails) => {;
     if (!ticketDetails) return;
     escalateTicket({
       ticketId: esCalatedTicket.id,

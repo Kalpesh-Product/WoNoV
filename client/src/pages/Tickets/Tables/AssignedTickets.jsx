@@ -61,7 +61,6 @@ const AssignedTickets = ({ title, departmentId }) => {
 
   // Transform Tickets Data
   const transformTicketsData = (tickets) => {
-    console.log("TransformedTickets:", tickets);
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => {

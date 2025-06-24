@@ -125,7 +125,6 @@ const ClientOnboarding = () => {
     useMutation({
       mutationKey: "clientData",
       mutationFn: async (data) => {
-        console.log("Mutation Data : ", data);
         const response = await axios.post(
           `/api/sales/onboard-co-working-client`,
           data
@@ -356,7 +355,6 @@ const ClientOnboarding = () => {
                       field.onChange(e);
                       setSelectedUnit(e.target.value);
                       fetchUnits();
-                      console.log("Selected Unit : ", selectedUnit);
                     }}
                     size="small"
                     select

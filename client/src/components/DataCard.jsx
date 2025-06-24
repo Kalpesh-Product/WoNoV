@@ -3,7 +3,6 @@ import { FaArrowRight } from "react-icons/fa";
 import { motion } from "motion/react";
 
 const DataCard = ({ title, description, data, route, onClick }) => {
-  console.log(route);
   const navigate = useNavigate();
 
   // const handleClick = () => {

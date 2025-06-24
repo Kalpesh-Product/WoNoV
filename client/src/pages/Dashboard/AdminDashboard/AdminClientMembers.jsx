@@ -10,7 +10,6 @@ const AdminClientMembers = () => {
    const selectedClient = useSelector((state) => state.client.selectedClient);
    const memberData = selectedClient.members;
 
-   console.log("selectedClient : ", selectedClient)
 
   const viewEmployeeColumns = [
     { field: "srNo", headerName: "SR No" },

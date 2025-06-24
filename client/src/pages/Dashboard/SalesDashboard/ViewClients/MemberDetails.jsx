@@ -48,7 +48,7 @@ const MemberDetails = () => {
 
   const location = useLocation();
   const { memberDetails } = location.state;
-  console.log("TUND GUSADHASDLASIDUHAS", memberDetails);
+
   const [isEditing, setIsEditing] = useState(false);
 
   const handleEditToggle = () => {

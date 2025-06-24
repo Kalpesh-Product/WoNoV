@@ -344,8 +344,6 @@ const AltRevenues = () => {
     0
   );
 
-  console.log("TOTAL ACTUAL : ", totalActual);
-
   const totalProjected = alternateRevenue.reduce(
     (sum, month) => sum + (month.projected ?? 0),
     0

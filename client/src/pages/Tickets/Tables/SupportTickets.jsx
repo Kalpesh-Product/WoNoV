@@ -51,7 +51,6 @@ const SupportTickets = ({ title, departmentId }) => {
 
   const handleViewTicket = (ticket) => {
     const raw = ticket || {};
-    console.log("raw", raw);
     setSelectedTicket({
       ticketTitle: ticket.ticketTitle || "No Title",
       raisedBy: raw.raisedBy ? raw.raisedBy : "Unknown",
@@ -68,7 +67,6 @@ const SupportTickets = ({ title, departmentId }) => {
 
   // Transform Tickets Data
   const transformTicketsData = (tickets) => {
-    console.log("TransformedTickets:", tickets);
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => {
@@ -288,7 +286,6 @@ const SupportTickets = ({ title, departmentId }) => {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => {
-        console.log(params.data);
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
           "In Progress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font

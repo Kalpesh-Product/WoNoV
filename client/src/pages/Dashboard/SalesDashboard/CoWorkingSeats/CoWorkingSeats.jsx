@@ -303,7 +303,6 @@ const CoWorkingSeats = () => {
       });
     }
 
-    console.log("MONTH DATA FROM function ", monthData);
 
     return monthData;
   };
@@ -322,7 +321,6 @@ const CoWorkingSeats = () => {
       .reduce((sum, row) => sum + (row.booked || 0), 0);
   }, [tableData, selectedTableMonth]);
 
-  console.log("TABLE DATA", tableData);
 
   const columns = [
     { headerName: "Sr No", field: "srno", maxWidth: 80 },
@@ -339,9 +337,6 @@ const CoWorkingSeats = () => {
             onClick={() => {
               const parsedDate = dayjs(rowData.date, "DD-MM-YYYY");
               const selectedMonth = parsedDate.format("MMM-YYYY");
-
-              console.log("Row Date Raw:", rowData.date);
-              console.log("Parsed Month:", selectedMonth);
 
               const monthStart = parsedDate.startOf("month");
               const monthEnd = parsedDate.endOf("month");
@@ -365,10 +360,6 @@ const CoWorkingSeats = () => {
                   selectedMonth: selectedMonth,
                 },
               });
-              console.log(
-                `📅 Bookings for unit ${unitNo} in ${selectedMonth}:`,
-                bookedClients
-              );
             }}
           >
             {params.value}
@@ -385,7 +376,6 @@ const CoWorkingSeats = () => {
     { headerName: "Month", field: "date" },
   ];
 
-  console.log("tableData", tableData);
 
   return (
     <div className="p-4 flex flex-col gap-4">

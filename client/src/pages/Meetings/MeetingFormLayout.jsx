@@ -51,8 +51,6 @@ const MeetingFormLayout = () => {
   const navigate = useNavigate();
   let showExternalType = false;
 
-  // console.log("employee",auth.user)
-
   const roles = auth.user.role.map((role) => role.roleTitle);
 
 
@@ -106,10 +104,6 @@ const MeetingFormLayout = () => {
   const company = watch("company");
   const isBizNest = company === "6799f0cd6a01edbe1bc3fcea";
   const externalCompany = watch("externalCompany");
-  useEffect(
-    () => console.log("EXTERNAL COMPANY : ", externalCompany || ""),
-    [externalCompany]
-  );
 
   const [shouldFetchParticipants, setShouldFetchParticipants] = useState(false);
 
@@ -160,7 +154,6 @@ const MeetingFormLayout = () => {
 
     const selectedDate = dayjs(arg.start).startOf("day");
     const startTime = dayjs(arg.start);
-    console.log("Start Time : ", startTime);
     const endTime = dayjs(arg.start).add(30, "minute");
 
     setValue("startDate", selectedDate, { shouldDirty: true });
@@ -238,7 +231,6 @@ const MeetingFormLayout = () => {
       navigate("/app/meetings/calendar");
     },
     onError: (error) => {
-      console.log("error", error);
       toast.error(error.response.data.message || "ERROR");
     },
   });

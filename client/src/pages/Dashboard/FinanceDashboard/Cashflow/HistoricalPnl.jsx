@@ -16,7 +16,6 @@ const HistoricalPnl = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/sales/fetch-revenues");
-        console.log("Revenue Data", response.data);
         return response.data;
       } catch (error) {
         console.error("Error fetching clients data:", error);

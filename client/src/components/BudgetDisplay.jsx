@@ -52,7 +52,6 @@ const BudgetDisplay = ({ budgetData }) => {
   });
 
   const onSubmit = (data) => {
-    console.log("Form Data:", data);
     setOpenModal(false);
     reset();
   };

@@ -35,7 +35,7 @@ const VisitorDashboard = () => {
   const visitorCategories = Array.isArray(visitorsData)
     ? visitorsData.map((item) => item.visitorType)
     : [];
-  console.log("Visitor Categories", visitorCategories);
+
 
   const visitorMap = {};
   visitorsData.forEach(({ visitorType }) => {

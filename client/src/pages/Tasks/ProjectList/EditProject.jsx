@@ -39,7 +39,6 @@ const EditProject = () => {
 
 
   const onSubmit = (data) => {
-    console.log("Task Data:", data);
     reset(); // Reset form after submission
     setOpenModal(false);
   };

@@ -50,7 +50,6 @@ const ManageTicketsHome = () => {
             onClick={() => {
               dispatch(setSelectedDepartment(params.data.mongoId));
               navigate(`${params.value}`);
-              console.log("Navigating with ID:", params.data?.mongoId);
             }}
             className="text-primary font-pregular hover:underline cursor-pointer">
             {params.value}

@@ -255,7 +255,6 @@ const SalesBudget = () => {
       };
     })
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
-  console.log("financeial Data", financialData);
 
   // ---------------------------------------------------------------------//
   if (!isReady) {

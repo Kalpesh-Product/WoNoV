@@ -250,10 +250,6 @@ const AdminMonthlyInvoiceReports = () => {
     }
   };
 
-  useEffect(() => {
-    console.log(selectedAsset);
-  }, [selectedAsset]);
-
   return (
     <>
       <PageFrame>

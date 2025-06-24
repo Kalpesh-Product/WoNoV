@@ -53,7 +53,7 @@ const AdditionalTasks = () => {
           tableTitle={"Additional Tasks"}
           data={rows}
           columns={dailyTaskColumns}
-          handleClick={() => console.log("Button clicked")}
+          // handleClick={() => console.log("Button clicked")}
           enableCheckbox
         />
       </div>

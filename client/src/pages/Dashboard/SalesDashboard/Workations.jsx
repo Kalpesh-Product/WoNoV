@@ -63,9 +63,6 @@ const Workations = () => {
     if (isWorkationLoading || !workationData) return [];
     return transformRevenues(workationData);
   }, [workationData, isWorkationLoading]);
-
-  console.log("In workations", transformRevenuesData);
-
   const graphNumbers = transformRevenuesData?.map((item) => {
     // Remove commas and convert the value to a number
     return parseFloat(item?.actual.replace(/,/g, ""));

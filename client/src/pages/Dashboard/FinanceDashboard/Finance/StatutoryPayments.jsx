@@ -173,7 +173,6 @@ const StatutoryPayments = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => {
-        console.log("Data : ", params.data);
         return (
           <>
             <div className="p-2 mb-2 flex gap-2">

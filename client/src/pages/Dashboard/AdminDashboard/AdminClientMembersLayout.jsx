@@ -4,7 +4,6 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const AdminClientMembersLayout = () => {
   const location = useLocation();
-  console.log(location.pathname)
   const navigate = useNavigate();
 
   // Map routes to tabs

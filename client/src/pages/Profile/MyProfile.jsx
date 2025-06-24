@@ -27,7 +27,6 @@ const MyProfile = ({ handleClose, pageTitle }) => {
   const [uploading, setUploading] = useState(false);
   const axios = useAxiosPrivate();
 
-  console.log("user img url", auth.user.profilePicture?.url);
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
@@ -97,7 +96,7 @@ const MyProfile = ({ handleClose, pageTitle }) => {
       // ✅ Update preview URL so <Avatar> shows the new image
       if (response.data.profilePicture?.url) {
         setPreviewUrl(response.data.profilePicture.url);
-        console.log("Updated preview URL:", response.data.profilePicture.url);
+
       }
 
       // ✅ Optional: update auth context if you store user globally

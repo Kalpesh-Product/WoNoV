@@ -66,7 +66,6 @@ const Projections = () => {
       monthlyIncomeExpense[fyMonthIndex].expense += entry.projectedAmount || 0;
     }
   });
-  console.log("EXPENSE : ", monthlyIncomeExpense);
 
   const projectionData = [
     {

@@ -28,7 +28,6 @@ const PerformanceAnnual = () => {
     queryKey: ["fetchedAnnualKra"],
     queryFn: fetchDepartments,
   });
-  console.log(department);
   const departmentColumns = [
     { headerName: "Sr no", field: "srno",width:100 },
     { headerName: "KPA List", field: "taskName", flex : 1 },

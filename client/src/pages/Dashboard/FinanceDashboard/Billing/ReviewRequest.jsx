@@ -44,7 +44,6 @@ const ReviewRequest = () => {
   const formRef = useRef(null);
   const navigate= useNavigate()
   const voucherDetails = useSelector((state) => state.finance.voucherDetails);
-  console.log("Voucher REdux" , voucherDetails)
   const [openPreview, setOpenPreview] = useState(false);
   const department = usePageDepartment();
   const axios = useAxiosPrivate();

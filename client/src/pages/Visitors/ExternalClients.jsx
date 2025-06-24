@@ -176,7 +176,6 @@ const ExternalClients = () => {
   };
 
   const submit = async (data) => {
-    console.log(data);
     if (isEditing && selectedVisitor) {
       const updatePayload = {
         ...data,

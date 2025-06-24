@@ -44,7 +44,6 @@ const DepartmentTasks = () => {
       headerName: "Department",
       field: "department",
       cellRenderer: (params) => {
-        console.log(params.data.mongoId);
         return (
           <span
             role="button"

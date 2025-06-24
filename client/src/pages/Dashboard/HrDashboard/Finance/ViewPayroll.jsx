@@ -117,7 +117,6 @@ const ViewPayroll = () => {
   };
 
   const paymentBreakup = isLoading ? [] : userPayrollData.paymentBreakup;
-  console.log("JJS", paymentBreakup);
 
   return (
     <div className="flex flex-col gap-4">

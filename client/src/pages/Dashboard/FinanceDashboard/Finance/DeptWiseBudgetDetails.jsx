@@ -32,7 +32,6 @@ const DeptWiseBudgetDetails = () => {
   const deptId = location.state?.deptId;
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const deptName = location.state?.deptName;
-  console.log("dEPST", deptName);
   const { data: departmentBudget = [], isPending: isBudgetLoading } = useQuery({
     queryKey: ["departmentBudget"],
     queryFn: async () => {
