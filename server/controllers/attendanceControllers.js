@@ -425,6 +425,33 @@ const getAttendance = async (req, res, next) => {
   }
 };
 
+// const getAttendanceRequests = async (req, res, next) => {
+//   const { id } = req.params;
+//   const { company } = req;
+
+//   try {
+//     const user = await UserData.findOne({ empId: id });
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     const requests = await AttendanceRequest.find({
+//       user: user._id,
+//       company,
+//     })
+//       .lean()
+//       .exec();
+
+//     if (!requests || requests.length === 0) {
+//       return res.status(200).json([]);
+//     }
+
+//     return res.status(200).json(requests);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const correctAttendance = async (req, res, next) => {
   const { user, ip, company } = req;
   const { targetedDay, inTime, outTime, empId } = req.body;
@@ -615,6 +642,29 @@ const approveCorrectionRequest = async (req, res, next) => {
       { new: true }
     );
 
+    // const attendanceRequest = await AttendanceRequest.findById({
+    //   _id: attendanceId,
+    // });
+
+    // ✅ Update attendance record
+    // const updatedAttendance = await Attendance.findOneAndUpdate(
+    //   {
+    //     user: attendanceRequest.user,
+    //     createdAt: { $gte: startOfDay, $lt: endOfDay },
+    //   },
+    //   {
+    //     $set: { status: "Approved", approvedBy: user },
+    //     $unset: { rejectedBy: "" },
+    //     $set: {
+    //       inTime: attendanceRequest.clockIn,
+    //       outTime: attendanceRequest.clockOut,
+    //     },
+    //   },
+    //   { new: true }
+    // ).sort({
+    //   createdAt: 1,
+    // });
+
     if (!updatedAttendance) {
       throw new CustomError(
         "Failed to approve the correction request",
@@ -803,6 +853,7 @@ module.exports = {
   endBreak,
   getAllAttendance,
   getAttendance,
+  // getAttendanceRequests,
   correctAttendance,
   approveCorrectionRequest,
   rejectCorrectionRequest,
