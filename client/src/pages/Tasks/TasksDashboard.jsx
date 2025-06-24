@@ -1,4 +1,3 @@
-import React from "react";
 import { RiPagesLine } from "react-icons/ri";
 import { MdFormatListBulleted, MdMiscellaneousServices } from "react-icons/md";
 import { CgProfile } from "react-icons/cg";
@@ -26,13 +25,13 @@ import { Chip } from "@mui/material";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import dayjs from "dayjs";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import { useLocation, useSearchParams } from "react-router-dom";
-
 const TasksDashboard = () => {
   const axios = useAxiosPrivate();
+  const [selectedFY, setSelectedFY] = useState(null);
 
   const { auth } = useAuth();
   const department = usePageDepartment();
@@ -137,10 +136,10 @@ const TasksDashboard = () => {
   });
 
   const { series, rawCounts } = normalizeDataByMonth(allTasksQuery.data || []);
-  const currentFY = series[0]?.group; // FY 2024-25, etc.
-  const totalTasksForYear = rawCounts[currentFY]
-    ? rawCounts[currentFY].reduce((sum, m) => sum + m.total, 0)
-    : 0;
+
+  const handleYearChange = (fy) => {
+    setSelectedFY(fy);
+  };
 
   const taskGraphOptions = {
     chart: {
@@ -574,18 +573,31 @@ const TasksDashboard = () => {
       })
     : [];
 
+  const availableFYs = Array.from(new Set(series.map((s) => s.group)));
+
+  useEffect(() => {
+    if (availableFYs.length > 0 && !selectedFY) {
+      setSelectedFY(availableFYs[0]); // Default to first FY (e.g., "FY 2024-25")
+    }
+  }, [availableFYs, selectedFY]);
+
+  const totalTasksForYear =
+    selectedFY && rawCounts[selectedFY]
+      ? rawCounts[selectedFY].reduce((sum, m) => sum + m.total, 0)
+      : 0;
+
   const meetingsWidgets = [
     {
       layout: 1,
       widgets: [
         <YearlyGraph
           data={series}
-          currentYear={true}
           responsiveResize
           chartId={"bargraph-hr-expense"}
           options={taskGraphOptions}
           title={"OVERALL AVERAGE TASKS COMPLETION"}
           titleAmount={`TOTAL TASKS : ${totalTasksForYear || 0}`}
+          onYearChange={handleYearChange}
         />,
       ],
     },
