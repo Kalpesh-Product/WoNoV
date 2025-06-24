@@ -40,6 +40,7 @@
     "grapesjs-preset-webpage": "^1.0.3",
     "grapesjs-react": "^4.0.2",
     "html2canvas": "^1.4.1",
+    "html2pdf.js": "^0.10.3",
     "jspdf": "^3.0.0",
     "motion": "^12.5.0",
     "react": "^19.0.0",
