@@ -685,11 +685,73 @@ const getTodayDeptTasks = async (req, res, next) => {
   }
 };
 
+// const getTeamMembersTasks = async (req, res, next) => {
+//   try {
+//     const { company, departments } = req;
+
+//     // Find team members
+//     const teamMembers = await User.find({
+//       departments: { $in: departments },
+//       isActive: true,
+//     })
+//       .populate([
+//         { path: "role", select: "roleTitle" },
+//         { path: "departments", select: "name" },
+//       ])
+//       .select("firstName middleName lastName email");
+
+//     const tasks = await Task.find({
+//       company,
+//       department: { $in: departments },
+//     })
+//       .populate([
+//         {
+//           path: "completedBy",
+//           select: "email firstName lastName isActive",
+//           populate: [
+//             { path: "role", select: "roleTitle" },
+//             { path: "departments", select: "name" },
+//           ],
+//         },
+//       ])
+//       .populate("assignedBy", "firstName lastName")
+//       .select("-company")
+//       .lean();
+
+//     const transformedTasks = teamMembers.map((member) => {
+//       const memberId = member._id.toString();
+
+//       const totalTasks = tasks.filter((emp) => {
+//         return emp?.completedBy && emp.completedBy._id.toString() === memberId;
+//       }).length;
+
+//       return {
+//         name: `${member.firstName} ${member.middleName || ""} ${
+//           member.lastName
+//         }`.trim(),
+//         email: member.email,
+//         department: member.departments.map((dept) => dept.name),
+//         role: member.role.map((r) => r.roleTitle),
+//         tasks: totalTasks,
+//       };
+//     });
+
+//     return res.status(200).json(transformedTasks);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const getTeamMembersTasks = async (req, res, next) => {
   try {
     const { company, departments } = req;
 
-    // Find team members
+    if (!company || !departments || departments.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Company or departments info missing in request" });
+    }
+
     const teamMembers = await User.find({
       departments: { $in: departments },
       isActive: true,
@@ -722,7 +784,8 @@ const getTeamMembersTasks = async (req, res, next) => {
       const memberId = member._id.toString();
 
       const totalTasks = tasks.filter((emp) => {
-        return emp?.completedBy && emp.completedBy._id.toString() === memberId;
+        const completedById = emp?.completedBy?._id;
+        return completedById && completedById.toString() === memberId;
       }).length;
 
       return {

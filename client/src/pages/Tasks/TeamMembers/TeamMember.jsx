@@ -19,8 +19,10 @@ const TeamMember = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/tasks/get-team-tasks");
+        console.log("Get Team Tasks:", response.data);
         return response.data;
       } catch (error) {
+        console.log("Get Team Tasks Error:", error.response.data.message);
         throw new Error(error.response.data.message);
       }
     },
@@ -162,19 +164,31 @@ const TeamMember = () => {
             search={true}
             searchColumn={"kra"}
             tableTitle={"Team Members"}
+            // data={
+            //   isLoading
+            //     ? []
+            //     : [
+            //         ...taskList.map((task, index) => ({
+            //           srNo: index + 1,
+            //           name: task.name,
+            //           email: task.email,
+            //           role: task.role,
+            //           tasks: task.tasks,
+            //           status: task.status,
+            //         })),
+            //       ]
+            // }
             data={
-              isLoading
+              isLoading || !Array.isArray(taskList)
                 ? []
-                : [
-                    ...taskList.map((task, index) => ({
-                      srNo: index + 1,
-                      name: task.name,
-                      email: task.email,
-                      role: task.role,
-                      tasks: task.tasks,
-                      status: task.status,
-                    })),
-                  ]
+                : taskList.map((task, index) => ({
+                    srNo: index + 1,
+                    name: task.name,
+                    email: task.email,
+                    role: task.role,
+                    tasks: task.tasks,
+                    status: task.status,
+                  }))
             }
             columns={teamMembersColumn}
           />

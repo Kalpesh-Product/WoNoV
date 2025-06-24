@@ -128,52 +128,53 @@ const Leaves = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => {
-        // ✅ Do not render ThreeDotMenu if status is Approved or Rejected
-        if (["Approved", "Rejected"].includes(params.data.status)) return null;
+        const status = params.data.status;
+        const userRole = auth.user.role[0]?.roleTitle || "";
+
+        const isAdmin =
+          userRole === "Master Admin" ||
+          userRole === "Super Admin" ||
+          userRole.endsWith("Admin");
+
+        // ✅ Don't show ThreeDotMenu if status is Approved/Rejected or user is not an admin
+        if (["Approved", "Rejected"].includes(status) || !isAdmin) return null;
 
         return (
           <div className="flex items-center gap-2">
             <ThreeDotMenu
               rowId={params.data.id}
               menuItems={[
-                ...(auth.user.role.length > 0 &&
-                (auth.user.role[0].roleTitle === "Master Admin" ||
-                  auth.user.role[0].roleTitle === "Super Admin" ||
-                  auth.user.role[0].roleTitle.endsWith("Admin"))
+                ...(params.data.status === "Rejected"
                   ? [
-                      ...(params.data.status === "Rejected"
-                        ? [
-                            {
-                              label: "Approve",
-                              onClick: () => approveLeave(params.data._id),
-                              isLoading: isApproving,
-                            },
-                          ]
-                        : []),
-                      ...(params.data.status === "Approved"
-                        ? [
-                            {
-                              label: "Reject",
-                              onClick: () => rejectLeave(params.data._id),
-                              isLoading: isRejecting,
-                            },
-                          ]
-                        : []),
-                      ...(params.data.status !== "Approved" &&
-                      params.data.status !== "Rejected"
-                        ? [
-                            {
-                              label: "Approve",
-                              onClick: () => approveLeave(params.data._id),
-                              isLoading: isApproving,
-                            },
-                            {
-                              label: "Reject",
-                              onClick: () => rejectLeave(params.data._id),
-                              isLoading: isRejecting,
-                            },
-                          ]
-                        : []),
+                      {
+                        label: "Approve",
+                        onClick: () => approveLeave(params.data._id),
+                        isLoading: isApproving,
+                      },
+                    ]
+                  : []),
+                ...(params.data.status === "Approved"
+                  ? [
+                      {
+                        label: "Reject",
+                        onClick: () => rejectLeave(params.data._id),
+                        isLoading: isRejecting,
+                      },
+                    ]
+                  : []),
+                ...(params.data.status !== "Approved" &&
+                params.data.status !== "Rejected"
+                  ? [
+                      {
+                        label: "Approve",
+                        onClick: () => approveLeave(params.data._id),
+                        isLoading: isApproving,
+                      },
+                      {
+                        label: "Reject",
+                        onClick: () => rejectLeave(params.data._id),
+                        isLoading: isRejecting,
+                      },
                     ]
                   : []),
               ]}
