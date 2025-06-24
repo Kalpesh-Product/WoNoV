@@ -797,6 +797,7 @@ const FinanceDashboard = () => {
   ];
 
   const marchPaymentColumns = [
+    { id: "srNo", label: "Sr No",width: 100},
     { id: "expanseName", label: "Expense Name", width: 200 },
     { id: "expanseType", label: "Type", width: 150 },
     {
@@ -946,7 +947,7 @@ const FinanceDashboard = () => {
         <MuiTable
           Title="Payouts Mar-25"
           columns={marchPaymentColumns}
-          rows={march2025Payments}
+          rows={march2025Payments.map((item,index)=> ({srNo:index+1,...item}))}
           rowKey="_id"
           scroll={true}
           rowsToDisplay={march2025Payments.length}
