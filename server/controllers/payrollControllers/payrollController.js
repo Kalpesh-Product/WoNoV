@@ -7,7 +7,7 @@ const { PDFDocument } = require("pdf-lib");
 const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
 const Payslip = require("../../models/Payslip");
 const Company = require("../../models/hr/Company");
-const { startOfMonth, isSameMonth, parseISO } = require("date-fns");
+const { startOfMonth, isSameMonth } = require("date-fns");
 const Leave = require("../../models/hr/Leaves");
 const Attendance = require("../../models/hr/Attendance");
 
@@ -140,7 +140,7 @@ const generatePayroll = async (req, res, next) => {
 
       const uploadResponse = await handleDocumentUpload(
         processedBuffer,
-        `${foundCompany.companyName}/payrolls/${foundUser.empId}`,
+        `${foundCompany.companyName}/payrolls/${foundUser.firstName} ${foundUser.lastName}`,
         originalFilename
       );
 
