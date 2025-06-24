@@ -31,6 +31,7 @@ const YearWiseTable = ({
   dateFilter,
   handleBatchAction,
   batchButton,
+  isRowSelectable
 }) => {
   const lastEmittedMonthRef = useRef(null);
   const fiscalMap = useMemo(() => {
@@ -201,6 +202,7 @@ const YearWiseTable = ({
         hideFilter={filteredData.length <= 9}
         search={filteredData.length >= 10}
         dateColumn={dateColumn}
+        isRowSelectable={isRowSelectable}
         handleBatchAction={handleBatchAction}
         batchButton={batchButton}
       />

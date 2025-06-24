@@ -3,142 +3,150 @@ import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
+import { useLocation } from "react-router-dom";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
+import humanTime from "../../../../utils/humanTime";
+import YearWiseTable from "../../../../components/Tables/YearWiseTable";
+import humanDate from "../../../../utils/humanDateForamt";
+import { inrFormat } from "../../../../utils/currencyFormat";
 
 const ViewPayroll = () => {
   const payrollColumns = [
-    { field: "date", headerName: "Date", flex: 1 },
-    { field: "inTime", headerName: "In Time", flex: 1 },
-    { field: "outTime", headerName: "Out Time", flex: 1 },
-    { field: "workHours", headerName: "Work Hours", flex: 1 },
-    { field: "breakHours", headerName: "Break Hours", flex: 1 },
-    { field: "totalHours", headerName: "Total Hours", flex: 1 },
+    { field: "srNo", headerName: "SrNo", flex: 1 },
+    { field: "empId", headerName: "Employee ID", flex: 1 },
+    {
+      field: "date",
+      headerName: "Date",
+      flex: 1,
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "inTime",
+      headerName: "In Time",
+      flex: 1,
+      cellRenderer: (params) => humanTime(params.value),
+    },
+    {
+      field: "outTime",
+      headerName: "Out Time",
+      flex: 1,
+      cellRenderer: (params) => humanTime(params.value),
+    },
+    // { field: "workHours", headerName: "Work Hours", flex: 1 },
+    { field: "breakDuration", headerName: "Break Hours", flex: 1 },
+    // { field: "totalHours", headerName: "Total Hours", flex: 1 },
     { field: "entryType", headerName: "Entry Type", flex: 1 },
-    { field: "paydeduction", headerName: "Pay Deduction", flex: 1 },
+    // { field: "paydeduction", headerName: "Pay Deduction", flex: 1 },
   ];
   const leavesRecord = [
+    { field: "srNo", headerName: "SrNo", flex: 1 },
     { field: "fromDate", headerName: "From Date", width: 150 },
     { field: "toDate", headerName: "To Date" },
     { field: "leaveType", headerName: "Leave Type" },
     { field: "leavePeriod", headerName: "Leave Period" },
     { field: "description", headerName: "Description", flex: 1 },
-    { field: "paydeduction", headerName: "Pay Deduction", width: 100 },
+    // { field: "paydeduction", headerName: "Pay Deduction", width: 100 },
   ];
+  const location = useLocation();
+  const { empId } = location.state;
+  const axios = useAxiosPrivate();
 
-  const leavesData = [
-    {
-      fromDate: "2025-01-20",
-      toDate: "2025-01-20",
-      leaveType: "Casual Leave",
-      leavePeriod: "8 Hours",
-      description: "Attended a family function",
-      paydeduction: "No",
-    },
-    {
-      fromDate: "2025-01-21",
-      toDate: "2025-01-21",
-      leaveType: "Sick Leave",
-      leavePeriod: "6 Hours",
-      description: "Recovered from fever and cold",
-      paydeduction: "Yes",
-    },
-    {
-      fromDate: "2025-01-22",
-      toDate: "2025-01-22",
-      leaveType: "Annual Leave",
-      leavePeriod: "7.5 Hours",
-      description: "Took a personal day for errands",
-      paydeduction: "No",
-    },
-    {
-      fromDate: "2025-01-23",
-      toDate: "2025-01-23",
-      leaveType: "Maternity Leave",
-      leavePeriod: "5 Hours",
-      description: "Caring for newborn child",
-      paydeduction: "Yes",
-    },
-    {
-      fromDate: "2025-01-24",
-      toDate: "2025-01-24",
-      leaveType: "Paternity Leave",
-      leavePeriod: "9 Hours",
-      description: "Supporting spouse and newborn",
-      paydeduction: "No",
-    },
-  ];
+  const { data: userPayrollData, isLoading } = useQuery({
+    queryKey: ["userPayroll"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/payroll/get-user-payrolls/${empId}`
+        );
 
-  const rows = [
-    {
-      id: 1,
-      date: "2025-01-01",
-      inTime: "09:00 AM",
-      outTime: "06:00 PM",
-      workHours: "8",
-      breakHours: "1",
-      totalHours: "9",
-      entryType: "Regular",
-      paydeduction: "0",
+        return response.data;
+      } catch (error) {
+        throw new Error(
+          error.response?.data?.message || "Failed to fetch employees"
+        );
+      }
     },
-    {
-      id: 2,
-      date: "2025-02-01",
-      inTime: "09:30 AM",
-      outTime: "06:30 PM",
-      workHours: "8",
-      breakHours: "1",
-      totalHours: "9",
-      entryType: "Regular",
-      paydeduction: "0",
-    },
-    {
-      id: 3,
-      date: "2025-03-01",
-      inTime: "10:00 AM",
-      outTime: "07:00 PM",
-      workHours: "7",
-      breakHours: "1",
-      totalHours: "8",
-      entryType: "Late",
-      paydeduction: "100",
-    },
-    {
-      id: 4,
-      date: "2025-04-01",
-      inTime: "09:15 AM",
-      outTime: "06:15 PM",
-      workHours: "7.5",
-      breakHours: "1",
-      totalHours: "8.5",
-      entryType: "Regular",
-      paydeduction: "0",
-    },
-    {
-      id: 5,
-      date: "2025-05-01",
-      inTime: "08:45 AM",
-      outTime: "05:45 PM",
-      workHours: "8",
-      breakHours: "1",
-      totalHours: "9",
-      entryType: "Early",
-      paydeduction: "0",
-    },
-  ];
+  });
+
+  const attendanceData = isLoading
+    ? []
+    : userPayrollData.attendances.map((item) => {
+        return {
+          ...item,
+          id: item._id,
+          date: item.inTime,
+          inTime: item.inTime,
+          outTime: item.outTime,
+          status: item.status,
+          empId: item.user?.empId,
+          name: `${item.user?.firstName} ${item.user?.lastName}`,
+          email: item.user?.email,
+        };
+      });
+  const leavesData = isLoading
+    ? []
+    : userPayrollData.leaves.map((item) => {
+        return {
+          ...item,
+          name: `${item.takenBy?.firstName} ${item.takenBy?.lastName}`,
+          email: item.takenBy?.email,
+          empId: item.takenBy?.empId,
+        };
+      });
+
+  const userData = {
+    name: [...new Set(attendanceData.map((item) => item.name))],
+    empId: [...new Set(attendanceData.map((item) => item.empId))],
+
+    department: [
+      ...new Set(
+        attendanceData.flatMap(
+          (item) => item.user?.departments?.map((d) => d.name) || []
+        )
+      ),
+    ],
+
+    role: [
+      ...new Set(
+        attendanceData.flatMap(
+          (item) => item.user?.role?.map((r) => r.roleTitle) || []
+        )
+      ),
+    ],
+  };
+
+  const paymentBreakup = isLoading ? [] : userPayrollData.paymentBreakup;
+  console.log("JJS", paymentBreakup);
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection  layout={1} border title={"Payroll List"} button={true} buttonTitle={"Edit"}>
-        <AgTable
-          key={rows.length}
+      <WidgetSection
+        layout={1}
+        border
+        title={"Attendance"}
+        button={true}
+        buttonTitle={"Edit"}
+      >
+        <YearWiseTable
+          key={attendanceData.map((item) => item.id)}
           search={true}
-          searchColumn={"kra"}
-          data={rows}
+          dateColumn={"inTime"}
+          formatTime
+          data={attendanceData}
           columns={payrollColumns}
         />
       </WidgetSection>
-      <WidgetSection  layout={1} border title={"Leaves List"} button={true} buttonTitle={"Edit"}>
-        <AgTable
+      <WidgetSection
+        layout={1}
+        border
+        title={"Leaves List"}
+        button={true}
+        buttonTitle={"Edit"}
+      >
+        <YearWiseTable
           key={leavesData.length}
+          dateColumn={"fromDate"}
           search={true}
           searchColumn={"Leave Type"}
           data={leavesData}
@@ -152,7 +160,6 @@ const ViewPayroll = () => {
         buttonTitle={"Edit"}
         layout={1}
         title={"Payslip Generator"}
-        titleFont
       >
         <div className="flex flex-col gap-4 justify-center items-center">
           <div className="border-default border-borderGray p-6 rounded-xl">
@@ -165,32 +172,34 @@ const ViewPayroll = () => {
                   <span className="text-content">Employee Name:</span>{" "}
                   <span className="text-content text-gray-600">
                     {" "}
-                    Abrar Shaikh
+                    {userData.name}{" "}
                   </span>
                 </div>
                 <div className="flex flex-col w-full">
                   <span className="text-content">Employee ID:</span>{" "}
-                  <span className="text-content text-gray-600">E0001</span>
+                  <span className="text-content text-gray-600">
+                    {userData.empId}
+                  </span>
                 </div>
               </div>
               <div className="flex gap-4 py-4 text-sm">
                 <div className="flex flex-col w-full">
                   <span className="text-content">Designation:</span>{" "}
                   <span className="text-content text-gray-600">
-                    Master-Admin
+                    {userData.role}
                   </span>
                 </div>
                 <div className="flex flex-col w-full">
                   <span className="text-content">Department</span>{" "}
                   <span className="text-content text-gray-600">
-                    Top Management
+                    {userData.department}
                   </span>
                 </div>
               </div>
               <div className="flex flex-col w-full">
                 <span className="text-content">Month</span>{" "}
                 <span className="text-content text-gray-600">
-                  December 2024
+                  {new Date().toLocaleString("default",{month : 'long', year:'numeric'})}
                 </span>
               </div>
             </div>
@@ -204,20 +213,20 @@ const ViewPayroll = () => {
               <div className="flex flex-col text-content py-4 gap-4">
                 <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
                   <span>Basic Pay</span>
-                  <span>₹70,000</span>
+                  <span>{inrFormat(paymentBreakup.basicPay) || 0}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
+                {/* <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
                   <span>House Rent Allowance (HRA)</span>
-                  <span>₹15,000</span>
+                  <span>INR 15,000</span>
                 </div>
                 <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
                   <span>Other Allowances</span>
-                  <span>₹10,000</span>
+                  <span>INR 10,000</span>
                 </div>
                 <div className="flex justify-between py-1 font-semibold">
                   <span>Total Earnings</span>
-                  <span>₹95,000</span>
-                </div>
+                  <span>INR 95,000</span>
+                </div> */}
               </div>
             </div>
             <div className="mb-4">
@@ -228,18 +237,17 @@ const ViewPayroll = () => {
               </div>
               <div className="flex flex-col text-content py-4 gap-4">
                 <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
-                  <span>Tax and Other Deductions</span>
-                  <span>₹5000</span>
-                </div>
-                <div className="flex justify-between py-1 font-semibold">
-                  <span>Total Deductions</span>
-                  <span>₹5000</span>
+                  <span>PF</span>
+                  <span>{inrFormat(paymentBreakup.pf) || 0}</span>
                 </div>
               </div>
             </div>
 
             <div className="text-sm text-right font-semibold text-gray-800">
-              <span>Net Pay : </span> <span className="text-lg">₹90,000</span>
+              <span>Net Pay : </span>{" "}
+              <span className="text-lg">
+                {inrFormat(paymentBreakup.basicPay - paymentBreakup.pf)}
+              </span>
             </div>
 
             <p className="text-xs text-gray-500 mt-4 text-center">

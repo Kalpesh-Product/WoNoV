@@ -1,51 +1,89 @@
-// components/PayslipTemplate.jsx
 import React from "react";
 
 const PayslipTemplate = ({ data }) => {
-  const { name, userId, department, month, totalSalary, deductions, netPay } = data;
+  const {
+    name,
+    empId,
+    designation,
+    departmentName,
+    month,
+    totalSalary = 0,
+    deductions = 0,
+  } = data || {};
 
-  const cellStyle = {
-    padding: "8px",
-    border: "1px solid #ccc",
-    textAlign: "left",
-  };
+  const netPay = totalSalary - deductions;
 
   return (
-    <div style={{ padding: "24px", border: "1px solid #ccc", width: "600px", fontFamily: "Arial, sans-serif" }}>
-      <h2 style={{ textAlign: "center", marginBottom: "20px" }}>Monthly Payslip</h2>
-      <div style={{ marginBottom: "16px" }}>
-        <strong>Employee Name:</strong> {name} <br />
-        <strong>Employee ID:</strong> {userId} <br />
-        <strong>Department:</strong> {department || "N/A"} <br />
-        <strong>Month:</strong> {month}
+    <div
+      style={{
+        maxWidth: "700px", // Just a reasonable printable width
+        margin: "0 auto",
+        padding: "0px",
+        fontFamily: "Arial, sans-serif",
+        backgroundColor: "white",
+        color: "#000",
+        fontSize: "14px",
+      }}
+    >
+      <div style={{ border: "1px solid #ccc", borderRadius: "8px", padding: "24px" }}>
+        <span style={{ textAlign: "center", marginBottom: "24px" }}>Pay Slip</span>
+
+        {/* Header Section */}
+        <div style={{ borderTop: "1px solid #ccc", borderBottom: "1px solid #ccc", padding: "16px 0", marginBottom: "24px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+            <div><strong>Employee Name:</strong> {name}</div>
+            <div><strong>Employee ID:</strong> {empId}</div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+            <div><strong>Designation:</strong> {designation || "N/A"}</div>
+            <div><strong>Department:</strong> {departmentName || "N/A"}</div>
+          </div>
+          <div><strong>Month:</strong> {new Date(month).toLocaleString("default", { month: "long", year: "numeric" })}</div>
+        </div>
+
+        {/* Earnings */}
+        <div style={{ marginBottom: "24px" }}>
+          <div style={{ backgroundColor: "#f0f0f0", padding: "8px" }}>
+            <strong>Earnings</strong>
+          </div>
+          <div style={{ padding: "16px 0" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span>Basic Pay</span>
+              <span>₹{totalSalary.toLocaleString()}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+              <span>Total Earnings</span>
+              <span>₹{totalSalary.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Deductions */}
+        <div style={{ marginBottom: "24px" }}>
+          <div style={{ backgroundColor: "#f0f0f0", padding: "8px" }}>
+            <strong>Deductions</strong>
+          </div>
+          <div style={{ padding: "16px 0" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span>Tax and Other Deductions</span>
+              <span>₹{deductions.toLocaleString()}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+              <span>Total Deductions</span>
+              <span>₹{deductions.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Net Pay */}
+        <div style={{ textAlign: "right", fontWeight: "bold", fontSize: "1.1rem", marginBottom: "24px" }}>
+          Net Pay: ₹{netPay.toLocaleString()}
+        </div>
+
+        <p style={{ fontSize: "0.8rem", color: "#555", textAlign: "center" }}>
+          *This is a computer-generated payslip and does not require a signature.
+        </p>
       </div>
-
-      <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "16px" }}>
-        <thead>
-          <tr style={{ background: "#f0f0f0" }}>
-            <th style={cellStyle}>Component</th>
-            <th style={cellStyle}>Amount (INR)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style={cellStyle}>Total Salary</td>
-            <td style={cellStyle}>₹ {totalSalary}</td>
-          </tr>
-          <tr>
-            <td style={cellStyle}>Deductions</td>
-            <td style={cellStyle}>₹ {deductions}</td>
-          </tr>
-          <tr style={{ fontWeight: "bold" }}>
-            <td style={cellStyle}>Net Pay</td>
-            <td style={cellStyle}>₹ {netPay}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <p style={{ textAlign: "center", fontSize: "0.9rem", color: "#888" }}>
-        This is a computer-generated payslip and does not require a signature.
-      </p>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React from "react";
 import AgTable from "../../../../components/AgTable";
-import { Chip } from "@mui/material";
+import { Chip, selectClasses } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 // import AgTable from "../../components/AgTable";
@@ -119,7 +119,8 @@ const HrPayroll = () => {
           }}
           onClick={() =>
             navigate(
-              `/app/dashboard/HR-dashboard/finance/payroll/view-payroll/${params.data.payrollId}`
+              `/app/dashboard/HR-dashboard/finance/payroll/${params.value}`,
+              { state: { empId: params.data.id } }
             )
           }
         >
@@ -225,6 +226,7 @@ const HrPayroll = () => {
     },
   });
   const handleBatchAction = async (selectedRows) => {
+    console.log("selectedRows : ", selectedRows);
     const preparedData = await Promise.all(
       selectedRows.map(async (item) => {
         const monthData = item.months?.[0] || {};
@@ -234,13 +236,26 @@ const HrPayroll = () => {
           email: item.email,
           month: item.month?.[0],
           totalSalary: monthData.totalSalary,
+          deductions: monthData.deductions,
+          departmentName: item.departmentName?.[0],
+          empId: item.empId,
         };
+        console.log("payload to form : ", payload);
 
         const html = ReactDOMServer.renderToStaticMarkup(
           <PayslipTemplate data={payload} />
         );
 
-        const pdfBlob = await html2pdf().from(html).output("blob");
+        const pdfBlob = await html2pdf()
+          .set({
+            margin: 10, // small margin is enough
+            filename: `Payslip_${payload.userId}_${payload.month}.pdf`,
+            image: { type: "jpeg", quality: 0.98 },
+            html2canvas: { scale: 2 }, // higher quality
+            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          })
+          .from(html)
+          .output("blob");
 
         return {
           ...payload,
@@ -264,6 +279,8 @@ const HrPayroll = () => {
         month: entry.month,
         totalSalary: entry.totalSalary,
         deductions: entry.deductions || 0,
+        departmentName: entry.departmentName,
+        empId: entry.empId,
       };
     });
 
@@ -297,6 +314,12 @@ const HrPayroll = () => {
           dateColumn={"month"}
           checkAll={true}
           checkbox
+          isRowSelectable={(rowNode) => {
+            const status = Array.isArray(rowNode.data.status)
+              ? rowNode.data.status[0]
+              : rowNode.data.status;
+            return status !== "Completed";
+          }}
           batchButton={"Generate"}
           searchColumn={"Employee Name"}
           tableTitle={""}

@@ -1,50 +1,91 @@
 import React from "react";
-import Tree from "./TreeNode";
 
-const TestPage = () => {
-  const mockData = [
-    {
-      id: 1,
-      name: "Company",
-      children: [
-        { id: 2, name: "About", children: [] },
-        {
-          id: 3,
-          name: "Department",
-          children: [
-            {
-              id: 4,
-              name: "HR",
-              children: [{ id: 5, name: "SOPs", children: [] }],
-            },
-          ],
-        },
-      ],
-    },
-  ];
+const PayslipTemplate = ({ data }) => {
+  const {
+    name = "Abrar Shaikh",
+    empId = "E0001",
+    designation = "Master-Admin",
+    departmentName = "Top Management",
+    month = "December 2024",
+    totalSalary = 70000,
+    netPay = 15000,
+    otherAllowances = 10000,
+    deductions = 5000,
+  } = data || {};
 
   return (
-    <div className="app p-4">
-      <h1 className="text-2xl font-bold mb-4">Company Handbook</h1>
-      <Tree data={mockData} />
+    <div
+      style={{
+        maxWidth: "900px", // Just a reasonable printable width
+        margin: "0 auto",
+        padding: "0px",
+        fontFamily: "Arial, sans-serif",
+        backgroundColor: "white",
+        color: "#000",
+        fontSize: "14px",
+      }}
+    >
+      <div style={{ border: "1px solid #ccc", borderRadius: "8px", padding: "24px" }}>
+        <h2 style={{ textAlign: "center", marginBottom: "24px" }}>Pay Slip</h2>
 
-      <div className="mt-20">
-        <div className="grid grid-cols-2 w-[100%]">
-          <div className="flex flex-col gap-16 border-default border-borderGray p-4">
-            <div className="h-32 border-default border-borderGray"></div>
-            <div className="h-64 border-default border-borderGray"></div>
-            <div className="h-64 border-default border-borderGray"></div>
+        {/* Header Section */}
+        <div style={{ borderTop: "1px solid #ccc", borderBottom: "1px solid #ccc", padding: "16px 0", marginBottom: "24px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+            <div><strong>Employee Name:</strong> {name}</div>
+            <div><strong>Employee ID:</strong> {empId}</div>
           </div>
-          <div className="flex flex-col gap-16 border-default border-borderGray p-4">
-            <div className="h-64 border-default border-borderGray"></div>
-            <div className="h-64 border-default border-borderGray"></div>
-            <div className="h-64 border-default border-borderGray"></div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+            <div><strong>Designation:</strong> {designation || "N/A"}</div>
+            <div><strong>Department:</strong> {departmentName || "N/A"}</div>
           </div>
-          <div></div>
+          <div><strong>Month:</strong> {new Date(month).toLocaleString("default", { month: "long", year: "numeric" })}</div>
         </div>
+
+        {/* Earnings */}
+        <div style={{ marginBottom: "24px" }}>
+          <div style={{ backgroundColor: "#f0f0f0", padding: "8px" }}>
+            <strong>Earnings</strong>
+          </div>
+          <div style={{ padding: "16px 0" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span>Basic Pay</span>
+              <span>₹{totalSalary.toLocaleString()}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+              <span>Total Earnings</span>
+              <span>₹{totalSalary.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Deductions */}
+        <div style={{ marginBottom: "24px" }}>
+          <div style={{ backgroundColor: "#f0f0f0", padding: "8px" }}>
+            <strong>Deductions</strong>
+          </div>
+          <div style={{ padding: "16px 0" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span>Tax and Other Deductions</span>
+              <span>₹{deductions.toLocaleString()}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+              <span>Total Deductions</span>
+              <span>₹{deductions.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Net Pay */}
+        <div style={{ textAlign: "right", fontWeight: "bold", fontSize: "1.1rem", marginBottom: "24px" }}>
+          Net Pay: ₹{netPay.toLocaleString()}
+        </div>
+
+        <p style={{ fontSize: "0.8rem", color: "#555", textAlign: "center" }}>
+          *This is a computer-generated payslip and does not require a signature.
+        </p>
       </div>
     </div>
   );
 };
 
-export default TestPage;
+export default PayslipTemplate;

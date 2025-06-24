@@ -1645,11 +1645,7 @@ export const routes = createBrowserRouter([
                             element: <HrPayroll />,
                           },
                           {
-                            path: "payroll/view-payroll",
-                            element: <HrPayroll />,
-                          },
-                          {
-                            path: "payroll/view-payroll/:id",
+                            path: "payroll/:id",
                             element: <ViewPayroll />,
                           },
                         ],
