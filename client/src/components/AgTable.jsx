@@ -34,6 +34,7 @@ const AgTableComponent = React.memo(
     checkAll,
     disabled,
     handleBatchAction,
+    isRowSelectable,
     batchButton,
   }) => {
     console.log("batch passed : ", batchButton);
@@ -351,6 +352,7 @@ const AgTableComponent = React.memo(
             columnDefs={modifiedColumns} // ✅ Use modified columns with checkboxes
             defaultColDef={defaultColDef}
             pagination={false}
+            isRowSelectable={isRowSelectable}
             paginationPageSize={paginationPageSize}
             rowHeight={50}
             rowSelection={

@@ -24,6 +24,7 @@ import humanTime from "../../../../../utils/humanTime";
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import MonthWiseTable from "../../../../../components/Tables/MonthWiseTable";
+import { formatDuration } from "../../../../../utils/dateFormat";
 
 const Attendance = () => {
   const axios = useAxiosPrivate();
@@ -76,7 +77,7 @@ const Attendance = () => {
   });
   const attendanceColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "date", headerName: "Date", width: 200, sort: "asc" },
+    { field: "date", headerName: "Date", width: 200,cellRenderer: (params)=>((params.value))},
     { field: "inTime", headerName: "In Time" },
     { field: "outTime", headerName: "Out Time" },
     { field: "workHours", headerName: "Work Hours" },
@@ -336,31 +337,62 @@ const Attendance = () => {
 
       <div>
         {!isLoading ? (
-          <WidgetSection layout={1} title={`${name}'s Attendance Table`} border>
+          <WidgetSection layout={1} title={`${name}'s Attendance table`} border>
             <MonthWiseTable
               buttonTitle={"Correction Request"}
               handleSubmit={() => {
                 setOpenModal(true);
               }}
+              // data={
+              //   !isLoading
+              //     ? attendance?.map((record, index) => ({
+              //         // id: index + 1,
+              //         date: record.inTime,
+              //         inTime: humanTime(record.inTime),
+              //         outTime: humanTime(record.outTime),
+              //         workHours: formatHours(
+              //           record.outTime - record.inTime
+              //         ),
+              //         breakHours: "1",
+              //         totalHours: formatHours(
+              //           new Date(record.outTime) -
+              //             new Date(record.inTime) -
+              //             1 * 60 * 60 * 1000
+              //         ),
+              //         entryType: record.entryType,
+              //       }))
+              //     : []
+              // }
               data={
-                !isLoading
-                  ? attendance?.map((record, index) => ({
-                      // id: index + 1,
-                      date: record.inTime,
-                      inTime: humanTime(record.inTime),
-                      outTime: humanTime(record.outTime),
-                      workHours: formatHours(
-                        new Date(record.outTime) - new Date(record.inTime)
-                      ),
-                      breakHours: "1",
-                      totalHours: formatHours(
-                        new Date(record.outTime) -
-                          new Date(record.inTime) -
-                          1 * 60 * 60 * 1000
-                      ),
-                      entryType: record.entryType,
+                !isLoading && attendance.length > 0
+                  ? attendance.map((record, index) => ({
+                      id: index + 1,
+                      date: record?.inTime ?  record?.inTime : "N/A",
+                      inTime: record?.inTime ? humanTime(record.inTime) : "N/A",
+                      outTime: record?.outTime
+                        ? humanTime(record.outTime)
+                        : "N/A",
+                      workHours:
+                        record?.inTime && record?.outTime
+                          ? formatDuration(record.inTime, record.outTime)
+                          : "N/A",
+                      breakHours: record?.breakDuration ?? "N/A",
+                      totalHours:
+                        record?.inTime && record?.outTime
+                          ? formatDuration(record.inTime, record.outTime)
+                          : "N/A",
                     }))
-                  : []
+                  : [
+                      {
+                        id: 1,
+                        date: "No Data",
+                        inTime: "-",
+                        outTime: "-",
+                        workHours: "-",
+                        breakHours: "-",
+                        totalHours: "-",
+                      },
+                    ]
               }
               columns={attendanceColumns}
               dateColumn="date"

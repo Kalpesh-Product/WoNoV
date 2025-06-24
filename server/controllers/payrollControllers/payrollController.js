@@ -7,7 +7,7 @@ const { PDFDocument } = require("pdf-lib");
 const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
 const Payslip = require("../../models/Payslip");
 const Company = require("../../models/hr/Company");
-const { startOfMonth, isSameMonth, parseISO } = require("date-fns");
+const { startOfMonth, isSameMonth } = require("date-fns");
 const Leave = require("../../models/hr/Leaves");
 const Attendance = require("../../models/hr/Attendance");
 
@@ -17,7 +17,7 @@ const generatePayroll = async (req, res, next) => {
   const logSourceKey = "payroll";
   const { user, ip, company } = req;
 
-  //payroll = [{userId,totalSalary,deductions:[],month}]
+  //payrolls = [{userId,totalSalary,deductions:[],month}]
   try {
     const payrolls = JSON.parse(req.body.payrolls);
     const files = req.files || [];
@@ -54,7 +54,7 @@ const generatePayroll = async (req, res, next) => {
 
       const file = files[i];
 
-      if (!userId || !month || !totalSalary) {
+      if (!userId || !month || isNaN(totalSalary)) {
         throw new CustomError(
           `Missing required fields in payroll ${i + 1}`,
           logPath,
@@ -140,7 +140,7 @@ const generatePayroll = async (req, res, next) => {
 
       const uploadResponse = await handleDocumentUpload(
         processedBuffer,
-        `${foundCompany.companyName}/payrolls/${foundUser.empId}`,
+        `${foundCompany.companyName}/payrolls/${foundUser.firstName} ${foundUser.lastName}`,
         originalFilename
       );
 

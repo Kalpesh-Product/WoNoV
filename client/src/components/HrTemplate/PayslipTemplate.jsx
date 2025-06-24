@@ -2,21 +2,21 @@ import React from "react";
 
 const PayslipTemplate = ({ data }) => {
   const {
-    name = "Abrar Shaikh",
-    empId = "E0001",
-    designation = "Master-Admin",
-    departmentName = "Top Management",
-    month = "December 2024",
-    totalSalary = 70000,
-    netPay = 15000,
-    otherAllowances = 10000,
-    deductions = 5000,
+    name,
+    empId,
+    designation,
+    departmentName,
+    month,
+    totalSalary = 0,
+    deductions = 0,
   } = data || {};
+
+  const netPay = totalSalary - deductions;
 
   return (
     <div
       style={{
-        maxWidth: "900px", // Just a reasonable printable width
+        maxWidth: "700px", // Just a reasonable printable width
         margin: "0 auto",
         padding: "0px",
         fontFamily: "Arial, sans-serif",
@@ -26,7 +26,7 @@ const PayslipTemplate = ({ data }) => {
       }}
     >
       <div style={{ border: "1px solid #ccc", borderRadius: "8px", padding: "24px" }}>
-        <h2 style={{ textAlign: "center", marginBottom: "24px" }}>Pay Slip</h2>
+        <span style={{ textAlign: "center", marginBottom: "24px" }}>Pay Slip</span>
 
         {/* Header Section */}
         <div style={{ borderTop: "1px solid #ccc", borderBottom: "1px solid #ccc", padding: "16px 0", marginBottom: "24px" }}>

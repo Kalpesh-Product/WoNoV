@@ -7,52 +7,27 @@ const { createLog } = require("../../utils/moduleLogs");
 
 const createDeptBasedTask = async (req, res, next) => {
   const { user, ip, company } = req;
-  const logPath = "performances/PerformanceLog";
-  const logAction = "Create Task";
-  const logSourceKey = "kraKpaRoles";
   try {
     const { task, taskType, department, dueDate, assignedDate, kpaDuration } =
       req.body;
 
     if (!task || !taskType || !department || !assignedDate) {
-      throw new CustomError(
-        "Missing required fields",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res
+        .status(400)
+        .json({ message: "Please provide all the valid details" });
     }
 
     if (taskType === "KPA" && (!kpaDuration || !dueDate)) {
-      throw new CustomError(
-        "KPA type or due date is missing",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res
+        .status(400)
+        .json({ message: "KPA type or due date is missing" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(department)) {
-      throw new CustomError(
-        "Invalid department ID provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res
+        .status(400)
+        .json({ message: "Invalid department ID provided" });
     }
-
-    // if (
-    //   typeof description !== "string" ||
-    //   !description.length ||
-    //   description.replace(/\s/g, "").length > 100
-    // ) {
-    //   throw new CustomError(
-    //     "Character limit exceeded,only upto 150 characters allowed",
-    //     logPath,
-    //     logAction,
-    //     logSourceKey
-    //   );
-    // }
 
     const currDate = new Date();
 
@@ -61,12 +36,7 @@ const createDeptBasedTask = async (req, res, next) => {
     const dueTime = "6:30 PM";
 
     if (currDate === parsedDueDate && taskType !== "KRA") {
-      throw new CustomError(
-        "Task type should be KRA",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Task type should be KRA" });
     }
 
     const kpaTypeMatch =
@@ -78,12 +48,9 @@ const createDeptBasedTask = async (req, res, next) => {
         : "No match";
 
     if (taskType === "KPA" && kpaTypeMatch !== kpaDuration) {
-      throw new CustomError(
-        "Selected dates and kpa type doesn't match",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res
+        .status(400)
+        .json({ message: "Selected dates and kpa type doesn't match" });
     }
 
     if (
@@ -91,12 +58,7 @@ const createDeptBasedTask = async (req, res, next) => {
       isNaN(parsedDueDate.getTime()) ||
       isNaN(parsedAssignedDate.getTime())
     ) {
-      throw new CustomError(
-        "Invalid date format provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Invalid date format provided" });
     }
 
     const newRoleKraKpa = new kraKpaRole({
@@ -113,35 +75,17 @@ const createDeptBasedTask = async (req, res, next) => {
 
     const savedNewRoleKraKpa = await newRoleKraKpa.save();
 
-    // Log success with createLog
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: `${taskType} added successfully`,
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: savedNewRoleKraKpa._id,
-      changes: newRoleKraKpa,
+    return res.status(201).json({
+      message: `${taskType} added successfully`,
+      data: savedNewRoleKraKpa,
     });
-
-    return res.status(201).json({ message: `${taskType} added successfully` });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
-    }
+    return res.status(500).json({ message: error.message || "Server Error" });
   }
 };
 
 const updateTaskStatus = async (req, res, next) => {
   const { user, ip, company } = req;
-
 
   try {
     const { taskId, taskType } = req.params;
