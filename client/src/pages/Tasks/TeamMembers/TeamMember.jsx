@@ -164,20 +164,6 @@ const TeamMember = () => {
             search={true}
             searchColumn={"kra"}
             tableTitle={"Team Members"}
-            // data={
-            //   isLoading
-            //     ? []
-            //     : [
-            //         ...taskList.map((task, index) => ({
-            //           srNo: index + 1,
-            //           name: task.name,
-            //           email: task.email,
-            //           role: task.role,
-            //           tasks: task.tasks,
-            //           status: task.status,
-            //         })),
-            //       ]
-            // }
             data={
               isLoading || !Array.isArray(taskList)
                 ? []
