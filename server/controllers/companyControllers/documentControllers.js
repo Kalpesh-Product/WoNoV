@@ -500,7 +500,9 @@ const addCompanyKyc = async (req, res, next) => {
 
       uploadResult = await handleDocumentUpload(
         buffer,
-        `${company.companyName}/kyc/${type}/${nameOfDirector}/${documentName?.trim()}`,
+        `${
+          company.companyName
+        }/kyc/${type}/${nameOfDirector}/${documentName?.trim()}`,
         originalname
       );
 
@@ -592,6 +594,211 @@ const getCompanyKyc = async (req, res, next) => {
   }
 };
 
+// const getComplianceDocuments = async (req, res, next) => {
+//   try {
+//     const companyId = req.company;
+//     const company = await Company.findById(companyId).select(
+//       "complianceDocuments"
+//     );
+
+//     if (!company) return res.status(404).json({ message: "Company not found" });
+
+//     res.status(200).json({ data: company.complianceDocuments || [] });
+//   } catch (err) {
+//     next(err);
+//   }
+// };
+const getComplianceDocuments = async (req, res, next) => {
+  try {
+    const companyId = req.company;
+
+    if (!companyId) {
+      return res.status(400).json({ message: "companyId is required" });
+    }
+
+    const company = await Company.findById(companyId).select(
+      "complianceDocuments"
+    );
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    res.status(200).json({ data: company.complianceDocuments });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// const uploadComplianceDocument = async (req, res, next) => {
+//   try {
+//     const { personName, documentName } = req.body;
+//     const companyId = req.company;
+
+//     if (!companyId || !personName || !documentName) {
+//       return res.status(400).json({
+//         message: "companyId, personName, and documentName are required",
+//       });
+//     }
+
+//     if (!req.file) {
+//       return res.status(400).json({ message: "No file uploaded" });
+//     }
+
+//     const { originalname, buffer } = req.file;
+//     const now = new Date();
+//     let createdDate = now;
+
+//     const company = await Company.findById(companyId);
+//     if (!company) {
+//       return res.status(404).json({ message: "Company not found" });
+//     }
+
+//     let complianceEntries = company.complianceDocuments || [];
+//     let personEntry = complianceEntries.find(
+//       (p) => p.personName === personName
+//     );
+
+//     if (!personEntry) {
+//       personEntry = {
+//         personName,
+//         documents: [],
+//         isActive: true,
+//       };
+//       complianceEntries.push(personEntry);
+//     }
+
+//     // Check if document already exists
+//     const existingDocIndex = personEntry.documents.findIndex(
+//       (doc) => doc.name === documentName
+//     );
+
+//     if (existingDocIndex !== -1) {
+//       const oldDoc = personEntry.documents[existingDocIndex];
+//       if (oldDoc.documentId) {
+//         await handleDocumentDelete(oldDoc.documentId); // optional
+//       }
+//       createdDate = oldDoc.createdDate || now;
+//       personEntry.documents.splice(existingDocIndex, 1); // remove old
+//     }
+
+//     // Upload new file
+//     // uploadResult = await handleDocumentUpload(
+//     //   buffer,
+//     //   `${
+//     //     company.companyName
+//     //   }/compliance/${documentName}/${documentName?.trim()}`,
+//     //   originalname
+//     // );
+//     uploadResult = await handleDocumentUpload(
+//       buffer,
+//       `${company.companyName?.trim()}/compliance/${personName?.trim()}/${documentName?.trim()}`,
+//       originalname
+//     );
+
+//     const newDoc = {
+//       name: documentName,
+//       documentLink: uploadResult.secure_url,
+//       documentId: uploadResult.public_id,
+//       createdDate,
+//       updatedDate: now,
+//     };
+
+//     personEntry.documents.push(newDoc);
+//     uploads.push(newDoc);
+
+//     // Rebuild compliance array (if needed)
+//     const updatedCompliance = complianceEntries.map((entry) =>
+//       entry.personName === personName ? personEntry : entry
+//     );
+
+//     await Company.findByIdAndUpdate(
+//       companyId,
+//       { $set: { complianceDocuments: updatedCompliance } },
+//       { new: true }
+//     );
+//     console.log(companyId);
+//     console.log(updatedCompliance);
+
+//     res.status(200).json({
+//       message: "Compliance document uploaded successfully",
+//       data: newDoc,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+const uploadComplianceDocument = async (req, res, next) => {
+  try {
+    const { documentName } = req.body;
+    const companyId = req.company;
+
+    if (!companyId || !documentName) {
+      return res.status(400).json({
+        message: "companyId and documentName are required",
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const { originalname, buffer } = req.file;
+    const now = new Date();
+    let createdDate = now;
+
+    const company = await Company.findById(companyId);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    let docs = company.complianceDocuments || [];
+
+    // Check if document with same name exists
+    const existingIndex = docs.findIndex((doc) => doc.name === documentName);
+
+    if (existingIndex !== -1) {
+      const oldDoc = docs[existingIndex];
+      if (oldDoc.documentId) {
+        await handleDocumentDelete(oldDoc.documentId);
+      }
+      createdDate = oldDoc.createdDate || now;
+      docs.splice(existingIndex, 1); // remove old
+    }
+
+    // Upload to Cloudinary
+    const uploadResult = await handleDocumentUpload(
+      buffer,
+      `${company.companyName?.trim()}/compliance/${documentName?.trim()}`,
+      originalname
+    );
+
+    const newDoc = {
+      name: documentName,
+      documentLink: uploadResult.secure_url,
+      documentId: uploadResult.public_id,
+      createdDate,
+      updatedDate: now,
+      isActive: true,
+    };
+
+    docs.push(newDoc);
+
+    await Company.findByIdAndUpdate(
+      companyId,
+      { $set: { complianceDocuments: docs } },
+      { new: true }
+    );
+
+    res.status(200).json({
+      message: "Compliance document uploaded successfully",
+      data: newDoc,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   uploadCompanyDocument,
   getCompanyDocuments,
@@ -599,4 +806,6 @@ module.exports = {
   getDepartmentDocuments,
   addCompanyKyc,
   getCompanyKyc,
+  getComplianceDocuments,
+  uploadComplianceDocument,
 };

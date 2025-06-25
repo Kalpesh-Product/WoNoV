@@ -33,11 +33,7 @@ const attendanceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
     },
-    //correction request status
-    status: {
-      type: String,
-      default: "Pending",
-    },
+    //Unused, must be removed later
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

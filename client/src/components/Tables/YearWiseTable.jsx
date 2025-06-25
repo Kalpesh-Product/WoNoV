@@ -31,7 +31,8 @@ const YearWiseTable = ({
   dateFilter,
   handleBatchAction,
   batchButton,
-  isRowSelectable
+  isRowSelectable,
+  hideTitle=true,
 }) => {
   const lastEmittedMonthRef = useRef(null);
   const fiscalMap = useMemo(() => {
@@ -127,6 +128,11 @@ const YearWiseTable = ({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center w-full justify-between">
+        {tableTitle && (
+          <div>
+            <span className="text-title text-primary font-pmedium uppercase">{tableTitle}</span>
+          </div>
+        )}
         {buttonTitle && (
           <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
         )}
@@ -205,6 +211,7 @@ const YearWiseTable = ({
         isRowSelectable={isRowSelectable}
         handleBatchAction={handleBatchAction}
         batchButton={batchButton}
+        hideTitle={hideTitle}
       />
     </div>
   );

@@ -5,11 +5,12 @@ const { createLog } = require("../utils/moduleLogs");
 const CustomError = require("../utils/customErrorlogs");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+const AttendanceCorrection = require("../models/hr/AttendanceCorrection");
 
 const clockIn = async (req, res, next) => {
   const { user, ip, company } = req;
   const { inTime, entryType } = req.body;
-  const logPath = "hr/HrLog";
+  const logPath = "hr/hrLog";
   const logAction = "Clock In";
   const logSourceKey = "attendance";
 
@@ -79,7 +80,7 @@ const clockIn = async (req, res, next) => {
       ip: ip,
       company: company,
       sourceKey: logSourceKey,
-      sourceId: newAttendance._id,
+      sourceId: savedAttendance._id,
       changes: {
         inTime: clockInTime,
         entryType,
@@ -425,37 +426,35 @@ const getAttendance = async (req, res, next) => {
   }
 };
 
-// const getAttendanceRequests = async (req, res, next) => {
-//   const { id } = req.params;
-//   const { company } = req;
+const getAttendanceRequests = async (req, res, next) => {
+  const { company } = req;
 
-//   try {
-//     const user = await UserData.findOne({ empId: id });
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
+  try {
+    const requests = await AttendanceCorrection.find({
+      company,
+    })
+      .populate([
+        { path: "user", select: "firstName middleName lastName empId" },
+        { path: "approvedBy", select: "firstName middleName lastName empId" },
+      ])
+      .lean()
+      .exec();
 
-//     const requests = await AttendanceRequest.find({
-//       user: user._id,
-//       company,
-//     })
-//       .lean()
-//       .exec();
+    if (!requests || requests.length === 0) {
+      return res.status(200).json([]);
+    }
 
-//     if (!requests || requests.length === 0) {
-//       return res.status(200).json([]);
-//     }
-
-//     return res.status(200).json(requests);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+    return res.status(200).json(requests);
+  } catch (error) {
+    next(error);
+  }
+};
 
 const correctAttendance = async (req, res, next) => {
   const { user, ip, company } = req;
-  const { targetedDay, inTime, outTime, empId } = req.body;
-  const logPath = "hr/hrLog";
+  const { targetedDay, inTime, outTime, startBreak, endBreak, empId } =
+    req.body;
+  const logPath = "hr/HrLog";
   const logAction = "Correct Attendance";
   const logSourceKey = "attendance";
 
@@ -469,9 +468,9 @@ const correctAttendance = async (req, res, next) => {
       );
     }
 
-    // ✅ Convert `targetedDay` to UTC midnight to match MongoDB stored date
     const targetedDate = new Date(targetedDay);
     const currentDate = new Date();
+
     const startOfDay = new Date(
       targetedDate.getFullYear(),
       targetedDate.getMonth(),
@@ -481,7 +480,6 @@ const correctAttendance = async (req, res, next) => {
       0,
       0
     );
-
     const endOfDay = new Date(
       targetedDate.getFullYear(),
       targetedDate.getMonth(),
@@ -493,7 +491,6 @@ const correctAttendance = async (req, res, next) => {
     );
 
     const foundUser = await UserData.findOne({ empId });
-
     if (!foundUser) {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);
     }
@@ -501,9 +498,7 @@ const correctAttendance = async (req, res, next) => {
     const foundDate = await Attendance.findOne({
       user: foundUser._id,
       createdAt: { $gte: startOfDay, $lt: endOfDay },
-    }).sort({
-      createdAt: -1,
-    });
+    }).sort({ createdAt: -1 });
 
     if (!foundDate) {
       throw new CustomError(
@@ -527,28 +522,14 @@ const correctAttendance = async (req, res, next) => {
       );
     }
 
-    if (inTime && !foundDate.inTime) {
-      throw new CustomError(
-        "Clock in time isn't present to correct",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // Validate presence and parse
+    const clockIn = inTime ? new Date(inTime) : null;
+    const clockOut = outTime ? new Date(outTime) : null;
+    const breakStart = startBreak ? new Date(startBreak) : null;
+    const breakEnd = endBreak ? new Date(endBreak) : null;
 
-    if (outTime && !foundDate.outTime) {
-      throw new CustomError(
-        "Clock out time isn't present to correct",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    const clockIn = inTime ? new Date(inTime) : foundDate.inTime;
-    const clockOut = outTime ? new Date(outTime) : foundDate.outTime;
-
-    if (inTime && isNaN(clockIn.getTime())) {
+    // Check validity of any provided fields
+    if (inTime && isNaN(clockIn)) {
       throw new CustomError(
         "Invalid clock-in format",
         logPath,
@@ -556,7 +537,7 @@ const correctAttendance = async (req, res, next) => {
         logSourceKey
       );
     }
-    if (outTime && isNaN(clockOut.getTime())) {
+    if (outTime && isNaN(clockOut)) {
       throw new CustomError(
         "Invalid clock-out format",
         logPath,
@@ -564,29 +545,44 @@ const correctAttendance = async (req, res, next) => {
         logSourceKey
       );
     }
-
-    // ✅ Update attendance record
-    const updatedAttendance = await Attendance.findOneAndUpdate(
-      { user: foundUser._id, createdAt: { $gte: startOfDay, $lt: endOfDay } },
-      { $set: { inTime: clockIn, outTime: clockOut } },
-      { new: true }
-    ).sort({
-      createdAt: 1,
-    });
-
-    if (!updatedAttendance) {
+    if (startBreak && isNaN(breakStart)) {
       throw new CustomError(
-        "Failed to correct the attendance",
+        "Invalid start break format",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+    if (endBreak && isNaN(breakEnd)) {
+      throw new CustomError(
+        "Invalid end break format",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
+    // Create new correction request
+
+    const newRequest = new AttendanceCorrection({
+      inTime: clockIn,
+      outTime: clockOut,
+      startBreak: breakStart,
+      endBreak: breakEnd,
+      originalInTime: foundDate.inTime || null,
+      originalOutTime: foundDate.outTime || null,
+      originalStartBreak: foundDate.startBreak || null,
+      originalEndBreak: foundDate.endBreak || null,
+      user: foundUser._id,
+      company: company,
+    });
+
+    await newRequest.save();
+
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: "Attendance corrected successfully",
+      remarks: "Attendance correction request submitted",
       status: "Success",
       user: user,
       ip: ip,
@@ -597,14 +593,18 @@ const correctAttendance = async (req, res, next) => {
         requester: foundUser._id,
         oldInTime: foundDate.inTime,
         oldOutTime: foundDate.outTime,
+        oldStartBreak: foundDate.startBreak,
+        oldEndBreak: foundDate.endBreak,
         newInTime: clockIn,
         newOutTime: clockOut,
+        newStartBreak: breakStart,
+        newEndBreak: breakEnd,
       },
     });
 
-    return res
-      .status(200)
-      .json({ message: "Attendance corrected successfully" });
+    return res.status(200).json({
+      message: "Attendance correction request submitted successfully",
+    });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);
@@ -617,10 +617,11 @@ const correctAttendance = async (req, res, next) => {
 };
 
 const approveCorrectionRequest = async (req, res, next) => {
-  const logPath = "hr/hrLog";
+  const logPath = "hr/HrLog";
   const logAction = "Approve Correction Request";
   const logSourceKey = "attendance";
   const { user, ip, company } = req;
+
   try {
     const { attendanceId } = req.params;
 
@@ -633,51 +634,90 @@ const approveCorrectionRequest = async (req, res, next) => {
       );
     }
 
-    const updatedAttendance = await Attendance.findOneAndUpdate(
-      { _id: attendanceId },
-      {
-        $set: { status: "Approved", approvedBy: user },
-        $unset: { rejectedBy: "" },
-      },
-      { new: true }
-    );
-
-    // const attendanceRequest = await AttendanceRequest.findById({
-    //   _id: attendanceId,
-    // });
-
-    // ✅ Update attendance record
-    // const updatedAttendance = await Attendance.findOneAndUpdate(
-    //   {
-    //     user: attendanceRequest.user,
-    //     createdAt: { $gte: startOfDay, $lt: endOfDay },
-    //   },
-    //   {
-    //     $set: { status: "Approved", approvedBy: user },
-    //     $unset: { rejectedBy: "" },
-    //     $set: {
-    //       inTime: attendanceRequest.clockIn,
-    //       outTime: attendanceRequest.clockOut,
-    //     },
-    //   },
-    //   { new: true }
-    // ).sort({
-    //   createdAt: 1,
-    // });
-
-    if (!updatedAttendance) {
+    // ✅ Fetch the correction request
+    const correction = await AttendanceCorrection.findById({
+      _id: attendanceId,
+    });
+    if (!correction) {
       throw new CustomError(
-        "Failed to approve the correction request",
+        "Correction request not found",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
+    const { user: userId, inTime, outTime, startBreak, endBreak } = correction;
+
+    // ✅ Build date boundaries for finding the correct attendance
+    const targetDate = new Date(inTime || correction.createdAt);
+    const startOfDay = new Date(
+      targetDate.getFullYear(),
+      targetDate.getMonth(),
+      targetDate.getDate(),
+      0,
+      0,
+      0,
+      0
+    );
+    const endOfDay = new Date(
+      targetDate.getFullYear(),
+      targetDate.getMonth(),
+      targetDate.getDate(),
+      23,
+      59,
+      59,
+      999
+    );
+
+    // ✅ Calculate breakDuration in minutes
+    let breakDuration = 0;
+    if (startBreak && endBreak) {
+      breakDuration = Math.floor(
+        (new Date(endBreak) - new Date(startBreak)) / 60000
+      ); // ms to min
+    }
+
+    // ✅ Update the actual attendance record
+    const updatedAttendance = await Attendance.findOneAndUpdate(
+      {
+        user: userId,
+        createdAt: { $gte: startOfDay, $lt: endOfDay },
+      },
+      {
+        $set: {
+          inTime,
+          outTime,
+          startBreak,
+          endBreak,
+          breakDuration,
+          breakCount: startBreak && endBreak ? 1 : 0,
+          status: "Approved",
+        },
+        $unset: { rejectedBy: "" },
+      },
+      { new: true }
+    );
+
+    if (!updatedAttendance) {
+      throw new CustomError(
+        "Failed to approve and update attendance record",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    // ✅ Update correction request status to Approved
+    correction.status = "Approved";
+    correction.approvedBy = user;
+    await correction.save();
+
+    // ✅ Log the approval
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: "Correction request approved successfully",
+      remarks: "Correction request approved and attendance updated",
       status: "Success",
       user,
       ip,
@@ -686,11 +726,19 @@ const approveCorrectionRequest = async (req, res, next) => {
       sourceId: attendanceId,
       changes: {
         status: "Approved",
-        approvedBy: user,
+        updatedAttendanceId: updatedAttendance._id,
+        inTime,
+        outTime,
+        startBreak,
+        endBreak,
+        breakDuration,
       },
     });
 
-    return res.status(200).json({ message: "Correction request Approved" });
+    return res.status(200).json({
+      message:
+        "Correction request approved and attendance updated successfully",
+    });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);
@@ -703,7 +751,7 @@ const approveCorrectionRequest = async (req, res, next) => {
 };
 
 const rejectCorrectionRequest = async (req, res, next) => {
-  const logPath = "hr/hrLog";
+  const logPath = "hr/HrLog";
   const logAction = "Reject Correction Request";
   const logSourceKey = "attendance";
   const { user, ip, company } = req;
@@ -719,7 +767,7 @@ const rejectCorrectionRequest = async (req, res, next) => {
       );
     }
 
-    const updatedAttendance = await Attendance.findOneAndUpdate(
+    const updatedAttendance = await AttendanceCorrection.findOneAndUpdate(
       { _id: attendanceId },
       {
         $set: { status: "Rejected", rejectedBy: user },
@@ -853,7 +901,7 @@ module.exports = {
   endBreak,
   getAllAttendance,
   getAttendance,
-  // getAttendanceRequests,
+  getAttendanceRequests,
   correctAttendance,
   approveCorrectionRequest,
   rejectCorrectionRequest,

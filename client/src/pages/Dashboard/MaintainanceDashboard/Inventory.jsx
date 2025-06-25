@@ -189,6 +189,7 @@ const Inventory = () => {
           search={true}
           searchColumn={"Asset Number"}
           tableTitle={"List Of Inventory"}
+          hideTitle={true}
           buttonTitle={"Add Inventory"}
           data={inventoryData || []}
           dateColumn={"date"}

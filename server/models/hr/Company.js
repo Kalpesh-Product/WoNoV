@@ -328,6 +328,20 @@ const companySchema = new mongoose.Schema({
       },
     },
   ],
+
+  complianceDocuments: [
+    {
+      name: String,
+      documentLink: String,
+      documentId: String,
+      createdDate: Date,
+      updatedDate: Date,
+      isActive: {
+        type: Boolean,
+        default: true,
+      },
+    },
+  ],
 });
 
 // Define the Company model

@@ -837,7 +837,7 @@ const HrDashboard = () => {
         { icon: <CgWebsite />, title: "Employee", route: "employee" },
         { icon: <LuHardDriveUpload />, title: "Company", route: "company" },
         { icon: <SiCashapp />, title: "Finance", route: "finance" },
-        { icon: <CgWebsite />, title: "Mix Bag", route: "#" },
+        { icon: <CgWebsite />, title: "Mix Bag", route: "mix-bag" },
         { icon: <SiGoogleadsense />, title: "Data", route: "data" },
         {
           icon: <MdMiscellaneousServices />,
