@@ -25,6 +25,8 @@ const {
   getDepartmentDocuments,
   addCompanyKyc,
   getCompanyKyc,
+  getComplianceDocuments,
+  uploadComplianceDocument,
 } = require("../controllers/companyControllers/documentControllers");
 const {
   addEmployeeType,
@@ -54,6 +56,11 @@ const {
   getJobApplications,
 } = require("../controllers/companyControllers/jobApplicationsController");
 
+// const {
+//   getComplianceDocuments,
+//   uploadComplianceDocument,
+// } = require("../controllers/companyControllers/complianceDocumentController");
+
 router.post("/create-company", addCompany);
 router.get("/get-companies", getCompanies);
 router.get("/company-hierarchy", getHierarchy);
@@ -74,6 +81,14 @@ router.post("/add-company-logo", upload.single("logo"), addCompanyLogo);
 router.get("/get-company-logo", getCompanyLogo);
 router.post("/add-kyc-document", upload.single("kyc"), addCompanyKyc);
 router.get("/get-kyc", getCompanyKyc);
+
+router.get("/get-compliance-documents", getComplianceDocuments);
+router.post(
+  "/add-compliance-document",
+  upload.single("document"),
+  uploadComplianceDocument
+);
+
 router.post("/add-shift", addShift);
 router.post(
   "/bulk-insert-job-applications",

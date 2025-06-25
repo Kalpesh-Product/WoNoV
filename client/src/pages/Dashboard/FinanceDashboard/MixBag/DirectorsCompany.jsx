@@ -9,7 +9,6 @@ const DirectorsCompany = () => {
   const location = useLocation();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
-  
 
   const { data: kycDetails, isLoading } = useQuery({
     queryKey: ["directorsCompany"],
@@ -68,8 +67,7 @@ const DirectorsCompany = () => {
               }
             )
           }
-          className="text-primary underline cursor-pointer"
-        >
+          className="text-primary underline cursor-pointer">
           {params.value}
         </span>
       ),
