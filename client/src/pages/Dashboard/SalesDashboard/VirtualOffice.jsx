@@ -119,7 +119,7 @@ const VirtualOffice = () => {
       },
     },
     tooltip: {
-      enabled: true,
+      enabled: false,
       y: {
         formatter: (val) => `INR ${val.toLocaleString()}`, // Format tooltip
       },

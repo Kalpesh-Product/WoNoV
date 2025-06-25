@@ -318,6 +318,7 @@ const AltRevenues = () => {
       },
     },
     tooltip: {
+      enabled: false,
       y: {
         formatter: (val) => `${val.toLocaleString()} INR`,
       },
@@ -378,7 +379,8 @@ const AltRevenues = () => {
           title={"Annual Monthly Alternate Revenues"}
           titleLabel={"FY 2024-25"}
           TitleAmount={`INR ${inrFormat(totalActual)}`}
-          border>
+          border
+        >
           <BarGraph
             data={series}
             options={options}
