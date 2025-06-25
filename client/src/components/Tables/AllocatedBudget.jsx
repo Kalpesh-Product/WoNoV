@@ -33,10 +33,11 @@ const AllocatedBudget = ({
   isLoading,
   variant,
   hideTitle,
-  noInvoice = false,
+  noInvoice = true,
   noFilter = false,
   annaualExpense = false,
-  newTitle
+  showInvoice = false,
+  newTitle,
 }) => {
   const axios = useAxiosPrivate();
   const [selectedTab, setSelectedTab] = useState(0);
@@ -199,69 +200,73 @@ const AllocatedBudget = ({
   const enhancedColumns = useMemo(() => {
     const baseColumns = [...monthDataForSelectedType.columns];
 
-    // if (!noInvoice) {
-    //   baseColumns.push({
-    //     field: "actions",
-    //     headerName: "Actions",
-    //     pinned: "right",
-    //     cellRenderer: (params) => {
-    //       const invoiceAttached =
-    //         params.data.invoiceAttached === true ||
-    //         params.data.invoiceAttached === "true";
-    //       const status = params.data.status;
+    if (!noInvoice) {
+      baseColumns.push({
+        field: "actions",
+        headerName: "Actions",
+        pinned: "right",
+        cellRenderer: (params) => {
+          const invoiceAttached =
+            params.data.invoiceAttached === true ||
+            params.data.invoiceAttached === "true";
+          const status = params.data.status;
 
-    //       const isApproved = status === "Approved";
-    //       const isRejected = status === "Rejected";
+          const isApproved = status === "Approved";
+          const isRejected = status === "Rejected";
 
-    //       return (
-    //         <div className="p-2">
-    //           {isApproved && !invoiceAttached ? (
-    //             <PrimaryButton
-    //               title="Upload Invoice"
-    //               externalStyles="p-2"
-    //               handleSubmit={() => {
-    //                 setSelectedRow(params.data);
-    //                 setUploadModalOpen(true);
-    //               }}
-    //             />
-    //           ) : (
-    //             <span className="text-content">
-    //               {invoiceAttached
-    //                 ? "Invoice Uploaded"
-    //                 : isRejected
-    //                 ? "Rejected"
-    //                 : ""}
-    //             </span>
-    //           )}
-    //         </div>
-    //       );
-    //     },
-    //   });
-    // }
+          return (
+            <div className="p-2">
+              {isApproved && !invoiceAttached ? (
+                <PrimaryButton
+                  title="Upload Invoice"
+                  externalStyles="p-2"
+                  handleSubmit={() => {
+                    setSelectedRow(params.data);
+                    setUploadModalOpen(true);
+                  }}
+                />
+              ) : (
+                <span className="text-content">
+                  {invoiceAttached
+                    ? "Invoice Uploaded"
+                    : isRejected
+                    ? "Rejected"
+                    : ""}
+                </span>
+              )}
+            </div>
+          );
+        },
+      });
+    }
 
     return baseColumns;
-  }, [monthDataForSelectedType.columns, noInvoice]);
-
+  }, [monthDataForSelectedType.columns,  noInvoice ]);
 
   if (isLoading) return <CircularProgress />;
 
   return (
     <>
       <WidgetSection
-        title={annaualExpense ? "Annual Expenses" : newTitle ? newTitle :"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS" }
+        title={
+          annaualExpense
+            ? "Annual Expenses"
+            : newTitle
+            ? newTitle
+            : "BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"
+        }
         TitleAmount={`INR ${inrFormat(totalProjectedAmountForFY)}`}
-        border>
+        border
+      >
         <div className="flex flex-col gap-4 rounded-md ">
           {!hideTitle ? (
-            <div className="flex justify-between items-center">
-            </div>
+            <div className="flex justify-between items-center"></div>
           ) : (
             ""
           )}
 
           <div className="flex items-center justify-between gap-4">
-            <div className="w-1/3">
-            </div>
+            <div className="w-1/3"></div>
             <div className="flex gap-4 justify-start items-center w-full ">
               <div className="">
                 {/* Month Switcher */}
@@ -337,10 +342,12 @@ const AllocatedBudget = ({
       <MuiModal
         open={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
-        title="Upload Invoice">
+        title="Upload Invoice"
+      >
         <form
           onSubmit={handleSubmit((data) => onUpload(data, selectedRow))}
-          className="space-y-4">
+          className="space-y-4"
+        >
           <Controller
             name="invoiceImage"
             control={control}
