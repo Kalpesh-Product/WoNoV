@@ -7,15 +7,15 @@ const SalesDataCard = () => {
   const navigate = useNavigate();
 
   const tabs = [
+    { label: "Asset List", path: "asset-list" },
     { label: "Vendor", path: "vendor" },
-    { label: "Asset List", path: "sales-asset-list" },
     { label: "Monthly Invoice Reports", path: "monthly-invoice-reports" },
   ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
   useEffect(() => {
     if (location.pathname === "/app/dashboard/sales-dashboard/data") {
-      navigate("/app/dashboard/sales-dashboard/data/vendor", {
+      navigate("/app/dashboard/sales-dashboard/data/asset-list", {
         replace: true,
       });
     }

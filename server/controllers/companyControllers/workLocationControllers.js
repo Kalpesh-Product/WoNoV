@@ -123,7 +123,6 @@ const addUnit = async (req, res, next) => {
 
   try {
     if (
-      !company ||
       !unitName ||
       !unitNo ||
       !buildingId ||
@@ -132,10 +131,6 @@ const addUnit = async (req, res, next) => {
       !openDesks
     ) {
       return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(company)) {
-      return res.status(400).json({ message: "Invalid company ID provided" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(buildingId)) {

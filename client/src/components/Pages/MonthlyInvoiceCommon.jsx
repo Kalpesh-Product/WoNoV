@@ -38,7 +38,7 @@ const MonthlyInvoiceCommon = () => {
 
   const invoiceCreationColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
-    { headerName: "Department", field: "department", flex: 1 },
+    // { headerName: "Department", field: "department", flex: 1 },
     { headerName: "Expense Name", field: "expanseName", flex: 1 },
     { headerName: "Invoice Name", field: "invoiceName", flex: 1 },
     { headerName: "GSTIN", field: "gstIn", flex: 1 },
