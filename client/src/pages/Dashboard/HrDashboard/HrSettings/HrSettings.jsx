@@ -9,8 +9,8 @@ const HrSettings = () => {
   // Map routes to tabs
   const tabs = [
     { label: "Bulk Upload", path: "bulk-upload" },
-    { label: "SOPs", path: "hr-sops" },
-    { label: "Policies", path: "hr-policies" },
+    { label: "SOPs", path: "sops" },
+    { label: "Policies", path: "policies" },
     // { label: "Leave Type", path: "leave-type" },
     // { label: "Policies", path: "policies" },
     // { label: "SOPs", path: "sops" },
@@ -58,7 +58,8 @@ const HrSettings = () => {
               backgroundColor: "#1E3D73",
               color: "white",
             },
-          }}>
+          }}
+        >
           {tabs.map((tab, index) => (
             <NavLink
               key={index}
@@ -72,7 +73,8 @@ const HrSettings = () => {
                 padding: "12px 16px",
                 display: "block",
                 backgroundColor: isActive ? "#1E3D73" : "white",
-              })}>
+              })}
+            >
               {tab.label}
             </NavLink>
           ))}

@@ -998,7 +998,7 @@ const AdminDashboard = () => {
   const executiveTimingsColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "name", label: "Name", align: "left" },
-    { id: "building", label: "Building", align: "left" },
+    // { id: "building", label: "Building", align: "left" },
     { id: "unitNo", label: "Unit No", align: "left" },
     { id: "startDate", label: "Start Date", align: "left" },
     { id: "endDate", label: "End Date", align: "left" },

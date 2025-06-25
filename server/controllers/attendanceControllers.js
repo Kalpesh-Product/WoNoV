@@ -27,14 +27,14 @@ const clockIn = async (req, res, next) => {
     const clockInTime = new Date(inTime);
     const currDate = new Date();
 
-    if (clockInTime.getDate() !== currDate.getDate()) {
-      throw new CustomError(
-        "Please select present date",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // if (clockInTime.getDate() !== currDate.getDate()) {
+    //   throw new CustomError(
+    //     "Please select present date",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
 
     if (isNaN(clockInTime.getTime())) {
       throw new CustomError(
@@ -495,9 +495,14 @@ const correctAttendance = async (req, res, next) => {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);
     }
 
+    // const foundDate = await Attendance.findOne({
+    //   user: foundUser._id,
+    //   createdAt: { $gte: startOfDay, $lt: endOfDay },
+    // }).sort({ createdAt: -1 });
+
     const foundDate = await Attendance.findOne({
       user: foundUser._id,
-      createdAt: { $gte: startOfDay, $lt: endOfDay },
+      inTime: { $gte: startOfDay, $lt: endOfDay },
     }).sort({ createdAt: -1 });
 
     if (!foundDate) {
@@ -513,20 +518,41 @@ const correctAttendance = async (req, res, next) => {
       currentDate.getDate() - targetedDate.getDate() === 1 ||
       currentDate.getDate() - targetedDate.getDate() === 0;
 
-    if (!isAllowed) {
-      throw new CustomError(
-        "Correction request only for same or previous day is allowed",
-        logPath,
-        logAction,
-        logSourceKey
+    // if (!isAllowed) {
+    //   throw new CustomError(
+    //     "Correction request only for same or previous day is allowed",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
+
+    function mergeDateWithTime(dateOnly, timeString) {
+      const time = new Date(timeString);
+      const merged = new Date(dateOnly);
+      merged.setHours(
+        time.getHours(),
+        time.getMinutes(),
+        time.getSeconds(),
+        time.getMilliseconds()
       );
+      return merged;
     }
 
     // Validate presence and parse
-    const clockIn = inTime ? new Date(inTime) : null;
-    const clockOut = outTime ? new Date(outTime) : null;
-    const breakStart = startBreak ? new Date(startBreak) : null;
-    const breakEnd = endBreak ? new Date(endBreak) : null;
+    // const clockIn = inTime ? new Date(inTime) : null;
+    // const clockOut = outTime ? new Date(outTime) : null;
+    // const breakStart = startBreak ? new Date(startBreak) : null;
+    // const breakEnd = endBreak ? new Date(endBreak) : null;
+
+    const clockIn = inTime ? mergeDateWithTime(targetedDate, inTime) : null;
+    const clockOut = outTime ? mergeDateWithTime(targetedDate, outTime) : null;
+    const breakStart = startBreak
+      ? mergeDateWithTime(targetedDate, startBreak)
+      : null;
+    const breakEnd = endBreak
+      ? mergeDateWithTime(targetedDate, endBreak)
+      : null;
 
     // Check validity of any provided fields
     if (inTime && isNaN(clockIn)) {
@@ -579,28 +605,28 @@ const correctAttendance = async (req, res, next) => {
 
     await newRequest.save();
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Attendance correction request submitted",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: foundDate._id,
-      changes: {
-        requester: foundUser._id,
-        oldInTime: foundDate.inTime,
-        oldOutTime: foundDate.outTime,
-        oldStartBreak: foundDate.startBreak,
-        oldEndBreak: foundDate.endBreak,
-        newInTime: clockIn,
-        newOutTime: clockOut,
-        newStartBreak: breakStart,
-        newEndBreak: breakEnd,
-      },
-    });
+    // await createLog({
+    //   path: logPath,
+    //   action: logAction,
+    //   remarks: "Attendance correction request submitted",
+    //   status: "Success",
+    //   user: user,
+    //   ip: ip,
+    //   company: company,
+    //   sourceKey: logSourceKey,
+    //   sourceId: foundDate._id,
+    //   changes: {
+    //     requester: foundUser._id,
+    //     oldInTime: foundDate.inTime,
+    //     oldOutTime: foundDate.outTime,
+    //     oldStartBreak: foundDate.startBreak,
+    //     oldEndBreak: foundDate.endBreak,
+    //     newInTime: clockIn,
+    //     newOutTime: clockOut,
+    //     newStartBreak: breakStart,
+    //     newEndBreak: breakEnd,
+    //   },
+    // });
 
     return res.status(200).json({
       message: "Attendance correction request submitted successfully",
@@ -682,7 +708,7 @@ const approveCorrectionRequest = async (req, res, next) => {
     const updatedAttendance = await Attendance.findOneAndUpdate(
       {
         user: userId,
-        createdAt: { $gte: startOfDay, $lt: endOfDay },
+        inTime: { $gte: startOfDay, $lt: endOfDay },
       },
       {
         $set: {
@@ -736,8 +762,7 @@ const approveCorrectionRequest = async (req, res, next) => {
     });
 
     return res.status(200).json({
-      message:
-        "Correction request approved and attendance updated successfully",
+      message: "Correction request approved",
     });
   } catch (error) {
     if (error instanceof CustomError) {

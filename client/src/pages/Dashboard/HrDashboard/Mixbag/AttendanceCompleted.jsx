@@ -3,9 +3,19 @@ import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { useQuery } from "@tanstack/react-query";
+import { CircularProgress } from "@mui/material";
+import humanDate from "../../../../utils/humanDateForamt";
+import { useState } from "react";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
+import MuiModal from "../../../../components/MuiModal";
+import humanTime from "../../../../utils/humanTime";
 
 const AttendanceCompleted = () => {
   const axios = useAxiosPrivate();
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ["attendance-requests"],
     queryFn: async () => {
@@ -13,29 +23,136 @@ const AttendanceCompleted = () => {
         const response = await axios.get(
           "/api/attendance/get-attendance-requests"
         );
-        return response.data;
+
+        return response.data.filter((data) => data.status !== "Pending");
       } catch (error) {
         console.warn(error.mesage);
       }
     },
   });
+
   const columns = [
-    { field: "srNo", headerName: "SrNo", width: 100 },
+    { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "name", headerName: "Name", flex: 1 },
     { field: "date", headerName: "Date" },
-    { field: "startTime", headerName: "Start Time" },
-    { field: "endTime", headerName: "End Time" },
-    { field: "actions", headerName: "End Time" },
+    { field: "inTime", headerName: "Start Time" },
+    { field: "outTime", headerName: "End Time" },
+    { field: "status", headerName: "Status" },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 100,
+      pinned: "right",
+      cellRenderer: (params) => (
+        <span
+          className="text-subtitle cursor-pointer"
+          onClick={() => handleViewDetails(params.data)}
+        >
+          <MdOutlineRemoveRedEye />
+        </span>
+      ),
+    },
   ];
+
+  const tableData = isLoading
+    ? []
+    : data.map((item) => ({
+        ...item,
+        empId: item.user?.empId,
+        name: `${item.user?.firstName} ${item.user?.lastName}`,
+        date: item.inTime,
+        inTime: humanTime(item.inTime),
+        outTime: humanTime(item.outTime),
+        originalInTime: humanTime(item.originalInTime),
+        originalOutTime: humanTime(item.originalOutTime),
+        status: item.status,
+      }));
+
+  const handleViewDetails = (row) => {
+    setSelectedRequest(row);
+    setOpenModal(true);
+  };
+
   return (
     <div className="flex flex-col">
       <PageFrame>
         <YearWiseTable
+         dateColumn={"date"}
           columns={columns}
-          data={[]}
+          data={!isLoading ? tableData : []}
           tableTitle={"ATTENDANCE REQUESTS"}
         />
       </PageFrame>
+      <MuiModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        title={"Attendance Request Details"}
+      >
+        {selectedRequest ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <DetalisFormatted
+              title="Employee ID"
+              detail={selectedRequest?.empId || "N/A"}
+            />
+            <DetalisFormatted
+              title="Name"
+              detail={selectedRequest?.name || "N/A"}
+            />
+            <DetalisFormatted
+              title="Date"
+              detail={selectedRequest?.date || "N/A"}
+            />
+            <DetalisFormatted
+              title="Start Time"
+              detail={selectedRequest?.inTime || "N/A"}
+            />
+            <DetalisFormatted
+              title="End Time"
+              detail={selectedRequest?.outTime || "N/A"}
+            />
+            <DetalisFormatted
+              title="Original Start Time"
+              detail={selectedRequest?.originalInTime || "N/A"}
+            />
+            <DetalisFormatted
+              title="Original End Time"
+              detail={selectedRequest?.originalOutTime || "N/A"}
+            />
+            <DetalisFormatted
+              title="Status"
+              detail={selectedRequest?.status || "N/A"}
+            />
+            {selectedRequest?.approvedBy && (
+              <DetalisFormatted
+                title="Approved By"
+                detail={
+                  selectedRequest.approvedBy?.firstName ||
+                  selectedRequest.approvedBy?.lastName
+                    ? `${selectedRequest.approvedBy?.firstName || ""} ${
+                        selectedRequest.approvedBy?.lastName || ""
+                      }`.trim()
+                    : "N/A"
+                }
+              />
+            )}
+            {selectedRequest?.rejectedBy && (
+              <DetalisFormatted
+                title="Rejected By"
+                detail={
+                  selectedRequest.rejectedBy?.firstName ||
+                  selectedRequest.rejectedBy?.lastName
+                    ? `${selectedRequest.rejectedBy?.firstName || ""} ${
+                        selectedRequest.rejectedBy?.lastName || ""
+                      }`.trim()
+                    : "N/A"
+                }
+              />
+            )}
+          </div>
+        ) : (
+          <CircularProgress />
+        )}
+      </MuiModal>
     </div>
   );
 };

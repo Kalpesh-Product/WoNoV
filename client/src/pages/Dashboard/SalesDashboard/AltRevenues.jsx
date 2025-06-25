@@ -318,6 +318,7 @@ const AltRevenues = () => {
       },
     },
     tooltip: {
+      enabled: false,
       y: {
         formatter: (val) => `${val.toLocaleString()} INR`,
       },

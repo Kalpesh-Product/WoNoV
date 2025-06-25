@@ -8,12 +8,12 @@ const FinanceData = () => {
 
   // Map routes to tabs
   const tabs = [
-    { label: "Department Asset List", path: "department-asset-list" },
-    { label: "Vendor", path: "vendor" },
+    { label: "Asset List", path: "asset-list" },
     {
       label: "Monthly Invoice Reports",
       path: "monthly-invoice-reports",
     },
+    { label: "Vendor", path: "vendor" },
     // {
     //   label: "Monthly Vouchers",
     //   path: "finance-monthly-vouchers",
@@ -23,12 +23,9 @@ const FinanceData = () => {
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
   useEffect(() => {
     if (location.pathname === "/app/dashboard/finance-dashboard/data") {
-      navigate(
-        "/app/dashboard/finance-dashboard/data/vendor",
-        {
-          replace: true,
-        }
-      );
+      navigate("/app/dashboard/finance-dashboard/data/asset-list", {
+        replace: true,
+      });
     }
   }, [location, navigate]);
 
@@ -62,7 +59,8 @@ const FinanceData = () => {
               backgroundColor: "#1E3D73",
               color: "white",
             },
-          }}>
+          }}
+        >
           {tabs.map((tab, index) => (
             <NavLink
               key={index}
@@ -76,7 +74,8 @@ const FinanceData = () => {
                 padding: "12px 16px",
                 display: "block",
                 backgroundColor: isActive ? "#1E3D73" : "white",
-              })}>
+              })}
+            >
               {tab.label}
             </NavLink>
           ))}

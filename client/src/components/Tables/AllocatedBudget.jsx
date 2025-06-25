@@ -241,7 +241,7 @@ const AllocatedBudget = ({
     }
 
     return baseColumns;
-  }, [monthDataForSelectedType.columns,  noInvoice ]);
+  }, [monthDataForSelectedType.columns, noInvoice]);
 
   if (isLoading) return <CircularProgress />;
 
@@ -256,8 +256,7 @@ const AllocatedBudget = ({
             : "BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"
         }
         TitleAmount={`INR ${inrFormat(totalProjectedAmountForFY)}`}
-        border
-      >
+        border>
         <div className="flex flex-col gap-4 rounded-md ">
           {!hideTitle ? (
             <div className="flex justify-between items-center"></div>
@@ -342,12 +341,10 @@ const AllocatedBudget = ({
       <MuiModal
         open={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
-        title="Upload Invoice"
-      >
+        title="Upload Invoice">
         <form
           onSubmit={handleSubmit((data) => onUpload(data, selectedRow))}
-          className="space-y-4"
-        >
+          className="space-y-4">
           <Controller
             name="invoiceImage"
             control={control}
