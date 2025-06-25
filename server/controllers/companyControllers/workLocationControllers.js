@@ -12,11 +12,6 @@ const sharp = require("sharp");
 const Unit = require("../../models/locations/Unit");
 const Building = require("../../models/locations/Building");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
-const sharp = require("sharp");
-const {
-  handleFileUpload,
-  handleFileDelete,
-} = require("../../utils/fileHandler");
 
 const addBuilding = async (req, res, next) => {
   const logPath = "hr/HrLog";
