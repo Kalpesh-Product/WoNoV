@@ -82,13 +82,13 @@ export default function CompletedLeaveRequests() {
   if (isLeavesPending) return <div>Loading...</div>;
 
   return (
-    <div className="p-4">
+    <div>
       <PageFrame>
         <YearWiseTable
           data={leavesData}
           columns={leaveColumns}
           dateColumn="fromDate"
-          tableTitle="Leave Requests"
+          tableTitle="Completed Leave Requests"
         />
       </PageFrame>
     </div>

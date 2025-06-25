@@ -368,6 +368,7 @@ import LeavesLayout from "../pages/Dashboard/HrDashboard/Mixbag/LeavesLayout";
 import PendingLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/PendingLeaveRequests";
 import CompletedLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/CompletedLeaveRequests";
 import AttendanceCompleted from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceCompleted";
+import ManageUnit from "../pages/Dashboard/SalesDashboard/ManageUnit";
 
 export const routes = createBrowserRouter([
   {
@@ -1419,6 +1420,10 @@ export const routes = createBrowserRouter([
                       {
                         path: "clients/client-onboarding",
                         element: <ClientOnboarding />,
+                      },
+                      {
+                        path: "mix-bag/manage-units",
+                        element: <ManageUnit />,
                       },
                       {
                         path: "data",
