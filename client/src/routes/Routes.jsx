@@ -360,6 +360,7 @@ import PaymentScheduleCommon from "../components/Pages/PaymentScheduleCommon";
 import ItOfficesNew from "../pages/Dashboard/ItDashboard/ItOffices/ItOfficessNew";
 import AdminOfficesNew from "../pages/Dashboard/AdminDashboard/AdminOffices/AdminOfficesNew";
 import PayrollReports from "../pages/Dashboard/HrDashboard/Data/PayrollReports";
+import ComplianceData from "../pages/Dashboard/FinanceDashboard/MixBag/ComplianceData";
 import HrMixBag from "../pages/Dashboard/HrDashboard/HrMixBag";
 import AttendanceRequests from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceRequests";
 import AttendanceLayout from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceLayout";
@@ -519,7 +520,12 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "mix-bag/compliance-documents",
-                        element: <ComplianceDocuments />,
+                        // element: <ComplianceDocuments />,
+                        element: <ComplianceData />,
+                      },
+                      {
+                        path: "mix-bag/compliance-documents/:name",
+                        element: <ComplianceData />,
                       },
                       {
                         path: "mix-bag/landlord-agreements",

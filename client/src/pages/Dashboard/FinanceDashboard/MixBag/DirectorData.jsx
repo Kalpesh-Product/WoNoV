@@ -126,8 +126,7 @@ const DirectorData = () => {
             href={params.value}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary underline cursor-pointer"
-          >
+            className="text-primary underline cursor-pointer">
             View
           </a>
         ) : (
@@ -158,8 +157,7 @@ const DirectorData = () => {
           setOpenModal(false);
           reset();
         }}
-        title={"Add Document"}
-      >
+        title={"Add Document"}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 gap-4">
             {!isCompany && (
