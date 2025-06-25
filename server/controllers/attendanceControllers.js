@@ -450,164 +450,11 @@ const getAttendanceRequests = async (req, res, next) => {
   }
 };
 
-// const correctAttendance = async (req, res, next) => {
-//   const { user, ip, company } = req;
-//   const { targetedDay, inTime, outTime, empId } = req.body;
-//   const logPath = "hr/hrLog";
-//   const logAction = "Correct Attendance";
-//   const logSourceKey = "attendance";
-
-//   try {
-//     if (!targetedDay) {
-//       throw new CustomError(
-//         "Correction Day is required",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     // ✅ Convert `targetedDay` to UTC midnight to match MongoDB stored date
-//     const targetedDate = new Date(targetedDay);
-//     const currentDate = new Date();
-//     const startOfDay = new Date(
-//       targetedDate.getFullYear(),
-//       targetedDate.getMonth(),
-//       targetedDate.getDate(),
-//       0,
-//       0,
-//       0,
-//       0
-//     );
-
-//     const endOfDay = new Date(
-//       targetedDate.getFullYear(),
-//       targetedDate.getMonth(),
-//       targetedDate.getDate(),
-//       23,
-//       59,
-//       59,
-//       999
-//     );
-
-//     const foundUser = await UserData.findOne({ empId });
-
-//     if (!foundUser) {
-//       throw new CustomError("User not found", logPath, logAction, logSourceKey);
-//     }
-
-//     const foundDate = await Attendance.findOne({
-//       user: foundUser._id,
-//       createdAt: { $gte: startOfDay, $lt: endOfDay },
-//     }).sort({
-//       createdAt: -1,
-//     });
-
-//     if (!foundDate) {
-//       throw new CustomError(
-//         "No timeclock found for that day",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     const isAllowed =
-//       currentDate.getDate() - targetedDate.getDate() === 1 ||
-//       currentDate.getDate() - targetedDate.getDate() === 0;
-
-//     if (!isAllowed) {
-//       throw new CustomError(
-//         "Correction request only for same or previous day is allowed",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     if (inTime && !foundDate.inTime) {
-//       throw new CustomError(
-//         "Clock in time isn't present to correct",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     if (outTime && !foundDate.outTime) {
-//       throw new CustomError(
-//         "Clock out time isn't present to correct",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     const clockIn = inTime ? new Date(inTime) : foundDate.inTime;
-//     const clockOut = outTime ? new Date(outTime) : foundDate.outTime;
-//     const startBreak = outTime ? new Date(outTime) : foundDate.outTime;
-
-//     if (inTime && isNaN(clockIn.getTime())) {
-//       throw new CustomError(
-//         "Invalid clock-in format",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-//     if (outTime && isNaN(clockOut.getTime())) {
-//       throw new CustomError(
-//         "Invalid clock-out format",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     const newRequest = new AttendanceCorrection({
-//       inTime: clockIn,
-//       outTime: clockOut,
-//       user: user,
-//     });
-
-//     await createLog({
-//       path: logPath,
-//       action: logAction,
-//       remarks: "Attendance corrected successfully",
-//       status: "Success",
-//       user: user,
-//       ip: ip,
-//       company: company,
-//       sourceKey: logSourceKey,
-//       sourceId: foundDate._id,
-//       changes: {
-//         requester: foundUser._id,
-//         oldInTime: foundDate.inTime,
-//         oldOutTime: foundDate.outTime,
-//         newInTime: clockIn,
-//         newOutTime: clockOut,
-//       },
-//     });
-
-//     return res
-//       .status(200)
-//       .json({ message: "Attendance corrected successfully" });
-//   } catch (error) {
-//     if (error instanceof CustomError) {
-//       next(error);
-//     } else {
-//       next(
-//         new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-//       );
-//     }
-//   }
-// };
-
 const correctAttendance = async (req, res, next) => {
   const { user, ip, company } = req;
   const { targetedDay, inTime, outTime, startBreak, endBreak, empId } =
     req.body;
-  const logPath = "hr/hrLog";
+  const logPath = "hr/HrLog";
   const logAction = "Correct Attendance";
   const logSourceKey = "attendance";
 
@@ -770,7 +617,7 @@ const correctAttendance = async (req, res, next) => {
 };
 
 const approveCorrectionRequest = async (req, res, next) => {
-  const logPath = "hr/hrLog";
+  const logPath = "hr/HrLog";
   const logAction = "Approve Correction Request";
   const logSourceKey = "attendance";
   const { user, ip, company } = req;
@@ -904,7 +751,7 @@ const approveCorrectionRequest = async (req, res, next) => {
 };
 
 const rejectCorrectionRequest = async (req, res, next) => {
-  const logPath = "hr/hrLog";
+  const logPath = "hr/HrLog";
   const logAction = "Reject Correction Request";
   const logSourceKey = "attendance";
   const { user, ip, company } = req;
