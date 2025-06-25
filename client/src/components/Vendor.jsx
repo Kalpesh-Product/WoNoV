@@ -208,7 +208,7 @@ const Vendor = () => {
     <div className="flex flex-col gap-8">
       <PageFrame>
         <div className="h-[65vh] overflow-y-auto">
-          <div className="py-4">
+          <div className="">
             <span className="text-title text-primary font-pmedium">
               VENDOR ONBOARDING FORM
             </span>
