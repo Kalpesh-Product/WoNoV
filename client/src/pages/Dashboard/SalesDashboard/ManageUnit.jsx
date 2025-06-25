@@ -4,15 +4,13 @@ import AgTable from "../../../components/AgTable";
 import PageFrame from "../../../components/Pages/PageFrame";
 import { useForm } from "react-hook-form";
 import MuiModal from "../../../components/MuiModal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TextField } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
 import { HiPencilSquare } from "react-icons/hi2";
-import {
-  MenuItem,
-} from "@mui/material";
+import { MenuItem } from "@mui/material";
 
 export default function ManageUnit() {
   const [openEdit, setOpenEdit] = useState(false);
@@ -25,6 +23,7 @@ export default function ManageUnit() {
     register,
     handleSubmit,
     setValue,
+    unregister,
     formState: { errors },
   } = useForm({ mode: "onChange", defaultValues: { buildingId: "" } });
 
@@ -159,6 +158,15 @@ export default function ManageUnit() {
     },
   ];
 
+  useEffect(() => {
+    if (modalMode === "edit") {
+      unregister("unitName");
+      unregister("unitNo");
+      unregister("sqft");
+      unregister("buildingId");
+    }
+  }, [modalMode]);
+
   return (
     <div className="p-4 flex flex-col gap-4">
       <PageFrame>
@@ -209,27 +217,27 @@ export default function ManageUnit() {
                 helperText={errors.sqft ? "Required" : ""}
               />
 
-                <TextField
-                  labelId="buildingId-label"
-                  id="buildingId"
-                  select
-                  size="small"
-                  label="Building"
-                  defaultValue=""
-                  {...register("buildingId", {
-                    required: "Building is required",
-                  })}
-                  error={!!errors.buildingId}
-                >
-                  <MenuItem value="">
-                    <em>Select Building</em>
+              <TextField
+                labelId="buildingId-label"
+                id="buildingId"
+                select
+                size="small"
+                label="Building"
+                defaultValue=""
+                {...register("buildingId", {
+                  required: "Building is required",
+                })}
+                error={!!errors.buildingId}
+              >
+                <MenuItem value="">
+                  <em>Select Building</em>
+                </MenuItem>
+                {buildings?.map((building) => (
+                  <MenuItem key={building._id} value={building._id}>
+                    {building.buildingName}
                   </MenuItem>
-                  {buildings?.map((building) => (
-                    <MenuItem key={building._id} value={building._id}>
-                      {building.buildingName}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                ))}
+              </TextField>
             </>
           )}
 
