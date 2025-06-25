@@ -360,6 +360,10 @@ import PaymentScheduleCommon from "../components/Pages/PaymentScheduleCommon";
 import ItOfficesNew from "../pages/Dashboard/ItDashboard/ItOffices/ItOfficessNew";
 import AdminOfficesNew from "../pages/Dashboard/AdminDashboard/AdminOffices/AdminOfficesNew";
 import PayrollReports from "../pages/Dashboard/HrDashboard/Data/PayrollReports";
+import HrMixBag from "../pages/Dashboard/HrDashboard/HrMixBag";
+import AttendanceRequests from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceRequests";
+import AttendanceLayout from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceLayout";
+import AttendanceCompleted from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceCompleted";
 
 export const routes = createBrowserRouter([
   {
@@ -1469,6 +1473,25 @@ export const routes = createBrowserRouter([
                           {
                             path: "department-tasks",
                             element: <HrDepartmentTasks />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "mix-bag",
+                        element: <HrMixBag />,
+                      },
+                      {
+                        path: "mix-bag/attendance",
+                        element: <AttendanceLayout />,
+                        children: [
+                          {
+                            path: "pending-approvals",
+                            element: <AttendanceRequests />,
+                            index:true
+                          },
+                          {
+                            path: "completed",
+                            element: <AttendanceCompleted />,
                           },
                         ],
                       },
