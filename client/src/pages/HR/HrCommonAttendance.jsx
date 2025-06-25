@@ -71,7 +71,7 @@ const HrCommonAttendance = () => {
         ...data,
         empId: auth?.user?.empId || "",
       };
-      const response = await axios.patch(
+      const response = await axios.post(
         "/api/attendance/correct-attendance",
         payload
       );

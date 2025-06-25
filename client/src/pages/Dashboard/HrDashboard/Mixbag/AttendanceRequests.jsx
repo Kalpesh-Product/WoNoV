@@ -2,27 +2,33 @@ import React, { useState } from "react";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import PageFrame from "../../../../components/Pages/PageFrame";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import humanDate from "../../../../utils/humanDateForamt";
 import MuiModal from "../../../../components/MuiModal";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { HiOutlinePencilSquare } from "react-icons/hi2";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import { toast } from "sonner";
+import { queryClient } from "../../../../main";
+import humanTime from "../../../../utils/humanTime";
+import { CircularProgress } from "@mui/material";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const AttendanceRequests = () => {
   const axios = useAxiosPrivate();
-  const [selectedEntry, setSelectedEntry] = useState([]);
-  const [openModal, setOpenModal] = useState();
-  const { data, isLoading } = useQuery({
-    queryKey: ["attendance-requests"],
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const { data: pendingRequests, isLoading } = useQuery({
+    queryKey: ["pending-requests"],
     queryFn: async () => {
       try {
         const response = await axios.get(
           "/api/attendance/get-attendance-requests"
         );
         const filtered = response.data.filter(
-          (item) => item.status !== "Approved"
+          (item) => item.status === "Pending"
         );
+
         return filtered;
       } catch (error) {
         console.warn(error.mesage);
@@ -30,12 +36,51 @@ const AttendanceRequests = () => {
     },
   });
 
+  const { mutate: approveRequest, isPending: approveRequestPending } =
+    useMutation({
+      mutationFn: async (id) => {
+        const response = await axios.patch(
+          `/api/attendance/approve-correct-attendance/${id}`
+        );
+        return response.data;
+      },
+      onSuccess: function (data) {
+        toast.success(data.message);
+        queryClient.invalidateQueries({queryKey:["pending-requests"]});
+        setSelectedRequest(null);
+        setOpenModal(false);
+      },
+      onError: function (error) {
+        toast.error(error.response.data.message);
+      },
+    });
+
+  const { mutate: rejectRequest, isPending: rejectRequestPending } =
+    useMutation({
+      mutationFn: async (id) => {
+        const response = await axios.patch(
+          `/api/attendance/reject-correct-attendance/${id}`
+        );
+        return response.data;
+      },
+      onSuccess: function (data) {
+        toast.success(data.message);
+        queryClient.invalidateQueries(["pending-requests"]);
+        setSelectedRequest(null);
+        setOpenModal(false);
+      },
+      onError: function (error) {
+        toast.error(error.response.data.message);
+      },
+    });
+
   const handleViewUser = (data) => {
-    setSelectedEntry(data);
+    setSelectedRequest(data);
     setOpenModal(true);
   };
+
   const columns = [
-    { field: "srNo", headerName: "SrNo", width: 100 },
+    { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "name", headerName: "Name", flex: 1 },
     { field: "date", headerName: "Date" },
     { field: "inTime", headerName: "Start Time" },
@@ -49,7 +94,17 @@ const AttendanceRequests = () => {
             rowId={params.data.id}
             menuItems={[
               {
-                label: "Accept",
+                label: "Approve",
+                onClick: () => approveRequest(params.data._id),
+                isLoading: isLoading,
+              },
+              {
+                label: "Reject",
+                onClick: () => rejectRequest(params.data._id),
+                isLoading: isLoading,
+              },
+              {
+                label: "View",
                 onClick: () => handleViewUser(params.data),
                 isLoading: isLoading,
               },
@@ -62,29 +117,72 @@ const AttendanceRequests = () => {
 
   const tableData = isLoading
     ? []
-    : data.map((item) => ({
+    : pendingRequests.map((item) => ({
         ...item,
         empId: item.user?.empId,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
         date: item.inTime,
+        inTime: humanTime(item.inTime),
+        outTime: humanTime(item.outTime),
+        originalInTime: humanTime(item.originalInTime),
+        originalOutTime: humanTime(item.originalOutTime),
+        status: item.status,
       }));
-      console.log(tableData)
+
   return (
     <div className="flex flex-col">
       <PageFrame>
         <YearWiseTable
+        key={tableData.length}
           dateColumn={"date"}
           columns={columns}
-          data={tableData}
+          data={!isLoading ? tableData : []}
           tableTitle={"ATTENDANCE REQUESTS"}
         />
       </PageFrame>
       <MuiModal
-        title={"Review Request"}
         open={openModal}
         onClose={() => setOpenModal(false)}
+        title={"Attendance Request Details"}
       >
-        hello
+        {selectedRequest ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <DetalisFormatted
+              title="Employee ID"
+              detail={selectedRequest?.empId || "N/A"}
+            />
+            <DetalisFormatted
+              title="Name"
+              detail={selectedRequest?.name || "N/A"}
+            />
+            <DetalisFormatted
+              title="Date"
+              detail={selectedRequest?.date || "N/A"}
+            />
+            <DetalisFormatted
+              title="Start Time"
+              detail={selectedRequest?.inTime || "N/A"}
+            />
+            <DetalisFormatted
+              title="End Time"
+              detail={selectedRequest?.outTime || "N/A"}
+            />
+            <DetalisFormatted
+              title="Original Start Time"
+              detail={selectedRequest?.originalInTime || "N/A"}
+            />
+            <DetalisFormatted
+              title="Original End Time"
+              detail={selectedRequest?.originalOutTime || "N/A"}
+            />
+            <DetalisFormatted
+              title="Status"
+              detail={selectedRequest?.status || "N/A"}
+            />
+          </div>
+        ) : (
+          <CircularProgress />
+        )}
       </MuiModal>
     </div>
   );

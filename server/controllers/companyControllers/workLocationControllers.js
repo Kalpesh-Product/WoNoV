@@ -126,7 +126,6 @@ const addUnit = async (req, res, next) => {
 
   try {
     if (
-      !company ||
       !unitName ||
       !unitNo ||
       !buildingId ||
@@ -136,15 +135,6 @@ const addUnit = async (req, res, next) => {
     ) {
       throw new CustomError(
         "Missing required fields",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(company)) {
-      throw new CustomError(
-        "Invalid company ID provided",
         logPath,
         logAction,
         logSourceKey
