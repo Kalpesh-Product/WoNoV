@@ -360,6 +360,7 @@ import PaymentScheduleCommon from "../components/Pages/PaymentScheduleCommon";
 import ItOfficesNew from "../pages/Dashboard/ItDashboard/ItOffices/ItOfficessNew";
 import AdminOfficesNew from "../pages/Dashboard/AdminDashboard/AdminOffices/AdminOfficesNew";
 import PayrollReports from "../pages/Dashboard/HrDashboard/Data/PayrollReports";
+import HrMixBag from "../pages/Dashboard/HrDashboard/HrMixBag";
 
 export const routes = createBrowserRouter([
   {
@@ -1472,7 +1473,10 @@ export const routes = createBrowserRouter([
                           },
                         ],
                       },
-
+                      {
+                        path: "mix-bag",
+                        element: <HrMixBag />,
+                      },
                       {
                         path: "company",
                         element: <Compliances />,
