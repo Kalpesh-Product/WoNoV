@@ -345,7 +345,7 @@ const totalUtilised =
   // BUDGET NEW END
 
   return (
-    <div className="flex flex-col gap-8 p-4">
+    <div className="flex flex-col gap-8">
       {/* <YearlyGraph
         data={expenseRawSeries}
         options={expenseOptions}
