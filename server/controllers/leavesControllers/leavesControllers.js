@@ -203,7 +203,11 @@ const requestLeave = async (req, res, next) => {
 const fetchAllLeaves = async (req, res, next) => {
   try {
     const leaves = await Leave.find()
-      .populate([{ path: "takenBy", select: "firstName lastName" }])
+      .populate([
+        { path: "takenBy", select: "firstName lastName" },
+        { path: "approvedBy", select: "firstName lastName" },
+        { path: "rejectedBy", select: "firstName lastName" },
+      ])
       .lean()
       .exec();
 

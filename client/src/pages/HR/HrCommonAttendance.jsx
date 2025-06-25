@@ -37,7 +37,12 @@ const HrCommonAttendance = () => {
 
   const attendanceColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "date", headerName: "Date", width: 200, cellRenderer: (params)=>((params.value)) },
+    {
+      field: "date",
+      headerName: "Date",
+      width: 200,
+      cellRenderer: (params) => params.value,
+    },
     { field: "inTime", headerName: "In Time" },
     { field: "outTime", headerName: "Out Time" },
     { field: "workHours", headerName: "Work Hours" },
@@ -47,7 +52,9 @@ const HrCommonAttendance = () => {
 
   const fetchAttendance = async () => {
     if (!auth?.user?.empId) throw new Error("User not found");
-    const response = await axios.get(`/api/attendance/get-attendance/${auth.user.empId}`);
+    const response = await axios.get(
+      `/api/attendance/get-attendance/${auth.user.empId}`
+    );
     const data = response.data;
     return Array.isArray(data) ? data : data?.attendance ?? [];
   };
@@ -64,7 +71,10 @@ const HrCommonAttendance = () => {
         ...data,
         empId: auth?.user?.empId || "",
       };
-      const response = await axios.patch("/api/attendance/correct-attendance", payload);
+      const response = await axios.patch(
+        "/api/attendance/correct-attendance",
+        payload
+      );
       return response.data;
     },
     onSuccess: (data) => {
@@ -74,7 +84,9 @@ const HrCommonAttendance = () => {
       reset();
     },
     onError: (error) => {
-      toast.error(error?.response?.data?.message || "Error submitting correction");
+      toast.error(
+        error?.response?.data?.message || "Error submitting correction"
+      );
     },
   });
 
@@ -96,25 +108,27 @@ const HrCommonAttendance = () => {
             dateColumn={"date"}
             columns={attendanceColumns}
             buttonTitle={"Correction Request"}
-                handleSubmit={() => {
+            handleSubmit={() => {
               setOpenModal(true);
             }}
             data={
               attendance.length > 0
                 ? attendance.map((record, index) => ({
                     id: index + 1,
-                    date: record?.inTime
-                      ? (record?.inTime)
-                      : "N/A",
+                    date: record?.inTime ? record?.inTime : "N/A",
                     inTime: record?.inTime ? humanTime(record.inTime) : "N/A",
-                    outTime: record?.outTime ? humanTime(record.outTime) : "N/A",
-                    workHours: record?.inTime && record?.outTime
-                      ? formatDuration(record.inTime, record.outTime)
+                    outTime: record?.outTime
+                      ? humanTime(record.outTime)
                       : "N/A",
+                    workHours:
+                      record?.inTime && record?.outTime
+                        ? formatDuration(record.inTime, record.outTime)
+                        : "N/A",
                     breakHours: record?.breakDuration ?? "N/A",
-                    totalHours: record?.inTime && record?.outTime
-                      ? formatDuration(record.inTime, record.outTime)
-                      : "N/A",
+                    totalHours:
+                      record?.inTime && record?.outTime
+                        ? formatDuration(record.inTime, record.outTime)
+                        : "N/A",
                   }))
                 : [
                     {
@@ -137,10 +151,7 @@ const HrCommonAttendance = () => {
         open={openModal}
         onClose={() => setOpenModal(false)}
       >
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <Controller
             name="targetedDay"
             control={control}
@@ -150,7 +161,8 @@ const HrCommonAttendance = () => {
                   {...field}
                   label={"Select Date"}
                   format="DD-MM-YYYY"
-                  disablePast
+             
+                  slotProps={{ textField: { size: "small" } }}
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) => {
                     field.onChange(date ? date.toISOString() : null);

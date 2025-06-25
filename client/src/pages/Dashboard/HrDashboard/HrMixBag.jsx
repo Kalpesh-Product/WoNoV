@@ -13,11 +13,11 @@ const HrMixBag = () => {
     {
       title: "Attendance Requests",
       route:
-        "#",
+        "/app/dashboard/hr-dashboard/mix-bag/attendance",
     },
     {
       title: "Leave Requests",
-      route: "leave-requests",
+      route: "/app/dashboard/hr-dashboard/mix-bag/leaves",
     },
 
   ];

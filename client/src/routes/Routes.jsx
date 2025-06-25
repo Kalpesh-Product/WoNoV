@@ -361,7 +361,11 @@ import ItOfficesNew from "../pages/Dashboard/ItDashboard/ItOffices/ItOfficessNew
 import AdminOfficesNew from "../pages/Dashboard/AdminDashboard/AdminOffices/AdminOfficesNew";
 import PayrollReports from "../pages/Dashboard/HrDashboard/Data/PayrollReports";
 import HrMixBag from "../pages/Dashboard/HrDashboard/HrMixBag";
-import LeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/LeaveRequests";
+import AttendanceRequests from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceRequests";
+import AttendanceLayout from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceLayout";
+import LeavesLayout from "../pages/Dashboard/HrDashboard/Mixbag/LeavesLayout";
+import PendingLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/PendingLeaveRequests";
+import CompletedLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/CompletedLeaveRequests";
 
 export const routes = createBrowserRouter([
   {
@@ -1479,12 +1483,32 @@ export const routes = createBrowserRouter([
                         element: <HrMixBag />,
                       },
                       {
-                        path: "mix-bag/attenance-requests",
+                        path: "mix-bag/attendance",
+                        element: <AttendanceLayout />,
+                        children: [
+                          {
+                            path: "pending-approvals",
+                            element: <AttendanceRequests />,
+                            index: true,
+                          },
+                        ],
                       },
                       {
-                        path: "mix-bag/leave-requests",
-                        element: <LeaveRequests />,
+                        path: "mix-bag/leaves",
+                        element: <LeavesLayout />,
+                        children: [
+                          {
+                            path: "pending-approvals",
+                            element: <PendingLeaveRequests />,
+                            index: true,
+                          },
+                          {
+                            path: "completed-approvals",
+                            element: <CompletedLeaveRequests />,
+                          },
+                        ],
                       },
+
                       {
                         path: "company",
                         element: <Compliances />,
