@@ -3,6 +3,7 @@ import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { useQuery } from "@tanstack/react-query";
+import humanDate from "../../../../utils/humanDateForamt";
 
 const AttendanceRequests = () => {
   const axios = useAxiosPrivate();
@@ -28,7 +29,7 @@ const AttendanceRequests = () => {
     { field: "date", headerName: "Date" },
     { field: "inTime", headerName: "Start Time" },
     { field: "outTime", headerName: "End Time" },
-    { field: "actions", headerName: "End Time" },
+    { field: "actions", headerName: "Actions" },
   ];
 
   const tableData = isLoading
@@ -37,11 +38,13 @@ const AttendanceRequests = () => {
         ...item,
         empId: item.user?.empId,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
+        date : (item.inTime)
       }));
   return (
     <div className="flex flex-col">
       <PageFrame>
         <YearWiseTable
+          dateColumn={"date"}
           columns={columns}
           data={tableData}
           tableTitle={"ATTENDANCE REQUESTS"}
