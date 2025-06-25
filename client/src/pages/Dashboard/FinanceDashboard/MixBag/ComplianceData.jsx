@@ -30,13 +30,12 @@ const ComplianceData = () => {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      personName: name,
       documentName: "",
       document: null,
     },
   });
 
-  const { data: complianceData, isLoading } = useQuery({
+  const { data: complianceData = [], isLoading } = useQuery({
     queryKey: ["complianceDocuments"],
     queryFn: async () => {
       const res = await axios.get("/api/company/get-compliance-documents");
@@ -45,11 +44,8 @@ const ComplianceData = () => {
   });
 
   const files = useMemo(() => {
-    if (!complianceData) return filesFromState;
-
-    const match = complianceData.find((entry) => entry.personName === name);
-    return match?.documents || filesFromState;
-  }, [complianceData, name]);
+    return complianceData || filesFromState;
+  }, [complianceData]);
 
   const fileRows = files.map((file, index) => ({
     srno: index + 1,
@@ -84,11 +80,10 @@ const ComplianceData = () => {
   });
 
   const onSubmit = (formValues) => {
-    const { personName, documentName, document } = formValues;
+    const { documentName, document } = formValues;
     if (!document) return toast.error("Please upload a document");
 
     const formData = new FormData();
-    formData.append("personName", personName);
     formData.append("documentName", documentName);
     formData.append("document", document);
 
@@ -153,19 +148,6 @@ const ComplianceData = () => {
         }}
         title="Add Document">
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-          {/* <Controller
-            name="personName"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Person Name"
-                fullWidth
-                size="small"
-                disabled
-              />
-            )}
-          /> */}
           <Controller
             name="documentName"
             control={control}

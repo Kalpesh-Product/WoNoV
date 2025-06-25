@@ -86,7 +86,6 @@ const TasksViewDepartment = () => {
   const { mutate: updateDailyKra, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateDailyTasks"],
     mutationFn: async (data) => {
-
       const response = await axios.patch(
         `/api/tasks/update-task-status/${data}`
       );
@@ -502,14 +501,14 @@ const TasksViewDepartment = () => {
             : ""
         }>
         {modalMode === "view" && selectedTask && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+            <div className="col-span-1">
               <DetalisFormatted
                 title={"Task"}
                 detail={selectedTask?.taskName}
               />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1">
               <DetalisFormatted
                 title={"Description"}
                 detail={selectedTask?.description}
@@ -536,7 +535,7 @@ const TasksViewDepartment = () => {
           </div>
         )}
         {modalMode === "completed" && selectedTask && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskName} />
             <DetalisFormatted
               title={"Assigned Date"}
