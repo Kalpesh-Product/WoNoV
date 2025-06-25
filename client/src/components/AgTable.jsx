@@ -36,6 +36,7 @@ const AgTableComponent = React.memo(
     handleBatchAction,
     isRowSelectable,
     batchButton,
+    hideTitle,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -163,55 +164,60 @@ const AgTableComponent = React.memo(
 
     return (
       <div className="border-b-[1px] border-borderGray">
-
-          <div className=" flex gap-4 items-center">
-            <div className={`flex items-center ${tableTitle ? "justify-between w-full items-center" : "justify-end w-full"} `}>
+        <div className=" flex gap-4 items-center">
+          <div
+            className={`flex items-center ${
+              tableTitle
+                ? "justify-between w-full items-center"
+                : "justify-end w-full"
+            } `}
+          >
+            {!hideTitle && (
               <div className="flex items-center justify-between pb-4">
                 <span className="font-pmedium text-title text-primary uppercase">
                   {tableTitle}
                 </span>
               </div>
-              <div className="flex items-center gap-4">
-                {exportData ? (
-                  <PrimaryButton
-                    title={"Export"}
-                    handleSubmit={() => {
-                      if (gridRef.current) {
-                        gridRef.current.api.exportDataAsCsv({
-                          fileName: `${tableTitle || "table-data"}.csv`,
-                        });
-                      }
-                    }}
-                  />
-                ) : (
-                  ""
-                )}
-                {buttonTitle ? (
-                  <PrimaryButton
-                    title={buttonTitle}
-                    handleSubmit={handleClick}
-                    disabled={disabled}
-                  />
-                ) : (
-                  ""
-                )}
+            )}
+            <div className="flex items-center gap-4">
+              {exportData ? (
+                <PrimaryButton
+                  title={"Export"}
+                  handleSubmit={() => {
+                    if (gridRef.current) {
+                      gridRef.current.api.exportDataAsCsv({
+                        fileName: `${tableTitle || "table-data"}.csv`,
+                      });
+                    }
+                  }}
+                />
+              ) : (
+                ""
+              )}
+              {buttonTitle ? (
+                <PrimaryButton
+                  title={buttonTitle}
+                  handleSubmit={handleClick}
+                  disabled={disabled}
+                />
+              ) : (
+                ""
+              )}
 
-                {batchButton ? (
-                  <>
-                    <PrimaryButton
-                      title={batchButton || ""}
-                      handleSubmit={handleActionClick}
-                      disabled={!selectedRows.length > 0}
-                    />
-                  </>
-                ) : (
-                  ""
-                )}
-              </div>
- 
+              {batchButton ? (
+                <>
+                  <PrimaryButton
+                    title={batchButton || ""}
+                    handleSubmit={handleActionClick}
+                    disabled={!selectedRows.length > 0}
+                  />
+                </>
+              ) : (
+                ""
+              )}
             </div>
           </div>
-   
+        </div>
 
         <div
           className={`flex ${

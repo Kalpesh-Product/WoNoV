@@ -787,7 +787,7 @@ const MaintainanceDashboard = () => {
           route={"maintenance-offices"}
           title={"Total"}
           data={""}
-          description={"Offices Under Maintenance"}
+          description={"Offices Under Management"}
         />,
         <DataCard
           route={"/app/tasks"}
