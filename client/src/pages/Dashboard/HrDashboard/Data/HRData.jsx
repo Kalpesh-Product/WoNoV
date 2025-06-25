@@ -8,9 +8,10 @@ const Data = () => {
 
   const tabs = [
     { label: "Job Application List", path: "job-application-list" },
+    { label: "Payroll Reports", path: "payroll-reports" },
+    { label: "Asset List", path: "asset-list" },
     { label: "Vendor", path: "vendor" },
     { label: "Monthly Invoice Reports", path: "monthly-invoice-reports" },
-    { label: "Payroll Reports", path: "payroll-reports" },
   ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"

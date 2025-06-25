@@ -31,6 +31,7 @@ import { TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import UploadFileInput from "../../components/UploadFileInput";
 import { inrFormat } from "../../utils/currencyFormat";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const ExternalMeetingCLients = () => {
   const axios = useAxiosPrivate();
@@ -570,18 +571,20 @@ const ExternalMeetingCLients = () => {
   ];
 
   return (
-    <div className="p-4 flex flex-col gap-4">
-      {!isMeetingsLoading ? (
-        <AgTable
-          key={transformedMeetings.length}
-          search
-          tableTitle={"Manage Meetings"}
-          data={transformedMeetings || []}
-          columns={columns}
-        />
-      ) : (
-        <CircularProgress />
-      )}
+    <div className="flex-col gap-4">
+      <PageFrame>
+        {!isMeetingsLoading ? (
+          <AgTable
+            key={transformedMeetings.length}
+            search
+            tableTitle={"Manage Meetings"}
+            data={transformedMeetings || []}
+            columns={columns}
+          />
+        ) : (
+          <CircularProgress />
+        )}
+      </PageFrame>
 
       {/* Checklist Modal */}
       <MuiModal
@@ -856,10 +859,7 @@ const ExternalMeetingCLients = () => {
             <div className="font-bold">Payment Details</div>
             <DetalisFormatted
               title="Amount"
-              detail={
-                selectedMeeting?.paymentAmount
-                  
-              }
+              detail={selectedMeeting?.paymentAmount}
             />
             <DetalisFormatted
               title="Mode"
