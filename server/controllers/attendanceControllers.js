@@ -27,14 +27,14 @@ const clockIn = async (req, res, next) => {
     const clockInTime = new Date(inTime);
     const currDate = new Date();
 
-    if (clockInTime.getDate() !== currDate.getDate()) {
-      throw new CustomError(
-        "Please select present date",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // if (clockInTime.getDate() !== currDate.getDate()) {
+    //   throw new CustomError(
+    //     "Please select present date",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
 
     if (isNaN(clockInTime.getTime())) {
       throw new CustomError(
@@ -141,14 +141,14 @@ const clockOut = async (req, res, next) => {
       );
     }
     const isSameDay = clockOutTime.getDate() - currDate.getDate() === 0;
-    if (!isSameDay) {
-      throw new CustomError(
-        "Please select present date",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // if (!isSameDay) {
+    //   throw new CustomError(
+    //     "Please select present date",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
 
     if (attendance.outTime) {
       throw new CustomError(
@@ -495,9 +495,14 @@ const correctAttendance = async (req, res, next) => {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);
     }
 
+    // const foundDate = await Attendance.findOne({
+    //   user: foundUser._id,
+    //   createdAt: { $gte: startOfDay, $lt: endOfDay },
+    // }).sort({ createdAt: -1 });
+
     const foundDate = await Attendance.findOne({
       user: foundUser._id,
-      createdAt: { $gte: startOfDay, $lt: endOfDay },
+      inTime: { $gte: startOfDay, $lt: endOfDay },
     }).sort({ createdAt: -1 });
 
     if (!foundDate) {
@@ -513,14 +518,14 @@ const correctAttendance = async (req, res, next) => {
       currentDate.getDate() - targetedDate.getDate() === 1 ||
       currentDate.getDate() - targetedDate.getDate() === 0;
 
-    if (!isAllowed) {
-      throw new CustomError(
-        "Correction request only for same or previous day is allowed",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // if (!isAllowed) {
+    //   throw new CustomError(
+    //     "Correction request only for same or previous day is allowed",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
 
     // Validate presence and parse
     const clockIn = inTime ? new Date(inTime) : null;
@@ -736,8 +741,7 @@ const approveCorrectionRequest = async (req, res, next) => {
     });
 
     return res.status(200).json({
-      message:
-        "Correction request approved and attendance updated successfully",
+      message: "Correction request approved",
     });
   } catch (error) {
     if (error instanceof CustomError) {
