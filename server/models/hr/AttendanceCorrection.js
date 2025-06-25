@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const attendanceSchema = new mongoose.Schema(
+const attendanceCorrectionSchema = new mongoose.Schema(
   {
     inTime: {
       type: Date,
@@ -14,17 +14,6 @@ const attendanceSchema = new mongoose.Schema(
     endBreak: {
       type: Date,
     },
-    breakDuration: {
-      type: Number,
-      default: 0,
-    },
-    breakCount: {
-      type: Number,
-      default: 0,
-    },
-    entryType: {
-      type: String,
-    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
@@ -33,14 +22,19 @@ const attendanceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
     },
-    //Unused, must be removed later
+    //correction request status
+    status: {
+      type: String,
+      enum: ["Pending", "Approved", "Rejected"],
+      default: "Pending",
+    },
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "UserData",
     },
     rejectedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "UserData",
     },
   },
   {
@@ -48,5 +42,8 @@ const attendanceSchema = new mongoose.Schema(
   }
 );
 
-const Attendance = mongoose.model("Attendance", attendanceSchema);
-module.exports = Attendance;
+const AttendanceCorrection = mongoose.model(
+  "AttendanceCorrection",
+  attendanceCorrectionSchema
+);
+module.exports = AttendanceCorrection;
