@@ -361,6 +361,7 @@ import ItOfficesNew from "../pages/Dashboard/ItDashboard/ItOffices/ItOfficessNew
 import AdminOfficesNew from "../pages/Dashboard/AdminDashboard/AdminOffices/AdminOfficesNew";
 import PayrollReports from "../pages/Dashboard/HrDashboard/Data/PayrollReports";
 import HrMixBag from "../pages/Dashboard/HrDashboard/HrMixBag";
+import LeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/LeaveRequests";
 
 export const routes = createBrowserRouter([
   {
@@ -1478,7 +1479,11 @@ export const routes = createBrowserRouter([
                         element: <HrMixBag />,
                       },
                       {
-                        path:"mix-bag/leave-requests",
+                        path: "mix-bag/attenance-requests",
+                      },
+                      {
+                        path: "mix-bag/leave-requests",
+                        element: <LeaveRequests />,
                       },
                       {
                         path: "company",

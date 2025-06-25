@@ -17,7 +17,7 @@ const HrMixBag = () => {
     },
     {
       title: "Leave Requests",
-      route: "#",
+      route: "leave-requests",
     },
 
   ];
