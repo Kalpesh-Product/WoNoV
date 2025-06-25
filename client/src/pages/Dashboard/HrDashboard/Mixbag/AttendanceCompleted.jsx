@@ -4,7 +4,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { useQuery } from "@tanstack/react-query";
 
-const AttendanceRequests = () => {
+const AttendanceCompleted = () => {
   const axios = useAxiosPrivate();
   const { data, isLoading } = useQuery({
     queryKey: ["attendance-requests"],
@@ -13,10 +13,7 @@ const AttendanceRequests = () => {
         const response = await axios.get(
           "/api/attendance/get-attendance-requests"
         );
-        const filtered = response.data.filter(
-          (item) => item.status !== "Approved"
-        );
-        return filtered;
+        return response.data;
       } catch (error) {
         console.warn(error.mesage);
       }
@@ -26,24 +23,16 @@ const AttendanceRequests = () => {
     { field: "srNo", headerName: "SrNo", width: 100 },
     { field: "name", headerName: "Name", flex: 1 },
     { field: "date", headerName: "Date" },
-    { field: "inTime", headerName: "Start Time" },
-    { field: "outTime", headerName: "End Time" },
+    { field: "startTime", headerName: "Start Time" },
+    { field: "endTime", headerName: "End Time" },
     { field: "actions", headerName: "End Time" },
   ];
-
-  const tableData = isLoading
-    ? []
-    : data.map((item) => ({
-        ...item,
-        empId: item.user?.empId,
-        name: `${item.user?.firstName} ${item.user?.lastName}`,
-      }));
   return (
     <div className="flex flex-col">
       <PageFrame>
         <YearWiseTable
           columns={columns}
-          data={tableData}
+          data={[]}
           tableTitle={"ATTENDANCE REQUESTS"}
         />
       </PageFrame>
@@ -51,4 +40,4 @@ const AttendanceRequests = () => {
   );
 };
 
-export default AttendanceRequests;
+export default AttendanceCompleted;
