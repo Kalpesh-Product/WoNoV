@@ -363,6 +363,9 @@ import PayrollReports from "../pages/Dashboard/HrDashboard/Data/PayrollReports";
 import HrMixBag from "../pages/Dashboard/HrDashboard/HrMixBag";
 import AttendanceRequests from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceRequests";
 import AttendanceLayout from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceLayout";
+import LeavesLayout from "../pages/Dashboard/HrDashboard/Mixbag/LeavesLayout";
+import PendingLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/PendingLeaveRequests";
+import CompletedLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/CompletedLeaveRequests";
 import AttendanceCompleted from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceCompleted";
 
 export const routes = createBrowserRouter([
@@ -1487,11 +1490,22 @@ export const routes = createBrowserRouter([
                           {
                             path: "pending-approvals",
                             element: <AttendanceRequests />,
-                            index:true
+                            index: true,
+                          },
+                        ],
+                      },
+                      {
+                        path: "mix-bag/leaves",
+                        element: <LeavesLayout />,
+                        children: [
+                          {
+                            path: "pending-approvals",
+                            element: <PendingLeaveRequests />,
+                            index: true,
                           },
                           {
-                            path: "completed",
-                            element: <AttendanceCompleted />,
+                            path: "completed-approvals",
+                            element: <CompletedLeaveRequests />,
                           },
                         ],
                       },

@@ -378,7 +378,7 @@ const AdminExpenses = () => {
         </div>
       )} */}
 
-      <AllocatedBudget financialData={financialData} />
+      <AllocatedBudget financialData={financialData}/>
       <MuiModal
         title="Request Budget"
         open={openModal}
