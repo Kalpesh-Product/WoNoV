@@ -7,6 +7,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
 import PageFrame from "../../components/Pages/PageFrame";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
 
 const TicketsHistory = ({ pageTitle }) => {
   const axios = useAxiosPrivate();
@@ -15,7 +16,7 @@ const TicketsHistory = ({ pageTitle }) => {
   const { data: tickets, isPending: ticketsLoading } = useQuery({
     queryKey: ["my-tickets"],
     queryFn: async function () {
-      const response = await axios.get("/api/tickets/today");
+      const response = await axios.get("/api/tickets/my-tickets");
       return response.data;
     },
   });
@@ -29,6 +30,7 @@ const TicketsHistory = ({ pageTitle }) => {
     { field: "raisedTo", headerName: "To Department", width: 150 },
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     { field: "description", headerName: "Description", width: 300 },
+    { field: "date", headerName: "Date" },
 
     {
       field: "priority",
@@ -94,7 +96,8 @@ const TicketsHistory = ({ pageTitle }) => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewTicketDetails(params.data)}>
+            onClick={() => handleViewTicketDetails(params.data)}
+          >
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -115,7 +118,8 @@ const TicketsHistory = ({ pageTitle }) => {
               <CircularProgress color="black" />
             </div>
           ) : (
-            <AgTable
+            <YearWiseTable
+              dateColumn={"date"}
               key={tickets?.length}
               search
               data={tickets?.map((ticket, index) => ({
@@ -126,6 +130,7 @@ const TicketsHistory = ({ pageTitle }) => {
                 ticketTitle: ticket.ticket,
                 status: ticket.status,
                 priority: ticket.priority,
+                date: ticket.createdAt,
               }))}
               columns={recievedTicketsColumns}
               paginationPageSize={10}
@@ -137,7 +142,8 @@ const TicketsHistory = ({ pageTitle }) => {
       <MuiModal
         open={openModal && viewTicketDetails}
         onClose={() => setOpenModal(false)}
-        title={"View Ticket Details"}>
+        title={"View Ticket Details"}
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
           <DetalisFormatted
             title="Raised By"

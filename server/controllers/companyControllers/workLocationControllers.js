@@ -109,10 +109,7 @@ const addBuilding = async (req, res, next) => {
 };
 
 const addUnit = async (req, res, next) => {
-  const logPath = "hr/HrLog";
-  const logAction = "Add Unit";
-  const logSourceKey = "unit";
-  const { user, ip, company } = req;
+  const { company, user, ip } = req;
   const {
     buildingId,
     unitName,
@@ -134,54 +131,27 @@ const addUnit = async (req, res, next) => {
       !sqft ||
       !openDesks
     ) {
-      throw new CustomError(
-        "Missing required fields",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(company)) {
-      throw new CustomError(
-        "Invalid company ID provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Invalid company ID provided" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(buildingId)) {
-      throw new CustomError(
-        "Invalid building ID provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Invalid building ID provided" });
     }
 
-    // Check if the company exists
     const existingCompany = await Company.findById(company);
     if (!existingCompany) {
-      throw new CustomError(
-        "Company not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(404).json({ message: "Company not found" });
     }
 
     const existingBuilding = await Building.findById(buildingId);
     if (!existingBuilding) {
-      throw new CustomError(
-        "Building not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(404).json({ message: "Building not found" });
     }
 
-    // Create new WorkLocation
     const newUnit = new Unit({
       company,
       unitName,
@@ -190,37 +160,19 @@ const addUnit = async (req, res, next) => {
       openDesks,
       sqft,
       building: buildingId,
-      clearImage: clearImage ? clearImage : "",
-      occupiedImage: occupiedImage ? occupiedImage : "",
+      clearImage: clearImage || "",
+      occupiedImage: occupiedImage || "",
     });
 
     const savedUnit = await newUnit.save();
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Work location added successfully",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: savedUnit._id,
-      changes: newUnit,
-    });
-
     return res.status(200).json({
       message: "Unit added successfully",
-      workLocation: newUnit,
+      workLocation: savedUnit,
     });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
-    }
+    console.error("Error adding unit:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -286,23 +238,13 @@ const addUnit = async (req, res, next) => {
 // };
 
 const updateUnit = async (req, res, next) => {
-  const logPath = "hr/HrLog";
-  const logAction = "Update Unit";
-  const logSourceKey = "unit";
-  const { user, ip, company } = req;
-
   try {
     const { unitId } = req.body;
-    const updateFields = { ...req.body }; // clone before modifying
-    const files = req.files || {}; // multer stores files here
+    const updateFields = { ...req.body };
+    const files = req.files || {};
 
     if (!unitId || !mongoose.Types.ObjectId.isValid(unitId)) {
-      throw new CustomError(
-        "Invalid or missing Unit ID",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Invalid or missing Unit ID" });
     }
 
     const existingUnit = await Unit.findById(unitId).populate([
@@ -311,25 +253,19 @@ const updateUnit = async (req, res, next) => {
     ]);
 
     if (!existingUnit) {
-      throw new CustomError("Unit not found", logPath, logAction, logSourceKey);
+      return res.status(404).json({ message: "Unit not found" });
     }
 
-    const oldUnitData = existingUnit.toObject();
-
-    // ❌ Do not allow updates to these fields
     const forbiddenFields = ["company", "building", "unitId"];
     forbiddenFields.forEach((field) => delete updateFields[field]);
 
-    // ✅ Upload and update image if provided
     for (const imageType of ["clearImage", "occupiedImage"]) {
-      const file = files[imageType]?.[0]; // Multer stores file arrays
+      const file = files[imageType]?.[0];
       if (file) {
-        // Delete previous image from cloud
         if (existingUnit[imageType]?.imageId) {
           await handleFileDelete(existingUnit[imageType].imageId);
         }
 
-        // Resize + convert to webp
         const buffer = await sharp(file.buffer)
           .webp({ quality: 80 })
           .toBuffer();
@@ -347,7 +283,6 @@ const updateUnit = async (req, res, next) => {
       }
     }
 
-    // ✅ Update allowed fields
     Object.entries(updateFields).forEach(([key, value]) => {
       if (value !== undefined && key in existingUnit) {
         existingUnit[key] = value;
@@ -356,31 +291,12 @@ const updateUnit = async (req, res, next) => {
 
     const updatedUnit = await existingUnit.save();
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Unit updated successfully",
-      status: "Success",
-      user,
-      ip,
-      company: company || existingUnit.company,
-      sourceKey: logSourceKey,
-      sourceId: updatedUnit._id,
-      changes: { old: oldUnitData, new: updatedUnit },
-    });
-
     return res.status(200).json({
       message: "Unit updated successfully",
       workLocation: updatedUnit,
     });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
-    }
+    return res.status(500).json({ message: error.message || "Server error" });
   }
 };
 

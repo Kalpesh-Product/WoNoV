@@ -1313,7 +1313,7 @@ const filterMyTickets = async (req, res, next) => {
   try {
     const myTickets = await Ticket.find({ raisedBy: user })
       .select(
-        "raisedBy raisedToDepartment status ticket description reject acceptedAt image"
+        "raisedBy raisedToDepartment status ticket description reject acceptedAt image createdAt"
       )
       .populate([
         { path: "raisedBy", select: "firstName lastName" },

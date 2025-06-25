@@ -27,6 +27,10 @@ const SalesMixBag = () => {
       title: "Desks",
       route: "/app/dashboard/sales-dashboard/mix-bag/co-working-seats",
     },
+    {
+      title:"Manage Units",
+      route:"/app/dashboard/sales-dashboard/mix-bag/manage-units"
+    }
   ];
 
   const handleSearch = (event) => {
