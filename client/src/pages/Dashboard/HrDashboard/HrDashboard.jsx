@@ -138,6 +138,14 @@ const HrDashboard = () => {
       },
     ];
   }, [hrFinance]);
+
+  const march2025Expense = Math.round(
+    expenseRawSeries.find((series) => series.group === "FY 2024-25")
+      ?.data?.[11] || 0
+  );
+
+  console.log("March 2025 expense:", march2025Expense);
+
   const expenseOptions = {
     chart: {
       type: "bar",
@@ -654,6 +662,8 @@ const HrDashboard = () => {
       0
     ) || 0;
 
+  console.log("Total Utilized ", totalUtilised);
+
   const lastUtilisedValue = hrBarData?.utilisedBudget?.at(-1) || 0;
 
   //------------------- UnitData -----------------------//
@@ -681,17 +691,20 @@ const HrDashboard = () => {
     descriptionData: [
       {
         title: "FY 2024-25",
-        value: `INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`,
+        // value: `INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`,
+        value: `INR ${inrFormat(totalUtilised)}`,
         route: "finance",
       },
       {
         title: "March 2025",
-        value: `INR ${Math.round(lastUtilisedValue).toLocaleString("en-IN")}`,
+        // value: `INR ${Math.round(lastUtilisedValue).toLocaleString("en-IN")}`,
+        value: `INR ${inrFormat(march2025Expense)}`,
         route: "finance",
       },
       {
         title: "March 2025 Budget",
-        value: "N/A",
+        // value: "N/A",
+        value: `INR ${inrFormat(march2025Expense)}`,
         route: "finance",
       },
       {
@@ -713,7 +726,8 @@ const HrDashboard = () => {
     descriptionData: [
       {
         title: "Annual Average Expense",
-        value: `INR ${inrFormat(totalExpense / 12)}`,
+        // value: `INR ${inrFormat(totalExpense / 12)}`,
+        value: `INR ${inrFormat(totalUtilised / 12)}`,
         route: "finance",
       },
       {
@@ -808,8 +822,7 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection normalCase layout={1} padding>
             <YearlyGraph
               data={expenseRawSeries}
@@ -865,8 +878,7 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <YearlyGraph
             data={tasksData}
             options={tasksOptions}

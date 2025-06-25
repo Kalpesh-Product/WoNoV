@@ -116,7 +116,6 @@ const DailyTasks = () => {
   const { mutate: updateMonthlyKpa, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateMyTasks"],
     mutationFn: async (data) => {
-    
       const response = await axios.patch(
         `/api/tasks/update-task-status/${data}`
       );
@@ -187,7 +186,6 @@ const DailyTasks = () => {
       field: "actions",
       pinned: "right",
       cellRenderer: (params) => {
-
         return (
           <div
             role="button"
@@ -493,7 +491,7 @@ const DailyTasks = () => {
         )}
 
         {modalMode === "view" && selectedTask && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskList} />
             <DetalisFormatted
               title={"Assigned Date"}
@@ -516,7 +514,7 @@ const DailyTasks = () => {
           </div>
         )}
         {modalMode === "view-completed" && selectedTask && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskList} />
             <DetalisFormatted
               title={"Assigned Date"}
