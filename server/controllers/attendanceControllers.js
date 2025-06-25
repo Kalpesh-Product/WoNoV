@@ -607,7 +607,7 @@ const correctAttendance = async (req, res, next) => {
   const { user, ip, company } = req;
   const { targetedDay, inTime, outTime, startBreak, endBreak, empId } =
     req.body;
-  const logPath = "hr/hrLog";
+  const logPath = "hr/HrLog";
   const logAction = "Correct Attendance";
   const logSourceKey = "attendance";
 
@@ -770,7 +770,7 @@ const correctAttendance = async (req, res, next) => {
 };
 
 const approveCorrectionRequest = async (req, res, next) => {
-  const logPath = "hr/hrLog";
+  const logPath = "hr/HrLog";
   const logAction = "Approve Correction Request";
   const logSourceKey = "attendance";
   const { user, ip, company } = req;
@@ -904,7 +904,7 @@ const approveCorrectionRequest = async (req, res, next) => {
 };
 
 const rejectCorrectionRequest = async (req, res, next) => {
-  const logPath = "hr/hrLog";
+  const logPath = "hr/HrLog";
   const logAction = "Reject Correction Request";
   const logSourceKey = "attendance";
   const { user, ip, company } = req;
