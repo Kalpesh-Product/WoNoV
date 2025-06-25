@@ -10,7 +10,7 @@ const AttendanceCorrection = require("../models/hr/AttendanceCorrection");
 const clockIn = async (req, res, next) => {
   const { user, ip, company } = req;
   const { inTime, entryType } = req.body;
-  const logPath = "hr/HrLog";
+  const logPath = "hr/hrLog";
   const logAction = "Clock In";
   const logSourceKey = "attendance";
 
@@ -676,10 +676,10 @@ const correctAttendance = async (req, res, next) => {
     }
 
     // Validate presence and parse
-    const clockIn = inTime ? new Date(inTime) : foundDate.inTime;
-    const clockOut = outTime ? new Date(outTime) : foundDate.outTime;
-    const breakStart = startBreak ? new Date(startBreak) : foundDate.startBreak;
-    const breakEnd = endBreak ? new Date(endBreak) : foundDate.endBreak;
+    const clockIn = inTime ? new Date(inTime) : null;
+    const clockOut = outTime ? new Date(outTime) : null;
+    const breakStart = startBreak ? new Date(startBreak) : null;
+    const breakEnd = endBreak ? new Date(endBreak) : null;
 
     // Check validity of any provided fields
     if (inTime && isNaN(clockIn)) {
@@ -718,10 +718,14 @@ const correctAttendance = async (req, res, next) => {
     // Create new correction request
 
     const newRequest = new AttendanceCorrection({
-      inTime: clockIn || null,
-      outTime: clockOut || null,
-      startBreak: breakStart || null,
-      endBreak: breakEnd || null,
+      inTime: clockIn,
+      outTime: clockOut,
+      startBreak: breakStart,
+      endBreak: breakEnd,
+      originalInTime: foundDate.inTime || null,
+      originalOutTime: foundDate.outTime || null,
+      originalStartBreak: foundDate.startBreak || null,
+      originalEndBreak: foundDate.endBreak || null,
       user: foundUser._id,
       company: company,
     });

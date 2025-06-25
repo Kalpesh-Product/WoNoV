@@ -14,6 +14,19 @@ const attendanceCorrectionSchema = new mongoose.Schema(
     endBreak: {
       type: Date,
     },
+    //original times
+    originalInTime: {
+      type: Date,
+    },
+    originalOutTime: {
+      type: Date,
+    },
+    originalStartBreak: {
+      type: Date,
+    },
+    originalEndBreak: {
+      type: Date,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
