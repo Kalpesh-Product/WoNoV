@@ -23,7 +23,11 @@ import ParentRevenue from "./ParentRevenue";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
-import { setClientData, setLeadsData, setUnitData } from "../../../redux/slices/salesSlice";
+import {
+  setClientData,
+  setLeadsData,
+  setUnitData,
+} from "../../../redux/slices/salesSlice";
 import { CircularProgress, Skeleton } from "@mui/material";
 import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import { useSidebar } from "../../../context/SideBarContext";
@@ -190,7 +194,7 @@ const SalesDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/sales/co-working-clients");
-        const data = response.data.filter((item)=>item.isActive)
+        const data = response.data.filter((item) => item.isActive);
         dispatch(setClientData(data));
         return data;
       } catch (error) {
@@ -258,10 +262,9 @@ const SalesDashboard = () => {
   };
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
 
-  const totalOccupiedSeats = clientsData.filter((item)=>item.isActive === true).reduce(
-    (sum, item) => (item.totalDesks || 0) + sum,
-    0
-  );
+  const totalOccupiedSeats = clientsData
+    .filter((item) => item.isActive === true)
+    .reduce((sum, item) => (item.totalDesks || 0) + sum, 0);
 
   const keyStatsData = {
     cardTitle: "KEY STATS",
@@ -616,14 +619,20 @@ const SalesDashboard = () => {
     { id: "startDate", label: "Date of Join" },
     { id: "completedTime", label: "Completed Time" },
   ];
-  
-  // ✅ Processed Table Data (Including Completed Time)
-  const formattedCompanyTableData = clientsData.map((company,index) => ({
-    id: index + 1,
-    company: company.clientName,
-    startDate: (humanDate(company.startDate)) || "18-10-2001",
-    completedTime: calculateCompletedTime(company.startDate ),
-  }));
+
+  const currentMonth = new Date().getMonth(); // 0-based index (0 = Jan, 5 = June, etc.)
+
+  const formattedCompanyTableData = clientsData
+    .filter((company) => {
+      const start = new Date(company.startDate);
+      return start.getMonth() === currentMonth;
+    })
+    .map((company, index) => ({
+      id: index + 1,
+      company: company.clientName,
+      startDate: humanDate(company.startDate) || "18-10-2001",
+      completedTime: calculateCompletedTime(company.startDate),
+    }));
   //-----------------------------------------------Client Anniversary-----------------------------------------------------------//
   //-----------------------------------------------Client Birthday-----------------------------------------------------------//
 
@@ -693,7 +702,7 @@ const SalesDashboard = () => {
   //-----------------------------------------------Conversion of India-wise Pie-graph-----------------------------------------------------------//
   function getLocationWiseData(data) {
     const locationMap = {};
-  
+
     // Step 1: Count companies per hoState
     data.forEach((client) => {
       const state = client.hoState || "Unknown";
@@ -702,10 +711,10 @@ const SalesDashboard = () => {
       }
       locationMap[state] += 1;
     });
-  
+
     const processed = [];
     let othersCount = 0;
-  
+
     // Step 2: Split into main locations and 'Others'
     for (const [location, count] of Object.entries(locationMap)) {
       if (count >= 2) {
@@ -714,14 +723,14 @@ const SalesDashboard = () => {
         othersCount += count;
       }
     }
-  
+
     if (othersCount > 0) {
       processed.push({ label: "Others", value: othersCount });
     }
-  
+
     return processed;
   }
-  
+
   const locationWiseData = getLocationWiseData(clientsData);
 
   const locationPieChartOptions = {
@@ -895,7 +904,7 @@ const SalesDashboard = () => {
       widgets: [
         <WidgetSection layout={1} padding>
           <MuiTable
-            Title="Client Anniversary"
+            Title="Current Month Client Anniversary"
             columns={companyTableColumns}
             rows={formattedCompanyTableData}
             rowKey="id"
@@ -921,11 +930,11 @@ const SalesDashboard = () => {
   return (
     <div>
       <div className="flex flex-col gap-4">
-        {meetingsWidgets.map((widget,index)=>(
+        {meetingsWidgets.map((widget, index) => (
           <LazyDashboardWidget
-          key={index}
-          layout={widget.layout}
-          widgets={widget.widgets}
+            key={index}
+            layout={widget.layout}
+            widgets={widget.widgets}
           />
         ))}
       </div>
