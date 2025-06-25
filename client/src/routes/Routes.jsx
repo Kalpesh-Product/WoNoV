@@ -1478,6 +1478,9 @@ export const routes = createBrowserRouter([
                         element: <HrMixBag />,
                       },
                       {
+                        path:"mix-bag/leave-requests",
+                      },
+                      {
                         path: "company",
                         element: <Compliances />,
                         children: [
