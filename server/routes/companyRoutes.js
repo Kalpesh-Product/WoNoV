@@ -43,6 +43,7 @@ const {
   fetchUnits,
   fetchBuildings,
   assignPrimaryUnit,
+  updateUnit,
 } = require("../controllers/companyControllers/workLocationControllers");
 const {
   createDepartment,
@@ -65,6 +66,14 @@ router.post("/add-leave-type", addLeaveType);
 router.post("/add-building", addBuilding);
 router.get("/buildings", fetchBuildings);
 router.post("/add-unit", addUnit);
+router.patch(
+  "/update-unit",
+  upload.fields([
+    { name: "clearImage", maxCount: 1 },
+    { name: "occupiedImage", maxCount: 1 },
+  ]),
+  updateUnit
+);
 router.patch("/assign-primary-unit", assignPrimaryUnit);
 router.get("/fetch-units", fetchUnits);
 router.post("/bulk-add-locations", upload.single("units"), bulkInsertUnits);

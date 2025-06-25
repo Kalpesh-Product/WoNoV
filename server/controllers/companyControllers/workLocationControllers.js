@@ -12,6 +12,11 @@ const sharp = require("sharp");
 const Unit = require("../../models/locations/Unit");
 const Building = require("../../models/locations/Building");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
+const sharp = require("sharp");
+const {
+  handleFileUpload,
+  handleFileDelete,
+} = require("../../utils/fileHandler");
 
 const addBuilding = async (req, res, next) => {
   const logPath = "hr/HrLog";
@@ -212,6 +217,166 @@ const addUnit = async (req, res, next) => {
     return res.status(200).json({
       message: "Unit added successfully",
       workLocation: newUnit,
+    });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
+  }
+};
+
+// const updateUnit = async (req, res, next) => {
+//   const logPath = "hr/HrLog";
+//   const logAction = "Update Unit";
+//   const logSourceKey = "unit";
+//   const { user, ip, company } = req;
+//   const { unitId, ...updateFields } = req.body;
+
+//   try {
+//     if (!unitId || !mongoose.Types.ObjectId.isValid(unitId)) {
+//       throw new CustomError(
+//         "Invalid or missing Unit ID",
+//         logPath,
+//         logAction,
+//         logSourceKey
+//       );
+//     }
+
+//     const existingUnit = await Unit.findById(unitId);
+//     if (!existingUnit) {
+//       throw new CustomError("Unit not found", logPath, logAction, logSourceKey);
+//     }
+
+//     const oldUnitData = existingUnit.toObject();
+
+//     // Update only the fields provided in the request
+//     Object.entries(updateFields).forEach(([key, value]) => {
+//       if (value !== undefined && key in existingUnit) {
+//         existingUnit[key] = value;
+//       }
+//     });
+
+//     const updatedUnit = await existingUnit.save();
+
+//     await createLog({
+//       path: logPath,
+//       action: logAction,
+//       remarks: "Unit updated successfully",
+//       status: "Success",
+//       user,
+//       ip,
+//       company: company || existingUnit.company,
+//       sourceKey: logSourceKey,
+//       sourceId: updatedUnit._id,
+//       changes: { old: oldUnitData, new: updatedUnit },
+//     });
+
+//     return res.status(200).json({
+//       message: "Unit updated successfully",
+//       workLocation: updatedUnit,
+//     });
+//   } catch (error) {
+//     if (error instanceof CustomError) {
+//       next(error);
+//     } else {
+//       next(
+//         new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+//       );
+//     }
+//   }
+// };
+
+const updateUnit = async (req, res, next) => {
+  const logPath = "hr/HrLog";
+  const logAction = "Update Unit";
+  const logSourceKey = "unit";
+  const { user, ip, company } = req;
+
+  try {
+    const { unitId } = req.body;
+    const updateFields = { ...req.body }; // clone before modifying
+    const files = req.files || {}; // multer stores files here
+
+    if (!unitId || !mongoose.Types.ObjectId.isValid(unitId)) {
+      throw new CustomError(
+        "Invalid or missing Unit ID",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const existingUnit = await Unit.findById(unitId).populate([
+      { path: "building", select: "buildingName" },
+      { path: "company", select: "companyName" },
+    ]);
+
+    if (!existingUnit) {
+      throw new CustomError("Unit not found", logPath, logAction, logSourceKey);
+    }
+
+    const oldUnitData = existingUnit.toObject();
+
+    // ❌ Do not allow updates to these fields
+    const forbiddenFields = ["company", "building", "unitId"];
+    forbiddenFields.forEach((field) => delete updateFields[field]);
+
+    // ✅ Upload and update image if provided
+    for (const imageType of ["clearImage", "occupiedImage"]) {
+      const file = files[imageType]?.[0]; // Multer stores file arrays
+      if (file) {
+        // Delete previous image from cloud
+        if (existingUnit[imageType]?.imageId) {
+          await handleFileDelete(existingUnit[imageType].imageId);
+        }
+
+        // Resize + convert to webp
+        const buffer = await sharp(file.buffer)
+          .webp({ quality: 80 })
+          .toBuffer();
+        const base64Image = `data:image/webp;base64,${buffer.toString(
+          "base64"
+        )}`;
+
+        const folderPath = `${existingUnit.company.companyName}/work-locations/${existingUnit.building.buildingName}/${existingUnit.unitName}`;
+        const uploadResult = await handleFileUpload(base64Image, folderPath);
+
+        existingUnit[imageType] = {
+          imageId: uploadResult.public_id,
+          url: uploadResult.secure_url,
+        };
+      }
+    }
+
+    // ✅ Update allowed fields
+    Object.entries(updateFields).forEach(([key, value]) => {
+      if (value !== undefined && key in existingUnit) {
+        existingUnit[key] = value;
+      }
+    });
+
+    const updatedUnit = await existingUnit.save();
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Unit updated successfully",
+      status: "Success",
+      user,
+      ip,
+      company: company || existingUnit.company,
+      sourceKey: logSourceKey,
+      sourceId: updatedUnit._id,
+      changes: { old: oldUnitData, new: updatedUnit },
+    });
+
+    return res.status(200).json({
+      message: "Unit updated successfully",
+      workLocation: updatedUnit,
     });
   } catch (error) {
     if (error instanceof CustomError) {
@@ -596,4 +761,5 @@ module.exports = {
   uploadUnitImage,
   fetchBuildings,
   assignPrimaryUnit,
+  updateUnit,
 };
