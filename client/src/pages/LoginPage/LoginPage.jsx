@@ -105,7 +105,7 @@ const LoginPage = () => {
   // If there are matches, use first matched route. Else fallback to Finance Dashboard
   const firstAvailableRoute = hasAnySubmenus
     ? filteredModules.find((module) => module.submenus.length > 0).submenus[0].route
-    : "/app/dashboard/finance-dashboard";
+    : "/app/dashboard";
   
   useEffect(() => {
     if (auth.accessToken) {

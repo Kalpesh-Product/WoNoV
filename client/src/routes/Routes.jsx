@@ -372,6 +372,7 @@ import DepartmentAssetCommon from "../components/Pages/DepartmentAssetCommon";
 import DepartmentSOP from "../pages/Dashboard/HrDashboard/Complaince/DepartmentSOP";
 import SopUpload from "../components/Pages/SopUpload";
 import ManageUnit from "../pages/Dashboard/SalesDashboard/ManageUnit";
+import MainDashboard from "../pages/Dashboard/MainDashboard/MainDashboard";
 
 export const routes = createBrowserRouter([
   {
@@ -393,6 +394,11 @@ export const routes = createBrowserRouter([
                 path: "dashboard",
                 element: <DashboardLayout />,
                 children: [
+                  {
+                    path: "",
+                    element: <MainDashboard />,
+                    index: true,
+                  },
                   {
                     path: "frontend-dashboard",
                     element: <FrontendLayout />,
@@ -621,7 +627,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "sops",
-                             element: <SopUpload />,
+                            element: <SopUpload />,
                           },
                           {
                             path: "policies",
@@ -1022,7 +1028,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "sops",
-                             element: <SopUpload />,
+                            element: <SopUpload />,
                           },
                           {
                             path: "policies",
@@ -1168,7 +1174,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "sops",
-                             element: <SopUpload />,
+                            element: <SopUpload />,
                           },
                           {
                             path: "policies",
@@ -1723,7 +1729,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "sops",
-                             element: <SopUpload />,
+                            element: <SopUpload />,
                           },
                           {
                             path: "policies",

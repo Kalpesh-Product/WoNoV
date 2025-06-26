@@ -35,52 +35,52 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedModule, setExpandedModule] = useState(0);
-    const { auth } = useAuth();
+  const { auth } = useAuth();
 
   const allowedVisitorDeptIds = [
-  "6798bae6e469e809084e24a4",
-  "67b2cf85b9b6ed5cedeb9a2e",
-  "6798ba9de469e809084e2494"
-];
+    "6798bae6e469e809084e24a4",
+    "67b2cf85b9b6ed5cedeb9a2e",
+    "6798ba9de469e809084e2494",
+  ];
 
-const userDeptIds = auth?.user?.departments?.map((d) => d._id) || [];
+  const userDeptIds = auth?.user?.departments?.map((d) => d._id) || [];
 
-const canAccessVisitors = userDeptIds.some((id) =>
-  allowedVisitorDeptIds.includes(id)
-);
+  const canAccessVisitors = userDeptIds.some((id) =>
+    allowedVisitorDeptIds.includes(id)
+  );
 
   // Menu items array (without DASHBOARD)
- const menuItems = [
-  {
-    name: "Tickets",
-    icon: <TiTicket />,
-    route: "tickets",
-  },
-  {
-    name: "Meetings",
-    icon: <MdMeetingRoom />,
-    route: "meetings",
-  },
-  {
-    name: "Tasks",
-    icon: <FaTasks />,
-    route: "tasks",
-  },
-  {
-    name: "Performance",
-    icon: <FaTasks />,
-    route: "performance",
-  },
-  ...(canAccessVisitors
-    ? [
-        {
-          name: "Visitors",
-          icon: <VscPersonAdd />,
-          route: "visitors",
-        },
-      ]
-    : []),
-];
+  const menuItems = [
+    {
+      name: "Tickets",
+      icon: <TiTicket />,
+      route: "tickets",
+    },
+    {
+      name: "Meetings",
+      icon: <MdMeetingRoom />,
+      route: "meetings",
+    },
+    {
+      name: "Tasks",
+      icon: <FaTasks />,
+      route: "tasks",
+    },
+    {
+      name: "Performance",
+      icon: <FaTasks />,
+      route: "performance",
+    },
+    ...(canAccessVisitors
+      ? [
+          {
+            name: "Visitors",
+            icon: <VscPersonAdd />,
+            route: "visitors",
+          },
+        ]
+      : []),
+  ];
   const generalItems = [
     { name: "Calendar", icon: <FaRegCalendarAlt />, route: "calendar" },
     { name: "Access", icon: <SiAuthelia />, route: "access" },
@@ -96,7 +96,7 @@ const canAccessVisitors = userDeptIds.some((id) =>
       icon: <TbReportSearch />,
       route: "#",
     },
-        {
+    {
       name: "Assets",
       icon: <FaBoxesStacked />,
       route: "#",
@@ -109,31 +109,31 @@ const canAccessVisitors = userDeptIds.some((id) =>
     },
   ];
 
-
   const defaultModules = [
     {
       id: 1,
       icon: <MdHome />,
       title: "Dashboard",
+      route: "/app/dashboard",
       submenus: [
         {
           id: 4,
           title: "Finance Dashboard",
-          codeName : "Finance",
+          codeName: "Finance",
           route: "/app/dashboard/finance-dashboard",
           icon: <TbCashRegister />,
         },
         {
           id: 5,
           title: "Sales Dashboard",
-          codeName : "Sales",
+          codeName: "Sales",
           icon: <FaChartLine />,
           route: "/app/dashboard/sales-dashboard",
         },
         {
           id: 3,
           title: "HR Dashboard",
-          codeName : "HR",
+          codeName: "HR",
           icon: <RiAdminFill />,
           route: "/app/dashboard/HR-dashboard",
         },
@@ -141,7 +141,7 @@ const canAccessVisitors = userDeptIds.some((id) =>
         {
           id: 2,
           title: "Frontend Dashboard",
-          codeName : "Tec",
+          codeName: "Tec",
           icon: <FaLaptopCode />,
           route: "/app/dashboard/frontend-dashboard",
         },
@@ -149,7 +149,7 @@ const canAccessVisitors = userDeptIds.some((id) =>
         {
           id: 6,
           title: "Admin Dashboard",
-          codeName : "Administration",
+          codeName: "Administration",
           route: "/app/dashboard/admin-dashboard",
           icon: <FaUserShield />,
         },
@@ -157,14 +157,14 @@ const canAccessVisitors = userDeptIds.some((id) =>
         {
           id: 7,
           title: "Maintenance Dashboard",
-          codeName : "Maintenance",
+          codeName: "Maintenance",
           route: "/app/dashboard/maintenance-dashboard",
           icon: <GiAutoRepair />,
         },
         {
           id: 9,
           title: "IT Dashboard",
-          codeName : "IT",
+          codeName: "IT",
           route: "/app/dashboard/IT-dashboard",
           icon: <FaLaptopMedical />,
         },
@@ -172,7 +172,7 @@ const canAccessVisitors = userDeptIds.some((id) =>
         {
           id: 8,
           title: "Cafe Dashboard",
-          codeName : "Cafe",
+          codeName: "Cafe",
           route: "/app/dashboard/cafe-dashboard",
           icon: <GrCafeteria />,
         },
@@ -187,20 +187,20 @@ const canAccessVisitors = userDeptIds.some((id) =>
     const filteredSubmenus = module.submenus.filter((submenu) =>
       userDepartments.includes(submenu.codeName)
     );
-  
+
     return {
       ...module,
       submenus: filteredSubmenus,
     };
   });
-  
+
   // Check if all submenus are empty
-  const hasAnySubmenus = filteredModules.some(module => module.submenus.length > 0);
-  
+  const hasAnySubmenus = filteredModules.some(
+    (module) => module.submenus.length > 0
+  );
+
   // If none match, return the original defaultModules
   const finalModules = hasAnySubmenus ? filteredModules : defaultModules;
-
-
 
   const handleMenuOpen = (item) => {
     navigate(item.route);
@@ -245,7 +245,7 @@ const canAccessVisitors = userDeptIds.some((id) =>
                         : ""
                     }`}
                     onClick={() => {
-                      module.submenus && toggleModule(index);
+                      navigate(module.route);
                     }}
                   >
                     <div className="flex justify-start items-center">
@@ -264,6 +264,7 @@ const canAccessVisitors = userDeptIds.some((id) =>
                     </div>
                     {isSidebarOpen && module.submenus && (
                       <span
+                        onClick={() => module.submenus && toggleModule(index)}
                         className={`transition-transform duration-300 ease-in-out ${
                           expandedModule === index ? "rotate-180" : "rotate-0"
                         }`}
