@@ -139,7 +139,7 @@ const updateCompanyDocument = async (req, res, next) => {
   }
 };
 
-const deleteCompanyDocument = async (req, res) => {
+const deleteCompanyDocument = async (req, res, next) => {
   const user = req.user;
   const { docObjectId } = req.body; // Use MongoDB _id
 
@@ -196,7 +196,7 @@ const deleteCompanyDocument = async (req, res) => {
       .status(200)
       .json({ message: "Document marked as inactive successfully" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
@@ -225,7 +225,7 @@ const getCompanyDocuments = async (req, res, next) => {
   }
 };
 
-const uploadDepartmentDocument = async (req, res) => {
+const uploadDepartmentDocument = async (req, res, next) => {
   const { documentName, type } = req.body;
   const file = req.file;
   const user = req.user;
@@ -340,7 +340,7 @@ const uploadDepartmentDocument = async (req, res) => {
       } department`,
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    next(error)
   }
 };
 
@@ -418,7 +418,7 @@ const updateDepartmentDocument = async (req, res, next) => {
   }
 };
 
-const deleteDepartmentDocument = async (req, res) => {
+const deleteDepartmentDocument = async (req, res,next) => {
   const user = req.user;
   const { docObjectId } = req.body; // Use the document's ObjectId
 
@@ -488,7 +488,7 @@ const deleteDepartmentDocument = async (req, res) => {
       .status(200)
       .json({ message: "Document marked as inactive successfully" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    next(error)
   }
 };
 
