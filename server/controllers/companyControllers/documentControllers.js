@@ -92,7 +92,7 @@ const uploadCompanyDocument = async (req, res, next) => {
   }
 };
 const updateCompanyDocument = async (req, res, next) => {
-  const { newName, documentId } = req.body;
+  const { newName, docObjectId } = req.body; // updated: use _id
   const user = req.user;
 
   try {
@@ -107,12 +107,11 @@ const updateCompanyDocument = async (req, res, next) => {
 
     const companyId = foundUser.company._id;
 
-    // Helper to try updating one path
     const tryUpdate = async (path) => {
-      return await Company.updateOne(
+      const result = await Company.updateOne(
         {
           _id: companyId,
-          [`${path}.documentId`]: documentId,
+          [`${path}._id`]: docObjectId, // match using the ObjectId of the embedded doc
         },
         {
           $set: {
@@ -121,9 +120,9 @@ const updateCompanyDocument = async (req, res, next) => {
           },
         }
       );
+      return result;
     };
 
-    // Try each section in sequence
     const sections = ["templates", "sop", "policies", "agreements"];
     for (const section of sections) {
       const result = await tryUpdate(section);
@@ -140,9 +139,9 @@ const updateCompanyDocument = async (req, res, next) => {
   }
 };
 
-const deleteCompanyDocument = async (req, res) => {
+const deleteCompanyDocument = async (req, res, next) => {
   const user = req.user;
-  const { documentId } = req.body;
+  const { docObjectId } = req.body; // Use MongoDB _id
 
   try {
     const foundUser = await User.findById(user)
@@ -154,31 +153,24 @@ const deleteCompanyDocument = async (req, res) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    // Delete from Cloudinary
-    const cloudRes = await handleFileDelete(documentId);
-    if (cloudRes.result !== "ok") {
-      return res
-        .status(500)
-        .json({ message: "Failed to delete from cloud storage" });
-    }
-
     // Document arrays to search in
     const docFields = ["templates", "sop", "policies", "agreements"];
 
-    // Fetch the full company document
+    // Fetch full company document
     const company = await Company.findById(foundUser.company._id);
 
     let found = false;
+    let targetDocumentId = null;
 
     for (const field of docFields) {
       const docArray = company[field];
 
-      const docIndex = docArray.findIndex(
-        (doc) => doc.documentId === documentId
-      );
-      if (docIndex !== -1) {
-        docArray[docIndex].isActive = false;
+      const doc = docArray.find((doc) => doc._id.toString() === docObjectId);
+      if (doc) {
+        doc.isActive = false;
         found = true;
+        targetDocumentId = doc.documentId;
+        break;
       }
     }
 
@@ -190,11 +182,21 @@ const deleteCompanyDocument = async (req, res) => {
 
     await company.save();
 
+    // Delete from Cloudinary using the actual documentId
+    if (targetDocumentId) {
+      const cloudRes = await handleFileDelete(targetDocumentId);
+      if (cloudRes.result !== "ok") {
+        return res
+          .status(500)
+          .json({ message: "Failed to delete from cloud storage" });
+      }
+    }
+
     return res
       .status(200)
       .json({ message: "Document marked as inactive successfully" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
@@ -223,7 +225,7 @@ const getCompanyDocuments = async (req, res, next) => {
   }
 };
 
-const uploadDepartmentDocument = async (req, res) => {
+const uploadDepartmentDocument = async (req, res, next) => {
   const { documentName, type } = req.body;
   const file = req.file;
   const user = req.user;
@@ -338,12 +340,12 @@ const uploadDepartmentDocument = async (req, res) => {
       } department`,
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    next(error)
   }
 };
 
 const updateDepartmentDocument = async (req, res, next) => {
-  const { newName, documentId } = req.body;
+  const { newName, docObjectId } = req.body; // Use MongoDB document _id
   const user = req.user;
 
   try {
@@ -362,7 +364,7 @@ const updateDepartmentDocument = async (req, res, next) => {
     const sopUpdate = await Company.updateOne(
       {
         _id: companyId,
-        "selectedDepartments.sop.documentId": documentId,
+        "selectedDepartments.sop._id": docObjectId,
       },
       {
         $set: {
@@ -372,8 +374,8 @@ const updateDepartmentDocument = async (req, res, next) => {
       },
       {
         arrayFilters: [
-          { "dept.sop.documentId": documentId },
-          { "doc.documentId": documentId },
+          { "dept.sop._id": docObjectId },
+          { "doc._id": docObjectId },
         ],
       }
     );
@@ -388,7 +390,7 @@ const updateDepartmentDocument = async (req, res, next) => {
     const policyUpdate = await Company.updateOne(
       {
         _id: companyId,
-        "selectedDepartments.policies.documentId": documentId,
+        "selectedDepartments.policies._id": docObjectId,
       },
       {
         $set: {
@@ -398,8 +400,8 @@ const updateDepartmentDocument = async (req, res, next) => {
       },
       {
         arrayFilters: [
-          { "dept.policies.documentId": documentId },
-          { "doc.documentId": documentId },
+          { "dept.policies._id": docObjectId },
+          { "doc._id": docObjectId },
         ],
       }
     );
@@ -416,9 +418,9 @@ const updateDepartmentDocument = async (req, res, next) => {
   }
 };
 
-const deleteDepartmentDocument = async (req, res) => {
+const deleteDepartmentDocument = async (req, res,next) => {
   const user = req.user;
-  const { documentId } = req.body;
+  const { docObjectId } = req.body; // Use the document's ObjectId
 
   try {
     const foundUser = await User.findById(user)
@@ -437,23 +439,28 @@ const deleteDepartmentDocument = async (req, res) => {
     }
 
     let updated = false;
+    let targetDocumentId = null;
 
     for (let dept of company.selectedDepartments) {
-      // Mark as inactive in SOP
-      const sopDoc = dept.sop?.find((doc) => doc.documentId === documentId);
+      // Mark SOP doc as inactive by _id
+      const sopDoc = dept.sop?.find(
+        (doc) => doc._id.toString() === docObjectId
+      );
       if (sopDoc) {
         sopDoc.isActive = false;
         updated = true;
+        targetDocumentId = sopDoc.documentId;
         break;
       }
 
-      // Mark as inactive in Policies
+      // Mark Policy doc as inactive by _id
       const policyDoc = dept.policies?.find(
-        (doc) => doc.documentId === documentId
+        (doc) => doc._id.toString() === docObjectId
       );
       if (policyDoc) {
         policyDoc.isActive = false;
         updated = true;
+        targetDocumentId = policyDoc.documentId;
         break;
       }
     }
@@ -467,19 +474,21 @@ const deleteDepartmentDocument = async (req, res) => {
     // Save the updated company
     await company.save();
 
-    // Delete from Cloudinary
-    const cloudRes = await handleFileDelete(documentId);
-    if (cloudRes.result !== "ok") {
-      return res
-        .status(500)
-        .json({ message: "Failed to delete from cloud storage" });
+    // Delete from Cloudinary if documentId is known
+    if (targetDocumentId) {
+      const cloudRes = await handleFileDelete(targetDocumentId);
+      if (cloudRes.result !== "ok") {
+        return res
+          .status(500)
+          .json({ message: "Failed to delete from cloud storage" });
+      }
     }
 
     return res
       .status(200)
       .json({ message: "Document marked as inactive successfully" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    next(error)
   }
 };
 
