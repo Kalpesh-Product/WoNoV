@@ -346,54 +346,58 @@ const uploadDepartmentDocument = async (req, res, next) => {
 
 const updateDepartmentDocument = async (req, res, next) => {
   const { newName, docObjectId } = req.body;
-  const user = req.user;
+  const userId = req.user;
 
   try {
-    const foundUser = await User.findById(user).select("company");
-
+    // 1) Fetch the user's company reference
+    const foundUser = await User.findById(userId).select("company").lean();
     if (!foundUser?.company) {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const company = await Company.findOne({ _id: foundUser.company });
-
+    // 2) Load the full Company document
+    const company = await Company.findById(foundUser.company);
     if (!company) {
-      return res.status(404).json({ message: "Company not found" });
+      return res.status(404).json({ message: "Company data missing" });
     }
 
-    let isUpdated = false;
+    let updated = false;
 
+    // 3) Loop through each department
     for (const dept of company.selectedDepartments) {
+      // Try to find a matching SOP
       const sopDoc = dept.sop?.find(
         (doc) => doc._id.toString() === docObjectId
       );
       if (sopDoc) {
         sopDoc.name = newName;
         sopDoc.updatedAt = new Date();
-        isUpdated = true;
+        updated = true;
         break;
       }
 
+      // Try to find a matching Policy
       const policyDoc = dept.policies?.find(
         (doc) => doc._id.toString() === docObjectId
       );
       if (policyDoc) {
         policyDoc.name = newName;
         policyDoc.updatedAt = new Date();
-        isUpdated = true;
+        updated = true;
         break;
       }
     }
 
-    if (isUpdated) {
-      company.markModified("selectedDepartments");
-      await company.save();
-      return res
-        .status(200)
-        .json({ message: "Document name updated successfully" });
+    // 4) If nothing was updated, return 404
+    if (!updated) {
+      return res.status(404).json({ message: "Document not found" });
     }
 
-    return res.status(404).json({ message: "Document not found" });
+    // 5) Save the company and respond
+    await company.save({ validateBeforeSave: false });
+    return res
+      .status(200)
+      .json({ message: "Document name updated successfully" });
   } catch (error) {
     next(error);
   }
@@ -453,7 +457,7 @@ const deleteDepartmentDocument = async (req, res, next) => {
     }
 
     // Save the updated company
-    await company.save();
+    await company.save({ validateBeforeSave: false });
 
     // Delete from Cloudinary if documentId is known
     if (targetDocumentId) {
