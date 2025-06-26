@@ -9,7 +9,7 @@ const DetalisFormatted = ({ title, detail, gap, upperCase = false }) => {
           className={`${
             upperCase ? "uppercase" : ""
           } text-content flex flex-col gap-2 items-start w-full justify-start pl-4`}>
-          {detail}
+          {detail || "—"}
         </span>
       </span>
     </div>

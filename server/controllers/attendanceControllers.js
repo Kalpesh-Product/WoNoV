@@ -19,34 +19,35 @@ const clockIn = async (req, res, next) => {
     const clockInTime = new Date(inTime);
     const currDate = new Date();
 
-    if (clockInTime.getDate() !== currDate.getDate()) {
-      throw new CustomError(
-        "Please select present date",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // if (clockInTime.getDate() !== currDate.getDate()) {
+    //   return res.status(400).json({ message: "Please select present date" });
+    // }
 
     if (isNaN(clockInTime.getTime())) {
       return res.status(400).json({ message: "Invalid date format" });
     }
 
     // Check if the user has already clocked in today
-    const attendances = await Attendance.find({ user: user._id });
-    const todayClockInExists = attendances.some((attendance) => {
-      const attendanceTime = new Date(attendance.inTime);
-      return (
-        attendanceTime.getDate() === clockInTime.getDate() &&
-        attendanceTime.getMonth() === clockInTime.getMonth() &&
-        attendanceTime.getFullYear() === clockInTime.getFullYear()
-      );
-    });
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
 
-    if (todayClockInExists) {
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingToday = await Attendance.findOne({
+      user,
+      inTime: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+    })
+      .lean()
+      .exec();
+
+    if (existingToday) {
       return res
         .status(400)
-        .json({ message: "Cannot clock in for the day again" });
+        .json({ message: "You have already clocked in today" });
     }
 
     const newAttendance = new Attendance({
@@ -404,7 +405,7 @@ const getAttendanceRequests = async (req, res, next) => {
 
 const correctAttendance = async (req, res, next) => {
   const { user, ip, company } = req;
-  const { targetedDay, inTime, outTime, startBreak, endBreak, empId } =
+  const { targetedDay, inTime, outTime, startBreak, endBreak, empId, reason } =
     req.body;
   const logPath = "hr/HrLog";
   const logAction = "Correct Attendance";
@@ -553,6 +554,7 @@ const correctAttendance = async (req, res, next) => {
       originalOutTime: foundDate.outTime || null,
       originalStartBreak: foundDate.startBreak || null,
       originalEndBreak: foundDate.endBreak || null,
+      reason,
       user: foundUser._id,
       company: company,
     });

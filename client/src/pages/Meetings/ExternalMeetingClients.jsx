@@ -32,6 +32,7 @@ import dayjs from "dayjs";
 import UploadFileInput from "../../components/UploadFileInput";
 import { inrFormat } from "../../utils/currencyFormat";
 import PageFrame from "../../components/Pages/PageFrame";
+import MonthWiseTable from "../../components/Tables/MonthWiseTable";
 
 const ExternalMeetingCLients = () => {
   const axios = useAxiosPrivate();
@@ -574,13 +575,21 @@ const ExternalMeetingCLients = () => {
     <div className="flex-col gap-4">
       <PageFrame>
         {!isMeetingsLoading ? (
-          <AgTable
+          <MonthWiseTable
             key={transformedMeetings.length}
             search
+            dateColumn={"date"}
             tableTitle={"Manage Meetings"}
             data={transformedMeetings || []}
             columns={columns}
           />
+          // <AgTable
+          //   key={transformedMeetings.length}
+          //   search
+          //   tableTitle={"Manage Meetings"}
+          //   data={transformedMeetings || []}
+          //   columns={columns}
+          // />
         ) : (
           <CircularProgress />
         )}

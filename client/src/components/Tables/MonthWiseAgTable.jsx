@@ -86,6 +86,7 @@ const monthTotal = monthData.rows
 
 
   const columns = [
+    { headerName: "Sr No", field: "srNo",width:100 },
     { headerName: "Particulars", field: "particulars" },
     {
       headerName: "Taxable Amount (INR)",

@@ -16,7 +16,7 @@ const MainDashboard = () => {
         <WidgetSection
           layout={1}
           border
-          title={"Clock-in Clock-out"}
+          title={"Clock In / Out Attendance"}
         >
           <ClockInOutAttendance />
         </WidgetSection>,

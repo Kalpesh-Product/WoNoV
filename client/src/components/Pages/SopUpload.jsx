@@ -3,35 +3,65 @@ import { MdUpload } from "react-icons/md";
 import WidgetSection from "../../components/WidgetSection";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import PageFrame from "./PageFrame";
 import { queryClient } from "../../main";
+import MuiModal from "../MuiModal";
+import { Controller, useForm } from "react-hook-form";
+import { TextField } from "@mui/material";
+import UploadFileInput from "../UploadFileInput";
+import ThreeDotMenu from "../ThreeDotMenu";
+import YearWiseTable from "../Tables/YearWiseTable";
+import SecondaryButton from "../SecondaryButton";
+import DangerButton from "../DangerButton";
 
 const SopUpload = () => {
   const axios = useAxiosPrivate();
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const department = usePageDepartment();
-
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedSop, setSelectedSop] = useState([]);
+  const [modalType, setModalType] = useState("");
   const uploadItems = ["Upload Sops"];
 
-  const sopsUploadDataColumns = [
-    { field: "srNo", headerName: "Sr No", flex: 1 },
-    { field: "templateName", headerName: "Template Name", flex: 1 },
-    { field: "uploadedBy", headerName: "Uploaded By", flex: 1 },
-    { field: "date", headerName: "Date", flex: 1 },
-  ];
+  // For adding an SOP
+  const {
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors },
+    control,
+  } = useForm({
+    defaultValues: {
+      documentName: "",
+      sop: null,
+    },
+  });
+
+  //For Editing SOP
+  const {
+    handleSubmit: handleEditForm,
+    control: controlEdit,
+    reset: resetEdit,
+    formState: { errors: editErrors },
+    setValue: setEditValue,
+  } = useForm({
+    defaultValues: {
+      newName: "",
+    },
+  });
 
   const { mutate: uploadSop, isPending } = useMutation({
-    mutationFn: async (file) => {
+    mutationFn: async ({ sop, documentName }) => {
       const formData = new FormData();
-      formData.append("department-document", file);
+      formData.append("department-document", sop);
       formData.append("type", "sop");
-      formData.append("documentName", file?.name || "Untitled");
+      formData.append("documentName", documentName || sop?.name || "Untitled");
 
       const response = await axios.post(
         `/api/company/add-department-document/${department?._id || ""}`,
@@ -46,7 +76,8 @@ const SopUpload = () => {
     },
     onSuccess: () => {
       toast.success("SOP uploaded successfully!");
-      setSelectedFile(null);
+      reset(); // reset form
+      setOpenModal(false); // close modal
       queryClient.invalidateQueries({ queryKey: ["departmentSOP"] });
     },
     onError: (error) => {
@@ -54,29 +85,60 @@ const SopUpload = () => {
     },
   });
 
-  const handleFileChange = (event) => {
-    const file = event.target?.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-    }
+  const { mutate: editSop, isPending: isEditPending } = useMutation({
+    mutationFn: async (data) => {
+      const response = await axios.patch(
+        `/api/company/update-department-document`,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("SOP updated successfully!");
+      reset(); // reset form
+      setOpenModal(false); // close modal
+      queryClient.invalidateQueries({ queryKey: ["departmentSOP"] });
+    },
+    onError: () => {
+      toast.error("Failed to update SOP.");
+    },
+  });
+  const { mutate: deleteSop, isPending: isDeletePending } = useMutation({
+    mutationFn: async (data) => {
+      console.log("data for delete", data);
+      const response = await axios.patch(
+        `/api/company/delete-department-document`,
+        {
+          documentId: selectedSop?._id,
+        }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("SOP Marked As Inactive Successfully!");
+      setOpenModal(false); // close modal
+      queryClient.invalidateQueries({ queryKey: ["departmentSOP"] });
+    },
+    onError: () => {
+      toast.error("Failed to delete SOP.");
+    },
+  });
+
+  const handleAddSop = () => {
+    setModalType("add");
+    setOpenModal(true);
   };
 
-  const triggerFileDialog = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+  const handleEdit = (data) => {
+    setModalType("edit");
+    setSelectedSop(data);
+    setEditValue("newName", data?.name.trim() || "");
+    setOpenModal(true);
   };
-
-  const handleUpload = () => {
-    if (!selectedFile) {
-      toast.warning("Please select a file first.");
-      return;
-    }
-    if (!department?._id) {
-      toast.error("Invalid department. Cannot upload.");
-      return;
-    }
-    uploadSop(selectedFile);
+  const handleDelete = (data) => {
+    deleteSop({
+      documentId: selectedSop?._id,
+    });
   };
 
   const { data = [], isLoading } = useQuery({
@@ -88,97 +150,199 @@ const SopUpload = () => {
       return response?.data?.documents?.sopDocuments || [];
     },
     enabled: !!department?._id,
-    staleTime: 1000 * 60 * 5, // optional: 5 min caching
+    staleTime: 1000 * 60 * 5,
   });
 
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "name", headerName: "Document Name", flex: 1 },
     {
-      field: "documentLink",
-      headerName: "Document Link",
-      pinned: "right",
-      width: 200,
+      field: "name",
+      headerName: "SOP Name",
+      flex: 1,
       cellRenderer: (params) => (
         <a
           className="text-primary underline cursor-pointer"
-          href={params?.value || "#"}
+          href={params?.data.documentLink || "#"}
           target="_blank"
           rel="noopener noreferrer"
         >
-          View SOP
+          {params.value}
         </a>
+      ),
+    },
+    { field: "date", headerName: "Upload Date", flex: 1 },
+    { field: "updatedAt", headerName: "Modified Date", flex: 1 },
+    { field: "status", headerName: "Status", flex: 1 },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 150,
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data.id}
+          menuItems={[
+            {
+              label: "Edit",
+              onClick: () => {
+                handleEdit(params.data);
+              },
+            },
+            {
+              label: "Mark As Inactive",
+              onClick: () => {
+                setModalType("delete");
+                setSelectedSop(params.data);
+                setOpenModal(true);
+              },
+            },
+          ]}
+        />
       ),
     },
   ];
 
-  const tableData = Array.isArray(data)
-    ? data.map((item, index) => ({
-        srNo: index + 1,
-        name: item?.name || "Untitled",
-        documentLink: item?.documentLink || "#",
-      }))
-    : [];
+  const tableData =
+    Array.isArray(data) && !isLoading
+      ? data
+          .map((item, index) => ({
+            ...item,
+            srNo: index + 1,
+            name: item?.name || "Untitled",
+            documentLink: item?.documentLink || "#",
+            date: item.createdAt,
+            status: item.isActive ? "Active" : "-",
+          }))
+          .filter((item) => item.isActive === true)
+      : [];
 
   return (
     <div className="flex flex-col gap-4">
-      <span className="text-title font-pmedium text-primary">Upload SOPs</span>
-      <hr />
-
-      <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
-        {uploadItems.map((item, index) => (
-          <div className="space-y-2 border-default p-4 rounded-md" key={index}>
-            <div className="mb-2">
-              <span className="text-subtitle text-primary">{item}</span>
-            </div>
-            <div className="flex gap-4">
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <div className="flex items-end w-full border justify-end border-gray-200 rounded-md">
-                <PrimaryButton
-                  title={!isPending ? "Choose File" : "Uploading"}
-                  handleSubmit={triggerFileDialog}
-                  isLoading={isPending}
-                  disabled={isPending}
-                />
-              </div>
-              {!isPending && (
-                <div className="flex gap-2 items-center">
-                  <div
-                    onClick={handleUpload}
-                    className="bg-borderGray text-black p-2 rounded-md cursor-pointer hover:bg-gray-200 transition-all"
-                  >
-                    <MdUpload style={{ fill: "black" }} />
-                  </div>
-                  <div className="bg-borderGray text-black p-2 rounded-md cursor-pointer hover:bg-gray-200 transition-all">
-                    <IoMdDownload style={{ fill: "black" }} />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {selectedFile && (
-              <span className="text-sm text-gray-600">{selectedFile.name}</span>
-            )}
-          </div>
-        ))}
-      </div>
-
       <div>
         <PageFrame>
-          <AgTable
+          <YearWiseTable
+            dateColumn={"date"}
             key={data?.length || 0}
             columns={columns}
             data={tableData}
+            buttonTitle={"Add SOP"}
+            handleSubmit={handleAddSop}
             search
             tableTitle="SOP documents"
           />
         </PageFrame>
       </div>
+      <MuiModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        title={`${
+          modalType === "add"
+            ? "Add SOP"
+            : modalType === "edit"
+            ? "Edit SOP"
+            : "Mark SOP As Inactive"
+        }`}
+      >
+        {modalType === "add" && (
+          <div>
+            <form
+              onSubmit={handleSubmit((data) => uploadSop(data))}
+              className="grid grid-cols-1 gap-4"
+            >
+              <Controller
+                name="documentName"
+                control={control}
+                rules={{ required: "Document Name is Required" }}
+                render={({ field }) => (
+                  <TextField
+                    name="documentName"
+                    label="Document Name"
+                    size="small"
+                    {...field}
+                    fullWidth
+                    error={!!errors.documentName}
+                    helperText={errors?.documentName?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="sop"
+                control={control}
+                rules={{ required: "SOP is Required" }}
+                render={({ field }) => (
+                  <UploadFileInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    previewType="pdf"
+                  />
+                )}
+              />
+              <PrimaryButton
+                type={"submit"}
+                title={"Upload SOP"}
+                isLoading={isPending}
+                disabled={isPending}
+              />
+            </form>
+          </div>
+        )}
+
+        {modalType === "edit" && (
+          <div>
+            <form
+              className="grid grid-cols-1 gap-4"
+              onSubmit={handleEditForm((data) =>
+                editSop({
+                  newName: data.newName,
+                  documentId: selectedSop?._id,
+                })
+              )}
+            >
+              <Controller
+                name="newName"
+                control={controlEdit}
+                rules={{ required: "Document Name is Required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Document Name"
+                    fullWidth
+                    error={!!editErrors.newName}
+                    helperText={editErrors?.newName?.message}
+                  />
+                )}
+              />
+              <PrimaryButton
+                type={"submit"}
+                title={"Update SOP"}
+                isLoading={isEditPending}
+                disabled={isEditPending}
+              />
+            </form>
+          </div>
+        )}
+
+        {modalType === "delete" && (
+          <div className="border-default border-borderGray rounded-xl flex flex-col gap-4 p-4">
+            <div>
+              <span>Mark {selectedSop?.name} as Inactive ?</span>
+            </div>
+            <div className="flex justify-end gap-4 items-center">
+              <SecondaryButton
+                title={"Cancel"}
+                handleSubmit={() => {
+                  setOpenModal(false);
+                  setSelectedSop([]);
+                }}
+              />
+              <DangerButton
+                title={"Confirm"}
+                handleSubmit={() => handleDelete(selectedSop)}
+              />
+            </div>
+          </div>
+        )}
+      </MuiModal>
     </div>
   );
 };
