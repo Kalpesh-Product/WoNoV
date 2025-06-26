@@ -1,6 +1,9 @@
 const Company = require("../../models/hr/Company");
 const User = require("../../models/hr/UserData");
-const { handleDocumentUpload, handleFileDelete } = require("../../config/cloudinaryConfig");
+const {
+  handleDocumentUpload,
+  handleFileDelete,
+} = require("../../config/cloudinaryConfig");
 const { PDFDocument } = require("pdf-lib");
 const path = require("path");
 
@@ -366,9 +369,7 @@ const updateDepartmentDocument = async (req, res, next) => {
     // 3) Loop through each department
     for (const dept of company.selectedDepartments) {
       // Try to find a matching SOP
-      const sopDoc = dept.sop?.find(
-        (doc) => doc._id.toString() === documentId
-      );
+      const sopDoc = dept.sop?.find((doc) => doc._id.toString() === documentId);
       if (sopDoc) {
         sopDoc.name = newName;
         sopDoc.updatedAt = new Date();
@@ -428,9 +429,7 @@ const deleteDepartmentDocument = async (req, res, next) => {
 
     for (let dept of company.selectedDepartments) {
       // Mark SOP doc as inactive by _id
-      const sopDoc = dept.sop?.find(
-        (doc) => doc._id.toString() === documentId
-      );
+      const sopDoc = dept.sop?.find((doc) => doc._id.toString() === documentId);
       if (sopDoc) {
         sopDoc.isActive = false;
         updated = true;
@@ -458,16 +457,6 @@ const deleteDepartmentDocument = async (req, res, next) => {
 
     // Save the updated company
     await company.save({ validateBeforeSave: false });
-
-    // Delete from Cloudinary if documentId is known
-    if (targetDocumentId) {
-      const cloudRes = await handleFileDelete(targetDocumentId);
-      if (cloudRes.result !== "ok") {
-        return res
-          .status(500)
-          .json({ message: "Failed to delete from cloud storage" });
-      }
-    }
 
     return res
       .status(200)
