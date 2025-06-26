@@ -349,66 +349,48 @@ const updateDepartmentDocument = async (req, res, next) => {
   const user = req.user;
 
   try {
-    const foundUser = await User.findById(user)
-      .select("company")
-      .populate("company", "companyName")
-      .lean();
+    const foundUser = await User.findById(user).select("company");
 
     if (!foundUser?.company) {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const companyId = foundUser.company._id;
+    const company = await Company.findOne({ _id: foundUser.company });
 
-    // Update SOP document inside a department
-    const sopUpdate = await Company.updateOne(
-      {
-        _id: companyId,
-        "selectedDepartments.sop._id": docObjectId,
-      },
-      {
-        $set: {
-          "selectedDepartments.$[dept].sop.$[doc].name": newName,
-          "selectedDepartments.$[dept].sop.$[doc].updatedAt": new Date(),
-        },
-      },
-      {
-        arrayFilters: [
-          { "dept.sop": { $exists: true } }, // ensure sop exists in that dept
-          { "doc._id": docObjectId },
-        ],
-      }
-    );
-
-    if (sopUpdate.modifiedCount > 0) {
-      return res
-        .status(200)
-        .json({ message: "SOP document name updated successfully" });
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
     }
 
-    // Update Policy document inside a department
-    const policyUpdate = await Company.updateOne(
-      {
-        _id: companyId,
-      },
-      {
-        $set: {
-          "selectedDepartments.$[dept].policies.$[doc].name": newName,
-          "selectedDepartments.$[dept].policies.$[doc].updatedAt": new Date(),
-        },
-      },
-      {
-        arrayFilters: [
-          { "dept.policies._id": { $exists: true } },
-          { "doc._id": docObjectId },
-        ],
-      }
-    );
+    let isUpdated = false;
 
-    if (policyUpdate.modifiedCount > 0) {
+    for (const dept of company.selectedDepartments) {
+      const sopDoc = dept.sop?.find(
+        (doc) => doc._id.toString() === docObjectId
+      );
+      if (sopDoc) {
+        sopDoc.name = newName;
+        sopDoc.updatedAt = new Date();
+        isUpdated = true;
+        break;
+      }
+
+      const policyDoc = dept.policies?.find(
+        (doc) => doc._id.toString() === docObjectId
+      );
+      if (policyDoc) {
+        policyDoc.name = newName;
+        policyDoc.updatedAt = new Date();
+        isUpdated = true;
+        break;
+      }
+    }
+
+    if (isUpdated) {
+      company.markModified("selectedDepartments");
+      await company.save();
       return res
         .status(200)
-        .json({ message: "Policy document name updated successfully" });
+        .json({ message: "Document name updated successfully" });
     }
 
     return res.status(404).json({ message: "Document not found" });
