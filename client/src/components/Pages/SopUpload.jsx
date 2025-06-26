@@ -94,19 +94,37 @@ const SopUpload = () => {
       return response.data;
     },
     onSuccess: () => {
-      toast.success("SOP uploaded successfully!");
+      toast.success("SOP updated successfully!");
       reset(); // reset form
       setOpenModal(false); // close modal
       queryClient.invalidateQueries({ queryKey: ["departmentSOP"] });
     },
     onError: () => {
-      toast.error("Failed to upload SOP.");
+      toast.error("Failed to update SOP.");
     },
   });
   const { mutate: deleteSop, isPending: isDeletePending } = useMutation({
-    mutationFn: async (data) => {},
-    onSuccess: () => {},
-    onError: () => {},
+    mutationFn: async (data) => {
+      console.log("data for delete", data);
+      const response = await axios.delete(
+        `/api/company/delete-department-document`,
+        {
+          data: {
+            docObjectId: selectedSop._id,
+            departmentId: department?._id,
+          },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("SOP deleted successfully!");
+      setOpenModal(false); // close modal
+      queryClient.invalidateQueries({ queryKey: ["departmentSOP"] });
+    },
+    onError: () => {
+      toast.error("Failed to delete SOP.");
+    },
   });
 
   const handleAddSop = () => {
@@ -122,7 +140,9 @@ const SopUpload = () => {
   };
   console.log("Selected SOP", selectedSop);
   const handleDelete = (data) => {
-    deleteSop(data);
+    deleteSop({
+      documentId: selectedSop?._id,
+    });
   };
 
   const { data = [], isLoading } = useQuery({
@@ -174,7 +194,7 @@ const SopUpload = () => {
               label: "Delete",
               onClick: () => {
                 setModalType("delete");
-                setSelectedSop(params.data)
+                setSelectedSop(params.data);
                 setOpenModal(true);
               },
             },
@@ -317,7 +337,7 @@ const SopUpload = () => {
               />
               <DangerButton
                 title={"Delete"}
-                handleSubmit={()=>handleDelete(selectedSop)}
+                handleSubmit={() => handleDelete(selectedSop)}
               />
             </div>
           </div>

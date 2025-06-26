@@ -16,6 +16,8 @@ import { TextField } from "@mui/material";
 import UploadFileInput from "../UploadFileInput";
 import ThreeDotMenu from "../ThreeDotMenu";
 import YearWiseTable from "../Tables/YearWiseTable";
+import DangerButton from "../DangerButton";
+import SecondaryButton from "../SecondaryButton";
 
 const PolicyUpload = () => {
   const axios = useAxiosPrivate();
@@ -59,7 +61,10 @@ const PolicyUpload = () => {
       const formData = new FormData();
       formData.append("department-document", policy);
       formData.append("type", "policy");
-      formData.append("documentName", documentName || policy?.name || "Untitled");
+      formData.append(
+        "documentName",
+        documentName || policy?.name || "Untitled"
+      );
 
       const response = await axios.post(
         `/api/company/add-department-document/${department?._id || ""}`,
@@ -101,11 +106,6 @@ const PolicyUpload = () => {
       toast.error("Failed to upload Policy.");
     },
   });
-  const { mutate: deleteSop, isPending: isDeletePending } = useMutation({
-    mutationFn: async (data) => {},
-    onSuccess: () => {},
-    onError: () => {},
-  });
 
   const handleAddPolicy = () => {
     setModalType("add");
@@ -118,18 +118,43 @@ const PolicyUpload = () => {
     setEditValue("newName", data?.name.trim() || "");
     setOpenModal(true);
   };
-  console.log("Selected SOP", selectedSop)
+
   const handleDelete = (data) => {
-    setOpenModal(true);
+    deleteSop({
+      documentId: selectedSop?._id,
+    });
   };
 
+  const { mutate: deleteSop, isPending: isDeletePending } = useMutation({
+    mutationFn: async (data) => {
+      const response = await axios.delete(
+        `/api/company/delete-department-document`,
+        {
+          data: {
+            docObjectId: selectedSop._id,
+            departmentId: department?._id,
+          },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Policy deleted successfully!");
+      setOpenModal(false); // close modal
+      queryClient.invalidateQueries({ queryKey: ["departmentPolicy"] });
+    },
+    onError: () => {
+      toast.error("Failed to delete Policy.");
+    },
+  });
+
   const { data = [], isLoading } = useQuery({
-    queryKey: ["departmentSOP", department?._id],
+    queryKey: ["departmentPolicy", department?._id],
     queryFn: async () => {
       const response = await axios.get(
         `/api/company/get-department-documents?departmentId=${department?._id}&type=policies`
       );
-        return response?.data?.documents?.policyDocuments || [];
+      return response?.data?.documents?.policyDocuments || [];
     },
     enabled: !!department?._id,
     staleTime: 1000 * 60 * 5,
@@ -170,7 +195,11 @@ const PolicyUpload = () => {
             },
             {
               label: "Delete",
-              onClick: () => {},
+              onClick: () => {
+                setModalType("delete");
+                setSelectedSop(params.data);
+                setOpenModal(true);
+              },
             },
           ]}
         />
@@ -181,7 +210,7 @@ const PolicyUpload = () => {
   const tableData =
     Array.isArray(data) && !isLoading
       ? data.map((item, index) => ({
-        ...item,
+          ...item,
           srNo: index + 1,
           name: item?.name || "Untitled",
           documentLink: item?.documentLink || "#",
@@ -252,7 +281,7 @@ const PolicyUpload = () => {
               />
               <PrimaryButton
                 type={"submit"}
-                title={"Upload SOP"}
+                title={"Upload Policy"}
                 isLoading={isPending}
                 disabled={isPending}
               />
@@ -264,10 +293,12 @@ const PolicyUpload = () => {
           <div>
             <form
               className="grid grid-cols-1 gap-4"
-              onSubmit={handleEditForm((data) => editSop({
-                newName : data.newName,
-                documentId : selectedSop?.documentId
-              }))}
+              onSubmit={handleEditForm((data) =>
+                editSop({
+                  newName: data.newName,
+                  docObjectId: selectedSop?.documentId,
+                })
+              )}
             >
               <Controller
                 name="newName"
@@ -291,6 +322,27 @@ const PolicyUpload = () => {
                 disabled={isEditPending}
               />
             </form>
+          </div>
+        )}
+
+        {modalType === "delete" && (
+          <div className="border-default border-borderGray rounded-xl flex flex-col gap-4 p-4">
+            <div>
+              <span>Delete {selectedSop?.name} ?</span>
+            </div>
+            <div className="flex justify-end gap-4 items-center">
+              <SecondaryButton
+                title={"Cancel"}
+                handleSubmit={() => {
+                  setOpenModal(false);
+                  setSelectedSop([]);
+                }}
+              />
+              <DangerButton
+                title={"Delete"}
+                handleSubmit={() => handleDelete(selectedSop)}
+              />
+            </div>
           </div>
         )}
       </MuiModal>
