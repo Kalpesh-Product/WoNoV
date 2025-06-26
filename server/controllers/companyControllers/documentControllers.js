@@ -405,66 +405,59 @@ const updateDepartmentDocument = async (req, res, next) => {
 };
 
 const deleteDepartmentDocument = async (req, res, next) => {
-  const user = req.user;
-  const { documentId } = req.body; // Use the document's ObjectId
+  const userId = req.user;
+  const { documentId } = req.body;
 
   try {
-    const foundUser = await User.findById(user)
-      .select("company")
-      .populate("company", "companyName")
-      .lean();
-
+    // 1) Fetch the user's company reference
+    const foundUser = await User.findById(userId).select("company").lean();
     if (!foundUser?.company) {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const company = await Company.findById(foundUser.company._id);
-
-    if (!company?.selectedDepartments?.length) {
-      return res.status(404).json({ message: "No departments found" });
+    // 2) Load the full Company document
+    const company = await Company.findById(foundUser.company);
+    if (!company || !company.selectedDepartments?.length) {
+      return res.status(404).json({ message: "Company or departments not found" });
     }
 
     let updated = false;
-    let targetDocumentId = null;
 
-    for (let dept of company.selectedDepartments) {
-      // Mark SOP doc as inactive by _id
+    // 3) Loop through each department
+    for (const dept of company.selectedDepartments) {
+      // Try to find and mark SOP doc as inactive
       const sopDoc = dept.sop?.find((doc) => doc._id.toString() === documentId);
       if (sopDoc) {
         sopDoc.isActive = false;
+        sopDoc.updatedAt = new Date();
         updated = true;
-        targetDocumentId = sopDoc.documentId;
         break;
       }
 
-      // Mark Policy doc as inactive by _id
-      const policyDoc = dept.policies?.find(
-        (doc) => doc._id.toString() === documentId
-      );
+      // Try to find and mark Policy doc as inactive
+      const policyDoc = dept.policies?.find((doc) => doc._id.toString() === documentId);
       if (policyDoc) {
         policyDoc.isActive = false;
+        policyDoc.updatedAt = new Date();
         updated = true;
-        targetDocumentId = policyDoc.documentId;
         break;
       }
     }
 
+    // 4) If not updated, return error
     if (!updated) {
-      return res
-        .status(404)
-        .json({ message: "Document not found in departments" });
+      return res.status(404).json({ message: "Document not found in departments" });
     }
 
-    // Save the updated company
+    // 5) Save and return success
     await company.save({ validateBeforeSave: false });
 
-    return res
-      .status(200)
-      .json({ message: "Document marked as inactive successfully" });
+    return res.status(200).json({ message: "Document marked as inactive successfully" });
   } catch (error) {
     next(error);
   }
 };
+
 
 const getDepartmentDocuments = async (req, res, next) => {
   try {
