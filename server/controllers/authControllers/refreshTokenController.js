@@ -13,7 +13,7 @@ const handleRefreshToken = async (req, res, next) => {
 
     const userExists = await User.findOne({ refreshToken })
       .select(
-        "firstName lastName role email empId password designation company departments permissions credits profilePicture phone"
+        "firstName lastName clockInDetails role email empId password designation company departments permissions credits profilePicture phone"
       )
       .populate([
         {
@@ -32,6 +32,21 @@ const handleRefreshToken = async (req, res, next) => {
       ])
       .lean()
       .exec();
+
+    let currentTime = new Date();
+
+    let currentOffset = currentTime.getTimezoneOffset();
+
+    let ISTOffset = 330; // IST offset UTC +5:30
+
+    let ISTTime = new Date(
+      currentTime.getTime() + (ISTOffset + currentOffset) * 60000
+    );
+
+    const updatedUser = {
+      ...userExists,
+      time: ISTTime,
+    };
 
     if (!userExists) {
       return res.sendStatus(403);
@@ -65,7 +80,7 @@ const handleRefreshToken = async (req, res, next) => {
 
         res.json({
           accessToken,
-          user: userExists,
+          user: updatedUser,
         });
       }
     );

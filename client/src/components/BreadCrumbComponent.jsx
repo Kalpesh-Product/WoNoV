@@ -13,9 +13,13 @@ const BreadCrumbComponent = () => {
   const queryParamEntries = Array.from(searchParams.entries());
 
   // Extract and process the path, excluding 'app' for display purposes
-  const pathSegments = location.pathname
-    .split("/")
-    .filter((segment) => segment && segment !== "app" && segment !== "dashboard");
+const pathSegments =
+  location.pathname === "/app/dashboard"
+    ? ["dashboard"]
+    : location.pathname
+        .split("/")
+        .filter((segment) => segment && segment !== "app" && segment !== "dashboard");
+
 
   // Generate breadcrumb links
   const breadcrumbs = pathSegments.map((segment, index) => {

@@ -101,6 +101,16 @@ const userDataSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  clockInDetails: {
+    hasClockedIn: {
+      type: Boolean,
+      default: false,
+    },
+    clockInTime: {
+      type: Date,
+      default: null,
+    },
+  },
   startDate: {
     type: Date,
     required: true,

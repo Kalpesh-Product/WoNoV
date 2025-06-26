@@ -135,7 +135,7 @@ const AttendanceRequests = () => {
         <YearWiseTable
         key={tableData.length}
           dateColumn={"date"}
-          columns={columns}a
+          columns={columns}
           data={!isLoading ? tableData : []}
           tableTitle={"ATTENDANCE REQUESTS"}
         />

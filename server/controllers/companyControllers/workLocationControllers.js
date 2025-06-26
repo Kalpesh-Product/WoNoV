@@ -171,67 +171,6 @@ const addUnit = async (req, res, next) => {
   }
 };
 
-// const updateUnit = async (req, res, next) => {
-//   const logPath = "hr/HrLog";
-//   const logAction = "Update Unit";
-//   const logSourceKey = "unit";
-//   const { user, ip, company } = req;
-//   const { unitId, ...updateFields } = req.body;
-
-//   try {
-//     if (!unitId || !mongoose.Types.ObjectId.isValid(unitId)) {
-//       throw new CustomError(
-//         "Invalid or missing Unit ID",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     const existingUnit = await Unit.findById(unitId);
-//     if (!existingUnit) {
-//       throw new CustomError("Unit not found", logPath, logAction, logSourceKey);
-//     }
-
-//     const oldUnitData = existingUnit.toObject();
-
-//     // Update only the fields provided in the request
-//     Object.entries(updateFields).forEach(([key, value]) => {
-//       if (value !== undefined && key in existingUnit) {
-//         existingUnit[key] = value;
-//       }
-//     });
-
-//     const updatedUnit = await existingUnit.save();
-
-//     await createLog({
-//       path: logPath,
-//       action: logAction,
-//       remarks: "Unit updated successfully",
-//       status: "Success",
-//       user,
-//       ip,
-//       company: company || existingUnit.company,
-//       sourceKey: logSourceKey,
-//       sourceId: updatedUnit._id,
-//       changes: { old: oldUnitData, new: updatedUnit },
-//     });
-
-//     return res.status(200).json({
-//       message: "Unit updated successfully",
-//       workLocation: updatedUnit,
-//     });
-//   } catch (error) {
-//     if (error instanceof CustomError) {
-//       next(error);
-//     } else {
-//       next(
-//         new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-//       );
-//     }
-//   }
-// };
-
 const updateUnit = async (req, res, next) => {
   try {
     const { unitId } = req.body;
