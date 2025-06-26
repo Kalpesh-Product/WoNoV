@@ -3,7 +3,7 @@ import { MdUpload } from "react-icons/md";
 import WidgetSection from "../../components/WidgetSection";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import { Controller, useForm } from "react-hook-form";
 import { TextField } from "@mui/material";
 import UploadFileInput from "../UploadFileInput";
 import ThreeDotMenu from "../ThreeDotMenu";
+import YearWiseTable from "../Tables/YearWiseTable";
 
 const SopUpload = () => {
   const axios = useAxiosPrivate();
@@ -25,6 +26,8 @@ const SopUpload = () => {
   const [selectedSop, setSelectedSop] = useState([]);
   const [modalType, setModalType] = useState("");
   const uploadItems = ["Upload Sops"];
+
+  // For adding an SOP
   const {
     handleSubmit,
     reset,
@@ -35,6 +38,19 @@ const SopUpload = () => {
     defaultValues: {
       documentName: "",
       sop: null,
+    },
+  });
+
+  //For Editing SOP
+  const {
+    handleSubmit: handleEditForm,
+    control: controlEdit,
+    reset: resetEdit,
+    formState: { errors: editErrors },
+    setValue: setEditValue,
+  } = useForm({
+    defaultValues: {
+      newName: "",
     },
   });
 
@@ -68,9 +84,22 @@ const SopUpload = () => {
   });
 
   const { mutate: editSop, isPending: isEditPending } = useMutation({
-    mutationFn: async (data) => {},
-    onSuccess: () => {},
-    onError: () => {},
+    mutationFn: async (data) => {
+      const response = await axios.patch(
+        `/api/company/update-department-document/${selectedSop?.documentId}`,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("SOP uploaded successfully!");
+      reset(); // reset form
+      setOpenModal(false); // close modal
+      queryClient.invalidateQueries({ queryKey: ["departmentSOP"] });
+    },
+    onError: () => {
+      toast.error("Failed to upload SOP.");
+    },
   });
   const { mutate: deleteSop, isPending: isDeletePending } = useMutation({
     mutationFn: async (data) => {},
@@ -84,8 +113,12 @@ const SopUpload = () => {
   };
 
   const handleEdit = (data) => {
+    setModalType("edit");
+    setSelectedSop(data);
+    setEditValue("newName", data?.name.trim() || "");
     setOpenModal(true);
   };
+  console.log("Selected SOP", selectedSop)
   const handleDelete = (data) => {
     setOpenModal(true);
   };
@@ -99,7 +132,7 @@ const SopUpload = () => {
       return response?.data?.documents?.sopDocuments || [];
     },
     enabled: !!department?._id,
-    staleTime: 1000 * 60 * 5, // optional: 5 min caching
+    staleTime: 1000 * 60 * 5,
   });
 
   const columns = [
@@ -119,7 +152,7 @@ const SopUpload = () => {
         </a>
       ),
     },
-    { field: "createdAt", headerName: "Upload Date", flex: 1 },
+    { field: "date", headerName: "Upload Date", flex: 1 },
     { field: "updatedAt", headerName: "Modified Date", flex: 1 },
     {
       field: "actions",
@@ -131,7 +164,9 @@ const SopUpload = () => {
           menuItems={[
             {
               label: "Edit",
-              onClick: () => {},
+              onClick: () => {
+                handleEdit(params.data);
+              },
             },
             {
               label: "Delete",
@@ -146,9 +181,11 @@ const SopUpload = () => {
   const tableData =
     Array.isArray(data) && !isLoading
       ? data.map((item, index) => ({
+        ...item,
           srNo: index + 1,
           name: item?.name || "Untitled",
           documentLink: item?.documentLink || "#",
+          date: item.createdAt,
         }))
       : [];
 
@@ -156,7 +193,8 @@ const SopUpload = () => {
     <div className="flex flex-col gap-4">
       <div>
         <PageFrame>
-          <AgTable
+          <YearWiseTable
+            dateColumn={"date"}
             key={data?.length || 0}
             columns={columns}
             data={tableData}
@@ -217,6 +255,37 @@ const SopUpload = () => {
                 title={"Upload SOP"}
                 isLoading={isPending}
                 disabled={isPending}
+              />
+            </form>
+          </div>
+        )}
+
+        {modalType === "edit" && (
+          <div>
+            <form
+              className="grid grid-cols-1 gap-4"
+              onSubmit={handleEditForm((data) => editSop(data))}
+            >
+              <Controller
+                name="newName"
+                control={controlEdit}
+                rules={{ required: "Document Name is Required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Document Name"
+                    fullWidth
+                    error={!!editErrors.newName}
+                    helperText={editErrors?.newName?.message}
+                  />
+                )}
+              />
+              <PrimaryButton
+                type={"submit"}
+                title={"Update SOP"}
+                isLoading={isEditPending}
+                disabled={isEditPending}
               />
             </form>
           </div>
