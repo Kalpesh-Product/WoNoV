@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
-import { getElapsedSeconds } from "../utils/time";
+import { computeOffset, getElapsedSecondsWithOffset } from "../utils/time";
 
 const ClockInOutAttendance = () => {
   const axios = useAxiosPrivate();
@@ -11,22 +11,38 @@ const ClockInOutAttendance = () => {
 
   const [startTime, setStartTime] = useState(null); // ISO string
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [offset, setOffset] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
   const timerRef = useRef(null);
 
+  // Boot with server timestamps
   useEffect(() => {
     const clockIn = auth?.user?.clockInDetails?.clockInTime;
     const serverNow = auth?.user?.time;
 
     if (auth?.user?.clockInDetails?.hasClockedIn && clockIn && serverNow) {
-      setStartTime(clockIn); // save as ISO string
-      setElapsedTime(getElapsedSeconds(clockIn, serverNow));
+      setStartTime(clockIn);
+      const calculatedOffset = computeOffset(serverNow);
+      setOffset(calculatedOffset);
+      setElapsedTime(getElapsedSecondsWithOffset(clockIn, calculatedOffset));
     }
 
     setIsBooting(false);
   }, [auth]);
 
-  // Clock-in mutation
+  // Timer ticking using offset
+  useEffect(() => {
+    if (startTime) {
+      timerRef.current = setInterval(() => {
+        setElapsedTime(getElapsedSecondsWithOffset(startTime, offset));
+      }, 1000);
+    } else {
+      clearInterval(timerRef.current);
+    }
+
+    return () => clearInterval(timerRef.current);
+  }, [startTime, offset]);
+
   const { mutate: clockIn, isPending: isClockingIn } = useMutation({
     mutationFn: async (inTime) => {
       const res = await axios.post("/api/attendance/clock-in", {
@@ -39,7 +55,6 @@ const ClockInOutAttendance = () => {
     onError: () => toast.error("Clock in failed."),
   });
 
-  // Clock-out mutation
   const { mutate: clockOut, isPending: isClockingOut } = useMutation({
     mutationFn: async (outTime) => {
       const res = await axios.patch("/api/attendance/clock-out", {
@@ -51,27 +66,15 @@ const ClockInOutAttendance = () => {
       toast.success("Clocked out successfully!");
       setStartTime(null);
       setElapsedTime(0);
+      setOffset(0);
     },
     onError: () => toast.error("Clock out failed."),
   });
 
-  // Timer effect
-  useEffect(() => {
-    if (startTime) {
-      timerRef.current = setInterval(() => {
-        const now = new Date().toISOString(); // always in ISO format
-        setElapsedTime(getElapsedSeconds(startTime, now));
-      }, 1000);
-    } else {
-      clearInterval(timerRef.current);
-    }
-
-    return () => clearInterval(timerRef.current);
-  }, [startTime]);
-
   const handleStart = () => {
     const now = new Date().toISOString();
     setStartTime(now);
+    setOffset(0); // reset offset; this session starts fresh
     clockIn(now);
   };
 
