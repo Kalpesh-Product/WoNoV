@@ -118,8 +118,10 @@ const SopUpload = () => {
     setEditValue("newName", data?.name.trim() || "");
     setOpenModal(true);
   };
-  console.log("Selected SOP", selectedSop)
+  console.log("Selected SOP", selectedSop);
   const handleDelete = (data) => {
+    setModalType("delete");
+    setSelectedSop(data);
     setOpenModal(true);
   };
 
@@ -170,7 +172,9 @@ const SopUpload = () => {
             },
             {
               label: "Delete",
-              onClick: () => {},
+              onClick: () => {
+                handleDelete(params.data);
+              },
             },
           ]}
         />
@@ -181,7 +185,7 @@ const SopUpload = () => {
   const tableData =
     Array.isArray(data) && !isLoading
       ? data.map((item, index) => ({
-        ...item,
+          ...item,
           srNo: index + 1,
           name: item?.name || "Untitled",
           documentLink: item?.documentLink || "#",
@@ -264,10 +268,12 @@ const SopUpload = () => {
           <div>
             <form
               className="grid grid-cols-1 gap-4"
-              onSubmit={handleEditForm((data) => editSop({
-                newName : data.newName,
-                documentId : selectedSop?.documentId
-              }))}
+              onSubmit={handleEditForm((data) =>
+                editSop({
+                  newName: data.newName,
+                  documentId: selectedSop?._id,
+                })
+              )}
             >
               <Controller
                 name="newName"
@@ -291,6 +297,12 @@ const SopUpload = () => {
                 disabled={isEditPending}
               />
             </form>
+          </div>
+        )}
+
+        {modalType === "delete" && (
+          <div>
+            <form></form>
           </div>
         )}
       </MuiModal>
