@@ -340,7 +340,7 @@ const uploadDepartmentDocument = async (req, res, next) => {
       } department`,
     });
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
 
@@ -390,7 +390,6 @@ const updateDepartmentDocument = async (req, res, next) => {
     const policyUpdate = await Company.updateOne(
       {
         _id: companyId,
-        "selectedDepartments.policies._id": docObjectId,
       },
       {
         $set: {
@@ -400,7 +399,7 @@ const updateDepartmentDocument = async (req, res, next) => {
       },
       {
         arrayFilters: [
-          { "dept.policies": { $exists: true } },
+          { "dept.policies._id": { $exists: true } },
           { "doc._id": docObjectId },
         ],
       }
@@ -418,8 +417,7 @@ const updateDepartmentDocument = async (req, res, next) => {
   }
 };
 
-
-const deleteDepartmentDocument = async (req, res,next) => {
+const deleteDepartmentDocument = async (req, res, next) => {
   const user = req.user;
   const { docObjectId } = req.body; // Use the document's ObjectId
 
@@ -489,7 +487,7 @@ const deleteDepartmentDocument = async (req, res,next) => {
       .status(200)
       .json({ message: "Document marked as inactive successfully" });
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
 
