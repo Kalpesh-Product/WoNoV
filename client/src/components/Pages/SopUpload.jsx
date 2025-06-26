@@ -199,7 +199,7 @@ const SopUpload = () => {
             columns={columns}
             data={tableData}
             buttonTitle={"Add SOP"}
-            handleClick={handleAddSop}
+            handleSubmit={handleAddSop}
             search
             tableTitle="SOP documents"
           />

@@ -3,35 +3,63 @@ import { MdUpload } from "react-icons/md";
 import WidgetSection from "../../components/WidgetSection";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import PageFrame from "./PageFrame";
 import { queryClient } from "../../main";
+import MuiModal from "../MuiModal";
+import { Controller, useForm } from "react-hook-form";
+import { TextField } from "@mui/material";
+import UploadFileInput from "../UploadFileInput";
+import ThreeDotMenu from "../ThreeDotMenu";
+import YearWiseTable from "../Tables/YearWiseTable";
 
 const PolicyUpload = () => {
   const axios = useAxiosPrivate();
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const department = usePageDepartment();
-
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedSop, setSelectedSop] = useState([]);
+  const [modalType, setModalType] = useState("");
   const uploadItems = ["Upload Policies"];
 
-  const policiesUploadDataColumns = [
-    { field: "srNo", headerName: "Sr No", flex: 1 },
-    { field: "templateName", headerName: "Template Name", flex: 1 },
-    { field: "uploadedBy", headerName: "Uploaded By", flex: 1 },
-    { field: "date", headerName: "Date", flex: 1 },
-  ];
+  // For adding an Policies
+  const {
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors },
+    control,
+  } = useForm({
+    defaultValues: {
+      documentName: "",
+      sop: null,
+    },
+  });
+
+  //For Editing SOP
+  const {
+    handleSubmit: handleEditForm,
+    control: controlEdit,
+    reset: resetEdit,
+    formState: { errors: editErrors },
+    setValue: setEditValue,
+  } = useForm({
+    defaultValues: {
+      newName: "",
+    },
+  });
 
   const { mutate: uploadSop, isPending } = useMutation({
-    mutationFn: async (file) => {
+    mutationFn: async ({ policy, documentName }) => {
       const formData = new FormData();
-      formData.append("department-document", file);
+      formData.append("department-document", policy);
       formData.append("type", "policy");
-      formData.append("documentName", file?.name || "Untitled");
+      formData.append("documentName", documentName || policy?.name || "Untitled");
 
       const response = await axios.post(
         `/api/company/add-department-document/${department?._id || ""}`,
@@ -45,140 +73,227 @@ const PolicyUpload = () => {
       return response.data;
     },
     onSuccess: () => {
-      toast.success("Policy uploaded successfully!");
-      setSelectedFile(null);
-      queryClient.invalidateQueries({ queryKey: ["departmentPolicy"] });
+      toast.success("SOP uploaded successfully!");
+      reset(); // reset form
+      setOpenModal(false); // close modal
+      queryClient.invalidateQueries({ queryKey: ["departmentSOP"] });
     },
     onError: (error) => {
-      toast.error(error?.message || "Failed to upload Policy.");
+      toast.error(error?.message || "Failed to upload SOP.");
     },
   });
 
-  const handleFileChange = (event) => {
-    const file = event.target?.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-    }
+  const { mutate: editSop, isPending: isEditPending } = useMutation({
+    mutationFn: async (data) => {
+      const response = await axios.patch(
+        `/api/company/update-department-document`,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Policy uploaded successfully!");
+      reset(); // reset form
+      setOpenModal(false); // close modal
+      queryClient.invalidateQueries({ queryKey: ["departmentPolicy"] });
+    },
+    onError: () => {
+      toast.error("Failed to upload Policy.");
+    },
+  });
+  const { mutate: deleteSop, isPending: isDeletePending } = useMutation({
+    mutationFn: async (data) => {},
+    onSuccess: () => {},
+    onError: () => {},
+  });
+
+  const handleAddPolicy = () => {
+    setModalType("add");
+    setOpenModal(true);
   };
 
-  const triggerFileDialog = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+  const handleEdit = (data) => {
+    setModalType("edit");
+    setSelectedSop(data);
+    setEditValue("newName", data?.name.trim() || "");
+    setOpenModal(true);
   };
-
-  const handleUpload = () => {
-    if (!selectedFile) {
-      toast.warning("Please select a file first.");
-      return;
-    }
-    if (!department?._id) {
-      toast.error("Invalid department. Cannot upload.");
-      return;
-    }
-    uploadSop(selectedFile);
+  console.log("Selected SOP", selectedSop)
+  const handleDelete = (data) => {
+    setOpenModal(true);
   };
 
   const { data = [], isLoading } = useQuery({
-    queryKey: ["departmentPolicy", department?._id],
+    queryKey: ["departmentSOP", department?._id],
     queryFn: async () => {
       const response = await axios.get(
         `/api/company/get-department-documents?departmentId=${department?._id}&type=policies`
       );
-      return response?.data?.documents?.policyDocuments || [];
+        return response?.data?.documents?.policyDocuments || [];
     },
     enabled: !!department?._id,
-    staleTime: 1000 * 60 * 5, // optional: 5 min caching
+    staleTime: 1000 * 60 * 5,
   });
 
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "name", headerName: "Document Name", flex: 1 },
     {
-      field: "documentLink",
-      headerName: "Document Link",
-      pinned: "right",
-      width: 200,
+      field: "name",
+      headerName: "Policy Name",
+      flex: 1,
       cellRenderer: (params) => (
         <a
           className="text-primary underline cursor-pointer"
-          href={params?.value || "#"}
+          href={params?.data.documentLink || "#"}
           target="_blank"
           rel="noopener noreferrer"
         >
-          View Policy
+          {params.value}
         </a>
+      ),
+    },
+    { field: "date", headerName: "Upload Date", flex: 1 },
+    { field: "updatedAt", headerName: "Modified Date", flex: 1 },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 150,
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data.id}
+          menuItems={[
+            {
+              label: "Edit",
+              onClick: () => {
+                handleEdit(params.data);
+              },
+            },
+            {
+              label: "Delete",
+              onClick: () => {},
+            },
+          ]}
+        />
       ),
     },
   ];
 
-  const tableData = Array.isArray(data)
-    ? data.map((item, index) => ({
-        srNo: index + 1,
-        name: item?.name || "Untitled",
-        documentLink: item?.documentLink || "#",
-      }))
-    : [];
+  const tableData =
+    Array.isArray(data) && !isLoading
+      ? data.map((item, index) => ({
+        ...item,
+          srNo: index + 1,
+          name: item?.name || "Untitled",
+          documentLink: item?.documentLink || "#",
+          date: item.createdAt,
+        }))
+      : [];
 
   return (
     <div className="flex flex-col gap-4">
-      <span className="text-title font-pmedium text-primary">Upload Policies</span>
-      <hr />
-
-      <div className="grid lg:grid-cols-3 md:grid-col-3 sm:grid-col-1">
-        {uploadItems.map((item, index) => (
-          <div className="space-y-2 border-default p-4 rounded-md" key={index}>
-            <div className="mb-2">
-              <span className="text-subtitle text-primary">{item}</span>
-            </div>
-            <div className="flex gap-4">
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <div className="flex items-end w-full border justify-end border-gray-200 rounded-md">
-                <PrimaryButton
-                  title={!isPending ? "Choose File" : "Uploading"}
-                  handleSubmit={triggerFileDialog}
-                  isLoading={isPending}
-                  disabled={isPending}
-                />
-              </div>
-              {!isPending && (
-                <div className="flex gap-2 items-center">
-                  <div
-                    onClick={handleUpload}
-                    className="bg-borderGray text-black p-2 rounded-md cursor-pointer hover:bg-gray-200 transition-all"
-                  >
-                    <MdUpload style={{ fill: "black" }} />
-                  </div>
-                  <div className="bg-borderGray text-black p-2 rounded-md cursor-pointer hover:bg-gray-200 transition-all">
-                    <IoMdDownload style={{ fill: "black" }} />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {selectedFile && (
-              <span className="text-sm text-gray-600">{selectedFile.name}</span>
-            )}
-          </div>
-        ))}
-      </div>
-
       <div>
         <PageFrame>
-          <AgTable
+          <YearWiseTable
+            dateColumn={"date"}
             key={data?.length || 0}
             columns={columns}
             data={tableData}
+            buttonTitle={"Add Policy"}
+            handleSubmit={handleAddPolicy}
             search
             tableTitle="Policy documents"
           />
         </PageFrame>
       </div>
+      <MuiModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        title={`${
+          modalType === "add"
+            ? "Add Policy"
+            : modalType === "edit"
+            ? "Edit Policy"
+            : "Delete Policy"
+        }`}
+      >
+        {modalType === "add" && (
+          <div>
+            <form
+              onSubmit={handleSubmit((data) => uploadSop(data))}
+              className="grid grid-cols-1 gap-4"
+            >
+              <Controller
+                name="documentName"
+                control={control}
+                rules={{ required: "Document Name is Required" }}
+                render={({ field }) => (
+                  <TextField
+                    name="documentName"
+                    label="Document Name"
+                    size="small"
+                    {...field}
+                    fullWidth
+                    error={!!errors.documentName}
+                    helperText={errors?.documentName?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="policy"
+                control={control}
+                rules={{ required: "Policy is Required" }}
+                render={({ field }) => (
+                  <UploadFileInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    previewType="pdf"
+                  />
+                )}
+              />
+              <PrimaryButton
+                type={"submit"}
+                title={"Upload SOP"}
+                isLoading={isPending}
+                disabled={isPending}
+              />
+            </form>
+          </div>
+        )}
+
+        {modalType === "edit" && (
+          <div>
+            <form
+              className="grid grid-cols-1 gap-4"
+              onSubmit={handleEditForm((data) => editSop({
+                newName : data.newName,
+                documentId : selectedSop?.documentId
+              }))}
+            >
+              <Controller
+                name="newName"
+                control={controlEdit}
+                rules={{ required: "Document Name is Required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Document Name"
+                    fullWidth
+                    error={!!editErrors.newName}
+                    helperText={editErrors?.newName?.message}
+                  />
+                )}
+              />
+              <PrimaryButton
+                type={"submit"}
+                title={"Update Policy"}
+                isLoading={isEditPending}
+                disabled={isEditPending}
+              />
+            </form>
+          </div>
+        )}
+      </MuiModal>
     </div>
   );
 };
