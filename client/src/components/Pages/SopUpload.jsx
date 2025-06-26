@@ -86,7 +86,7 @@ const SopUpload = () => {
   const { mutate: editSop, isPending: isEditPending } = useMutation({
     mutationFn: async (data) => {
       const response = await axios.patch(
-        `/api/company/update-department-document/${selectedSop?.documentId}`,
+        `/api/company/update-department-document`,
         data
       );
       return response.data;
@@ -264,7 +264,10 @@ const SopUpload = () => {
           <div>
             <form
               className="grid grid-cols-1 gap-4"
-              onSubmit={handleEditForm((data) => editSop(data))}
+              onSubmit={handleEditForm((data) => editSop({
+                newName : data.newName,
+                documentId : selectedSop?.documentId
+              }))}
             >
               <Controller
                 name="newName"
