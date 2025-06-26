@@ -80,28 +80,27 @@ const clockOut = async (req, res, next) => {
     }
 
     const clockOutTime = new Date(outTime);
-    const currDate = new Date();
-
     if (isNaN(clockOutTime.getTime())) {
       return res.status(400).json({ message: "Invalid date format" });
     }
 
-    // Retrieve the latest attendance record for the user
-    const attendance = await Attendance.findOne({ user }).sort({
-      createdAt: -1,
-    });
+    // Get the start and end of the day for the provided outTime
+    const startOfDay = new Date(clockOutTime);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(clockOutTime);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    // Retrieve today’s attendance entry for the user
+    const attendance = await Attendance.findOne({
+      user,
+      inTime: { $gte: startOfDay, $lt: endOfDay },
+    }).sort({ createdAt: -1 });
 
     if (!attendance) {
-      return res.status(404).json({ message: "No attendance record exists" });
-    }
-
-    const isSameDay =
-      clockOutTime.getDate() === currDate.getDate() &&
-      clockOutTime.getMonth() === currDate.getMonth() &&
-      clockOutTime.getFullYear() === currDate.getFullYear();
-
-    if (!isSameDay) {
-      return res.status(400).json({ message: "Please select present date" });
+      return res
+        .status(404)
+        .json({ message: "No attendance record for today" });
     }
 
     if (attendance.outTime) {
@@ -111,6 +110,7 @@ const clockOut = async (req, res, next) => {
     // Update the attendance record with outTime
     attendance.outTime = clockOutTime;
     const updatedAttendance = await attendance.save();
+
     if (updatedAttendance) {
       await UserData.findOneAndUpdate(
         { _id: user },
