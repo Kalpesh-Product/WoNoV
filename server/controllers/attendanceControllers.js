@@ -19,14 +19,9 @@ const clockIn = async (req, res, next) => {
     const clockInTime = new Date(inTime);
     const currDate = new Date();
 
-    if (clockInTime.getDate() !== currDate.getDate()) {
-      throw new CustomError(
-        "Please select present date",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // if (clockInTime.getDate() !== currDate.getDate()) {
+    //   return res.status(400).json({ message: "Please select present date" });
+    // }
 
     if (isNaN(clockInTime.getTime())) {
       return res.status(400).json({ message: "Invalid date format" });
@@ -410,7 +405,7 @@ const getAttendanceRequests = async (req, res, next) => {
 
 const correctAttendance = async (req, res, next) => {
   const { user, ip, company } = req;
-  const { targetedDay, inTime, outTime, startBreak, endBreak, empId } =
+  const { targetedDay, inTime, outTime, startBreak, endBreak, empId, reason } =
     req.body;
   const logPath = "hr/HrLog";
   const logAction = "Correct Attendance";
@@ -559,6 +554,7 @@ const correctAttendance = async (req, res, next) => {
       originalOutTime: foundDate.outTime || null,
       originalStartBreak: foundDate.startBreak || null,
       originalEndBreak: foundDate.endBreak || null,
+      reason,
       user: foundUser._id,
       company: company,
     });

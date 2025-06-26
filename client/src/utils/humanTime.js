@@ -1,5 +1,5 @@
 const humanTime = (date) => {
-  if (!date) return "N/A"; // or return "", or some fallback
+  if (!date) return "—"; // or return "", or some fallback
 
   const parsedDate = new Date(date);
   if (isNaN(parsedDate.getTime())) return "Invalid date";

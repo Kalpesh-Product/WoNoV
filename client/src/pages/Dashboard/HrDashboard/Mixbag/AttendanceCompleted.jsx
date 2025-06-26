@@ -59,6 +59,7 @@ const AttendanceCompleted = () => {
     : data.map((item) => ({
         ...item,
         empId: item.user?.empId,
+        reason:item.reason,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
         date: item.inTime,
         inTime: humanTime(item.inTime),
@@ -89,38 +90,42 @@ const AttendanceCompleted = () => {
         title={"Attendance Request Details"}
       >
         {selectedRequest ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
             <DetalisFormatted
               title="Employee ID"
-              detail={selectedRequest?.empId || "N/A"}
+              detail={selectedRequest?.empId}
             />
             <DetalisFormatted
               title="Name"
-              detail={selectedRequest?.name || "N/A"}
+              detail={selectedRequest?.name}
+            />
+            <DetalisFormatted
+              title="Reason"
+              detail={selectedRequest?.reason}
             />
             <DetalisFormatted
               title="Date"
-              detail={selectedRequest?.date || "N/A"}
+              detail={selectedRequest?.date}
             />
             <DetalisFormatted
               title="Start Time"
-              detail={selectedRequest?.inTime || "N/A"}
+              detail={selectedRequest?.inTime}
             />
             <DetalisFormatted
               title="End Time"
-              detail={selectedRequest?.outTime || "N/A"}
+              detail={selectedRequest?.outTime}
             />
             <DetalisFormatted
               title="Original Start Time"
-              detail={selectedRequest?.originalInTime || "N/A"}
+              detail={selectedRequest?.originalInTime}
             />
             <DetalisFormatted
               title="Original End Time"
-              detail={selectedRequest?.originalOutTime || "N/A"}
+              detail={selectedRequest?.originalOutTime}
             />
             <DetalisFormatted
               title="Status"
-              detail={selectedRequest?.status || "N/A"}
+              detail={selectedRequest?.status}
             />
             {selectedRequest?.approvedBy && (
               <DetalisFormatted

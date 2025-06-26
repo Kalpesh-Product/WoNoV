@@ -34,6 +34,7 @@ const Attendance = () => {
       targetedDay: null,
       inTime: null,
       outTime: null,
+      reason:""
     },
   });
   const [openModal, setOpenModal] = useState(false);
@@ -59,7 +60,7 @@ const Attendance = () => {
 
   const { mutate: correctionPost, isPending: correctionPending } = useMutation({
     mutationFn: async (data) => {
-      const response = await axios.patch("/api/attendance/correct-attendance", {
+      const response = await axios.post("/api/attendance/correct-attendance", {
         ...data,
         empId: employmentID,
       });
@@ -462,6 +463,23 @@ const Attendance = () => {
                 )}
               />
             </LocalizationProvider>
+               <Controller
+            name="reason"
+            rules={{ required: "Please specify your reason" }}
+            control={control}
+            render={({ field }) => (
+              <>
+                <TextField
+                  {...field}
+                  size="small"
+                  label="Reason"
+                  fullWidth
+                  multiline
+                  rows={3} // ← Change this number to increase/decrease height
+                />
+              </>
+            )}
+          />
 
             <div className="flex items-center justify-center gap-4">
               <SecondaryButton

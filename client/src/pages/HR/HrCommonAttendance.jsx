@@ -32,6 +32,7 @@ const HrCommonAttendance = () => {
       targetedDay: null,
       inTime: null,
       outTime: null,
+      reason:""
     },
   });
 
@@ -161,7 +162,6 @@ const HrCommonAttendance = () => {
                   {...field}
                   label={"Select Date"}
                   format="DD-MM-YYYY"
-             
                   slotProps={{ textField: { size: "small" } }}
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) => {
@@ -207,6 +207,23 @@ const HrCommonAttendance = () => {
               )}
             />
           </LocalizationProvider>
+          <Controller
+            name="reason"
+            rules={{ required: "Please specify your reason" }}
+            control={control}
+            render={({ field }) => (
+              <>
+                <TextField
+                  {...field}
+                  size="small"
+                  label="Reason"
+                  fullWidth
+                  multiline
+                  rows={3} // ← Change this number to increase/decrease height
+                />
+              </>
+            )}
+          />
 
           <div className="flex items-center justify-center gap-4">
             <SecondaryButton
