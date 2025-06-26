@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
-import PrimaryButton from "../components/PrimaryButton";
 import useAuth from "../hooks/useAuth";
 
 const ClockInOutAttendance = () => {
@@ -13,25 +12,27 @@ const ClockInOutAttendance = () => {
   const [isBooting, setIsBooting] = useState(true);
   const timerRef = useRef(null);
 
-  // ✅ On load, set startTime from persisted clock-in
+  // ✅ On load, set startTime and base it off server time
   useEffect(() => {
-    if (
-      auth?.user?.clockInDetails?.hasClockedIn &&
-      auth?.user?.clockInDetails.clockInTime
-    ) {
-      const storedStartTime = new Date(
-        auth.user?.clockInDetails?.clockInTime
-      ).toISOString();
-      setStartTime(storedStartTime);
+    const clockIn = auth?.user?.clockInDetails?.clockInTime;
+    const serverNow = auth?.user?.clockInDetails?.serverTimeAtLogin;
+
+    if (auth?.user?.clockInDetails?.hasClockedIn && clockIn && serverNow) {
+      const start = new Date(clockIn).getTime();
+      const serverNowTime = new Date(serverNow).getTime();
+      const elapsed = Math.floor((serverNowTime - start) / 1000);
+      setStartTime(start); // Store as timestamp
+      setElapsedTime(elapsed);
     }
+
     setIsBooting(false);
   }, [auth]);
 
   // ⏱️ Mutation to clock-in
   const { mutate: clockIn, isPending: isClockingIn } = useMutation({
-    mutationFn: async (startTime) => {
+    mutationFn: async (inTime) => {
       const response = await axios.post("/api/attendance/clock-in", {
-        inTime: startTime,
+        inTime,
         entryType: "web",
       });
       return response.data;
@@ -42,9 +43,9 @@ const ClockInOutAttendance = () => {
 
   // ⏱️ Mutation to clock-out
   const { mutate: clockOut, isPending: isClockingOut } = useMutation({
-    mutationFn: async (endTime) => {
+    mutationFn: async (outTime) => {
       const response = await axios.patch("/api/attendance/clock-out", {
-        outTime: endTime,
+        outTime,
       });
       return response.data;
     },
@@ -60,7 +61,8 @@ const ClockInOutAttendance = () => {
   useEffect(() => {
     if (startTime) {
       timerRef.current = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - new Date(startTime)) / 1000));
+        const secondsElapsed = Math.floor((Date.now() - startTime) / 1000);
+        setElapsedTime(secondsElapsed);
       }, 1000);
     } else {
       clearInterval(timerRef.current);
@@ -71,13 +73,13 @@ const ClockInOutAttendance = () => {
 
   const handleStart = () => {
     const now = new Date().toISOString();
-    setStartTime(now);
+    setStartTime(new Date(now).getTime());
     clockIn(now);
   };
 
   const handleStop = () => {
-    const endTime = new Date().toISOString();
-    clockOut(endTime);
+    const now = new Date().toISOString();
+    clockOut(now);
   };
 
   const formatElapsedTime = (seconds) => {
@@ -87,7 +89,6 @@ const ClockInOutAttendance = () => {
     return `${hrs}:${mins}:${secs}`;
   };
 
-  // Loading state during token check
   if (isBooting) {
     return (
       <div className="flex items-center justify-center h-48">
@@ -110,15 +111,13 @@ const ClockInOutAttendance = () => {
           : "Not Clocked In"}
       </div>
 
-      <div className="">
-        <button
-          onClick={startTime ? handleStop : handleStart}
-          className="hover:scale-105 transition-all h-40 w-40  rounded-full text-center bg-primary text-white flex justify-center items-center"
-          disabled={isClockingIn || isClockingOut}
-        >
-          {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"}
-        </button>
-      </div>
+      <button
+        onClick={startTime ? handleStop : handleStart}
+        className="hover:scale-105 transition-all h-40 w-40 rounded-full text-center bg-primary text-white flex justify-center items-center"
+        disabled={isClockingIn || isClockingOut}
+      >
+        {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"}
+      </button>
     </div>
   );
 };
