@@ -3,54 +3,49 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
+import { getElapsedSeconds } from "../utils/time";
 
 const ClockInOutAttendance = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
-  const [startTime, setStartTime] = useState(null);
+
+  const [startTime, setStartTime] = useState(null); // ISO string
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
   const timerRef = useRef(null);
-const [timeOffset, setTimeOffset] = useState(0); // new
-  // ✅ On load, set startTime and base it off server time
-useEffect(() => {
-  const clockIn = auth?.user?.clockInDetails?.clockInTime;
-  const serverNow = auth?.user?.time;
 
-  if (auth?.user?.clockInDetails?.hasClockedIn && clockIn && serverNow) {
-    const start = new Date(clockIn).getTime();
-    const serverNowTime = new Date(serverNow).getTime();
-    const clientNowTime = Date.now();
-    const offset = serverNowTime - clientNowTime;
+  useEffect(() => {
+    const clockIn = auth?.user?.clockInDetails?.clockInTime;
+    const serverNow = auth?.user?.time;
 
-    setStartTime(start);
-    setTimeOffset(offset);
-    setElapsedTime(Math.floor((serverNowTime - start) / 1000));
-  }
+    if (auth?.user?.clockInDetails?.hasClockedIn && clockIn && serverNow) {
+      setStartTime(clockIn); // save as ISO string
+      setElapsedTime(getElapsedSeconds(clockIn, serverNow));
+    }
 
-  setIsBooting(false);
-}, [auth]);
+    setIsBooting(false);
+  }, [auth]);
 
-  // ⏱️ Mutation to clock-in
+  // Clock-in mutation
   const { mutate: clockIn, isPending: isClockingIn } = useMutation({
     mutationFn: async (inTime) => {
-      const response = await axios.post("/api/attendance/clock-in", {
+      const res = await axios.post("/api/attendance/clock-in", {
         inTime,
         entryType: "web",
       });
-      return response.data;
+      return res.data;
     },
     onSuccess: () => toast.success("Clocked in successfully!"),
     onError: () => toast.error("Clock in failed."),
   });
 
-  // ⏱️ Mutation to clock-out
+  // Clock-out mutation
   const { mutate: clockOut, isPending: isClockingOut } = useMutation({
     mutationFn: async (outTime) => {
-      const response = await axios.patch("/api/attendance/clock-out", {
+      const res = await axios.patch("/api/attendance/clock-out", {
         outTime,
       });
-      return response.data;
+      return res.data;
     },
     onSuccess: () => {
       toast.success("Clocked out successfully!");
@@ -60,25 +55,23 @@ useEffect(() => {
     onError: () => toast.error("Clock out failed."),
   });
 
-  // ⏱️ Timer logic
-useEffect(() => {
-  if (startTime !== null) {
-    timerRef.current = setInterval(() => {
-      const clientNow = Date.now();
-      const adjustedNow = clientNow + timeOffset;
-      const secondsElapsed = Math.floor((adjustedNow - startTime) / 1000);
-      setElapsedTime(secondsElapsed);
-    }, 1000);
-  } else {
-    clearInterval(timerRef.current);
-  }
+  // Timer effect
+  useEffect(() => {
+    if (startTime) {
+      timerRef.current = setInterval(() => {
+        const now = new Date().toISOString(); // always in ISO format
+        setElapsedTime(getElapsedSeconds(startTime, now));
+      }, 1000);
+    } else {
+      clearInterval(timerRef.current);
+    }
 
-  return () => clearInterval(timerRef.current);
-}, [startTime, timeOffset]);
+    return () => clearInterval(timerRef.current);
+  }, [startTime]);
 
   const handleStart = () => {
     const now = new Date().toISOString();
-    setStartTime(new Date(now).getTime());
+    setStartTime(now);
     clockIn(now);
   };
 
@@ -96,10 +89,8 @@ useEffect(() => {
 
   if (isBooting) {
     return (
-      <div className="flex items-center justify-center h-48">
-        <span className="text-sm text-gray-500">
-          Loading attendance state...
-        </span>
+      <div className="flex justify-center items-center h-40">
+        <span className="text-sm text-gray-600">Loading attendance...</span>
       </div>
     );
   }
@@ -110,7 +101,7 @@ useEffect(() => {
         Clock In / Out Attendance
       </span>
 
-      <div className="text-lg text-content font-medium">
+      <div className="text-lg font-medium">
         {startTime
           ? `Time Elapsed: ${formatElapsedTime(elapsedTime)}`
           : "Not Clocked In"}
@@ -118,7 +109,7 @@ useEffect(() => {
 
       <button
         onClick={startTime ? handleStop : handleStart}
-        className="hover:scale-105 transition-all h-40 w-40 rounded-full text-center bg-primary text-white flex justify-center items-center"
+        className="h-40 w-40 rounded-full bg-primary text-white flex justify-center items-center hover:scale-105 transition-all"
         disabled={isClockingIn || isClockingOut}
       >
         {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"}
