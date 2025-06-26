@@ -92,7 +92,7 @@ const uploadCompanyDocument = async (req, res, next) => {
   }
 };
 const updateCompanyDocument = async (req, res, next) => {
-  const { newName, docObjectId } = req.body; // updated: use _id
+  const { newName, documentId } = req.body; // updated: use _id
   const user = req.user;
 
   try {
@@ -111,7 +111,7 @@ const updateCompanyDocument = async (req, res, next) => {
       const result = await Company.updateOne(
         {
           _id: companyId,
-          [`${path}._id`]: docObjectId, // match using the ObjectId of the embedded doc
+          [`${path}._id`]: documentId, // match using the ObjectId of the embedded doc
         },
         {
           $set: {
@@ -141,7 +141,7 @@ const updateCompanyDocument = async (req, res, next) => {
 
 const deleteCompanyDocument = async (req, res, next) => {
   const user = req.user;
-  const { docObjectId } = req.body; // Use MongoDB _id
+  const { documentId } = req.body; // Use MongoDB _id
 
   try {
     const foundUser = await User.findById(user)
@@ -165,7 +165,7 @@ const deleteCompanyDocument = async (req, res, next) => {
     for (const field of docFields) {
       const docArray = company[field];
 
-      const doc = docArray.find((doc) => doc._id.toString() === docObjectId);
+      const doc = docArray.find((doc) => doc._id.toString() === documentId);
       if (doc) {
         doc.isActive = false;
         found = true;
@@ -345,7 +345,7 @@ const uploadDepartmentDocument = async (req, res, next) => {
 };
 
 const updateDepartmentDocument = async (req, res, next) => {
-  const { newName, docObjectId } = req.body;
+  const { newName, documentId } = req.body;
   const userId = req.user;
 
   try {
@@ -367,7 +367,7 @@ const updateDepartmentDocument = async (req, res, next) => {
     for (const dept of company.selectedDepartments) {
       // Try to find a matching SOP
       const sopDoc = dept.sop?.find(
-        (doc) => doc._id.toString() === docObjectId
+        (doc) => doc._id.toString() === documentId
       );
       if (sopDoc) {
         sopDoc.name = newName;
@@ -378,7 +378,7 @@ const updateDepartmentDocument = async (req, res, next) => {
 
       // Try to find a matching Policy
       const policyDoc = dept.policies?.find(
-        (doc) => doc._id.toString() === docObjectId
+        (doc) => doc._id.toString() === documentId
       );
       if (policyDoc) {
         policyDoc.name = newName;
@@ -405,7 +405,7 @@ const updateDepartmentDocument = async (req, res, next) => {
 
 const deleteDepartmentDocument = async (req, res, next) => {
   const user = req.user;
-  const { docObjectId } = req.body; // Use the document's ObjectId
+  const { documentId } = req.body; // Use the document's ObjectId
 
   try {
     const foundUser = await User.findById(user)
@@ -429,7 +429,7 @@ const deleteDepartmentDocument = async (req, res, next) => {
     for (let dept of company.selectedDepartments) {
       // Mark SOP doc as inactive by _id
       const sopDoc = dept.sop?.find(
-        (doc) => doc._id.toString() === docObjectId
+        (doc) => doc._id.toString() === documentId
       );
       if (sopDoc) {
         sopDoc.isActive = false;
@@ -440,7 +440,7 @@ const deleteDepartmentDocument = async (req, res, next) => {
 
       // Mark Policy doc as inactive by _id
       const policyDoc = dept.policies?.find(
-        (doc) => doc._id.toString() === docObjectId
+        (doc) => doc._id.toString() === documentId
       );
       if (policyDoc) {
         policyDoc.isActive = false;
