@@ -174,6 +174,7 @@ const SopUpload = () => {
               label: "Delete",
               onClick: () => {
                 setModalType("delete");
+                setSelectedSop(params.data)
                 setOpenModal(true);
               },
             },
@@ -302,7 +303,7 @@ const SopUpload = () => {
         )}
 
         {modalType === "delete" && (
-          <div className="border-default border-borderGray rounded-xl flex flex-col gap-4">
+          <div className="border-default border-borderGray rounded-xl flex flex-col gap-4 p-4">
             <div>
               <span>Delete {selectedSop?.name} ?</span>
             </div>
@@ -316,7 +317,7 @@ const SopUpload = () => {
               />
               <DangerButton
                 title={"Delete"}
-                handleSubmit={handleDelete(selectedSop)}
+                handleSubmit={()=>handleDelete(selectedSop)}
               />
             </div>
           </div>
