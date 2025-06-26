@@ -8,123 +8,82 @@ const csvParser = require("csv-parser");
 const AttendanceCorrection = require("../models/hr/AttendanceCorrection");
 
 const clockIn = async (req, res, next) => {
-  const { user, ip, company } = req;
+  const { user, company } = req;
   const { inTime, entryType } = req.body;
-  const logPath = "hr/hrLog";
-  const logAction = "Clock In";
-  const logSourceKey = "attendance";
 
   try {
     if (!inTime || !entryType) {
-      throw new CustomError(
-        "All fields are required",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "All fields are required" });
     }
 
     const clockInTime = new Date(inTime);
-    const currDate = new Date();
-
-    // if (clockInTime.getDate() !== currDate.getDate()) {
-    //   throw new CustomError(
-    //     "Please select present date",
-    //     logPath,
-    //     logAction,
-    //     logSourceKey
-    //   );
-    // }
 
     if (isNaN(clockInTime.getTime())) {
-      throw new CustomError(
-        "Invalid date format",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Invalid date format" });
     }
 
     // Check if the user has already clocked in today
     const attendances = await Attendance.find({ user: user._id });
     const todayClockInExists = attendances.some((attendance) => {
       const attendanceTime = new Date(attendance.inTime);
-      return attendanceTime.getDate() === clockInTime.getDate();
+      return (
+        attendanceTime.getDate() === clockInTime.getDate() &&
+        attendanceTime.getMonth() === clockInTime.getMonth() &&
+        attendanceTime.getFullYear() === clockInTime.getFullYear()
+      );
     });
 
     if (todayClockInExists) {
-      throw new CustomError(
-        "Cannot clock in for the day again",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res
+        .status(400)
+        .json({ message: "Cannot clock in for the day again" });
     }
 
     const newAttendance = new Attendance({
       inTime: clockInTime,
       entryType,
-      user: user,
+      user,
       company,
     });
 
-    const savedAttendance = await newAttendance.save();
-
-    // Log the successful clock-in
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Clock in successful",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: savedAttendance._id,
-      changes: {
-        inTime: clockInTime,
-        entryType,
-      },
-    });
+    const savedAttandance = await newAttendance.save();
+    if (savedAttandance) {
+      await UserData.findOneAndUpdate(
+        { _id: user },
+        {
+          $set: {
+            "clockInDetails.hasClockedIn": true,
+            "clockInDetails.clockInTime": clockInTime,
+          },
+        }
+      )
+        .lean()
+        .exec();
+    }
 
     return res.status(201).json({ message: "You clocked in" });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
-    }
+    console.error("Clock-in error:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
 
 const clockOut = async (req, res, next) => {
-  const { user, ip, company } = req;
+  const { user, company } = req;
   const { outTime } = req.body;
-  const logPath = "hr/HrLog";
-  const logAction = "Clock Out";
-  const logSourceKey = "attendance";
 
   try {
     if (!outTime) {
-      throw new CustomError(
-        "All fields are required",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "All fields are required" });
     }
 
     const clockOutTime = new Date(outTime);
     const currDate = new Date();
+
     if (isNaN(clockOutTime.getTime())) {
-      throw new CustomError(
-        "Invalid date format",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Invalid date format" });
     }
 
     // Retrieve the latest attendance record for the user
@@ -133,62 +92,45 @@ const clockOut = async (req, res, next) => {
     });
 
     if (!attendance) {
-      throw new CustomError(
-        "No attendance record exists",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(404).json({ message: "No attendance record exists" });
     }
-    const isSameDay = clockOutTime.getDate() - currDate.getDate() === 0;
+
+    const isSameDay =
+      clockOutTime.getDate() === currDate.getDate() &&
+      clockOutTime.getMonth() === currDate.getMonth() &&
+      clockOutTime.getFullYear() === currDate.getFullYear();
+
     if (!isSameDay) {
-      throw new CustomError(
-        "Please select present date",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Please select present date" });
     }
 
     if (attendance.outTime) {
-      throw new CustomError(
-        "Already clocked out",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Already clocked out" });
     }
 
     // Update the attendance record with outTime
     attendance.outTime = clockOutTime;
-    await attendance.save();
-
-    // Log the successful clock out
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Clock out successful",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: attendance._id,
-      changes: {
-        inTime: attendance.inTime,
-        outTime: clockOutTime,
-      },
-    });
+    const updatedAttendance = await attendance.save();
+    if (updatedAttendance) {
+      await UserData.findOneAndUpdate(
+        { _id: user },
+        {
+          $set: {
+            "clockInDetails.hasClockedIn": false,
+            "clockInDetails.clockInTime": null,
+          },
+        }
+      )
+        .lean()
+        .exec();
+    }
 
     return res.status(200).json({ message: "You clocked out" });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
-    }
+    console.error("Clock-out error:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
 
