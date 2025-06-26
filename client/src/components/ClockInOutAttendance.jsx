@@ -9,7 +9,7 @@ const ClockInOutAttendance = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
 
-  const [startTime, setStartTime] = useState(null); // ISO string
+  const [startTime, setStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [offset, setOffset] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
@@ -49,10 +49,15 @@ const ClockInOutAttendance = () => {
         inTime,
         entryType: "web",
       });
-      return res.data;
+      return { data: res.data, inTime }; // Return both server response and time
     },
-    onSuccess: () => toast.success("Clocked in successfully!"),
-    onError: () => toast.error("Clock in failed."),
+    onSuccess: ({ data, inTime }) => {
+      toast.success("Clocked in successfully!");
+      setStartTime(inTime);
+      setOffset(0); // start fresh
+      setElapsedTime(getElapsedSecondsWithOffset(inTime, 0));
+    },
+    onError: (error) => toast.error(error.response.data.message),
   });
 
   const { mutate: clockOut, isPending: isClockingOut } = useMutation({
@@ -68,14 +73,12 @@ const ClockInOutAttendance = () => {
       setElapsedTime(0);
       setOffset(0);
     },
-    onError: () => toast.error("Clock out failed."),
+    onError: (error) => toast.error(error.response.data.message),
   });
 
   const handleStart = () => {
     const now = new Date().toISOString();
-    setStartTime(now);
-    setOffset(0); // reset offset; this session starts fresh
-    clockIn(now);
+    clockIn(now); // Only call the API, don't start timer yet
   };
 
   const handleStop = () => {

@@ -75,6 +75,14 @@ const companySchema = new mongoose.Schema({
             type: Boolean,
             default: false,
           },
+          createdAt: {
+            type: Date,
+            default: Date.now,
+          },
+          updatedAt: {
+            type: Date,
+            default: null,
+          },
         },
       ],
       sop: [
@@ -98,6 +106,14 @@ const companySchema = new mongoose.Schema({
           isDeleted: {
             type: Boolean,
             default: false,
+          },
+          createdAt: {
+            type: Date,
+            default: Date.now,
+          },
+          updatedAt: {
+            type: Date,
+            default: null,
           },
         },
       ],
@@ -282,6 +298,14 @@ const companySchema = new mongoose.Schema({
         type: Boolean,
         default: false,
       },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+      updatedAt: {
+        type: Date,
+        default: null,
+      },
     },
   ],
   sop: [
@@ -306,6 +330,14 @@ const companySchema = new mongoose.Schema({
         type: Boolean,
         default: false,
       },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+      updatedAt: {
+        type: Date,
+        default: null,
+      },
     },
   ],
   agreements: [
@@ -325,6 +357,14 @@ const companySchema = new mongoose.Schema({
       isActive: {
         type: Boolean,
         default: true,
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+      updatedAt: {
+        type: Date,
+        default: null,
       },
     },
   ],
