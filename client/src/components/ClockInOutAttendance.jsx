@@ -96,30 +96,62 @@ const ClockInOutAttendance = () => {
   if (isBooting) {
     return (
       <div className="flex justify-center items-center h-40">
-        <span className="text-sm text-gray-600">Loading attendance...</span>
+        <span className="text-content text-gray-600">Loading attendance...</span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 p-4 border rounded-md w-full max-w-md mx-auto shadow">
-      <span className="text-title font-pmedium text-primary">
-        Clock In / Out Attendance
-      </span>
+    <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
+      <div className="grid grid-cols-4 gap-4">
+        <div className="col-span-2 flex justify-center items-center flex-col">
+          <div className="text-subtitle text-primary font-pmedium font-medium mb-4">
+            {startTime
+              ? `Time Elapsed: ${formatElapsedTime(elapsedTime)}`
+              : "Not Clocked In"}
+          </div>
 
-      <div className="text-lg font-medium">
-        {startTime
-          ? `Time Elapsed: ${formatElapsedTime(elapsedTime)}`
-          : "Not Clocked In"}
+          <button
+            onClick={startTime ? handleStop : handleStart}
+            className={`h-40 w-40 rounded-full ${startTime ? "bg-[#EB5C45]" : "bg-wonoGreen  transition-all"}  text-white flex justify-center items-center hover:scale-105`}
+            disabled={isClockingIn || isClockingOut}
+          >
+            {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"}
+          </button>
+        </div>
+        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700">
+          <div className="font-semibold text-base text-gray-900">
+            Clock-in Details
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-muted">Status:</span>
+            <span className="font-medium">
+              {auth?.user?.clockInDetails?.hasClockedIn
+                ? "Clocked In"
+                : "Not Clocked In"}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-muted">Clock-in Time:</span>
+            <span className="font-medium">
+              {auth?.user?.clockInDetails?.clockInTime
+                ? new Date(
+                    auth.user.clockInDetails.clockInTime
+                  ).toLocaleString()
+                : "—"}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-muted">Elapsed Time:</span>
+            <span className="font-medium">
+              {startTime ? formatElapsedTime(elapsedTime) : "—"}
+            </span>
+          </div>
+        </div>
       </div>
-
-      <button
-        onClick={startTime ? handleStop : handleStart}
-        className="h-40 w-40 rounded-full bg-primary text-white flex justify-center items-center hover:scale-105 transition-all"
-        disabled={isClockingIn || isClockingOut}
-      >
-        {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"}
-      </button>
     </div>
   );
 };

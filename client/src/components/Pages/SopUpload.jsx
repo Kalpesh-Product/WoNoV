@@ -191,7 +191,7 @@ const SopUpload = () => {
               },
             },
             {
-              label: "Delete",
+              label: "Mark As Inactive",
               onClick: () => {
                 setModalType("delete");
                 setSelectedSop(params.data);
@@ -239,7 +239,7 @@ const SopUpload = () => {
             ? "Add SOP"
             : modalType === "edit"
             ? "Edit SOP"
-            : "Delete SOP"
+            : "Mark SOP As Inactive"
         }`}
       >
         {modalType === "add" && (
@@ -325,7 +325,7 @@ const SopUpload = () => {
         {modalType === "delete" && (
           <div className="border-default border-borderGray rounded-xl flex flex-col gap-4 p-4">
             <div>
-              <span>Delete {selectedSop?.name} ?</span>
+              <span>Mark {selectedSop?.name} as Inactive ?</span>
             </div>
             <div className="flex justify-end gap-4 items-center">
               <SecondaryButton
@@ -336,7 +336,7 @@ const SopUpload = () => {
                 }}
               />
               <DangerButton
-                title={"Delete"}
+                title={"Confirm"}
                 handleSubmit={() => handleDelete(selectedSop)}
               />
             </div>
