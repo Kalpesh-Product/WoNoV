@@ -48,7 +48,13 @@ const clockIn = async (req, res, next) => {
 
     const savedAttandance = await newAttendance.save();
     if (savedAttandance) {
-      await UserData.findOneAndUpdate({ _id: user }, { hasClockedIn: true })
+      await UserData.findOneAndUpdate(
+        { _id: user },
+        {
+          "clockInDetails.hasClockedIn": true,
+          "clockInDetails.clockInTime": clockInTime,
+        }
+      )
         .lean()
         .exec();
     }
@@ -104,7 +110,13 @@ const clockOut = async (req, res, next) => {
     attendance.outTime = clockOutTime;
     const updatedAttendance = await attendance.save();
     if (updatedAttendance) {
-      await UserData.findOneAndUpdate({ _id: user }, { hasClockedIn: false })
+      await UserData.findOneAndUpdate(
+        { _id: user },
+        {
+          "clockInDetails.hasClockedIn": false,
+          "clockInDetails.clockInTime": null,
+        }
+      )
         .lean()
         .exec();
     }
