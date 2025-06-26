@@ -368,6 +368,34 @@ const companySchema = new mongoose.Schema({
       },
     },
   ],
+  templates: [
+    {
+      name: {
+        type: String,
+        required: true,
+      },
+      documentLink: {
+        type: String,
+        required: true,
+      },
+      documentId: {
+        type: String,
+        required: true,
+      },
+      isActive: {
+        type: Boolean,
+        default: true,
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+      updatedAt: {
+        type: Date,
+        default: null,
+      },
+    },
+  ],
 
   complianceDocuments: [
     {
