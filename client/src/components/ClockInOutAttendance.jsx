@@ -15,7 +15,7 @@ const ClockInOutAttendance = () => {
   // ✅ On load, set startTime and base it off server time
   useEffect(() => {
     const clockIn = auth?.user?.clockInDetails?.clockInTime;
-    const serverNow = auth?.user?.clockInDetails?.serverTimeAtLogin;
+    const serverNow = auth?.user?.time;
 
     if (auth?.user?.clockInDetails?.hasClockedIn && clockIn && serverNow) {
       const start = new Date(clockIn).getTime();
