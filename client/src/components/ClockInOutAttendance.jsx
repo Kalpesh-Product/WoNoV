@@ -7,7 +7,7 @@ import useAuth from "../hooks/useAuth";
 
 const ClockInOutAttendance = () => {
   const axios = useAxiosPrivate();
-  const { auth } = useAuth(); 
+  const { auth } = useAuth();
   const [startTime, setStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
@@ -15,8 +15,13 @@ const ClockInOutAttendance = () => {
 
   // ✅ On load, set startTime from persisted clock-in
   useEffect(() => {
-    if (auth?.user?.hasClockedIn && auth?.user?.clockInTime) {
-      const storedStartTime = new Date(auth.user.clockInTime).toISOString();
+    if (
+      auth?.user?.clockInDetails?.hasClockedIn &&
+      auth?.user?.clockInDetails.clockInTime
+    ) {
+      const storedStartTime = new Date(
+        auth.user?.clockInDetails?.clockInTime
+      ).toISOString();
       setStartTime(storedStartTime);
     }
     setIsBooting(false);
@@ -26,7 +31,7 @@ const ClockInOutAttendance = () => {
   const { mutate: clockIn, isPending: isClockingIn } = useMutation({
     mutationFn: async (startTime) => {
       const response = await axios.post("/api/attendance/clock-in", {
-        inTime : startTime,
+        inTime: startTime,
         entryType: "web",
       });
       return response.data;
@@ -38,8 +43,8 @@ const ClockInOutAttendance = () => {
   // ⏱️ Mutation to clock-out
   const { mutate: clockOut, isPending: isClockingOut } = useMutation({
     mutationFn: async (endTime) => {
-      const response = await axios.post("/api/attendance/clock-out", {
-        endTime,
+      const response = await axios.patch("/api/attendance/clock-out", {
+        outTime: endTime,
       });
       return response.data;
     },
@@ -86,7 +91,9 @@ const ClockInOutAttendance = () => {
   if (isBooting) {
     return (
       <div className="flex items-center justify-center h-48">
-        <span className="text-sm text-gray-500">Loading attendance state...</span>
+        <span className="text-sm text-gray-500">
+          Loading attendance state...
+        </span>
       </div>
     );
   }
@@ -103,10 +110,10 @@ const ClockInOutAttendance = () => {
           : "Not Clocked In"}
       </div>
 
-      <div className="h-10 w-10 p-20 rounded-full text-center bg-primary text-white flex justify-center items-center">
+      <div className="">
         <button
           onClick={startTime ? handleStop : handleStart}
-          className="hover:scale-105 transition-all"
+          className="hover:scale-105 transition-all h-40 w-40  rounded-full text-center bg-primary text-white flex justify-center items-center"
           disabled={isClockingIn || isClockingOut}
         >
           {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"}
