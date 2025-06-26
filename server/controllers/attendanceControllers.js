@@ -33,20 +33,24 @@ const clockIn = async (req, res, next) => {
     }
 
     // Check if the user has already clocked in today
-    const attendances = await Attendance.find({ user: user._id });
-    const todayClockInExists = attendances.some((attendance) => {
-      const attendanceTime = new Date(attendance.inTime);
-      return (
-        attendanceTime.getDate() === clockInTime.getDate() &&
-        attendanceTime.getMonth() === clockInTime.getMonth() &&
-        attendanceTime.getFullYear() === clockInTime.getFullYear()
-      );
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingToday = await Attendance.findOne({
+      user: user._id,
+      inTime: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
     });
 
-    if (todayClockInExists) {
+    if (existingToday) {
       return res
         .status(400)
-        .json({ message: "Cannot clock in for the day again" });
+        .json({ message: "You have already clocked in today" });
     }
 
     const newAttendance = new Attendance({
