@@ -11,6 +11,7 @@ import {
   FormControl,
   Avatar,
   CircularProgress,
+  Chip,
 } from "@mui/material";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
@@ -249,8 +250,8 @@ const UserDetails = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-md">
-        <div className="flex gap-6 items-center">
+      <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-xl">
+        <div className="flex gap-6 items-center w-full">
           <div className="w-40 h-40">
             {/* <Avatar
                     style={{
@@ -275,7 +276,7 @@ const UserDetails = () => {
                 user.name?.charAt(0)}
             </Avatar>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className=" w-96 flex flex-col gap-1">
             <span className="text-title flex items-center gap-3">
               {user.name}{" "}
             </span>
@@ -353,26 +354,44 @@ const UserDetails = () => {
               </div>
             </div>
           </div>
+          <div className="h-40  flex flex-col justify-start items-start  ">
+            <div className="">
+              <Chip
+                label={user.status ? "Active" : "Inactive"}
+                sx={{
+                  backgroundColor: user.status ? "green" : "grey",
+                  color: "white",
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
-      {!editMode ? (
-        <div className="flex justify-end">
-          <PrimaryButton
-            title={"Edit"}
-            handleSubmit={() => {
-              if (userDetails) reset(userDetails);
-              setEditMode(true);
-            }}
-          />
+      <div className="flex justify-between">
+        <div>
+          <span className="text-title font-pmedium text-primary uppercase">
+            My Profile
+          </span>
         </div>
-      ) : (
-        <div className="flex justify-end">
-          <SecondaryButton
-            title={"Cancel"}
-            handleSubmit={() => setEditMode(false)}
-          />
-        </div>
-      )}
+        {!editMode ? (
+          <div className="flex justify-end">
+            <PrimaryButton
+              title={"Edit"}
+              handleSubmit={() => {
+                if (userDetails) reset(userDetails);
+                setEditMode(true);
+              }}
+            />
+          </div>
+        ) : (
+          <div className="flex justify-end">
+            <SecondaryButton
+              title={"Cancel"}
+              handleSubmit={() => setEditMode(false)}
+            />
+          </div>
+        )}
+      </div>
 
       <PageFrame>
         <form onSubmit={handleSubmit(onSubmit)}>

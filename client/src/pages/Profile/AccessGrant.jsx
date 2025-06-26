@@ -4,6 +4,7 @@ import PermissionsTable from "../../components/PermissionsTable";
 import useAuth from "../../hooks/useAuth";
 import { toast } from "sonner";
 import Abrar from "../../assets/abrar.jpeg";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const AccessGrant = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -354,7 +355,7 @@ const AccessGrant = () => {
   ];
 
   const handlePermissionUpdate = (updatedPermissions) => {
-  //asdasd
+    //asdasd
   };
 
   const handleSavePermissions = () => {
@@ -363,149 +364,158 @@ const AccessGrant = () => {
   };
 
   return (
-    <div className="bg-white">
-      <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary uppercase">
-          My permissions
-        </span>
-      </div>
-      {/* User Info */}
-      <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-md">
-        <div className="flex gap-6 items-center">
-          <div className="w-40 h-40">
-            <Avatar
-              style={{
-                backgroundColor: user.avatarColor,
-                width: "100%",
-                height: "100%",
-                fontSize: "5rem",
-              }}
-              // src={user.email === "abrar@biznest.co.in" ? Abrar : undefined}>
-            >
-              {auth?.user?.profilePicture?.url ? (
-                // <img src={Abrar} alt="" />
-                <img src={auth?.user?.profilePicture?.url} alt="" />
-              ) : (
-                auth.user.firstName.charAt(0)
-              )}
-            </Avatar>
-          </div>
-          <div className="flex flex-col gap-6">
-            <span className="text-title flex items-center gap-3">
-              {user.name}{" "}
-              {/* <Chip
+    <PageFrame>
+      <div className="bg-white">
+        <div className="flex items-center justify-between pb-4">
+          <span className="text-title font-pmedium text-primary uppercase">
+            My permissions
+          </span>
+        </div>
+        <hr />
+        {/* User Info */}
+        <div className="flex items-center gap-8 w-full  p-4 rounded-md">
+          <div className="flex gap-6 items-center">
+            <div className="w-40 h-40">
+              <Avatar
+                style={{
+                  backgroundColor: user.avatarColor,
+                  width: "100%",
+                  height: "100%",
+                  fontSize: "5rem",
+                }}
+                // src={user.email === "abrar@biznest.co.in" ? Abrar : undefined}>
+              >
+                {auth?.user?.profilePicture?.url ? (
+                  // <img src={Abrar} alt="" />
+                  <img src={auth?.user?.profilePicture?.url} alt="" />
+                ) : (
+                  auth.user.firstName.charAt(0)
+                )}
+              </Avatar>
+            </div>
+            <div className="w-96 flex flex-col gap-6">
+              <span className="text-title flex items-center gap-3">
+                {user.name}{" "}
+                {/* <Chip
                 label={user.status ? "Active" : "Inactive"}
                 sx={{
                   backgroundColor: user.status ? "green" : "grey",
                   color: "white",
                 }}
               /> */}
-            </span>
-            <span className="text-subtitle">{user.designation}</span>
-          </div>
-        </div>
-        <div className="flex flex-col gap-4 flex-1">
-          <div className="flex gap-2">
-            <div className="flex flex-col gap-4 text-gray-600">
-              <span className="capitalize">Email : </span>
-              <span className="capitalize">Phone: </span>
-              <span className="capitalize">Department : </span>
-              <span className="capitalize">Work Location : </span>
-            </div>
-            <div className="flex flex-col gap-4 text-gray-500">
-              <span>{user.email}</span>
-              <span>{auth.user.phone}</span>
-              <span>{auth.user.departments.map((item) => item.name)[0]}</span>
-              <span>{user.workLocation}</span>
+              </span>
+              <span className="text-subtitle">{user.designation}</span>
             </div>
           </div>
-        </div>
-        <div className="h-40  flex flex-col justify-start items-start  ">
-          <div className="">
-            <Chip
-              label={user.status ? "Active" : "Inactive"}
-              sx={{
-                backgroundColor: user.status ? "green" : "grey",
-                color: "white",
-              }}
-            />
+          <div className="flex flex-col gap-4 flex-1">
+            <div className="flex gap-2">
+              <div className="flex flex-col gap-4 text-gray-600">
+                <span className="capitalize">Email : </span>
+                <span className="capitalize">Phone: </span>
+                <span className="capitalize">Department : </span>
+                <span className="capitalize">Work Location : </span>
+              </div>
+              <div className="flex flex-col gap-4 text-gray-500">
+                <span>{user.email}</span>
+                <span>{auth.user.phone}</span>
+                <span>{auth.user.departments.map((item) => item.name)[0]}</span>
+                <span>{user.workLocation}</span>
+              </div>
+            </div>
           </div>
+          <div className="h-40  flex flex-col justify-start items-start  ">
+            <div className="">
+              <Chip
+                label={user.status ? "Active" : "Inactive"}
+                sx={{
+                  backgroundColor: user.status ? "green" : "grey",
+                  color: "white",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+        <hr />
+        {/* Department Cards */}
+        <div className="mt-6">
+          <h2 className="text-title font-pmedium">Grant Access To</h2>
+          <br />
+          <br />
+          <div className="font-bold">Department Modules</div>
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            {departments.map((department) => (
+              <div
+                key={department.departmentId}
+                className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
+                  selectedDepartment?.departmentId === department.departmentId
+                    ? "border-default border-primary"
+                    : ""
+                }`}
+                // onClick={() => setSelectedDepartment(department)}
+              >
+                <span className="text-subtitle">
+                  {department.departmentName}
+                </span>
+              </div>
+            ))}
+          </div>
+          <br />
+          <br />
+          <div className="font-bold">Apps</div>
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            {appsSection.map((department) => (
+              <div
+                key={department.departmentId}
+                className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
+                  selectedDepartment?.departmentId === department.departmentId
+                    ? "border-default border-primary"
+                    : ""
+                }`}
+                // onClick={() => setSelectedDepartment(department)}
+              >
+                <span className="text-subtitle">
+                  {department.departmentName}
+                </span>
+              </div>
+            ))}
+          </div>
+          <br />
+          <br />
+          <div className="font-bold">General</div>
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            {generalSection.map((department) => (
+              <div
+                key={department.departmentId}
+                className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
+                  selectedDepartment?.departmentId === department.departmentId
+                    ? "border-default border-primary"
+                    : ""
+                }`}
+                // onClick={() => setSelectedDepartment(department)}
+              >
+                <span className="text-subtitle">
+                  {department.departmentName}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Permissions Table */}
+          {selectedDepartment && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold">
+                {selectedDepartment.departmentName} Permissions
+              </h3>
+              <PermissionsTable
+                key={selectedDepartment.departmentId}
+                modules={selectedDepartment.modules}
+                onPermissionChange={handlePermissionUpdate}
+              />
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Department Cards */}
-      <div className="mt-6">
-        <h2 className="text-title font-pmedium">Grant Access To</h2>
-        <br />
-        <br />
-        <div className="font-bold">Department Modules</div>
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          {departments.map((department) => (
-            <div
-              key={department.departmentId}
-              className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
-                selectedDepartment?.departmentId === department.departmentId
-                  ? "border-default border-primary"
-                  : ""
-              }`}
-              // onClick={() => setSelectedDepartment(department)}
-            >
-              <span className="text-subtitle">{department.departmentName}</span>
-            </div>
-          ))}
-        </div>
-        <br />
-        <br />
-        <div className="font-bold">Apps</div>
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          {appsSection.map((department) => (
-            <div
-              key={department.departmentId}
-              className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
-                selectedDepartment?.departmentId === department.departmentId
-                  ? "border-default border-primary"
-                  : ""
-              }`}
-              // onClick={() => setSelectedDepartment(department)}
-            >
-              <span className="text-subtitle">{department.departmentName}</span>
-            </div>
-          ))}
-        </div>
-        <br />
-        <br />
-        <div className="font-bold">General</div>
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          {generalSection.map((department) => (
-            <div
-              key={department.departmentId}
-              className={`cursor-not-allowed rounded-md shadow-md transition-all duration-200 p-4 ${
-                selectedDepartment?.departmentId === department.departmentId
-                  ? "border-default border-primary"
-                  : ""
-              }`}
-              // onClick={() => setSelectedDepartment(department)}
-            >
-              <span className="text-subtitle">{department.departmentName}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Permissions Table */}
-        {selectedDepartment && (
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold">
-              {selectedDepartment.departmentName} Permissions
-            </h3>
-            <PermissionsTable
-              key={selectedDepartment.departmentId}
-              modules={selectedDepartment.modules}
-              onPermissionChange={handlePermissionUpdate}
-            />
-          </div>
-        )}
-      </div>
-    </div>
+    </PageFrame>
   );
 };
 
