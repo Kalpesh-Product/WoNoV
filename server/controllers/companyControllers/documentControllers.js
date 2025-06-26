@@ -1,6 +1,6 @@
 const Company = require("../../models/hr/Company");
 const User = require("../../models/hr/UserData");
-const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
+const { handleDocumentUpload, handleFileDelete } = require("../../config/cloudinaryConfig");
 const { PDFDocument } = require("pdf-lib");
 const path = require("path");
 
