@@ -46,6 +46,15 @@ const login = async (req, res, next) => {
     if (!isPasswordValid) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
+    let currentTime = new Date();
+
+    let currentOffset = currentTime.getTimezoneOffset();
+
+    let ISTOffset = 330; // IST offset UTC +5:30
+
+    let ISTTime = new Date(
+      currentTime.getTime() + (ISTOffset + currentOffset) * 60000
+    );
 
     const accessToken = jwt.sign(
       {
@@ -79,8 +88,12 @@ const login = async (req, res, next) => {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
     delete userExists.password;
+    const updatedUser = {
+      ...userExists,
+      time: ISTTime,
+    };
 
-    res.status(200).json({ user: userExists, accessToken });
+    res.status(200).json({ user: updatedUser, accessToken });
   } catch (error) {
     next(error);
   }

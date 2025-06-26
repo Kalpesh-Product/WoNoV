@@ -33,6 +33,21 @@ const handleRefreshToken = async (req, res, next) => {
       .lean()
       .exec();
 
+    let currentTime = new Date();
+
+    let currentOffset = currentTime.getTimezoneOffset();
+
+    let ISTOffset = 330; // IST offset UTC +5:30
+
+    let ISTTime = new Date(
+      currentTime.getTime() + (ISTOffset + currentOffset) * 60000
+    );
+
+    const updatedUser = {
+      ...userExists,
+      time: ISTTime,
+    };
+
     if (!userExists) {
       return res.sendStatus(403);
     }
@@ -65,7 +80,7 @@ const handleRefreshToken = async (req, res, next) => {
 
         res.json({
           accessToken,
-          user: userExists,
+          user: updatedUser,
         });
       }
     );
