@@ -345,7 +345,7 @@ const uploadDepartmentDocument = async (req, res, next) => {
 };
 
 const updateDepartmentDocument = async (req, res, next) => {
-  const { newName, docObjectId } = req.body; // Use MongoDB document _id
+  const { newName, docObjectId } = req.body;
   const user = req.user;
 
   try {
@@ -360,7 +360,7 @@ const updateDepartmentDocument = async (req, res, next) => {
 
     const companyId = foundUser.company._id;
 
-    // Try updating SOP
+    // Update SOP document inside a department
     const sopUpdate = await Company.updateOne(
       {
         _id: companyId,
@@ -374,7 +374,7 @@ const updateDepartmentDocument = async (req, res, next) => {
       },
       {
         arrayFilters: [
-          { "dept.sop._id": docObjectId },
+          { "dept.sop": { $exists: true } }, // ensure sop exists in that dept
           { "doc._id": docObjectId },
         ],
       }
@@ -386,7 +386,7 @@ const updateDepartmentDocument = async (req, res, next) => {
         .json({ message: "SOP document name updated successfully" });
     }
 
-    // Try updating Policies
+    // Update Policy document inside a department
     const policyUpdate = await Company.updateOne(
       {
         _id: companyId,
@@ -400,7 +400,7 @@ const updateDepartmentDocument = async (req, res, next) => {
       },
       {
         arrayFilters: [
-          { "dept.policies._id": docObjectId },
+          { "dept.policies": { $exists: true } },
           { "doc._id": docObjectId },
         ],
       }
@@ -417,6 +417,7 @@ const updateDepartmentDocument = async (req, res, next) => {
     next(error);
   }
 };
+
 
 const deleteDepartmentDocument = async (req, res,next) => {
   const user = req.user;
