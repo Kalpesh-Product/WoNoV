@@ -110,7 +110,7 @@ const SopUpload = () => {
         `/api/company/delete-department-document`,
         {
           data: {
-            docObjectId: selectedSop._id,
+            documentId: selectedSop._id,
             departmentId: department?._id,
           },
         }
