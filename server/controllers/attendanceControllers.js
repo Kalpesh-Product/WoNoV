@@ -404,7 +404,7 @@ const getAttendanceRequests = async (req, res, next) => {
 
 const correctAttendance = async (req, res, next) => {
   const { user, ip, company } = req;
-  const { targetedDay, inTime, outTime, startBreak, endBreak, empId } =
+  const { targetedDay, inTime, outTime, startBreak, endBreak, empId, reason } =
     req.body;
   const logPath = "hr/HrLog";
   const logAction = "Correct Attendance";
@@ -553,6 +553,7 @@ const correctAttendance = async (req, res, next) => {
       originalOutTime: foundDate.outTime || null,
       originalStartBreak: foundDate.startBreak || null,
       originalEndBreak: foundDate.endBreak || null,
+      reason,
       user: foundUser._id,
       company: company,
     });
