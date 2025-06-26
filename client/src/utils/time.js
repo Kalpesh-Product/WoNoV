@@ -4,5 +4,7 @@ export const computeOffset = (serverTime) => {
 
 export const getElapsedSecondsWithOffset = (startTime, offset) => {
   const now = Date.now() + offset;
-  return Math.floor((now - new Date(startTime).getTime()) / 1000);
+  const diff = now - new Date(startTime).getTime();
+  return Math.max(Math.floor(diff / 1000), 0); // ensure it's not negative
 };
+
