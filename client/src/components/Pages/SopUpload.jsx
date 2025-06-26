@@ -106,11 +106,11 @@ const SopUpload = () => {
   const { mutate: deleteSop, isPending: isDeletePending } = useMutation({
     mutationFn: async (data) => {
       console.log("data for delete", data);
-      const response = await axios.delete(
+      const response = await axios.patch(
         `/api/company/delete-department-document`,
         {
           data: {
-            documentId: selectedSop._id,
+            documentId: selectedSop?._id,
             departmentId: department?._id,
           },
         }
