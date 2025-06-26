@@ -1511,6 +1511,10 @@ export const routes = createBrowserRouter([
                             element: <AttendanceRequests />,
                             index: true,
                           },
+                          {
+                            path: "completed",
+                            element: <AttendanceCompleted />,
+                          },
                         ],
                       },
                       {
