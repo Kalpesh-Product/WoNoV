@@ -1,11 +1,8 @@
-// utils/time.js
-export function getElapsedSeconds(clockInTime, currentTime) {
-  try {
-    const start = new Date(clockInTime).getTime();
-    const now = new Date(currentTime).getTime();
-    if (isNaN(start) || isNaN(now)) return 0;
-    return Math.floor((now - start) / 1000);
-  } catch (e) {
-    return 0;
-  }
-}
+export const computeOffset = (serverTime) => {
+  return new Date(serverTime).getTime() - Date.now();
+};
+
+export const getElapsedSecondsWithOffset = (startTime, offset) => {
+  const now = Date.now() + offset;
+  return Math.floor((now - new Date(startTime).getTime()) / 1000);
+};
