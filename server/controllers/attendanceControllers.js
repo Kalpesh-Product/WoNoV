@@ -40,7 +40,7 @@ const clockIn = async (req, res, next) => {
     endOfDay.setHours(23, 59, 59, 999);
 
     const existingToday = await Attendance.findOne({
-      user: user._id,
+      user,
       inTime: {
         $gte: startOfDay,
         $lte: endOfDay,

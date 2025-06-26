@@ -2,19 +2,12 @@ const Company = require("../../models/hr/Company");
 const User = require("../../models/hr/UserData");
 const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
 const { PDFDocument } = require("pdf-lib");
-const CustomError = require("../../utils/customErrorlogs");
-const { createLog } = require("../../utils/moduleLogs");
 const path = require("path");
 
 const uploadCompanyDocument = async (req, res, next) => {
-  const logPath = "hr/HrLog";
-  const logAction = "Upload Company Document";
-  const logSourceKey = "companyData";
   const { documentName, type } = req.body;
   const file = req.file;
   const user = req.user;
-  const ip = req.ip;
-  const company = req.company;
 
   if (!file) {
     return res.status(400).json({ message: "No file uploaded" });
@@ -22,26 +15,21 @@ const uploadCompanyDocument = async (req, res, next) => {
 
   try {
     if (!["template", "sop", "policy", "agreement"].includes(type)) {
-      throw new CustomError(
-        "Invalid document type. Allowed values: template, sop, policy, agreement",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({
+        message:
+          "Invalid document type. Allowed values: template, sop, policy, agreement",
+      });
     }
 
     const allowedExtensions = [".pdf", ".doc", ".docx", ".xls", ".xlsx"];
     const extension = path.extname(file.originalname).toLowerCase();
 
     if (!allowedExtensions.includes(extension)) {
-      throw new CustomError(
-        `Unsupported file type. Allowed extensions: ${allowedExtensions.join(
+      return res.status(400).json({
+        message: `Unsupported file type. Allowed extensions: ${allowedExtensions.join(
           ", "
         )}`,
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      });
     }
 
     const foundUser = await User.findById(user)
@@ -50,12 +38,7 @@ const uploadCompanyDocument = async (req, res, next) => {
       .lean();
 
     if (!foundUser?.company) {
-      throw new CustomError(
-        "Company not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(404).json({ message: "Company not found" });
     }
 
     let finalBuffer = file.buffer;
@@ -79,12 +62,7 @@ const uploadCompanyDocument = async (req, res, next) => {
     );
 
     if (!response?.public_id) {
-      throw new CustomError(
-        "Failed to upload document",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(500).json({ message: "Failed to upload document" });
     }
 
     const updateField =
@@ -106,35 +84,117 @@ const uploadCompanyDocument = async (req, res, next) => {
       },
     });
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: `${type.toUpperCase()} uploaded successfully`,
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: foundUser.company._id,
-      changes: {
-        documentName,
-        type,
-        documentLink: response.secure_url,
-        documentId: response.public_id,
-      },
-    });
-
     return res
       .status(200)
       .json({ message: `${type.toUpperCase()} uploaded successfully` });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
+    next(error);
+  }
+};
+const updateCompanyDocument = async (req, res, next) => {
+  const { documentId } = req.params;
+  const { newName } = req.body;
+  const user = req.user;
+
+  try {
+    const foundUser = await User.findById(user)
+      .select("company")
+      .populate("company", "companyName")
+      .lean();
+
+    if (!foundUser?.company) {
+      return res.status(404).json({ message: "Company not found" });
     }
+
+    const updatePaths = ["templates", "sop", "policies", "agreements"];
+    let updated = false;
+
+    for (let path of updatePaths) {
+      const result = await Company.findOneAndUpdate(
+        {
+          _id: foundUser.company._id,
+          [`${path}.documentId`]: documentId,
+        },
+        {
+          $set: {
+            [`${path}.$.name`]: newName,
+          },
+        }
+      );
+
+      if (result) {
+        updated = true;
+        break;
+      }
+    }
+
+    if (!updated) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Document name updated successfully" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const deleteCompanyDocument = async (req, res) => {
+  const { documentId } = req.params;
+  const user = req.user;
+
+  try {
+    const foundUser = await User.findById(user)
+      .select("company")
+      .populate("company", "companyName")
+      .lean();
+
+    if (!foundUser?.company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    // Delete from Cloudinary
+    const cloudRes = await handleFileDelete(documentId);
+    if (cloudRes.result !== "ok") {
+      return res
+        .status(500)
+        .json({ message: "Failed to delete from cloud storage" });
+    }
+
+    // Document arrays to search in
+    const docFields = ["templates", "sop", "policies", "agreements"];
+
+    // Fetch the full company document
+    const company = await Company.findById(foundUser.company._id);
+
+    let found = false;
+
+    for (const field of docFields) {
+      const docArray = company[field];
+
+      const docIndex = docArray.findIndex(
+        (doc) => doc.documentId === documentId
+      );
+      if (docIndex !== -1) {
+        docArray[docIndex].isActive = false;
+        found = true;
+      }
+    }
+
+    if (!found) {
+      return res
+        .status(404)
+        .json({ message: "Document not found in company records" });
+    }
+
+    await company.save();
+
+    return res
+      .status(200)
+      .json({ message: "Document marked as inactive successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -163,40 +223,33 @@ const getCompanyDocuments = async (req, res, next) => {
   }
 };
 
-const uploadDepartmentDocument = async (req, res, next) => {
-  const logPath = "hr/HrLog";
-  const logAction = "Upload Department Document";
-  const logSourceKey = "department";
+const uploadDepartmentDocument = async (req, res) => {
   const { documentName, type } = req.body;
   const file = req.file;
   const user = req.user;
   const { departmentId } = req.params;
-  const ip = req.ip;
-  const company = req.company;
+
+  if (!file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
 
   try {
     if (!["sop", "policy"].includes(type)) {
-      throw new CustomError(
-        "Invalid document type. Allowed values: sop, policy",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({
+        message: "Invalid document type. Allowed values: sop, policy",
+      });
     }
 
     const allowedMimeTypes = [
       "application/pdf",
-      "application/msword", // .doc
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ];
 
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new CustomError(
-        "Invalid file type. Allowed types: PDF, DOC, DOCX",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({
+        message: "Invalid file type. Allowed types: PDF, DOC, DOCX",
+      });
     }
 
     const foundUser = await User.findOne({ _id: user })
@@ -206,12 +259,7 @@ const uploadDepartmentDocument = async (req, res, next) => {
       .exec();
 
     if (!foundUser || !foundUser.company) {
-      throw new CustomError(
-        "User's company not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(404).json({ message: "User's company not found" });
     }
 
     const foundCompany = await Company.findOne({ _id: foundUser.company })
@@ -221,12 +269,7 @@ const uploadDepartmentDocument = async (req, res, next) => {
       .exec();
 
     if (!foundCompany) {
-      throw new CustomError(
-        "Company not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(404).json({ message: "Company not found" });
     }
 
     const department = foundCompany.selectedDepartments.find(
@@ -234,22 +277,18 @@ const uploadDepartmentDocument = async (req, res, next) => {
     );
 
     if (!department) {
-      throw new CustomError(
-        "Department not found in selectedDepartments",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res
+        .status(404)
+        .json({ message: "Department not found in selectedDepartments" });
     }
 
     let processedBuffer = file.buffer;
     const originalFilename = file.originalname;
 
-    // Process PDF: set document title
     if (file.mimetype === "application/pdf") {
       const pdfDoc = await PDFDocument.load(file.buffer);
       pdfDoc.setTitle(
-        file.originalname ? file.originalname.split(".")[0] : "Untitled"
+        originalFilename ? originalFilename.split(".")[0] : "Untitled"
       );
       processedBuffer = await pdfDoc.save();
     }
@@ -261,12 +300,7 @@ const uploadDepartmentDocument = async (req, res, next) => {
     );
 
     if (!response.public_id) {
-      throw new CustomError(
-        "Failed to upload document",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(500).json({ message: "Failed to upload document" });
     }
 
     const updateField =
@@ -293,33 +327,10 @@ const uploadDepartmentDocument = async (req, res, next) => {
     ).exec();
 
     if (!updatedCompany) {
-      throw new CustomError(
-        "Failed to update company document field",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res
+        .status(500)
+        .json({ message: "Failed to update document field" });
     }
-
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: `${type.toUpperCase()} uploaded successfully for ${
-        department.department.name
-      } department`,
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: foundUser.company._id,
-      changes: {
-        documentName,
-        type,
-        documentLink: response.secure_url,
-        documentId: response.public_id,
-      },
-    });
 
     return res.status(200).json({
       message: `${type.toUpperCase()} uploaded successfully for ${
@@ -327,13 +338,165 @@ const uploadDepartmentDocument = async (req, res, next) => {
       } department`,
     });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const updateDepartmentDocument = async (req, res) => {
+  const { documentId } = req.params;
+  const { newName } = req.body;
+  const user = req.user;
+
+  try {
+    const foundUser = await User.findById(user)
+      .select("company")
+      .populate("company", "companyName")
+      .lean();
+
+    if (!foundUser?.company) {
+      return res.status(404).json({ message: "Company not found" });
     }
+
+    const company = await Company.findById(foundUser.company._id).lean();
+
+    if (!company?.selectedDepartments?.length) {
+      return res.status(404).json({ message: "No departments found" });
+    }
+
+    let updated = false;
+
+    for (let i = 0; i < company.selectedDepartments.length; i++) {
+      const dept = company.selectedDepartments[i];
+
+      // Check and update in sop
+      const sopDoc = dept.sop?.find((doc) => doc.documentId === documentId);
+      if (sopDoc) {
+        await Company.updateOne(
+          {
+            _id: company._id,
+            "selectedDepartments.department": dept.department,
+            "selectedDepartments.sop.documentId": documentId,
+          },
+          {
+            $set: {
+              "selectedDepartments.$[dept].sop.$[doc].name": newName,
+            },
+          },
+          {
+            arrayFilters: [
+              { "dept.department": dept.department },
+              { "doc.documentId": documentId },
+            ],
+          }
+        );
+        updated = true;
+        break;
+      }
+
+      // Check and update in policies
+      const policyDoc = dept.policies?.find(
+        (doc) => doc.documentId === documentId
+      );
+      if (policyDoc) {
+        await Company.updateOne(
+          {
+            _id: company._id,
+            "selectedDepartments.department": dept.department,
+            "selectedDepartments.policies.documentId": documentId,
+          },
+          {
+            $set: {
+              "selectedDepartments.$[dept].policies.$[doc].name": newName,
+            },
+          },
+          {
+            arrayFilters: [
+              { "dept.department": dept.department },
+              { "doc.documentId": documentId },
+            ],
+          }
+        );
+        updated = true;
+        break;
+      }
+    }
+
+    if (!updated) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Document name updated successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const deleteDepartmentDocument = async (req, res) => {
+  const { documentId } = req.params;
+  const user = req.user;
+
+  try {
+    const foundUser = await User.findById(user)
+      .select("company")
+      .populate("company", "companyName")
+      .lean();
+
+    if (!foundUser?.company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const company = await Company.findById(foundUser.company._id);
+
+    if (!company?.selectedDepartments?.length) {
+      return res.status(404).json({ message: "No departments found" });
+    }
+
+    let updated = false;
+
+    for (let dept of company.selectedDepartments) {
+      // Mark as inactive in SOP
+      const sopDoc = dept.sop?.find((doc) => doc.documentId === documentId);
+      if (sopDoc) {
+        sopDoc.isActive = false;
+        updated = true;
+        break;
+      }
+
+      // Mark as inactive in Policies
+      const policyDoc = dept.policies?.find(
+        (doc) => doc.documentId === documentId
+      );
+      if (policyDoc) {
+        policyDoc.isActive = false;
+        updated = true;
+        break;
+      }
+    }
+
+    if (!updated) {
+      return res
+        .status(404)
+        .json({ message: "Document not found in departments" });
+    }
+
+    // Save the updated company
+    await company.save();
+
+    // Delete from Cloudinary
+    const cloudRes = await handleFileDelete(documentId);
+    if (cloudRes.result !== "ok") {
+      return res
+        .status(500)
+        .json({ message: "Failed to delete from cloud storage" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Document marked as inactive successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -594,20 +757,6 @@ const getCompanyKyc = async (req, res, next) => {
   }
 };
 
-// const getComplianceDocuments = async (req, res, next) => {
-//   try {
-//     const companyId = req.company;
-//     const company = await Company.findById(companyId).select(
-//       "complianceDocuments"
-//     );
-
-//     if (!company) return res.status(404).json({ message: "Company not found" });
-
-//     res.status(200).json({ data: company.complianceDocuments || [] });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
 const getComplianceDocuments = async (req, res, next) => {
   try {
     const companyId = req.company;
@@ -628,105 +777,6 @@ const getComplianceDocuments = async (req, res, next) => {
     next(error);
   }
 };
-
-// const uploadComplianceDocument = async (req, res, next) => {
-//   try {
-//     const { personName, documentName } = req.body;
-//     const companyId = req.company;
-
-//     if (!companyId || !personName || !documentName) {
-//       return res.status(400).json({
-//         message: "companyId, personName, and documentName are required",
-//       });
-//     }
-
-//     if (!req.file) {
-//       return res.status(400).json({ message: "No file uploaded" });
-//     }
-
-//     const { originalname, buffer } = req.file;
-//     const now = new Date();
-//     let createdDate = now;
-
-//     const company = await Company.findById(companyId);
-//     if (!company) {
-//       return res.status(404).json({ message: "Company not found" });
-//     }
-
-//     let complianceEntries = company.complianceDocuments || [];
-//     let personEntry = complianceEntries.find(
-//       (p) => p.personName === personName
-//     );
-
-//     if (!personEntry) {
-//       personEntry = {
-//         personName,
-//         documents: [],
-//         isActive: true,
-//       };
-//       complianceEntries.push(personEntry);
-//     }
-
-//     // Check if document already exists
-//     const existingDocIndex = personEntry.documents.findIndex(
-//       (doc) => doc.name === documentName
-//     );
-
-//     if (existingDocIndex !== -1) {
-//       const oldDoc = personEntry.documents[existingDocIndex];
-//       if (oldDoc.documentId) {
-//         await handleDocumentDelete(oldDoc.documentId); // optional
-//       }
-//       createdDate = oldDoc.createdDate || now;
-//       personEntry.documents.splice(existingDocIndex, 1); // remove old
-//     }
-
-//     // Upload new file
-//     // uploadResult = await handleDocumentUpload(
-//     //   buffer,
-//     //   `${
-//     //     company.companyName
-//     //   }/compliance/${documentName}/${documentName?.trim()}`,
-//     //   originalname
-//     // );
-//     uploadResult = await handleDocumentUpload(
-//       buffer,
-//       `${company.companyName?.trim()}/compliance/${personName?.trim()}/${documentName?.trim()}`,
-//       originalname
-//     );
-
-//     const newDoc = {
-//       name: documentName,
-//       documentLink: uploadResult.secure_url,
-//       documentId: uploadResult.public_id,
-//       createdDate,
-//       updatedDate: now,
-//     };
-
-//     personEntry.documents.push(newDoc);
-//     uploads.push(newDoc);
-
-//     // Rebuild compliance array (if needed)
-//     const updatedCompliance = complianceEntries.map((entry) =>
-//       entry.personName === personName ? personEntry : entry
-//     );
-
-//     await Company.findByIdAndUpdate(
-//       companyId,
-//       { $set: { complianceDocuments: updatedCompliance } },
-//       { new: true }
-//     );
-//     console.log(companyId);
-//     console.log(updatedCompliance);
-
-//     res.status(200).json({
-//       message: "Compliance document uploaded successfully",
-//       data: newDoc,
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
 
 const uploadComplianceDocument = async (req, res, next) => {
   try {
@@ -808,4 +858,8 @@ module.exports = {
   getCompanyKyc,
   getComplianceDocuments,
   uploadComplianceDocument,
+  updateCompanyDocument,
+  deleteCompanyDocument,
+  updateDepartmentDocument,
+  deleteDepartmentDocument,
 };
