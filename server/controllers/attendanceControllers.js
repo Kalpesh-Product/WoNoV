@@ -51,8 +51,10 @@ const clockIn = async (req, res, next) => {
       await UserData.findOneAndUpdate(
         { _id: user },
         {
-          "clockInDetails.hasClockedIn": true,
-          "clockInDetails.clockInTime": clockInTime,
+          $set: {
+            "clockInDetails.hasClockedIn": true,
+            "clockInDetails.clockInTime": clockInTime,
+          },
         }
       )
         .lean()
@@ -113,8 +115,10 @@ const clockOut = async (req, res, next) => {
       await UserData.findOneAndUpdate(
         { _id: user },
         {
-          "clockInDetails.hasClockedIn": false,
-          "clockInDetails.clockInTime": null,
+          $set: {
+            "clockInDetails.hasClockedIn": false,
+            "clockInDetails.clockInTime": null,
+          },
         }
       )
         .lean()
