@@ -141,8 +141,8 @@ const updateCompanyDocument = async (req, res, next) => {
 };
 
 const deleteCompanyDocument = async (req, res) => {
-  const { documentId } = req.params;
   const user = req.user;
+  const { documentId } = req.body;
 
   try {
     const foundUser = await User.findById(user)
@@ -417,8 +417,8 @@ const updateDepartmentDocument = async (req, res, next) => {
 };
 
 const deleteDepartmentDocument = async (req, res) => {
-  const { documentId } = req.params;
   const user = req.user;
+  const { documentId } = req.body;
 
   try {
     const foundUser = await User.findById(user)
