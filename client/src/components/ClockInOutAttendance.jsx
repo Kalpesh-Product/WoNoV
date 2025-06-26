@@ -11,22 +11,25 @@ const ClockInOutAttendance = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
   const timerRef = useRef(null);
-
+const [timeOffset, setTimeOffset] = useState(0); // new
   // ✅ On load, set startTime and base it off server time
-  useEffect(() => {
-    const clockIn = auth?.user?.clockInDetails?.clockInTime;
-    const serverNow = auth?.user?.time;
+useEffect(() => {
+  const clockIn = auth?.user?.clockInDetails?.clockInTime;
+  const serverNow = auth?.user?.time;
 
-    if (auth?.user?.clockInDetails?.hasClockedIn && clockIn && serverNow) {
-      const start = new Date(clockIn).getTime();
-      const serverNowTime = new Date(serverNow).getTime();
-      const elapsed = Math.floor((serverNowTime - start) / 1000);
-      setStartTime(start); // Store as timestamp
-      setElapsedTime(elapsed);
-    }
+  if (auth?.user?.clockInDetails?.hasClockedIn && clockIn && serverNow) {
+    const start = new Date(clockIn).getTime();
+    const serverNowTime = new Date(serverNow).getTime();
+    const clientNowTime = Date.now();
+    const offset = serverNowTime - clientNowTime;
 
-    setIsBooting(false);
-  }, [auth]);
+    setStartTime(start);
+    setTimeOffset(offset);
+    setElapsedTime(Math.floor((serverNowTime - start) / 1000));
+  }
+
+  setIsBooting(false);
+}, [auth]);
 
   // ⏱️ Mutation to clock-in
   const { mutate: clockIn, isPending: isClockingIn } = useMutation({
@@ -58,18 +61,20 @@ const ClockInOutAttendance = () => {
   });
 
   // ⏱️ Timer logic
-  useEffect(() => {
-    if (startTime) {
-      timerRef.current = setInterval(() => {
-        const secondsElapsed = Math.floor((Date.now() - startTime) / 1000);
-        setElapsedTime(secondsElapsed);
-      }, 1000);
-    } else {
-      clearInterval(timerRef.current);
-    }
+useEffect(() => {
+  if (startTime !== null) {
+    timerRef.current = setInterval(() => {
+      const clientNow = Date.now();
+      const adjustedNow = clientNow + timeOffset;
+      const secondsElapsed = Math.floor((adjustedNow - startTime) / 1000);
+      setElapsedTime(secondsElapsed);
+    }, 1000);
+  } else {
+    clearInterval(timerRef.current);
+  }
 
-    return () => clearInterval(timerRef.current);
-  }, [startTime]);
+  return () => clearInterval(timerRef.current);
+}, [startTime, timeOffset]);
 
   const handleStart = () => {
     const now = new Date().toISOString();
