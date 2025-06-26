@@ -588,6 +588,8 @@ const correctAttendance = async (req, res, next) => {
       );
     }
 
+    //Validate if the time to be corrected exists in the DB
+
     // Create new correction request
 
     const newRequest = new AttendanceCorrection({
