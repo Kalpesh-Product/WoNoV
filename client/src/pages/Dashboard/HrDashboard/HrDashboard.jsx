@@ -574,8 +574,9 @@ const HrDashboard = () => {
     },
   });
 
+
   // Calculate total and gender-specific counts
-  const totalUsers = usersQuery.isLoading ? [] : usersQuery.data.length;
+  const totalUsers = usersQuery.isLoading ? [] : usersQuery?.data?.length;
 
   const maleCount = usersQuery.isLoading
     ? []
@@ -654,25 +655,6 @@ const HrDashboard = () => {
     },
   };
 
-    useEffect(() => {
-  if (!isHrFinanceLoading && Array.isArray(hrFinance)) {
-    const data = transformBudgetData(hrFinance)
-    const utilised =
-  data?.[selectedFiscalYear]?.utilisedBudget?.reduce((a, b) => a + b, 0);
-  setTotalUtilised(utilised)
-
-  //Salary calculation
-  const salary = transformBudgetData(salaryExpense)
-   const utilisedSalary =
-  salary?.[selectedFiscalYear]?.utilisedBudget?.reduce((a, b) => a + b, 0);
-  setTotalSalary(utilisedSalary)
-  }
-}, [isHrFinanceLoading, hrFinance]);
-
-
-  // const totalUtilised =
-  // budgetData?.[selectedFiscalYear]?.utilisedBudget?.reduce((a, b) => a + b, 0);
-  
   const budgetBar = useMemo(() => {
     if (isHrFinanceLoading || !Array.isArray(hrFinance)) return null;
     const data = transformBudgetData(hrFinance);
@@ -686,10 +668,9 @@ const HrDashboard = () => {
   //     0
   //   ) || 0;
 
-
   //Salary calculation
 
-  const totalEmployees = usersQuery.data.length;
+  const totalEmployees = useQuery.isLoading ? [] : usersQuery?.data?.length;
   const salaryExpense = isHrFinanceLoading
     ? []
     : hrFinance.filter((item) => item.expanseType === "SALARY EXPENSES");
@@ -1013,7 +994,23 @@ const HrDashboard = () => {
     },
   ];
 
+    useEffect(() => {
+    if (!isHrFinanceLoading && Array.isArray(hrFinance)) {
+      const data = transformBudgetData(hrFinance);
+      const utilised = data?.[selectedFiscalYear]?.utilisedBudget?.reduce(
+        (a, b) => a + b,
+        0
+      );
+      setTotalUtilised(utilised);
 
+      //Salary calculation
+      const salary = transformBudgetData(salaryExpense);
+      const utilisedSalary = salary?.[
+        selectedFiscalYear
+      ]?.utilisedBudget?.reduce((a, b) => a + b, 0);
+      setTotalSalary(utilisedSalary);
+    }
+  }, [isHrFinanceLoading, hrFinance]);
 
   return (
     <>
@@ -1025,6 +1022,9 @@ const HrDashboard = () => {
               layout={widget.layout}
               widgets={widget.widgets}
             />
+            // <WidgetSection key={index} layout={widget?.layout}>
+            //   {widget?.widgets}
+            // </WidgetSection>
           ))}
         </div>
       </div>
