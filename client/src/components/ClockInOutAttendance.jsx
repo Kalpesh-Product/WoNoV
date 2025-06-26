@@ -26,7 +26,7 @@ const ClockInOutAttendance = () => {
   const { mutate: clockIn, isPending: isClockingIn } = useMutation({
     mutationFn: async (startTime) => {
       const response = await axios.post("/api/attendance/clock-in", {
-        startTime,
+        inTime : startTime,
         entryType: "web",
       });
       return response.data;
