@@ -408,6 +408,7 @@ const deleteDepartmentDocument = async (req, res, next) => {
   const userId = req.user;
   const { documentId } = req.body;
 
+
   try {
     // 1) Fetch the user's company reference
     const foundUser = await User.findById(userId).select("company").lean();

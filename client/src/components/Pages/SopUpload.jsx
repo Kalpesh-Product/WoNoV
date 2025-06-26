@@ -109,16 +109,13 @@ const SopUpload = () => {
       const response = await axios.patch(
         `/api/company/delete-department-document`,
         {
-          data: {
-            documentId: selectedSop?._id,
-            departmentId: department?._id,
-          },
+          documentId: selectedSop?._id,
         }
       );
       return response.data;
     },
     onSuccess: () => {
-      toast.success("SOP deleted successfully!");
+      toast.success("SOP Marked As Inactive Successfully!");
       setOpenModal(false); // close modal
       queryClient.invalidateQueries({ queryKey: ["departmentSOP"] });
     },
@@ -138,7 +135,6 @@ const SopUpload = () => {
     setEditValue("newName", data?.name.trim() || "");
     setOpenModal(true);
   };
-  console.log("Selected SOP", selectedSop);
   const handleDelete = (data) => {
     deleteSop({
       documentId: selectedSop?._id,
@@ -176,6 +172,7 @@ const SopUpload = () => {
     },
     { field: "date", headerName: "Upload Date", flex: 1 },
     { field: "updatedAt", headerName: "Modified Date", flex: 1 },
+    { field: "status", headerName: "Status", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -206,13 +203,16 @@ const SopUpload = () => {
 
   const tableData =
     Array.isArray(data) && !isLoading
-      ? data.map((item, index) => ({
-          ...item,
-          srNo: index + 1,
-          name: item?.name || "Untitled",
-          documentLink: item?.documentLink || "#",
-          date: item.createdAt,
-        }))
+      ? data
+          .map((item, index) => ({
+            ...item,
+            srNo: index + 1,
+            name: item?.name || "Untitled",
+            documentLink: item?.documentLink || "#",
+            date: item.createdAt,
+            status: item.isActive ? "Active" : "-",
+          }))
+          .filter((item) => item.isActive === true)
       : [];
 
   return (

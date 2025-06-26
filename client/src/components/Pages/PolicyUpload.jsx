@@ -127,19 +127,16 @@ const PolicyUpload = () => {
 
   const { mutate: deleteSop, isPending: isDeletePending } = useMutation({
     mutationFn: async (data) => {
-      const response = await axios.delete(
+      const response = await axios.patch(
         `/api/company/delete-department-document`,
         {
-          data: {
-            docObjectId: selectedSop._id,
-            departmentId: department?._id,
-          },
+          documentId: selectedSop._id,
         }
       );
       return response.data;
     },
     onSuccess: () => {
-      toast.success("Policy deleted successfully!");
+      toast.success("Policy Marked As Inactive successfully!");
       setOpenModal(false); // close modal
       queryClient.invalidateQueries({ queryKey: ["departmentPolicy"] });
     },
@@ -157,7 +154,6 @@ const PolicyUpload = () => {
       return response?.data?.documents?.policyDocuments || [];
     },
     enabled: !!department?._id,
-    staleTime: 1000 * 60 * 5,
   });
 
   const columns = [
@@ -179,6 +175,7 @@ const PolicyUpload = () => {
     },
     { field: "date", headerName: "Upload Date", flex: 1 },
     { field: "updatedAt", headerName: "Modified Date", flex: 1 },
+    { field: "status", headerName: "Status", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -194,7 +191,7 @@ const PolicyUpload = () => {
               },
             },
             {
-              label: "Delete",
+              label: "Mark As Inactive",
               onClick: () => {
                 setModalType("delete");
                 setSelectedSop(params.data);
@@ -209,13 +206,16 @@ const PolicyUpload = () => {
 
   const tableData =
     Array.isArray(data) && !isLoading
-      ? data.map((item, index) => ({
-          ...item,
-          srNo: index + 1,
-          name: item?.name || "Untitled",
-          documentLink: item?.documentLink || "#",
-          date: item.createdAt,
-        }))
+      ? data
+          .map((item, index) => ({
+            ...item,
+            srNo: index + 1,
+            name: item?.name || "Untitled",
+            documentLink: item?.documentLink || "#",
+            date: item.createdAt,
+            status: item.isActive ? "Active" : "-",
+          }))
+          .filter((item) => item.isActive === true)
       : [];
 
   return (
@@ -223,8 +223,8 @@ const PolicyUpload = () => {
       <div>
         <PageFrame>
           <YearWiseTable
+            key={tableData.length}
             dateColumn={"date"}
-            key={data?.length || 0}
             columns={columns}
             data={tableData}
             buttonTitle={"Add Policy"}
@@ -242,7 +242,7 @@ const PolicyUpload = () => {
             ? "Add Policy"
             : modalType === "edit"
             ? "Edit Policy"
-            : "Delete Policy"
+            : "Mark Policy As Inactive"
         }`}
       >
         {modalType === "add" && (
@@ -296,7 +296,7 @@ const PolicyUpload = () => {
               onSubmit={handleEditForm((data) =>
                 editSop({
                   newName: data.newName,
-                  docObjectId: selectedSop?.documentId,
+                  documentId: selectedSop?._id,
                 })
               )}
             >
@@ -328,7 +328,7 @@ const PolicyUpload = () => {
         {modalType === "delete" && (
           <div className="border-default border-borderGray rounded-xl flex flex-col gap-4 p-4">
             <div>
-              <span>Delete {selectedSop?.name} ?</span>
+              <span>Mark {selectedSop?.name} as Inactive ?</span>
             </div>
             <div className="flex justify-end gap-4 items-center">
               <SecondaryButton
@@ -339,7 +339,7 @@ const PolicyUpload = () => {
                 }}
               />
               <DangerButton
-                title={"Delete"}
+                title={"Mark As Inactive"}
                 handleSubmit={() => handleDelete(selectedSop)}
               />
             </div>
