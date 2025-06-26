@@ -23,6 +23,7 @@ const AltRevenues = () => {
         }
       },
     });
+
   const monthlyRevenueData = [
     {
       month: "Apr-24",
@@ -368,6 +369,22 @@ const AltRevenues = () => {
     };
   });
 
+  const transformedData = isLoadingAlternateRevenue
+    ? []
+    : alternateRevenue.map((item, index) => {
+        const revenue = item?.revenue.map((rev) => ({
+          ...rev,
+          taxableAmount: inrFormat(rev?.taxableAmount),
+          invoiceAmount: inrFormat(rev?.invoiceAmount),
+          gst: inrFormat(rev?.gst),
+        }));
+
+        return {
+          ...item,
+          revenue,
+        };
+      });
+
   return (
     <div className="flex flex-col gap-4">
       {isLoadingAlternateRevenue ? (
@@ -393,7 +410,7 @@ const AltRevenues = () => {
       {!isLoadingAlternateRevenue ? (
         <MonthWiseAgTable
           title={"Monthly Revenue with Source Details"}
-          financialData={alternateRevenue}
+          financialData={transformedData}
           noFilter
         />
       ) : (

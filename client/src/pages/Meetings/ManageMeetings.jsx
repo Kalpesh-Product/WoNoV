@@ -29,6 +29,7 @@ import humanTime from "../../utils/humanTime";
 import { TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
+import MonthWiseTable from "../../components/Tables/MonthWiseTable";
 
 const ManageMeetings = () => {
   const axios = useAxiosPrivate();
@@ -460,7 +461,8 @@ const ManageMeetings = () => {
           <div className="flex gap-2 items-center">
             <div
               onClick={() => handleSelectedMeeting("viewDetails", params.data)}
-              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
+              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+            >
               <span className="text-subtitle">
                 <MdOutlineRemoveRedEye />
               </span>
@@ -477,9 +479,10 @@ const ManageMeetings = () => {
     <div className="flex flex-col gap-4">
       <PageFrame>
         {!isMeetingsLoading ? (
-          <AgTable
+          <MonthWiseTable
             key={transformedMeetings.length}
             search
+            dateColumn={"date"}
             tableTitle={"Manage Meetings"}
             data={transformedMeetings || []}
             columns={columns}
@@ -493,7 +496,8 @@ const ManageMeetings = () => {
       <MuiModal
         open={checklistModalOpen}
         onClose={handleCloseChecklistModal}
-        title={"Checklist"}>
+        title={"Checklist"}
+      >
         <Box
           sx={{
             maxHeight: "80vh",
@@ -502,7 +506,8 @@ const ManageMeetings = () => {
             overflow: "hidden",
             justifyContent: "start",
             alignItems: "start",
-          }}>
+          }}
+        >
           {/* Scrollable Checklist Section */}
           <div className="h-[60vh] overflow-y-auto w-full">
             <span className="text-subtitle text-primary font-pmedium">
@@ -549,7 +554,8 @@ const ManageMeetings = () => {
                             {modalMode === "update" && (
                               <IconButton
                                 onClick={() => handleRemoveChecklistItem(index)}
-                                color="error">
+                                color="error"
+                              >
                                 <Delete />
                               </IconButton>
                             )}
@@ -588,7 +594,8 @@ const ManageMeetings = () => {
               <Button
                 variant="contained"
                 disabled={isSubmitDisabled()}
-                onClick={handleSubmitChecklist}>
+                onClick={handleSubmitChecklist}
+              >
                 Submit
               </Button>
             </div>
@@ -607,7 +614,8 @@ const ManageMeetings = () => {
             : ""
         }
         open={detailsModal}
-        onClose={() => setDetailsModal(false)}>
+        onClose={() => setDetailsModal(false)}
+      >
         {modalMode === "viewDetails" && (
           <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4 w-full">
             <div className="font-bold">Basic Info</div>
@@ -765,7 +773,8 @@ const ManageMeetings = () => {
                 });
                 resetCancelMeeting();
                 setDetailsModal(false);
-              })}>
+              })}
+            >
               <Controller
                 name="reason"
                 control={cancelMeetingControl}
@@ -804,7 +813,8 @@ const ManageMeetings = () => {
                   meetingId: selectedMeeting?._id,
                   newEndTime: data.newEndTime,
                 });
-              })}>
+              })}
+            >
               <div className="flex flex-col gap-4">
                 <span className="text-content">Meeting Details</span>
                 <hr />
