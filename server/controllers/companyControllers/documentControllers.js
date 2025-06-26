@@ -106,35 +106,38 @@ const updateCompanyDocument = async (req, res, next) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const updatePaths = ["templates", "sop", "policies", "agreements"];
-    let updated = false;
+    const companyId = foundUser.company._id;
 
-    for (let path of updatePaths) {
-      const result = await Company.findOneAndUpdate(
+    // Helper to try updating one path
+    const tryUpdate = async (path) => {
+      return await Company.updateOne(
         {
-          _id: foundUser.company._id,
+          _id: companyId,
           [`${path}.documentId`]: documentId,
         },
         {
           $set: {
             [`${path}.$.name`]: newName,
+            [`${path}.$.updatedAt`]: new Date(),
           },
         }
       );
+    };
 
-      if (result) {
-        updated = true;
-        break;
+    // Try each section in sequence
+    const sections = ["templates", "sop", "policies", "agreements"];
+    for (const section of sections) {
+      const result = await tryUpdate(section);
+      if (result.modifiedCount > 0) {
+        return res
+          .status(200)
+          .json({
+            message: `Document name updated successfully in ${section}`,
+          });
       }
     }
 
-    if (!updated) {
-      return res.status(404).json({ message: "Document not found" });
-    }
-
-    return res
-      .status(200)
-      .json({ message: "Document name updated successfully" });
+    return res.status(404).json({ message: "Document not found" });
   } catch (error) {
     return next(error);
   }
@@ -342,7 +345,7 @@ const uploadDepartmentDocument = async (req, res) => {
   }
 };
 
-const updateDepartmentDocument = async (req, res) => {
+const updateDepartmentDocument = async (req, res, next) => {
   const { documentId } = req.params;
   const { newName } = req.body;
   const user = req.user;
@@ -357,79 +360,63 @@ const updateDepartmentDocument = async (req, res) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const company = await Company.findById(foundUser.company._id).lean();
+    const companyId = foundUser.company._id;
 
-    if (!company?.selectedDepartments?.length) {
-      return res.status(404).json({ message: "No departments found" });
-    }
-
-    let updated = false;
-
-    for (let i = 0; i < company.selectedDepartments.length; i++) {
-      const dept = company.selectedDepartments[i];
-
-      // Check and update in sop
-      const sopDoc = dept.sop?.find((doc) => doc.documentId === documentId);
-      if (sopDoc) {
-        await Company.updateOne(
-          {
-            _id: company._id,
-            "selectedDepartments.department": dept.department,
-            "selectedDepartments.sop.documentId": documentId,
-          },
-          {
-            $set: {
-              "selectedDepartments.$[dept].sop.$[doc].name": newName,
-            },
-          },
-          {
-            arrayFilters: [
-              { "dept.department": dept.department },
-              { "doc.documentId": documentId },
-            ],
-          }
-        );
-        updated = true;
-        break;
+    // Try updating SOP
+    const sopUpdate = await Company.updateOne(
+      {
+        _id: companyId,
+        "selectedDepartments.sop.documentId": documentId,
+      },
+      {
+        $set: {
+          "selectedDepartments.$[dept].sop.$[doc].name": newName,
+          "selectedDepartments.$[dept].sop.$[doc].updatedAt": new Date(),
+        },
+      },
+      {
+        arrayFilters: [
+          { "dept.sop.documentId": documentId },
+          { "doc.documentId": documentId },
+        ],
       }
+    );
 
-      // Check and update in policies
-      const policyDoc = dept.policies?.find(
-        (doc) => doc.documentId === documentId
-      );
-      if (policyDoc) {
-        await Company.updateOne(
-          {
-            _id: company._id,
-            "selectedDepartments.department": dept.department,
-            "selectedDepartments.policies.documentId": documentId,
-          },
-          {
-            $set: {
-              "selectedDepartments.$[dept].policies.$[doc].name": newName,
-            },
-          },
-          {
-            arrayFilters: [
-              { "dept.department": dept.department },
-              { "doc.documentId": documentId },
-            ],
-          }
-        );
-        updated = true;
-        break;
+    if (sopUpdate.modifiedCount > 0) {
+      return res
+        .status(200)
+        .json({ message: "SOP document name updated successfully" });
+    }
+
+    // Try updating Policies
+    const policyUpdate = await Company.updateOne(
+      {
+        _id: companyId,
+        "selectedDepartments.policies.documentId": documentId,
+      },
+      {
+        $set: {
+          "selectedDepartments.$[dept].policies.$[doc].name": newName,
+          "selectedDepartments.$[dept].policies.$[doc].updatedAt": new Date(),
+        },
+      },
+      {
+        arrayFilters: [
+          { "dept.policies.documentId": documentId },
+          { "doc.documentId": documentId },
+        ],
       }
+    );
+
+    if (policyUpdate.modifiedCount > 0) {
+      return res
+        .status(200)
+        .json({ message: "Policy document name updated successfully" });
     }
 
-    if (!updated) {
-      return res.status(404).json({ message: "Document not found" });
-    }
-
-    return res
-      .status(200)
-      .json({ message: "Document name updated successfully" });
+    return res.status(404).json({ message: "Document not found" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
