@@ -145,11 +145,11 @@ router.post(
   uploadDepartmentDocument
 );
 router.patch(
-  "/update-department-document/:documentId",
+  "/update-department-document",
   updateDepartmentDocument
 );
 router.delete(
-  "/delete-department-document/:documentId",
+  "/delete-department-document",
   deleteDepartmentDocument
 );
 router.get("/get-department-documents", getDepartmentDocuments);
