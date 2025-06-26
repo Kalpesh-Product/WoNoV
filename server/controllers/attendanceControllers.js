@@ -45,7 +45,9 @@ const clockIn = async (req, res, next) => {
         $gte: startOfDay,
         $lte: endOfDay,
       },
-    });
+    })
+      .lean()
+      .exec();
 
     if (existingToday) {
       return res
