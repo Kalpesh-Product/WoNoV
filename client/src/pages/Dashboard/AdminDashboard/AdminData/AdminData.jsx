@@ -8,22 +8,22 @@ const AdminData = () => {
 
   // Map routes to tabs
   const tabs = [
-    { label: "Asset List", path: "asset-list" },
-    { label: "Vendor", path: "vendor" },
-    {
-      label: "Monthly Invoice Reports",
-      path: "monthly-invoice-reports",
-    },
     {
       label: "Electricity Consumption & Expenses",
       path: "electricity-expenses",
     },
+    { label: "Asset List", path: "asset-list" },
+    {
+      label: "Monthly Invoice Reports",
+      path: "monthly-invoice-reports",
+    },
+    { label: "Vendor", path: "vendor" },
   ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
   useEffect(() => {
     if (location.pathname === "/app/dashboard/admin-dashboard/data") {
-      navigate("/app/dashboard/admin-dashboard/data/asset-list", {
+      navigate("/app/dashboard/admin-dashboard/data/electricity-expenses", {
         replace: true,
       });
     }
@@ -59,7 +59,8 @@ const AdminData = () => {
               backgroundColor: "#1E3D73",
               color: "white",
             },
-          }}>
+          }}
+        >
           {tabs.map((tab, index) => (
             <NavLink
               key={index}
@@ -73,7 +74,8 @@ const AdminData = () => {
                 padding: "12px 16px",
                 display: "block",
                 backgroundColor: isActive ? "#1E3D73" : "white",
-              })}>
+              })}
+            >
               {tab.label}
             </NavLink>
           ))}

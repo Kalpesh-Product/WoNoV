@@ -22,7 +22,7 @@ const BudgetPage = () => {
   const { auth } = useAuth();
   const location = useLocation();
   const department = usePageDepartment();
-  const queryClient = useQueryClient(); 
+  const queryClient = useQueryClient();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
@@ -49,18 +49,17 @@ const BudgetPage = () => {
 
   const selectedBuilding = watch("building");
 
-const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
-  queryKey: ["departmentBudget", department?._id],
-  queryFn: async () => {
-    const response = await axios.get(
-      `/api/budget/company-budget?departmentId=${department._id}`
-    );
-    const budgets = response.data.allBudgets;
-    return Array.isArray(budgets) ? budgets : [];
-  },
-  enabled: !!department?._id, // <- ✅ prevents firing until department is ready
-});
-
+  const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+    queryKey: ["departmentBudget", department?._id],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/budget/company-budget?departmentId=${department._id}`
+      );
+      const budgets = response.data.allBudgets;
+      return Array.isArray(budgets) ? budgets : [];
+    },
+    enabled: !!department?._id, // <- ✅ prevents firing until department is ready
+  });
 
   const {
     data: units = [],
@@ -110,8 +109,8 @@ const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
         setOpenModal(false);
         toast.success(data.message);
         reset();
-        
-    queryClient.invalidateQueries(["departmentBudget"]); 
+
+        queryClient.invalidateQueries(["departmentBudget"]);
       },
       onError: function (error) {
         toast.error(error.response.data.message);
@@ -211,58 +210,57 @@ const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     }
   }, [isHrLoading]);
 
-const expenseRawSeries = useMemo(() => {
-  // Initialize monthly buckets
-  const months = Array.from({ length: 12 }, (_, index) =>
-    dayjs(`2024-04-01`).add(index, "month").format("MMM")
-  );
+  const expenseRawSeries = useMemo(() => {
+    // Initialize monthly buckets
+    const months = Array.from({ length: 12 }, (_, index) =>
+      dayjs(`2024-04-01`).add(index, "month").format("MMM")
+    );
 
-  const fyData = {
-    "FY 2024-25": Array(12).fill(0),
-    "FY 2025-26": Array(12).fill(0),
-  };
+    const fyData = {
+      "FY 2024-25": Array(12).fill(0),
+      "FY 2025-26": Array(12).fill(0),
+    };
 
-  hrFinance.forEach((item) => {
-    const date = dayjs(item.dueDate);
-    const year = date.year();
-    const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+    hrFinance.forEach((item) => {
+      const date = dayjs(item.dueDate);
+      const year = date.year();
+      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
 
-    if (year === 2024 && monthIndex >= 3) {
-      // Apr 2024 to Dec 2024 (month 3 to 11)
-      fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-    } else if (year === 2025) {
-      if (monthIndex <= 2) {
-        // Jan to Mar 2025 (months 0–2)
-        fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-      } else if (monthIndex >= 3) {
-        // Apr 2025 to Dec 2025 (months 3–11)
-        fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+      if (year === 2024 && monthIndex >= 3) {
+        // Apr 2024 to Dec 2024 (month 3 to 11)
+        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+      } else if (year === 2025) {
+        if (monthIndex <= 2) {
+          // Jan to Mar 2025 (months 0–2)
+          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+        } else if (monthIndex >= 3) {
+          // Apr 2025 to Dec 2025 (months 3–11)
+          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+        }
+      } else if (year === 2026 && monthIndex <= 2) {
+        // Jan to Mar 2026
+        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
       }
-    } else if (year === 2026 && monthIndex <= 2) {
-      // Jan to Mar 2026
-      fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
-    }
-  });
+    });
 
-  return [
-    {
-      name: "total",
-      group: "FY 2024-25",
-      data: fyData["FY 2024-25"],
-    },
-    {
-      name: "total",
-      group: "FY 2025-26",
-      data: fyData["FY 2025-26"],
-    },
-  ];
-}, [hrFinance]);
+    return [
+      {
+        name: "total",
+        group: "FY 2024-25",
+        data: fyData["FY 2024-25"],
+      },
+      {
+        name: "total",
+        group: "FY 2025-26",
+        data: fyData["FY 2025-26"],
+      },
+    ];
+  }, [hrFinance]);
 
-const maxExpenseValue = Math.max(
-  ...expenseRawSeries.flatMap((series) => series.data)
-);
-const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
-
+  const maxExpenseValue = Math.max(
+    ...expenseRawSeries.flatMap((series) => series.data)
+  );
+  const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
 
   const expenseOptions = {
     chart: {
@@ -337,9 +335,11 @@ const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
     },
   };
 
-const totalUtilised =
-  budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
-
+  const totalUtilised =
+    budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
+      (acc, val) => acc + val,
+      0
+    ) || 0;
 
   const navigate = useNavigate();
   // BUDGET NEW END
@@ -365,7 +365,7 @@ const totalUtilised =
         </div>
       )}
 
-      <AllocatedBudget financialData={financialData} />
+      <AllocatedBudget financialData={financialData} noInvoice={false} />
       <MuiModal
         title="Request Budget"
         open={openModal}

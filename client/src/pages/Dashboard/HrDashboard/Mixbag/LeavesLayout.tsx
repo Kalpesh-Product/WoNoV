@@ -1,33 +1,38 @@
-import React, { useEffect } from "react";
-import { Tab, Tabs } from "@mui/material";
+import { Tabs } from "@mui/material";
+import { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
-const SalesDataCard = () => {
+const LeavesLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Map routes to tabs
   const tabs = [
-    { label: "Asset List", path: "asset-list" },
-    { label: "Vendor", path: "vendor" },
-    { label: "Monthly Invoice Reports", path: "monthly-invoice-reports" },
+    { label: "Pending Approvals", path: "pending-approvals" },
+    { label: "Completed Approvals", path: "completed-approvals" },
   ];
 
-  // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
   useEffect(() => {
-    if (location.pathname === "/app/dashboard/sales-dashboard/data") {
-      navigate("/app/dashboard/sales-dashboard/data/asset-list", {
-        replace: true,
-      });
+    if (
+      location.pathname === "/app/dashboard/hr-dashboard/mix-bag/leaves"
+    ) {
+      navigate(
+        "/app/dashboard/hr-dashboard/mix-bag/leaves/pending-approvals",
+        {
+          replace: true,
+        }
+      );
     }
   }, [location, navigate]);
 
   // Determine whether to show the tabs
-  const showTabs = !location.pathname.includes("vendor/");
+  const showTabs = !location.pathname.includes("budget/");
 
   // Determine active tab based on location
   const activeTab = tabs.findIndex((tab) =>
     location.pathname.includes(tab.path)
   );
+
   return (
     <div className="p-4">
       {/* Render tabs only if the current route is not EmployeeDetails */}
@@ -80,4 +85,4 @@ const SalesDataCard = () => {
   );
 };
 
-export default SalesDataCard;
+export default LeavesLayout;

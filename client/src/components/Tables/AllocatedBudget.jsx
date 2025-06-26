@@ -33,10 +33,11 @@ const AllocatedBudget = ({
   isLoading,
   variant,
   hideTitle,
-  noInvoice = false,
+  noInvoice = true,
   noFilter = false,
   annaualExpense = false,
-  newTitle
+  showInvoice = false,
+  newTitle,
 }) => {
   const axios = useAxiosPrivate();
   const [selectedTab, setSelectedTab] = useState(0);
@@ -242,26 +243,29 @@ const AllocatedBudget = ({
     return baseColumns;
   }, [monthDataForSelectedType.columns, noInvoice]);
 
-
   if (isLoading) return <CircularProgress />;
 
   return (
     <>
       <WidgetSection
-        title={annaualExpense ? "Annual Expenses" : newTitle ? newTitle :"BIZ Nest DEPARTMENT WISE EXPENSE DETAILS" }
+        title={
+          annaualExpense
+            ? "Annual Expenses"
+            : newTitle
+            ? newTitle
+            : "BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"
+        }
         TitleAmount={`INR ${inrFormat(totalProjectedAmountForFY)}`}
         border>
         <div className="flex flex-col gap-4 rounded-md ">
           {!hideTitle ? (
-            <div className="flex justify-between items-center">
-            </div>
+            <div className="flex justify-between items-center"></div>
           ) : (
             ""
           )}
 
           <div className="flex items-center justify-between gap-4">
-            <div className="w-1/3">
-            </div>
+            <div className="w-1/3"></div>
             <div className="flex gap-4 justify-start items-center w-full ">
               <div className="">
                 {/* Month Switcher */}

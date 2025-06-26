@@ -202,9 +202,14 @@ const requestLeave = async (req, res, next) => {
 
 const fetchAllLeaves = async (req, res, next) => {
   try {
-    const user = req.userData.userId;
-
-    const leaves = await Leave.find({ takenBy: user });
+    const leaves = await Leave.find()
+      .populate([
+        { path: "takenBy", select: "firstName lastName" },
+        { path: "approvedBy", select: "firstName lastName" },
+        { path: "rejectedBy", select: "firstName lastName" },
+      ])
+      .lean()
+      .exec();
 
     if (!leaves || leaves.length === 0) {
       return res.status(204).json({ message: "No leaves found" });
