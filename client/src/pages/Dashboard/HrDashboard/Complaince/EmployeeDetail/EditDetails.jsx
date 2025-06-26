@@ -15,15 +15,17 @@ import { useSelector } from "react-redux";
 dayjs.extend(customParseFormat);
 
 const EditDetails = () => {
-  const location = useLocation()
-  // const { employmentID } = location.state; 
-  const employmentID = useSelector((state)=>state.hr.selectedEmployee)
+  const location = useLocation();
+  // const { employmentID } = location.state;
+  const employmentID = useSelector((state) => state.hr.selectedEmployee);
   const axios = useAxiosPrivate();
   const { data: employeeData, isLoading } = useQuery({
     queryKey: ["employeeData"],
     queryFn: async () => {
       try {
-        const response = await axios.get(`/api/users/fetch-single-user/${employmentID}`);
+        const response = await axios.get(
+          `/api/users/fetch-single-user/${employmentID}`
+        );
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -104,14 +106,20 @@ const EditDetails = () => {
           </span>
         </div>
         {!isEditing ? (
-          
-        <div>
-          <PrimaryButton disabled={true} handleSubmit={handleEditToggle} title={"Edit"} />
-        </div>
+          <div>
+            <PrimaryButton
+              disabled={true}
+              handleSubmit={handleEditToggle}
+              title={"Edit"}
+            />
+          </div>
         ) : (
           <div>
-          <PrimaryButton handleSubmit={()=>setIsEditing(false)} title={"Cancel"} />
-        </div>
+            <PrimaryButton
+              handleSubmit={() => setIsEditing(false)}
+              title={"Cancel"}
+            />
+          </div>
         )}
       </div>
 
@@ -292,8 +300,7 @@ const EditDetails = () => {
                                     href={transformEmployeeData[fieldKey]}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-blue-600 underline"
-                                  >
+                                    className="text-blue-600 underline">
                                     {fieldKey
                                       .replace(/([A-Z])/g, " $1")
                                       .replace(/^./, (str) =>
@@ -342,7 +349,7 @@ const EditDetails = () => {
                             />
                           ) : (
                             <div className="py-2 flex justify-between items-center gap-2">
-                              <div className="w-[100%] justify-start flex">
+                              <div className="w-[35%] justify-start flex">
                                 <span className="font-pmedium text-gray-600 text-content">
                                   {fieldKey
                                     .replace(/([A-Z])/g, " $1")
@@ -401,7 +408,7 @@ const EditDetails = () => {
                             />
                           ) : (
                             <div className="py-2 flex justify-between items-center gap-2">
-                              <div className="w-[100%] justify-start flex">
+                              <div className="w-[35%] justify-start flex">
                                 <span className="font-pmedium text-gray-600 text-content">
                                   {fieldKey
                                     .replace(/([A-Z])/g, " $1")

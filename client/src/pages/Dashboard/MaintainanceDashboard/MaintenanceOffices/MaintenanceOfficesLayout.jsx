@@ -145,8 +145,7 @@ const MaintenanceOfficesLayout = () => {
               minWidth: "20%",
               borderRight: "0.1px solid #d1d5db",
             },
-          }}
-        >
+          }}>
           <Tab label="Occupied" />
           <Tab label="Clear" />
         </Tabs>
@@ -156,8 +155,7 @@ const MaintenanceOfficesLayout = () => {
         <div className=" text-center">
           <div
             // onClick={() => setImageOpen(true)}
-            className="h-[32rem] w-full p-4 border border-borderGray rounded-lg"
-          >
+            className="h-[32rem] w-full p-4 border border-borderGray rounded-lg">
             <img
               src={unitDetails?.occupiedImage?.url || occupiedImage}
               alt="Occupied"
@@ -168,11 +166,10 @@ const MaintenanceOfficesLayout = () => {
       )}
 
       {tabIndex === 1 && (
-        <div className="py-4 text-center">
+        <div className=" text-center">
           <div
             // onClick={() => setClearedImageOpen(true)}
-            className="h-[32rem] w-full  p-4 border border-borderGray rounded-lg"
-          >
+            className="h-[32rem] w-full  p-4 border border-borderGray rounded-lg">
             <img
               src={unitDetails?.clearImage?.url || clearedImagePreview}
               alt="Clear"
@@ -212,8 +209,7 @@ const MaintenanceOfficesLayout = () => {
       <WidgetSection
         title={`Occupancy details - ${unitName}`}
         border
-        TitleAmount={`TOTAL OCCUPIED : ${totalOccupied}`}
-      >
+        TitleAmount={`TOTAL OCCUPIED : ${totalOccupied}`}>
         <AgTable
           tableHeight={300}
           hideFilter
@@ -233,8 +229,7 @@ const MaintenanceOfficesLayout = () => {
         onClose={() => {
           setOpenModal(false);
           setMemberDetails({});
-        }}
-      >
+        }}>
         <div className="grid grid-cols-2 gap-8 px-2 pb-8 border-b-default border-borderGray">
           <div className="flex items-center justify-between">
             <span className="text-content">Member Name</span>
@@ -274,8 +269,7 @@ const MaintenanceOfficesLayout = () => {
       <MuiModal
         open={imageOpen}
         onClose={() => setImageOpen(false)}
-        title="Upload occupied space"
-      >
+        title="Upload occupied space">
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
@@ -294,8 +288,7 @@ const MaintenanceOfficesLayout = () => {
       <MuiModal
         open={clearedImageOpen}
         onClose={() => setClearedImageOpen(false)}
-        title="Upload clear space"
-      >
+        title="Upload clear space">
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">

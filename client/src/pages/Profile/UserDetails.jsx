@@ -11,6 +11,7 @@ import {
   FormControl,
   Avatar,
   CircularProgress,
+  Chip,
 } from "@mui/material";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
@@ -59,7 +60,6 @@ const UserDetails = () => {
       }, 1000); // delay of 1000ms = 1 second
       if (response.data.profilePicture?.url) {
         setPreviewUrl(response.data.profilePicture.url);
-
       }
     } catch (error) {
       console.error("Upload Error:", error);
@@ -115,9 +115,9 @@ const UserDetails = () => {
       toast.success(data.message || "User details updated successfully!");
       setEditMode(false);
     },
-    onError: (error) =>{
+    onError: (error) => {
       toast.error(error.message || "Failed to update user details");
-    }
+    },
   });
 
   const onSubmit = (data) => {
@@ -250,8 +250,8 @@ const UserDetails = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-md">
-        <div className="flex gap-6 items-center">
+      <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-xl">
+        <div className="flex gap-6 items-center w-full">
           <div className="w-40 h-40">
             {/* <Avatar
                     style={{
@@ -270,14 +270,13 @@ const UserDetails = () => {
                 height: "100%",
                 fontSize: "5rem",
               }}
-              src={previewUrl || auth?.user?.profilePicture?.url}
-            >
+              src={previewUrl || auth?.user?.profilePicture?.url}>
               {!previewUrl &&
                 !auth?.user?.profilePicture?.url &&
                 user.name?.charAt(0)}
             </Avatar>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className=" w-96 flex flex-col gap-1">
             <span className="text-title flex items-center gap-3">
               {user.name}{" "}
             </span>
@@ -288,8 +287,7 @@ const UserDetails = () => {
             <label
               htmlFor="fileUpload"
               // className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 p-6 rounded-md cursor-pointer transition">
-              className="flex flex-col items-center justify-center   rounded-md cursor-pointer transition"
-            >
+              className="flex flex-col items-start justify-center   rounded-md cursor-pointer transition">
               {previewUrl ? (
                 // <img
                 //   src={previewUrl}
@@ -299,7 +297,7 @@ const UserDetails = () => {
                 <span> </span>
               ) : (
                 <>
-                  <span className="text-content text-white bg-primary font-pregular mt-8 px-4 py-3 rounded-md hover:scale-[1.05] transition">
+                  <span className="text-content text-white bg-primary font-pregular mt-8 px-5 py-3 rounded-md hover:scale-[1.05] transition">
                     Update Profile Image
                   </span>
                 </>
@@ -314,11 +312,10 @@ const UserDetails = () => {
             </label>
             {/* Buttons: Change File & Upload */}
             {previewUrl && (
-              <div className=" flex flex-col items-center gap-2">
+              <div className=" flex flex-col items-start gap-2">
                 <label
                   htmlFor="fileUpload"
-                  className="text-primary cursor-pointer underline"
-                >
+                  className="text-primary cursor-pointer underline">
                   Change Image
                 </label>
                 <button
@@ -328,8 +325,7 @@ const UserDetails = () => {
                     uploading
                       ? "bg-gray-400"
                       : "bg-primary hover:scale-[1.05] transition"
-                  }`}
-                >
+                  }`}>
                   {uploading ? "Uploading..." : "Save Image"}
                 </button>
               </div>
@@ -358,26 +354,44 @@ const UserDetails = () => {
               </div>
             </div>
           </div>
+          <div className="h-40  flex flex-col justify-start items-start  ">
+            <div className="">
+              <Chip
+                label={user.status ? "Active" : "Inactive"}
+                sx={{
+                  backgroundColor: user.status ? "green" : "grey",
+                  color: "white",
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
-      {!editMode ? (
-        <div className="flex justify-end">
-          <PrimaryButton
-            title={"Edit"}
-            handleSubmit={() => {
-              if (userDetails) reset(userDetails);
-              setEditMode(true);
-            }}
-          />
+      <div className="flex justify-between">
+        <div>
+          <span className="text-title font-pmedium text-primary uppercase">
+            My Profile
+          </span>
         </div>
-      ) : (
-        <div className="flex justify-end">
-          <SecondaryButton
-            title={"Cancel"}
-            handleSubmit={() => setEditMode(false)}
-          />
-        </div>
-      )}
+        {!editMode ? (
+          <div className="flex justify-end">
+            <PrimaryButton
+              title={"Edit"}
+              handleSubmit={() => {
+                if (userDetails) reset(userDetails);
+                setEditMode(true);
+              }}
+            />
+          </div>
+        ) : (
+          <div className="flex justify-end">
+            <SecondaryButton
+              title={"Cancel"}
+              handleSubmit={() => setEditMode(false)}
+            />
+          </div>
+        )}
+      </div>
 
       <PageFrame>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -420,8 +434,7 @@ const UserDetails = () => {
                                   size="small"
                                   select
                                   {...field}
-                                  label={label}
-                                >
+                                  label={label}>
                                   {options.map((opt) => (
                                     <MenuItem key={opt} value={opt}>
                                       {opt}
@@ -483,8 +496,7 @@ const UserDetails = () => {
                               href={value}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-600 underline ml-2"
-                            >
+                              className="text-blue-600 underline ml-2">
                               {label === "Leave Policy"
                                 ? "View Leave Policy"
                                 : label === "Holiday Policy"

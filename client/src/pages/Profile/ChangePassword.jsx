@@ -80,13 +80,13 @@ const ChangePassword = ({ pageTitle }) => {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between pb-4">
-        <span className="text-title font-pmedium text-primary uppercase">
-          Change password
-        </span>
-      </div>
       <PageFrame>
+        {/* Header */}
+        <div className="flex items-center justify-between pb-4">
+          <span className="text-title font-pmedium text-primary uppercase">
+            Change password
+          </span>
+        </div>
         <div>
           {/* Current Password Field */}
           <div className="mb-4 w-full flex justify-start items-center gap-4">
