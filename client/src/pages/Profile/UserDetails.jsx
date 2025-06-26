@@ -311,7 +311,7 @@ const UserDetails = () => {
             </label>
             {/* Buttons: Change File & Upload */}
             {previewUrl && (
-              <div className=" flex flex-col items-center gap-2">
+              <div className=" flex flex-col items-start gap-2">
                 <label
                   htmlFor="fileUpload"
                   className="text-primary cursor-pointer underline">

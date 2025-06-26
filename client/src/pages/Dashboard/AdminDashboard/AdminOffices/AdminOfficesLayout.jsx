@@ -33,7 +33,7 @@ const AdminOfficesLayout = () => {
   };
   const location = useLocation();
   const unit = location.state?.unitId || "";
-  const {unitName} = location.state;
+  const { unitName } = location.state;
   const params = new URLSearchParams(location.search);
   const locationParam = params.get("location") || "Unknown Location";
   const floorParam = params.get("floor") || "Unknown Floor";
@@ -147,8 +147,7 @@ const AdminOfficesLayout = () => {
               minWidth: "20%",
               borderRight: "0.1px solid #d1d5db",
             },
-          }}
-        >
+          }}>
           <Tab label="Occupied" />
           <Tab label="Clear" />
         </Tabs>
@@ -158,8 +157,7 @@ const AdminOfficesLayout = () => {
         <div className=" text-center">
           <div
             onClick={() => setImageOpen(true)}
-            className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg"
-          >
+            className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg">
             <img
               src={unitDetails?.occupiedImage?.url || occupiedImage}
               alt="Occupied"
@@ -170,11 +168,10 @@ const AdminOfficesLayout = () => {
       )}
 
       {tabIndex === 1 && (
-        <div className="py-4 text-center">
+        <div className=" text-center">
           <div
             onClick={() => setClearedImageOpen(true)}
-            className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg"
-          >
+            className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg">
             <img
               src={unitDetails?.clearImage?.url || clearedImagePreview}
               alt="Clear"
@@ -185,17 +182,32 @@ const AdminOfficesLayout = () => {
       )}
 
       <WidgetSection layout={4} padding>
-        <DataCard data={totalDesks} title="Total Desks" description="Last Month : Apr-25" />
-        <DataCard data={totalActualOccupied} title="Occupied Desks" description="Last Month : Apr-25" />
-        <DataCard data={occupancyPercent} title="Occupancy %" description="Last Month : Apr-25" />
-        <DataCard data={totalDesks - totalActualOccupied} title="Free Desks" description="Last Month : Apr-25" />
+        <DataCard
+          data={totalDesks}
+          title="Total Desks"
+          description="Last Month : Apr-25"
+        />
+        <DataCard
+          data={totalActualOccupied}
+          title="Occupied Desks"
+          description="Last Month : Apr-25"
+        />
+        <DataCard
+          data={occupancyPercent}
+          title="Occupancy %"
+          description="Last Month : Apr-25"
+        />
+        <DataCard
+          data={totalDesks - totalActualOccupied}
+          title="Free Desks"
+          description="Last Month : Apr-25"
+        />
       </WidgetSection>
 
       <WidgetSection
         title={`Occupancy details - ${unitName}`}
         border
-        TitleAmount={`TOTAL OCCUPIED : ${totalOccupied}`}
-      >
+        TitleAmount={`TOTAL OCCUPIED : ${totalOccupied}`}>
         <AgTable
           tableHeight={300}
           hideFilter
@@ -215,8 +227,7 @@ const AdminOfficesLayout = () => {
         onClose={() => {
           setOpenModal(false);
           setMemberDetails({});
-        }}
-      >
+        }}>
         <div className="grid grid-cols-2 gap-8 px-2 pb-8 border-b-default border-borderGray">
           <div className="flex items-center justify-between">
             <span className="text-content">Member Name</span>
@@ -240,7 +251,9 @@ const AdminOfficesLayout = () => {
           data={{
             ...viewDetails,
             date: viewDetails?.date
-              ? dayjs(new Date(viewDetails.date.split("-").reverse().join("-"))).format("DD-MM-YYYY")
+              ? dayjs(
+                  new Date(viewDetails.date.split("-").reverse().join("-"))
+                ).format("DD-MM-YYYY")
               : "-",
           }}
           title="member details"
@@ -254,8 +267,7 @@ const AdminOfficesLayout = () => {
       <MuiModal
         open={imageOpen}
         onClose={() => setImageOpen(false)}
-        title="Upload occupied space"
-      >
+        title="Upload occupied space">
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
@@ -274,14 +286,17 @@ const AdminOfficesLayout = () => {
       <MuiModal
         open={clearedImageOpen}
         onClose={() => setClearedImageOpen(false)}
-        title="Upload clear space"
-      >
+        title="Upload clear space">
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
             <MdUploadFile className="text-4xl text-gray-500" />
             <span className="text-gray-500">Click to upload</span>
-            <input type="file" className="hidden" onChange={handleClearedFileChange} />
+            <input
+              type="file"
+              className="hidden"
+              onChange={handleClearedFileChange}
+            />
           </label>
           {clearedFile && (
             <div className="mt-4 text-gray-700">
