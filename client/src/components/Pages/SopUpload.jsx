@@ -16,6 +16,8 @@ import { TextField } from "@mui/material";
 import UploadFileInput from "../UploadFileInput";
 import ThreeDotMenu from "../ThreeDotMenu";
 import YearWiseTable from "../Tables/YearWiseTable";
+import SecondaryButton from "../SecondaryButton";
+import DangerButton from "../DangerButton";
 
 const SopUpload = () => {
   const axios = useAxiosPrivate();
@@ -120,9 +122,7 @@ const SopUpload = () => {
   };
   console.log("Selected SOP", selectedSop);
   const handleDelete = (data) => {
-    setModalType("delete");
-    setSelectedSop(data);
-    setOpenModal(true);
+    deleteSop(data);
   };
 
   const { data = [], isLoading } = useQuery({
@@ -173,7 +173,8 @@ const SopUpload = () => {
             {
               label: "Delete",
               onClick: () => {
-                handleDelete(params.data);
+                setModalType("delete");
+                setOpenModal(true);
               },
             },
           ]}
@@ -301,8 +302,23 @@ const SopUpload = () => {
         )}
 
         {modalType === "delete" && (
-          <div>
-            <form></form>
+          <div className="border-default border-borderGray rounded-xl flex flex-col gap-4">
+            <div>
+              <span>Delete {selectedSop?.name} ?</span>
+            </div>
+            <div className="flex justify-end gap-4 items-center">
+              <SecondaryButton
+                title={"Cancel"}
+                handleSubmit={() => {
+                  setOpenModal(false);
+                  setSelectedSop([]);
+                }}
+              />
+              <DangerButton
+                title={"Delete"}
+                handleSubmit={handleDelete(selectedSop)}
+              />
+            </div>
           </div>
         )}
       </MuiModal>
