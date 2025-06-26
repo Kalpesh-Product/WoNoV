@@ -605,29 +605,6 @@ const correctAttendance = async (req, res, next) => {
 
     await newRequest.save();
 
-    // await createLog({
-    //   path: logPath,
-    //   action: logAction,
-    //   remarks: "Attendance correction request submitted",
-    //   status: "Success",
-    //   user: user,
-    //   ip: ip,
-    //   company: company,
-    //   sourceKey: logSourceKey,
-    //   sourceId: foundDate._id,
-    //   changes: {
-    //     requester: foundUser._id,
-    //     oldInTime: foundDate.inTime,
-    //     oldOutTime: foundDate.outTime,
-    //     oldStartBreak: foundDate.startBreak,
-    //     oldEndBreak: foundDate.endBreak,
-    //     newInTime: clockIn,
-    //     newOutTime: clockOut,
-    //     newStartBreak: breakStart,
-    //     newEndBreak: breakEnd,
-    //   },
-    // });
-
     return res.status(200).json({
       message: "Attendance correction request submitted successfully",
     });
@@ -739,28 +716,6 @@ const approveCorrectionRequest = async (req, res, next) => {
     correction.approvedBy = user;
     await correction.save();
 
-    // ✅ Log the approval
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Correction request approved and attendance updated",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: attendanceId,
-      changes: {
-        status: "Approved",
-        updatedAttendanceId: updatedAttendance._id,
-        inTime,
-        outTime,
-        startBreak,
-        endBreak,
-        breakDuration,
-      },
-    });
-
     return res.status(200).json({
       message: "Correction request approved",
     });
@@ -809,22 +764,6 @@ const rejectCorrectionRequest = async (req, res, next) => {
         logSourceKey
       );
     }
-
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Correction request rejected successfully",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: attendanceId,
-      changes: {
-        status: "Rejected",
-        approvedBy: user,
-      },
-    });
 
     return res.status(200).json({ message: "Correction request Rejected" });
   } catch (error) {
