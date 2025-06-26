@@ -19,14 +19,9 @@ const clockIn = async (req, res, next) => {
     const clockInTime = new Date(inTime);
     const currDate = new Date();
 
-    if (clockInTime.getDate() !== currDate.getDate()) {
-      throw new CustomError(
-        "Please select present date",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // if (clockInTime.getDate() !== currDate.getDate()) {
+    //   return res.status(400).json({ message: "Please select present date" });
+    // }
 
     if (isNaN(clockInTime.getTime())) {
       return res.status(400).json({ message: "Invalid date format" });
