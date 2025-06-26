@@ -92,8 +92,7 @@ const uploadCompanyDocument = async (req, res, next) => {
   }
 };
 const updateCompanyDocument = async (req, res, next) => {
-  const { documentId } = req.params;
-  const { newName } = req.body;
+  const { newName, documentId } = req.body;
   const user = req.user;
 
   try {
@@ -129,11 +128,9 @@ const updateCompanyDocument = async (req, res, next) => {
     for (const section of sections) {
       const result = await tryUpdate(section);
       if (result.modifiedCount > 0) {
-        return res
-          .status(200)
-          .json({
-            message: `Document name updated successfully in ${section}`,
-          });
+        return res.status(200).json({
+          message: `Document name updated successfully in ${section}`,
+        });
       }
     }
 
@@ -346,8 +343,7 @@ const uploadDepartmentDocument = async (req, res) => {
 };
 
 const updateDepartmentDocument = async (req, res, next) => {
-  const { documentId } = req.params;
-  const { newName } = req.body;
+  const { newName, documentId } = req.body;
   const user = req.user;
 
   try {

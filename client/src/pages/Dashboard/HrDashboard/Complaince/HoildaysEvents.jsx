@@ -73,7 +73,7 @@ const HoildaysEvents = ({ title }) => {
           tableTitle={"Holidays"}
           columns={columns}
           buttonTitle="Add Holiday"
-          handleClick={() => setModalOpen(true)}
+          handleSubmit={() => setModalOpen(true)}
           data={combinedEvents}
         />
 

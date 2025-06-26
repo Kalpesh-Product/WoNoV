@@ -11,6 +11,7 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 
 const HrEvents = ({ title }) => {
   const axios = useAxiosPrivate();
@@ -61,13 +62,12 @@ const HrEvents = ({ title }) => {
   return (
     <PageFrame>
       <div>
-        <AgTable
+        <YearWiseTable
           key={combinedEvents.length}
-          search={true}
           tableTitle={"Events"}
           columns={columns}
           buttonTitle="Add Event"
-          handleClick={() => setModalOpen(true)}
+          handleSubmit={() => setModalOpen(true)}
           data={combinedEvents}
         />
 
