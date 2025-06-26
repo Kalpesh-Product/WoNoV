@@ -134,8 +134,8 @@ router.post(
   upload.single("document"),
   uploadCompanyDocument
 );
-router.patch("/update-company-document/:documentId", updateCompanyDocument);
-router.delete("/delete-company-document/:documentId", deleteCompanyDocument);
+router.patch("/update-company-document", updateCompanyDocument);
+router.delete("/delete-company-document", deleteCompanyDocument);
 router.get("/get-company-documents/:type", getCompanyDocuments);
 
 // Department Documents
