@@ -4,6 +4,9 @@ const errorHandler = (err, req, res, next) => {
   next();
 };
 
+//////////////////////////////////////////////////
+//Error handling and storing error logs
+
 // const multer = require("multer");
 // const { createLog } = require("../utils/moduleLogs");
 

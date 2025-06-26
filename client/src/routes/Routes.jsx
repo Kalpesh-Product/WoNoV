@@ -372,6 +372,7 @@ import DepartmentAssetCommon from "../components/Pages/DepartmentAssetCommon";
 import DepartmentSOP from "../pages/Dashboard/HrDashboard/Complaince/DepartmentSOP";
 import SopUpload from "../components/Pages/SopUpload";
 import ManageUnit from "../pages/Dashboard/SalesDashboard/ManageUnit";
+import PolicyUpload from "../components/Pages/PolicyUpload";
 import MainDashboard from "../pages/Dashboard/MainDashboard/MainDashboard";
 
 export const routes = createBrowserRouter([
@@ -476,7 +477,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "policies",
-                            element: <Policies />,
+                            element: <PolicyUpload />,
                           },
                         ],
                       },
@@ -631,7 +632,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "policies",
-                            element: <FinancePolicies />,
+                            element: <PolicyUpload />,
                           },
                         ],
                       },
@@ -881,7 +882,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "policies",
-                            element: <AdminPolicies />,
+                            element: <PolicyUpload />,
                           },
                         ],
                       },
@@ -1032,7 +1033,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "policies",
-                            element: <MaintenancePolicies />,
+                            element: <PolicyUpload />,
                           },
                         ],
                       },
@@ -1178,7 +1179,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "policies",
-                            element: <ItPolicies />,
+                            element: <PolicyUpload />,
                           },
                         ],
                       },
@@ -1474,7 +1475,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "policies",
-                            element: <SalesPolicies />,
+                            element: <PolicyUpload />,
                           },
                         ],
                       },
@@ -1515,6 +1516,10 @@ export const routes = createBrowserRouter([
                             path: "pending-approvals",
                             element: <AttendanceRequests />,
                             index: true,
+                          },
+                          {
+                            path: "completed",
+                            element: <AttendanceCompleted />,
                           },
                         ],
                       },
@@ -1733,7 +1738,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "policies",
-                            element: <HrPolicies />,
+                            element: <PolicyUpload />,
                           },
                         ],
                       },
