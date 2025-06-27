@@ -8,17 +8,17 @@ const attendanceSchema = new mongoose.Schema(
     outTime: {
       type: Date,
     },
-    startBreak: {
-      type: Date,
-    },
-    endBreak: {
-      type: Date,
-    },
+    breaks: [
+      {
+        startBreak: {
+          type: Date,
+        },
+        endBreak: {
+          type: Date,
+        },
+      },
+    ],
     breakDuration: {
-      type: Number,
-      default: 0,
-    },
-    breakCount: {
       type: Number,
       default: 0,
     },

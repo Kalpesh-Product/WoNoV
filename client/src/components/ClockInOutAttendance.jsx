@@ -10,6 +10,9 @@ const ClockInOutAttendance = () => {
   const { auth } = useAuth();
 
   const [startTime, setStartTime] = useState(null);
+  const [takeBreak, setTakeBreak] = useState(null);
+  const [stopBreak, setStopBreak] = useState(null);
+  const [hasClockedIn, setHasClockedIn] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [offset, setOffset] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
@@ -54,6 +57,7 @@ const ClockInOutAttendance = () => {
     onSuccess: ({ data, inTime }) => {
       toast.success("Clocked in successfully!");
       setStartTime(inTime);
+      setHasClockedIn(true);
       setOffset(0); // start fresh
       setElapsedTime(getElapsedSecondsWithOffset(inTime, 0));
     },
@@ -70,8 +74,43 @@ const ClockInOutAttendance = () => {
     onSuccess: () => {
       toast.success("Clocked out successfully!");
       setStartTime(null);
+      setHasClockedIn(false);
       setElapsedTime(0);
       setOffset(0);
+    },
+    onError: (error) => toast.error(error.response.data.message),
+  });
+
+  const { mutate: startBreak, isPending: isStartbreak } = useMutation({
+    mutationFn: async (breakTime) => {
+      const res = await axios.patch("/api/attendance/start-break", {
+        startBreak: breakTime,
+      });
+      return { data: res.data, breakTime }; // Return both server response and time
+    },
+    onSuccess: ({ data, breakTime }) => {
+      console.log("start break", breakTime);
+      toast.success("Break started");
+      setStopBreak(null);
+      setTakeBreak(breakTime);
+      setOffset(0); // start fresh
+    },
+    onError: (error) => toast.error(error.response.data.message),
+  });
+
+  const { mutate: endBreak, isPending: isEndBreak } = useMutation({
+    mutationFn: async (breakTime) => {
+      const res = await axios.patch("/api/attendance/end-break", {
+        endBreak: breakTime,
+      });
+      return { data: res.data, breakTime }; // Return both server response and time
+    },
+    onSuccess: ({ data, breakTime }) => {
+      console.log("end break", breakTime);
+      toast.success("Break ended");
+      setTakeBreak(null);
+      setStopBreak(breakTime);
+      setOffset(0); // start fresh
     },
     onError: (error) => toast.error(error.response.data.message),
   });
@@ -86,6 +125,15 @@ const ClockInOutAttendance = () => {
     clockOut(now);
   };
 
+  const handleStartBreak = () => {
+    const now = new Date().toISOString();
+    startBreak(now);
+  };
+  const handleEnBreak = () => {
+    const now = new Date().toISOString();
+    endBreak(now);
+  };
+
   const formatElapsedTime = (seconds) => {
     const hrs = String(Math.floor(seconds / 3600)).padStart(2, "0");
     const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
@@ -96,10 +144,13 @@ const ClockInOutAttendance = () => {
   if (isBooting) {
     return (
       <div className="flex justify-center items-center h-40">
-        <span className="text-content text-gray-600">Loading attendance...</span>
+        <span className="text-content text-gray-600">
+          Loading attendance...
+        </span>
       </div>
     );
   }
+
 
   return (
     <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
@@ -111,13 +162,31 @@ const ClockInOutAttendance = () => {
               : "Not Clocked In"}
           </div>
 
-          <button
-            onClick={startTime ? handleStop : handleStart}
-            className={`h-40 w-40 rounded-full ${startTime ? "bg-[#EB5C45]" : "bg-wonoGreen  transition-all"}  text-white flex justify-center items-center hover:scale-105`}
-            disabled={isClockingIn || isClockingOut}
-          >
-            {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"}
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={startTime ? handleStop : handleStart}
+              className={`h-40 w-40 rounded-full ${
+                startTime ? "bg-[#EB5C45]" : "bg-wonoGreen  transition-all"
+              }  text-white flex justify-center items-center hover:scale-105`}
+              disabled={isClockingIn || isClockingOut}
+            >
+              {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"}
+            </button>
+
+            <button
+              onClick={takeBreak ? handleEnBreak : handleStartBreak}
+              className={`h-40 w-40 rounded-full ${
+                takeBreak ? "bg-[#FB923C]" : "bg-[#FACC15]  transition-all"
+              }  text-white flex justify-center items-center hover:scale-105`}
+              disabled={isStartbreak || isEndBreak}
+            >
+              {takeBreak
+                ? "End Break"
+                : isStartbreak
+                ? "Starting..."
+                : "Start Break"}
+            </button>
+          </div>
         </div>
         <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700">
           <div className="font-semibold text-base text-gray-900">
@@ -130,6 +199,7 @@ const ClockInOutAttendance = () => {
               {auth?.user?.clockInDetails?.hasClockedIn
                 ? "Clocked In"
                 : "Not Clocked In"}
+              {/* {startTime ? "Clocked In" : "Not Clocked In"} */}
             </span>
           </div>
 
@@ -150,6 +220,18 @@ const ClockInOutAttendance = () => {
               {startTime ? formatElapsedTime(elapsedTime) : "—"}
             </span>
           </div>
+          {takeBreak && (
+            <div className="flex justify-between">
+              <span className="text-muted">Break Start:</span>
+              <span className="font-medium">{takeBreak}</span>
+            </div>
+          )}
+          {stopBreak && (
+            <div className="flex justify-between">
+              <span className="text-muted">Break End:</span>
+              <span className="font-medium">{stopBreak}</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -95,18 +95,10 @@ const clockOut = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid date format" });
     }
 
-    // Get the start and end of the day for the provided outTime
-    const startOfDay = new Date(clockOutTime);
-    startOfDay.setUTCHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(clockOutTime);
-    endOfDay.setUTCHours(23, 59, 59, 999);
-
-    // Retrieve today’s attendance entry for the user
-    const attendance = await Attendance.findOne({
-      user,
-      inTime: { $gte: startOfDay, $lt: endOfDay },
-    }).sort({ createdAt: -1 });
+    // Retrieve latest attendance entry for the user
+    const attendance = await Attendance.findOne({ user }).sort({
+      createdAt: -1,
+    });
 
     if (!attendance) {
       return res
@@ -118,7 +110,19 @@ const clockOut = async (req, res, next) => {
       return res.status(400).json({ message: "Already clocked out" });
     }
 
-    // Update the attendance record with outTime
+    // ✅ Auto-end the last break if it's open
+    const lastBreak = attendance.breaks?.[attendance.breaks.length - 1];
+    if (lastBreak && lastBreak.startBreak && !lastBreak.endBreak) {
+      lastBreak.endBreak = clockOutTime;
+
+      const duration =
+        (clockOutTime - new Date(lastBreak.startBreak)) / (1000 * 60); // in minutes
+      if (duration > 0) {
+        attendance.breakDuration += duration;
+      }
+    }
+
+    // ✅ Finalize clock-out
     attendance.outTime = clockOutTime;
     const updatedAttendance = await attendance.save();
 
@@ -150,14 +154,12 @@ const startBreak = async (req, res, next) => {
   const logAction = "Start Break";
   const logSourceKey = "attendance";
   const { startBreak } = req.body;
-  const loggedInUser = req.user;
-  const ip = req.ip;
-  const company = req.company;
+  const { user, ip, company } = req;
 
   try {
     if (!startBreak) {
       throw new CustomError(
-        "All fields are required",
+        "Start break time is required",
         logPath,
         logAction,
         logSourceKey
@@ -174,63 +176,45 @@ const startBreak = async (req, res, next) => {
       );
     }
 
-    // Retrieve the latest attendance record for the user
+    // Get today's date range
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Get latest attendance record for today
     const attendance = await Attendance.findOne({
-      user: loggedInUser._id,
+      user,
+      inTime: { $gte: startOfDay, $lte: endOfDay },
     }).sort({ createdAt: -1 });
+
     if (!attendance) {
       throw new CustomError(
-        "No clock in record exists",
+        "No clock-in record exists",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
-    if (attendance.breakCount === 2) {
+    // ✅ Prevent starting a new break if last one is still active
+    const lastBreak = attendance.breaks.at(-1); // last element
+    if (lastBreak && !lastBreak.endBreak) {
       throw new CustomError(
-        "Only 2 breaks allowed",
+        "Previous break not ended yet",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
-    const updatedAttendance = await Attendance.findByIdAndUpdate(
-      attendance._id,
-      {
-        startBreak: startBreakTime,
-        endBreak: null,
-        breakCount: attendance.breakCount + 1,
-      },
-      { new: true }
-    );
-
-    if (!updatedAttendance) {
-      throw new CustomError(
-        "No clock in record exists",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    // Log the successful break start
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Break started successfully",
-      status: "Success",
-      user: loggedInUser,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: updatedAttendance._id,
-      changes: {
-        startBreak: startBreakTime,
-        breakCount: updatedAttendance.breakCount,
-      },
+    // Append new break
+    attendance.breaks.push({
+      startBreak: startBreakTime,
+      endBreak: null,
     });
+
+    await attendance.save();
 
     return res.status(200).json({ message: "Break started" });
   } catch (error) {
@@ -254,7 +238,7 @@ const endBreak = async (req, res, next) => {
   try {
     if (!endBreak) {
       throw new CustomError(
-        "All fields are required",
+        "End break time is required",
         logPath,
         logAction,
         logSourceKey
@@ -271,10 +255,19 @@ const endBreak = async (req, res, next) => {
       );
     }
 
-    // Retrieve the latest attendance record for the user
-    const attendance = await Attendance.findOne({ user: user._id }).sort({
-      createdAt: -1,
-    });
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const attendance = await Attendance.findOne({
+      user,
+      inTime: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+    }).sort({ createdAt: -1 });
+
     if (!attendance) {
       throw new CustomError(
         "No clock in record exists",
@@ -284,39 +277,53 @@ const endBreak = async (req, res, next) => {
       );
     }
 
-    if (!attendance.startBreak) {
+    // Find the most recent break without an endBreak
+    const lastBreak = attendance.breaks
+      .slice()
+      .reverse()
+      .find((brk) => brk.endBreak === null);
+
+    if (!lastBreak || !lastBreak.startBreak) {
       throw new CustomError(
-        "No break record found",
+        "No ongoing break found",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
-    const startBreakTime = new Date(attendance.startBreak);
-    const breakDuration =
-      (endBreakTime - startBreakTime) / (1000 * 60) +
-      (attendance.breakDuration || 0);
+    const startBreakTime = new Date(lastBreak.startBreak);
 
-    attendance.endBreak = endBreakTime;
-    attendance.breakDuration = breakDuration;
+    lastBreak.endBreak = endBreakTime;
+
+    // Recalculate total breakDuration
+    attendance.breakDuration = attendance.breaks.reduce((total, brk) => {
+      if (brk.startBreak && brk.endBreak) {
+        return (
+          total +
+          (new Date(brk.endBreak) - new Date(brk.startBreak)) / (1000 * 60)
+        );
+      }
+      return total;
+    }, 0);
+
     await attendance.save();
 
-    // Log the successful break end
+    // Log
     await createLog({
       path: logPath,
       action: logAction,
       remarks: "Break ended successfully",
       status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
+      user,
+      ip,
+      company,
       sourceKey: logSourceKey,
       sourceId: attendance._id,
       changes: {
-        startBreak: attendance.startBreak,
+        startBreak: startBreakTime,
         endBreak: endBreakTime,
-        breakDuration,
+        breakDuration: attendance.breakDuration,
       },
     });
 
@@ -448,11 +455,6 @@ const correctAttendance = async (req, res, next) => {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);
     }
 
-    // const foundDate = await Attendance.findOne({
-    //   user: foundUser._id,
-    //   createdAt: { $gte: startOfDay, $lt: endOfDay },
-    // }).sort({ createdAt: -1 });
-
     const foundDate = await Attendance.findOne({
       user: foundUser._id,
       inTime: { $gte: startOfDay, $lt: endOfDay },
@@ -467,19 +469,6 @@ const correctAttendance = async (req, res, next) => {
       );
     }
 
-    const isAllowed =
-      currentDate.getDate() - targetedDate.getDate() === 1 ||
-      currentDate.getDate() - targetedDate.getDate() === 0;
-
-    // if (!isAllowed) {
-    //   throw new CustomError(
-    //     "Correction request only for same or previous day is allowed",
-    //     logPath,
-    //     logAction,
-    //     logSourceKey
-    //   );
-    // }
-
     function mergeDateWithTime(dateOnly, timeString) {
       const time = new Date(timeString);
       const merged = new Date(dateOnly);
@@ -492,12 +481,6 @@ const correctAttendance = async (req, res, next) => {
       return merged;
     }
 
-    // Validate presence and parse
-    // const clockIn = inTime ? new Date(inTime) : null;
-    // const clockOut = outTime ? new Date(outTime) : null;
-    // const breakStart = startBreak ? new Date(startBreak) : null;
-    // const breakEnd = endBreak ? new Date(endBreak) : null;
-
     const clockIn = inTime ? mergeDateWithTime(targetedDate, inTime) : null;
     const clockOut = outTime ? mergeDateWithTime(targetedDate, outTime) : null;
     const breakStart = startBreak
@@ -507,62 +490,58 @@ const correctAttendance = async (req, res, next) => {
       ? mergeDateWithTime(targetedDate, endBreak)
       : null;
 
-    // Check validity of any provided fields
-    if (inTime && isNaN(clockIn)) {
+    // Validate provided fields
+    if (inTime && isNaN(clockIn))
       throw new CustomError(
         "Invalid clock-in format",
         logPath,
         logAction,
         logSourceKey
       );
-    }
-    if (outTime && isNaN(clockOut)) {
+    if (outTime && isNaN(clockOut))
       throw new CustomError(
         "Invalid clock-out format",
         logPath,
         logAction,
         logSourceKey
       );
-    }
-    if (startBreak && isNaN(breakStart)) {
+    if (startBreak && isNaN(breakStart))
       throw new CustomError(
         "Invalid start break format",
         logPath,
         logAction,
         logSourceKey
       );
-    }
-    if (endBreak && isNaN(breakEnd)) {
+    if (endBreak && isNaN(breakEnd))
       throw new CustomError(
         "Invalid end break format",
         logPath,
         logAction,
         logSourceKey
       );
-    }
 
-    //Validate if the time to be corrected exists in the DB
+    const correctedBreaks = [];
 
-    // Create new correction request
+    correctedBreaks.push({ startBreak: breakStart, endBreak: breakEnd });
+
+    const originalBreaks = foundDate.breaks || [];
 
     const newRequest = new AttendanceCorrection({
       inTime: clockIn,
       outTime: clockOut,
-      startBreak: breakStart,
-      endBreak: breakEnd,
+      correctedBreaks,
       originalInTime: foundDate.inTime || null,
       originalOutTime: foundDate.outTime || null,
-      originalStartBreak: foundDate.startBreak || null,
-      originalEndBreak: foundDate.endBreak || null,
+      originalBreaks: originalBreaks,
       reason,
       user: foundUser._id,
-      company: company,
+      company,
     });
 
     await newRequest.save();
 
     return res.status(200).json({
-      message: "Attendance correction request submitted successfully",
+      message: "Correction request submitted successfully",
     });
   } catch (error) {
     if (error instanceof CustomError) {
@@ -594,9 +573,7 @@ const approveCorrectionRequest = async (req, res, next) => {
     }
 
     // ✅ Fetch the correction request
-    const correction = await AttendanceCorrection.findById({
-      _id: attendanceId,
-    });
+    const correction = await AttendanceCorrection.findById(attendanceId);
     if (!correction) {
       throw new CustomError(
         "Correction request not found",
@@ -606,51 +583,36 @@ const approveCorrectionRequest = async (req, res, next) => {
       );
     }
 
-    const { user: userId, inTime, outTime, startBreak, endBreak } = correction;
+    const { user: userId, inTime, outTime, breaks = [] } = correction;
 
-    // ✅ Build date boundaries for finding the correct attendance
+    // ✅ Build date range to find original attendance
     const targetDate = new Date(inTime || correction.createdAt);
-    const startOfDay = new Date(
-      targetDate.getFullYear(),
-      targetDate.getMonth(),
-      targetDate.getDate(),
-      0,
-      0,
-      0,
-      0
-    );
-    const endOfDay = new Date(
-      targetDate.getFullYear(),
-      targetDate.getMonth(),
-      targetDate.getDate(),
-      23,
-      59,
-      59,
-      999
-    );
+    const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
 
-    // ✅ Calculate breakDuration in minutes
-    let breakDuration = 0;
-    if (startBreak && endBreak) {
-      breakDuration = Math.floor(
-        (new Date(endBreak) - new Date(startBreak)) / 60000
-      ); // ms to min
-    }
+    // ✅ Calculate total breakDuration
+    let totalBreakDuration = 0;
+    breaks.forEach((b) => {
+      if (b.startBreak && b.endBreak) {
+        const diff = new Date(b.endBreak) - new Date(b.startBreak);
+        totalBreakDuration += diff > 0 ? diff : 0;
+      }
+    });
+    const breakDurationInMinutes = totalBreakDuration / (1000 * 60);
 
-    // ✅ Update the actual attendance record
+    // ✅ Update attendance with corrected values
     const updatedAttendance = await Attendance.findOneAndUpdate(
       {
         user: userId,
-        inTime: { $gte: startOfDay, $lt: endOfDay },
+        inTime: { $gte: startOfDay, $lte: endOfDay },
       },
       {
         $set: {
           inTime,
           outTime,
-          startBreak,
-          endBreak,
-          breakDuration,
-          breakCount: startBreak && endBreak ? 1 : 0,
+          breaks: breaks.length > 0 ? breaks : [],
+          breakDuration: breakDurationInMinutes,
+          breakCount: breaks.length,
           status: "Approved",
         },
         $unset: { rejectedBy: "" },
@@ -667,7 +629,7 @@ const approveCorrectionRequest = async (req, res, next) => {
       );
     }
 
-    // ✅ Update correction request status to Approved
+    // ✅ Mark correction request as approved
     correction.status = "Approved";
     correction.approvedBy = user;
     await correction.save();
