@@ -24,6 +24,7 @@ import humanDate from "../../utils/humanDateForamt";
 import { toast } from "sonner";
 import PageFrame from "./PageFrame";
 import UploadFileInput from "../UploadFileInput";
+import  html2pdf  from "html2pdf.js";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
@@ -203,17 +204,18 @@ const Reimbursement = () => {
     },
   });
 
-  const exportToPDF = async () => {
-    const canvas = await html2canvas(formRef.current, {
-      scale: window.devicePixelRatio,
-    });
+  const exportToPDF = () => {
+    if (!formRef.current) return;
 
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const imgWidth = 210;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-    pdf.save("Voucher_Form.pdf");
+    const options = {
+      margin: 0.2,
+      filename: "Voucher_Form.pdf",
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 1, useCORS: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    };
+
+    html2pdf().set(options).from(formRef.current).save();
   };
 
   return (

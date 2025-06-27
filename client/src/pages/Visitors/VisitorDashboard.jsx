@@ -15,6 +15,8 @@ import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import LazyDashboardWidget from "../../components/Optimization/LazyDashboardWidget";
 import dayjs from "dayjs";
+import YearlyGraph from "../../components/graphs/YearlyGraph";
+import DateBasedGraph from "../../components/graphs/DateBasedGraph";
 
 const VisitorDashboard = () => {
   const navigate = useNavigate();
@@ -35,7 +37,6 @@ const VisitorDashboard = () => {
   const visitorCategories = Array.isArray(visitorsData)
     ? visitorsData.map((item) => item.visitorType)
     : [];
-
 
   const visitorMap = {};
   visitorsData.forEach(({ visitorType }) => {
@@ -86,44 +87,43 @@ const VisitorDashboard = () => {
     },
   ];
 
-const visitorsChartOptions = {
-  chart: {
-    type: "bar",
-    toolbar: { show: false },
-    fontFamily: "Poppins-Regular",
-  },
-  xaxis: {
-    categories: months,
-  },
-  yaxis: {
-    max: 50, // ✅ Add this line
-    title: {
-      text: "No. of Visitors",
+  const visitorsChartOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      fontFamily: "Poppins-Regular",
     },
-    labels: {
-      formatter: (val) => `${Math.round(val)}`,
+    xaxis: {
+      categories: months,
     },
-  },
-  plotOptions: {
-    bar: {
-      borderRadius: 4,
-      horizontal: false,
-      columnWidth: "40%",
-      dataLabels: {
-        position: "top",
+    yaxis: {
+      max: 50, // ✅ Add this line
+      title: {
+        text: "No. of Visitors",
+      },
+      labels: {
+        formatter: (val) => `${Math.round(val)}`,
       },
     },
-  },
-  dataLabels: {
-    enabled: true,
-    offsetY: -25,
-    style: {
-      fontSize: "12px",
-      colors: ["#000"],
+    plotOptions: {
+      bar: {
+        borderRadius: 4,
+        horizontal: false,
+        columnWidth: "40%",
+        dataLabels: {
+          position: "top",
+        },
+      },
     },
-  },
-};
-
+    dataLabels: {
+      enabled: true,
+      offsetY: -25,
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+    },
+  };
 
   //---------------------------------------------------First Graph Data---------------------------------------------------//
   //---------------------------------------------------Category Wise Visitors Donut Data---------------------------------------------------//
@@ -479,18 +479,15 @@ const visitorsChartOptions = {
       layout: 1,
       widgets: [
         // <WidgetSection layout={1} border title={"Monthly Visitor Statistics"}>
-        <WidgetSection
-          layout={1}
-          border
-          title={"Monthly Total Visitors"}
-          titleLabel={"FY 2025-26"}
-        >
-          <BarGraph
-            height={400}
-            data={visitorsSeries}
-            options={visitorsChartOptions}
-          />
-        </WidgetSection>,
+
+        <DateBasedGraph
+          rawData={visitorsData}
+          dateKey="dateOfVisit"
+          chartTitle="MONTHLY TOTAL VISITORS"
+          instanceTitle="TOTAL VISIOTRS"
+          yAxisTitle="No. of Visitors"
+          yAxisMax={50}
+        />,
       ],
     },
     {

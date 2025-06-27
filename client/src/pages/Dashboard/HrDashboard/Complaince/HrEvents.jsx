@@ -44,7 +44,7 @@ const HrEvents = ({ title }) => {
   const { data: holidayEvents = [] } = useQuery({
     queryKey: ["holidayEvents"],
     queryFn: async () => {
-      const response = await axios.get("/api/events/all-events");
+      const response = await axios.get("/api/events/get-events");
       return response.data;
     },
   });
@@ -75,7 +75,7 @@ const HrEvents = ({ title }) => {
   });
 
   const onSubmit = (data) => {
-    if (!data.title || !data.startDate) {
+    if (!data.title || !data.start) {
       toast.error("Please fill all fields");
       return;
     }
@@ -84,8 +84,8 @@ const HrEvents = ({ title }) => {
       title: data.title,
       type: "event",
       description: data.description,
-      start: data.startDate,
-      end: data.endDate,
+      start: data.start,
+      end: data.end,
     };
 
     addEventMutation.mutate(payload);

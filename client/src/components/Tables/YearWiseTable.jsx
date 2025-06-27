@@ -35,7 +35,15 @@ const YearWiseTable = ({
   hideTitle = true,
 }) => {
   const lastEmittedMonthRef = useRef(null);
-
+  const [exportTable, setExportTable] = useState(false);
+  const agGridRef = useRef(null);
+  const handleExportPass = () => {
+    if (agGridRef.current) {
+      agGridRef.current.api.exportDataAsCsv({
+        fileName: `${tableTitle || "data"}.csv`,
+      });
+    }
+  };
   const fiscalMap = useMemo(() => {
     const map = new Map();
     data.forEach((item) => {
@@ -152,9 +160,14 @@ const YearWiseTable = ({
             </span>
           </div>
         )}
-        {buttonTitle && (
-          <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
-        )}
+        <div className="flex gap-4 items-center">
+          {buttonTitle && (
+            <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
+          )}
+          {exportData && (
+            <PrimaryButton title={"Export"} handleSubmit={handleExportPass} />
+          )}
+        </div>
       </div>
 
       <div className="flex items-center justify-between">
@@ -214,7 +227,8 @@ const YearWiseTable = ({
       <AgTable
         key={key}
         enableCheckbox={checkbox}
-        exportData={exportData}
+        tableRef={agGridRef}
+        exportData={exportTable}
         dropdownColumns={dropdownColumns}
         checkAll={checkAll}
         tableTitle={tableTitle}

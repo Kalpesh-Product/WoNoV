@@ -103,8 +103,8 @@ const ClockInOutAttendance = () => {
 
   return (
     <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
-      <div className="grid grid-cols-4 gap-4">
-        <div className="col-span-2 flex justify-center items-center flex-col">
+      <div className="grid grid-cols-5 gap-4">
+        <div className="col-span-3 flex justify-center items-center flex-col">
           <div className="text-subtitle text-primary font-pmedium font-medium mb-4">
             {startTime
               ? `Time Elapsed: ${formatElapsedTime(elapsedTime)}`

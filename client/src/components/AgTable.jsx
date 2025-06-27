@@ -37,6 +37,7 @@ const AgTableComponent = React.memo(
     isRowSelectable,
     batchButton,
     hideTitle,
+    tableRef,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -44,35 +45,19 @@ const AgTableComponent = React.memo(
     const [appliedFilters, setAppliedFilters] = useState({});
     const [isFilterDrawerOpen, setFilterDrawerOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState([]); // ✅ Track selected rows
-    const [isTableInView, setTableInView] = useState(true); // ✅ Track table visibility
-
-    const tableRef = useRef(null); // ✅ Reference to track table visibility
     const gridRef = useRef(null);
-
-    const tableRefCurrent = tableRef.current;
-
-    useEffect(() => {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          setTableInView(entry.isIntersecting);
-        },
-        { threshold: 0.6 } // 20% of the table must be visible
-      );
-
-      if (tableRefCurrent) {
-        observer.observe(tableRefCurrent);
-      }
-
-      return () => {
-        if (tableRefCurrent) observer.unobserve(tableRefCurrent);
-      };
-    }, [tableRefCurrent]);
 
     useEffect(() => {
       if (data && data.length > 0) {
         setFilteredData(data);
       }
     }, [data]);
+
+    useEffect(() => {
+      if (tableRef && gridRef.current) {
+        tableRef.current = gridRef.current;
+      }
+    }, [gridRef, tableRef]);
 
     const defaultColDef = {
       resizable: true,

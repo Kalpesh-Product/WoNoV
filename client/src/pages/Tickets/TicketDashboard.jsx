@@ -12,15 +12,16 @@ import useAuth from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import FinanceCard from "../../components/FinanceCard";
 import { CircularProgress } from "@mui/material";
+import { useState } from "react";
 
 const TicketDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
 
-  const roles = auth.user.role.map((role)=>  role.roleTitle )
-  const depts = auth.user.departments.map((dept)=>  dept.name )
-
+  const roles = auth.user.role.map((role) => role.roleTitle);
+  const depts = auth.user.departments.map((dept) => dept.name);
+  const [filteredTotal, setFilteredTotal] = useState(0);
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
     queryFn: async () => {
@@ -48,7 +49,7 @@ const TicketDashboard = () => {
       }
     },
   });
-    const totalTickets = ticketsData.length || 0
+  const totalTickets = ticketsData.length || 0;
 
   const ticketsFilteredData = {
     openTickets: ticketsData.filter((item) => item.status === "Open").length,
@@ -66,28 +67,31 @@ const TicketDashboard = () => {
         auth.user.departments.includes(item.raisedToDepartment) &&
         item.status === "Escalated"
     ).length,
-    averagePerformance: ((ticketsData.filter((item) => item.status === "Closed")
-      .length / ticketsData.length)*100).toFixed(0)
+    averagePerformance: (
+      (ticketsData.filter((item) => item.status === "Closed").length /
+        ticketsData.length) *
+      100
+    ).toFixed(0),
   };
 
-  const avg = ((ticketsData.filter((item) => item.status === "Closed")
-      .length / ticketsData.length)*100).toFixed(0)
+  const avg = (
+    (ticketsData.filter((item) => item.status === "Closed").length /
+      ticketsData.length) *
+    100
+  ).toFixed(0);
 
+  let masterDepartments = [];
 
-  let masterDepartments = []
-
-  if(roles.includes("Master Admin") || roles.includes("Super Admin")){
-     masterDepartments = !departmentsIsLoading
-    ? departments.map((dept) => dept.name)
-    : [];
-  }
-  else{
-   masterDepartments = !departmentsIsLoading
-  ? departments
-      .filter((dept) => depts.includes(dept.name))
-      .map((dept) => dept.name)
-  : [];
-
+  if (roles.includes("Master Admin") || roles.includes("Super Admin")) {
+    masterDepartments = !departmentsIsLoading
+      ? departments.map((dept) => dept.name)
+      : [];
+  } else {
+    masterDepartments = !departmentsIsLoading
+      ? departments
+          .filter((dept) => depts.includes(dept.name))
+          .map((dept) => dept.name)
+      : [];
   }
 
   const departmentCountMap = {};
@@ -165,7 +169,6 @@ const TicketDashboard = () => {
   const todayTicketseries = todayPriorityOrder.map(
     (priority) => todayPriorityCountMap[priority] || 0
   );
-  
 
   const filterDepartmentTickts = (department) => {
     const tickets = currentMonthTickets.filter(
@@ -183,10 +186,13 @@ const TicketDashboard = () => {
           border
           padding
           title={"Overall Department Raised Tickets"}
-          TitleAmount={`TOTAL TICKETS : ${totalTickets}`}
+          TitleAmount={`TOTAL TICKETS : ${filteredTotal}`}
         >
           {!isLoading ? (
-            <AreaGraph responseData={ticketsData} />
+            <AreaGraph
+              responseData={ticketsData}
+              onTotalChange={setFilteredTotal}
+            />
           ) : (
             <div className="h-72 flex items-center justify-center">
               <CircularProgress />
@@ -359,7 +365,9 @@ const TicketDashboard = () => {
             },
             {
               title: "Assigned Tickets",
-              value: ticketsFilteredData.assignedTickets ? ticketsFilteredData.assignedTickets : 0,
+              value: ticketsFilteredData.assignedTickets
+                ? ticketsFilteredData.assignedTickets
+                : 0,
               route: "/app/tickets/manage-tickets",
             },
             {
