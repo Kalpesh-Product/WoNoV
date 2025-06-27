@@ -96,13 +96,16 @@ const ClockInOutAttendance = () => {
   if (isBooting) {
     return (
       <div className="flex justify-center items-center h-40">
-        <span className="text-content text-gray-600">Loading attendance...</span>
+        <span className="text-content text-gray-600">
+          Loading attendance...
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
+    // <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
+    <div className="flex flex-col  gap-4 p-4 ">
       <div className="grid grid-cols-4 gap-4">
         <div className="col-span-2 flex justify-center items-center flex-col">
           <div className="text-subtitle text-primary font-pmedium font-medium mb-4">
@@ -113,19 +116,20 @@ const ClockInOutAttendance = () => {
 
           <button
             onClick={startTime ? handleStop : handleStart}
-            className={`h-40 w-40 rounded-full ${startTime ? "bg-[#EB5C45]" : "bg-wonoGreen  transition-all"}  text-white flex justify-center items-center hover:scale-105`}
-            disabled={isClockingIn || isClockingOut}
-          >
+            className={`h-40 w-40 rounded-full ${
+              startTime ? "bg-[#EB5C45]" : "bg-wonoGreen  transition-all"
+            }  text-white flex justify-center items-center hover:scale-105`}
+            disabled={isClockingIn || isClockingOut}>
             {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"}
           </button>
         </div>
-        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700">
+        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 pl-24">
           <div className="font-semibold text-base text-gray-900">
             Clock-in Details
           </div>
 
-          <div className="flex justify-between">
-            <span className="text-muted">Status:</span>
+          <div className="flex justify-start">
+            <span className="text-muted">Status: &nbsp;</span>
             <span className="font-medium">
               {auth?.user?.clockInDetails?.hasClockedIn
                 ? "Clocked In"
@@ -133,8 +137,8 @@ const ClockInOutAttendance = () => {
             </span>
           </div>
 
-          <div className="flex justify-between">
-            <span className="text-muted">Clock-in Time:</span>
+          <div className="flex justify-start">
+            <span className="text-muted">Clock-in Time: &nbsp;</span>
             <span className="font-medium">
               {auth?.user?.clockInDetails?.clockInTime
                 ? new Date(
@@ -144,8 +148,8 @@ const ClockInOutAttendance = () => {
             </span>
           </div>
 
-          <div className="flex justify-between">
-            <span className="text-muted">Elapsed Time:</span>
+          <div className="flex justify-start">
+            <span className="text-muted">Elapsed Time: &nbsp;</span>
             <span className="font-medium">
               {startTime ? formatElapsedTime(elapsedTime) : "—"}
             </span>
