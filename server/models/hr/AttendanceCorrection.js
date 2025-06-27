@@ -8,12 +8,16 @@ const attendanceCorrectionSchema = new mongoose.Schema(
     outTime: {
       type: Date,
     },
-    startBreak: {
-      type: Date,
-    },
-    endBreak: {
-      type: Date,
-    },
+    correctedBreaks: [
+      {
+        startBreak: {
+          type: Date,
+        },
+        endBreak: {
+          type: Date,
+        },
+      },
+    ],
     //original times
     originalInTime: {
       type: Date,
@@ -21,12 +25,16 @@ const attendanceCorrectionSchema = new mongoose.Schema(
     originalOutTime: {
       type: Date,
     },
-    originalStartBreak: {
-      type: Date,
-    },
-    originalEndBreak: {
-      type: Date,
-    },
+    originalBreaks: [
+      {
+        startBreak: {
+          type: Date,
+        },
+        endBreak: {
+          type: Date,
+        },
+      },
+    ],
     reason: {
       type: String,
     },

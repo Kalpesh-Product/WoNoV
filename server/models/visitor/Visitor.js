@@ -61,7 +61,13 @@ const visitorSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    scheduledTime: {
+    scheduledDate: {
+      type: Date,
+    },
+    scheduledStartTime: {
+      type: Date,
+    },
+    scheduledEndTime: {
       type: Date,
     },
     toMeet: {

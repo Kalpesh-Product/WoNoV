@@ -16,7 +16,10 @@ const {
 
 router.post(
   "/request-budget/:departmentId",
-  upload.single("invoice"),
+  upload.fields([
+    { name: "invoice", maxCount: 1 },
+    { name: "voucher", maxCount: 1 },
+  ]),
   requestBudget
 );
 router.get("/pending-approvals", fetchPendingApprovals);

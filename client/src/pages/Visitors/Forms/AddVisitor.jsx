@@ -3,7 +3,11 @@ import { useForm, Controller } from "react-hook-form";
 import { TextField, MenuItem, CircularProgress } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
-import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import {
+  DatePicker,
+  LocalizationProvider,
+  TimePicker,
+} from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -40,6 +44,7 @@ const AddVisitor = () => {
       visitorCompany: "",
       paymentAmount: "",
       paymentStatus: "",
+      scheduledDate: null,
     },
   });
 
@@ -128,6 +133,7 @@ const AddVisitor = () => {
     },
   });
   const onSubmit = (data) => {
+    console.log("data", data);
     const isBiznest = data.clientCompany === "6799f0cd6a01edbe1bc3fcea";
 
     const payload = {
@@ -237,7 +243,8 @@ const AddVisitor = () => {
                       helperText={errors.gender?.message}
                       size="small"
                       label="Gender"
-                      fullWidth>
+                      fullWidth
+                    >
                       <MenuItem value="" disabled>
                         Select Gender
                       </MenuItem>
@@ -258,7 +265,8 @@ const AddVisitor = () => {
                       select
                       label="Select Visitor Type"
                       error={!!errors.visitorType}
-                      helperText={errors.visitorType?.message}>
+                      helperText={errors.visitorType?.message}
+                    >
                       <MenuItem value="" disabled>
                         Select Visitor Type
                       </MenuItem>
@@ -315,7 +323,8 @@ const AddVisitor = () => {
                         field.onChange(e);
                         setSelectedDepartment("");
                       }}
-                      select>
+                      select
+                    >
                       <MenuItem value="" disabled>
                         Select Company
                       </MenuItem>
@@ -355,7 +364,8 @@ const AddVisitor = () => {
                       }}
                       select
                       error={!!errors.department}
-                      helperText={errors.department?.message}>
+                      helperText={errors.department?.message}
+                    >
                       <MenuItem value="">Select Department</MenuItem>
                       {visitorType === "Meeting" && (
                         <MenuItem value="na">N/A</MenuItem>
@@ -391,7 +401,8 @@ const AddVisitor = () => {
                           (!showClientMembers && !showBiznestEmployees) ||
                           (isBiznest && selectedDepartment === "na")
                         }
-                        label={"Select Person"}>
+                        label={"Select Person"}
+                      >
                         <MenuItem value="">Select the person to meet</MenuItem>
 
                         {/* Show client members if a non-BIZNest company is selected */}
@@ -430,30 +441,32 @@ const AddVisitor = () => {
                   <span className="text-subtitle font-pmedium">Timings</span>
                 </div>
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
-                  {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <Controller
-                    name="dateOfVisit"
-                    control={control}
-                    rules={{ required: "Date of visit is required" }}
-                    render={({ field }) => (
-                      <DatePicker
-                        {...field}
-                        format="DD-MM-YYYY"
-                        label={"Date of Visit"}
-                        value={field.value || null}
-                        onChange={(e) => field.onChange(e)}
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            size: "small",
-                            error: !!errors.dateOfVisit,
-                            helperText: errors.dateOfVisit?.message,
-                          },
-                        }}
+                  {visitorType === "Scheduled" && (
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <Controller
+                        name="scheduledDate"
+                        control={control}
+                        rules={{ required: "Scheduled date is required" }}
+                        render={({ field }) => (
+                          <DatePicker
+                            {...field}
+                            format="DD-MM-YYYY"
+                            label={"Scheduled Date"}
+                            value={field.value || null}
+                            onChange={(e) => field.onChange(e)}
+                            slotProps={{
+                              textField: {
+                                fullWidth: true,
+                                size: "small",
+                                error: !!errors.scheduledDate,
+                                helperText: errors.scheduledDate?.message,
+                              },
+                            }}
+                          />
+                        )}
                       />
-                    )}
-                  />
-                </LocalizationProvider> */}
+                    </LocalizationProvider>
+                  )}
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Controller
                       name="checkIn"
@@ -463,14 +476,15 @@ const AddVisitor = () => {
                         <TimePicker
                           {...field}
                           label={"Check-In Time"}
-                          slotProps={{ textField: { size: "small" } }}
+                          slotProps={{
+                            textField: {
+                              size: "small",
+                              error: !!errors.checkOut,
+                              helperText: errors.checkOut?.message,
+                            },
+                          }}
                           render={(params) => (
-                            <TextField
-                              {...params}
-                              fullWidth
-                              error={!!errors.checkIn}
-                              helperText={errors.checkIn?.message}
-                            />
+                            <TextField {...params} fullWidth />
                           )}
                         />
                       )}
@@ -480,19 +494,19 @@ const AddVisitor = () => {
                     <Controller
                       name="checkOut"
                       control={control}
-                      rules={{ required: "Check-Out time is required" }}
                       render={({ field }) => (
                         <TimePicker
                           {...field}
                           label={"Check-Out Time"}
-                          slotProps={{ textField: { size: "small" } }}
+                          slotProps={{
+                            textField: {
+                              size: "small",
+                              error: !!errors.checkOut,
+                              helperText: errors.checkOut?.message,
+                            },
+                          }}
                           render={(params) => (
-                            <TextField
-                              {...params}
-                              fullWidth
-                              error={!!errors.checkOut}
-                              helperText={errors.checkOut?.message}
-                            />
+                            <TextField {...params} fullWidth />
                           )}
                         />
                       )}
