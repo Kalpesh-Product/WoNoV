@@ -61,6 +61,9 @@ const visitorSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    scheduledDate: {
+      type: Date,
+    },
     scheduledStartTime: {
       type: Date,
     },

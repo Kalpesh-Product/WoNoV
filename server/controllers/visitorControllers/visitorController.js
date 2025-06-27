@@ -134,6 +134,7 @@ const addVisitor = async (req, res, next) => {
       checkOut,
       scheduledStartTime,
       scheduledEndTime,
+      scheduledDate,
       toMeet,
       clientToMeet,
       clientCompany,
@@ -163,14 +164,23 @@ const addVisitor = async (req, res, next) => {
 
     // Scheduled-specific checks
     if (isScheduled) {
-      if (!scheduledStartTime || !scheduledEndTime) {
+      if (!scheduledDate) {
         throw new CustomError(
-          "Missing scheduled start/end time for scheduled visitor",
+          "Missing scheduled date for scheduled visitor",
           logPath,
           logAction,
           logSourceKey
         );
       }
+
+      // if (!scheduledStartTime || !scheduledEndTime) {
+      //   throw new CustomError(
+      //     "Missing scheduled start/end time for scheduled visitor",
+      //     logPath,
+      //     logAction,
+      //     logSourceKey
+      //   );
+      // }
 
       if (!toMeet) {
         throw new CustomError(
@@ -186,29 +196,26 @@ const addVisitor = async (req, res, next) => {
         toMeet,
         visitorType: "Scheduled",
         company,
-        dateOfVisit: {
-          $gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          $lt: new Date(new Date().setHours(23, 59, 59, 999)),
-        },
-        $or: [
-          {
-            scheduledStartTime: {
-              $lt: new Date(scheduledEndTime),
-              $gte: new Date(scheduledStartTime),
-            },
-          },
-          {
-            scheduledEndTime: {
-              $gt: new Date(scheduledStartTime),
-              $lte: new Date(scheduledEndTime),
-            },
-          },
-        ],
+        scheduledDate,
+        // $or: [
+        //   {
+        //     scheduledStartTime: {
+        //       $lt: new Date(scheduledEndTime),
+        //       $gte: new Date(scheduledStartTime),
+        //     },
+        //   },
+        //   {
+        //     scheduledEndTime: {
+        //       $gt: new Date(scheduledStartTime),
+        //       $lte: new Date(scheduledEndTime),
+        //     },
+        //   },
+        // ],
       });
 
       if (overlappingVisitor) {
         throw new CustomError(
-          "Another visitor is already scheduled to meet this person during that time.",
+          "Another visitor is already scheduled to meet this person during that day.",
           logPath,
           logAction,
           logSourceKey
@@ -286,8 +293,11 @@ const addVisitor = async (req, res, next) => {
       dateOfVisit: visitDate,
       checkIn: clockIn,
       checkOut: clockOut,
-      scheduledStartTime: isScheduled ? new Date(scheduledStartTime) : null,
-      scheduledEndTime: isScheduled ? new Date(scheduledEndTime) : null,
+      // scheduledStartTime: scheduledStartTime
+      //   ? new Date(scheduledStartTime)
+      //   : null,
+      // scheduledEndTime: scheduledEndTime ? new Date(scheduledEndTime) : null,
+      scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
       toMeet: isDepartmentEmpty ? null : toMeet,
       clientToMeet: clientToMeet || null,
       clientCompany: clientCompany || null,
