@@ -31,7 +31,7 @@ const createEvent = async (req, res, next) => {
 
     return res.status(201).json({ message: "Event created successfully" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    next(error)
   }
 };
 
@@ -177,7 +177,7 @@ const extendEvent = async (req, res, next) => {
 
     return res.status(200).json({ message: "Meeting time extended" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    next(error)
   }
 };
 
@@ -204,7 +204,7 @@ const deleteEvent = async (req, res, next) => {
       data: inActiveEvent,
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    next(error)
   }
 };
 
