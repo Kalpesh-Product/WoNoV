@@ -59,6 +59,20 @@ const budgetSchema = new mongoose.Schema({
   //   type: String,
   //   required: true,
   // },
+  voucher: {
+    name: {
+      type: String,
+    },
+    link: {
+      type: String,
+    },
+    id: {
+      type: String,
+    },
+    date: {
+      type: Date,
+    },
+  },
   invoice: {
     name: {
       type: String,

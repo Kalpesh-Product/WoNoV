@@ -37,6 +37,8 @@ const requestBudget = async (req, res, next) => {
       gstIn,
     } = req.body;
     const { departmentId } = req.params;
+    const invoiceFile = req.files?.invoice?.[0];
+    const voucherFile = req.files?.voucher?.[0];
 
     if (!expanseName || !expanseType || !unitId) {
       throw new CustomError(
@@ -47,9 +49,18 @@ const requestBudget = async (req, res, next) => {
       );
     }
 
-    if (expanseType === "Reimbursement" && !req.file) {
+    if (expanseType === "Reimbursement" && !voucherFile) {
       throw new CustomError(
         "Voucher file isn't uploaded",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (expanseType === "Reimbursement" && !invoiceFile) {
+      throw new CustomError(
+        "Invoice file isn't uploaded",
         logPath,
         logAction,
         logSourceKey
@@ -112,29 +123,27 @@ const requestBudget = async (req, res, next) => {
     };
 
     // Handle invoice file upload
-    if (req.file) {
-      const allowedMimeTypes = [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      ];
+    const allowedMimeTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
 
-      const file = req.file;
-
-      if (!allowedMimeTypes.includes(file.mimetype)) {
+    if (invoiceFile) {
+      if (!allowedMimeTypes.includes(invoiceFile.mimetype)) {
         throw new CustomError(
-          "Invalid file type",
+          "Invalid invoice file type",
           logPath,
           logAction,
           logSourceKey
         );
       }
 
-      let processedBuffer = file.buffer;
-      const originalFilename = file.originalname;
+      let processedBuffer = invoiceFile.buffer;
+      const originalFilename = invoiceFile.originalname;
 
-      if (file.mimetype === "application/pdf") {
-        const pdfDoc = await PDFDocument.load(file.buffer);
+      if (invoiceFile.mimetype === "application/pdf") {
+        const pdfDoc = await PDFDocument.load(invoiceFile.buffer);
         pdfDoc.setTitle(originalFilename.split(".")[0] || "Untitled");
         processedBuffer = await pdfDoc.save();
       }
@@ -160,8 +169,49 @@ const requestBudget = async (req, res, next) => {
         id: response.public_id,
         date: new Date(),
       };
-
       budgetData.invoiceAttached = true;
+    }
+
+    if (voucherFile) {
+      if (!allowedMimeTypes.includes(voucherFile.mimetype)) {
+        throw new CustomError(
+          "Invalid voucher file type",
+          logPath,
+          logAction,
+          logSourceKey
+        );
+      }
+
+      let processedBuffer = voucherFile.buffer;
+      const originalFilename = voucherFile.originalname;
+
+      if (voucherFile.mimetype === "application/pdf") {
+        const pdfDoc = await PDFDocument.load(voucherFile.buffer);
+        pdfDoc.setTitle(originalFilename.split(".")[0] || "Untitled");
+        processedBuffer = await pdfDoc.save();
+      }
+
+      const response = await handleDocumentUpload(
+        processedBuffer,
+        `${foundCompany.companyName}/departments/${departmentExists.name}/budget/voucher`,
+        originalFilename
+      );
+
+      if (!response.public_id) {
+        throw new CustomError(
+          "Failed to upload voucher",
+          logPath,
+          logAction,
+          logSourceKey
+        );
+      }
+
+      budgetData.voucher = {
+        name: originalFilename,
+        link: response.secure_url,
+        id: response.public_id,
+        date: new Date(),
+      };
     }
 
     const newBudgetRequest = new Budget(budgetData);
