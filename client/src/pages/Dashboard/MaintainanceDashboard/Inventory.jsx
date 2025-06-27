@@ -139,6 +139,11 @@ const Inventory = () => {
       cellRenderer: (params) => inrFormat(params.value),
     },
     {
+      field: "openingPerUnitPrice",
+      headerName: "Opening Per Unit Price",
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
       field: "openingInventoryValue",
       headerName: "Opening Value (INR)",
       cellRenderer: (params) => inrFormat(params.value),
@@ -146,6 +151,11 @@ const Inventory = () => {
     {
       field: "newPurchaseUnits",
       headerName: "New Purchase Units",
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "newPurchasePerUnitPrice",
+      headerName: "New Purchase Per Unit Price",
       cellRenderer: (params) => inrFormat(params.value),
     },
     {
@@ -157,6 +167,10 @@ const Inventory = () => {
       field: "closingInventoryUnits",
       headerName: "Closing Units",
       cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "Category",
+      headerName: "Category",
     },
     {
       field: "date",
