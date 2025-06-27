@@ -3,36 +3,20 @@ const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 
 const createEvent = async (req, res, next) => {
-  const { user, ip, company } = req;
-  const { title, type, description, start, end, participants } = req.body;
-
-  const logPath = "events/EventLog";
-  const logAction = "Create Event";
-  const logSourceKey = "event";
+  const { company } = req;
+  const { title, type, description, start, end } = req.body;
 
   try {
     const startDate = new Date(start);
     const endDate = new Date(end);
 
     if (!title || !type || !description || !start || !end) {
-      throw new CustomError(
-        "All fields are required",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "All fields are required" });
     }
 
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      throw new CustomError(
-        "Invalid date format",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Invalid date format" });
     }
-
-    const validParticipants = Array.isArray(participants) ? participants : [];
 
     const newEvent = new Event({
       title,
@@ -40,41 +24,14 @@ const createEvent = async (req, res, next) => {
       description,
       start: startDate,
       end: endDate,
-      participants: validParticipants,
       company,
     });
 
-    const event = await newEvent.save();
-
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Event created successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: event._id,
-      changes: {
-        title,
-        type,
-        description,
-        start: startDate,
-        end: endDate,
-        participants: validParticipants,
-      },
-    });
+    await newEvent.save();
 
     return res.status(201).json({ message: "Event created successfully" });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
-    }
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -85,7 +42,7 @@ const getAllEvents = async (req, res, next) => {
 
     let query = { company };
 
-    if (thisMonth === 'true') {
+    if (thisMonth === "true") {
       const now = new Date();
       const year = now.getFullYear();
       const month = now.getMonth(); // 0-indexed
@@ -132,7 +89,6 @@ const getAllEvents = async (req, res, next) => {
     next(error);
   }
 };
-
 
 const getNormalEvents = async (req, res, next) => {
   try {
@@ -183,31 +139,16 @@ const getBirthdays = async (req, res, next) => {
 };
 
 const extendEvent = async (req, res, next) => {
-  const { user, ip, company } = req;
   const { id, extend } = req.body;
   const extendTime = new Date(extend);
 
-  const logPath = "events/EventLog";
-  const logAction = "Extend Event";
-  const logSourceKey = "event";
-
   try {
     if (!id) {
-      throw new CustomError(
-        "EventId is required",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "EventId is required" });
     }
 
     if (isNaN(extendTime.getTime())) {
-      throw new CustomError(
-        "Invalid date format",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "Invalid date format" });
     }
 
     const meetings = await Event.find({ type: "holiday" });
@@ -219,12 +160,9 @@ const extendEvent = async (req, res, next) => {
     });
 
     if (onGoingMeetings) {
-      throw new CustomError(
-        "Cannot extend the meeting due to ongoing meetings",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res
+        .status(400)
+        .json({ message: "Cannot extend the meeting due to ongoing meetings" });
     }
 
     const extendedMeeting = await Event.findOneAndUpdate(
@@ -234,56 +172,21 @@ const extendEvent = async (req, res, next) => {
     );
 
     if (!extendedMeeting) {
-      throw new CustomError(
-        "Event not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(404).json({ message: "Event not found" });
     }
-
-    // Success log with the updated event details
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Meeting time extended successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: extendedMeeting._id,
-      changes: { extendedEnd: extendTime },
-    });
 
     return res.status(200).json({ message: "Meeting time extended" });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
-    }
+    return res.status(500).json({ message: error.message });
   }
 };
 
 const deleteEvent = async (req, res, next) => {
-  const { user, ip, company } = req;
   const { id } = req.params;
-
-  const logPath = "events/EventLog";
-  const logAction = "Delete Event";
-  const logSourceKey = "event";
 
   try {
     if (!id) {
-      throw new CustomError(
-        "EventId is required",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(400).json({ message: "EventId is required" });
     }
 
     const inActiveEvent = await Event.findOneAndUpdate(
@@ -293,40 +196,15 @@ const deleteEvent = async (req, res, next) => {
     );
 
     if (!inActiveEvent) {
-      throw new CustomError(
-        "Event not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res.status(404).json({ message: "Event not found" });
     }
-
-    // Success log with event ID and details
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Event deleted successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: inActiveEvent._id,
-      changes: { eventId: inActiveEvent._id, active: "false" },
-    });
 
     return res.status(200).json({
       message: "Event deleted successfully",
       data: inActiveEvent,
     });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
-    }
+    return res.status(500).json({ message: error.message });
   }
 };
 

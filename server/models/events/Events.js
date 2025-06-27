@@ -26,12 +26,6 @@ const EventSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    participants: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
     active: {
       type:Boolean,
       default: true
