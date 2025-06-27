@@ -1,6 +1,4 @@
 const Event = require("../../models/events/Events");
-const CustomError = require("../../utils/customErrorlogs");
-const { createLog } = require("../../utils/moduleLogs");
 
 const createEvent = async (req, res, next) => {
   const { company } = req;
