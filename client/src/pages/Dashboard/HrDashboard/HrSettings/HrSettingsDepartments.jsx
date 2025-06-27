@@ -32,9 +32,8 @@ const HrSettingsDepartments = () => {
       cellRenderer: (params) => {
         return (
           <div>
-            <span className="text-primary cursor-pointer hover:underline">
-              {params.value}
-            </span>
+            {/* <span className="text-primary cursor-pointer hover:underline"> */}
+            <span className="">{params.value}</span>
           </div>
         );
       },
@@ -81,7 +80,6 @@ const HrSettingsDepartments = () => {
     //   ),
     // },
   ];
- 
 
   return (
     <div className="flex flex-col gap-8">

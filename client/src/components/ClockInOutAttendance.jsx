@@ -154,9 +154,10 @@ const ClockInOutAttendance = () => {
 
 
   return (
-    <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
-      <div className="grid grid-cols-5 gap-4">
-        <div className="col-span-3 flex justify-center items-center flex-col">
+    // <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
+    <div className="flex flex-col  gap-4 p-4 ">
+      <div className="grid grid-cols-4 gap-4">
+        <div className="col-span-2 flex justify-center items-center flex-col">
           <div className="text-subtitle text-primary font-pmedium font-medium mb-4">
             {startTime
               ? `Time Elapsed: ${formatElapsedTime(elapsedTime)}`
@@ -190,13 +191,13 @@ const ClockInOutAttendance = () => {
             </button>
           </div>
         </div>
-        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700">
+        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 pl-32">
           <div className="font-semibold text-base text-gray-900">
             Clock-in Details
           </div>
 
-          <div className="flex justify-between">
-            <span className="text-muted">Status:</span>
+          <div className="flex justify-start">
+            <span className="text-muted">Status: &nbsp;</span>
             <span className="font-medium">
               {/* {auth?.user?.clockInDetails?.clockInTime
                 ? "Clocked In"
@@ -205,8 +206,8 @@ const ClockInOutAttendance = () => {
             </span>
           </div>
 
-          <div className="flex justify-between">
-            <span className="text-muted">Clock-in Time:</span>
+          <div className="flex justify-start">
+            <span className="text-muted">Clock-in Time: &nbsp;</span>
             <span className="font-medium">
               {/* {auth?.user?.clockInDetails?.clockInTime
                 ? new Date(
@@ -221,8 +222,8 @@ const ClockInOutAttendance = () => {
             </span>
           </div>
 
-          <div className="flex justify-between">
-            <span className="text-muted">Elapsed Time:</span>
+          <div className="flex justify-start">
+            <span className="text-muted">Elapsed Time: &nbsp;</span>
             <span className="font-medium">
               {startTime ? formatElapsedTime(elapsedTime) : "—"}
             </span>

@@ -169,7 +169,7 @@ const YearWiseTable = ({
           )}
         </div>
       </div>
-
+      <hr />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 w-full justify-center">
           {monthsInFY.length > 0 && (
