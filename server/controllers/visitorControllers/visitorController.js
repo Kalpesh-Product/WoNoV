@@ -124,7 +124,6 @@ const addVisitor = async (req, res, next) => {
       lastName,
       email,
       gender,
-      // address,
       phoneNumber,
       purposeOfVisit,
       idProof,
@@ -133,7 +132,8 @@ const addVisitor = async (req, res, next) => {
       state,
       checkIn,
       checkOut,
-      scheduledTime,
+      scheduledStartTime,
+      scheduledEndTime,
       toMeet,
       clientToMeet,
       clientCompany,
@@ -143,11 +143,12 @@ const addVisitor = async (req, res, next) => {
       visitorFlag,
     } = req.body;
 
-    // Validate date format
     const visitDate = new Date();
     const clockIn = new Date(checkIn);
     const clockOut = checkOut ? new Date(checkOut) : null;
+    const isScheduled = visitorType === "Scheduled";
 
+    // Validate IDs
     if (
       visitorCompanyId &&
       !mongoose.Types.ObjectId.isValid(visitorCompanyId)
@@ -160,36 +161,54 @@ const addVisitor = async (req, res, next) => {
       );
     }
 
-    if (visitorType === "Scheduled" && !scheduledTime) {
-      throw new CustomError(
-        "Missing scheduled time",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    // Scheduled-specific checks
+    if (isScheduled) {
+      if (!scheduledStartTime || !scheduledEndTime) {
+        throw new CustomError(
+          "Missing scheduled start/end time for scheduled visitor",
+          logPath,
+          logAction,
+          logSourceKey
+        );
+      }
 
-    if (visitorType === "Scheduled") {
-      const existingVisitor = await Visitor.findOne({
+      if (!toMeet) {
+        throw new CustomError(
+          "Missing person to meet for scheduled visitor",
+          logPath,
+          logAction,
+          logSourceKey
+        );
+      }
+
+      // Prevent overlap: check if any scheduled visitor is meeting the same person at overlapping time
+      const overlappingVisitor = await Visitor.findOne({
         toMeet,
-        dateOfVisit: visitDate,
         visitorType: "Scheduled",
-        scheduledTime,
         company,
+        dateOfVisit: {
+          $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          $lt: new Date(new Date().setHours(23, 59, 59, 999)),
+        },
+        $or: [
+          {
+            scheduledStartTime: {
+              $lt: new Date(scheduledEndTime),
+              $gte: new Date(scheduledStartTime),
+            },
+          },
+          {
+            scheduledEndTime: {
+              $gt: new Date(scheduledStartTime),
+              $lte: new Date(scheduledEndTime),
+            },
+          },
+        ],
       });
 
-      if (clientToMeet && !mongoose.Types.ObjectId.isValid(clientToMeet)) {
+      if (overlappingVisitor) {
         throw new CustomError(
-          "Invalid client member Id provided",
-          logPath,
-          logAction,
-          logSourceKey
-        );
-      }
-
-      if (existingVisitor) {
-        throw new CustomError(
-          "A scheduled visitor is already meeting this person at the same time.",
+          "Another visitor is already scheduled to meet this person during that time.",
           logPath,
           logAction,
           logSourceKey
@@ -197,6 +216,7 @@ const addVisitor = async (req, res, next) => {
       }
     }
 
+    // Client member validation
     let foundClientMember = null;
     if (clientToMeet) {
       if (!mongoose.Types.ObjectId.isValid(clientToMeet)) {
@@ -219,38 +239,22 @@ const addVisitor = async (req, res, next) => {
       }
     }
 
+    // Resolve visitor company
     let visitorCompany = null;
+    const isClient = company !== visitorCompanyId;
 
-    // Save new external company if provided in request
-    // if (visitorCompany) {
-    // const newExternalCompany = new ExternalCompany({
-    //   ...visitorCompany,
-    //   company,
-    // });
-    // externalCompany = await newExternalCompany.save();
-
-    // }
-
-    // Lookup existing external company if ID provided
-    isClient = company !== visitorCompanyId ? true : false;
     if (visitorCompanyId && isClient) {
-      visitorCompany = await CoworkingClient.findById({
-        _id: visitorCompanyId,
-      });
-
+      visitorCompany = await CoworkingClient.findById(visitorCompanyId);
       if (!visitorCompany) {
         throw new CustomError(
-          "Company not found",
+          "Client company not found",
           logPath,
           logAction,
           logSourceKey
         );
       }
     } else if (visitorCompanyId) {
-      visitorCompany = await Company.findById({
-        _id: visitorCompanyId,
-      });
-
+      visitorCompany = await Company.findById(visitorCompanyId);
       if (!visitorCompany) {
         throw new CustomError(
           "Company not found",
@@ -261,7 +265,7 @@ const addVisitor = async (req, res, next) => {
       }
     }
 
-    // Handle empty department and clear toMeet if department is empty
+    // Handle optional department
     const isDepartmentEmpty =
       department === null ||
       department === undefined ||
@@ -273,26 +277,26 @@ const addVisitor = async (req, res, next) => {
       lastName,
       email,
       gender,
-      // address,
       phoneNumber,
       purposeOfVisit,
-      clientToMeet: clientToMeet ? clientToMeet : null,
-      clientCompany: clientCompany ? clientCompany : null,
       idProof: {
-        idType: idProof ? idProof.idType : "",
-        idNumber: idProof ? idProof.idNumber : "",
+        idType: idProof?.idType || "",
+        idNumber: idProof?.idNumber || "",
       },
       dateOfVisit: visitDate,
       checkIn: clockIn,
       checkOut: clockOut,
+      scheduledStartTime: isScheduled ? new Date(scheduledStartTime) : null,
+      scheduledEndTime: isScheduled ? new Date(scheduledEndTime) : null,
+      toMeet: isDepartmentEmpty ? null : toMeet,
+      clientToMeet: clientToMeet || null,
+      clientCompany: clientCompany || null,
       sector,
       city,
       state,
-      toMeet: isDepartmentEmpty ? null : toMeet,
-      company,
       department: isDepartmentEmpty ? null : department,
       visitorType,
-      visitorCompany: visitorCompany ? visitorCompany : null,
+      visitorCompany,
       company,
       visitorFlag,
     });
