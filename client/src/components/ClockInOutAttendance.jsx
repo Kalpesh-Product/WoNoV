@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
 import { computeOffset, getElapsedSecondsWithOffset } from "../utils/time";
-import  humanTime from "../utils/humanDateForamt"
+import  humanTime from "../utils/humanTime"
 
 
 const ClockInOutAttendance = () => {
@@ -236,7 +236,7 @@ const ClockInOutAttendance = () => {
           {stopBreak && (
             <div className="flex justify-between">
               <span className="text-muted">Break End:</span>
-              <span className="font-medium">{stopBreak}</span>
+              <span className="font-medium">{humanTime(stopBreak)}</span>
             </div>
           )}
         </div>
