@@ -31,6 +31,10 @@ const {
   deleteDepartmentDocument,
   updateCompanyDocument,
   updateDepartmentDocument,
+  handleDepartmentTemplateUpload,
+  deleteDepartmentTemplate,
+  getDepartmentTemplates,
+  updateDepartmentTemplate,
 } = require("../controllers/companyControllers/documentControllers");
 
 const {
@@ -144,14 +148,20 @@ router.post(
   upload.single("department-document"),
   uploadDepartmentDocument
 );
-router.patch(
-  "/update-department-document",
-  updateDepartmentDocument
-);
-router.patch(
-  "/delete-department-document",
-  deleteDepartmentDocument
-);
+router.patch("/update-department-document", updateDepartmentDocument);
+router.patch("/delete-department-document", deleteDepartmentDocument);
 router.get("/get-department-documents", getDepartmentDocuments);
+router.post(
+  "/upload-department-templates/:departmentId",
+  upload.single("template"),
+  handleDepartmentTemplateUpload
+);
+router.get("/department-templates/:departmentId", getDepartmentTemplates);
+router.delete("/delete-department-templates", deleteDepartmentTemplate);
+router.patch(
+  "/update-department-template",
+  upload.single("template"),
+  updateDepartmentTemplate
+);
 
 module.exports = router;

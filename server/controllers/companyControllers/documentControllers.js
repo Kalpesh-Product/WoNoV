@@ -2,10 +2,11 @@ const Company = require("../../models/hr/Company");
 const User = require("../../models/hr/UserData");
 const {
   handleDocumentUpload,
-  handleFileDelete,
+  handleDocumentDelete,
 } = require("../../config/cloudinaryConfig");
 const { PDFDocument } = require("pdf-lib");
 const path = require("path");
+const Department = require("../../models/Departments");
 
 const uploadCompanyDocument = async (req, res, next) => {
   const { documentName, type } = req.body;
@@ -187,7 +188,7 @@ const deleteCompanyDocument = async (req, res, next) => {
 
     // Delete from Cloudinary using the actual documentId
     if (targetDocumentId) {
-      const cloudRes = await handleFileDelete(targetDocumentId);
+      const cloudRes = await handleDocumentDelete(targetDocumentId);
       if (cloudRes.result !== "ok") {
         return res
           .status(500)
@@ -408,7 +409,6 @@ const deleteDepartmentDocument = async (req, res, next) => {
   const userId = req.user;
   const { documentId } = req.body;
 
-
   try {
     // 1) Fetch the user's company reference
     const foundUser = await User.findById(userId).select("company").lean();
@@ -419,7 +419,9 @@ const deleteDepartmentDocument = async (req, res, next) => {
     // 2) Load the full Company document
     const company = await Company.findById(foundUser.company);
     if (!company || !company.selectedDepartments?.length) {
-      return res.status(404).json({ message: "Company or departments not found" });
+      return res
+        .status(404)
+        .json({ message: "Company or departments not found" });
     }
 
     let updated = false;
@@ -436,7 +438,9 @@ const deleteDepartmentDocument = async (req, res, next) => {
       }
 
       // Try to find and mark Policy doc as inactive
-      const policyDoc = dept.policies?.find((doc) => doc._id.toString() === documentId);
+      const policyDoc = dept.policies?.find(
+        (doc) => doc._id.toString() === documentId
+      );
       if (policyDoc) {
         policyDoc.isActive = false;
         policyDoc.updatedAt = new Date();
@@ -447,18 +451,21 @@ const deleteDepartmentDocument = async (req, res, next) => {
 
     // 4) If not updated, return error
     if (!updated) {
-      return res.status(404).json({ message: "Document not found in departments" });
+      return res
+        .status(404)
+        .json({ message: "Document not found in departments" });
     }
 
     // 5) Save and return success
     await company.save({ validateBeforeSave: false });
 
-    return res.status(200).json({ message: "Document marked as inactive successfully" });
+    return res
+      .status(200)
+      .json({ message: "Document marked as inactive successfully" });
   } catch (error) {
     next(error);
   }
 };
-
 
 const getDepartmentDocuments = async (req, res, next) => {
   try {
@@ -809,6 +816,174 @@ const uploadComplianceDocument = async (req, res, next) => {
   }
 };
 
+const handleDepartmentTemplateUpload = async (req, res, next) => {
+  try {
+    const { departmentId } = req.params;
+    const file = req.file;
+    const { company } = req;
+    const { documentName } = req.body;
+
+    // Check if file is present
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // Validate company
+    const foundCompany = await Company.findOne({ _id: company }).lean().exec();
+    if (!foundCompany) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const foundDepartment = await Department.findOne({ _id: departmentId })
+      .lean()
+      .exec();
+
+    // Upload to Cloudinary
+    const uploadPath = `${foundCompany.companyName}/departments/${foundDepartment.name}/templates`;
+    const uploadedFile = await handleDocumentUpload(
+      file.buffer,
+      uploadPath,
+      file.originalname
+    );
+
+    // Construct template object
+    const newTemplate = {
+      name: documentName,
+      documentLink: uploadedFile.secure_url,
+      documentId: uploadedFile.public_id,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: null,
+    };
+
+    // Update the department
+    const updatedDepartment = await Department.findOneAndUpdate(
+      { _id: departmentId },
+      { $push: { templates: newTemplate } },
+      { new: true }
+    );
+
+    if (!updatedDepartment) {
+      return res.status(404).json({ message: "Department not found" });
+    }
+
+    return res.status(200).json({
+      message: "Template uploaded successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getDepartmentTemplates = async (req, res, next) => {
+  try {
+    const { departmentId } = req.params;
+    const foundDepartment = await Department.findOne({ _id: departmentId })
+      .lean()
+      .exec();
+    if (!foundDepartment) {
+      return res.status(404).json({ message: "Department not found" });
+    }
+    const templates = foundDepartment.templates;
+    return res.status(200).json({ templates });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteDepartmentTemplate = async (req, res, next) => {
+  try {
+    const { departmentId, documentId } = req.query;
+
+    // Find the department
+    const department = await Department.findOne({ departmentId });
+    if (!department) {
+      return res.status(404).json({ message: "Department not found" });
+    }
+
+    // Find the specific template
+    const template = department.templates.find(
+      (t) => t.documentId === documentId
+    );
+
+    if (!template) {
+      return res.status(404).json({ message: "Template not found" });
+    }
+
+    // Toggle active status
+    template.isActive = !template.isActive;
+    template.updatedAt = new Date();
+
+    await department.save({ validateBeforeSave: false });
+
+    res.status(200).json({
+      message: `Template ${
+        template.isActive ? "activated" : "deactivated"
+      } successfully`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateDepartmentTemplate = async (req, res, next) => {
+  try {
+    const { departmentId, templateId } = req.query;
+    const { documentName } = req.body;
+    const file = req.file;
+    const { company } = req;
+
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // Fetch company
+    const foundCompany = await Company.findById(company).lean().exec();
+    if (!foundCompany) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    // Fetch department
+    const department = await Department.findById(departmentId);
+    if (!department) {
+      return res.status(404).json({ message: "Department not found" });
+    }
+
+    // Find template by _id
+    const template = department.templates.id(templateId);
+    if (!template) {
+      return res.status(404).json({ message: "Template not found" });
+    }
+
+    // Delete old document from Cloudinary
+    await handleDocumentDelete(template.documentId);
+
+    // Upload new document
+    const uploadPath = `${foundCompany.companyName}/departments/${department.name}/templates`;
+    const uploadedFile = await handleDocumentUpload(
+      file.buffer,
+      uploadPath,
+      file.originalname
+    );
+
+    // Update template fields
+    template.name = documentName;
+    template.documentLink = uploadedFile.secure_url;
+    template.documentId = uploadedFile.public_id;
+    template.updatedAt = new Date();
+
+    // Save updated department
+    await department.save();
+
+    return res.status(200).json({
+      message: "Template updated successfully",
+      updatedTemplate: template,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   uploadCompanyDocument,
   getCompanyDocuments,
@@ -822,4 +997,8 @@ module.exports = {
   deleteCompanyDocument,
   updateDepartmentDocument,
   deleteDepartmentDocument,
+  handleDepartmentTemplateUpload,
+  getDepartmentTemplates,
+  deleteDepartmentTemplate,
+  updateDepartmentTemplate,
 };
