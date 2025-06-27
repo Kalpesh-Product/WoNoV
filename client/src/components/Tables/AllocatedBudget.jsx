@@ -316,7 +316,7 @@ const AllocatedBudget = ({
               </div>
             </div>
           </div>
-          <hr className="mt-4" />
+          {/* <hr className="mt-4" /> */}
 
           {/* AgTable */}
           {monthDataForSelectedType.rows.length > 0 ? (

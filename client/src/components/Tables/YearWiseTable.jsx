@@ -32,7 +32,7 @@ const YearWiseTable = ({
   handleBatchAction,
   batchButton,
   isRowSelectable,
-  hideTitle=true,
+  hideTitle = true,
 }) => {
   const lastEmittedMonthRef = useRef(null);
   const fiscalMap = useMemo(() => {
@@ -130,13 +130,16 @@ const YearWiseTable = ({
       <div className="flex items-center w-full justify-between">
         {tableTitle && (
           <div>
-            <span className="text-title text-primary font-pmedium uppercase">{tableTitle}</span>
+            <span className="text-title text-primary font-pmedium uppercase">
+              {tableTitle}
+            </span>
           </div>
         )}
         {buttonTitle && (
           <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
         )}
       </div>
+      <hr />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 w-full justify-center">
           {filteredData.length > 0 && (

@@ -170,8 +170,7 @@ const AgTableComponent = React.memo(
               tableTitle
                 ? "justify-between w-full items-center"
                 : "justify-end w-full"
-            } `}
-          >
+            } `}>
             {!hideTitle && (
               <div className="flex items-center justify-between pb-4">
                 <span className="font-pmedium text-title text-primary uppercase">
@@ -219,11 +218,12 @@ const AgTableComponent = React.memo(
           </div>
         </div>
 
+        <hr className="my-2" />
+
         <div
           className={`flex ${
             search ? "justify-between" : "justify-end"
-          }  items-center py-2`}
-        >
+          }  items-center py-2`}>
           {search ? (
             <TextField
               label="Search"
@@ -303,8 +303,7 @@ const AgTableComponent = React.memo(
         <MuiAside
           open={isFilterDrawerOpen}
           onClose={() => setFilterDrawerOpen(false)}
-          title="Advanced Filter"
-        >
+          title="Advanced Filter">
           {columns.map((column) =>
             dropdownColumns.includes(column.field) ? (
               <TextField
@@ -318,8 +317,7 @@ const AgTableComponent = React.memo(
                 value={filters[column.field] || ""}
                 onChange={(e) =>
                   handleFilterChange(column.field, e.target.value)
-                }
-              >
+                }>
                 <MenuItem value="">All</MenuItem>
                 {columnOptions[column.field]?.map((option) => (
                   <MenuItem key={option} value={option}>
@@ -349,8 +347,7 @@ const AgTableComponent = React.memo(
         <div
           ref={tableRef}
           className="ag-theme-quartz border-none w-full font-pregular"
-          style={{ height: tableHeight || 500 }}
-        >
+          style={{ height: tableHeight || 500 }}>
           <AgGridReact
             ref={gridRef}
             rowData={filteredData}
