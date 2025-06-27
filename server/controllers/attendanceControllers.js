@@ -95,8 +95,16 @@ const clockOut = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid date format" });
     }
 
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
     // Retrieve latest attendance entry for the user
-    const attendance = await Attendance.findOne({ user }).sort({
+    const attendance = await Attendance.findOne({
+      user,
+    }).sort({
       createdAt: -1,
     });
 
@@ -191,6 +199,15 @@ const startBreak = async (req, res, next) => {
     if (!attendance) {
       throw new CustomError(
         "No clock-in record exists",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (attendance.outTime) {
+      throw new CustomError(
+        "You've already clocked out",
         logPath,
         logAction,
         logSourceKey

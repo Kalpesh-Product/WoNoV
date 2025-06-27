@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
 import { computeOffset, getElapsedSecondsWithOffset } from "../utils/time";
+import  humanTime from "../utils/humanDateForamt"
+
 
 const ClockInOutAttendance = () => {
   const axios = useAxiosPrivate();
@@ -12,11 +14,11 @@ const ClockInOutAttendance = () => {
   const [startTime, setStartTime] = useState(null);
   const [takeBreak, setTakeBreak] = useState(null);
   const [stopBreak, setStopBreak] = useState(null);
-  const [hasClockedIn, setHasClockedIn] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [offset, setOffset] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
   const timerRef = useRef(null);
+  const hasClockedIn = auth?.user?.clockInDetails?.hasClockedIn;
 
   // Boot with server timestamps
   useEffect(() => {
@@ -56,8 +58,8 @@ const ClockInOutAttendance = () => {
     },
     onSuccess: ({ data, inTime }) => {
       toast.success("Clocked in successfully!");
+       console.log("start time", inTime);
       setStartTime(inTime);
-      setHasClockedIn(true);
       setOffset(0); // start fresh
       setElapsedTime(getElapsedSecondsWithOffset(inTime, 0));
     },
@@ -74,7 +76,6 @@ const ClockInOutAttendance = () => {
     onSuccess: () => {
       toast.success("Clocked out successfully!");
       setStartTime(null);
-      setHasClockedIn(false);
       setElapsedTime(0);
       setOffset(0);
     },
@@ -170,7 +171,8 @@ const ClockInOutAttendance = () => {
               }  text-white flex justify-center items-center hover:scale-105`}
               disabled={isClockingIn || isClockingOut}
             >
-              {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"}
+              {/* {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"} */}
+              {hasClockedIn ? "Stop" : isClockingIn ? "Starting..." : "Start"}
             </button>
 
             <button
@@ -196,19 +198,24 @@ const ClockInOutAttendance = () => {
           <div className="flex justify-between">
             <span className="text-muted">Status:</span>
             <span className="font-medium">
-              {auth?.user?.clockInDetails?.hasClockedIn
+              {/* {auth?.user?.clockInDetails?.clockInTime
                 ? "Clocked In"
-                : "Not Clocked In"}
-              {/* {startTime ? "Clocked In" : "Not Clocked In"} */}
+                : "Not Clocked In"} */}
+              {startTime ? "Clocked In" : "Not Clocked In"}
             </span>
           </div>
 
           <div className="flex justify-between">
             <span className="text-muted">Clock-in Time:</span>
             <span className="font-medium">
-              {auth?.user?.clockInDetails?.clockInTime
+              {/* {auth?.user?.clockInDetails?.clockInTime
                 ? new Date(
                     auth.user.clockInDetails.clockInTime
+                  ).toLocaleString()
+                : "—"} */}
+                {auth?.user?.clockInDetails?.clockInTime
+                ? new Date(
+                    startTime
                   ).toLocaleString()
                 : "—"}
             </span>
@@ -223,7 +230,7 @@ const ClockInOutAttendance = () => {
           {takeBreak && (
             <div className="flex justify-between">
               <span className="text-muted">Break Start:</span>
-              <span className="font-medium">{takeBreak}</span>
+              <span className="font-medium">{humanTime(takeBreak)}</span>
             </div>
           )}
           {stopBreak && (
