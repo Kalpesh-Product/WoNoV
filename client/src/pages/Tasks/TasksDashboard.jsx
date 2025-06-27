@@ -602,7 +602,7 @@ const TasksDashboard = () => {
       ],
     },
     {
-      layout: 6,
+      layout: 5,
       widgets: [
         <Card
           route={"/app/tasks/my-tasks"}
@@ -619,7 +619,7 @@ const TasksDashboard = () => {
           title={"Team Members"}
           icon={<MdFormatListBulleted />}
         />,
-        <Card route={""} title={"Mix Bag"} icon={<MdFormatListBulleted />} />,
+        // <Card route={""} title={"Mix Bag"} icon={<MdFormatListBulleted />} />,
         <Card
           route={"/app/tasks/reports"}
           title={"Reports"}

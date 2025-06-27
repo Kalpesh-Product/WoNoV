@@ -123,7 +123,7 @@ const ClockInOutAttendance = () => {
             {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"}
           </button>
         </div>
-        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 pl-24">
+        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 pl-32">
           <div className="font-semibold text-base text-gray-900">
             Clock-in Details
           </div>
