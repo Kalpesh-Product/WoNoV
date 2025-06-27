@@ -148,15 +148,6 @@ const addVisitor = async (req, res, next) => {
     const clockIn = new Date(checkIn);
     const clockOut = checkOut ? new Date(checkOut) : null;
 
-    // if (isNaN(visitDate.getTime()) || isNaN(clockIn.getTime())) {
-    //   throw new CustomError(
-    //     "Invalid date format",
-    //     logPath,
-    //     logAction,
-    //     logSourceKey
-    //   );
-    // }
-
     if (
       visitorCompanyId &&
       !mongoose.Types.ObjectId.isValid(visitorCompanyId)
@@ -169,11 +160,21 @@ const addVisitor = async (req, res, next) => {
       );
     }
 
+    if (visitorType === "Scheduled" && !scheduledTime) {
+      throw new CustomError(
+        "Missing scheduled time",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     if (visitorType === "Scheduled") {
       const existingVisitor = await Visitor.findOne({
         toMeet,
         dateOfVisit: visitDate,
         visitorType: "Scheduled",
+        scheduledTime,
         company,
       });
 
