@@ -192,6 +192,7 @@ const Inventory = () => {
           hideTitle={true}
           buttonTitle={"Add Inventory"}
           data={inventoryData || []}
+          tableHeight={450}
           dateColumn={"date"}
           columns={inventoryColumns}
           handleSubmit={handleAddAsset}

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import AgTable from "../../../../components/AgTable";
-import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useForm, Controller } from "react-hook-form";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
+import AgTable from "../../../../components/AgTable";
 import MuiModal from "../../../../components/MuiModal";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
-import { TextField, Button } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { DatePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers";
@@ -15,14 +16,28 @@ import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 
 const HrEvents = ({ title }) => {
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
-  const [newEvent, setNewEvent] = useState({ title: "", startDate: "" });
-  const [localEvents, setLocalEvents] = useState([]);
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      title: "",
+      type: "",
+      description: "",
+      start: null,
+      end: null,
+    },
+  });
 
   const columns = [
-    { field: "id", headerName: "SR No", width: 100 },
+    { field: "srNo", headerName: "SR No", width: 100 },
     { field: "title", headerName: "Event", flex: 1 },
-    { field: "start", headerName: "Date" },
+    { field: "startDate", headerName: "Date" },
     { field: "day", headerName: "Day" },
   ];
 
@@ -34,35 +49,53 @@ const HrEvents = ({ title }) => {
     },
   });
 
-  const combinedEvents = [...holidayEvents, ...localEvents].map(
-    (holiday, index) => {
-      const date = dayjs(holiday.start);
-      return {
-        id: index + 1,
-        title: holiday.title,
-        day: date.format("dddd"), // e.g., "Monday"
-        start: date.format("DD-MM-YYYY"),
-      };
-    }
-  );
+  const combinedEvents = [...holidayEvents].map((holiday) => {
+    const date = dayjs(holiday.start);
+    return {
+      title: holiday.title,
+      day: date.format("dddd"),
+      startDate: holiday.start,
+    };
+  });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!newEvent.title || !newEvent.startDate) {
+  const addEventMutation = useMutation({
+    mutationFn: async (eventData) => {
+      const response = await axios.post("/api/events/create-event", eventData);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["holidayEvents"] });
+      toast.success("Event added successfully!");
+      reset(); // Clear form
+      setModalOpen(false);
+    },
+    onError: () => {
+      toast.error("Failed to add event.");
+    },
+  });
+
+  const onSubmit = (data) => {
+    if (!data.title || !data.startDate) {
       toast.error("Please fill all fields");
       return;
     }
 
-    setLocalEvents((prev) => [...prev, newEvent]);
-    toast.success("Event/Event added successfully!");
-    setNewEvent({ title: "", startDate: "" });
-    setModalOpen(false);
+    const payload = {
+      title: data.title,
+      type: "event",
+      description: data.description,
+      start: data.startDate,
+      end: data.endDate,
+    };
+
+    addEventMutation.mutate(payload);
   };
 
   return (
     <PageFrame>
       <div>
         <YearWiseTable
+          dateColumn={"startDate"}
           key={combinedEvents.length}
           tableTitle={"Events"}
           columns={columns}
@@ -77,28 +110,85 @@ const HrEvents = ({ title }) => {
           title="Add Event"
         >
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <TextField
-                label="Title"
-                fullWidth
-                size="small"
-                value={newEvent.title}
-                onChange={(e) =>
-                  setNewEvent({ ...newEvent, title: e.target.value })
-                }
-              />
-              <DatePicker
-                label="Date"
-                slotProps={{ textField: { size: "small" } }}
-                value={newEvent.startDate ? dayjs(newEvent.startDate) : null}
-                onChange={(newDate) =>
-                  setNewEvent({ ...newEvent, startDate: newDate })
-                }
-                renderInput={(params) => (
-                  <TextField size="small" {...params} fullWidth />
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="flex flex-col gap-4"
+            >
+              <Controller
+                name="title"
+                control={control}
+                rules={{ required: "Event title is required" }}
+                render={({ field }) => (
+                  <TextField
+                    label="Title"
+                    fullWidth
+                    size="small"
+                    {...field}
+                    error={!!errors.title}
+                    helperText={errors.title?.message}
+                  />
                 )}
               />
 
+              <Controller
+                name="description"
+                control={control}
+                rules={{ required: "Event Description is required" }}
+                render={({ field }) => (
+                  <TextField
+                    label="Description"
+                    fullWidth
+                    multiline
+                    rows={4}
+                    size="small"
+                    {...field}
+                    error={!!errors.description}
+                    helperText={errors.description?.message}
+                  />
+                )}
+              />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Controller
+                  name="start"
+                  control={control}
+                  rules={{ required: "Start Date is required" }}
+                  render={({ field }) => (
+                    <DatePicker
+                      label="Start Date"
+                      value={field.value}
+                      format="DD-MM-YYYY"
+                      onChange={field.onChange}
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          error: !!errors.start,
+                          helperText: errors.start?.message,
+                        },
+                      }}
+                    />
+                  )}
+                />
+                <Controller
+                  name="end"
+                  control={control}
+                  rules={{ required: "End Date is required" }}
+                  render={({ field }) => (
+                    <DatePicker
+                      label="End Date"
+                      value={field.value}
+                      format="DD-MM-YYYY"
+                      onChange={field.onChange}
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          error: !!errors.end,
+                          helperText: errors.end?.message,
+                        },
+                      }}
+                    />
+                  )}
+                />
+              </div>
               <PrimaryButton type="submit" title="Add Event" />
             </form>
           </LocalizationProvider>

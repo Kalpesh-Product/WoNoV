@@ -31,8 +31,10 @@ const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const dispatch = useDispatch();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedHrFiscalYear, setSelectedHrFiscalYear] =
+    useState("FY 2024-25");
+
   const [budgetData, setBudgetData] = useState({});
-  const [totalUtilised, setTotalUtilised] = useState({});
   const [totalSalary, setTotalSalary] = useState({});
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
 
@@ -144,8 +146,17 @@ const HrDashboard = () => {
     ];
   }, [hrFinance]);
 
+  const selectedHrExpenseSeries = expenseRawSeries.find(
+    (item) => item.group === selectedHrFiscalYear
+  );
+
+  const totalUtilised = useMemo(() => {
+    if (!selectedHrExpenseSeries) return 0;
+    return selectedHrExpenseSeries.data.reduce((sum, val) => sum + val, 0);
+  }, [selectedHrExpenseSeries]);
+
   const march2025Expense = Math.round(
-    expenseRawSeries.find((series) => series.group === "FY 2024-25")
+    expenseRawSeries.find((series) => series.group === selectedHrFiscalYear)
       ?.data?.[11] || 0
   );
 
@@ -574,7 +585,6 @@ const HrDashboard = () => {
     },
   });
 
-
   // Calculate total and gender-specific counts
   const totalUsers = usersQuery.isLoading ? [] : usersQuery?.data?.length;
 
@@ -688,9 +698,6 @@ const HrDashboard = () => {
   //     0
   //   ) || 0;
 
-  // console.log("salaryExpense",salaryExpense)
-  // console.log("salaryBar",salaryBar?.[selectedFiscalYear]?.utilisedBudget)
-
   const lastUtilisedValue = hrBarData?.utilisedBudget?.at(-1) || 0;
 
   //------------------- UnitData -----------------------//
@@ -712,24 +719,30 @@ const HrDashboard = () => {
     .reduce((sum, item) => (item.sqft || 0) + sum, 0);
   //--------------------UnitData -----------------------//
   //--------------------New Data card data -----------------------//
+
   const HrExpenses = {
     cardTitle: "Expenses",
     // timePeriod: "FY 2024-25",
     descriptionData: [
       {
-        title: "FY 2024-25",
+        title: `${selectedHrFiscalYear}`,
         // value: `INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`,
         value: `INR ${inrFormat(totalUtilised)}`,
         route: "finance",
       },
       {
-        title: "March 2025",
-        // value: `INR ${Math.round(lastUtilisedValue).toLocaleString("en-IN")}`,
+        title: `${
+          selectedHrFiscalYear === "FY 2024-25" ? "March 2025" : "March 2026"
+        }`,
         value: `INR ${inrFormat(march2025Expense)}`,
         route: "finance",
       },
       {
-        title: "March 2025 Budget",
+        title: `${
+          selectedHrFiscalYear === "FY 2024-25"
+            ? "March 2025 Budget"
+            : "March 2026 Budget"
+        }`,
         // value: "N/A",
         value: `INR ${inrFormat(march2025Expense)}`,
         route: "finance",
@@ -859,7 +872,7 @@ const HrDashboard = () => {
               options={expenseOptions}
               title={`BIZ Nest HR DEPARTMENT EXPENSE`}
               titleAmount={`INR ${inrFormat(totalUtilised)}`}
-              onYearChange={setSelectedFiscalYear}
+              onYearChange={setSelectedHrFiscalYear}
             />
           </WidgetSection>
         </Suspense>,
@@ -994,14 +1007,13 @@ const HrDashboard = () => {
     },
   ];
 
-    useEffect(() => {
+  useEffect(() => {
     if (!isHrFinanceLoading && Array.isArray(hrFinance)) {
       const data = transformBudgetData(hrFinance);
       const utilised = data?.[selectedFiscalYear]?.utilisedBudget?.reduce(
         (a, b) => a + b,
         0
       );
-      setTotalUtilised(utilised);
 
       //Salary calculation
       const salary = transformBudgetData(salaryExpense);

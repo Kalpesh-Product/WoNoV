@@ -24,7 +24,7 @@ const YearWiseTable = ({
   checkbox,
   checkAll,
   key,
-  initialMonth, // ✅ NEW PROP
+  initialMonth,
   onMonthChange,
   exportData,
   dropdownColumns = [],
@@ -32,9 +32,10 @@ const YearWiseTable = ({
   handleBatchAction,
   batchButton,
   isRowSelectable,
-  hideTitle=true,
+  hideTitle = true,
 }) => {
   const lastEmittedMonthRef = useRef(null);
+
   const fiscalMap = useMemo(() => {
     const map = new Map();
     data.forEach((item) => {
@@ -58,9 +59,13 @@ const YearWiseTable = ({
     [fiscalMap]
   );
 
-  const [selectedFYIndex, setSelectedFYIndex] = useState(
-    fiscalYears.findIndex((fy) => fy === getFiscalYear(new Date()))
-  );
+  const [selectedFYIndex, setSelectedFYIndex] = useState(() => {
+    const defaultIndex = fiscalYears.findIndex(
+      (fy) => fy === getFiscalYear(new Date())
+    );
+    return defaultIndex !== -1 ? defaultIndex : 0;
+  });
+
   const selectedFY = fiscalYears[selectedFYIndex] || fiscalYears[0];
 
   const monthsInFY = useMemo(() => {
@@ -72,7 +77,7 @@ const YearWiseTable = ({
 
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
 
-  // ✅ Sync selectedMonthIndex with initialMonth prop
+  // ✅ Sync initial month if provided
   useEffect(() => {
     if (initialMonth && monthsInFY.length > 0) {
       const matchedIndex = monthsInFY.findIndex((monthStr) => {
@@ -84,7 +89,19 @@ const YearWiseTable = ({
     }
   }, [initialMonth, monthsInFY]);
 
-  // When selectedMonthIndex changes, notify parent
+  // ✅ Reset month if it doesn't exist in the new FY
+  useEffect(() => {
+    if (monthsInFY.length === 0) return;
+
+    const currentMonth = monthsInFY[selectedMonthIndex];
+    const isValid = fiscalMap.get(selectedFY)?.has(currentMonth);
+
+    if (!isValid) {
+      setSelectedMonthIndex(0); // Default to first month
+    }
+  }, [selectedFYIndex, monthsInFY, fiscalMap, selectedFY, selectedMonthIndex]);
+
+  // Notify parent on month change
   useEffect(() => {
     const currentMonth = monthsInFY[selectedMonthIndex];
     if (
@@ -113,7 +130,7 @@ const YearWiseTable = ({
             if (!date.isValid()) return params.value;
 
             if (!formatDate && !formatTime) {
-              return params.value; // ✅ raw value (e.g. ISO string or Date object)
+              return params.value;
             }
 
             if (formatTime) return date.format("hh:mm A");
@@ -123,23 +140,26 @@ const YearWiseTable = ({
       }
       return col;
     });
-  }, [columns, formatTime]);
+  }, [columns, formatDate, formatTime]);
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center w-full justify-between">
         {tableTitle && (
           <div>
-            <span className="text-title text-primary font-pmedium uppercase">{tableTitle}</span>
+            <span className="text-title text-primary font-pmedium uppercase">
+              {tableTitle}
+            </span>
           </div>
         )}
         {buttonTitle && (
           <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
         )}
       </div>
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 w-full justify-center">
-          {filteredData.length > 0 && (
+          {monthsInFY.length > 0 && (
             <>
               {/* Month Switcher */}
               <div className="flex items-center gap-2">
@@ -198,11 +218,11 @@ const YearWiseTable = ({
         dropdownColumns={dropdownColumns}
         checkAll={checkAll}
         tableTitle={tableTitle}
-        tableHeight={tableHeight ? tableHeight : 300}
+        tableHeight={tableHeight || 300}
         columns={formattedColumns}
         data={filteredData.map((item, index) => ({
           ...item,
-          srNo: index + 1, // ✅ Resets per month view
+          srNo: index + 1,
           date: humanDate(item[dateColumn]),
         }))}
         hideFilter={filteredData.length <= 9}

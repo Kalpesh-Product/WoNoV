@@ -80,7 +80,7 @@ const Header = () => {
           <div>
             <div className={`w-48 flex items-center gap-16 h-full pl-4`}>
               <img
-                onClick={() => navigate("dashboard/frontend-dashboard")}
+                onClick={() => navigate("dashboard")}
                 className="w-[70%] h-full object-contain cursor-pointer"
                 src={companyLogo?.logoUrl || biznestLogo}
                 alt="logo"
