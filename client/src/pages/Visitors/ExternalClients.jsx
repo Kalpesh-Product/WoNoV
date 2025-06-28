@@ -115,20 +115,20 @@ const ExternalClients = () => {
     },
     { field: "checkIn", headerName: "Check In" },
     { field: "checkOut", headerName: "Checkout" },
-    {
-      field: "paymentStatus",
-      headerName: "Payment Status",
-      cellRenderer: ({ value }) => (
-        <Chip
-          label={value}
-          sx={{
-            backgroundColor: value === "Paid" ? "#D1FAE5" : "#FECACA", // green-100 / red-100
-            color: value === "Paid" ? "#047857" : "#B91C1C", // green-700 / red-700
-            fontWeight: "bold",
-          }}
-        />
-      ),
-    },
+    // {
+    //   field: "paymentStatus",
+    //   headerName: "Payment Status",
+    //   cellRenderer: ({ value }) => (
+    //     <Chip
+    //       label={value}
+    //       sx={{
+    //         backgroundColor: value === "Paid" ? "#D1FAE5" : "#FECACA", // green-100 / red-100
+    //         color: value === "Paid" ? "#047857" : "#B91C1C", // green-700 / red-700
+    //         fontWeight: "bold",
+    //       }}
+    //     />
+    //   ),
+    // },
     // { field: "paymentAmount", headerName: "Amount (INR)" },
     // { field: "paymentMode", headerName: "Mode" },
 
