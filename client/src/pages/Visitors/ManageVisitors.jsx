@@ -194,7 +194,11 @@ const ManageVisitors = () => {
         <div className="flex flex-col gap-4">
           <form onSubmit={handleSubmit(submit)}>
             <div>
-              <PrimaryButton title={"Edit"} handleSubmit={()=>setIsEditing(true)} />
+              <PrimaryButton
+                title={"Edit"}
+                handleSubmit={handleEditToggle}
+                type="button"
+              />
             </div>
             {!isVisitorsData ? (
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
