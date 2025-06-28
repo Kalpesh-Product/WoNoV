@@ -1,23 +1,25 @@
 import { useEffect, useRef, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
 import { computeOffset, getElapsedSecondsWithOffset } from "../utils/time";
 import humanTime from "../utils/humanTime";
 
-const AttendanceTimeline = () => {
+const AttendanceTimeline = ({ attendanceData }) => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
 
   const [startTime, setStartTime] = useState(null);
   const [takeBreak, setTakeBreak] = useState(null);
+  const [breaks, setBreaks] = useState([]);
   const [stopBreak, setStopBreak] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [offset, setOffset] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
   const timerRef = useRef(null);
   const hasClockedIn = auth?.user?.clockInDetails?.hasClockedIn;
+  const empID = auth?.user?.empId;
 
   // Boot with server timestamps
   useEffect(() => {
@@ -113,6 +115,21 @@ const AttendanceTimeline = () => {
       setOffset(0); // start fresh
     },
     onError: (error) => toast.error(error.response.data.message),
+  });
+
+  const { data: attendance = [], isLoading } = useQuery({
+    queryKey: ["user-attendance"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/attendance/get-attendance/${empID}`
+        );
+        const data = response.data;
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
   });
 
   const handleStart = () => {
