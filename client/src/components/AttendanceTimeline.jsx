@@ -220,45 +220,7 @@ const AttendanceTimeline = () => {
           </div>
 
           {/* --START-- */}
-          {/* <div className="flex justify-between">
-            <span className="text-muted">Break Start: &nbsp;</span>
-            <span className="font-medium">04:30 pm</span>
-          </div>
 
-          <div className="flex justify-between">
-            <span className="text-muted">Break End: &nbsp;</span>
-            <span className="font-medium">04:45 pm</span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-muted">Break Start: &nbsp;</span>
-            <span className="font-medium">04:30 pm</span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-muted">Break End: &nbsp;</span>
-            <span className="font-medium">04:45 pm</span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-muted">Break Start: &nbsp;</span>
-            <span className="font-medium">04:30 pm</span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-muted">Break End: &nbsp;</span>
-            <span className="font-medium">04:45 pm</span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-muted">Break Start: &nbsp;</span>
-            <span className="font-medium">04:30 pm</span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-muted">Break End: &nbsp;</span>
-            <span className="font-medium">04:45 pm</span>
-          </div> */}
           {/* --END-- */}
           <div className="flex justify-between">
             <span className="text-muted">Clock-out Time: &nbsp;</span>

@@ -151,15 +151,26 @@ const ClockInOutAttendance = () => {
     );
   }
 
+  const formatDisplayDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   return (
     // <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
     <div className="flex flex-col  gap-4 p-4 h-80 ">
       <div className="grid grid-cols-1 gap-4">
         <div className="col-span-2 flex  items-center flex-col h-80 ">
           <div className="text-subtitle text-primary font-pmedium font-medium mb-4">
-            {startTime
+            {/* {startTime
               ? `Time Elapsed: ${formatElapsedTime(elapsedTime)}`
-              : "Not Clocked In"}
+              : "Not Clocked In"} */}
+            {formatDisplayDate(new Date())}
           </div>
 
           <div className="flex gap-12">
