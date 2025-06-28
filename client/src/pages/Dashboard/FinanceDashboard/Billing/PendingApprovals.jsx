@@ -138,14 +138,17 @@ const PendingApprovals = () => {
         <AgTable
           search={true}
           tableTitle={"Pending Approvals"}
-          data={pendingApprovals.map((item, index) => ({
+          data={pendingApprovals.map((item, index) =>{
+           
+            return {
             ...item,
             srNo: item.srNo,
             srno: index + 1,
             department: item.department?.name,
-            reimbursementDate: humanDate(item.reimbursementDate),
+            reimbursementDate:  humanDate(item.reimbursementDate),
             projectedAmount: inrFormat(item.projectedAmount),
-          }))}
+          }
+          })}
           columns={kraColumn}
         />
       </PageFrame>
@@ -247,9 +250,25 @@ const PendingApprovals = () => {
                 title="Invoice Date"
                 detail={humanDate(selectedBudget.invoiceDate)}
               />
+               <DetalisFormatted
+                title="Voucher Name"
+                detail={selectedBudget.voucher?.name}
+              />
+              <DetalisFormatted
+                title="Voucher Link"
+                detail={
+                  <a
+                    href={selectedBudget.voucher?.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline">
+                    View Voucher
+                  </a>
+                }
+              />
               <DetalisFormatted
                 title="Reimbursement Date"
-                detail={humanDate(selectedBudget.reimbursementDate)}
+                detail={selectedBudget.reimbursementDate}
               />
               <DetalisFormatted
                 title="Due Date"

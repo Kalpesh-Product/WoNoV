@@ -242,6 +242,80 @@ const requestBudget = async (req, res, next) => {
   }
 };
 
+const updateBudget = async (req, res, next) => {
+  const logPath = "/budget/BudgetLog";
+  const logAction = "Update Budget";
+  const logSourceKey = "budget";
+  const { user, ip, company } = req;
+
+  try {
+    const { budgetId } = req.params;
+    const updateFields = req.body;
+
+    const allowedFields = ["gstIn", "expanseType"]; // Add more fields here later
+
+    // Filter only allowed fields from incoming data
+    const filteredFields = Object.keys(updateFields).reduce((acc, key) => {
+      if (allowedFields.includes(key)) {
+        acc[key] = updateFields[key];
+      }
+      return acc;
+    }, {});
+
+    if (Object.keys(filteredFields).length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Allowed fields include only: gstIn, expanseType" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(budgetId)) {
+      return res.status(400).json({ message: "Invalid budget ID provided" });
+    }
+
+    const foundBudget = await Budget.findById(budgetId);
+    if (!foundBudget) {
+      return res.status(400).json({ message: "Budget not found" });
+    }
+
+    const originalData = foundBudget.toObject();
+
+    // Apply updates
+    for (const key in filteredFields) {
+      if (typeof filteredFields[key] === "string") {
+        foundBudget[key] = filteredFields[key].trim();
+      } else {
+        foundBudget[key] = filteredFields[key];
+      }
+    }
+
+    const updatedBudget = await foundBudget.save();
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: `Budget updated: ${budgetId}`,
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: updatedBudget._id,
+      changes: { before: originalData, after: updatedBudget.toObject() },
+    });
+
+    return res.status(200).json({
+      message: "Budget updated successfully",
+      updatedBudget,
+    });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+    );
+  }
+};
+
 const fetchBudget = async (req, res, next) => {
   try {
     const { departmentId } = req.query;
@@ -918,6 +992,7 @@ module.exports = {
   requestBudget,
   approveBudget,
   rejectBudget,
+  updateBudget,
   fetchBudget,
   fetchLandlordPayments,
   bulkInsertBudgets,
