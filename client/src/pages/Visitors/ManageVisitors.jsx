@@ -114,7 +114,8 @@ const ManageVisitors = () => {
           onClick={() => {
             handleDetailsClick({ ...params.data });
           }}
-          className="p-2 rounded-full w-fit hover:bg-borderGray">
+          className="p-2 rounded-full w-fit hover:bg-borderGray"
+        >
           <MdOutlineRemoveRedEye />
         </div>
       ),
@@ -155,40 +156,46 @@ const ManageVisitors = () => {
   };
 
   return (
-    <div className="p-4">
-      <AgTable
-        key={visitorsData.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"Visitors Today"}
-        data={[
-          ...visitorsData.map((item, index) => ({
-            srNo: index + 1,
-            mongoId: item._id,
-            firstName: item.firstName,
-            lastName: item.lastName,
-            address: item.address,
-            phoneNumber: item.phoneNumber,
-            email: item.email,
-            purposeOfVisit: item.purposeOfVisit,
-            toMeet: !item?.toMeet
-              ? null
-              : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
-            checkInRaw: item.checkIn,
-            checkOutRaw: item.checkOut,
-            checkIn: humanTime(item.checkIn),
-            checkOut: item.checkOut ? humanTime(item.checkOut) : "",
-          })),
-        ]}
-        columns={visitorsColumns}
-        handleClick={handleAddAsset}
-      />
+    <div>
+      <PageFrame>
+        <AgTable
+          key={visitorsData.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"Visitors Today"}
+          data={[
+            ...visitorsData.map((item, index) => ({
+              srNo: index + 1,
+              mongoId: item._id,
+              firstName: item.firstName,
+              lastName: item.lastName,
+              address: item.address,
+              phoneNumber: item.phoneNumber,
+              email: item.email,
+              purposeOfVisit: item.purposeOfVisit,
+              toMeet: !item?.toMeet
+                ? null
+                : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
+              checkInRaw: item.checkIn,
+              checkOutRaw: item.checkOut,
+              checkIn: humanTime(item.checkIn),
+              checkOut: item.checkOut ? humanTime(item.checkOut) : "",
+            })),
+          ]}
+          columns={visitorsColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
       <MuiModal
         open={isModalOpen}
         onClose={handleCloseModal}
-        title={"Visitor Details"}>
+        title={"Visitor Details"}
+      >
         <div className="flex flex-col gap-4">
           <form onSubmit={handleSubmit(submit)}>
+            <div>
+              <PrimaryButton title={"Edit"} handleSubmit={()=>setIsEditing(true)} />
+            </div>
             {!isVisitorsData ? (
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
                 {/* First Name */}
@@ -233,7 +240,6 @@ const ManageVisitors = () => {
                     detail={selectedVisitor.lastName}
                   />
                 )}
-
 
                 {/* Phone Number */}
                 {isEditing ? (

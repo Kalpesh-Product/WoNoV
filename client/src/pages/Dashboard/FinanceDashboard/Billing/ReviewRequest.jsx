@@ -24,6 +24,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
+import html2pdf from "html2pdf.js";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
@@ -42,15 +43,15 @@ const paymentModes = [
 
 const ReviewRequest = () => {
   const formRef = useRef(null);
-  const navigate= useNavigate()
+  const navigate = useNavigate();
   const voucherDetails = useSelector((state) => state.finance.voucherDetails);
   const [openPreview, setOpenPreview] = useState(false);
   const department = usePageDepartment();
   const axios = useAxiosPrivate();
   const { control, watch, setValue, getValues, reset } = useForm({
     defaultValues: {
-      fSrNo : '',
-      budgetId : '',
+      fSrNo: "",
+      budgetId: "",
       modeOfPayment: "",
       chequeNo: "",
       chequeDate: null,
@@ -87,7 +88,7 @@ const ReviewRequest = () => {
       const number = String(reimbursedBudget + 1).padStart(3, "0");
       const generatedSNo = `${prefix}-${number}`;
       setValue("srNo", generatedSNo);
-      setValue("budgetId",voucherDetails._id)
+      setValue("budgetId", voucherDetails._id);
     }
   }, [department?.name, reimbursedBudget, setValue, voucherDetails]);
 
@@ -135,82 +136,86 @@ const ReviewRequest = () => {
   });
   const values = watch();
 
-const onUpload = async () => {
-  const values = getValues();
-  values.particulars = fields;
+  const onUpload = async () => {
+    const values = getValues();
+    values.particulars = fields;
 
-  // Step 1: Generate canvas with lower resolution
-  const canvas = await html2canvas(formRef.current, {
-    scale: 1, // lower scale for compression
+    try {
+      // Step 1: Generate the PDF Blob directly using html2pdf
+      const element = formRef.current;
+
+      const opt = {
+        margin: [0.2, 0.2, 0.2, 0.2], // top, left, bottom, right (in inches)
+        filename: "Voucher_Form.pdf",
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 1, // lower scale for smaller size
+          useCORS: true,
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+
+      const worker = html2pdf().set(opt).from(element).toPdf();
+
+      const pdfBlob = await new Promise((resolve) =>
+        worker.outputPdf("blob").then(resolve)
+      );
+
+      // Step 2: Prepare FormData
+      const formData = new FormData();
+      formData.append("voucher", pdfBlob, "Voucher_Form.pdf");
+      formData.append("budgetId", voucherDetails._id);
+      formData.append("fSrNo", values.fSrNo || "");
+      formData.append("modeOfPayment", values.modeOfPayment || "");
+      formData.append("chequeNo", values.chequeNo || "");
+      formData.append("chequeDate", values.chequeDate || "");
+      formData.append("advanceAmount", values.advanceAmount?.toString() || "0");
+      formData.append("expectedDateInvoice", values.expectedDateInvoice || "");
+      formData.append("particulars", JSON.stringify(values.particulars || []));
+
+      // Step 3: Upload
+      submitRequest(formData);
+    } catch (error) {
+      toast.error("Failed to generate PDF.");
+      console.error("html2pdf error", error);
+    }
+  };
+
+  const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
+    mutationKey: ["approve"],
+    mutationFn: async (formData) => {
+      const response = await axios.patch(
+        `/api/budget/approve-budget`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+      setOpenPreview(false);
+      reset();
+      navigate("/app/dashboard/finance-dashboard/billing/pending-approvals");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
 
-  const imgData = canvas.toDataURL("image/png");
+  const exportToPDF = () => {
+    const opt = {
+      margin: 0.2,
+      filename: "Voucher_Form.pdf",
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 1, useCORS: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    };
 
-  // Step 2: Create compressed PDF
-  const pdf = new jsPDF("p", "mm", "a4", true); // true enables internal compression
-  const imgWidth = 210;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-  pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight, undefined, "FAST");
-
-  const pdfBlob = pdf.output("blob");
-
-  // Step 3: Create FormData
-  const formData = new FormData();
-  formData.append("voucher", pdfBlob, "Voucher_Form.pdf");
-  formData.append("budgetId", voucherDetails._id);
-  formData.append("fSrNo", values.fSrNo || "");
-  formData.append("modeOfPayment", values.modeOfPayment || "");
-  formData.append("chequeNo", values.chequeNo || "");
-  formData.append("chequeDate", values.chequeDate || "");
-  formData.append("advanceAmount", values.advanceAmount?.toString() || "0");
-  formData.append("expectedDateInvoice", values.expectedDateInvoice || "");
-  formData.append("particulars", JSON.stringify(values.particulars || []));
-
-  // Step 4: Upload
-  submitRequest(formData);
-};
-
-
-
-
-
-const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
-  mutationKey: ["approve"],
-  mutationFn: async (formData) => {
-    const response = await axios.patch(
-      `/api/budget/approve-budget`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-    return response.data;
-  },
-  onSuccess: (data) => {
-    toast.success(data.message);
-    setOpenPreview(false);
-    reset();
-    navigate('/app/dashboard/finance-dashboard/billing/pending-approvals')
-  },
-  onError: (error) => {
-    toast.error(error.message);
-  },
-});
-
-
-  const exportToPDF = async () => {
-    const canvas = await html2canvas(formRef.current, {
-      scale: window.devicePixelRatio,
-    });
-
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const imgWidth = 210;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-    pdf.save("Voucher_Form.pdf");
+    html2pdf().set(opt).from(formRef.current).save();
   };
 
   return (

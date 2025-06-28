@@ -37,6 +37,7 @@ const AgTableComponent = React.memo(
     isRowSelectable,
     batchButton,
     hideTitle,
+    tableRef,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -44,35 +45,19 @@ const AgTableComponent = React.memo(
     const [appliedFilters, setAppliedFilters] = useState({});
     const [isFilterDrawerOpen, setFilterDrawerOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState([]); // ✅ Track selected rows
-    const [isTableInView, setTableInView] = useState(true); // ✅ Track table visibility
-
-    const tableRef = useRef(null); // ✅ Reference to track table visibility
     const gridRef = useRef(null);
-
-    const tableRefCurrent = tableRef.current;
-
-    useEffect(() => {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          setTableInView(entry.isIntersecting);
-        },
-        { threshold: 0.6 } // 20% of the table must be visible
-      );
-
-      if (tableRefCurrent) {
-        observer.observe(tableRefCurrent);
-      }
-
-      return () => {
-        if (tableRefCurrent) observer.unobserve(tableRefCurrent);
-      };
-    }, [tableRefCurrent]);
 
     useEffect(() => {
       if (data && data.length > 0) {
         setFilteredData(data);
       }
     }, [data]);
+
+    useEffect(() => {
+      if (tableRef && gridRef.current) {
+        tableRef.current = gridRef.current;
+      }
+    }, [gridRef, tableRef]);
 
     const defaultColDef = {
       resizable: true,
@@ -170,8 +155,7 @@ const AgTableComponent = React.memo(
               tableTitle
                 ? "justify-between w-full items-center"
                 : "justify-end w-full"
-            } `}
-          >
+            } `}>
             {!hideTitle && (
               <div className="flex items-center justify-between pb-4">
                 <span className="font-pmedium text-title text-primary uppercase">
@@ -219,11 +203,12 @@ const AgTableComponent = React.memo(
           </div>
         </div>
 
+        <hr className="my-2" />
+
         <div
           className={`flex ${
             search ? "justify-between" : "justify-end"
-          }  items-center py-2`}
-        >
+          }  items-center py-2`}>
           {search ? (
             <TextField
               label="Search"
@@ -303,8 +288,7 @@ const AgTableComponent = React.memo(
         <MuiAside
           open={isFilterDrawerOpen}
           onClose={() => setFilterDrawerOpen(false)}
-          title="Advanced Filter"
-        >
+          title="Advanced Filter">
           {columns.map((column) =>
             dropdownColumns.includes(column.field) ? (
               <TextField
@@ -318,8 +302,7 @@ const AgTableComponent = React.memo(
                 value={filters[column.field] || ""}
                 onChange={(e) =>
                   handleFilterChange(column.field, e.target.value)
-                }
-              >
+                }>
                 <MenuItem value="">All</MenuItem>
                 {columnOptions[column.field]?.map((option) => (
                   <MenuItem key={option} value={option}>
@@ -349,8 +332,7 @@ const AgTableComponent = React.memo(
         <div
           ref={tableRef}
           className="ag-theme-quartz border-none w-full font-pregular"
-          style={{ height: tableHeight || 500 }}
-        >
+          style={{ height: tableHeight || 500 }}>
           <AgGridReact
             ref={gridRef}
             rowData={filteredData}

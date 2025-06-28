@@ -7,7 +7,7 @@ import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
 dayjs.extend(utc);
 
-const AreaGraph = ({ responseData }) => {
+const AreaGraph = ({ responseData, onTotalChange }) => {
   const [timeFilter, setTimeFilter] = useState("Yearly"); // State for the filter
 
   const [currentDate, setCurrentDate] = useState(dayjs());
@@ -147,6 +147,15 @@ const AreaGraph = ({ responseData }) => {
   useEffect(() => {
     const transformedData = transformData(responseData, timeFilter);
     setData(transformedData);
+
+    // ✅ Send total count to parent
+    if (onTotalChange && transformedData?.series?.[0]?.data) {
+      const total = transformedData.series[0].data.reduce(
+        (sum, val) => sum + val,
+        0
+      );
+      onTotalChange(total);
+    }
   }, [responseData, timeFilter, currentDate]);
 
   const chartOptions = {
@@ -188,9 +197,9 @@ const AreaGraph = ({ responseData }) => {
       shared: true,
       intersect: false,
     },
-   legend: {
-  show: false,  
-},
+    legend: {
+      show: false,
+    },
     grid: {
       borderColor: "#f1f1f1",
     },

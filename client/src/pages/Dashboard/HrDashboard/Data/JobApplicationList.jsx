@@ -9,6 +9,7 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { CircularProgress } from "@mui/material";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import {inrFormat} from "../../../../utils/currencyFormat";
+import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 
 const JobApplicationList = () => {
   const axios = useAxiosPrivate();
@@ -112,7 +113,7 @@ const JobApplicationList = () => {
   return (
     <PageFrame>
       <div>
-        <MonthWiseTable
+        <YearWiseTable
           dateColumn={"finalSubmissionDate"}
           search={true}
           searchColumn={"Job Position"}

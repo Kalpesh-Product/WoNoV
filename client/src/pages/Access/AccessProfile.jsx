@@ -118,11 +118,11 @@ const AccessProfile = () => {
                   ? "border-default border-primary"
                   : ""
               }`}
-              // onClick={() =>
-              //   setSelectedDepartment((prev) =>
-              //     prev?.departmentId === department.departmentId ? prev : department
-              //   )
-              // }
+              onClick={() =>
+                setSelectedDepartment((prev) =>
+                  prev?.departmentId === department.departmentId ? prev : department
+                )
+              }
             >
               <div className="p-4">
                 <span className="text-subtitle">

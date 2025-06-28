@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { inrFormat } from "../../utils/currencyFormat";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const ExternalClients = () => {
   const axios = useAxiosPrivate();
@@ -155,7 +156,8 @@ const ExternalClients = () => {
             onClick={(e) => {
               e.stopPropagation(); // Prevent row selection on click
             }}
-            className="rounded-full w-fit hover:bg-borderGray">
+            className="rounded-full w-fit hover:bg-borderGray"
+          >
             <ThreeDotMenu menuItems={menuItems} />
           </div>
         );
@@ -197,47 +199,50 @@ const ExternalClients = () => {
   };
 
   return (
-    <div className="p-4">
-      <AgTable
-        key={visitorsData.length}
-        search={true}
-        searchColumn={"Asset Number"}
-        tableTitle={"Visitors Today"}
-        data={[
-          ...visitorsData
-            .filter((m) => m.visitorFlag === "Client")
-            .map((item, index) => ({
-              srNo: index + 1,
-              mongoId: item._id,
-              firstName: item.firstName,
-              lastName: item.lastName,
-              address: item.address,
-              phoneNumber: item.phoneNumber,
-              email: item.email,
-              purposeOfVisit: item.purposeOfVisit,
-              toMeet: !item?.toMeet
-                ? null
-                : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
-              checkInRaw: item.checkIn,
-              checkOutRaw: item.checkOut,
-              checkIn: humanTime(item.checkIn),
-              checkOut: item.checkOut ? humanTime(item.checkOut) : "",
-              paymentStatus:
-                item?.meeting?.paymentStatus === true ? "Paid" : "Unpaid",
-              paymentAmount: item?.meeting?.paymentAmount
-                ? inrFormat(item?.meeting?.paymentAmount)
-                : 0,
-              paymentMode: item?.meeting?.paymentMode || "N/A",
-              paymentDate: item?.meeting?.paymentDate || null,
-            })),
-        ]}
-        columns={visitorsColumns}
-        handleClick={handleAddAsset}
-      />
+    <div>
+      <PageFrame>
+        <AgTable
+          key={visitorsData.length}
+          search={true}
+          searchColumn={"Asset Number"}
+          tableTitle={"Visitors Today"}
+          data={[
+            ...visitorsData
+              .filter((m) => m.visitorFlag === "Client")
+              .map((item, index) => ({
+                srNo: index + 1,
+                mongoId: item._id,
+                firstName: item.firstName,
+                lastName: item.lastName,
+                address: item.address,
+                phoneNumber: item.phoneNumber,
+                email: item.email,
+                purposeOfVisit: item.purposeOfVisit,
+                toMeet: !item?.toMeet
+                  ? null
+                  : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
+                checkInRaw: item.checkIn,
+                checkOutRaw: item.checkOut,
+                checkIn: humanTime(item.checkIn),
+                checkOut: item.checkOut ? humanTime(item.checkOut) : "",
+                paymentStatus:
+                  item?.meeting?.paymentStatus === true ? "Paid" : "Unpaid",
+                paymentAmount: item?.meeting?.paymentAmount
+                  ? inrFormat(item?.meeting?.paymentAmount)
+                  : 0,
+                paymentMode: item?.meeting?.paymentMode || "N/A",
+                paymentDate: item?.meeting?.paymentDate || null,
+              })),
+          ]}
+          columns={visitorsColumns}
+          handleClick={handleAddAsset}
+        />
+      </PageFrame>
       <MuiModal
         open={isModalOpen}
         onClose={handleCloseModal}
-        title={"Visitor Detail"}>
+        title={"Visitor Detail"}
+      >
         <div className="flex flex-col gap-4">
           <form onSubmit={handleSubmit(submit)}>
             {!isVisitorsData ? (

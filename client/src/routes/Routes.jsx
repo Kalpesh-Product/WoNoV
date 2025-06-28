@@ -63,7 +63,6 @@ import ViewVendors from "../pages/Dashboard/HrDashboard/Complaince/ViewVendors";
 import HrPayroll from "../pages/Dashboard/HrDashboard/Finance/HrPayroll";
 import ViewPayroll from "../pages/Dashboard/HrDashboard/Finance/ViewPayroll";
 import HrReports from "../pages/Dashboard/HrDashboard/Data/Reports";
-import BulkUpload from "../pages/Dashboard/HrDashboard/HrSettings/BulkUpload";
 import ComapanyHandbook from "../pages/Dashboard/HrDashboard/Complaince/CompanyHandbook";
 import MeetingLayout from "../pages/Meetings/MeetingLayout";
 import MeetingDashboard from "../pages/Meetings/MeetingDashboard";
@@ -374,6 +373,7 @@ import SopUpload from "../components/Pages/SopUpload";
 import ManageUnit from "../pages/Dashboard/SalesDashboard/ManageUnit";
 import PolicyUpload from "../components/Pages/PolicyUpload";
 import MainDashboard from "../pages/Dashboard/MainDashboard/MainDashboard";
+import DepartmentWiseBulkUpload from "../components/Pages/BulkUpload";
 
 export const routes = createBrowserRouter([
   {
@@ -469,7 +469,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "bulk-upload",
-                            element: <FrontendBulkUpload />,
+                            element: <DepartmentWiseBulkUpload />,
                           },
                           {
                             path: "sops",
@@ -624,7 +624,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "bulk-upload",
-                            element: <FinanceBulkUpload />,
+                            element: <DepartmentWiseBulkUpload />,
                           },
                           {
                             path: "sops",
@@ -874,7 +874,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "bulk-upload",
-                            element: <AdminBulkUpload />,
+                            element: <DepartmentWiseBulkUpload />,
                           },
                           {
                             path: "sops",
@@ -1025,7 +1025,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "bulk-upload",
-                            element: <MaintenanceBulkUpload />,
+                            element: <DepartmentWiseBulkUpload />,
                           },
                           {
                             path: "sops",
@@ -1171,7 +1171,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "bulk-upload",
-                            element: <ItBulkUpload />,
+                            element: <DepartmentWiseBulkUpload />,
                           },
                           {
                             path: "sops",
@@ -1467,7 +1467,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "bulk-upload",
-                            element: <BulkUploadSales />,
+                            element: <DepartmentWiseBulkUpload />,
                           },
                           {
                             path: "sops",
@@ -1730,7 +1730,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "bulk-upload",
-                            element: <BulkUpload />,
+                            element: <DepartmentWiseBulkUpload />,
                           },
                           {
                             path: "sops",

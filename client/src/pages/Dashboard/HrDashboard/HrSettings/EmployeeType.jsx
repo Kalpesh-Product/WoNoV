@@ -67,7 +67,9 @@ const EmployeeType = () => {
         const response = await axios.get(
           "/api/company/get-company-data/?field=employeeTypes"
         );
-        const filteredEmployeeTypes = response.data.employeeTypes.filter((emp)=> !emp.isDeleted)
+        const filteredEmployeeTypes = response.data.employeeTypes.filter(
+          (emp) => !emp.isDeleted
+        );
         return filteredEmployeeTypes;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -119,9 +121,7 @@ const EmployeeType = () => {
       cellRenderer: (params) => {
         return (
           <div>
-            <span className="text-primary cursor-pointer hover:underline">
-              {params.value}
-            </span>
+            <span className="">{params.value}</span>
           </div>
         );
       },
@@ -236,8 +236,7 @@ const EmployeeType = () => {
               ? "Edit Employee Type"
               : "Employee Type Details"
           }
-          onClose={() => setOpenModal(false)}
-        >
+          onClose={() => setOpenModal(false)}>
           {modalMode === "view" ? (
             <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[70vh]">
               <DetalisFormatted
@@ -252,8 +251,7 @@ const EmployeeType = () => {
           ) : (
             <form
               onSubmit={handleSubmit(onSubmit)}
-              className="flex flex-col gap-4"
-            >
+              className="flex flex-col gap-4">
               <Controller
                 name="employeeType"
                 control={control}
