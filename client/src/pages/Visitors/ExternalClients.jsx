@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -7,7 +7,7 @@ import humanTime from "../../utils/humanTime";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { Chip, TextField } from "@mui/material";
+import { Chip, MenuItem, TextField } from "@mui/material";
 import { TimePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -38,7 +38,7 @@ const ExternalClients = () => {
     },
   });
 
-  const { handleSubmit, reset, control } = useForm({
+  const { handleSubmit, reset, control, setValue } = useForm({
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -48,6 +48,10 @@ const ExternalClients = () => {
       toMeet: "",
       checkIn: "",
       checkOut: "",
+      checkOutRaw: null,
+      paymentStatus: "",
+      paymentAmount: 0,
+      paymentMode: "",
     },
   });
   const handleEditToggle = () => {
@@ -79,7 +83,7 @@ const ExternalClients = () => {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["visitors"] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
       toast.success("Visitor updated successfully");
       handleCloseModal();
     },
@@ -87,6 +91,16 @@ const ExternalClients = () => {
       toast.error(error?.message);
     },
   });
+
+  const paymentModes = [
+    "Cash",
+    "Cheque",
+    "NEFT",
+    "RTGS",
+    "IMPS",
+    "Credit Card",
+    "ETC",
+  ];
 
   const visitorsColumns = [
     { field: "srNo", headerName: "Sr No", sort: "desc" },
@@ -127,24 +141,13 @@ const ExternalClients = () => {
             label: "View details",
             onClick: () => handleDetailsClick({ ...params.data }),
           },
-          !params.data.checkOut && {
-            label: "Mark as checked out",
+          {
+            label: "Edit",
             onClick: () => {
-              const currentTimeISO = dayjs().toISOString();
-
-              const updatePayload = {
-                firstName: params.data.firstName,
-                lastName: params.data.lastName,
-                address: params.data.address,
-                email: params.data.email,
-                phoneNumber: params.data.phoneNumber,
-                purposeOfVisit: params.data.purposeOfVisit,
-                checkOut: currentTimeISO,
-              };
-
-              // Send update mutation
               setSelectedVisitor(params.data);
-              mutate(updatePayload);
+              setModalMode("edit");
+              setIsEditing(true);
+              setIsModalOpen(true);
             },
           },
         ];
@@ -165,6 +168,9 @@ const ExternalClients = () => {
     },
   ];
 
+  useEffect(() => {
+    setValue("paymentMode", selectedVisitor?.paymentMode);
+  }, [selectedVisitor]);
   const handleDetailsClick = (asset) => {
     setSelectedVisitor(asset);
     setModalMode("view");
@@ -180,14 +186,18 @@ const ExternalClients = () => {
   const submit = async (data) => {
     if (isEditing && selectedVisitor) {
       const updatePayload = {
-        ...data,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        purposeOfVisit: data.purposeOfVisit,
         checkOut: data.checkOutRaw
           ? dayjs(data.checkOutRaw).toISOString()
           : null,
+        paymentStatus: data.paymentStatus,
+        paymentAmount: data.paymentAmount,
+        paymentMode: data.paymentMode,
       };
-
-      delete updatePayload.toMeet;
-      delete updatePayload.checkIn;
 
       mutate(updatePayload);
     }
@@ -383,28 +393,6 @@ const ExternalClients = () => {
                   )}
                 </LocalizationProvider>
                 {/* </div>
-            ) : (
-              []
-            )} */}
-                {isEditing ? (
-                  <Controller
-                    name="paymentStatus"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Payment Status"
-                        fullWidth
-                      />
-                    )}
-                  />
-                ) : (
-                  <DetalisFormatted
-                    title="Payment Status"
-                    detail={selectedVisitor?.paymentStatus}
-                  />
-                )}
                 {/* Payment Amount */}
                 {isEditing ? (
                   <Controller
@@ -434,11 +422,18 @@ const ExternalClients = () => {
                     control={control}
                     render={({ field }) => (
                       <TextField
-                        {...field}
+                        select
+                        fullWidth
                         size="small"
                         label="Payment Mode"
-                        fullWidth
-                      />
+                        {...field}
+                      >
+                        {paymentModes.map((opt) => (
+                          <MenuItem key={opt} value={opt}>
+                            {opt}
+                          </MenuItem>
+                        ))}
+                      </TextField>
                     )}
                   />
                 ) : (
