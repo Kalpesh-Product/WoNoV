@@ -40,6 +40,20 @@ const requestBudget = async (req, res, next) => {
     const invoiceFile = req.files?.invoice?.[0];
     const voucherFile = req.files?.voucher?.[0];
 
+    const allowedPaymentTypes = ["One Time", "Recurring"];
+    const allowedPaymentModes = [
+      "Cash",
+      "Cheque",
+      "NEFT",
+      "RTGS",
+      "IMPS",
+      "Credit Card",
+      "ETC",
+    ];
+    const gstInRegex =
+      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    const chequeNoRegex = /^[0-9]{6,9}$/;
+
     if (!expanseName || !expanseType || !unitId) {
       throw new CustomError(
         "Missing required fields",
@@ -70,6 +84,50 @@ const requestBudget = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(departmentId)) {
       throw new CustomError(
         "Invalid department Id provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    // ✅ Enum Validations
+    if (paymentType && !allowedPaymentTypes.includes(paymentType)) {
+      throw new CustomError(
+        "Invalid payment type",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    // ✅ GSTIN Regex Match
+    if (gstIn && !gstInRegex.test(gstIn)) {
+      throw new CustomError(
+        "Invalid GSTIN format",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (
+      req.body.finance?.modeOfPayment &&
+      !allowedPaymentModes.includes(req.body.finance.modeOfPayment)
+    ) {
+      throw new CustomError(
+        "Invalid mode of payment",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (
+      req.body.finance?.chequeNo &&
+      !chequeNoRegex.test(req.body.finance.chequeNo)
+    ) {
+      throw new CustomError(
+        "Invalid cheque number",
         logPath,
         logAction,
         logSourceKey
