@@ -129,8 +129,8 @@ const ExternalClients = () => {
         />
       ),
     },
-    { field: "paymentAmount", headerName: "Amount (INR)" },
-    { field: "paymentMode", headerName: "Mode" },
+    // { field: "paymentAmount", headerName: "Amount (INR)" },
+    // { field: "paymentMode", headerName: "Mode" },
 
     {
       field: "actions",
@@ -169,8 +169,20 @@ const ExternalClients = () => {
   ];
 
   useEffect(() => {
-    setValue("paymentMode", selectedVisitor?.paymentMode);
-  }, [selectedVisitor]);
+    if (selectedVisitor) {
+      setValue("firstName", selectedVisitor.firstName || "");
+      setValue("lastName", selectedVisitor.lastName || "");
+      setValue("email", selectedVisitor.email || "");
+      setValue("phoneNumber", selectedVisitor.phoneNumber || "");
+      setValue("purposeOfVisit", selectedVisitor.purposeOfVisit || "");
+      setValue(
+        "checkOutRaw",
+        selectedVisitor.checkOutRaw ? dayjs(selectedVisitor.checkOutRaw) : null
+      );
+      setValue("paymentStatus", selectedVisitor.paymentStatus || "");
+    }
+  }, [selectedVisitor, setValue]);
+
   const handleDetailsClick = (asset) => {
     setSelectedVisitor(asset);
     setModalMode("view");
@@ -392,56 +404,6 @@ const ExternalClients = () => {
                     />
                   )}
                 </LocalizationProvider>
-                {/* </div>
-                {/* Payment Amount */}
-                {isEditing ? (
-                  <Controller
-                    name="paymentAmount"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Payment Amount"
-                        type="number"
-                        fullWidth
-                      />
-                    )}
-                  />
-                ) : (
-                  <DetalisFormatted
-                    title="Payment Amount"
-                    detail={inrFormat(selectedVisitor?.paymentAmount || 0)}
-                  />
-                )}
-
-                {/* Payment Mode */}
-                {isEditing ? (
-                  <Controller
-                    name="paymentMode"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        select
-                        fullWidth
-                        size="small"
-                        label="Payment Mode"
-                        {...field}
-                      >
-                        {paymentModes.map((opt) => (
-                          <MenuItem key={opt} value={opt}>
-                            {opt}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                    )}
-                  />
-                ) : (
-                  <DetalisFormatted
-                    title="Payment Mode"
-                    detail={selectedVisitor?.paymentMode || "N/A"}
-                  />
-                )}
               </div>
             ) : (
               []
