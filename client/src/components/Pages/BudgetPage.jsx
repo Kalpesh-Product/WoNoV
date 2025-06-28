@@ -58,7 +58,7 @@ const BudgetPage = () => {
       const budgets = response.data.allBudgets;
       return Array.isArray(budgets) ? budgets : [];
     },
-    enabled: !!department?._id, // <- ✅ prevents firing until department is ready
+    enabled: !!department?._id,
   });
 
   const {
@@ -400,8 +400,17 @@ const BudgetPage = () => {
                   <MenuItem value="" disabled>
                     Select Expense Type
                   </MenuItem>
-                  <MenuItem value="Internal">Internal</MenuItem>
-                  <MenuItem value="External">External</MenuItem>
+                  {isHrLoading
+                    ? []
+                    : [
+                        ...new Map(
+                          hrFinance.map((item) => [item.expanseType, item])
+                        ).values(),
+                      ].map((item) => (
+                        <MenuItem key={item._id} value={item.expanseType}>
+                          {item.expanseType}
+                        </MenuItem>
+                      ))}
                 </Select>
               </FormControl>
             )}

@@ -94,10 +94,25 @@ const Calender = () => {
     },
   }));
 
+  const transformedEvents = events.map((event) => {
+  const type = event?.extendedProps?.type?.toLowerCase?.() || "event";
+  const colorMap = {
+    holiday: "#4caf50",
+    event: "#ff9800",
+    meeting: "#2196f3",
+  };
+
+  return {
+    ...event,
+    backgroundColor: colorMap[type] || "#757575", // default gray if unknown
+  };
+});
+
   //---------------------------------API------------------------------------------//
 
   useEffect(() => {
-    const allCombinedEvents = [...events, ...transformedMeetings];
+   const allCombinedEvents = [...transformedEvents, ...transformedMeetings];
+
 
     if (eventFilter.length === 0) {
       setFilteredEvents([]); // ✅ Show nothing if no filter selected
@@ -120,7 +135,7 @@ const Calender = () => {
       );
     });
   };
-
+console.log("filtered events : ",filteredEvents)
   const todaysEvents = getTodaysEvents();
 
   const handleEventClick = (clickInfo) => {

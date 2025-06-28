@@ -16,12 +16,21 @@ import { Skeleton } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import DonutChart from "../../components/graphs/DonutChart";
 import dayjs from "dayjs";
+import { useTopDepartment } from "../../hooks/useTopDepartment";
 const WidgetSection = lazy(() => import("../../components/WidgetSection"));
 
 const MeetingDashboard = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const [selectedFY, setSelectedFY] = useState("FY 2024-25");
+  const { isTop } = useTopDepartment({
+    additionalTopUserIds: [
+      "67b83885daad0f7bab2f189a",
+      "67b83885daad0f7bab2f18a9",
+      "67b83885daad0f7bab2f18a6",
+    ],
+    additionalTopDepartmentIds: ["6798bae6e469e809084e24a4","6798ba9de469e809084e2494"],
+  });
 
   const { data: meetingsData = [], isLoading } = useQuery({
     queryKey: ["meetings"],
@@ -58,6 +67,48 @@ const MeetingDashboard = () => {
       }
     },
   });
+
+  const cardItems = [
+    {
+      key: "book",
+      title: "Book a Meeting",
+      route: "/app/meetings/book-meeting",
+      icon: <RiPagesLine />,
+    },
+    {
+      key: "manage",
+      title: "Manage Meetings",
+      route: "/app/meetings/manage-meetings",
+      icon: <RiArchiveDrawerLine />,
+      onlyTop: true,
+    },
+    {
+      key: "calendar",
+      title: "Calendar",
+      route: "/app/meetings/calendar",
+      icon: <MdFormatListBulleted />,
+    },
+    {
+      key: "reports",
+      title: "Reports",
+      route: "/app/meetings/reports",
+      icon: <CgProfile />,
+    },
+    {
+      key: "reviews",
+      title: "Reviews",
+      route: "/app/meetings/reviews",
+      icon: <RiPagesLine />,
+      onlyTop: true,
+    },
+    {
+      key: "settings",
+      title: "Settings",
+      route: "/app/meetings/settings",
+      icon: <RiPagesLine />,
+      onlyTop: true,
+    },
+  ];
 
   // Function to calculate total duration in hours
   const calculateTotalDurationInHours = (meetings) => {
@@ -848,39 +899,17 @@ const MeetingDashboard = () => {
       ],
     },
     {
-      layout: 6,
-      widgets: [
-        <Card
-          route={"/app/meetings/book-meeting"}
-          title={"Book a Meeting"}
-          icon={<RiPagesLine />}
-        />,
-        <Card
-          route={"/app/meetings/manage-meetings"}
-          title={"Manage Meetings"}
-          icon={<RiArchiveDrawerLine />}
-        />,
-        <Card
-          route={"/app/meetings/calendar"}
-          title={"Calendar"}
-          icon={<MdFormatListBulleted />}
-        />,
-        <Card
-          route={"/app/meetings/reports"}
-          title={"Reports"}
-          icon={<CgProfile />}
-        />,
-        <Card
-          route={"/app/meetings/reviews"}
-          title={"Reviews"}
-          icon={<RiPagesLine />}
-        />,
-        <Card
-          route={"/app/meetings/settings"}
-          title={"Settings"}
-          icon={<RiPagesLine />}
-        />,
-      ],
+      layout: cardItems.filter((item) => !item.onlyTop || isTop).length,
+      widgets: cardItems
+        .filter((item) => !item.onlyTop || isTop)
+        .map((item) => (
+          <Card
+            key={item.key}
+            route={item.route}
+            title={item.title}
+            icon={item.icon}
+          />
+        )),
     },
     {
       layout: 3,
