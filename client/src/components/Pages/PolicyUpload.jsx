@@ -81,7 +81,9 @@ const PolicyUpload = () => {
       toast.success("SOP uploaded successfully!");
       reset(); // reset form
       setOpenModal(false); // close modal
-      queryClient.invalidateQueries({ queryKey: ["departmentSOP"] });
+      queryClient.invalidateQueries({
+        queryKey: ["departmentPolicy", department?._id],
+      });
     },
     onError: (error) => {
       toast.error(error?.message || "Failed to upload SOP.");
