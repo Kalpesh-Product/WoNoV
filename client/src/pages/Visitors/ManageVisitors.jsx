@@ -14,62 +14,25 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { queryClient } from "../../main";
 import { toast } from "sonner";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import PageFrame from "../../components/Pages/PageFrame";
 
 const ManageVisitors = () => {
   const axios = useAxiosPrivate();
-  const [modalMode, setModalMode] = useState("add");
+  const [modalMode, setModalMode] = useState("view");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedVisitor, setSelectedVisitor] = useState([]);
-  const [isEditing, setIsEditing] = useState(false);
+  const [selectedVisitor, setSelectedVisitor] = useState(null);
+  const { setValue, handleSubmit, reset, control } = useForm();
 
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
     queryKey: ["visitors"],
     queryFn: async () => {
-      try {
-        const response = await axios.get("/api/visitors/fetch-visitors");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+      const response = await axios.get("/api/visitors/fetch-visitors");
+      return response.data;
     },
   });
 
-  const { handleSubmit, reset, control } = useForm({
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phoneNumber: "",
-      purposeOfVisit: "",
-      toMeet: "",
-      checkIn: "",
-      checkOut: "",
-    },
-  });
-  const handleEditToggle = () => {
-    if (!isEditing && selectedVisitor) {
-      reset({
-        id: selectedVisitor?.mongoId,
-        firstName: selectedVisitor.firstName || "",
-        lastName: selectedVisitor.lastName || "",
-        address: selectedVisitor.address || "",
-        email: selectedVisitor.email || "",
-        phoneNumber: selectedVisitor.phoneNumber || "",
-        purposeOfVisit: selectedVisitor.purposeOfVisit || "",
-        toMeet: selectedVisitor.toMeet || "",
-        checkIn: selectedVisitor.checkIn ? selectedVisitor.checkIn : "",
-        checkOutRaw: selectedVisitor?.checkOutRaw
-          ? dayjs(selectedVisitor.checkOutRaw)
-          : null,
-      });
-    }
-    setIsEditing(!isEditing);
-  };
-
-  const { mutate, isPending } = useMutation({
+  const { mutate, isPending: isUpdating } = useMutation({
     mutationFn: async (updatedData) => {
       const response = await axios.patch(
         `/api/visitors/update-visitor/${selectedVisitor.mongoId}`,
@@ -83,276 +46,160 @@ const ManageVisitors = () => {
       handleCloseModal();
     },
     onError: (error) => {
-      toast.error(error?.message);
+      toast.error(error.message || "Update failed");
     },
   });
 
-  const visitorsColumns = [
-    { field: "srNo", headerName: "Sr No", sort: "desc" },
-    { field: "firstName", headerName: "First Name" },
-    { field: "lastName", headerName: "Last Name" },
-    { field: "email", headerName: "Email" },
-    { field: "phoneNumber", headerName: "Phone No" },
-    {
-      field: "purposeOfVisit",
-      headerName: "Purpose",
-      cellStyle: { textAlign: "right" },
-    },
-    {
-      field: "toMeet",
-      headerName: "To Meet",
-      cellStyle: { textAlign: "right" },
-    },
-    { field: "checkIn", headerName: "Check In" },
-    { field: "checkOut", headerName: "Checkout" },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <div
-          role="button"
-          onClick={() => {
-            handleDetailsClick({ ...params.data });
-          }}
-          className="p-2 rounded-full w-fit hover:bg-borderGray"
-        >
-          <MdOutlineRemoveRedEye />
-        </div>
-      ),
-    },
-  ];
-
-  const handleDetailsClick = (asset) => {
-    setSelectedVisitor(asset);
-    setModalMode("view");
+  const openModalWithMode = (visitor, mode) => {
+    setSelectedVisitor(visitor);
+    setModalMode(mode);
     setIsModalOpen(true);
-  };
 
-  const handleAddAsset = () => {
-    setModalMode("add");
-    setSelectedVisitor(null);
-    setIsModalOpen(true);
-  };
-
-  const submit = async (data) => {
-    if (isEditing && selectedVisitor) {
-      const updatePayload = {
-        ...data,
-        checkOut: data.checkOutRaw
-          ? dayjs(data.checkOutRaw).toISOString()
-          : null,
-      };
-
-      delete updatePayload.toMeet;
-      delete updatePayload.checkIn;
-
-      mutate(updatePayload);
+    if (mode === "edit") {
+      setValue("firstName", visitor.firstName || "");
+      setValue("lastName", visitor.lastName || "");
+      setValue("email", visitor.email || "");
+      setValue("phoneNumber", visitor.phoneNumber || "");
+      setValue("purposeOfVisit", visitor.purposeOfVisit || "");
+      setValue("checkOutRaw", visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null);
     }
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setIsEditing(false);
+    setModalMode("view");
+    setSelectedVisitor(null);
   };
+
+  const submit = (data) => {
+    mutate({
+      ...data,
+      checkOut: data.checkOutRaw ? dayjs(data.checkOutRaw).toISOString() : null,
+    });
+  };
+
+  const visitorsColumns = [
+    { field: "srNo", headerName: "Sr No" },
+    { field: "firstName", headerName: "First Name" },
+    { field: "lastName", headerName: "Last Name" },
+    { field: "email", headerName: "Email" },
+    { field: "phoneNumber", headerName: "Phone No" },
+    { field: "purposeOfVisit", headerName: "Purpose" },
+    { field: "toMeet", headerName: "To Meet" },
+    { field: "checkIn", headerName: "Check In" },
+    { field: "checkOut", headerName: "Checkout" },
+    {
+      field: "actions",
+      headerName: "Actions",
+      cellRenderer: ({ data }) => {
+        return (
+          <ThreeDotMenu
+            menuItems={[
+              {
+                label: "View details",
+                onClick: () => openModalWithMode(data, "view"),
+              },
+              {
+                label: "Edit",
+                onClick: () => openModalWithMode(data, "edit"),
+              },
+            ]}
+          />
+        );
+      },
+    },
+  ];
 
   return (
     <div>
       <PageFrame>
         <AgTable
-          key={visitorsData.length}
-          search={true}
-          searchColumn={"Asset Number"}
-          tableTitle={"Visitors Today"}
-          data={[
-            ...visitorsData.map((item, index) => ({
-              srNo: index + 1,
-              mongoId: item._id,
-              firstName: item.firstName,
-              lastName: item.lastName,
-              address: item.address,
-              phoneNumber: item.phoneNumber,
-              email: item.email,
-              purposeOfVisit: item.purposeOfVisit,
-              toMeet: !item?.toMeet
-                ? null
-                : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
-              checkInRaw: item.checkIn,
-              checkOutRaw: item.checkOut,
-              checkIn: humanTime(item.checkIn),
-              checkOut: item.checkOut ? humanTime(item.checkOut) : "",
-            })),
-          ]}
+          search
+          tableTitle="Visitors Today"
+          data={visitorsData.map((item, index) => ({
+            srNo: index + 1,
+            mongoId: item._id,
+            firstName: item.firstName,
+            lastName: item.lastName,
+            email: item.email,
+            phoneNumber: item.phoneNumber,
+            purposeOfVisit: item.purposeOfVisit,
+            toMeet: `${item?.toMeet?.firstName || ""} ${item?.toMeet?.lastName || ""}`,
+            checkIn: humanTime(item.checkIn),
+            checkOut: item.checkOut ? humanTime(item.checkOut) : "",
+            checkOutRaw: item.checkOut,
+          }))}
           columns={visitorsColumns}
-          handleClick={handleAddAsset}
         />
       </PageFrame>
-      <MuiModal
-        open={isModalOpen}
-        onClose={handleCloseModal}
-        title={"Visitor Details"}
-      >
-        <div className="flex flex-col gap-4">
-          <form onSubmit={handleSubmit(submit)}>
-            <div>
-              <PrimaryButton
-                title={"Edit"}
-                handleSubmit={handleEditToggle}
-                type="button"
+
+      <MuiModal open={isModalOpen} onClose={handleCloseModal} title="Visitor Details">
+        <form onSubmit={handleSubmit(submit)} className="grid grid-cols-1 gap-4">
+          {modalMode === "view" ? (
+            <>
+              <DetalisFormatted title="First Name" detail={selectedVisitor?.firstName} />
+              <DetalisFormatted title="Last Name" detail={selectedVisitor?.lastName} />
+              <DetalisFormatted title="Phone Number" detail={selectedVisitor?.phoneNumber} />
+              <DetalisFormatted title="Email" detail={selectedVisitor?.email} />
+              <DetalisFormatted title="Purpose" detail={selectedVisitor?.purposeOfVisit} />
+              <DetalisFormatted
+                title="Checkout"
+                detail={
+                  selectedVisitor?.checkOutRaw
+                    ? humanTime(selectedVisitor.checkOutRaw)
+                    : ""
+                }
               />
-            </div>
-            {!isVisitorsData ? (
-              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
-                {/* First Name */}
-                <div className="font-bold">Personal Information</div>
-                {isEditing ? (
-                  <Controller
-                    name="firstName"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="First Name"
-                        fullWidth
-                      />
-                    )}
-                  />
-                ) : (
-                  <DetalisFormatted
-                    title="First Name"
-                    detail={selectedVisitor.firstName}
-                  />
-                )}
-
-                {/* Last Name */}
-                {isEditing ? (
-                  <Controller
-                    name="lastName"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Last Name"
-                        fullWidth
-                      />
-                    )}
-                  />
-                ) : (
-                  <DetalisFormatted
-                    title="Last Name"
-                    detail={selectedVisitor.lastName}
-                  />
-                )}
-
-                {/* Phone Number */}
-                {isEditing ? (
-                  <Controller
-                    name="phoneNumber"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Phone Number"
-                        type="tel"
-                        fullWidth
-                      />
-                    )}
-                  />
-                ) : (
-                  <DetalisFormatted
-                    title="Phone Number"
-                    detail={selectedVisitor.phoneNumber}
-                  />
-                )}
-
-                {/* Email */}
-                {isEditing ? (
-                  <Controller
-                    name="email"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Email"
-                        type="email"
-                        fullWidth
-                      />
-                    )}
-                  />
-                ) : (
-                  <DetalisFormatted
-                    title="Email"
-                    detail={selectedVisitor.email}
-                  />
-                )}
-                <br />
-                <div className="font-bold">Visit Details</div>
-                {/* Purpose of Visit */}
-                {isEditing ? (
-                  <Controller
-                    name="purposeOfVisit"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Purpose of Visit"
-                        fullWidth
-                      />
-                    )}
-                  />
-                ) : (
-                  <DetalisFormatted
-                    title="Purpose of Visit"
-                    detail={selectedVisitor.purposeOfVisit}
-                  />
-                )}
-                {/* Checkout time */}
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  {isEditing ? (
-                    <Controller
-                      name="checkOutRaw"
-                      control={control}
-                      render={({ field }) => (
-                        <TimePicker
-                          label="Checkout Time"
-                          value={field.value ? dayjs(field.value) : null}
-                          onChange={field.onChange}
-                          slotProps={{ textField: { size: "small" } }}
-                          renderInput={(params) => (
-                            <TextField {...params} size="small" fullWidth />
-                          )}
-                        />
-                      )}
-                    />
-                  ) : (
-                    <DetalisFormatted
-                      title="Checkout Time"
-                      detail={
-                        selectedVisitor?.checkOutRaw
-                          ? humanTime(selectedVisitor.checkOutRaw)
-                          : ""
-                      }
+            </>
+          ) : (
+            <>
+              <Controller
+                name="firstName"
+                control={control}
+                render={({ field }) => <TextField {...field} label="First Name" size="small" fullWidth />}
+              />
+              <Controller
+                name="lastName"
+                control={control}
+                render={({ field }) => <TextField {...field} label="Last Name" size="small" fullWidth />}
+              />
+              <Controller
+                name="phoneNumber"
+                control={control}
+                render={({ field }) => <TextField {...field} label="Phone Number" size="small" fullWidth />}
+              />
+              <Controller
+                name="email"
+                control={control}
+                render={({ field }) => <TextField {...field} label="Email" size="small" fullWidth />}
+              />
+              <Controller
+                name="purposeOfVisit"
+                control={control}
+                render={({ field }) => <TextField {...field} label="Purpose" size="small" fullWidth />}
+              />
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Controller
+                  name="checkOutRaw"
+                  control={control}
+                  render={({ field }) => (
+                    <TimePicker
+                      label="Checkout Time"
+                      value={field.value}
+                      onChange={field.onChange}
+                      slotProps={{ textField: { size: "small", fullWidth: true } }}
                     />
                   )}
-                </LocalizationProvider>
-              </div>
-            ) : (
-              []
-            )}
-            {isEditing && (
+                />
+              </LocalizationProvider>
               <PrimaryButton
-                disabled={isPending}
-                title={isPending ? "Saving..." : "Save"}
-                className="mt-2 w-full"
+                title={isUpdating ? "Saving..." : "Save"}
+                disabled={isUpdating}
                 type="submit"
               />
-            )}
-          </form>
-        </div>
+            </>
+          )}
+        </form>
       </MuiModal>
     </div>
   );
