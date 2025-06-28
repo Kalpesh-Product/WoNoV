@@ -24,7 +24,7 @@ import humanDate from "../../utils/humanDateForamt";
 import { toast } from "sonner";
 import PageFrame from "./PageFrame";
 import UploadFileInput from "../UploadFileInput";
-import  html2pdf  from "html2pdf.js";
+import html2pdf from "html2pdf.js";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
@@ -149,7 +149,7 @@ const Reimbursement = () => {
   });
   const values = watch();
 
-  const onUpload = () => {
+  const onUpload = async () => {
     const values = getValues();
     values.particulars = fields;
 
@@ -176,6 +176,52 @@ const Reimbursement = () => {
     if (values.invoiceAttached && values.invoiceFile instanceof File) {
       formData.append("invoice", values.invoiceFile);
     }
+
+   const onUpload = async () => {
+  const values = getValues();
+  values.particulars = fields;
+
+  const formData = new FormData();
+  // Append all fields...
+  formData.append("gstIn", values.gstIn || "");
+  formData.append("invoiceNo", values.invoiceNo || "");
+  if (values.invoiceAttached && values.invoiceFile instanceof File) {
+    formData.append("invoice", values.invoiceFile);
+  }
+
+
+};
+
+  if (values.voucherFile instanceof File) {
+    formData.append("voucher", values.voucherFile);
+    submitRequest(formData);
+    return
+  } else {
+    try {
+      const pdfBlob = await html2pdf()
+        .set({
+          margin: 0.2,
+          filename: "Voucher_Form.pdf",
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 1, useCORS: true },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        })
+        .from(formRef.current)
+        .outputPdf("blob");
+
+      const file = new File([pdfBlob], "Voucher_Form.pdf", {
+        type: "application/pdf",
+      });
+
+      formData.append("voucher", file);
+      submitRequest(formData);
+      return
+    } catch (err) {
+      toast.error("Failed to generate voucher PDF.");
+      console.error(err);
+    }
+  }
+
 
     submitRequest(formData);
   };
@@ -215,7 +261,19 @@ const Reimbursement = () => {
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     };
 
-    html2pdf().set(options).from(formRef.current).save();
+    // html2pdf().set(options).from(formRef.current).save();
+
+    html2pdf()
+      .set(options)
+      .from(formRef.current)
+      .outputPdf("blob")
+      .then((pdfBlob) => {
+        const file = new File([pdfBlob], "Voucher_Form.pdf", {
+          type: "application/pdf",
+        });
+
+        setValue("voucherFile", file);
+      });
   };
 
   return (

@@ -6,7 +6,7 @@ import useAuth from "../hooks/useAuth";
 import { computeOffset, getElapsedSecondsWithOffset } from "../utils/time";
 import humanTime from "../utils/humanTime";
 
-const ClockInOutAttendance = () => {
+const AttendanceTimeline = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
 
@@ -153,61 +153,122 @@ const ClockInOutAttendance = () => {
 
   return (
     // <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
-    <div className="flex flex-col  gap-4 p-4 h-80 ">
-      <div className="grid grid-cols-1 gap-4">
-        <div className="col-span-2 flex  items-center flex-col h-80 ">
-          <div className="text-subtitle text-primary font-pmedium font-medium mb-4">
-            {startTime
-              ? `Time Elapsed: ${formatElapsedTime(elapsedTime)}`
-              : "Not Clocked In"}
+    <div className="flex flex-col gap-4 h-80 ">
+      <div className="flex justify-center ">
+        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 overflow-scroll h-80 overflow-x-hidden w-full px-36">
+          {/* <div className="font-semibold text-base text-gray-900">
+         
+            Timeline
+          </div> */}
+
+          <div className="flex justify-between">
+            <span className="text-muted">Status: &nbsp;</span>
+            <span className="font-medium">
+              {/* {auth?.user?.clockInDetails?.clockInTime
+                ? "Clocked In"
+                : "Not Clocked In"} */}
+              {startTime ? "Clocked In" : "Not Clocked In"}
+            </span>
           </div>
 
-          <div className="flex gap-12">
-            <button
-              onClick={startTime ? handleStop : handleStart}
-              className={`h-40 w-40 rounded-full ${
-                startTime ? "bg-[#EB5C45]" : "bg-wonoGreen  transition-all"
-              }  text-white flex justify-center items-center hover:scale-105`}
-              disabled={isClockingIn || isClockingOut}>
-              {/* {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"} */}
-              {hasClockedIn
-                ? "Clock Out"
-                : isClockingIn
-                ? "Starting..."
-                : "Clock In"}
-            </button>
+          {/* <div className="flex justify-between">
+            <span className="text-muted">Clock-in Time: &nbsp;</span>
+            <span className="font-medium">
+          
+              {auth?.user?.clockInDetails?.clockInTime
+                ? new Date(startTime).toLocaleString()
+                : "—"}
+            </span>
+          </div> */}
 
-            <button
-              onClick={takeBreak ? handleEnBreak : handleStartBreak}
-              className={`h-40 w-40 rounded-full ${
-                takeBreak ? "bg-[#FB923C]" : "bg-[#FACC15]  transition-all"
-              }  text-white flex justify-center items-center hover:scale-105`}
-              disabled={isStartbreak || isEndBreak}>
-              {takeBreak
-                ? "End Break"
-                : isStartbreak
-                ? "Starting..."
-                : "Start Break"}
-            </button>
+          <div className="flex justify-between">
+            <span className="text-muted">Clock-in Time: &nbsp;</span>
+            <span className="font-medium">09:30 am</span>
           </div>
-          <div className="text-subtitle text-primary font-pmedium font-medium mb-4 pt-4">
-            {startTime ? `${formatElapsedTime(elapsedTime)}` : "Not Clocked In"}
-          </div>
-          <div className="flex gap-4 pt-2">
-            <div className="flex justify-start">
-              <span className="text-muted">Clock-in Time: &nbsp;</span>
-              <span className="font-medium">9:30 am</span>
+
+          {/* <div className="flex justify-between">
+            <span className="text-muted">Elapsed Time: &nbsp;</span>
+            <span className="font-medium">
+              {startTime ? formatElapsedTime(elapsedTime) : "—"}
+            </span>
+          </div> */}
+          {takeBreak && (
+            <div className="flex justify-between">
+              <span className="text-muted">Break Start: &nbsp;</span>
+              <span className="font-medium">{humanTime(takeBreak)}</span>
             </div>
-
-            <div className="flex justify-start">
-              <span className="text-muted">Clock-out Time: &nbsp;</span>
-              <span className="font-medium">6:30 pm</span>
+          )}
+          {/* {stopBreak && (
+            <div className="flex justify-between">
+              <span className="text-muted">Break End: &nbsp;</span>
+              <span className="font-medium">{humanTime(stopBreak)}</span>
             </div>
+          )} */}
+          <div className="flex justify-between">
+            <span className="text-muted">Break End: &nbsp;</span>
+            <span className="font-medium">11:45 am</span>
           </div>
+
+          <div className="flex justify-between">
+            <span className="text-muted">Break Start: &nbsp;</span>
+            <span className="font-medium">04:30 pm</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-muted">Break End: &nbsp;</span>
+            <span className="font-medium">04:45 pm</span>
+          </div>
+
+          {/* --START-- */}
+          {/* <div className="flex justify-between">
+            <span className="text-muted">Break Start: &nbsp;</span>
+            <span className="font-medium">04:30 pm</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-muted">Break End: &nbsp;</span>
+            <span className="font-medium">04:45 pm</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-muted">Break Start: &nbsp;</span>
+            <span className="font-medium">04:30 pm</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-muted">Break End: &nbsp;</span>
+            <span className="font-medium">04:45 pm</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-muted">Break Start: &nbsp;</span>
+            <span className="font-medium">04:30 pm</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-muted">Break End: &nbsp;</span>
+            <span className="font-medium">04:45 pm</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-muted">Break Start: &nbsp;</span>
+            <span className="font-medium">04:30 pm</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-muted">Break End: &nbsp;</span>
+            <span className="font-medium">04:45 pm</span>
+          </div> */}
+          {/* --END-- */}
+          <div className="flex justify-between">
+            <span className="text-muted">Clock-out Time: &nbsp;</span>
+            <span className="font-medium">06:30 pm</span>
+          </div>
+          <div className="flex justify-between h-4"></div>
         </div>
       </div>
     </div>
   );
 };
 
-export default ClockInOutAttendance;
+export default AttendanceTimeline;
