@@ -24,6 +24,7 @@ import { queryClient } from "../../main";
 import CustomRating from "../../components/CustomRating";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import humanDate from "../../utils/humanDateForamt";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
 
 const BookMeetings = () => {
   // ------------------------------Initializations ------------------------------------//
@@ -270,7 +271,7 @@ const BookMeetings = () => {
                   >
                     <MenuItem value="" disabled>
                       {" "}
-                      Seletc Location
+                      Select Location
                     </MenuItem>
                     {buildings.map((building) => (
                       <MenuItem key={building?._id} value={building?._id}>
@@ -339,15 +340,16 @@ const BookMeetings = () => {
       <div>
         {!isMyMeetingsPending ? (
           <div className="border-default border-borderGray rounded-md p-4">
-            <AgTable
+            <YearWiseTable
               tableTitle={"My Meetings"}
+              dateColumn={"date"}
               data={[
                 ...myMeetings.map((meeting, index) => ({
                   id: index + 1,
                   meetingId: meeting._id,
                   bookedBy: meeting.bookedBy,
                   agenda: meeting.agenda,
-                  date: humanDate(meeting.date),
+                  date: meeting.date,
                   roomName: meeting.roomName,
                   reviews: meeting.reviews,
                   location: meeting.location
@@ -423,7 +425,7 @@ const BookMeetings = () => {
         title={"Meeting Details"}
       >
         {selectedMeeting ? (
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="w-full grid grid-cols-1 gap-4">
             <DetalisFormatted
               title="Agenda"
               detail={selectedMeeting?.agenda || "N/A"}

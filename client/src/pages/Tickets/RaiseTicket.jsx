@@ -22,6 +22,8 @@ import MuiModal from "../../components/MuiModal";
 import { queryClient } from "../../main";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import humanTime from "../../utils/humanTime";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
+import humanDate from "../../utils/humanDateForamt";
 
 const RaiseTicket = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -217,7 +219,8 @@ const RaiseTicket = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewTicketDetails(params.data)}>
+            onClick={() => handleViewTicketDetails(params.data)}
+          >
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -254,7 +257,8 @@ const RaiseTicket = () => {
                           onChange={(e) => {
                             field.onChange(e.target.value);
                             handleDepartmentSelect(e.target.value);
-                          }}>
+                          }}
+                        >
                           <MenuItem value="" disabled>
                             Select Department
                           </MenuItem>
@@ -275,7 +279,8 @@ const RaiseTicket = () => {
                               .map((dept) => (
                                 <MenuItem
                                   key={dept.department._id}
-                                  value={dept.department._id}>
+                                  value={dept.department._id}
+                                >
                                   {dept.department.name}
                                 </MenuItem>
                               ))
@@ -307,7 +312,8 @@ const RaiseTicket = () => {
                           label="Issue"
                           helperText={errors.ticketTitle?.message}
                           error={!!errors.ticketTitle}
-                          disabled={!watchFields.department}>
+                          disabled={!watchFields.department}
+                        >
                           <MenuItem value="">Select Ticket Title</MenuItem>
                           {ticketIssues.length > 0 ? (
                             ticketIssues.map((issue) => (
@@ -387,7 +393,8 @@ const RaiseTicket = () => {
                               <IconButton
                                 color="primary"
                                 component="label"
-                                htmlFor="image-upload">
+                                htmlFor="image-upload"
+                              >
                                 <LuImageUp />
                               </IconButton>
                             ),
@@ -399,13 +406,15 @@ const RaiseTicket = () => {
                           <>
                             <span
                               className="underline text-primary text-content cursor-pointer"
-                              onClick={() => setOpenModal(true)}>
+                              onClick={() => setOpenModal(true)}
+                            >
                               Preview
                             </span>
                             <MuiModal
                               open={openModal}
                               onClose={() => setOpenModal(false)}
-                              title={"Preview File"}>
+                              title={"Preview File"}
+                            >
                               <div>
                                 <div className="flex flex-col">
                                   <IconButton
@@ -413,7 +422,8 @@ const RaiseTicket = () => {
                                     onClick={() => {
                                       onChange(null);
                                       setPreview(null);
-                                    }}>
+                                    }}
+                                  >
                                     <MdDelete />
                                   </IconButton>
                                   <div className="p-2 border-default border-borderGray rounded-md">
@@ -482,7 +492,7 @@ const RaiseTicket = () => {
               <CircularProgress color="black" />
             </div>
           ) : (
-            <AgTable
+            <YearWiseTable
               key={tickets?.length}
               search
               dropdownColumns={["status", "priority"]}
@@ -499,14 +509,11 @@ const RaiseTicket = () => {
                 closedBy: ticket?.closedBy
                   ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
                   : "None",
-                acceptedAt: ticket.acceptedAt
-                  ? humanTime(ticket.acceptedAt)
-                  : "None",
-                closedAt: ticket.closedAt
-                  ? humanTime(ticket.closedAt)
-                  : "None",
+                acceptedAt: ticket.acceptedAt ? ticket.acceptedAt : "None",
+                closedAt: ticket.closedAt ? ticket.closedAt : "None",
                 priority: ticket.priority,
                 image: ticket.image ? ticket.image.url : null,
+                raisedAt: ticket.createdAt,
               }))}
               columns={recievedTicketsColumns}
               paginationPageSize={10}
@@ -517,7 +524,8 @@ const RaiseTicket = () => {
       <MuiModal
         open={viewDetails && viewTicketDetails}
         onClose={() => setViewDetails(false)}
-        title={"Ticket Details"}>
+        title={"Ticket Details"}
+      >
         <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4 overflow-y-auto max-h-[70vh]">
           <DetalisFormatted
             title="Ticket Title"
@@ -533,7 +541,7 @@ const RaiseTicket = () => {
           />
           <DetalisFormatted
             title="Raised At"
-            detail={viewTicketDetails?.date || "N/A"}
+            detail={humanTime(viewTicketDetails?.raisedAt) || "N/A"}
           />
           <DetalisFormatted
             title="Raised To Department"
@@ -551,7 +559,7 @@ const RaiseTicket = () => {
           />
           <DetalisFormatted
             title="Accepted at"
-            detail={viewTicketDetails?.acceptedAt}
+            detail={humanTime(viewTicketDetails?.acceptedAt)}
           />
           <DetalisFormatted
             title="Closed by"
