@@ -172,7 +172,7 @@ const ClockInOutAttendance = () => {
               disabled={isClockingIn || isClockingOut}
             >
               {/* {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"} */}
-              {hasClockedIn ? "Stop" : isClockingIn ? "Starting..." : "Start"}
+              {hasClockedIn ? "Clock Out" : isClockingIn ? "Starting..." : "Clock In"}
             </button>
 
             <button
@@ -198,10 +198,10 @@ const ClockInOutAttendance = () => {
           <div className="flex justify-between">
             <span className="text-muted">Status:</span>
             <span className="font-medium">
-              {/* {auth?.user?.clockInDetails?.clockInTime
+              {auth?.user?.clockInDetails?.clockInTime
                 ? "Clocked In"
-                : "Not Clocked In"} */}
-              {startTime ? "Clocked In" : "Not Clocked In"}
+                : "Not Clocked In"}
+              {/* {startTime ? "Clocked In" : "Not Clocked In"} */}
             </span>
           </div>
 
@@ -213,7 +213,7 @@ const ClockInOutAttendance = () => {
                     auth.user.clockInDetails.clockInTime
                   ).toLocaleString()
                 : "—"} */}
-                {auth?.user?.clockInDetails?.clockInTime
+                {startTime
                 ? new Date(
                     startTime
                   ).toLocaleString()
@@ -227,18 +227,18 @@ const ClockInOutAttendance = () => {
               {startTime ? formatElapsedTime(elapsedTime) : "—"}
             </span>
           </div>
-          {takeBreak && (
+         
             <div className="flex justify-between">
-              <span className="text-muted">Break Start:</span>
+              <span className="text-muted">Start Break:</span>
               <span className="font-medium">{humanTime(takeBreak)}</span>
             </div>
-          )}
-          {stopBreak && (
+        
+         
             <div className="flex justify-between">
-              <span className="text-muted">Break End:</span>
+              <span className="text-muted">End Break:</span>
               <span className="font-medium">{stopBreak}</span>
             </div>
-          )}
+         
         </div>
       </div>
     </div>
