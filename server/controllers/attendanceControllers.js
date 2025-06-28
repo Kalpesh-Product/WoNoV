@@ -231,7 +231,21 @@ const startBreak = async (req, res, next) => {
       endBreak: null,
     });
 
-    await attendance.save();
+    const savedAttendance = await attendance.save();
+
+    if (savedAttendance) {
+      await UserData.findOneAndUpdate(
+        { _id: user },
+        {
+          $set: {
+            "clockInDetails.hasTakenBreak": true,
+            "clockInDetails.startBreak": startBreakTime,
+          },
+        }
+      )
+        .lean()
+        .exec();
+    }
 
     return res.status(200).json({ message: "Break started" });
   } catch (error) {

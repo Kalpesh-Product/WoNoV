@@ -12,6 +12,7 @@ const {
   fetchPendingApprovals,
   approveFinanceBudget,
   fetchApprovedbudgets,
+  updateBudget,
 } = require("../controllers/budgetControllers/budgetController");
 
 router.post(
@@ -27,6 +28,7 @@ router.get("/approved-budgets", fetchApprovedbudgets);
 // router.patch("/approve-budget/:budgetId", approveBudget);
 router.patch("/approve-budget", upload.single("voucher"), approveFinanceBudget);
 router.patch("/reject-budget/:budgetId", rejectBudget);
+router.patch("/update-budget/:budgetId", updateBudget);
 router.patch(
   "/upload-budget-invoice/:budgetId",
   upload.single("invoice"),

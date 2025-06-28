@@ -110,6 +110,14 @@ const userDataSchema = new mongoose.Schema({
       type: Date,
       default: null,
     },
+    hasTakenBreak: {
+      type: Boolean,
+      default: false,
+    },
+    startBreak: {
+      type: Date,
+      default: null,
+    },
   },
   startDate: {
     type: Date,

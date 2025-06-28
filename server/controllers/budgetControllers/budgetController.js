@@ -40,6 +40,20 @@ const requestBudget = async (req, res, next) => {
     const invoiceFile = req.files?.invoice?.[0];
     const voucherFile = req.files?.voucher?.[0];
 
+    const allowedPaymentTypes = ["One Time", "Recurring"];
+    const allowedPaymentModes = [
+      "Cash",
+      "Cheque",
+      "NEFT",
+      "RTGS",
+      "IMPS",
+      "Credit Card",
+      "ETC",
+    ];
+    const gstInRegex =
+      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    const chequeNoRegex = /^[0-9]{6,9}$/;
+
     if (!expanseName || !expanseType || !unitId) {
       throw new CustomError(
         "Missing required fields",
@@ -70,6 +84,50 @@ const requestBudget = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(departmentId)) {
       throw new CustomError(
         "Invalid department Id provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    // ✅ Enum Validations
+    if (paymentType && !allowedPaymentTypes.includes(paymentType)) {
+      throw new CustomError(
+        "Invalid payment type",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    // ✅ GSTIN Regex Match
+    if (gstIn && !gstInRegex.test(gstIn)) {
+      throw new CustomError(
+        "Invalid GSTIN format",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (
+      req.body.finance?.modeOfPayment &&
+      !allowedPaymentModes.includes(req.body.finance.modeOfPayment)
+    ) {
+      throw new CustomError(
+        "Invalid mode of payment",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (
+      req.body.finance?.chequeNo &&
+      !chequeNoRegex.test(req.body.finance.chequeNo)
+    ) {
+      throw new CustomError(
+        "Invalid cheque number",
         logPath,
         logAction,
         logSourceKey
@@ -232,6 +290,80 @@ const requestBudget = async (req, res, next) => {
 
     return res.status(200).json({
       message: `Budget requested for ${departmentExists.name}`,
+    });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+    );
+  }
+};
+
+const updateBudget = async (req, res, next) => {
+  const logPath = "/budget/BudgetLog";
+  const logAction = "Update Budget";
+  const logSourceKey = "budget";
+  const { user, ip, company } = req;
+
+  try {
+    const { budgetId } = req.params;
+    const updateFields = req.body;
+
+    const allowedFields = ["gstIn", "expanseType"]; // Add more fields here later
+
+    // Filter only allowed fields from incoming data
+    const filteredFields = Object.keys(updateFields).reduce((acc, key) => {
+      if (allowedFields.includes(key)) {
+        acc[key] = updateFields[key];
+      }
+      return acc;
+    }, {});
+
+    if (Object.keys(filteredFields).length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Allowed fields include only: gstIn, expanseType" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(budgetId)) {
+      return res.status(400).json({ message: "Invalid budget ID provided" });
+    }
+
+    const foundBudget = await Budget.findById(budgetId);
+    if (!foundBudget) {
+      return res.status(400).json({ message: "Budget not found" });
+    }
+
+    const originalData = foundBudget.toObject();
+
+    // Apply updates
+    for (const key in filteredFields) {
+      if (typeof filteredFields[key] === "string") {
+        foundBudget[key] = filteredFields[key].trim();
+      } else {
+        foundBudget[key] = filteredFields[key];
+      }
+    }
+
+    const updatedBudget = await foundBudget.save();
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: `Budget updated: ${budgetId}`,
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: updatedBudget._id,
+      changes: { before: originalData, after: updatedBudget.toObject() },
+    });
+
+    return res.status(200).json({
+      message: "Budget updated successfully",
+      updatedBudget,
     });
   } catch (error) {
     next(
@@ -918,6 +1050,7 @@ module.exports = {
   requestBudget,
   approveBudget,
   rejectBudget,
+  updateBudget,
   fetchBudget,
   fetchLandlordPayments,
   bulkInsertBudgets,
