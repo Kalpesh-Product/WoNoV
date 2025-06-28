@@ -4,8 +4,7 @@ import { toast } from "sonner";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
 import { computeOffset, getElapsedSecondsWithOffset } from "../utils/time";
-import  humanTime from "../utils/humanTime"
-
+import humanTime from "../utils/humanTime";
 
 const ClockInOutAttendance = () => {
   const axios = useAxiosPrivate();
@@ -14,11 +13,12 @@ const ClockInOutAttendance = () => {
   const [startTime, setStartTime] = useState(null);
   const [takeBreak, setTakeBreak] = useState(null);
   const [stopBreak, setStopBreak] = useState(null);
+  const [breaks, setBreaks] = useState([]);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [offset, setOffset] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
   const timerRef = useRef(null);
-  const hasClockedIn = auth?.user?.clockInDetails?.hasClockedIn;
+  
 
   // Boot with server timestamps
   useEffect(() => {
@@ -30,6 +30,11 @@ const ClockInOutAttendance = () => {
       const calculatedOffset = computeOffset(serverNow);
       setOffset(calculatedOffset);
       setElapsedTime(getElapsedSecondsWithOffset(clockIn, calculatedOffset));
+    }
+
+    const breaksFromServer = auth?.user?.clockInDetails?.breaks;
+    if (Array.isArray(breaksFromServer)) {
+      setBreaks(breaksFromServer);
     }
 
     setIsBooting(false);
@@ -58,7 +63,7 @@ const ClockInOutAttendance = () => {
     },
     onSuccess: ({ data, inTime }) => {
       toast.success("Clocked in successfully!");
-       console.log("start time", inTime);
+      console.log("start time", inTime);
       setStartTime(inTime);
       setOffset(0); // start fresh
       setElapsedTime(getElapsedSecondsWithOffset(inTime, 0));
@@ -90,10 +95,10 @@ const ClockInOutAttendance = () => {
       return { data: res.data, breakTime }; // Return both server response and time
     },
     onSuccess: ({ data, breakTime }) => {
-      console.log("start break", breakTime);
       toast.success("Break started");
       setStopBreak(null);
       setTakeBreak(breakTime);
+      setBreaks((prev) => [...prev, { start: breakTime }]);
       setOffset(0); // start fresh
     },
     onError: (error) => toast.error(error.response.data.message),
@@ -107,10 +112,19 @@ const ClockInOutAttendance = () => {
       return { data: res.data, breakTime }; // Return both server response and time
     },
     onSuccess: ({ data, breakTime }) => {
-      console.log("end break", breakTime);
       toast.success("Break ended");
       setTakeBreak(null);
       setStopBreak(breakTime);
+      setBreaks((prev) => {
+        const updated = [...prev];
+        const len = updated.length;
+
+        if (len > 0 && !updated[len - 1].end) {
+          updated[len - 1].end = { end: breakTime };
+        }
+
+        return updated;
+      });
       setOffset(0); // start fresh
     },
     onError: (error) => toast.error(error.response.data.message),
@@ -172,8 +186,11 @@ const ClockInOutAttendance = () => {
               }  text-white flex justify-center items-center hover:scale-105`}
               disabled={isClockingIn || isClockingOut}
             >
-              {/* {startTime ? "Stop" : isClockingIn ? "Starting..." : "Start"} */}
-              {hasClockedIn ? "Clock Out" : isClockingIn ? "Starting..." : "Clock In"}
+              {auth?.user?.clockInDetails?.hasClockedIn 
+                ? "Clock Out"
+                : isClockingIn
+                ? "Starting..."
+                : "Clock In"}
             </button>
 
             <button
@@ -214,11 +231,7 @@ const ClockInOutAttendance = () => {
                     auth.user.clockInDetails.clockInTime
                   ).toLocaleString()
                 : "—"} */}
-                {startTime
-                ? new Date(
-                    startTime
-                  ).toLocaleString()
-                : "—"}
+              {startTime ? new Date(startTime).toLocaleString() : "—"}
             </span>
           </div>
 
@@ -228,18 +241,38 @@ const ClockInOutAttendance = () => {
               {startTime ? formatElapsedTime(elapsedTime) : "—"}
             </span>
           </div>
-         
-            <div className="flex justify-between">
-              <span className="text-muted">Start Break:</span>
-              <span className="font-medium">{humanTime(takeBreak)}</span>
+
+          {breaks.length > 0 ? (
+            breaks.map((brk, index) => (
+              <div key={index}>
+                <div className="flex justify-between">
+                  <span className="text-muted">Start Break {index + 1}:</span>
+                  <span className="font-medium">
+                    {brk.start ? humanTime(brk.start) : "—"}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-muted">Break End {index + 1}:</span>
+                  <span className="font-medium">
+                    {brk.end ? humanTime(brk.end) : "—"}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div>
+              <div className="flex justify-between">
+                <span className="text-muted">Start Break:</span>
+                <span className="font-medium">—</span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-muted">Break End:</span>
+                <span className="font-medium">—</span>
+              </div>
             </div>
-        
-         
-            <div className="flex justify-between">
-              <span className="text-muted">Break End:</span>
-              <span className="font-medium">{humanTime(stopBreak)}</span>
-            </div>
-         
+          )}
         </div>
       </div>
     </div>
