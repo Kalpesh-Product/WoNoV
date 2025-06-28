@@ -265,8 +265,8 @@ const AllocatedBudget = ({
           )}
 
           <div className="flex items-center justify-between gap-4">
-            <div className="w-1/3"></div>
-            <div className="flex gap-4 justify-start items-center w-full ">
+      
+            <div className="flex gap-4 justify-center items-center w-full ">
               <div className="">
                 {/* Month Switcher */}
                 {filteredMonths.length > 0 && (

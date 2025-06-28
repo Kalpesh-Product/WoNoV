@@ -36,53 +36,53 @@ const LoginPage = () => {
           id: 4,
           title: "Finance Dashboard",
           codeName: "Finance",
-          route: "/app/dashboard/finance-dashboard",
+          route: "/app/dashboard",
         },
         {
           id: 5,
           title: "Sales Dashboard",
           codeName: "Sales",
-          route: "/app/dashboard/sales-dashboard",
+          route: "/app/dashboard",
         },
         {
           id: 3,
           title: "HR Dashboard",
           codeName: "HR",
-          route: "/app/dashboard/HR-dashboard",
+          route: "/app/dashboard",
         },
 
         {
           id: 2,
           title: "Frontend Dashboard",
           codeName: "Tec",
-          route: "/app/dashboard/frontend-dashboard",
+          route: "/app/dashboard",
         },
 
         {
           id: 6,
           title: "Admin Dashboard",
           codeName: "Administration",
-          route: "/app/dashboard/admin-dashboard",
+          route: "/app/dashboard",
         },
 
         {
           id: 7,
           title: "Maintenance Dashboard",
           codeName: "Maintenance",
-          route: "/app/dashboard/maintenance-dashboard",
+          route: "/app/dashboard",
         },
         {
           id: 9,
           title: "IT Dashboard",
           codeName: "IT",
-          route: "/app/dashboard/IT-dashboard",
+          route: "/app/dashboard",
         },
 
         {
           id: 8,
           title: "Cafe Dashboard",
           codeName: "Cafe",
-          route: "/app/dashboard/cafe-dashboard",
+          route: "/app/dashboard",
         },
       ],
     },

@@ -97,6 +97,9 @@ const DateBasedGraph = ({
           colors: ["#000"],
         },
       },
+      tooltip:{
+        enabled : false
+      }
     };
 
     return {

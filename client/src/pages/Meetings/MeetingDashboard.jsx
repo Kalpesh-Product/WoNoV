@@ -638,27 +638,15 @@ const MeetingDashboard = () => {
         formatter: function (val) {
           return `${(val / 100) * totalBookableHours} hrs`; // Custom text, like "12 hrs"
         },
+         title: {
+      formatter: () => 'Total hours : ', // 🔥 Hides "Series 1"
+    },
       },
       x: {
         formatter: function (val) {
           return `Month: ${val}`; // Customizes "May-25"
         },
       },
-      //  custom: function({ series, seriesIndex, dataPointIndex, w }) {
-      //   const value = series[seriesIndex][dataPointIndex];
-      //   const monthKey = w.config.xaxis.categories[dataPointIndex];
-      //   const total = totalBookableHours || 0;
-
-      //   return `
-      //     <div class="apexcharts-tooltip-title">Month: ${monthKey}</div>
-      //     <div class="apexcharts-tooltip-series-group">
-      //       <span class="apexcharts-tooltip-marker" style="background-color: #008FFB"></span>
-      //       Booking Utilization: <strong>${value} hrs</strong><br/>
-      //       <span class="apexcharts-tooltip-marker" style="background-color: #00E396"></span>
-      //       Total Bookable Hours: <strong>${total} hrs</strong>
-      //     </div>
-      //   `;
-      // }
     },
   };
 
