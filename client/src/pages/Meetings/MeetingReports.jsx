@@ -11,26 +11,54 @@ import { useEffect, useState } from "react";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
+import { useTopDepartment } from "../../hooks/useTopDepartment";
+import useAuth from "../../hooks/useAuth";
 
 const MeetingReports = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const [openModal, setOpenModal] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
-  const { data: myMeetings = [], isPending: isMyMeetingsPending } = useQuery({
-    queryKey: ["myMeetings"],
+  const { isTop } = useTopDepartment({
+    additionalTopUserIds: ["67b83885daad0f7bab2f1864"],
+    additionalTopDepartmentIds: [
+      "6798bae6e469e809084e24a4",
+      "6798ba9de469e809084e2494",
+    ], //Admin//Tech
+  });
+  const {
+    data: meetings = [],
+    isPending: isMeetingsPending,
+    error,
+  } = useQuery({
+    queryKey: ["meetings"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/meetings/my-meetings");
+        const response = await axios.get("/api/meetings/get-meetings");
         return response.data;
       } catch (error) {
-        toast.error(error || "Failed to load your bookings");
+        toast.error("Failed to fetch meetings");
+        throw error;
       }
     },
   });
+
+  const loggedDeptIds = auth.user?.departments?.map((d) => d._id) || [];
+
+  const filteredMeetings = isMeetingsPending
+    ? []
+    : meetings.filter((meeting) => {
+        const bookedByDepts =
+          meeting.bookedBy?.departments?.map((d) => d._id) || [];
+        return bookedByDepts.some((deptId) => loggedDeptIds.includes(deptId));
+      });
+
   const handleSelectedMeeting = (meeting) => {
     setSelectedMeeting(meeting);
     setOpenModal(true);
   };
+
+  const meetingReportsData = isTop ? meetings : filteredMeetings;
 
   const meetingReportsColumn = [
     { field: "srNo", headerName: "Sr No" },
@@ -78,7 +106,8 @@ const MeetingReports = () => {
                 onClick={() => {
                   handleSelectedMeeting(params.data);
                 }}
-                className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
+                className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+              >
                 <span className="text-subtitle">
                   <MdOutlineRemoveRedEye />
                 </span>
@@ -94,14 +123,14 @@ const MeetingReports = () => {
     <div className="flex flex-col gap-8 p-4">
       <PageFrame>
         <div>
-          {!isMyMeetingsPending ? (
+          {!isMeetingsPending ? (
             <YearWiseTable
               search={true}
               exportData
               dateColumn={"date"}
               tableTitle={"Meetings Reports"}
               data={[
-                ...myMeetings.map((item, index) => ({
+                ...meetingReportsData.map((item, index) => ({
                   srNo: index + 1,
                   id: index + 1,
                   department: item.department,
@@ -111,7 +140,7 @@ const MeetingReports = () => {
                   buildingName: item.location?.building?.buildingName,
                   meetingType: item.meetingType,
                   housekeepingStatus: item.housekeepingStatus,
-                  date: (item.date),
+                  date: item.date,
                   startTime: item.startTime,
                   endTime: item.endTime,
                   duration: item.duration,
@@ -139,8 +168,9 @@ const MeetingReports = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Meeting Details"}>
-        {!isMyMeetingsPending && selectedMeeting ? (
+        title={"Meeting Details"}
+      >
+        {!isMeetingsPending && selectedMeeting ? (
           <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
             <DetalisFormatted
               title="Department"
