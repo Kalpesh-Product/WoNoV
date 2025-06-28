@@ -5,20 +5,20 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useNavigate } from "react-router-dom";
 import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardWidget";
 import ClockInOutAttendance from "../../../components/ClockInOutAttendance";
+import AttendanceTimeline from "../../../components/AttendanceTimeline";
 
 const MainDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const mainWidgets = [
     {
-      layout: 1,
+      layout: 2,
       widgets: [
-        <WidgetSection
-          layout={1}
-          border
-          title={"Clock In / Out Attendance"}
-        >
+        <WidgetSection layout={1} border title={"Clock In / Out Attendance"}>
           <ClockInOutAttendance />
+        </WidgetSection>,
+        <WidgetSection layout={1} border title={"Timeline"}>
+          <AttendanceTimeline />
         </WidgetSection>,
       ],
     },
