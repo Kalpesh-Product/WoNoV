@@ -190,7 +190,10 @@ const ClockInOutAttendance = () => {
                 : "Start Break"}
             </button>
           </div>
-          <div className="flex gap-4 pt-4">
+          <div className="text-subtitle text-primary font-pmedium font-medium mb-4 pt-4">
+            {startTime ? `${formatElapsedTime(elapsedTime)}` : "Not Clocked In"}
+          </div>
+          <div className="flex gap-4 pt-2">
             <div className="flex justify-start">
               <span className="text-muted">Clock-in Time: &nbsp;</span>
               <span className="font-medium">9:30 am</span>
