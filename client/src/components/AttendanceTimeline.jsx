@@ -84,7 +84,7 @@ const AttendanceTimeline = () => {
               .filter((brk) => brk.startBreak)
               .map((brk) => ({
                 startBreak: humanTime(brk.startBreak),
-                endBreak: brk.endBreak ? humanTime(brk.endBreak) : "0h:0m:0s",
+                endBreak: brk.endBreak ? humanTime(brk.endBreak) : null,
               }))
           : [],
       };
@@ -134,16 +134,20 @@ const AttendanceTimeline = () => {
                   <span className="font-medium">{brk.startBreak}</span>
                 </div>
                 <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
-                <div className="flex justify-between w-full">
-                  <div className="flex gap-2 items-center">
-                    <div className="pb-0">
-                      <BsCup />
+                {brk.endBreak && (
+                  <>
+                    <div className="flex justify-between w-full">
+                      <div className="flex gap-2 items-center">
+                        <div className="pb-0">
+                          <BsCup />
+                        </div>
+                        <span className="text-muted">Break End</span>
+                      </div>
+                      <span className="font-medium">{brk.endBreak}</span>
                     </div>
-                    <span className="text-muted">Break End</span>
-                  </div>
-                  <span className="font-medium">{brk.endBreak}</span>
-                </div>
-                <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
+                    <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
+                  </>
+                )}
               </div>
             ))}
 

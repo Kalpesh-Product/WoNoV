@@ -120,7 +120,15 @@ const ClockInOutAttendance = () => {
       toast.success("Break started");
       setStopBreak(null);
       setTakeBreak(breakTime);
-      setBreaks((prev) => [...prev, { start: breakTime }]);
+      setBreaks((prev) => {
+        const updated = [...prev];
+        // Only add a new break if last one has ended
+        if (!updated.length || updated[updated.length - 1]?.end) {
+          updated.push({ start: breakTime });
+        }
+        return updated;
+      });
+
       setOffset(0); // start fresh
       setTotalHours((prev) => ({
         ...prev,
@@ -316,11 +324,15 @@ const ClockInOutAttendance = () => {
 
             <div className="flex flex-col gap-2 justify-center text-center">
               <span className="text-muted">Work Hours</span>
-              <span className="font-medium text-content">{totalHours.workHours}</span>
+              <span className="font-medium text-content">
+                {totalHours.workHours}
+              </span>
             </div>
             <div className="flex flex-col gap-2 justify-center text-center">
               <span className="text-muted">Break Hours</span>
-              <span className="font-medium text-content">{totalHours.breakHours}</span>
+              <span className="font-medium text-content">
+                {totalHours.breakHours}
+              </span>
             </div>
           </div>
         </div>
