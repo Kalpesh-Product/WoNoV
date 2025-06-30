@@ -84,7 +84,7 @@ const AttendanceTimeline = () => {
               .filter((brk) => brk.startBreak)
               .map((brk) => ({
                 startBreak: humanTime(brk.startBreak),
-                endBreak: brk.endBreak ? humanTime(brk.endBreak) : "0h:0m:0s",
+                endBreak: brk.endBreak ? humanTime(brk.endBreak) : null,
               }))
           : [],
       };
@@ -102,9 +102,9 @@ const AttendanceTimeline = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 h-80 ">
+    <div className="flex flex-col gap-4 px-2 h-80 ">
       <div className="flex justify-center ">
-        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 overflow-scroll h-80 overflow-x-hidden w-full px-36">
+        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 overflow-scroll h-80 overflow-x-hidden w-full px-4">
           <div className="flex flex-col justify-between">
             <div className="flex gap-2 items-center justify-between">
               <div className="pb-1 flex gap-2 items-center">
@@ -134,16 +134,20 @@ const AttendanceTimeline = () => {
                   <span className="font-medium">{brk.startBreak}</span>
                 </div>
                 <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
-                <div className="flex justify-between w-full">
-                  <div className="flex gap-2 items-center">
-                    <div className="pb-0">
-                      <BsCup />
+                {brk.endBreak && (
+                  <>
+                    <div className="flex justify-between w-full">
+                      <div className="flex gap-2 items-center">
+                        <div className="pb-0">
+                          <BsCup />
+                        </div>
+                        <span className="text-muted">Break End</span>
+                      </div>
+                      <span className="font-medium">{brk.endBreak}</span>
                     </div>
-                    <span className="text-muted">Break End</span>
-                  </div>
-                  <span className="font-medium">{brk.endBreak}</span>
-                </div>
-                <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
+                    <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
+                  </>
+                )}
               </div>
             ))}
 

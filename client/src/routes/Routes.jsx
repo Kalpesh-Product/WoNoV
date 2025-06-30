@@ -375,6 +375,7 @@ import PolicyUpload from "../components/Pages/PolicyUpload";
 import MainDashboard from "../pages/Dashboard/MainDashboard/MainDashboard";
 import DepartmentWiseBulkUpload from "../components/Pages/BulkUpload";
 import HrCommonAttandenceRequests from "../pages/HR/HrCommonAttandenceRequests";
+import PastEmployees from "../pages/Dashboard/HrDashboard/OnBoarding/PastEmployees";
 
 export const routes = createBrowserRouter([
   {
@@ -1604,14 +1605,19 @@ export const routes = createBrowserRouter([
                         element: <OnBoarding />,
                         children: [
                           {
-                            path: "view-employees",
-                            index: true, // Default tab when route is hit
+                            path: "employee-list",
                             element: <ViewEmployees />,
+                            index: true,
                           },
-                          // {
-                          //   path: "past-employees",
-                          //   element: <PastEmployees />, // 🛠 Make sure this component exists
-                          // },
+                          {
+                            path: "employee-onboarding",
+
+                            element: <EmployeeOnboard />,
+                          },
+                          {
+                            path: "past-employees",
+                            element: <PastEmployees />, // 🛠 Make sure this component exists
+                          },
                           {
                             path: "attendance",
                             element: <HrAttendance />,
@@ -1620,10 +1626,7 @@ export const routes = createBrowserRouter([
                             path: "leaves",
                             element: <HrLeaves />,
                           },
-                          {
-                            path: "employee-list",
-                            element: <ViewEmployees />,
-                          },
+
                           {
                             path: "employee-list/:firstName/",
                             element: <EmployeeDetail />,

@@ -47,7 +47,7 @@ const clockIn = async (req, res, next) => {
     if (existingToday) {
       return res
         .status(400)
-        .json({ message: "You have already clocked in today" });
+        .json({ message: "You have already clocked out for the day" });
     }
 
     const newAttendance = new Attendance({
@@ -74,10 +74,7 @@ const clockIn = async (req, res, next) => {
 
     return res.status(201).json({ message: "You clocked in" });
   } catch (error) {
-    console.error("Clock-in error:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    next(error)
   }
 };
 

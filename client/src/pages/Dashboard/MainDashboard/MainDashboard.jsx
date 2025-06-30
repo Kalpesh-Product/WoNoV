@@ -7,19 +7,27 @@ import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardW
 import ClockInOutAttendance from "../../../components/ClockInOutAttendance";
 import AttendanceTimeline from "../../../components/AttendanceTimeline";
 
-
 const MainDashboard = () => {
-
   const mainWidgets = [
     {
-      layout: 2,
+      layout: 1,
       widgets: [
-        <WidgetSection layout={1} border title={"Clock In / Out Attendance"}>
-          <ClockInOutAttendance />
-        </WidgetSection>,
-        <WidgetSection layout={1} border title={"Timeline"}>
-          <AttendanceTimeline />
-        </WidgetSection>,
+        <div className="grid grid-cols-3 gap-4">
+          <div className="col-span-2">
+            <WidgetSection
+              layout={1}
+              border
+              title={"Clock In / Out Attendance"}
+            >
+              <ClockInOutAttendance />
+            </WidgetSection>
+          </div>
+          <div className="col-span-1">
+            <WidgetSection layout={1} border title={"Timeline"}>
+              <AttendanceTimeline />
+            </WidgetSection>
+          </div>
+        </div>,
       ],
     },
   ];

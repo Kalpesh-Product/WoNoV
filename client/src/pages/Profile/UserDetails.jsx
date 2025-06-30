@@ -250,6 +250,11 @@ const UserDetails = () => {
 
   return (
     <div className="flex flex-col gap-4">
+         <div>
+          <span className="text-title font-pmedium text-primary uppercase">
+            My Profile
+          </span>
+        </div>
       <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-xl">
         <div className="flex gap-6 items-center w-full">
           <div className="w-40 h-40">
@@ -367,12 +372,8 @@ const UserDetails = () => {
           </div>
         </div>
       </div>
-      <div className="flex justify-between">
-        <div>
-          <span className="text-title font-pmedium text-primary uppercase">
-            My Profile
-          </span>
-        </div>
+      <div className="flex justify-end">
+     
         {!editMode ? (
           <div className="flex justify-end">
             <PrimaryButton
@@ -544,13 +545,7 @@ const UserDetails = () => {
                 />
               </>
             ) : (
-              <PrimaryButton
-                title={"Edit"}
-                handleSubmit={() => {
-                  if (userDetails) reset(userDetails);
-                  setEditMode(true);
-                }}
-              />
+             <></>
             )}
           </div>
         </form>

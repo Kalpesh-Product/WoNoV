@@ -205,7 +205,8 @@ export default function BulkUpload() {
                   <UploadFileInput
                     onChange={field.onChange}
                     value={field.value}
-                    previewType={["pdf"]}
+                    allowedExtensions={["csv"]}
+                    previewType="auto" 
                   />
                 )}
               />
