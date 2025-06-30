@@ -33,7 +33,7 @@ const ClockInOutAttendance = () => {
 
     if (auth?.user?.clockInDetails?.hasClockedIn && clockIn && serverNow) {
       setStartTime(clockIn);
-      const calculatedOffset = computeOffset(serverNow);
+      const calculatedOffset = computeOffset(new Date());
       setOffset(calculatedOffset);
       setElapsedTime(getElapsedSecondsWithOffset(clockIn, calculatedOffset));
     }

@@ -5,6 +5,8 @@ import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
 import { computeOffset, getElapsedSecondsWithOffset } from "../utils/time";
 import humanTime from "../utils/humanTime";
+import { BsCup, BsCupHot } from "react-icons/bs";
+import { IoEnterOutline } from "react-icons/io5";
 
 const AttendanceTimeline = () => {
   const axios = useAxiosPrivate();
@@ -49,8 +51,7 @@ const AttendanceTimeline = () => {
     return () => clearInterval(timerRef.current);
   }, [startTime, offset]);
 
-
-   const {
+  const {
     data: todayAttendance,
     isLoading,
     refetch,
@@ -78,14 +79,14 @@ const AttendanceTimeline = () => {
       return {
         inTime: data.inTime ? humanTime(data.inTime) : null,
         outTime: data.outTime ? humanTime(data.outTime) : "0h:0m:0s",
-         breaks: Array.isArray(data.breaks)
-    ? data.breaks
-        .filter((brk) => brk.startBreak && brk.endBreak)
-        .map((brk) => ({
-          startBreak: humanTime(brk.startBreak),
-          endBreak: humanTime(brk.endBreak),
-        }))
-    : [],
+        breaks: Array.isArray(data.breaks)
+          ? data.breaks
+              .filter((brk) => brk.startBreak && brk.endBreak)
+              .map((brk) => ({
+                startBreak: humanTime(brk.startBreak),
+                endBreak: humanTime(brk.endBreak),
+              }))
+          : [],
       };
     },
   });
@@ -127,36 +128,56 @@ const AttendanceTimeline = () => {
             </span>
           </div>
 
-          <div className="flex justify-between">
-            <span className="text-muted">Clock-in Time: &nbsp;</span>
-            <span className="font-medium">
-              {todayAttendance?.inTime ? todayAttendance.inTime : "0h:0m:0s"}
-            </span>
+          <div className="flex flex-col justify-between">
+            <div className="flex gap-2 items-center justify-between">
+              <div className="pb-1 flex gap-2 items-center">
+                <IoEnterOutline />
+                <span className="text-muted">Clock-in Time: &nbsp;</span>
+              </div>
+              <span className="font-medium">
+                {todayAttendance?.inTime ? todayAttendance.inTime : "0h:0m:0s"}
+              </span>
+            </div>
+
+            <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
           </div>
           {todayAttendance?.breaks &&
             todayAttendance?.breaks.length > 0 &&
             todayAttendance?.breaks.map((brk, index) => (
-              <div key={index} className="flex flex-col gap-4">
-                <div className="flex justify-between">
-                  <span className="text-muted">Break Start: &nbsp;</span>
-                  <span className="font-medium">
-                    {brk.startBreak}
-                  </span>
+              <div key={index} className="flex flex-col gap-1 items-start">
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="flex gap-2 items-center">
+                      <div className="pb-1">
+                        <BsCupHot />
+                      </div>
+                      <span className="text-muted">Break Start: &nbsp;</span>
+                    </div>
+                  </div>
+                  <span className="font-medium">{brk.startBreak}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted">Break End: &nbsp;</span>
+                <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
+                <div className="flex justify-between w-full">
+                  <div className="flex gap-2 items-center">
+                    <div className="pb-0">
+                      <BsCup />
+                    </div>
+                    <span className="text-muted">Break End: &nbsp;</span>
+                  </div>
                   <span className="font-medium">{brk.endBreak}</span>
                 </div>
+                <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
               </div>
             ))}
-
 
           {/* --START-- */}
 
           {/* --END-- */}
           <div className="flex justify-between">
             <span className="text-muted">Clock-out Time: &nbsp;</span>
-            <span className="font-medium">{todayAttendance?.outTime ? todayAttendance.outTime : "0h:0m:0s"}</span>
+            <span className="font-medium">
+              {todayAttendance?.outTime ? todayAttendance.outTime : "0h:0m:0s"}
+            </span>
           </div>
           <div className="flex justify-between h-4"></div>
         </div>
