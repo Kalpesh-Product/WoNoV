@@ -63,8 +63,8 @@ export default function PastEmployees() {
       cellRenderer: (params) => {
         const statusText = params.value ? "Active" : "In Active";
         const statusColorMap = {
-          Active: { backgroundColor: "#90EE90", color: "#006400" }, // light green bg, dark green text
-          InActive: { backgroundColor: "#F8D7DA", color: "#721C24" }, // light red bg, dark red text
+          Active: { backgroundColor: "#90EE90", color: "#006400" }, 
+          InActive: { backgroundColor: "#F8D7DA", color: "#721C24" }, 
         };
 
         const { backgroundColor, color } = statusColorMap[statusText] || {
