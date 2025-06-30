@@ -6,6 +6,7 @@ import useAuth from "../hooks/useAuth";
 import { computeOffset, getElapsedSecondsWithOffset } from "../utils/time";
 import humanTime from "../utils/humanTime";
 import { queryClient } from "../main";
+import { format } from "date-fns";
 
 const ClockInOutAttendance = () => {
   const axios = useAxiosPrivate();
@@ -18,6 +19,10 @@ const ClockInOutAttendance = () => {
   });
   const [takeBreak, setTakeBreak] = useState(null);
   const [breaks, setBreaks] = useState([]);
+  const [totalHours, setTotalHours] = useState({
+    workHours: "0h:0m:0s",
+    breakHours: "0h:0m:0s",
+  });
   const [stopBreak, setStopBreak] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -95,6 +100,10 @@ const ClockInOutAttendance = () => {
       setClockTime((prev) => ({ ...prev, endTime: outTime }));
       setElapsedTime(0);
       setOffset(0);
+      setTotalHours((prev) => ({
+        ...prev,
+        workHours: calculateTotalHours(startTime, outTime, "workhours"),
+      }));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
     onError: (error) => toast.error(error.response.data.message),
@@ -113,6 +122,10 @@ const ClockInOutAttendance = () => {
       setTakeBreak(breakTime);
       setBreaks((prev) => [...prev, { start: breakTime }]);
       setOffset(0); // start fresh
+      setTotalHours((prev) => ({
+        ...prev,
+        workHours: calculateTotalHours(startTime, breakTime, "workhours"),
+      }));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
     onError: (error) => toast.error(error.response.data.message),
@@ -134,12 +147,16 @@ const ClockInOutAttendance = () => {
         const len = updated.length;
 
         if (len > 0 && !updated[len - 1].end) {
-          updated[len - 1].end = { end: breakTime };
+          updated[len - 1].end = breakTime;
         }
 
         return updated;
       });
       setOffset(0); // start fresh
+      setTotalHours((prev) => ({
+        ...prev,
+        breakHours: calculateTotalHours(takeBreak, breakTime),
+      }));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
     onError: (error) => toast.error(error.response.data.message),
@@ -171,16 +188,6 @@ const ClockInOutAttendance = () => {
     return `${hrs}:${mins}:${secs}`;
   };
 
-  if (isBooting) {
-    return (
-      <div className="flex justify-center items-center h-40">
-        <span className="text-content text-gray-600">
-          Loading attendance...
-        </span>
-      </div>
-    );
-  }
-
   const formatDisplayDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -190,6 +197,61 @@ const ClockInOutAttendance = () => {
       year: "numeric",
     });
   };
+
+  const formatTime = (seconds) => {
+    const hrs = String(Math.floor(seconds / 3600)).padStart(2, "0");
+    const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
+    const secs = String(Math.floor(seconds % 60)).padStart(2, "0");
+    return `${hrs}:${mins}:${secs}`;
+  };
+
+  const calculateTotalHours = (startTime, endTime, type) => {
+    if (type === "workhours") {
+      const workDuration = (new Date(endTime) - new Date(startTime)) / 1000;
+      return formatTime(workDuration);
+    } else {
+      const breakDuration = breaks.reduce((total, brk) => {
+        const start = brk.start;
+        const end = brk.end;
+        if (start && end) {
+          return total + (new Date(end) - new Date(start)) / 1000;
+        }
+        return total;
+      }, 0);
+
+      return formatTime(breakDuration);
+    }
+  };
+
+  useEffect(() => {
+    if (clockTime.startTime && clockTime.endTime) {
+      const workDuration =
+        (new Date(clockTime.endTime) - new Date(clockTime.startTime)) / 1000;
+
+      const breakDuration = breaks.reduce((total, brk) => {
+        const start = brk.start;
+        const end = brk.end;
+        if (start && end) {
+          return total + (new Date(end) - new Date(start)) / 1000;
+        }
+        return total;
+      }, 0);
+      setTotalHours({
+        breakHours: formatTime(breakDuration),
+        workHours: formatTime(workDuration),
+      });
+    }
+  }, [clockTime, breaks]);
+
+  if (isBooting) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <span className="text-content text-gray-600">
+          Loading attendance...
+        </span>
+      </div>
+    );
+  }
 
   return (
     // <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
@@ -236,20 +298,35 @@ const ClockInOutAttendance = () => {
             {startTime ? `${formatElapsedTime(elapsedTime)}` : "Not Clocked In"}
           </div>
 
-          <div className="flex gap-4">
-            <div className="flex justify-between">
-              <span className="text-muted">Clock-in Time: &nbsp;</span>
-              <span className="font-medium">
-                {clockTime.startTime
-                  ? humanTime(clockTime.startTime)
-                  : "0h:0m:0s"}
-              </span>
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-4">
+              <div className="flex justify-between">
+                <span className="text-muted">Clock-in Time: &nbsp;</span>
+                <span className="font-medium">
+                  {clockTime.startTime
+                    ? humanTime(clockTime.startTime)
+                    : "0h:0m:0s"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted">Clock-out Time: &nbsp;</span>
+                <span className="font-medium">
+                  {clockTime.endTime
+                    ? humanTime(clockTime.endTime)
+                    : "0h:0m:0s"}
+                </span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted">Clock-out Time: &nbsp;</span>
-              <span className="font-medium">
-                {clockTime.endTime ? humanTime(clockTime.endTime) : "0h:0m:0s"}
-              </span>
+
+            <div className="flex gap-4">
+              <div className="flex justify-between">
+                <span className="text-muted">Work Hours: &nbsp;</span>
+                <span className="font-medium">{totalHours.workHours}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted">Break Hours: &nbsp;</span>
+                <span className="font-medium">{totalHours.breakHours}</span>
+              </div>
             </div>
           </div>
         </div>
