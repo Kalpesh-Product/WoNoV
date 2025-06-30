@@ -102,9 +102,9 @@ const AttendanceTimeline = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 h-80 ">
+    <div className="flex flex-col gap-4 px-2 h-80 ">
       <div className="flex justify-center ">
-        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 overflow-scroll h-80 overflow-x-hidden w-full px-36">
+        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 overflow-scroll h-80 overflow-x-hidden w-full px-4">
           <div className="flex flex-col justify-between">
             <div className="flex gap-2 items-center justify-between">
               <div className="pb-1 flex gap-2 items-center">
