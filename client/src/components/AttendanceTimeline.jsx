@@ -81,22 +81,15 @@ const AttendanceTimeline = () => {
         outTime: data.outTime ? humanTime(data.outTime) : "0h:0m:0s",
         breaks: Array.isArray(data.breaks)
           ? data.breaks
-              .filter((brk) => brk.startBreak && brk.endBreak)
+              .filter((brk) => brk.startBreak)
               .map((brk) => ({
                 startBreak: humanTime(brk.startBreak),
-                endBreak: humanTime(brk.endBreak),
+                endBreak: brk.endBreak ? humanTime(brk.endBreak) : "0h:0m:0s",
               }))
           : [],
       };
     },
   });
-
-  const formatElapsedTime = (seconds) => {
-    const hrs = String(Math.floor(seconds / 3600)).padStart(2, "0");
-    const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
-    const secs = String(seconds % 60).padStart(2, "0");
-    return `${hrs}:${mins}:${secs}`;
-  };
 
   if (isBooting) {
     return (
@@ -109,25 +102,9 @@ const AttendanceTimeline = () => {
   }
 
   return (
-    // <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
-    <div className="flex flex-col gap-4 h-80 ">
+    <div className="flex flex-col gap-4 p-4 h-80 ">
       <div className="flex justify-center ">
         <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 overflow-scroll h-80 overflow-x-hidden w-full px-36">
-          {/* <div className="font-semibold text-base text-gray-900">
-
-            Timeline
-          </div> */}
-
-          <div className="flex justify-between">
-            <span className="text-muted">Status: &nbsp;</span>
-            <span className="font-medium">
-              {/* {auth?.user?.clockInDetails?.clockInTime
-                ? "Clocked In"
-                : "Not Clocked In"} */}
-              {todayAttendance?.inTime ? "Clocked In" : "Not Clocked In"}
-            </span>
-          </div>
-
           <div className="flex flex-col justify-between">
             <div className="flex gap-2 items-center justify-between">
               <div className="pb-1 flex gap-2 items-center">
