@@ -172,7 +172,8 @@ const PerformanceKra = () => {
               <div
                 role="button"
                 onClick={() => updateDailyKra(params.data.id)}
-                className="p-2">
+                className="p-2"
+              >
                 <PrimaryButton
                   title={"Mark As Done"}
                   disabled={!params.node.selected}
@@ -228,7 +229,6 @@ const PerformanceKra = () => {
             <WidgetSection padding layout={1}>
               <DateWiseTable
                 formatTime
-               
                 key={departmentKra.length}
                 checkbox={showCheckBox}
                 buttonTitle={"Add Daily KRA"}
@@ -257,11 +257,11 @@ const PerformanceKra = () => {
         <PageFrame>
           <div>
             {!departmentLoading ? (
-              <WidgetSection>
+              <WidgetSection padding>
                 <DateWiseTable
                   formatTime
                   tableTitle={`COMPLETED - DAILY KRA`}
-                   exportData={true}
+                  exportData={true}
                   checkAll={false}
                   key={completedEntries.length}
                   data={completedEntries.map((item, index) => ({
@@ -289,10 +289,12 @@ const PerformanceKra = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Daily KRA"}>
+        title={"Add Daily KRA"}
+      >
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
-          className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+          className="grid grid-cols-1 lg:grid-cols-1 gap-4"
+        >
           <Controller
             name="dailyKra"
             control={control}

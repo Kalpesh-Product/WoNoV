@@ -25,21 +25,14 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import html2pdf from "html2pdf.js";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
 const tableClasses = "w-full border border-black border-collapse mb-5";
 
 const options = ["Yes", "No"];
-const paymentModes = [
-  "Cash",
-  "Cheque",
-  "NEFT",
-  "RTGS",
-  "IMPS",
-  "Credit Card",
-  "ETC",
-];
+const paymentModes = ["Cash", "Cheque", "NEFT", "RTGS", "IMPS", "Credit Card"];
 
 const ReviewRequest = () => {
   const formRef = useRef(null);
@@ -51,6 +44,7 @@ const ReviewRequest = () => {
   const { control, watch, setValue, getValues, reset } = useForm({
     defaultValues: {
       fSrNo: "",
+      fDate: null,
       budgetId: "",
       modeOfPayment: "",
       chequeNo: "",
@@ -60,7 +54,13 @@ const ReviewRequest = () => {
       particulars: [],
     },
   });
-
+  const { data: voucherData = [], isPending: isVoucherPending } = useQuery({
+    queryKey: ["voucherData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/budget/approved-budgets");
+      return response.data.allBudgets;
+    },
+  });
   const { data: departmentBudget = [], isPending: isDepartmentLoading } =
     useQuery({
       queryKey: ["departmentBudget"],
@@ -89,6 +89,8 @@ const ReviewRequest = () => {
       const generatedSNo = `${prefix}-${number}`;
       setValue("srNo", generatedSNo);
       setValue("budgetId", voucherDetails._id);
+      setValue("fDate", new Date());
+      setValue("fSrNo", `FIN-${voucherData.length + 1}`);
     }
   }, [department?.name, reimbursedBudget, setValue, voucherDetails]);
 
@@ -220,31 +222,236 @@ const ReviewRequest = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="w-full space-y-4">
-        <div className="flex justify-between items-center">
-          <span className="text-title text-primary font-pbold mb-4 uppercase">
-            FINANCE AREA
-          </span>
-        </div>
+      <PageFrame>
+        <div className="w-full space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-title text-primary font-pbold mb-4 uppercase">
+              FINANCE AREA
+            </span>
+          </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Controller
-              name="fSrNo"
-              control={control}
-              defaultValue=""
-              render={({ field }) => (
-                <TextField
-                  label="Finance Sno"
-                  size="small"
-                  type="number"
-                  fullWidth
-                  {...field}
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Controller
+                name="fSrNo"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    label="Finance Sno"
+                    size="small"
+                    disabled
+                    fullWidth
+                    {...field}
+                  />
+                )}
+              />
+              <Controller
+                name="fDate"
+                control={control}
+                rules={{
+                  required: "Date is required",
+                  validate: (value) => {
+                    if (!value) return true; // already handled by required
+                    const today = dayjs().startOf("day");
+                    const selected = dayjs(value);
+                    if (selected.isBefore(today)) {
+                      return "Date cannot be in the past.";
+                    }
+                    return true;
+                  },
+                }}
+                render={({ field, fieldState }) => (
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      {...field}
+                      label="Finance Date"
+                      format="DD-MM-YYYY"
+                      disablePast
+                      value={field.value ? dayjs(field.value) : null}
+                      onChange={(date) =>
+                        field.onChange(date ? date.toISOString() : null)
+                      }
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          size: "small",
+                        },
+                      }}
+                    />
+                  </LocalizationProvider>
+                )}
+              />
+            </div>
+            <span className="text-subtitle font-pmedium">Add Particulars</span>
+            <div className="flex gap-2">
+              <Controller
+                name="particularName"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    label="Particulars"
+                    size="small"
+                    fullWidth
+                    {...field}
+                  />
+                )}
+              />
+              <Controller
+                name="particularAmount"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    label="Amount"
+                    size="small"
+                    type="number"
+                    fullWidth
+                    {...field}
+                  />
+                )}
+              />
+              <div className="flex flex-col justify-center items-center">
+                <PrimaryButton
+                  title="Add"
+                  externalStyles={"w-1/4"}
+                  handleSubmit={() => {
+                    const { particularName, particularAmount } = watch();
+                    if (particularName && particularAmount) {
+                      append({
+                        particularName: particularName,
+                        particularAmount: parseFloat(particularAmount),
+                      });
+                      setValue("particularName", "");
+                      setValue("particularAmount", "");
+                    }
+                  }}
                 />
-              )}
-            />
+              </div>
+            </div>
+            {fields.length > 0 && (
+              <div className="mt-4 border border-gray-300 rounded p-3 bg-gray-50">
+                <p className="text-sm font-semibold text-gray-800 mb-2">
+                  Added Particulars (UI Preview Only):
+                </p>
+                <ul className="text-xs space-y-1">
+                  {fields.map((item, index) => (
+                    <li
+                      key={index}
+                      className="flex justify-between items-center border-b py-1"
+                    >
+                      <div className="flex flex-col">
+                        <span>{item.particularName}</span>
+                        <span className="font-medium text-gray-600">
+                          INR {item.particularAmount?.toFixed(2)}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => remove(index)}
+                        className="text-red-500 hover:text-red-700"
+                        title="Delete"
+                      >
+                        <MdDelete size={20} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="flex justify-between border-t border-gray-300 pt-2 mt-2 text-xs font-semibold text-gray-700">
+                  <span>Total</span>
+                  <span>
+                    INR{" "}
+                    {fields
+                      .reduce(
+                        (acc, item) =>
+                          acc + (parseFloat(item.particularAmount) || 0),
+                        0
+                      )
+                      .toFixed(0)}
+                  </span>
+                </div>
+
+                <p className="text-[10px] text-gray-500 mt-2 italic">
+                  * This list is for UI purposes only. The actual voucher
+                  remains unchanged.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {[
+              {
+                name: "modeOfPayment",
+                label: "Mode of Payment",
+                values: paymentModes,
+              },
+            ].map(({ name, label, values }) => (
+              <Controller
+                key={name}
+                name={name}
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    select
+                    fullWidth
+                    size="small"
+                    label={label}
+                    {...field}
+                  >
+                    {values.map((opt) => (
+                      <MenuItem
+                        key={opt}
+                        value={opt}
+                        disabled={opt !== "Cash" && opt !== "Cheque"}
+                      >
+                        {opt}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+            ))}
+
+            {["chequeNo"].map((fieldName) => (
+              <Controller
+                key={fieldName}
+                name={fieldName}
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    disabled={values.modeOfPayment === "Cash"}
+                    label={fieldName
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (str) => str.toUpperCase())}
+                    {...field}
+                  />
+                )}
+              />
+            ))}
+            {["advanceAmount"].map((fieldName) => (
+              <Controller
+                key={fieldName}
+                name={fieldName}
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label={fieldName
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (str) => str.toUpperCase())}
+                    {...field}
+                  />
+                )}
+              />
+            ))}
+
             <Controller
-              name="fDate"
+              name="chequeDate"
               control={control}
               rules={{
                 required: "Date is required",
@@ -262,7 +469,44 @@ const ReviewRequest = () => {
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
                     {...field}
-                    label="Finance Date"
+                    label="Cheque Date"
+                    format="DD-MM-YYYY"
+                    disablePast
+                    disabled={values.modeOfPayment === "Cash"}
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(date) =>
+                      field.onChange(date ? date.toISOString() : null)
+                    }
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        size: "small",
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
+              )}
+            />
+            <Controller
+              name="expectedDateInvoice"
+              control={control}
+              rules={{
+                required: "Date is required",
+                validate: (value) => {
+                  if (!value) return true; // already handled by required
+                  const today = dayjs().startOf("day");
+                  const selected = dayjs(value);
+                  if (selected.isBefore(today)) {
+                    return "Date cannot be in the past.";
+                  }
+                  return true;
+                },
+              }}
+              render={({ field, fieldState }) => (
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    {...field}
+                    label="Expected Inovice Date"
                     format="DD-MM-YYYY"
                     disablePast
                     value={field.value ? dayjs(field.value) : null}
@@ -280,234 +524,16 @@ const ReviewRequest = () => {
               )}
             />
           </div>
-          <span className="text-subtitle font-pmedium">Add Particulars</span>
-          <div className="flex gap-2">
-            <Controller
-              name="particularName"
-              control={control}
-              defaultValue=""
-              render={({ field }) => (
-                <TextField
-                  label="Particulars"
-                  size="small"
-                  fullWidth
-                  {...field}
-                />
-              )}
+
+          <div className="place-items-center">
+            <PrimaryButton
+              title="Preview"
+              externalStyles={"w-1/4"}
+              handleSubmit={() => setOpenPreview(true)}
             />
-            <Controller
-              name="particularAmount"
-              control={control}
-              defaultValue=""
-              render={({ field }) => (
-                <TextField
-                  label="Amount"
-                  size="small"
-                  type="number"
-                  fullWidth
-                  {...field}
-                />
-              )}
-            />
-            <div className="flex flex-col justify-center items-center">
-              <PrimaryButton
-                title="Add"
-                externalStyles={"w-1/4"}
-                handleSubmit={() => {
-                  const { particularName, particularAmount } = watch();
-                  if (particularName && particularAmount) {
-                    append({
-                      particularName: particularName,
-                      particularAmount: parseFloat(particularAmount),
-                    });
-                    setValue("particularName", "");
-                    setValue("particularAmount", "");
-                  }
-                }}
-              />
-            </div>
           </div>
-          {fields.length > 0 && (
-            <div className="mt-4 border border-gray-300 rounded p-3 bg-gray-50">
-              <p className="text-sm font-semibold text-gray-800 mb-2">
-                Added Particulars (UI Preview Only):
-              </p>
-              <ul className="text-xs space-y-1">
-                {fields.map((item, index) => (
-                  <li
-                    key={index}
-                    className="flex justify-between items-center border-b py-1"
-                  >
-                    <div className="flex flex-col">
-                      <span>{item.particularName}</span>
-                      <span className="font-medium text-gray-600">
-                        INR {item.particularAmount?.toFixed(2)}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => remove(index)}
-                      className="text-red-500 hover:text-red-700"
-                      title="Delete"
-                    >
-                      <MdDelete size={20} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="flex justify-between border-t border-gray-300 pt-2 mt-2 text-xs font-semibold text-gray-700">
-                <span>Total</span>
-                <span>
-                  INR{" "}
-                  {fields
-                    .reduce(
-                      (acc, item) =>
-                        acc + (parseFloat(item.particularAmount) || 0),
-                      0
-                    )
-                    .toFixed(0)}
-                </span>
-              </div>
-
-              <p className="text-[10px] text-gray-500 mt-2 italic">
-                * This list is for UI purposes only. The actual voucher remains
-                unchanged.
-              </p>
-            </div>
-          )}
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {[
-            {
-              name: "modeOfPayment",
-              label: "Mode of Payment",
-              values: paymentModes,
-            },
-          ].map(({ name, label, values }) => (
-            <Controller
-              key={name}
-              name={name}
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  select
-                  fullWidth
-                  size="small"
-                  label={label}
-                  {...field}
-                >
-                  {values.map((opt) => (
-                    <MenuItem key={opt} value={opt}>
-                      {opt}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-          ))}
-
-          {["chequeNo", "advanceAmount"].map((fieldName) => (
-            <Controller
-              key={fieldName}
-              name={fieldName}
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  fullWidth
-                  size="small"
-                  label={fieldName
-                    .replace(/([A-Z])/g, " $1")
-                    .replace(/^./, (str) => str.toUpperCase())}
-                  {...field}
-                />
-              )}
-            />
-          ))}
-
-          <Controller
-            name="chequeDate"
-            control={control}
-            rules={{
-              required: "Date is required",
-              validate: (value) => {
-                if (!value) return true; // already handled by required
-                const today = dayjs().startOf("day");
-                const selected = dayjs(value);
-                if (selected.isBefore(today)) {
-                  return "Date cannot be in the past.";
-                }
-                return true;
-              },
-            }}
-            render={({ field, fieldState }) => (
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  {...field}
-                  label="Cheque Date"
-                  format="DD-MM-YYYY"
-                  disablePast
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(date) =>
-                    field.onChange(date ? date.toISOString() : null)
-                  }
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      size: "small",
-                    },
-                  }}
-                />
-              </LocalizationProvider>
-            )}
-          />
-          <Controller
-            name="expectedDateInvoice"
-            control={control}
-            rules={{
-              required: "Date is required",
-              validate: (value) => {
-                if (!value) return true; // already handled by required
-                const today = dayjs().startOf("day");
-                const selected = dayjs(value);
-                if (selected.isBefore(today)) {
-                  return "Date cannot be in the past.";
-                }
-                return true;
-              },
-            }}
-            render={({ field, fieldState }) => (
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  {...field}
-                  label="Expected Inovice Date"
-                  format="DD-MM-YYYY"
-                  disablePast
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(date) =>
-                    field.onChange(date ? date.toISOString() : null)
-                  }
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      size: "small",
-                    },
-                  }}
-                />
-              </LocalizationProvider>
-            )}
-          />
-        </div>
-
-        <div className="place-items-center">
-          <PrimaryButton
-            title="Preview"
-            externalStyles={"w-1/4"}
-            handleSubmit={() => setOpenPreview(true)}
-          />
-        </div>
-      </div>
+      </PageFrame>
 
       <MuiModal open={openPreview} onClose={() => setOpenPreview(false)}>
         <Box className="absolute top-1/2 left-1/2 bg-white p-4 rounded shadow max-h-screen overflow-y-auto w-[77%] -translate-x-1/2 -translate-y-1/2">

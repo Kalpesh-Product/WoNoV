@@ -82,7 +82,7 @@ const AttendanceRequests = () => {
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "name", headerName: "Name", flex: 1 },
-    { field: "date", headerName: "Date" },
+    { field: "requestDay", headerName: "Date" },
     { field: "inTime", headerName: "Start Time" },
     { field: "outTime", headerName: "End Time" },
     {
@@ -122,11 +122,12 @@ const AttendanceRequests = () => {
         empId: item.user?.empId,
         reason:item.reason,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
-        date: item.inTime,
+        requestDay: humanDate(item.inTime) || "N/A",
         inTime: humanTime(item.inTime),
         outTime: humanTime(item.outTime),
         originalInTime: humanTime(item.originalInTime),
         originalOutTime: humanTime(item.originalOutTime),
+        createdDate : item.createdDate,
         status: item.status,
       }));
 
@@ -135,7 +136,8 @@ const AttendanceRequests = () => {
       <PageFrame>
         <YearWiseTable
         key={tableData.length}
-          dateColumn={"date"}
+        formatDate
+          dateColumn={"createdDate"}
           columns={columns}
           data={!isLoading ? tableData : []}
           tableTitle={"ATTENDANCE REQUESTS"}
@@ -161,8 +163,12 @@ const AttendanceRequests = () => {
               detail={selectedRequest?.reason}
             />
             <DetalisFormatted
+              title="Raised Date"
+              detail={humanDate(selectedRequest?.createdAt)}
+            />
+            <DetalisFormatted
               title="Date"
-              detail={selectedRequest?.date}
+              detail={selectedRequest?.requestDay}
             />
             <DetalisFormatted
               title="Start Time"

@@ -271,7 +271,7 @@ const BookMeetings = () => {
                   >
                     <MenuItem value="" disabled>
                       {" "}
-                      Seletc Location
+                      Select Location
                     </MenuItem>
                     {buildings.map((building) => (
                       <MenuItem key={building?._id} value={building?._id}>

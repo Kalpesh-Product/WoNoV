@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { TextField, MenuItem, CircularProgress } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
@@ -22,6 +22,7 @@ const AddVisitor = () => {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({
     mode: "onChange",
@@ -157,6 +158,10 @@ const AddVisitor = () => {
   const handleReset = () => {
     reset();
   };
+
+  useEffect(()=>{
+    setValue("checkIn", dayjs(new Date()))
+  },[])
 
   return (
     <div className=" p-4">
@@ -438,35 +443,39 @@ const AddVisitor = () => {
 
               <div>
                 <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">Timings</span>
+                  <span className="text-subtitle font-pmedium">
+                    Date & Time
+                  </span>
                 </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
-                  {visitorType === "Scheduled" && (
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <Controller
-                        name="scheduledDate"
-                        control={control}
-                        rules={{ required: "Scheduled date is required" }}
-                        render={({ field }) => (
-                          <DatePicker
-                            {...field}
-                            format="DD-MM-YYYY"
-                            label={"Scheduled Date"}
-                            value={field.value || null}
-                            onChange={(e) => field.onChange(e)}
-                            slotProps={{
-                              textField: {
-                                fullWidth: true,
-                                size: "small",
-                                error: !!errors.scheduledDate,
-                                helperText: errors.scheduledDate?.message,
-                              },
-                            }}
-                          />
-                        )}
-                      />
-                    </LocalizationProvider>
-                  )}
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4 p-4 ">
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Controller
+                      name="scheduledDate"
+                      control={control}
+                      rules={{ required: "Scheduled date is required" }}
+                      render={({ field }) => {
+                        const visitType = visitorType !== "Scheduled" ? dayjs(new Date()) : field.value
+                        return (
+                        <DatePicker
+                          {...field}
+                          format="DD-MM-YYYY"
+                          label={"Scheduled Date"}
+                          disabled={visitorType !== "Scheduled"}
+                          value={visitType}
+                          onChange={(e) => field.onChange(e)}
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              size: "small",
+                              error: !!errors.scheduledDate,
+                              helperText: errors.scheduledDate?.message,
+                            },
+                          }}
+                        />
+                      )}}
+                    />
+                  </LocalizationProvider>
+
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Controller
                       name="checkIn"
