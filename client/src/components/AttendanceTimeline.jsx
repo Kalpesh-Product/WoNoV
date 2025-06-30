@@ -102,14 +102,14 @@ const AttendanceTimeline = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 h-80 ">
+    <div className="flex flex-col gap-4 px-2 h-80 ">
       <div className="flex justify-center ">
-        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 overflow-scroll h-80 overflow-x-hidden w-full px-36">
+        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 overflow-scroll h-80 overflow-x-hidden w-full px-4">
           <div className="flex flex-col justify-between">
             <div className="flex gap-2 items-center justify-between">
               <div className="pb-1 flex gap-2 items-center">
                 <IoEnterOutline />
-                <span className="text-muted">Clock-in Time: &nbsp;</span>
+                <span className="text-muted">Clock-in Time</span>
               </div>
               <span className="font-medium">
                 {todayAttendance?.inTime ? todayAttendance.inTime : "0h:0m:0s"}
@@ -128,7 +128,7 @@ const AttendanceTimeline = () => {
                       <div className="pb-1">
                         <BsCupHot />
                       </div>
-                      <span className="text-muted">Break Start: &nbsp;</span>
+                      <span className="text-muted">Break Start</span>
                     </div>
                   </div>
                   <span className="font-medium">{brk.startBreak}</span>
@@ -139,7 +139,7 @@ const AttendanceTimeline = () => {
                     <div className="pb-0">
                       <BsCup />
                     </div>
-                    <span className="text-muted">Break End: &nbsp;</span>
+                    <span className="text-muted">Break End</span>
                   </div>
                   <span className="font-medium">{brk.endBreak}</span>
                 </div>
@@ -151,7 +151,7 @@ const AttendanceTimeline = () => {
 
           {/* --END-- */}
           <div className="flex justify-between">
-            <span className="text-muted">Clock-out Time: &nbsp;</span>
+            <span className="text-muted">Clock-out Time</span>
             <span className="font-medium">
               {todayAttendance?.outTime ? todayAttendance.outTime : "0h:0m:0s"}
             </span>

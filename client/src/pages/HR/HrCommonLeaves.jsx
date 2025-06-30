@@ -64,14 +64,14 @@ const HrCommonLeaves = () => {
       }
     }
   }, [leavePeriod, fromDate, toDate, setValue]);
-useEffect(() => {
-  setValue("toDate", null);
-  setValue("hours", 0);
+  useEffect(() => {
+    setValue("toDate", null);
+    setValue("hours", 0);
 
-  if (leavePeriod === "Partial" && fromDate) {
-    setValue("toDate", fromDate); // 👈 Set toDate same as fromDate
-  }
-}, [leavePeriod, fromDate, setValue]);
+    if (leavePeriod === "Partial" && fromDate) {
+      setValue("toDate", fromDate); // 👈 Set toDate same as fromDate
+    }
+  }, [leavePeriod, fromDate, setValue]);
 
   const leavesColumn = [
     { field: "srNo", headerName: "Sr No" },
@@ -141,6 +141,50 @@ useEffect(() => {
       >
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           {/* Leave Type */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* From Date */}
+            <Controller
+              name="fromDate"
+              control={control}
+              render={({ field }) => (
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    {...field}
+                    label="From Date"
+                    disablePast
+                    format="DD-MM-YYYY"
+                    slotProps={{ textField: { size: "small" } }}
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(date) => {
+                      field.onChange(date ? date.toISOString() : null);
+                    }}
+                  />
+                </LocalizationProvider>
+              )}
+            />
+
+            {/* To Date (conditionally disabled) */}
+            <Controller
+              name="toDate"
+              control={control}
+              render={({ field }) => (
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    {...field}
+                    disabled={leavePeriod !== "Multiple"}
+                    disablePast
+                    label="To Date"
+                    format="DD-MM-YYYY"
+                    slotProps={{ textField: { size: "small" } }}
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(date) => {
+                      field.onChange(date ? date.toISOString() : null);
+                    }}
+                  />
+                </LocalizationProvider>
+              )}
+            />
+          </div>
           <Controller
             name="leaveType"
             control={control}
@@ -184,49 +228,6 @@ useEffect(() => {
             )}
           />
 
-          {/* From Date */}
-          <Controller
-            name="fromDate"
-            control={control}
-            render={({ field }) => (
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  {...field}
-                  label="From Date"
-                  disablePast
-                  format="DD-MM-YYYY"
-                  slotProps={{ textField: { size: "small" } }}
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(date) => {
-                    field.onChange(date ? date.toISOString() : null);
-                  }}
-                />
-              </LocalizationProvider>
-            )}
-          />
-
-          {/* To Date (conditionally disabled) */}
-          <Controller
-            name="toDate"
-            control={control}
-            render={({ field }) => (
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  {...field}
-                  disabled={leavePeriod !== "Multiple"}
-                  disablePast
-                  label="To Date"
-                  format="DD-MM-YYYY"
-                  slotProps={{ textField: { size: "small" } }}
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(date) => {
-                    field.onChange(date ? date.toISOString() : null);
-                  }}
-                />
-              </LocalizationProvider>
-            )}
-          />
-
           {/* Hours */}
           <Controller
             name="hours"
@@ -261,7 +262,10 @@ useEffect(() => {
           />
 
           <div className="flex items-center justify-center gap-4">
-            <SecondaryButton title="Cancel" handleSubmit={() => setOpenModal(false)} />
+            <SecondaryButton
+              title="Cancel"
+              handleSubmit={() => setOpenModal(false)}
+            />
             <PrimaryButton
               title="Submit"
               type="submit"

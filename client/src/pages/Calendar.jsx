@@ -82,11 +82,7 @@ const Calender = () => {
       subject: meeting.subject,
       department: meeting.department,
       participants: meeting.participants?.map((p) =>
-        p.employeeName
-          ? p.employeeName
-          : p.firstname
-          ? `${p.firstName} ${p.lastName}`
-          : p.name
+       `${p.firstName} ${p.lastName}`
       ),
       meetingStatus: meeting.meetingStatus,
       housekeepingStatus: meeting.housekeepingStatus,
@@ -124,17 +120,21 @@ const Calender = () => {
     }
   }, [eventFilter, events, meetings]);
 
-  const getTodaysEvents = () => {
-    const today = dayjs().startOf("day");
-    return events.filter((event) => {
-      const eventStart = dayjs(event.start).startOf("day");
-      const eventEnd = dayjs(event.end).startOf("day");
-      return (
-        today.isSame(eventStart) ||
-        (today.isAfter(eventStart) && today.isBefore(eventEnd))
-      );
-    });
-  };
+const getTodaysEvents = () => {
+  const today = dayjs().startOf("day");
+
+  return filteredEvents.filter((event) => {
+    const start = dayjs(event.start).startOf("day");
+    const end = event.end ? dayjs(event.end).startOf("day") : start;
+
+    return (
+      today.isSame(start) ||
+      today.isSame(end) ||
+      (today.isAfter(start) && today.isBefore(end))
+    );
+  });
+};
+
 console.log("filtered events : ",filteredEvents)
   const todaysEvents = getTodaysEvents();
 
@@ -165,6 +165,8 @@ console.log("filtered events : ",filteredEvents)
       description: "",
     });
   };
+
+  console.log("selected : ", filteredEvents)
   return (
     <div className="flex w-[70%] md:w-full">
       {!isMeetingsLoading && !isEventsPending ? (

@@ -619,7 +619,7 @@ const HrDashboard = () => {
       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: () => {
-          navigate("employee/view-employees");
+          navigate("employee/employee-list");
         },
       },
     },
@@ -750,7 +750,7 @@ const HrDashboard = () => {
       {
         title: "Exit Head Count",
         value: "2",
-        route: "employee/view-employees",
+        route: "employee/employee-list",
       },
       {
         title: "Per Sq. Ft.",
@@ -773,12 +773,12 @@ const HrDashboard = () => {
       {
         title: "Average Salary",
         value: `INR ${inrFormat(totalSalary / totalEmployees)}`,
-        route: "employee/view-employees",
+        route: "employee/employee-list",
       },
       {
         title: "Average Head Count",
         value: "30",
-        route: "employee/view-employees",
+        route: "employee/employee-list",
       },
       {
         title: "Average Attendance",

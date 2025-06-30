@@ -47,7 +47,7 @@ const clockIn = async (req, res, next) => {
     if (existingToday) {
       return res
         .status(400)
-        .json({ message: "You have already clocked in today" });
+        .json({ message: "You have already clocked out for the day" });
     }
 
     const newAttendance = new Attendance({
@@ -421,8 +421,22 @@ const getAttendance = async (req, res, next) => {
 
 const getAttendanceRequests = async (req, res, next) => {
   const { company } = req;
+  const { userId } = req.query;
 
   try {
+    if (userId) {
+      const requests = await AttendanceCorrection.find({
+        user: userId,
+      })
+        .populate([
+          { path: "user", select: "firstName middleName lastName empId" },
+          { path: "approvedBy", select: "firstName middleName lastName empId" },
+        ])
+        .lean()
+        .exec();
+
+      return res.status(200).json(requests);
+    }
     const requests = await AttendanceCorrection.find({
       company,
     })

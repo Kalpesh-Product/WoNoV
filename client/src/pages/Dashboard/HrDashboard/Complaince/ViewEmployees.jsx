@@ -46,7 +46,7 @@ const ViewEmployees = () => {
             localStorage.setItem("employeeName", params.data.employeeName);
 
             navigate(
-              `/app/dashboard/HR-dashboard/employee/view-employees/${params.data.employeeName}/edit-details`
+              `/app/dashboard/HR-dashboard/employee/employee-list/${params.data.employeeName}/edit-details`
             );
             dispatch(setSelectedEmployee(params.data.employmentID));
           }}>
@@ -90,7 +90,7 @@ const ViewEmployees = () => {
         <div className="w-full">
           <AgTable
             search={true}
-            tableTitle={"View Employees"}
+            tableTitle={"Employees List"}
             data={
               isLoading
                 ? []

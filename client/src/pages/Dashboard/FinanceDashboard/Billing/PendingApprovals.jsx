@@ -13,11 +13,11 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 import { toast } from "sonner";
 import { queryClient } from "../../../../main";
 import { IoCloseCircleOutline } from "react-icons/io5";
-import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setVoucherDetails } from "../../../../redux/slices/financeSlice"; // adjust path as needed
 import PageFrame from "../../../../components/Pages/PageFrame";
+import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 
 const PendingApprovals = () => {
   const navigate = useNavigate();
@@ -135,19 +135,19 @@ const PendingApprovals = () => {
   return (
     <div>
       <PageFrame>
-        <AgTable
+        <YearWiseTable
+          dateColumn={"date"}
           search={true}
           tableTitle={"Pending Approvals"}
-          data={pendingApprovals.map((item, index) =>{
-           
+          data={pendingApprovals.map((item, index) => {
             return {
-            ...item,
-            srNo: item.srNo,
-            srno: index + 1,
-            department: item.department?.name,
-            reimbursementDate:  humanDate(item.reimbursementDate),
-            projectedAmount: inrFormat(item.projectedAmount),
-          }
+              ...item,
+              srNo: item.srNo,
+              srno: index + 1,
+              department: item.department?.name,
+              reimbursementDate: humanDate(item.reimbursementDate),
+              projectedAmount: inrFormat(item.projectedAmount),
+            };
           })}
           columns={kraColumn}
         />
@@ -156,11 +156,13 @@ const PendingApprovals = () => {
         <MuiModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
-          title={"Invoice Details"}>
+          title={"Invoice Details"}
+        >
           {modalType === "reject" && (
             <form
               onSubmit={reasonSubmit(onSubmit)}
-              className="flex flex-col gap-4">
+              className="flex flex-col gap-4"
+            >
               <Controller
                 name="reason"
                 control={control}
@@ -201,6 +203,7 @@ const PendingApprovals = () => {
                 title="Amount (INR)"
                 detail={selectedBudget.projectedAmount?.toLocaleString()}
               />
+              <DetalisFormatted title="GSTIN" detail={selectedBudget.gstIn} />
               <DetalisFormatted title="Status" detail={selectedBudget.status} />
               <DetalisFormatted
                 title="Paid Status"
@@ -241,7 +244,8 @@ const PendingApprovals = () => {
                     href={selectedBudget.invoice?.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 underline">
+                    className="text-blue-600 underline"
+                  >
                     View Invoice
                   </a>
                 }
@@ -250,7 +254,7 @@ const PendingApprovals = () => {
                 title="Invoice Date"
                 detail={humanDate(selectedBudget.invoiceDate)}
               />
-               <DetalisFormatted
+              <DetalisFormatted
                 title="Voucher Name"
                 detail={selectedBudget.voucher?.name}
               />
@@ -261,11 +265,13 @@ const PendingApprovals = () => {
                     href={selectedBudget.voucher?.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 underline">
+                    className="text-blue-600 underline"
+                  >
                     View Voucher
                   </a>
                 }
               />
+
               <DetalisFormatted
                 title="Reimbursement Date"
                 detail={selectedBudget.reimbursementDate}

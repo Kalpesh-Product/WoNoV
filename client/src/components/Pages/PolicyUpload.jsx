@@ -1,9 +1,5 @@
-import { IoMdDownload } from "react-icons/io";
-import { MdUpload } from "react-icons/md";
-import WidgetSection from "../../components/WidgetSection";
-import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
@@ -21,13 +17,10 @@ import SecondaryButton from "../SecondaryButton";
 
 const PolicyUpload = () => {
   const axios = useAxiosPrivate();
-  const fileInputRef = useRef(null);
-  const [selectedFile, setSelectedFile] = useState(null);
   const department = usePageDepartment();
   const [openModal, setOpenModal] = useState(false);
   const [selectedSop, setSelectedSop] = useState([]);
   const [modalType, setModalType] = useState("");
-  const uploadItems = ["Upload Policies"];
 
   // For adding an Policies
   const {
