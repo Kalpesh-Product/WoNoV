@@ -237,16 +237,16 @@ const ClockInOutAttendance = () => {
           </div>
 
           <div className="flex gap-4">
-            <div className="flex justify-between">
-              <span className="text-muted">Clock-in Time: &nbsp;</span>
+            <div className="flex flex-col gap-2 justify-center text-center">
+              <span className="text-muted">Clock-in Time</span>
               <span className="font-medium">
                 {clockTime.startTime
                   ? humanTime(clockTime.startTime)
                   : "0h:0m:0s"}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted">Clock-out Time: &nbsp;</span>
+            <div className="flex flex-col gap-2 justify-center text-center">
+              <span className="text-muted">Clock-out Time</span>
               <span className="font-medium">
                 {clockTime.endTime ? humanTime(clockTime.endTime) : "0h:0m:0s"}
               </span>
