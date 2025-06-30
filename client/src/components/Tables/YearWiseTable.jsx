@@ -33,6 +33,7 @@ const YearWiseTable = ({
   batchButton,
   isRowSelectable,
   hideTitle = true,
+  search=true
 }) => {
   const lastEmittedMonthRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -240,7 +241,7 @@ const YearWiseTable = ({
           date: humanDate(item[dateColumn]),
         }))}
         hideFilter={filteredData.length <= 9}
-        search={filteredData.length >= 10}
+        search={search}
         dateColumn={dateColumn}
         isRowSelectable={isRowSelectable}
         handleBatchAction={handleBatchAction}

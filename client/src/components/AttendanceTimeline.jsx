@@ -132,7 +132,7 @@ const AttendanceTimeline = () => {
             <div className="flex gap-2 items-center justify-between">
               <div className="pb-1 flex gap-2 items-center">
                 <IoEnterOutline />
-                <span className="text-muted">Clock-in Time: &nbsp;</span>
+                <span className="text-muted">Clock-in Time</span>
               </div>
               <span className="font-medium">
                 {todayAttendance?.inTime ? todayAttendance.inTime : "0h:0m:0s"}
@@ -151,7 +151,7 @@ const AttendanceTimeline = () => {
                       <div className="pb-1">
                         <BsCupHot />
                       </div>
-                      <span className="text-muted">Break Start: &nbsp;</span>
+                      <span className="text-muted">Break Start</span>
                     </div>
                   </div>
                   <span className="font-medium">{brk.startBreak}</span>
@@ -162,7 +162,7 @@ const AttendanceTimeline = () => {
                     <div className="pb-0">
                       <BsCup />
                     </div>
-                    <span className="text-muted">Break End: &nbsp;</span>
+                    <span className="text-muted">Break End</span>
                   </div>
                   <span className="font-medium">{brk.endBreak}</span>
                 </div>
@@ -174,7 +174,7 @@ const AttendanceTimeline = () => {
 
           {/* --END-- */}
           <div className="flex justify-between">
-            <span className="text-muted">Clock-out Time: &nbsp;</span>
+            <span className="text-muted">Clock-out Time</span>
             <span className="font-medium">
               {todayAttendance?.outTime ? todayAttendance.outTime : "0h:0m:0s"}
             </span>

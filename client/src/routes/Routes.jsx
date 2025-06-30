@@ -1616,11 +1616,11 @@ export const routes = createBrowserRouter([
                             element: <HrLeaves />,
                           },
                           {
-                            path: "view-employees",
+                            path: "employee-list",
                             element: <ViewEmployees />,
                           },
                           {
-                            path: "view-employees/:firstName/",
+                            path: "employee-list/:firstName/",
                             element: <EmployeeDetail />,
                             children: [
                               {
