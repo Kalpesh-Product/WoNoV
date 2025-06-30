@@ -375,6 +375,7 @@ import PolicyUpload from "../components/Pages/PolicyUpload";
 import MainDashboard from "../pages/Dashboard/MainDashboard/MainDashboard";
 import DepartmentWiseBulkUpload from "../components/Pages/BulkUpload";
 import HrCommonAttandenceRequests from "../pages/HR/HrCommonAttandenceRequests";
+import PastEmployees from "../pages/Dashboard/HrDashboard/OnBoarding/PastEmployees";
 
 export const routes = createBrowserRouter([
   {
@@ -1613,10 +1614,10 @@ export const routes = createBrowserRouter([
 
                             element: <EmployeeOnboard />,
                           },
-                          // {
-                          //   path: "past-employees",
-                          //   element: <PastEmployees />, // 🛠 Make sure this component exists
-                          // },
+                          {
+                            path: "past-employees",
+                            element: <PastEmployees />, // 🛠 Make sure this component exists
+                          },
                           {
                             path: "attendance",
                             element: <HrAttendance />,

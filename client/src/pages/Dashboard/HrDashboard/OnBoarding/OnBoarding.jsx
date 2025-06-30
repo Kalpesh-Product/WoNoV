@@ -9,6 +9,7 @@ const OnBoarding = () => {
   // Map routes to tabs
   const tabs = [
     { label: "Employee-List", path: "employee-list" },
+    { label: "Past-Employees", path: "past-employees" },
     { label: "Attendance", path: "attendance" },
     { label: "Leaves", path: "leaves" },
     { label: "Employee On-Boarding", path: "employee-onboarding" },
