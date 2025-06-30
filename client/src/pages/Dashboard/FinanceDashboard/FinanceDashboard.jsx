@@ -9,7 +9,6 @@ import FinanceCard from "../../../components/FinanceCard";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
-import { Chip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../../../context/SideBarContext";
 import { useEffect, useState } from "react";
@@ -19,10 +18,6 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useDispatch } from "react-redux";
-import {
-  setTotalExpense,
-  setTotalIncome,
-} from "../../../redux/slices/financeSlice";
 
 const FinanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();

@@ -5,8 +5,10 @@ import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
 import { computeOffset, getElapsedSecondsWithOffset } from "../utils/time";
 import humanTime from "../utils/humanTime";
+import { BsCup, BsCupHot } from "react-icons/bs";
+import { IoEnterOutline } from "react-icons/io5";
 
-const AttendanceTimeline = ({ attendanceData }) => {
+const AttendanceTimeline = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
 
@@ -49,114 +51,45 @@ const AttendanceTimeline = ({ attendanceData }) => {
     return () => clearInterval(timerRef.current);
   }, [startTime, offset]);
 
-  const { mutate: clockIn, isPending: isClockingIn } = useMutation({
-    mutationFn: async (inTime) => {
-      const res = await axios.post("/api/attendance/clock-in", {
-        inTime,
-        entryType: "web",
-      });
-      return { data: res.data, inTime }; // Return both server response and time
-    },
-    onSuccess: ({ data, inTime }) => {
-      toast.success("Clocked in successfully!");
-      console.log("start time", inTime);
-      setStartTime(inTime);
-      setOffset(0); // start fresh
-      setElapsedTime(getElapsedSecondsWithOffset(inTime, 0));
-    },
-    onError: (error) => toast.error(error.response.data.message),
-  });
-
-  const { mutate: clockOut, isPending: isClockingOut } = useMutation({
-    mutationFn: async (outTime) => {
-      const res = await axios.patch("/api/attendance/clock-out", {
-        outTime,
-      });
-      return res.data;
-    },
-    onSuccess: () => {
-      toast.success("Clocked out successfully!");
-      setStartTime(null);
-      setElapsedTime(0);
-      setOffset(0);
-    },
-    onError: (error) => toast.error(error.response.data.message),
-  });
-
-  const { mutate: startBreak, isPending: isStartbreak } = useMutation({
-    mutationFn: async (breakTime) => {
-      const res = await axios.patch("/api/attendance/start-break", {
-        startBreak: breakTime,
-      });
-      return { data: res.data, breakTime }; // Return both server response and time
-    },
-    onSuccess: ({ data, breakTime }) => {
-      console.log("start break", breakTime);
-      toast.success("Break started");
-      setStopBreak(null);
-      setTakeBreak(breakTime);
-      setOffset(0); // start fresh
-    },
-    onError: (error) => toast.error(error.response.data.message),
-  });
-
-  const { mutate: endBreak, isPending: isEndBreak } = useMutation({
-    mutationFn: async (breakTime) => {
-      const res = await axios.patch("/api/attendance/end-break", {
-        endBreak: breakTime,
-      });
-      return { data: res.data, breakTime }; // Return both server response and time
-    },
-    onSuccess: ({ data, breakTime }) => {
-      console.log("end break", breakTime);
-      toast.success("Break ended");
-      setTakeBreak(null);
-      setStopBreak(breakTime);
-      setOffset(0); // start fresh
-    },
-    onError: (error) => toast.error(error.response.data.message),
-  });
-
-  const { data: attendance = [], isLoading } = useQuery({
+  const {
+    data: todayAttendance,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["user-attendance"],
     queryFn: async () => {
-      try {
-        const response = await axios.get(
-          `/api/attendance/get-attendance/${empID}`
+      const response = await axios.get(
+        `/api/attendance/get-attendance/${auth?.user?.empId}`
+      );
+      const allData = response.data;
+      const today = new Date();
+
+      const data = allData.find((entry) => {
+        if (!entry.inTime) return false;
+        const entryDate = new Date(entry.inTime);
+        return (
+          entryDate.getDate() === today.getDate() &&
+          entryDate.getMonth() === today.getMonth() &&
+          entryDate.getFullYear() === today.getFullYear()
         );
-        const data = response.data;
-        return Array.isArray(data) ? data : [];
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+      });
+
+      if (!data) return null;
+
+      return {
+        inTime: data.inTime ? humanTime(data.inTime) : null,
+        outTime: data.outTime ? humanTime(data.outTime) : "0h:0m:0s",
+        breaks: Array.isArray(data.breaks)
+          ? data.breaks
+              .filter((brk) => brk.startBreak)
+              .map((brk) => ({
+                startBreak: humanTime(brk.startBreak),
+                endBreak: brk.endBreak ? humanTime(brk.endBreak) : "0h:0m:0s",
+              }))
+          : [],
+      };
     },
   });
-
-  const handleStart = () => {
-    const now = new Date().toISOString();
-    clockIn(now); // Only call the API, don't start timer yet
-  };
-
-  const handleStop = () => {
-    const now = new Date().toISOString();
-    clockOut(now);
-  };
-
-  const handleStartBreak = () => {
-    const now = new Date().toISOString();
-    startBreak(now);
-  };
-  const handleEnBreak = () => {
-    const now = new Date().toISOString();
-    endBreak(now);
-  };
-
-  const formatElapsedTime = (seconds) => {
-    const hrs = String(Math.floor(seconds / 3600)).padStart(2, "0");
-    const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
-    const secs = String(seconds % 60).padStart(2, "0");
-    return `${hrs}:${mins}:${secs}`;
-  };
 
   if (isBooting) {
     return (
@@ -169,79 +102,59 @@ const AttendanceTimeline = ({ attendanceData }) => {
   }
 
   return (
-    // <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
-    <div className="flex flex-col gap-4 h-80 ">
+    <div className="flex flex-col gap-4 p-4 h-80 ">
       <div className="flex justify-center ">
         <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 overflow-scroll h-80 overflow-x-hidden w-full px-36">
-          {/* <div className="font-semibold text-base text-gray-900">
-         
-            Timeline
-          </div> */}
-
-          <div className="flex justify-between">
-            <span className="text-muted">Status: &nbsp;</span>
-            <span className="font-medium">
-              {/* {auth?.user?.clockInDetails?.clockInTime
-                ? "Clocked In"
-                : "Not Clocked In"} */}
-              {startTime ? "Clocked In" : "Not Clocked In"}
-            </span>
-          </div>
-
-          {/* <div className="flex justify-between">
-            <span className="text-muted">Clock-in Time: &nbsp;</span>
-            <span className="font-medium">
-          
-              {auth?.user?.clockInDetails?.clockInTime
-                ? new Date(startTime).toLocaleString()
-                : "—"}
-            </span>
-          </div> */}
-
-          <div className="flex justify-between">
-            <span className="text-muted">Clock-in Time: &nbsp;</span>
-            <span className="font-medium">09:30 am</span>
-          </div>
-
-          {/* <div className="flex justify-between">
-            <span className="text-muted">Elapsed Time: &nbsp;</span>
-            <span className="font-medium">
-              {startTime ? formatElapsedTime(elapsedTime) : "—"}
-            </span>
-          </div> */}
-          {takeBreak && (
-            <div className="flex justify-between">
-              <span className="text-muted">Break Start: &nbsp;</span>
-              <span className="font-medium">{humanTime(takeBreak)}</span>
+          <div className="flex flex-col justify-between">
+            <div className="flex gap-2 items-center justify-between">
+              <div className="pb-1 flex gap-2 items-center">
+                <IoEnterOutline />
+                <span className="text-muted">Clock-in Time</span>
+              </div>
+              <span className="font-medium">
+                {todayAttendance?.inTime ? todayAttendance.inTime : "0h:0m:0s"}
+              </span>
             </div>
-          )}
-          {/* {stopBreak && (
-            <div className="flex justify-between">
-              <span className="text-muted">Break End: &nbsp;</span>
-              <span className="font-medium">{humanTime(stopBreak)}</span>
-            </div>
-          )} */}
-          <div className="flex justify-between">
-            <span className="text-muted">Break End: &nbsp;</span>
-            <span className="font-medium">11:45 am</span>
-          </div>
 
-          <div className="flex justify-between">
-            <span className="text-muted">Break Start: &nbsp;</span>
-            <span className="font-medium">04:30 pm</span>
+            <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
           </div>
-
-          <div className="flex justify-between">
-            <span className="text-muted">Break End: &nbsp;</span>
-            <span className="font-medium">04:45 pm</span>
-          </div>
+          {todayAttendance?.breaks &&
+            todayAttendance?.breaks.length > 0 &&
+            todayAttendance?.breaks.map((brk, index) => (
+              <div key={index} className="flex flex-col gap-1 items-start">
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="flex gap-2 items-center">
+                      <div className="pb-1">
+                        <BsCupHot />
+                      </div>
+                      <span className="text-muted">Break Start</span>
+                    </div>
+                  </div>
+                  <span className="font-medium">{brk.startBreak}</span>
+                </div>
+                <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
+                <div className="flex justify-between w-full">
+                  <div className="flex gap-2 items-center">
+                    <div className="pb-0">
+                      <BsCup />
+                    </div>
+                    <span className="text-muted">Break End</span>
+                  </div>
+                  <span className="font-medium">{brk.endBreak}</span>
+                </div>
+                <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
+              </div>
+            ))}
 
           {/* --START-- */}
 
           {/* --END-- */}
           <div className="flex justify-between">
-            <span className="text-muted">Clock-out Time: &nbsp;</span>
-            <span className="font-medium">06:30 pm</span>
+            <span className="text-muted">Clock-out Time</span>
+            <span className="font-medium">
+              {todayAttendance?.outTime ? todayAttendance.outTime : "0h:0m:0s"}
+            </span>
           </div>
           <div className="flex justify-between h-4"></div>
         </div>

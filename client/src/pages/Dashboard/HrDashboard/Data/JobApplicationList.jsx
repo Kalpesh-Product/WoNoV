@@ -115,7 +115,7 @@ const JobApplicationList = () => {
       <div>
         <YearWiseTable
           dateColumn={"finalSubmissionDate"}
-          search={true}
+          search
           searchColumn={"Job Position"}
           tableTitle={"Job Applications"}
           data={

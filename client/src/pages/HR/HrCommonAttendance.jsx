@@ -21,6 +21,7 @@ import MuiModal from "../../components/MuiModal";
 import { queryClient } from "../../main";
 import { toast } from "sonner";
 import MonthWiseTable from "../../components/Tables/MonthWiseTable";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
 
 const HrCommonAttendance = () => {
   const { auth } = useAuth();
@@ -104,7 +105,7 @@ const HrCommonAttendance = () => {
             <CircularProgress color="#1E3D73" />
           </div>
         ) : (
-          <MonthWiseTable
+          <YearWiseTable
             tableTitle={`Attendance Table`}
             dateColumn={"date"}
             columns={attendanceColumns}
@@ -125,7 +126,7 @@ const HrCommonAttendance = () => {
                       record?.inTime && record?.outTime
                         ? formatDuration(record.inTime, record.outTime)
                         : "N/A",
-                    breakHours: record?.breakDuration ?? "N/A",
+                    breakHours: record?.breakDuration?.toFixed(2) ?? "N/A",
                     totalHours:
                       record?.inTime && record?.outTime
                         ? formatDuration(record.inTime, record.outTime)

@@ -1,49 +1,77 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import AgTable from "../../components/AgTable";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import humanDate from "../../utils/humanDateForamt";
 import useAuth from "../../hooks/useAuth";
 import { CircularProgress, MenuItem, TextField } from "@mui/material";
-import { useState } from "react";
 import { toast } from "sonner";
 import PrimaryButton from "../../components/PrimaryButton";
 import SecondaryButton from "../../components/SecondaryButton";
-import {
-  DatePicker,
-  LocalizationProvider,
-  TimePicker,
-} from "@mui/x-date-pickers";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { Controller, useForm } from "react-hook-form";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import MuiModal from "../../components/MuiModal";
 import dayjs from "dayjs";
-import { useEffect } from "react";
 import MonthWiseTable from "../../components/Tables/MonthWiseTable";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
 
 const HrCommonLeaves = () => {
   const { auth } = useAuth();
-  const id = auth.user.empId
+  const id = auth.user.empId;
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
+  const [openModal, setOpenModal] = useState(false);
+
+  const leaveType = ["Privileged", "Sick"];
+  const leavePeriodOptions = ["Partial", "Single", "Multiple"];
+
   const {
     control,
     reset,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
       fromDate: null,
       toDate: null,
       leaveType: "",
-      leavePeriod: null,
-      hours: null,
+      leavePeriod: "",
+      hours: 0,
       description: "",
     },
   });
-  const [openModal, setOpenModal] = useState(false);
-  const leaveType = ["Privileged", "Sick"];
-  const leavePeriod = ["Partial", "Single", "Multiple"];
+
+  const leavePeriod = watch("leavePeriod");
+  const fromDate = watch("fromDate");
+  const toDate = watch("toDate");
+
+  useEffect(() => {
+    if (leavePeriod === "Single" && fromDate) {
+      setValue("toDate", fromDate);
+      setValue("hours", 9);
+    }
+
+    if (leavePeriod === "Multiple" && fromDate && toDate) {
+      const start = dayjs(fromDate);
+      const end = dayjs(toDate);
+      const days = end.diff(start, "day") + 1;
+      if (days > 0) {
+        setValue("hours", days * 9);
+      } else {
+        setValue("hours", 9); // fallback
+      }
+    }
+  }, [leavePeriod, fromDate, toDate, setValue]);
+useEffect(() => {
+  setValue("toDate", null);
+  setValue("hours", 0);
+
+  if (leavePeriod === "Partial" && fromDate) {
+    setValue("toDate", fromDate); // 👈 Set toDate same as fromDate
+  }
+}, [leavePeriod, fromDate, setValue]);
 
   const leavesColumn = [
     { field: "srNo", headerName: "Sr No" },
@@ -59,222 +87,189 @@ const HrCommonLeaves = () => {
   const { data: leaves = [], isLoading } = useQuery({
     queryKey: ["leaves"],
     queryFn: async () => {
-      try {
-        const response = await axios.get(
-          `/api/leaves/view-leaves/${auth.user.empId}`
-        );
-        // return response.data;
-        return Array.isArray(response.data) ? response.data : [];
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+      const response = await axios.get(`/api/leaves/view-leaves/${id}`);
+      return Array.isArray(response.data) ? response.data : [];
     },
   });
 
-   const { mutate: leaveRequest, isPending: leaveRequestPending } = useMutation({
-      mutationFn: async (data) => {
-        const response = await axios.post("/api/leaves/request-leave", {
-          ...data,
-          empId: id,
-        });
-        return response.data;
-      },
-      onSuccess: function (data) {
-        setOpenModal(false);
-        toast.success(data.message);
-        queryClient.invalidateQueries({ queryKey: ["leaves"] });
-        reset();
-      },
-      onError: function (error) {
-        toast.error(error.response.data.message);
-      },
-    });
+  const { mutate: leaveRequest, isPending: leaveRequestPending } = useMutation({
+    mutationFn: async (data) => {
+      const response = await axios.post("/api/leaves/request-leave", {
+        ...data,
+        empId: id,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+      setOpenModal(false);
+      queryClient.invalidateQueries({ queryKey: ["leaves"] });
+      reset();
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Something went wrong");
+    },
+  });
 
   const onSubmit = (data) => {
     leaveRequest(data);
   };
 
-
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <div>
-          {isLoading ? (
-            <div className="flex justify-center items-center">
-              <CircularProgress color="#1E3D73" />
-            </div>
-          ) : (
-            <MonthWiseTable
-              tableTitle={`Leaves Table`}
-              tableHeight={300}
-              dateColumn={"fromDate"}
-              columns={leavesColumn}
-              buttonTitle={"Add Requested Leave"}
-               handleSubmit={() => {
-              setOpenModal(true);
-            }}
-              data={
-                isLoading
-                  ? [
-                      {
-                        id: "loading",
-                        fromDate: "Loading...",
-                        toDate: "-",
-                        leaveType: "-",
-                        leavePeriod: "-",
-                        hours: "-",
-                        description: "-",
-                        status: "-",
-                      },
-                    ]
-                  : leaves
-                      .filter((item) => item.fromDate !== undefined)
-                      .map((leave, index) => {
-                        return {
-                          // id: index + 1,
-                          fromDate: leave.fromDate,
-                          toDate: leave.toDate,
-                          leaveType: leave.leaveType,
-                          leavePeriod: leave.leavePeriod,
-                          hours: leave.hours,
-                          description: leave.description,
-                          status: leave.status,
-                        };
-                      })
-              }
-            />
-          )}
-        </div>
-      </div>
-      <MuiModal
-        title={"Leave Request"}
-        open={openModal}
-        onClose={() => {
-          setOpenModal(false);
-        }}
-      >
-        <div>
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4"
-          >
-            <Controller
-              name="fromDate"
-              control={control}
-              render={({ field }) => (
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    {...field}
-                    label={"From Date"}
-                    format="DD-MM-YYYY"
-                    value={field.value ? dayjs(field.value) : null}
-                    onChange={(date) => {
-                      field.onChange(date ? date.toISOString() : null);
-                    }}
-                  />
-                </LocalizationProvider>
-              )}
-            />
-            <Controller
-              name="toDate"
-              control={control}
-              render={({ field }) => (
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    {...field}
-                    label={"To Date"}
-                    format="DD-MM-YYYY"
-                    value={field.value ? dayjs(field.value) : null}
-                    onChange={(date) => {
-                      field.onChange(date ? date.toISOString() : null);
-                    }}
-                  />
-                </LocalizationProvider>
-              )}
-            />
-            <Controller
-              name="hours"
-              control={control}
-              rules={{ required: "Hours is required" }}
-              render={({ field }) => (
-                <TextField
-                  size="small"
-                  {...field}
-                  label="Hours"
-                  type="number"
-                  // helperText={errors.quantity?.message}
-                />
-              )}
-            />
-            <Controller
-              name="leaveType"
-              control={control}
-              defaultValue=""
-              rules={{ required: "Leavetype is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  select
-                  label="Leave type"
-                  size="small"
-                >
-                  {leaveType.map((type) => (
-                    <MenuItem key={leaveType.length} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-            <Controller
-              name="leavePeriod"
-              control={control}
-              defaultValue=""
-              rules={{ required: "LeavePeriod is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  select
-                  label="Leave period"
-                  size="small"
-                >
-                  {leavePeriod.map((period) => (
-                    <MenuItem key={leavePeriod.length} value={period}>
-                      {period}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-            <Controller
-              name="description"
-              rules={{ required: "Please specify your description" }}
-              control={control}
-              render={({ field }) => (
-                <>
-                  <TextField {...field} size="small" label="Description" />
-                </>
-              )}
-            />
+    <div className="flex flex-col gap-8 overflow-hidden">
+      <YearWiseTable
+        tableTitle="Leaves Table"
+        tableHeight={300}
+        dateColumn="fromDate"
+        columns={leavesColumn}
+        buttonTitle="Add Requested Leave"
+        handleSubmit={() => setOpenModal(true)}
+        data={
+          isLoading
+            ? []
+            : leaves.map((leave, index) => ({
+                srNo: index + 1,
+                ...leave,
+              }))
+        }
+      />
 
-            <div className="flex items-center justify-center gap-4">
-              <SecondaryButton
-                title={"Cancel"}
-                handleSubmit={() => {
-                  setOpenModal(false);
-                }}
+      <MuiModal
+        title="Leave Request"
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          {/* Leave Type */}
+          <Controller
+            name="leaveType"
+            control={control}
+            rules={{ required: "Leave type is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                select
+                label="Leave type"
+                size="small"
+              >
+                {leaveType.map((type, idx) => (
+                  <MenuItem key={idx} value={type}>
+                    {type}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+
+          {/* Leave Period */}
+          <Controller
+            name="leavePeriod"
+            control={control}
+            rules={{ required: "Leave period is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                select
+                label="Leave period"
+                size="small"
+              >
+                {leavePeriodOptions.map((option, idx) => (
+                  <MenuItem key={idx} value={option}>
+                    {option}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+
+          {/* From Date */}
+          <Controller
+            name="fromDate"
+            control={control}
+            render={({ field }) => (
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  {...field}
+                  label="From Date"
+                  disablePast
+                  format="DD-MM-YYYY"
+                  slotProps={{ textField: { size: "small" } }}
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) => {
+                    field.onChange(date ? date.toISOString() : null);
+                  }}
+                />
+              </LocalizationProvider>
+            )}
+          />
+
+          {/* To Date (conditionally disabled) */}
+          <Controller
+            name="toDate"
+            control={control}
+            render={({ field }) => (
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  {...field}
+                  disabled={leavePeriod !== "Multiple"}
+                  disablePast
+                  label="To Date"
+                  format="DD-MM-YYYY"
+                  slotProps={{ textField: { size: "small" } }}
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) => {
+                    field.onChange(date ? date.toISOString() : null);
+                  }}
+                />
+              </LocalizationProvider>
+            )}
+          />
+
+          {/* Hours */}
+          <Controller
+            name="hours"
+            control={control}
+            rules={{ required: "Hours are required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                size="small"
+                disabled={leavePeriod !== "Partial"}
+                label="Hours"
+                type="number"
+                fullWidth
               />
-              <PrimaryButton
-                title={"Submit"}
-                type={"submit"}
-                isLoading={leaveRequestPending}
-                disabled={leaveRequestPending}
+            )}
+          />
+
+          {/* Description */}
+          <Controller
+            name="description"
+            rules={{ required: "Description is required" }}
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                size="small"
+                label="Description"
+                multiline
+                rows={4}
               />
-            </div>
-          </form>
-        </div>
+            )}
+          />
+
+          <div className="flex items-center justify-center gap-4">
+            <SecondaryButton title="Cancel" handleSubmit={() => setOpenModal(false)} />
+            <PrimaryButton
+              title="Submit"
+              type="submit"
+              isLoading={leaveRequestPending}
+              disabled={leaveRequestPending}
+            />
+          </div>
+        </form>
       </MuiModal>
     </div>
   );

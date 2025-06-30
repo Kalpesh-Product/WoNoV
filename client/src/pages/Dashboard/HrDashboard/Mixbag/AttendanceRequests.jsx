@@ -46,7 +46,7 @@ const AttendanceRequests = () => {
       },
       onSuccess: function (data) {
         toast.success(data.message);
-        queryClient.invalidateQueries({queryKey:["pending-requests"]});
+        queryClient.invalidateQueries({ queryKey: ["pending-requests"] });
         setSelectedRequest(null);
         setOpenModal(false);
       },
@@ -120,14 +120,14 @@ const AttendanceRequests = () => {
     : pendingRequests.map((item) => ({
         ...item,
         empId: item.user?.empId,
-        reason:item.reason,
+        reason: item.reason,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
         requestDay: humanDate(item.inTime) || "N/A",
         inTime: humanTime(item.inTime),
         outTime: humanTime(item.outTime),
         originalInTime: humanTime(item.originalInTime),
         originalOutTime: humanTime(item.originalOutTime),
-        createdDate : item.createdDate,
+        createdDate: item.createdDate,
         status: item.status,
       }));
 
@@ -135,8 +135,8 @@ const AttendanceRequests = () => {
     <div className="flex flex-col">
       <PageFrame>
         <YearWiseTable
-        key={tableData.length}
-        formatDate
+          key={tableData.length}
+          formatDate
           dateColumn={"createdDate"}
           columns={columns}
           data={!isLoading ? tableData : []}
@@ -149,50 +149,83 @@ const AttendanceRequests = () => {
         title={"Attendance Request Details"}
       >
         {selectedRequest ? (
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-            <DetalisFormatted
-              title="Employee ID"
-              detail={selectedRequest?.empId}
-            />
-            <DetalisFormatted
-              title="Name"
-              detail={selectedRequest?.name}
-            />
-            <DetalisFormatted
-              title="Reason"
-              detail={selectedRequest?.reason}
-            />
-            <DetalisFormatted
-              title="Raised Date"
-              detail={humanDate(selectedRequest?.createdAt)}
-            />
-            <DetalisFormatted
-              title="Date"
-              detail={selectedRequest?.requestDay}
-            />
-            <DetalisFormatted
-              title="Start Time"
-              detail={selectedRequest?.inTime}
-            />
-            <DetalisFormatted
-              title="End Time"
-              detail={selectedRequest?.outTime}
-            />
-            <DetalisFormatted
-              title="Original Start Time"
-              detail={selectedRequest?.originalInTime}
-            />
-            <DetalisFormatted
-              title="Original End Time"
-              detail={selectedRequest?.originalOutTime}
-            />
-            <DetalisFormatted
-              title="Status"
-              detail={selectedRequest?.status}
-            />
+          <div className="flex flex-col gap-4">
+            {/* 🧑‍💼 Employee Details */}
+            <div className=" pb-2">
+              <div className="mb-4">
+                <span className="text-subtitle font-pmedium text-black ">
+                  Employee Details
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                <DetalisFormatted
+                  title="Employee ID"
+                  detail={selectedRequest?.empId}
+                />
+                <DetalisFormatted title="Name" detail={selectedRequest?.name} />
+                <DetalisFormatted
+                  title="Reason"
+                  detail={selectedRequest?.reason}
+                />
+              </div>
+            </div>
+
+            {/* 📅 Request Information */}
+            <div className=" pb-2">
+              <div className="mb-4">
+                <span className="text-subtitle font-pmedium text-black mb-4">
+                  Request Information
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <DetalisFormatted
+                  title="Raised Date"
+                  detail={humanDate(selectedRequest?.createdAt)}
+                />
+                <DetalisFormatted
+                  title="Attendance Date"
+                  detail={selectedRequest?.requestDay}
+                />
+                <DetalisFormatted
+                  title="Status"
+                  detail={selectedRequest?.status}
+                />
+              </div>
+            </div>
+
+            {/* ⏰ Attendance Timing */}
+            <div>
+              <div className="mb-4">
+                <span className="text-subtitle font-pmedium text-black mb-4">
+                  Attendance Timing
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <DetalisFormatted
+                  title="Start Time"
+                  detail={selectedRequest?.inTime}
+                />
+                <DetalisFormatted
+                  title="End Time"
+                  detail={selectedRequest?.outTime}
+                />
+                <DetalisFormatted
+                  title="Original Start Time"
+                  detail={selectedRequest?.originalInTime}
+                />
+                <DetalisFormatted
+                  title="Original End Time"
+                  detail={selectedRequest?.originalOutTime}
+                />
+              </div>
+            </div>
           </div>
         ) : (
-          <CircularProgress />
+          <div className="flex justify-center items-center py-6">
+            <CircularProgress />
+          </div>
         )}
       </MuiModal>
     </div>

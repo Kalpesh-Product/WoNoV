@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import dayjs from "dayjs";
 import AgTable from "../AgTable"; // Adjust the import path as needed
@@ -17,10 +17,17 @@ const MonthWiseTable = ({
   checkAll,
   key,
   onMonthChange,
-  exportData
+  exportData,
 }) => {
-
-
+    const [exportTable, setExportTable] = useState(false);
+    const agGridRef = useRef(null);
+    const handleExportPass = () => {
+      if (agGridRef.current) {
+        agGridRef.current.api.exportDataAsCsv({
+          fileName: `${tableTitle || "data"}.csv`,
+        });
+      }
+    };
   // Step 1: Get unique months from the date column
   const monthLabels = useMemo(() => {
     const monthSet = new Set();
@@ -52,12 +59,11 @@ const MonthWiseTable = ({
 
   const selectedMonth = monthLabels[selectedMonthIndex];
 
-  
   useEffect(() => {
-  if (onMonthChange) {
-    onMonthChange(selectedMonth);
-  }
-}, [selectedMonth, onMonthChange]);
+    if (onMonthChange) {
+      onMonthChange(selectedMonth);
+    }
+  }, [selectedMonth, onMonthChange]);
 
   // Step 4: Filter data by selected month
   const filteredData = useMemo(() => {
@@ -99,36 +105,41 @@ const MonthWiseTable = ({
               <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
             </div>
           ) : null}
-          {monthLabels.length > 0 && (
-            <div className="flex justify-end items-center">
-              <PrimaryButton
-                title={<MdNavigateBefore />}
-                handleSubmit={() =>
-                  setSelectedMonthIndex((prev) => Math.max(prev - 1, 0))
-                }
-                disabled={selectedMonthIndex === 0}
-              />
-              <div className="text-subtitle text-center font-pmedium w-[120px]">
-                {selectedMonth}
-              </div>
-              <PrimaryButton
-                title={<MdNavigateNext />}
-                handleSubmit={() =>
-                  setSelectedMonthIndex((prev) =>
-                    Math.min(prev + 1, monthLabels.length - 1)
-                  )
-                }
-                disabled={selectedMonthIndex === monthLabels.length - 1}
-              />
-            </div>
+          {exportData && (
+            <PrimaryButton title={"Export"} handleSubmit={handleExportPass} />
           )}
         </div>
+      </div>
+      <div className="flex w-full justify-center">
+        {monthLabels.length > 0 && (
+          <div className="flex justify-end items-center">
+            <PrimaryButton
+              title={<MdNavigateBefore />}
+              handleSubmit={() =>
+                setSelectedMonthIndex((prev) => Math.max(prev - 1, 0))
+              }
+              disabled={selectedMonthIndex === 0}
+            />
+            <div className="text-subtitle text-center font-pmedium w-[120px]">
+              {selectedMonth}
+            </div>
+            <PrimaryButton
+              title={<MdNavigateNext />}
+              handleSubmit={() =>
+                setSelectedMonthIndex((prev) =>
+                  Math.min(prev + 1, monthLabels.length - 1)
+                )
+              }
+              disabled={selectedMonthIndex === monthLabels.length - 1}
+            />
+          </div>
+        )}
       </div>
 
       <AgTable
         key={key}
         enableCheckbox={checkbox}
-        exportData={exportData}
+        exportData={exportTable}
         checkAll={checkAll}
         tableHeight={300}
         columns={formattedColumns}

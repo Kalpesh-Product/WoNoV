@@ -12,6 +12,10 @@ const ClockInOutAttendance = () => {
   const { auth } = useAuth();
 
   const [startTime, setStartTime] = useState(null);
+  const [clockTime, setClockTime] = useState({
+    startTime: null,
+    endTime: null,
+  });
   const [takeBreak, setTakeBreak] = useState(null);
   const [breaks, setBreaks] = useState([]);
   const [stopBreak, setStopBreak] = useState(null);
@@ -33,7 +37,7 @@ const ClockInOutAttendance = () => {
 
     if (auth?.user?.clockInDetails?.hasClockedIn && clockIn && serverNow) {
       setStartTime(clockIn);
-      const calculatedOffset = computeOffset(serverNow);
+      const calculatedOffset = computeOffset(new Date());
       setOffset(calculatedOffset);
       setElapsedTime(getElapsedSecondsWithOffset(clockIn, calculatedOffset));
     }
@@ -70,6 +74,7 @@ const ClockInOutAttendance = () => {
     onSuccess: ({ data, inTime }) => {
       toast.success("Clocked in successfully!");
       setStartTime(inTime);
+      setClockTime((prev) => ({ ...prev, startTime: inTime }));
       setOffset(0); // start fresh
       setElapsedTime(getElapsedSecondsWithOffset(inTime, 0));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
@@ -82,13 +87,15 @@ const ClockInOutAttendance = () => {
       const res = await axios.patch("/api/attendance/clock-out", {
         outTime,
       });
-      return res.data;
+      return { data: res.data, outTime };
     },
-    onSuccess: () => {
+    onSuccess: ({ data, outTime }) => {
       toast.success("Clocked out successfully!");
       setStartTime(null);
+      setClockTime((prev) => ({ ...prev, endTime: outTime }));
       setElapsedTime(0);
       setOffset(0);
+      queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
     onError: (error) => toast.error(error.response.data.message),
   });
@@ -106,6 +113,7 @@ const ClockInOutAttendance = () => {
       setTakeBreak(breakTime);
       setBreaks((prev) => [...prev, { start: breakTime }]);
       setOffset(0); // start fresh
+      queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
     onError: (error) => toast.error(error.response.data.message),
   });
@@ -132,6 +140,7 @@ const ClockInOutAttendance = () => {
         return updated;
       });
       setOffset(0); // start fresh
+      queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
     onError: (error) => toast.error(error.response.data.message),
   });
@@ -200,26 +209,28 @@ const ClockInOutAttendance = () => {
               }  text-white flex justify-center items-center hover:scale-105`}
               disabled={isClockingIn || isClockingOut}
             >
-              {auth?.user?.clockInDetails?.hasClockedIn
+              {startTime
                 ? "Clock Out"
                 : isClockingIn
                 ? "Starting..."
                 : "Clock In"}
             </button>
 
-            <button
-              onClick={takeBreak ? handleEnBreak : handleStartBreak}
-              className={`h-40 w-40 rounded-full ${
-                takeBreak ? "bg-[#FB923C]" : "bg-[#FACC15]  transition-all"
-              }  text-white flex justify-center items-center hover:scale-105`}
-              disabled={isStartbreak || isEndBreak}
-            >
-              {takeBreak
-                ? "End Break"
-                : isStartbreak
-                ? "Starting..."
-                : "Start Break"}
-            </button>
+            {startTime && (
+              <button
+                onClick={takeBreak ? handleEnBreak : handleStartBreak}
+                className={`h-40 w-40 rounded-full ${
+                  takeBreak ? "bg-[#FB923C]" : "bg-[#FACC15]  transition-all"
+                }  text-white flex justify-center items-center hover:scale-105`}
+                disabled={isStartbreak || isEndBreak}
+              >
+                {takeBreak
+                  ? "End Break"
+                  : isStartbreak
+                  ? "Starting..."
+                  : "Start Break"}
+              </button>
+            )}
           </div>
           <div className="text-subtitle text-primary font-pmedium font-medium mb-4 pt-4">
             {startTime ? `${formatElapsedTime(elapsedTime)}` : "Not Clocked In"}
@@ -228,11 +239,17 @@ const ClockInOutAttendance = () => {
           <div className="flex gap-4">
             <div className="flex justify-between">
               <span className="text-muted">Clock-in Time: &nbsp;</span>
-              <span className="font-medium">09:30 am</span>
+              <span className="font-medium">
+                {clockTime.startTime
+                  ? humanTime(clockTime.startTime)
+                  : "0h:0m:0s"}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted">Clock-out Time: &nbsp;</span>
-              <span className="font-medium">06:30 pm</span>
+              <span className="font-medium">
+                {clockTime.endTime ? humanTime(clockTime.endTime) : "0h:0m:0s"}
+              </span>
             </div>
           </div>
         </div>

@@ -257,7 +257,7 @@ const PerformanceKra = () => {
         <PageFrame>
           <div>
             {!departmentLoading ? (
-              <WidgetSection>
+              <WidgetSection padding>
                 <DateWiseTable
                   formatTime
                   tableTitle={`COMPLETED - DAILY KRA`}

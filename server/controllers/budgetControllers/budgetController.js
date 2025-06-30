@@ -54,7 +54,7 @@ const requestBudget = async (req, res, next) => {
       /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
     const chequeNoRegex = /^[0-9]{6,9}$/;
 
-    if (!expanseName || !expanseType || !unitId) {
+    if (!expanseName || !expanseType || !unitId || !gstIn) {
       throw new CustomError(
         "Missing required fields",
         logPath,

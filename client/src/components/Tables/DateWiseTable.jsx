@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import dayjs from "dayjs";
 import AgTable from "../AgTable";
@@ -18,7 +18,16 @@ const DateWiseTable = ({
   formatTime = false,
   exportData,
 }) => {
-  const { ref } = useRefWithInitialRerender;
+  const { ref } = useRefWithInitialRerender();
+    const [exportTable, setExportTable] = useState(false);
+    const agGridRef = useRef(null);
+    const handleExportPass = () => {
+      if (agGridRef.current) {
+        agGridRef.current.api.exportDataAsCsv({
+          fileName: `${tableTitle || "data"}.csv`,
+        });
+      }
+    };
 
   const dateLabels = useMemo(() => {
     const dateSet = new Set();
@@ -97,6 +106,12 @@ const DateWiseTable = ({
               <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
             </div>
           )}
+               {exportData && (
+            <PrimaryButton title={"Export"} handleSubmit={handleExportPass} />
+          )}
+        </div>
+      </div>
+        <div className="flex w-full justify-center">
           {dateLabels.length > 0 && (
             <div className="flex justify-end items-center">
               <PrimaryButton
@@ -121,13 +136,13 @@ const DateWiseTable = ({
             </div>
           )}
         </div>
-      </div>
 
       <AgTable
         key={key}
+        tableRef={agGridRef}
         tableHeight={350}
         enableCheckbox={checkbox}
-        exportData={exportData}
+        exportData={exportTable}
         checkAll={checkAll}
         columns={formattedColumns}
         data={filteredData.map((item, index) => ({ ...item, srno: index + 1 }))}
