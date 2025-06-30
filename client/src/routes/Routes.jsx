@@ -374,6 +374,7 @@ import ManageUnit from "../pages/Dashboard/SalesDashboard/ManageUnit";
 import PolicyUpload from "../components/Pages/PolicyUpload";
 import MainDashboard from "../pages/Dashboard/MainDashboard/MainDashboard";
 import DepartmentWiseBulkUpload from "../components/Pages/BulkUpload";
+import HrCommonAttandenceRequests from "../pages/HR/HrCommonAttandenceRequests";
 
 export const routes = createBrowserRouter([
   {
@@ -1603,10 +1604,14 @@ export const routes = createBrowserRouter([
                         element: <OnBoarding />,
                         children: [
                           {
-                            path: "employee-onboarding",
-                            index: true,
-                            element: <EmployeeOnboard />,
+                            path: "view-employees",
+                            index: true, // Default tab when route is hit
+                            element: <ViewEmployees />,
                           },
+                          // {
+                          //   path: "past-employees",
+                          //   element: <PastEmployees />, // 🛠 Make sure this component exists
+                          // },
                           {
                             path: "attendance",
                             element: <HrAttendance />,
@@ -1653,7 +1658,6 @@ export const routes = createBrowserRouter([
                               },
                             ],
                           },
-
                           {
                             path: "member-onboarding",
                             element: <MemberOnboard />,
@@ -1804,6 +1808,10 @@ export const routes = createBrowserRouter([
                       {
                         path: "attendance",
                         element: <HrCommonAttendance />,
+                      },
+                      {
+                        path: "attendance-correction-requests",
+                        element: <HrCommonAttandenceRequests />,
                       },
                       {
                         path: "leaves",
