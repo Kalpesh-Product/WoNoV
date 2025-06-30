@@ -89,6 +89,7 @@ const ClockInOutAttendance = () => {
       setStartTime(null);
       setElapsedTime(0);
       setOffset(0);
+      queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
     onError: (error) => toast.error(error.response.data.message),
   });
@@ -106,6 +107,7 @@ const ClockInOutAttendance = () => {
       setTakeBreak(breakTime);
       setBreaks((prev) => [...prev, { start: breakTime }]);
       setOffset(0); // start fresh
+      queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
     onError: (error) => toast.error(error.response.data.message),
   });
@@ -132,6 +134,7 @@ const ClockInOutAttendance = () => {
         return updated;
       });
       setOffset(0); // start fresh
+      queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
     onError: (error) => toast.error(error.response.data.message),
   });
