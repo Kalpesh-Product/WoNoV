@@ -74,10 +74,7 @@ const clockIn = async (req, res, next) => {
 
     return res.status(201).json({ message: "You clocked in" });
   } catch (error) {
-    console.error("Clock-in error:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    next(error)
   }
 };
 
