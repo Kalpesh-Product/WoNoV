@@ -234,6 +234,7 @@ const fetchUser = async (req, res, next) => {
       const users = await User.find({
         departments: deptId,
         company,
+        isActive: true,
       })
         .select("-password")
         .populate([
