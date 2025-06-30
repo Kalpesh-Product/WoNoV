@@ -1604,9 +1604,14 @@ export const routes = createBrowserRouter([
                         element: <OnBoarding />,
                         children: [
                           {
-                            path: "view-employees",
-                            index: true, // Default tab when route is hit
+                            path: "employee-list",
                             element: <ViewEmployees />,
+                            index: true,
+                          },
+                          {
+                            path: "employee-onboarding",
+
+                            element: <EmployeeOnboard />,
                           },
                           // {
                           //   path: "past-employees",
@@ -1620,10 +1625,7 @@ export const routes = createBrowserRouter([
                             path: "leaves",
                             element: <HrLeaves />,
                           },
-                          {
-                            path: "employee-list",
-                            element: <ViewEmployees />,
-                          },
+
                           {
                             path: "employee-list/:firstName/",
                             element: <EmployeeDetail />,
