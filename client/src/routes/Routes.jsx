@@ -1604,10 +1604,14 @@ export const routes = createBrowserRouter([
                         element: <OnBoarding />,
                         children: [
                           {
-                            path: "employee-onboarding",
-                            index: true,
-                            element: <EmployeeOnboard />,
+                            path: "view-employees",
+                            index: true, // Default tab when route is hit
+                            element: <ViewEmployees />,
                           },
+                          // {
+                          //   path: "past-employees",
+                          //   element: <PastEmployees />, // 🛠 Make sure this component exists
+                          // },
                           {
                             path: "attendance",
                             element: <HrAttendance />,
@@ -1617,8 +1621,8 @@ export const routes = createBrowserRouter([
                             element: <HrLeaves />,
                           },
                           {
-                            path: "view-employees",
-                            element: <ViewEmployees />,
+                            path: "employee-onboarding",
+                            element: <EmployeeOnboard />,
                           },
                           {
                             path: "view-employees/:firstName/",
@@ -1654,7 +1658,6 @@ export const routes = createBrowserRouter([
                               },
                             ],
                           },
-
                           {
                             path: "member-onboarding",
                             element: <MemberOnboard />,

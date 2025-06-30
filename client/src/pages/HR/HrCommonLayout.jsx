@@ -9,7 +9,7 @@ const HrCommonLayout = () => {
   // Define tabs with paths
   const tabs = [
     { label: "Attendance", path: "attendance" },
-    { label: "Correction Reqeuests", path: "attendance-correction-requests" },
+    { label: "Correction Requests", path: "attendance-correction-requests" },
     { label: "Leaves", path: "leaves" },
     { label: "Agreements", path: "agreements" },
     { label: "Company Handbook", path: "companyHandbook" },
