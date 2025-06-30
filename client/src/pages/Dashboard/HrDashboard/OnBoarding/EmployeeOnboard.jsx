@@ -46,6 +46,9 @@ const EmployeeOnboard = () => {
   return (
     <PageFrame>
       <div className="h-[65vh] overflow-y-auto">
+        <div>
+          <span className="text-primary font-pmedium text-title uppercase">employee onboarding</span>
+        </div>
         <form onSubmit={handleSubmit(onSubmit)} className="">
           <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
             <div>

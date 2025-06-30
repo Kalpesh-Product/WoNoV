@@ -90,7 +90,7 @@ const ViewEmployees = () => {
         <div className="w-full">
           <AgTable
             search={true}
-            searchColumn="Email"
+            tableTitle={"View Employees"}
             data={
               isLoading
                 ? []

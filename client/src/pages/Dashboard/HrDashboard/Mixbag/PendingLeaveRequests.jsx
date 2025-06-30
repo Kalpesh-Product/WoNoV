@@ -1,8 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { Chip } from "@mui/material";
+import { toast } from "sonner";
+import { queryClient } from "../../../../main";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 
 export default function PendingLeaveRequests() {
   const axios = useAxiosPrivate();
@@ -12,6 +15,34 @@ export default function PendingLeaveRequests() {
     queryFn: async () => {
       const response = await axios.get("/api/leaves/view-all-leaves");
       return response.data.filter((data) => data.status === "Pending");
+    },
+  });
+
+  const { mutate: approveLeave, isPending: isApproving } = useMutation({
+    mutationFn: async (leaveId) => {
+      const res = await axios.patch(`/api/leaves/approve-leave/${leaveId}`);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Leave Approved");
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Approval failed");
+    },
+  });
+
+  const { mutate: rejectLeave, isPending: isRejecting } = useMutation({
+    mutationFn: async (leaveId) => {
+      const res = await axios.patch(`/api/leaves/reject-leave/${leaveId}`);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Leave Rejected");
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Rejection failed");
     },
   });
 
@@ -60,7 +91,20 @@ export default function PendingLeaveRequests() {
           />
         );
       },
-    }
+    },
+    {
+      field: "action",
+      headerName: "Action",
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data.id}
+          menuItems={[
+            { label: "Accept", onClick: () => approveLeave(params.data._id) },
+            { label: "Reject", onClick: () => rejectLeave(params.data._id) },
+          ]}
+        />
+      ),
+    },
   ];
 
   if (isLeavesPending) return <div>Loading...</div>;

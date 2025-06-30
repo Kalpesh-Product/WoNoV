@@ -20,6 +20,7 @@ import { queryClient } from "../../../main";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
 
 const PerformanceMonthly = () => {
   const axios = useAxiosPrivate();
@@ -237,7 +238,7 @@ const PerformanceMonthly = () => {
         <PageFrame>
           {!isCompletedLoading && !isUpdatePending ? (
             <WidgetSection padding layout={1}>
-              <MonthWiseTable
+              <YearWiseTable
                 checkbox={showCheckBox}
                 tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
                 buttonTitle={"Add Monthly KPA"}
@@ -267,7 +268,7 @@ const PerformanceMonthly = () => {
         <PageFrame>
           {!isCompletedLoading ? (
             <WidgetSection padding layout={1}>
-              <MonthWiseTable
+              <YearWiseTable
               exportData={true}
                 tableTitle={`COMPLETED - MONTHLY KPA`}
                 key={completedEntries.length}
