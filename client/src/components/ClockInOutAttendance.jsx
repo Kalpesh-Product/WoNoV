@@ -12,6 +12,10 @@ const ClockInOutAttendance = () => {
   const { auth } = useAuth();
 
   const [startTime, setStartTime] = useState(null);
+  const [clockTime, setClockTime] = useState({
+    startTime:null,
+    endTime:null,
+  });
   const [takeBreak, setTakeBreak] = useState(null);
   const [breaks, setBreaks] = useState([]);
   const [stopBreak, setStopBreak] = useState(null);
@@ -33,7 +37,7 @@ const ClockInOutAttendance = () => {
 
     if (auth?.user?.clockInDetails?.hasClockedIn && clockIn && serverNow) {
       setStartTime(clockIn);
-      const calculatedOffset = computeOffset(serverNow);
+      const calculatedOffset = computeOffset(new Date);
       setOffset(calculatedOffset);
       setElapsedTime(getElapsedSecondsWithOffset(clockIn, calculatedOffset));
     }
@@ -70,6 +74,7 @@ const ClockInOutAttendance = () => {
     onSuccess: ({ data, inTime }) => {
       toast.success("Clocked in successfully!");
       setStartTime(inTime);
+      setClockTime((prev) => ({...prev,startTime:inTime}))
       setOffset(0); // start fresh
       setElapsedTime(getElapsedSecondsWithOffset(inTime, 0));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
@@ -82,11 +87,12 @@ const ClockInOutAttendance = () => {
       const res = await axios.patch("/api/attendance/clock-out", {
         outTime,
       });
-      return res.data;
+      return {data: res.data, outTime}
     },
-    onSuccess: () => {
+    onSuccess: ({data,outTime}) => {
       toast.success("Clocked out successfully!");
       setStartTime(null);
+      setClockTime((prev) => ({...prev,endTime:outTime}))
       setElapsedTime(0);
       setOffset(0);
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
@@ -203,7 +209,7 @@ const ClockInOutAttendance = () => {
               }  text-white flex justify-center items-center hover:scale-105`}
               disabled={isClockingIn || isClockingOut}
             >
-              {auth?.user?.clockInDetails?.hasClockedIn
+              {startTime
                 ? "Clock Out"
                 : isClockingIn
                 ? "Starting..."
@@ -231,11 +237,11 @@ const ClockInOutAttendance = () => {
           <div className="flex gap-4">
             <div className="flex justify-between">
               <span className="text-muted">Clock-in Time: &nbsp;</span>
-              <span className="font-medium">09:30 am</span>
+              <span className="font-medium">{clockTime.startTime ? humanTime(clockTime.startTime) : "0h:0m:0s"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted">Clock-out Time: &nbsp;</span>
-              <span className="font-medium">06:30 pm</span>
+              <span className="font-medium">{clockTime.endTime ? humanTime(clockTime.endTime) : "0h:0m:0s"}</span>
             </div>
           </div>
         </div>

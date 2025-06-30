@@ -121,13 +121,15 @@ const clockOut = async (req, res, next) => {
     // ✅ Auto-end the last break if it's open
     const lastBreak = attendance.breaks?.[attendance.breaks.length - 1];
     if (lastBreak && lastBreak.startBreak && !lastBreak.endBreak) {
-      lastBreak.endBreak = clockOutTime;
+      return res.status(400).json({ message: "Please end the break" });
 
-      const duration =
-        (clockOutTime - new Date(lastBreak.startBreak)) / (1000 * 60); // in minutes
-      if (duration > 0) {
-        attendance.breakDuration += duration;
-      }
+      // lastBreak.endBreak = clockOutTime;
+
+      // const duration =
+      //   (clockOutTime - new Date(lastBreak.startBreak)) / (1000 * 60); // in minutes
+      // if (duration > 0) {
+      //   attendance.breakDuration += duration;
+      // }
     }
 
     // ✅ Finalize clock-out
