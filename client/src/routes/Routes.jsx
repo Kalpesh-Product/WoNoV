@@ -374,6 +374,7 @@ import ManageUnit from "../pages/Dashboard/SalesDashboard/ManageUnit";
 import PolicyUpload from "../components/Pages/PolicyUpload";
 import MainDashboard from "../pages/Dashboard/MainDashboard/MainDashboard";
 import DepartmentWiseBulkUpload from "../components/Pages/BulkUpload";
+import HrCommonAttandenceRequests from "../pages/HR/HrCommonAttandenceRequests";
 
 export const routes = createBrowserRouter([
   {
@@ -1804,6 +1805,10 @@ export const routes = createBrowserRouter([
                       {
                         path: "attendance",
                         element: <HrCommonAttendance />,
+                      },
+                      {
+                        path: "attendance-correction-requests",
+                        element: <HrCommonAttandenceRequests />,
                       },
                       {
                         path: "leaves",

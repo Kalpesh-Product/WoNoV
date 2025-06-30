@@ -23,7 +23,7 @@ import MonthWiseTable from "../../components/Tables/MonthWiseTable";
 
 const HrCommonLeaves = () => {
   const { auth } = useAuth();
-  const id = auth.user.empId
+  const id = auth.user.empId;
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const {
@@ -71,29 +71,28 @@ const HrCommonLeaves = () => {
     },
   });
 
-   const { mutate: leaveRequest, isPending: leaveRequestPending } = useMutation({
-      mutationFn: async (data) => {
-        const response = await axios.post("/api/leaves/request-leave", {
-          ...data,
-          empId: id,
-        });
-        return response.data;
-      },
-      onSuccess: function (data) {
-        setOpenModal(false);
-        toast.success(data.message);
-        queryClient.invalidateQueries({ queryKey: ["leaves"] });
-        reset();
-      },
-      onError: function (error) {
-        toast.error(error.response.data.message);
-      },
-    });
+  const { mutate: leaveRequest, isPending: leaveRequestPending } = useMutation({
+    mutationFn: async (data) => {
+      const response = await axios.post("/api/leaves/request-leave", {
+        ...data,
+        empId: id,
+      });
+      return response.data;
+    },
+    onSuccess: function (data) {
+      setOpenModal(false);
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["leaves"] });
+      reset();
+    },
+    onError: function (error) {
+      toast.error(error.response.data.message);
+    },
+  });
 
   const onSubmit = (data) => {
     leaveRequest(data);
   };
-
 
   return (
     <div className="flex flex-col gap-8">
@@ -110,9 +109,9 @@ const HrCommonLeaves = () => {
               dateColumn={"fromDate"}
               columns={leavesColumn}
               buttonTitle={"Add Requested Leave"}
-               handleSubmit={() => {
-              setOpenModal(true);
-            }}
+              handleSubmit={() => {
+                setOpenModal(true);
+              }}
               data={
                 isLoading
                   ? [
@@ -158,40 +157,54 @@ const HrCommonLeaves = () => {
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-4"
           >
-            <Controller
-              name="fromDate"
-              control={control}
-              render={({ field }) => (
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    {...field}
-                    label={"From Date"}
-                    format="DD-MM-YYYY"
-                    value={field.value ? dayjs(field.value) : null}
-                    onChange={(date) => {
-                      field.onChange(date ? date.toISOString() : null);
-                    }}
-                  />
-                </LocalizationProvider>
-              )}
-            />
-            <Controller
-              name="toDate"
-              control={control}
-              render={({ field }) => (
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    {...field}
-                    label={"To Date"}
-                    format="DD-MM-YYYY"
-                    value={field.value ? dayjs(field.value) : null}
-                    onChange={(date) => {
-                      field.onChange(date ? date.toISOString() : null);
-                    }}
-                  />
-                </LocalizationProvider>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-2">
+              <Controller
+                name="fromDate"
+                control={control}
+                render={({ field }) => (
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      {...field}
+                      label={"From Date"}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          size: "small",
+                        },
+                      }}
+                      value={field.value ? dayjs(field.value) : null}
+                      onChange={(date) => {
+                        field.onChange(date ? date.toISOString() : null);
+                      }}
+                    />
+                  </LocalizationProvider>
+                )}
+              />
+              <Controller
+                name="toDate"
+                control={control}
+                render={({ field }) => (
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      {...field}
+                      label={"To Date"}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          size: "small",
+                        },
+                      }}
+                      format="DD-MM-YYYY"
+                      value={field.value ? dayjs(field.value) : null}
+                      onChange={(date) => {
+                        field.onChange(date ? date.toISOString() : null);
+                      }}
+                    />
+                  </LocalizationProvider>
+                )}
+              />
+            </div>
             <Controller
               name="hours"
               control={control}

@@ -125,7 +125,7 @@ const HrCommonAttendance = () => {
                       record?.inTime && record?.outTime
                         ? formatDuration(record.inTime, record.outTime)
                         : "N/A",
-                    breakHours: record?.breakDuration ?? "N/A",
+                    breakHours: record?.breakDuration?.toFixed(2) ?? "N/A",
                     totalHours:
                       record?.inTime && record?.outTime
                         ? formatDuration(record.inTime, record.outTime)
