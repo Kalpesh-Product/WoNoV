@@ -140,6 +140,7 @@ const clockOut = async (req, res, next) => {
           $set: {
             "clockInDetails.hasClockedIn": false,
             "clockInDetails.clockInTime": null,
+            "clockInDetails.breaks": [],
             "clockInDetails.clockOutTime": clockOutTime,
           },
         }

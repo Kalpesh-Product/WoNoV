@@ -6,7 +6,8 @@ import useAuth from "../hooks/useAuth";
 import { computeOffset, getElapsedSecondsWithOffset } from "../utils/time";
 import humanTime from "../utils/humanTime";
 import { BsCup, BsCupHot } from "react-icons/bs";
-import { IoEnterOutline } from "react-icons/io5";
+import { IoEnterOutline, IoExitOutline } from "react-icons/io5";
+import { useSelector } from "react-redux";
 
 const AttendanceTimeline = () => {
   const axios = useAxiosPrivate();
@@ -20,7 +21,16 @@ const AttendanceTimeline = () => {
   const [offset, setOffset] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
   const timerRef = useRef(null);
-  const hasClockedIn = auth?.user?.clockInDetails?.hasClockedIn;
+   const {
+    clockInTime,
+    clockOutTime,
+    breakTimings,
+    workHours,
+    breakHours,
+    hasClockedIn,
+  } = useSelector((state) => {
+    return state.user;
+  });
   const empID = auth?.user?.empId;
 
   // Boot with server timestamps
@@ -91,8 +101,6 @@ const AttendanceTimeline = () => {
     },
   });
 
-  console.log("Out time", todayAttendance?.outTime);
-
   if (isBooting) {
     return (
       <div className="flex justify-center items-center h-40">
@@ -103,80 +111,84 @@ const AttendanceTimeline = () => {
     );
   }
 
-  return (
-    <div className="flex flex-col gap-4 px-2 h-80 ">
-      <div className="flex justify-center ">
-        <div className="col-span-2 flex flex-col gap-3 text-sm text-gray-700 overflow-scroll h-80 overflow-x-hidden w-full px-4">
-          <div className="flex flex-col justify-between">
-            <div className="flex gap-2 items-center justify-between">
-              <div className="pb-1 flex gap-2 items-center">
-                <IoEnterOutline />
-                <span className="text-muted">Clock-in Time</span>
-              </div>
-              <span className="font-medium">
-                {todayAttendance?.inTime ? todayAttendance.inTime : "0h:0m:0s"}
-              </span>
+  
+  if(!hasClockedIn){
+    return (
+      <div className="flex justify-center items-center h-80">
+        <span className="text-content text-gray-600">
+          No Timeline
+        </span>
+      </div>
+    );
+  }
+
+return (
+  <div className="flex flex-col gap-4 px-2 h-80">
+    <div className="flex justify-center">
+      <div className="flex flex-col gap-0 text-sm text-gray-700 overflow-y-scroll h-80 w-full px-4">
+
+        {/* Clock-in */}
+        <div className="flex flex-col items-start gap-1">
+          <div className="flex justify-between items-center w-full">
+            <div className="flex gap-2 items-center">
+              <IoEnterOutline />
+              <span className="text-muted">Clock-in Time</span>
             </div>
-            {todayAttendance?.outTime &&
-              todayAttendance.outTime !== "0h:0m:0s" && (
-                <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
-              )}
+            <span className="font-medium">
+              {todayAttendance?.inTime || "0h:0m:0s"}
+            </span>
           </div>
-          {todayAttendance?.breaks &&
-            todayAttendance?.breaks.length > 0 &&
-            todayAttendance?.breaks.map((brk, index) => (
-              <div key={index} className="flex flex-col gap-1 items-start">
-                   {brk.startBreak && (
-                  <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
-                )}
-                {/* <div className="w-[1px] h-4 bg-borderGray ml-1"></div> */}
-                <div className="flex justify-between w-full">
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="flex gap-2 items-center">
-                      <div className="pb-1">
-                        <BsCupHot />
-                      </div>
-                      <span className="text-muted">Break Start</span>
-                    </div>
-                  </div>
-                  <span className="font-medium">{brk.startBreak}</span>
-                </div>
-                {brk.endBreak && (
-                  <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
-                )}
-                {brk.endBreak && (
-                  <>
-                    <div className="flex justify-between w-full">
-                      <div className="flex gap-2 items-center">
-                        <div className="pb-0">
-                          <BsCup />
-                        </div>
-                        <span className="text-muted">Break End</span>
-                      </div>
-                      <span className="font-medium">{brk.endBreak}</span>
-                    </div>
-                    {/* <div className="w-[1px] h-4 bg-borderGray ml-1"></div> */}
-                  </>
-                )}
-              </div>
-            ))}
-
-          {/* --START-- */}
-
-          {/* --END-- */}
-          {todayAttendance?.outTime &&
-            todayAttendance.outTime !== "0h:0m:0s" && (
-              <div className="flex justify-between">
-                <span className="text-muted">Clock-out Time</span>
-                <span className="font-medium">{todayAttendance.outTime}</span>
-              </div>
-            )}
-
-          <div className="flex justify-between h-4"></div>
         </div>
+
+        {/* Breaks */}
+        {todayAttendance?.breaks?.map((brk, index) => (
+          <div key={index} className="flex flex-col gap-1 items-start">
+            <div className="w-[1px] h-4 bg-borderGray ml-1" />
+
+            <div className="flex justify-between items-center w-full">
+              <div className="flex gap-2 items-center">
+                <BsCupHot />
+                <span className="text-muted">Break Start</span>
+              </div>
+              <span className="font-medium">{brk.startBreak}</span>
+            </div>
+
+            {brk.endBreak && (
+              <>
+                <div className="w-[1px] h-4 bg-borderGray ml-1" />
+                <div className="flex justify-between items-center w-full">
+                  <div className="flex gap-2 items-center">
+                    <BsCup />
+                    <span className="text-muted">Break End</span>
+                  </div>
+                  <span className="font-medium">{brk.endBreak}</span>
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+
+        {/* Clock-out */}
+        {todayAttendance?.outTime &&
+          todayAttendance.outTime !== "0h:0m:0s" && (
+            <div className="flex flex-col gap-1 items-start">
+              <div className="w-[1px] h-4 bg-borderGray ml-1" />
+              <div className="flex justify-between items-center w-full">
+                <div className="flex gap-2 items-center">
+                  <IoEnterOutline className="rotate-180" />
+                  <span className="text-muted">Clock-out Time</span>
+                </div>
+                <span className="font-medium">
+                  {todayAttendance.outTime}
+                </span>
+              </div>
+            </div>
+          )}
       </div>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default AttendanceTimeline;

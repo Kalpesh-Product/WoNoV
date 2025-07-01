@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const userSlice = createSlice({
   name: "user",
   initialState: {
+    hasClockedIn: false,
     clockInTime: null,
     clockOutTime: null,
     breakTimings: [],
@@ -10,6 +11,9 @@ const userSlice = createSlice({
     breakHours: "0h:0m:0s",
   },
   reducers: {
+    setHasClockedIn: (state, action) => {
+      state.hasClockedIn = action.payload;
+    },
     setClockInTime: (state, action) => {
       state.clockInTime = action.payload;
     },
@@ -23,7 +27,6 @@ const userSlice = createSlice({
       state.workHours = action.payload;
     },
     setBreakHours: (state, action) => {
-      console.log("breakss", action.payload);
       state.breakHours = action.payload;
     },
     resetAttendanceState: (state) => {
@@ -38,6 +41,7 @@ const userSlice = createSlice({
 
 export const {
   setClockInTime,
+  setHasClockedIn,
   setClockOutTime,
   setBreakTimings,
   setWorkHours,
