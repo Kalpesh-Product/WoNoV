@@ -112,15 +112,13 @@ const AttendanceTimeline = () => {
   }
 
   
-  if(!hasClockedIn){
-    return (
-      <div className="flex justify-center items-center h-80">
-        <span className="text-content text-gray-600">
-          No Timeline
-        </span>
-      </div>
-    );
-  }
+if (!todayAttendance) {
+  return (
+    <div className="flex justify-center items-center h-80">
+      <span className="text-content text-gray-600">No Timeline</span>
+    </div>
+  );
+}
 
 return (
   <div className="flex flex-col gap-4 px-2 h-80">

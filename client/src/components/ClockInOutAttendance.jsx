@@ -334,6 +334,25 @@ const ClockInOutAttendance = () => {
     );
   }
 
+  const timeStats = [
+    {
+      label: "Clock-in Time",
+      value: clockTime.startTime ? humanTime(clockTime.startTime) : "0h:0m:0s",
+    },
+    {
+      label: "Work Hours",
+      value: totalHours.workHours,
+    },
+    {
+      label: "Break Hours",
+      value: totalHours.breakHours,
+    },
+    {
+      label: "Clock-out Time",
+      value: clockTime.endTime ? humanTime(clockTime.endTime) : "0h:0m:0s",
+    },
+  ];
+
   return (
     // <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
 
@@ -386,37 +405,18 @@ const ClockInOutAttendance = () => {
           </div>
 
           <div className="flex gap-4">
-            <div className="flex flex-col gap-2 justify-center text-center">
-              <span className="text-muted">Clock-in Time</span>
-              <hr />
-              <span className="font-medium text-content">
-                {clockTime.startTime
-                  ? humanTime(clockTime.startTime)
-                  : "0h:0m:0s"}
-              </span>
-            </div>
+            {timeStats.map((stat, index) => (
+              <div
+                key={index}
+                className={`flex flex-col gap-2 justify-center text-center ${
+                  index !== timeStats.length - 1 ? "border-r-[1px] border-borderGray pr-4" : ""
+                }`}
+              >
+                <span className="text-muted">{stat.label}</span>
 
-            <div className="flex flex-col gap-2 justify-center text-center">
-              <span className="text-muted">Work Hours</span>
-              <hr />
-              <span className="font-medium text-content">
-                {totalHours.workHours}
-              </span>
-            </div>
-            <div className="flex flex-col gap-2 justify-center text-center">
-              <span className="text-muted">Break Hours</span>
-              <hr />
-              <span className="font-medium text-content">
-                {totalHours.breakHours}
-              </span>
-            </div>
-            <div className="flex flex-col gap-2 justify-center text-center">
-              <span className="text-muted">Clock-out Time</span>
-              <hr />
-              <span className="font-medium text-content">
-                {clockTime.endTime ? humanTime(clockTime.endTime) : "0h:0m:0s"}
-              </span>
-            </div>
+                <span className="font-medium text-content">{stat.value}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
