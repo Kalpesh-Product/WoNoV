@@ -376,6 +376,8 @@ import MainDashboard from "../pages/Dashboard/MainDashboard/MainDashboard";
 import DepartmentWiseBulkUpload from "../components/Pages/BulkUpload";
 import HrCommonAttandenceRequests from "../pages/HR/HrCommonAttandenceRequests";
 import PastEmployees from "../pages/Dashboard/HrDashboard/OnBoarding/PastEmployees";
+import HrCommonHandbook from "../pages/HR/HrCommonHandbook";
+import DepartmentPolicies from "../pages/Dashboard/HrDashboard/Complaince/DepartmentPolicies";
 
 export const routes = createBrowserRouter([
   {
@@ -1573,6 +1575,7 @@ export const routes = createBrowserRouter([
                             path: "company-handbook/:department",
                             element: <DepartmentSOP />,
                           },
+
                           {
                             path: "policies",
                             element: <HrSettingsPolicies />,
@@ -1825,8 +1828,13 @@ export const routes = createBrowserRouter([
                         element: <HrCommonAgreements />,
                       },
                       {
-                        path: "companyHandbook",
-                        element: <CompanyHandbook />,
+                        path: "company-handbook",
+                        element: <HrCommonHandbook />,
+                      },
+
+                      {
+                        path: "company-handbook/:department",
+                        element: <DepartmentSOP />,
                       },
                       {
                         path: "payslips",

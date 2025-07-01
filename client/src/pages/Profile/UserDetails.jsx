@@ -250,11 +250,11 @@ const UserDetails = () => {
 
   return (
     <div className="flex flex-col gap-4">
-         <div>
-          <span className="text-title font-pmedium text-primary uppercase">
-            My Profile
-          </span>
-        </div>
+      <div>
+        <span className="text-title font-pmedium text-primary uppercase">
+          My Profile
+        </span>
+      </div>
       <div className="flex items-center gap-8 w-full border-2 border-gray-200 p-4 rounded-xl">
         <div className="flex gap-6 items-center w-full">
           <div className="w-40 h-40">
@@ -275,7 +275,8 @@ const UserDetails = () => {
                 height: "100%",
                 fontSize: "5rem",
               }}
-              src={previewUrl || auth?.user?.profilePicture?.url}>
+              src={previewUrl || auth?.user?.profilePicture?.url}
+            >
               {!previewUrl &&
                 !auth?.user?.profilePicture?.url &&
                 user.name?.charAt(0)}
@@ -292,7 +293,8 @@ const UserDetails = () => {
             <label
               htmlFor="fileUpload"
               // className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 p-6 rounded-md cursor-pointer transition">
-              className="flex flex-col items-start justify-center   rounded-md cursor-pointer transition">
+              className="flex flex-col items-start justify-center   rounded-md cursor-pointer transition"
+            >
               {previewUrl ? (
                 // <img
                 //   src={previewUrl}
@@ -320,7 +322,8 @@ const UserDetails = () => {
               <div className=" flex flex-col items-start gap-2">
                 <label
                   htmlFor="fileUpload"
-                  className="text-primary cursor-pointer underline">
+                  className="text-primary cursor-pointer underline"
+                >
                   Change Image
                 </label>
                 <button
@@ -330,7 +333,8 @@ const UserDetails = () => {
                     uploading
                       ? "bg-gray-400"
                       : "bg-primary hover:scale-[1.05] transition"
-                  }`}>
+                  }`}
+                >
                   {uploading ? "Uploading..." : "Save Image"}
                 </button>
               </div>
@@ -371,27 +375,6 @@ const UserDetails = () => {
             </div>
           </div>
         </div>
-      </div>
-      <div className="flex justify-end">
-     
-        {!editMode ? (
-          <div className="flex justify-end">
-            <PrimaryButton
-              title={"Edit"}
-              handleSubmit={() => {
-                if (userDetails) reset(userDetails);
-                setEditMode(true);
-              }}
-            />
-          </div>
-        ) : (
-          <div className="flex justify-end">
-            <SecondaryButton
-              title={"Cancel"}
-              handleSubmit={() => setEditMode(false)}
-            />
-          </div>
-        )}
       </div>
 
       <PageFrame>
@@ -435,7 +418,8 @@ const UserDetails = () => {
                                   size="small"
                                   select
                                   {...field}
-                                  label={label}>
+                                  label={label}
+                                >
                                   {options.map((opt) => (
                                     <MenuItem key={opt} value={opt}>
                                       {opt}
@@ -497,7 +481,8 @@ const UserDetails = () => {
                               href={value}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-600 underline ml-2">
+                              className="text-blue-600 underline ml-2"
+                            >
                               {label === "Leave Policy"
                                 ? "View Leave Policy"
                                 : label === "Holiday Policy"
@@ -535,6 +520,22 @@ const UserDetails = () => {
             </div>
           ))}
 
+          <div className="flex justify-center">
+            {!editMode ? (
+              <div className="flex justify-end">
+                <PrimaryButton
+                  title={"Edit"}
+                  handleSubmit={() => {
+                    if (userDetails) reset(userDetails);
+                    setEditMode(true);
+                  }}
+                />
+              </div>
+            ) : (
+              ""
+            )}
+          </div>
+
           <div className="flex items-center justify-center gap-4 mt-4">
             {editMode ? (
               <>
@@ -545,7 +546,7 @@ const UserDetails = () => {
                 />
               </>
             ) : (
-             <></>
+              <></>
             )}
           </div>
         </form>

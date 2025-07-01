@@ -927,54 +927,38 @@ const uploadInvoice = async (req, res, next) => {
 
 const bulkInsertBudgets = async (req, res, next) => {
   try {
-    const logPath = "BulkInsertLogs";
-    const logAction = "Bulk insert for Budget";
-    const logSourceKey = "budget";
-    const { user, ip, company } = req;
     const { departmentId } = req.params;
+    const { company } = req;
 
     if (!req.file) {
-      throw new CustomError(
-        "CSV file was not provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res
+        .status(400)
+        .json({ success: false, message: "CSV file was not provided" });
     }
 
     const csvData = req.file.buffer.toString("utf-8").trim();
     if (!csvData) {
-      throw new CustomError(
-        "CSV file is empty",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+      return res
+        .status(400)
+        .json({ success: false, message: "CSV file is empty" });
     }
 
+    const units = await Unit.find({ company }).lean();
+    const unitsMap = new Map(units.map((u) => [u.unitNo, u._id]));
+
     const budgets = [];
-    const stream = Readable.from(csvData);
-
-    const units = await Unit.find({ company }).lean().exec();
-
-    const unitsMap = new Map(units.map((unit) => [unit._id, unit.unitNo]));
-
-    stream
+    Readable.from(csvData)
       .pipe(csvParser())
       .on("data", (row) => {
         const projectedAmt = parseFloat(row["Projected Amount"]);
         const actualAmt = row["Actual Amount"]
           ? parseFloat(row["Actual Amount"])
           : 0;
-        const parsedMonth = new Date(row["Month"]);
+        const month = new Date(row["Due Date"]);
 
-        if (
-          isNaN(projectedAmt) ||
-          isNaN(actualAmt) ||
-          isNaN(parsedMonth.getTime())
-        ) {
-          console.warn(`Skipping invalid row: ${JSON.stringify(row)}`);
-          return; // Skip invalid rows
+        /** skip clearly bad rows **/
+        if (isNaN(projectedAmt) || isNaN(month.getTime())) {
+          return res.status(400).json({ message: "please check the csv file" });
         }
 
         budgets.push({
@@ -983,66 +967,41 @@ const bulkInsertBudgets = async (req, res, next) => {
           expanseName: row["Expanse Name"],
           projectedAmount: projectedAmt,
           actualAmount: actualAmt,
-          unit: row["Unit"] ? unitsMap.get(row["Unit"].trim()) : null,
+          unit: row["Unit"] ? unitsMap.get(row["Unit"].trim()) ?? null : null,
           status: row["Status"] || "Pending",
-          month: parsedMonth,
+          month,
           typeOfBudget: row["Type Of Budget"],
         });
       })
       .on("end", async () => {
         if (budgets.length === 0) {
-          return next(
-            new CustomError(
-              "No valid budgets found in CSV file",
-              logPath,
-              logAction,
-              logSourceKey
-            )
-          );
+          return res
+            .status(400)
+            .json({ success: false, message: "No valid budgets found in CSV" });
         }
 
         try {
           await Budget.insertMany(budgets);
-        } catch (dbError) {
-          return next(
-            new CustomError(
-              dbError.message,
-              logPath,
-              logAction,
-              logSourceKey,
-              500
-            )
-          );
+          return res.status(201).json({
+            success: true,
+            message: "Budgets uploaded successfully",
+            data: budgets,
+          });
+        } catch (dbErr) {
+          console.error(dbErr);
+          return res
+            .status(500)
+            .json({ success: false, message: dbErr.message });
         }
-
-        await createLog({
-          path: logPath,
-          action: logAction,
-          remarks: "Bulk inserted budgets in the database",
-          status: "Success",
-          user,
-          ip,
-          company,
-        });
-
-        res.status(201).json({
-          success: true,
-          message: "Budgets uploaded successfully",
-          data: budgets,
-        });
+      })
+      .on("error", (streamErr) => {
+        console.error(streamErr);
+        return res
+          .status(500)
+          .json({ success: false, message: streamErr.message });
       });
-  } catch (error) {
-    next(
-      error instanceof CustomError
-        ? error
-        : new CustomError(
-            error.message,
-            "BudgetLogs",
-            "Request Budget",
-            "budget",
-            500
-          )
-    );
+  } catch (err) {
+    next(err);
   }
 };
 
