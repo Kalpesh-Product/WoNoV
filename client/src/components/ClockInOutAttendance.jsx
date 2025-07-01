@@ -6,24 +6,44 @@ import useAuth from "../hooks/useAuth";
 import { computeOffset, getElapsedSecondsWithOffset } from "../utils/time";
 import humanTime from "../utils/humanTime";
 import { queryClient } from "../main";
-import { format } from "date-fns";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  setClockInTime,
+  setClockOutTime,
+  setBreakTimings,
+  setWorkHours,
+  setBreakHours,
+  setHasClockedIn,
+  resetAttendanceState,
+} from "../redux/slices/userSlice";
 
 const ClockInOutAttendance = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
+  const dispatch = useDispatch();
+  const {
+    clockInTime,
+    clockOutTime,
+    breakTimings,
+    workHours,
+    breakHours,
+    hasClockedIn,
+  } = useSelector((state) => {
+    return state.user;
+  });
 
-  const [startTime, setStartTime] = useState(null);
+  const [startTime, setStartTime] = useState(clockInTime);
   const [clockTime, setClockTime] = useState({
-    startTime: null,
-    endTime: null,
+    startTime: clockInTime,
+    endTime: clockOutTime,
   });
+  const [clockedInStatus, setClockedInStatus] = useState(hasClockedIn);
   const [takeBreak, setTakeBreak] = useState(null);
-  const [breaks, setBreaks] = useState([]);
+  const [breaks, setBreaks] = useState(breakTimings);
   const [totalHours, setTotalHours] = useState({
-    workHours: "0h:0m:0s",
-    breakHours: "0h:0m:0s",
+    workHours: workHours,
+    breakHours: breakHours,
   });
-  const [stopBreak, setStopBreak] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [offset, setOffset] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
@@ -38,18 +58,37 @@ const ClockInOutAttendance = () => {
   // Boot with server timestamps
   useEffect(() => {
     const clockIn = auth?.user?.clockInDetails?.clockInTime;
+    const clockOut = auth?.user?.clockInDetails?.clockOutTime;
+    const hasClockedIn = auth?.user?.clockInDetails?.hasClockedIn;
     const serverNow = auth?.user?.time;
 
-    if (auth?.user?.clockInDetails?.hasClockedIn && clockIn && serverNow) {
+    if (hasClockedIn && clockIn && serverNow) {
       setStartTime(clockIn);
       const calculatedOffset = computeOffset(new Date());
       setOffset(calculatedOffset);
       setElapsedTime(getElapsedSecondsWithOffset(clockIn, calculatedOffset));
+
+      setClockTime((prev) => ({
+        ...prev,
+        startTime: clockIn,
+        endTime: clockOut ?? null,
+      }));
     }
 
     const breaksFromServer = auth?.user?.clockInDetails?.breaks;
-    if (Array.isArray(breaksFromServer)) {
+    if (hasClockedIn && Array.isArray(breaksFromServer)) {
       setBreaks(breaksFromServer);
+      const breakDuration = breaksFromServer.reduce((total, brk) => {
+        if (brk.start && brk.end) {
+          return total + (new Date(brk.end) - new Date(brk.start)) / 1000;
+        }
+        return total;
+      }, 0);
+
+      setTotalHours((prev) => ({
+        ...prev,
+        breakHours: formatTime(breakDuration),
+      }));
     }
 
     setIsBooting(false);
@@ -82,6 +121,9 @@ const ClockInOutAttendance = () => {
       setClockTime((prev) => ({ ...prev, startTime: inTime }));
       setOffset(0); // start fresh
       setElapsedTime(getElapsedSecondsWithOffset(inTime, 0));
+      setClockedInStatus(true);
+      dispatch(setClockInTime(inTime));
+      dispatch(setHasClockedIn(true));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
     onError: (error) => toast.error(error.response.data.message),
@@ -100,10 +142,16 @@ const ClockInOutAttendance = () => {
       setClockTime((prev) => ({ ...prev, endTime: outTime }));
       setElapsedTime(0);
       setOffset(0);
+      setClockedInStatus(false);
       setTotalHours((prev) => ({
         ...prev,
-        workHours: calculateTotalHours(startTime, outTime, "workhours"),
+        workHours: calculateTotalHours([], startTime, outTime, "workhours"),
       }));
+      dispatch(setClockOutTime(outTime));
+      dispatch(
+        setWorkHours(calculateTotalHours([], startTime, outTime, "workhours"))
+      );
+      dispatch(setHasClockedIn(false));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
     onError: (error) => toast.error(error.response.data.message),
@@ -118,22 +166,31 @@ const ClockInOutAttendance = () => {
     },
     onSuccess: ({ data, breakTime }) => {
       toast.success("Break started");
-      setStopBreak(null);
       setTakeBreak(breakTime);
-      setBreaks((prev) => {
-        const updated = [...prev];
-        // Only add a new break if last one has ended
-        if (!updated.length || updated[updated.length - 1]?.end) {
-          updated.push({ start: breakTime });
-        }
-        return updated;
-      });
 
       setOffset(0); // start fresh
       setTotalHours((prev) => ({
         ...prev,
-        workHours: calculateTotalHours(startTime, breakTime, "workhours"),
+        workHours: calculateTotalHours([], startTime, breakTime, "workhours"),
       }));
+      const updatedBreaks = [...breaks];
+      if (
+        !updatedBreaks.length ||
+        updatedBreaks[updatedBreaks.length - 1]?.end
+      ) {
+        updatedBreaks.push({ start: breakTime });
+      }
+
+      // Update local state
+      setBreaks(updatedBreaks);
+
+      // Update persisted Redux state
+      dispatch(setBreakTimings(updatedBreaks));
+      // dispatch(setClockOutTime(breakTime));
+
+      dispatch(
+        setWorkHours(calculateTotalHours([], startTime, breakTime, "workhours"))
+      );
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
     onError: (error) => toast.error(error.response.data.message),
@@ -149,22 +206,38 @@ const ClockInOutAttendance = () => {
     onSuccess: ({ data, breakTime }) => {
       toast.success("Break ended");
       setTakeBreak(null);
-      setStopBreak(breakTime);
-      setBreaks((prev) => {
-        const updated = [...prev];
-        const len = updated.length;
 
-        if (len > 0 && !updated[len - 1].end) {
-          updated[len - 1].end = breakTime;
-        }
+      // setBreaks((prev) => {
+      //   const updated = [...prev];
+      //   const len = updated.length;
 
-        return updated;
-      });
+      //   if (len > 0 && !updated[len - 1].end) {
+      //     updated[len - 1].end = breakTime;
+      //   }
+
+      //   return updated;
+      // });
+
+      const updatedBreaks = [...breaks];
+      const lastIndex = updatedBreaks.length - 1;
+      if (lastIndex >= 0 && !updatedBreaks[lastIndex].end) {
+        updatedBreaks[lastIndex] = {
+          ...updatedBreaks[lastIndex],
+          end: breakTime,
+        };
+      }
       setOffset(0); // start fresh
       setTotalHours((prev) => ({
         ...prev,
-        breakHours: calculateTotalHours(takeBreak, breakTime),
+        breakHours: calculateTotalHours(updatedBreaks),
       }));
+
+      // Update local state
+      setBreaks(updatedBreaks);
+
+      // Update persisted Redux state
+      dispatch(setBreakTimings(updatedBreaks));
+      dispatch(setBreakHours(calculateTotalHours(updatedBreaks)));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
     onError: (error) => toast.error(error.response.data.message),
@@ -213,12 +286,12 @@ const ClockInOutAttendance = () => {
     return `${hrs}:${mins}:${secs}`;
   };
 
-  const calculateTotalHours = (startTime, endTime, type) => {
+  const calculateTotalHours = (breaksHours, startTime, endTime, type) => {
     if (type === "workhours") {
       const workDuration = (new Date(endTime) - new Date(startTime)) / 1000;
       return formatTime(workDuration);
     } else {
-      const breakDuration = breaks.reduce((total, brk) => {
+      const breakDuration = breaksHours.reduce((total, brk) => {
         const start = brk.start;
         const end = brk.end;
         if (start && end) {
@@ -273,20 +346,22 @@ const ClockInOutAttendance = () => {
 
           <div className="flex gap-12">
             <button
-              onClick={startTime ? handleStop : handleStart}
+              onClick={clockedInStatus ? handleStop : handleStart}
               className={`h-40 w-40 rounded-full ${
-                startTime ? "bg-[#EB5C45]" : "bg-wonoGreen  transition-all"
+                clockedInStatus
+                  ? "bg-[#EB5C45]"
+                  : "bg-wonoGreen  transition-all"
               }  text-white flex justify-center items-center hover:scale-105`}
               disabled={isClockingIn || isClockingOut}
             >
-              {startTime
+              {clockedInStatus
                 ? "Clock Out"
                 : isClockingIn
                 ? "Starting..."
                 : "Clock In"}
             </button>
 
-            {startTime && (
+            {clockInTime && !clockOutTime && (
               <button
                 onClick={takeBreak ? handleEnBreak : handleStartBreak}
                 className={`h-40 w-40 rounded-full ${
@@ -303,7 +378,11 @@ const ClockInOutAttendance = () => {
             )}
           </div>
           <div className="text-subtitle text-primary font-pmedium font-medium mb-4 pt-4">
-            {startTime ? `${formatElapsedTime(elapsedTime)}` : "Not Clocked In"}
+            {clockTime.startTime && !clockTime.outTime
+              ? `${formatElapsedTime(elapsedTime)}`
+              : clockOutTime
+              ? "Clocked Out"
+              : "Not Clocked In"}
           </div>
 
           <div className="flex gap-4">
