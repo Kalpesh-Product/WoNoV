@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 
 const OverallProfitLoss = () => {
   const axios = useAxiosPrivate();
-  const navigate = useNavigate();
+  const navigate = useNavigate();;
   const [selectedFY, setSelectedFY] = useState("FY 2024-25");
   const [dynamicIncome, setDynamicIncome] = useState("0");
   const [dynamicExpense, setDynamicExpense] = useState("0");
@@ -343,6 +343,7 @@ const OverallProfitLoss = () => {
       colors: ["transparent"],
     },
     yaxis: {
+      max: 8000000,
       title: {
         text: "Amount In Lakhs (INR)",
       },

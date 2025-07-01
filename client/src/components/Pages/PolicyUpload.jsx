@@ -71,7 +71,7 @@ const PolicyUpload = () => {
       return response.data;
     },
     onSuccess: () => {
-      toast.success("SOP uploaded successfully!");
+      toast.success("Policy uploaded successfully!");
       reset(); // reset form
       setOpenModal(false); // close modal
       queryClient.invalidateQueries({
