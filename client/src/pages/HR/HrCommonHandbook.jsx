@@ -1,20 +1,22 @@
 import React, { useState } from "react";
-import biznestLogo from "../../../../assets/biznest/biznest_logo.jpg";
-import HierarchyTree from "../../../../components/HierarchyTree";
+import biznestLogo from "../../assets/biznest/biznest_logo.jpg";
 import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import { IoIosArrowDown, IoIosArrowForward } from "react-icons/io";
-import AccessTree from "../../../../components/AccessTree";
 import { useQuery } from "@tanstack/react-query";
-import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
-import Access from "../../../Access/Access";
+import Access from "../Access/Access";
 import { useLocation, useNavigate } from "react-router-dom";
-import usePageDepartment from "../../../../hooks/usePageDepartment";
-import useAuth from "../../../../hooks/useAuth";
+import usePageDepartment from "../../hooks/usePageDepartment";
+import useAuth from "../../hooks/useAuth";
+import { useTopDepartment } from "../../hooks/useTopDepartment";
 
-const CompanyHandbook = () => {
+const HrCommonHandbook = () => {
   const [generalDoc, setGeneralDoc] = useState(null); // initially null
   const axios = useAxiosPrivate();
+  const department = usePageDepartment();
+  const isTop = useTopDepartment();
+
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isProfile = pathname.includes("profile/HR/companyHandbook");
@@ -38,7 +40,7 @@ const CompanyHandbook = () => {
       enabled: !!generalDoc, // disables initial fetch until a type is selected
     });
 
-  const { data: departmentData, isLoading } = useQuery({
+  const { data: departmentData = [], isLoading } = useQuery({
     queryKey: ["departmentData"],
     queryFn: async () => {
       try {
@@ -59,7 +61,15 @@ const CompanyHandbook = () => {
         }))
         .sort((a, b) => a.title.localeCompare(b.title));
 
-  const filteredAccordionData = departmentList;
+  const userDepartmentIds = auth.user?.departments?.map((d) => d._id) || [];
+
+  const filteredAccordionData = isTop.isTop
+    ? departmentList
+    : departmentList.filter(
+        (dep) => userDepartmentIds.includes(dep.id) // assuming dep.id is the department's ID in `departmentList`
+      );
+
+  console.log("Filtered Departments:", filteredAccordionData);
 
   const accordionDataGeneral = [
     {
@@ -173,7 +183,6 @@ const CompanyHandbook = () => {
       <div className="flex">
         <div className="w-full h-full rounded-md">
           <Access />
-          {/* <AccessTree clickState={false} /> */}
         </div>
       </div>
 
@@ -235,9 +244,8 @@ const CompanyHandbook = () => {
                           state: {
                             departmentId: item.id,
                             departmentName: item.title,
-                            documentType :"sop"
+                            documentType : "sop"
                           },
-                          
                         })
                       }
                     >
@@ -254,7 +262,7 @@ const CompanyHandbook = () => {
                           state: {
                             departmentId: item.id,
                             departmentName: item.title,
-                            documentType :"policies"
+                            documentType : "policies"
                           },
                         })
                       }
@@ -273,4 +281,4 @@ const CompanyHandbook = () => {
   );
 };
 
-export default CompanyHandbook;
+export default HrCommonHandbook;

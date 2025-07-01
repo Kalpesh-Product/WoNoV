@@ -10,7 +10,6 @@ import MonthWiseAgTable from "../../../../components/Tables/MonthWiseAgTable";
 const IncomeDetails = () => {
   const axios = useAxiosPrivate();
   const [selectedYear, setSelectedYear] = useState("2024-25");
-  
 
   const { data: totalRevenue = [], isLoading: isTotalLoading } = useQuery({
     queryKey: ["totalRevenue"],
@@ -44,7 +43,7 @@ const IncomeDetails = () => {
       ? []
       : totalRevenue.map((category) => ({
           vertical: category.name,
-          revenue: inrFormat(category.data["2024-25"][i]),
+          revenue: inrFormat(category.data?.["2024-25"]?.[i] ?? 0),
           percentage: `${100}%`,
         }));
 
@@ -152,8 +151,7 @@ const IncomeDetails = () => {
           layout={1}
           title={"Annual Monthly Mix Income FY 2024-25"}
           border
-          TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}
-        >
+          TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}>
           <BarGraph height={400} data={normalizedData} options={options} />
         </WidgetSection>
       )}

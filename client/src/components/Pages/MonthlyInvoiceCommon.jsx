@@ -16,6 +16,7 @@ const MonthlyInvoiceCommon = () => {
   const axios = useAxiosPrivate();
   const department = usePageDepartment();
   const departmentId = department?._id;
+  console.log("department : ", departmentId)
 
   const [viewModal, setViewModal] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);

@@ -329,7 +329,7 @@ const ClockInOutAttendance = () => {
   return (
     // <div className="flex flex-col  gap-4 p-4 border rounded-md  shadow">
 
-    <div className="flex flex-col  gap-4 p-4 h-80 ">
+    <div className="flex flex-col  gap-4 p-0 h-80">
       <div className="grid grid-cols-1 gap-4">
         <div className="col-span-2 flex  items-center flex-col h-80 ">
           <div className="text-subtitle text-primary font-pmedium font-medium mb-4">
@@ -374,29 +374,33 @@ const ClockInOutAttendance = () => {
           <div className="flex gap-4">
             <div className="flex flex-col gap-2 justify-center text-center">
               <span className="text-muted">Clock-in Time</span>
+              <hr />
               <span className="font-medium text-content">
                 {clockTime.startTime
                   ? humanTime(clockTime.startTime)
                   : "0h:0m:0s"}
               </span>
             </div>
-            <div className="flex flex-col gap-2 justify-center text-center">
-              <span className="text-muted">Clock-out Time</span>
-              <span className="font-medium text-content">
-                {clockTime.endTime ? humanTime(clockTime.endTime) : "0h:0m:0s"}
-              </span>
-            </div>
 
             <div className="flex flex-col gap-2 justify-center text-center">
               <span className="text-muted">Work Hours</span>
+              <hr />
               <span className="font-medium text-content">
                 {totalHours.workHours}
               </span>
             </div>
             <div className="flex flex-col gap-2 justify-center text-center">
               <span className="text-muted">Break Hours</span>
+              <hr />
               <span className="font-medium text-content">
                 {totalHours.breakHours}
+              </span>
+            </div>
+            <div className="flex flex-col gap-2 justify-center text-center">
+              <span className="text-muted">Clock-out Time</span>
+              <hr />
+              <span className="font-medium text-content">
+                {clockTime.endTime ? humanTime(clockTime.endTime) : "0h:0m:0s"}
               </span>
             </div>
           </div>

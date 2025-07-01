@@ -5,15 +5,15 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import PageFrame from "../../../../components/Pages/PageFrame";
 
-const DepartmentSOP = () => {
+const DepartmentPolicies = () => {
   const location = useLocation();
   const axios = useAxiosPrivate();
-  const { departmentId, departmentName,documentType } = location.state;
-  const { data = [], isLoading } = useQuery({
+  const { departmentId, departmentName } = location.state;
+  const { data=[], isLoading } = useQuery({
     queryKey: ["departmentSOP", departmentId],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/company/get-department-documents?departmentId=${departmentId}&type=${documentType ? documentType : "sop"}`
+        `/api/company/get-department-documents?departmentId=${departmentId}&type=policies`
       );
       const filtered = response.data.documents.sopDocuments;
       return filtered;
@@ -37,7 +37,7 @@ const DepartmentSOP = () => {
             target="_blank"
             rel="noopener noreferrer"
           >
-            View {documentType ? documentType : "SOP"}
+            View Policy
           </a>
         </>
       ),
@@ -58,7 +58,7 @@ const DepartmentSOP = () => {
         <AgTable
           columns={columns}
           data={tableData}
-          tableTitle={`${departmentName || "Null"} ${documentType ? documentType : "SOP"} Documents`}
+          tableTitle={`${departmentName || "Null"} Policy Documents`}
           search
         />
       </PageFrame>
@@ -66,4 +66,4 @@ const DepartmentSOP = () => {
   );
 };
 
-export default DepartmentSOP;
+export default DepartmentPolicies;

@@ -24,7 +24,9 @@ const MonthlyProfitLoss = () => {
       queryFn: async () => {
         try {
           const response = await axios.get("/api/finance/income-expense");
-          return response.data?.response;
+          return Array.isArray(response.data?.response)
+            ? response.data.response
+            : [];
         } catch (error) {
           console.error(error);
         }
@@ -36,7 +38,9 @@ const MonthlyProfitLoss = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/budget/company-budget");
-        return response.data?.allBudgets;
+        return Array.isArray(response.data?.allBudgets)
+          ? response.data.allBudgets
+          : [];
       } catch (error) {
         console.error(error);
       }
@@ -48,6 +52,30 @@ const MonthlyProfitLoss = () => {
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
+  const [selectedFY, setSelectedFY] = useState("FY 2024-25");
+  const [dynamicPnL, setDynamicPnL] = useState("0");
+  const [dynamicIncome, setDynamicIncome] = useState("0");
+  const [dynamicExpense, setDynamicExpense] = useState("0");
+
+  const handleYearChange = (fiscalYear) => {
+    setSelectedFY(fiscalYear);
+
+    const months = yearCategories[fiscalYear];
+
+    const income = months.reduce(
+      (sum, month) => sum + (incomeMap[month] || 0),
+      0
+    );
+    const expense = months.reduce(
+      (sum, month) => sum + (expenseMap[month] || 0),
+      0
+    );
+    const pnl = income - expense;
+
+    setDynamicIncome(`INR ${inrFormat(income)}`);
+    setDynamicExpense(`INR ${inrFormat(expense)}`);
+    setDynamicPnL(`INR ${inrFormat(pnl)}`);
+  };
 
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
   const monthWiseExpenses = {};
@@ -89,11 +117,19 @@ const MonthlyProfitLoss = () => {
   const incomeSources = (revenueExpenseData || []).flatMap((item) => {
     const income = item.income || {};
     return [
-      ...(income.meetingRevenue || []),
-      ...(income.alternateRevenues || []),
-      ...(income.virtualOfficeRevenues || []),
-      ...(income.workationRevenues || []),
-      ...(income.coworkingRevenues || []),
+      ...(Array.isArray(income.meetingRevenue) ? income.meetingRevenue : []),
+      ...(Array.isArray(income.alternateRevenues)
+        ? income.alternateRevenues
+        : []),
+      ...(Array.isArray(income.virtualOfficeRevenues)
+        ? income.virtualOfficeRevenues
+        : []),
+      ...(Array.isArray(income.workationRevenues)
+        ? income.workationRevenues
+        : []),
+      ...(Array.isArray(income.coworkingRevenues)
+        ? income.coworkingRevenues
+        : []),
     ];
   });
 
@@ -106,6 +142,8 @@ const MonthlyProfitLoss = () => {
     // income.dueTerm;
 
     if (!rawDate || !dayjs(rawDate).isValid()) return;
+    // if (!dueDate || !dayjs(dueDate).isValid()) return;
+
     const monthKey = dayjs(rawDate).format("MMM-YY");
 
     // Skip excluded months
@@ -201,9 +239,11 @@ const MonthlyProfitLoss = () => {
 
   const transformedExpenses = Object.values(monthWiseExpenses);
 
-  const sortedExpenses = transformedExpenses.sort((a, b) =>
-    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
-  );
+  const sortedExpenses = transformedExpenses
+    .filter((e) => e.month && dayjs(e.month, "MMM-YY").isValid())
+    .sort((a, b) =>
+      dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
+    );
 
   // Build map of month => actualExpense
   const expenseMap = {};
@@ -335,11 +375,14 @@ const MonthlyProfitLoss = () => {
     tooltip: {
       custom: ({ dataPointIndex, w }) => {
         const monthIndex = dataPointIndex;
-        const income = w.globals.initialSeries.find((s) => s.name === "Income")
-          ?.data[monthIndex];
-        const expense = w.globals.initialSeries.find(
-          (s) => s.name === "Expense"
-        )?.data[monthIndex];
+        const income =
+          w.globals.initialSeries.find((s) => s.name === "Income")?.data[
+            monthIndex
+          ] ?? 0;
+        const expense =
+          w.globals.initialSeries.find((s) => s.name === "Expense")?.data[
+            monthIndex
+          ] ?? 0;
 
         const monthLabel =
           w.globals.labels && w.globals.labels[monthIndex]
@@ -383,7 +426,8 @@ const MonthlyProfitLoss = () => {
     }
   );
   const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
-    const numericalPnL = parseInt(item.pnl.replace(/,/g, ""), 10);
+    const numericalPnL = parseInt(item.pnl?.replace(/,/g, ""), 10) || 0;
+
     return sum + numericalPnL;
   }, 0);
 
@@ -397,8 +441,9 @@ const MonthlyProfitLoss = () => {
           options={incomeExpenseOptions}
           chartId={"bargraph-finance-income"}
           title={"BIZNest FINANCE INCOME V/S EXPENSE"}
-          TitleAmountGreen={`INR ${inrFormat(totalIncomeAmount)} `}
-          TitleAmountRed={`INR ${inrFormat(totalExpense)}`}
+          TitleAmountGreen={dynamicIncome}
+          TitleAmountRed={dynamicExpense}
+          onYearChange={handleYearChange}
         />,
       ],
     },
