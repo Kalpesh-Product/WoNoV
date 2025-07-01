@@ -30,6 +30,7 @@ const PolicyUpload = () => {
     formState: { errors },
     control,
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       documentName: "",
       sop: null,
@@ -44,6 +45,7 @@ const PolicyUpload = () => {
     formState: { errors: editErrors },
     setValue: setEditValue,
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       newName: "",
     },
@@ -249,7 +251,17 @@ const PolicyUpload = () => {
               <Controller
                 name="documentName"
                 control={control}
-                rules={{ required: "Document Name is Required" }}
+                rules={{
+                  required: "Document Name is Required",
+                  pattern: {
+                    value: /^[a-zA-Z0-9 _-]+$/,
+                    message:
+                      "Only alphanumeric characters, spaces, underscores and hyphens are allowed.",
+                  },
+                  validate: (value) =>
+                    value.trim().length > 0 ||
+                    "Document name cannot be only whitespace",
+                }}
                 render={({ field }) => (
                   <TextField
                     name="documentName"
@@ -298,7 +310,17 @@ const PolicyUpload = () => {
               <Controller
                 name="newName"
                 control={controlEdit}
-                rules={{ required: "Document Name is Required" }}
+                rules={{
+                  required: "Document Name is Required",
+                  pattern: {
+                    value: /^[a-zA-Z0-9 _-]+$/,
+                    message:
+                      "Only alphanumeric characters, spaces, underscores and hyphens are allowed.",
+                  },
+                  validate: (value) =>
+                    value.trim().length > 0 ||
+                    "Document name cannot be only whitespace",
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}
