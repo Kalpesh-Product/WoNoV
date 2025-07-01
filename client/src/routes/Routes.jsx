@@ -378,6 +378,7 @@ import HrCommonAttandenceRequests from "../pages/HR/HrCommonAttandenceRequests";
 import PastEmployees from "../pages/Dashboard/HrDashboard/OnBoarding/PastEmployees";
 import HrCommonHandbook from "../pages/HR/HrCommonHandbook";
 import DepartmentPolicies from "../pages/Dashboard/HrDashboard/Complaince/DepartmentPolicies";
+import HrCommonDocuments from "../pages/HR/HrCommonDocuments";
 
 export const routes = createBrowserRouter([
   {
@@ -668,6 +669,10 @@ export const routes = createBrowserRouter([
                       {
                         path: "sqft-wise-data",
                         element: <SqWiseData />,
+                      },
+                      {
+                        path: "sqft-wise-data/income-details",
+                        element: <IncomeDetails />,
                       },
                       {
                         path: "billing",
@@ -1831,10 +1836,9 @@ export const routes = createBrowserRouter([
                         path: "company-handbook",
                         element: <HrCommonHandbook />,
                       },
-
                       {
                         path: "company-handbook/:department",
-                        element: <DepartmentSOP />,
+                        element: <HrCommonDocuments />,
                       },
                       {
                         path: "payslips",

@@ -1,22 +1,26 @@
-import AgTable from "../../../../components/AgTable";
+import AgTable from "../../components/AgTable";
 import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import PageFrame from "../../../../components/Pages/PageFrame";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import PageFrame from "../../components/Pages/PageFrame";
 
-const DepartmentSOP = () => {
+const HrCommonDocuments = () => {
   const location = useLocation();
   const axios = useAxiosPrivate();
   const { departmentId, departmentName, documentType } = location.state;
   const { data = [], isLoading } = useQuery({
-    queryKey: ["departmentSOP", departmentId],
+    queryKey: ["departmentDocuments"],
     queryFn: async () => {
       const response = await axios.get(
         `/api/company/get-department-documents?departmentId=${departmentId}&type=${
           documentType ? documentType : "sop"
         }`
       );
-      const filtered = response.data.documents.sopDocuments;
+
+      const filtered =
+        documentType === "policies"
+          ? response.data.documents.policyDocuments
+          : response.data.documents.sopDocuments;
       return filtered;
     },
     enabled: !!departmentId,
@@ -72,4 +76,4 @@ const DepartmentSOP = () => {
   );
 };
 
-export default DepartmentSOP;
+export default HrCommonDocuments;
