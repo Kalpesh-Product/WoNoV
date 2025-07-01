@@ -233,7 +233,7 @@ const SqWiseData = () => {
           role="button"
           onClick={() =>
             navigate(
-              "/app/dashboard/finance-dashboard/overall-profit-loss/income-details"
+              "/app/dashboard/finance-dashboard/sqft-wise-data/income-details"
             )
           }
           className="text-primary underline cursor-pointer"

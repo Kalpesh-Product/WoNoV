@@ -33,7 +33,7 @@ const YearWiseTable = ({
   batchButton,
   isRowSelectable,
   hideTitle = true,
-  search=true
+  search = true,
 }) => {
   const lastEmittedMonthRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -88,13 +88,19 @@ const YearWiseTable = ({
 
   // ✅ Sync initial month if provided
   useEffect(() => {
-    if (initialMonth && monthsInFY.length > 0) {
-      const matchedIndex = monthsInFY.findIndex((monthStr) => {
-        return dayjs(monthStr, "MMM-YYYY").format("MMMM") === initialMonth;
-      });
-      if (matchedIndex !== -1) {
-        setSelectedMonthIndex(matchedIndex);
+    if (monthsInFY.length > 0) {
+      if (initialMonth) {
+        const matchedIndex = monthsInFY.findIndex((monthStr) => {
+          return dayjs(monthStr, "MMM-YYYY").format("MMMM") === initialMonth;
+        });
+        if (matchedIndex !== -1) {
+          setSelectedMonthIndex(matchedIndex);
+          return;
+        }
       }
+
+      // ✅ Default to latest month available
+      setSelectedMonthIndex(monthsInFY.length - 1);
     }
   }, [initialMonth, monthsInFY]);
 

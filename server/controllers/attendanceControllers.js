@@ -74,7 +74,7 @@ const clockIn = async (req, res, next) => {
 
     return res.status(201).json({ message: "You clocked in" });
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
 
@@ -140,6 +140,8 @@ const clockOut = async (req, res, next) => {
           $set: {
             "clockInDetails.hasClockedIn": false,
             "clockInDetails.clockInTime": null,
+            "clockInDetails.breaks": [],
+            "clockInDetails.clockOutTime": clockOutTime,
           },
         }
       )
@@ -236,9 +238,11 @@ const startBreak = async (req, res, next) => {
       await UserData.findOneAndUpdate(
         { _id: user },
         {
-          $set: {
-            "clockInDetails.hasTakenBreak": true,
-            "clockInDetails.startBreak": startBreakTime,
+          $push: {
+            "clockInDetails.breaks": {
+              start: startBreakTime,
+              end: null,
+            },
           },
         }
       )
@@ -337,7 +341,24 @@ const endBreak = async (req, res, next) => {
       return total;
     }, 0);
 
-    await attendance.save();
+    const savedAttendance = await attendance.save();
+
+    if (savedAttendance) {
+      await UserData.findOneAndUpdate(
+        { _id: user },
+        {
+          $set: {
+            "clockInDetails.breaks.$[last].end": endBreakTime,
+          },
+        },
+        {
+          arrayFilters: [{ "last.end": null }],
+          new: true,
+        }
+      )
+        .lean()
+        .exec();
+    }
 
     // Log
     await createLog({
