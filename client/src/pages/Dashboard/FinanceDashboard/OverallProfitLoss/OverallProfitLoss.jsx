@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 
 const OverallProfitLoss = () => {
   const axios = useAxiosPrivate();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   //-----------------API-----------------//
   const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
@@ -321,6 +321,7 @@ const OverallProfitLoss = () => {
       colors: ["transparent"],
     },
     yaxis: {
+      max: 8000000,
       title: {
         text: "Amount In Lakhs (INR)",
       },
