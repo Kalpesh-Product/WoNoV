@@ -12,7 +12,7 @@ const HrCommonLayout = () => {
     { label: "Correction Requests", path: "attendance-correction-requests" },
     { label: "Leaves", path: "leaves" },
     { label: "Agreements", path: "agreements" },
-    { label: "Company Handbook", path: "companyHandbook" },
+    { label: "Company Handbook", path: "company-handbook" },
     { label: "Payslips", path: "payslips" },
   ];
 

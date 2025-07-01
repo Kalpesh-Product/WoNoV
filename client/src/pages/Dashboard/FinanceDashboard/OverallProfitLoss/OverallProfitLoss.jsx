@@ -15,7 +15,10 @@ import { useNavigate } from "react-router-dom";
 
 const OverallProfitLoss = () => {
   const axios = useAxiosPrivate();
-  const navigate = useNavigate();
+  const navigate = useNavigate();;
+  const [selectedFY, setSelectedFY] = useState("FY 2024-25");
+  const [dynamicIncome, setDynamicIncome] = useState("0");
+  const [dynamicExpense, setDynamicExpense] = useState("0");
 
   //-----------------API-----------------//
   const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
@@ -96,6 +99,25 @@ const OverallProfitLoss = () => {
       ...(income.coworkingRevenues || []),
     ];
   });
+
+  const handleYearChange = (fiscalYear) => {
+    setSelectedFY(fiscalYear);
+
+    const months = yearCategories[fiscalYear] || [];
+
+    const incomeTotal = months.reduce(
+      (sum, month) => sum + (incomeMap[month] || 0),
+      0
+    );
+
+    const expenseTotal = months.reduce(
+      (sum, month) => sum + (expenseMap[month] || 0),
+      0
+    );
+
+    setDynamicIncome(`INR ${inrFormat(incomeTotal)}`);
+    setDynamicExpense(`INR ${inrFormat(expenseTotal)}`);
+  };
 
   // Process each income item
   incomeSources.forEach((income) => {
@@ -398,8 +420,9 @@ const OverallProfitLoss = () => {
           options={incomeExpenseOptions}
           chartId={"bargraph-finance-income"}
           title={"BIZNest FINANCE INCOME V/S EXPENSE"}
-          TitleAmountGreen={`INR ${inrFormat(totalIncomeAmount)} `}
-          TitleAmountRed={`INR ${inrFormat(totalExpense)}`}
+          TitleAmountGreen={dynamicIncome}
+          TitleAmountRed={dynamicExpense}
+          onYearChange={handleYearChange}
         />,
       ],
     },

@@ -84,12 +84,14 @@ const AttendanceTimeline = () => {
               .filter((brk) => brk.startBreak)
               .map((brk) => ({
                 startBreak: humanTime(brk.startBreak),
-                endBreak: brk.endBreak ? humanTime(brk.endBreak) : "0h:0m:0s",
+                endBreak: brk.endBreak ? humanTime(brk.endBreak) : null,
               }))
           : [],
       };
     },
   });
+
+  console.log("Out time", todayAttendance?.outTime);
 
   if (isBooting) {
     return (
@@ -115,13 +117,19 @@ const AttendanceTimeline = () => {
                 {todayAttendance?.inTime ? todayAttendance.inTime : "0h:0m:0s"}
               </span>
             </div>
-
-            <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
+            {todayAttendance?.outTime &&
+              todayAttendance.outTime !== "0h:0m:0s" && (
+                <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
+              )}
           </div>
           {todayAttendance?.breaks &&
             todayAttendance?.breaks.length > 0 &&
             todayAttendance?.breaks.map((brk, index) => (
               <div key={index} className="flex flex-col gap-1 items-start">
+                   {brk.startBreak && (
+                  <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
+                )}
+                {/* <div className="w-[1px] h-4 bg-borderGray ml-1"></div> */}
                 <div className="flex justify-between w-full">
                   <div className="flex flex-col items-center justify-center">
                     <div className="flex gap-2 items-center">
@@ -133,29 +141,37 @@ const AttendanceTimeline = () => {
                   </div>
                   <span className="font-medium">{brk.startBreak}</span>
                 </div>
-                <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
-                <div className="flex justify-between w-full">
-                  <div className="flex gap-2 items-center">
-                    <div className="pb-0">
-                      <BsCup />
+                {brk.endBreak && (
+                  <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
+                )}
+                {brk.endBreak && (
+                  <>
+                    <div className="flex justify-between w-full">
+                      <div className="flex gap-2 items-center">
+                        <div className="pb-0">
+                          <BsCup />
+                        </div>
+                        <span className="text-muted">Break End</span>
+                      </div>
+                      <span className="font-medium">{brk.endBreak}</span>
                     </div>
-                    <span className="text-muted">Break End</span>
-                  </div>
-                  <span className="font-medium">{brk.endBreak}</span>
-                </div>
-                <div className="w-[1px] h-4 bg-borderGray ml-1"></div>
+                    {/* <div className="w-[1px] h-4 bg-borderGray ml-1"></div> */}
+                  </>
+                )}
               </div>
             ))}
 
           {/* --START-- */}
 
           {/* --END-- */}
-          <div className="flex justify-between">
-            <span className="text-muted">Clock-out Time</span>
-            <span className="font-medium">
-              {todayAttendance?.outTime ? todayAttendance.outTime : "0h:0m:0s"}
-            </span>
-          </div>
+          {todayAttendance?.outTime &&
+            todayAttendance.outTime !== "0h:0m:0s" && (
+              <div className="flex justify-between">
+                <span className="text-muted">Clock-out Time</span>
+                <span className="font-medium">{todayAttendance.outTime}</span>
+              </div>
+            )}
+
           <div className="flex justify-between h-4"></div>
         </div>
       </div>
