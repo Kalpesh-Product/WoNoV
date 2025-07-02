@@ -223,6 +223,7 @@ const getCompanyDocuments = async (req, res, next) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
+    console.log("sops");
     return res.status(200).json({ [type]: foundUser.company[type] || [] });
   } catch (error) {
     next(error);
