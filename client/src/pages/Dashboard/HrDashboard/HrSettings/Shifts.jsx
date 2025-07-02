@@ -223,7 +223,9 @@ const Shifts = () => {
                   onClick: () => handleEdit(params.data),
                 },
                 {
-                  label: `${params.data.isActive ? "Mark As Inactive" : "Mark As Active"}`,
+                  label: `${
+                    params.data.status ? "Mark As Inactive" : "Mark As Active"
+                  }`,
                   onClick: () =>
                     updateMutation.mutate({
                       type: "shifts",
@@ -231,7 +233,7 @@ const Shifts = () => {
                       name: params.data.shift,
                       startTime: params.data.startTime,
                       endTime: params.data.endTime,
-                      isActive: false,
+                      isActive: !params.data.status, // Correct toggle
                     }),
                 },
 
