@@ -47,7 +47,10 @@ const PayrollReports = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewApplicationDetails(params.data)}
+            onClick={() =>{
+              console.log("date",params.data.date)
+              handleViewApplicationDetails(params.data)
+            }}
           >
             <MdOutlineRemoveRedEye />
           </span>
@@ -64,15 +67,14 @@ const PayrollReports = () => {
             ...item,
             empId: item.empId,
             employeeName: item.name,
-            status: item.months?.map((item) => item.status),
+            status: item?.status,
             totalSalary: inrFormat(
-              item.months?.map((item) => item.totalSalary)
-            ),
+              item?.totalSalary),
             departmentName: item.departments?.map(
               (item) => item.name || "null"
             ),
-            date: humanDate(item.months?.map((item) => item.month)),
-            payslip: item.months?.map((item) => item.payslip?.payslipLink),
+            date: item?.month,
+            payslip: item?.payslip?.payslipLink,
           };
         })
         .sort((a, b) =>
@@ -95,6 +97,7 @@ const PayrollReports = () => {
           exportData={true}
           tableTitle={"Payroll Reports"}
           hideTitle
+          dateColumn={"date"}
         />
       </PageFrame>
       <MuiModal
@@ -116,15 +119,15 @@ const PayrollReports = () => {
             />
             <DetalisFormatted
               title="Date"
-              detail={humanDate(selectedEmployee?.date)}
+              detail={selectedEmployee?.date}
             />
             <DetalisFormatted
               title="Total Salary"
-              detail={`INR ${inrFormat(selectedEmployee?.totalSalary?.[0])}`}
+              detail={`INR ${inrFormat(selectedEmployee?.totalSalary)}`}
             />
             <DetalisFormatted
               title="Status"
-              detail={selectedEmployee?.status?.[0] || "N/A"}
+              detail={selectedEmployee?.status || "N/A"}
             />
             <DetalisFormatted
               title="Payslip"

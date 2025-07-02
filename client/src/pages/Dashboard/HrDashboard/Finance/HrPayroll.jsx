@@ -201,10 +201,10 @@ const HrPayroll = () => {
           ...item,
           id: item.employeeId,
           employeeName: item.name,
-          status: item.months?.map((item) => item.status),
-          totalSalary: item.months?.map((item) => item.totalSalary),
+          status: item.status,
+          totalSalary: item.totalSalary,
           departmentName: item.departments?.map((item) => item.name || "null"),
-          month: item.months?.map((item) => item.month),
+          month: item.month,
         }))
         .sort((a, b) =>
           a.employeeName?.localeCompare(b.employeeName, undefined, {
@@ -233,7 +233,7 @@ const HrPayroll = () => {
           name: item.employeeName,
           userId: item.employeeId,
           email: item.email,
-          month: item.month?.[0],
+          month: item.month,
           totalSalary: monthData.totalSalary,
           deductions: monthData.deductions,
           departmentName: item.departmentName?.[0],
