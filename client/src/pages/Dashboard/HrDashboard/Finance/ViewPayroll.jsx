@@ -118,6 +118,7 @@ const ViewPayroll = () => {
   };
 
   const paymentBreakup = isLoading ? [] : userPayrollData.paymentBreakup;
+  console.log(paymentBreakup);
 
   return (
     <div className="flex flex-col gap-4">
@@ -231,10 +232,43 @@ const ViewPayroll = () => {
                 </span>
               </div>
               <div className="flex flex-col text-content py-4 gap-4">
-                <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
-                  <span>Basic Pay</span>
-                  <span>{inrFormat(paymentBreakup.basicPay) || 0}</span>
+                <div className="flex flex-col text-content py-4 gap-4">
+                  <div className="flex justify-between py-1 border-b border-borderGray">
+                    <span>Basic Pay</span>
+                    <span>{inrFormat(paymentBreakup.basic) || 0}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-borderGray">
+                    <span>HRA</span>
+                    <span>{inrFormat(paymentBreakup.hra) || 0}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-borderGray">
+                    <span>Special Allowance</span>
+                    <span>
+                      {inrFormat(paymentBreakup.specialAllowance) || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-borderGray">
+                    <span>Bonus</span>
+                    <span>{inrFormat(paymentBreakup.bonus) || 0}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-borderGray">
+                    <span>Other Allowance</span>
+                    <span>{inrFormat(paymentBreakup.otherAllowance) || 0}</span>
+                  </div>
+                  <div className="flex justify-between py-1 font-semibold">
+                    <span>Total Earnings</span>
+                    <span>
+                      {inrFormat(
+                        (paymentBreakup.basic || 0) +
+                          (paymentBreakup.hra || 0) +
+                          (paymentBreakup.specialAllowance || 0) +
+                          (paymentBreakup.bonus || 0) +
+                          (paymentBreakup.otherAllowance || 0)
+                      )}
+                    </span>
+                  </div>
                 </div>
+
                 {/* <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
                   <span>House Rent Allowance (HRA)</span>
                   <span>INR 15,000</span>
@@ -256,9 +290,39 @@ const ViewPayroll = () => {
                 </span>
               </div>
               <div className="flex flex-col text-content py-4 gap-4">
-                <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
+                <div className="flex justify-between py-1 border-b border-borderGray">
                   <span>PF</span>
-                  <span>{inrFormat(paymentBreakup.pf) || 0}</span>
+                  <span>{inrFormat(paymentBreakup.employeePf) || 0}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-borderGray">
+                  <span>ESI</span>
+                  <span>
+                    {inrFormat(paymentBreakup.employeesStateInsurance) || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-borderGray">
+                  <span>Professional Tax</span>
+                  <span>{inrFormat(paymentBreakup.professionTax) || 0}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-borderGray">
+                  <span>Income Tax</span>
+                  <span>{inrFormat(paymentBreakup.incomeTax) || 0}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-borderGray">
+                  <span>Other Deductions</span>
+                  <span>{inrFormat(paymentBreakup.recovery) || 0}</span>
+                </div>
+                <div className="flex justify-between py-1 font-semibold">
+                  <span>Total Deductions</span>
+                  <span>
+                    {inrFormat(
+                      (paymentBreakup.employeePf || 0) +
+                        (paymentBreakup.employeesStateInsurance || 0) +
+                        (paymentBreakup.professionTax || 0) +
+                        (paymentBreakup.incomeTax || 0) +
+                        (paymentBreakup.recovery || 0)
+                    )}
+                  </span>
                 </div>
               </div>
             </div>
@@ -266,7 +330,7 @@ const ViewPayroll = () => {
             <div className="text-sm text-right font-semibold text-gray-800">
               <span>Net Pay : </span>{" "}
               <span className="text-lg">
-                {inrFormat(paymentBreakup.basicPay - paymentBreakup.pf)}
+                {inrFormat(paymentBreakup.netAmount || 0)}
               </span>
             </div>
 
