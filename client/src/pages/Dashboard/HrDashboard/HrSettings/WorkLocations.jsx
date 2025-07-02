@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { queryClient } from "../../../../main";
 import Loader from "../../../Loading";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import { noOnlyWhitespace, isAlphanumeric } from "../../../../utils/validators";
 
 const WorkLocations = () => {
   const axios = useAxiosPrivate();
@@ -35,7 +36,9 @@ const WorkLocations = () => {
     handleSubmit,
     control,
     formState: { errors },
+    reset
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       building: "",
       workLocation: "",
@@ -65,6 +68,7 @@ const WorkLocations = () => {
       onSuccess: (data) => {
         toast.success(data.message || "Work Location Added");
         queryClient.invalidateQueries(["workLocation"]);
+        reset();
         setOpenModal(false);
       },
       onError: (error) => {
@@ -184,14 +188,22 @@ const WorkLocations = () => {
       <MuiModal
         open={openModal}
         onClose={handleCloseModal}
-        title={"Add Work Location"}>
+        title={"Add Work Location"}
+      >
         <div>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4">
+            className="flex flex-col gap-4"
+          >
             <Controller
               name="workLocation"
-              rules={{ required: "Work location is required" }}
+              rules={{
+                required: "Work location is required",
+                validate: {
+                  noOnlyWhitespace,
+                  isAlphanumeric,
+                },
+              }}
               control={control}
               render={({ field }) => (
                 <TextField
@@ -206,7 +218,13 @@ const WorkLocations = () => {
             />
             <Controller
               name="address"
-              rules={{ required: "Address is required" }}
+              rules={{
+                required: "Address is required",
+                validate: {
+                  noOnlyWhitespace,
+                  isAlphanumeric,
+                },
+              }}
               control={control}
               render={({ field }) => (
                 <TextField
@@ -234,13 +252,15 @@ const WorkLocations = () => {
                   label="Country"
                   fullWidth
                   onChange={(e) => {
-                    field.onChange(e);
                     const selectedCode = e.target.value;
-                    handleCountrySelect(selectedCode);
-                    // Reset dependent fields
-                    control.setValue("state", "");
-                    control.setValue("city", "");
-                  }}>
+                    field.onChange(e); // Let MUI handle its state first
+                    setTimeout(() => {
+                      handleCountrySelect(selectedCode);
+                      control.setValue("state", "");
+                      control.setValue("city", "");
+                    }, 0);
+                  }}
+                >
                   <MenuItem value="">Select a Country</MenuItem>
                   {countries.map((item) => (
                     <MenuItem key={item.isoCode} value={item.isoCode}>
@@ -264,13 +284,17 @@ const WorkLocations = () => {
                   fullWidth
                   disabled={!control._formValues.country}
                   onChange={(e) => {
+                    const selectedStateCode = e.target.value;
                     field.onChange(e);
-                    handleStateSelect(
-                      control._formValues.country,
-                      e.target.value
-                    );
-                    control.setValue("city", "");
-                  }}>
+                    setTimeout(() => {
+                      handleStateSelect(
+                        control._formValues.country,
+                        selectedStateCode
+                      );
+                      control.setValue("city", "");
+                    }, 0);
+                  }}
+                >
                   <MenuItem value="">Select a State</MenuItem>
                   {states.map((item) => (
                     <MenuItem value={item.isoCode} key={item.isoCode}>
@@ -292,12 +316,14 @@ const WorkLocations = () => {
                   select
                   label="City"
                   fullWidth
-                  disabled={!control._formValues.state}>
+                  disabled={!control._formValues.state}
+                >
                   <MenuItem value="">Select a City</MenuItem>
                   {cities.map((item) => (
                     <MenuItem
                       value={item.name}
-                      key={`${item.name}-${item.stateCode}-${item.latitude}`}>
+                      key={`${item.name}-${item.stateCode}-${item.latitude}`}
+                    >
                       {item.name}
                     </MenuItem>
                   ))}
@@ -309,6 +335,9 @@ const WorkLocations = () => {
               name="pincode"
               rules={{
                 required: "Pincode is required",
+                validate: {
+                  noOnlyWhitespace,
+                },
                 pattern: {
                   value: /^[1-9][0-9]{5}$/, // Indian 6-digit pincode starting with non-zero
                   message: "Enter a valid 6-digit pincode",

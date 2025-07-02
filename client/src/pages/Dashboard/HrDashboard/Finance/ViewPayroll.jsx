@@ -10,6 +10,7 @@ import humanTime from "../../../../utils/humanTime";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import humanDate from "../../../../utils/humanDateForamt";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const ViewPayroll = () => {
   const payrollColumns = [
@@ -52,7 +53,7 @@ const ViewPayroll = () => {
   const { empId } = location.state;
   const axios = useAxiosPrivate();
 
-  const { data: userPayrollData, isLoading } = useQuery({
+  const { data: userPayrollData = [], isLoading } = useQuery({
     queryKey: ["userPayroll"],
     queryFn: async () => {
       try {
@@ -120,22 +121,18 @@ const ViewPayroll = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection
-        layout={1}
-        border
-        title={"Attendance"}
-        button={true}
-        buttonTitle={"Edit"}
-      >
+      <PageFrame>
         <YearWiseTable
           key={attendanceData.map((item) => item.id)}
           search={true}
           dateColumn={"inTime"}
+          tableTitle={"Attendance"}
           formatTime
           data={attendanceData}
           columns={payrollColumns}
         />
-      </WidgetSection>
+      </PageFrame>
+
       <WidgetSection
         layout={1}
         border
@@ -195,11 +192,35 @@ const ViewPayroll = () => {
                   </span>
                 </div>
               </div>
-              <div className="flex flex-col w-full">
-                <span className="text-content">Month</span>{" "}
-                <span className="text-content text-gray-600">
-                  {new Date().toLocaleString("default",{month : 'long', year:'numeric'})}
-                </span>
+              <div className="flex gap-4  items-center w-full">
+                <div className="flex flex-col w-full">
+                  <span className="text-content">Start Date</span>
+                  <span className="text-content text-gray-600">
+                    {new Date(
+                      new Date().getFullYear(),
+                      new Date().getMonth(),
+                      1
+                    ).toLocaleDateString("default", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+                <div className="flex flex-col w-full">
+                  <span className="text-content">End Date</span>
+                  <span className="text-content text-gray-600">
+                    {new Date(
+                      new Date().getFullYear(),
+                      new Date().getMonth() + 1,
+                      0
+                    ).toLocaleDateString("default", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
               </div>
             </div>
 

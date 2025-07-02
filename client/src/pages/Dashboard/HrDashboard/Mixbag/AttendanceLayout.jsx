@@ -14,8 +14,8 @@ const AttendanceLayout = () => {
 
   // Redirect to "first tab" if the current path is "/module/first-page"
   useEffect(() => {
-    if (location.pathname === "/app/dashboard/hr-dashboard/mix-bag/attendance") {
-      navigate("/app/dashboard/hr-dashboard/mix-bag/attendance/pending-approvals", {
+    if (location.pathname === "/app/dashboard/HR-dashboard/mix-bag/attendance") {
+      navigate("/app/dashboard/HR-dashboard/mix-bag/attendance/pending-approvals", {
         replace: true,
       });
     }

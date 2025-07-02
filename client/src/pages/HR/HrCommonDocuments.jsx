@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import PageFrame from "../../components/Pages/PageFrame";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
 
 const HrCommonDocuments = () => {
   const location = useLocation();
@@ -28,24 +29,30 @@ const HrCommonDocuments = () => {
 
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "name", headerName: "Document Name", flex: 1 },
     {
-      field: "documentLink",
-      headerName: "Document Link",
-      pinned: "right",
-      width: 200,
+      field: "name",
+      headerName: `${documentType === "sop" ? "SOP" : "Policy"} Name`,
+      flex: 1,
       cellRenderer: (params) => (
         <>
           <a
             className="text-primary underline cursor-pointer"
-            href={params.value}
+            href={params.data.documentLink}
             target="_blank"
             rel="noopener noreferrer"
           >
-            View {documentType ? documentType : "SOP"}
+            {params.value}
           </a>
         </>
       ),
+    },
+    {
+      field: "uploadedDate",
+      headerName: "Upload Date",
+    },
+    {
+      field: "modifiedDate",
+      headerName: "Modified Date",
     },
   ];
 
@@ -55,6 +62,8 @@ const HrCommonDocuments = () => {
         srNo: index + 1,
         name: item.name,
         documentLink: item.documentLink,
+        uploadedDate : item.createdAt,
+        modifiedDate : item.updatedAt
       }));
 
   console.log("Data", data);
@@ -62,7 +71,8 @@ const HrCommonDocuments = () => {
   return (
     <div>
       <PageFrame>
-        <AgTable
+        <YearWiseTable
+          dateColumn={"uploadedDate"}
           key={data.length}
           columns={columns}
           data={tableData}

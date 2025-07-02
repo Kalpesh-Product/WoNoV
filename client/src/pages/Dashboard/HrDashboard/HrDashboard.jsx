@@ -64,7 +64,7 @@ const HrDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/users/fetch-users");
-        return response.data;
+        return response.data.filter((u) => u.isActive);
       } catch (error) {
         throw new Error(error.response.data.message);
       }
@@ -862,7 +862,8 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection normalCase layout={1} padding>
             <YearlyGraph
               data={expenseRawSeries}
@@ -918,7 +919,8 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <YearlyGraph
             data={tasksData}
             options={tasksOptions}

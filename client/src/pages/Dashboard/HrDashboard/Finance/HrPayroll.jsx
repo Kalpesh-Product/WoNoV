@@ -1,6 +1,6 @@
 import React from "react";
 import AgTable from "../../../../components/AgTable";
-import { Chip, selectClasses } from "@mui/material";
+import { Chip, CircularProgress, selectClasses } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 // import AgTable from "../../components/AgTable";
@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import PayslipTemplate from "../../../../components/HrTemplate/PayslipTemplate";
 import html2pdf from "html2pdf.js";
 import ReactDOMServer from "react-dom/server";
+import { queryClient } from "../../../../main";
 
 const HrPayroll = () => {
   const navigate = useNavigate();
@@ -215,14 +216,18 @@ const HrPayroll = () => {
   const { mutate: payrollMutate, isPending: isPayrollPending } = useMutation({
     mutationKey: ["batchPayrollMutate"],
     mutationFn: async (data) => {
+      setIsModalOpen(true)
       const response = await axios.post("/api/payroll/generate-payroll", data);
       return response.data;
     },
     onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["payrollData"] });
       toast.success(data.message || "BATCH SENT");
+      setIsModalOpen(false)
     },
     onError: (error) => {
       toast.error(error.message || "BATCH FAILED");
+      setIsModalOpen(false)
     },
   });
   const handleBatchAction = async (selectedRows) => {
@@ -303,7 +308,7 @@ const HrPayroll = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <WidgetSection layout={1} title={"Employee payroll"} border>
+      <PageFrame>
         <YearWiseTable
           search={true}
           dateColumn={"month"}
@@ -315,15 +320,23 @@ const HrPayroll = () => {
               : rowNode.data.status;
             return status !== "Completed";
           }}
-          batchButton={"Generate"}
           searchColumn={"Employee Name"}
-          tableTitle={""}
+          tableTitle={"Employee payroll"}
           handleBatchAction={handleBatchAction}
+          batchButton={"Generate"}
           data={tableData}
           columns={payrollColumn}
           exportData={true}
         />
-      </WidgetSection>
+      </PageFrame>
+      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={"Payslip Generation"}>
+        <div className="h-36 flex justify-center items-center">
+          <div className="flex flex-col gap-2 justify-center items-center">
+            <CircularProgress />
+            <span className="text-content">Generating Payslips....</span>
+          </div>
+        </div>
+      </MuiModal>
     </div>
   );
 };
