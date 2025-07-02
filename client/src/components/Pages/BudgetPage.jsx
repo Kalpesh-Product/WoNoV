@@ -26,7 +26,6 @@ const BudgetPage = () => {
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
-    "6798bab9e469e809084e249e",
   ];
 
   const isTop = auth.user.departments.some((item) => {

@@ -7,16 +7,15 @@ import { Controller, useForm } from "react-hook-form";
 import MuiModal from "../../../../components/MuiModal";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { toast } from "sonner";
-import SecondaryButton from "../../../../components/SecondaryButton";
 import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PageFrame from "../../../../components/Pages/PageFrame";
-import { HiOutlinePencilSquare } from "react-icons/hi2";
 import { useEffect } from "react";
 import humanTime from "../../../../utils/humanTime";
 import dayjs from "dayjs";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 
 const Shifts = () => {
   const axios = useAxiosPrivate();
@@ -24,13 +23,34 @@ const Shifts = () => {
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [selectedItem, setSelectedItem] = useState(null);
-  const { handleSubmit, control, reset, setValue } = useForm({
+  const {
+    handleSubmit: handleAddSubmit,
+    control: addControl,
+    reset: resetAddForm,
+    formState: { errors: addingErrors },
+  } = useForm({
+    defaultValues: {
+      shiftName: "",
+      startTime: null,
+      endTime: null,
+    },
+    mode: "onChange",
+  });
+
+  const {
+    handleSubmit: handleEditSubmit,
+    control: editControl,
+    reset: resetEditForm,
+    setValue: setEditValue,
+    formState: { errors: editingErrors },
+  } = useForm({
     defaultValues: {
       shiftName: "",
       startTime: null,
       endTime: null,
       isActive: true,
     },
+    mode: "onChange",
   });
 
   const { addMutation, isPending } = useMutation({
@@ -47,7 +67,7 @@ const Shifts = () => {
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ["shifts"] });
       setOpenModal(false);
-      reset();
+      resetAddForm();
     },
     onError: function (data) {
       toast.error(data.message);
@@ -94,7 +114,7 @@ const Shifts = () => {
 
       queryClient.invalidateQueries(["shifts"]);
       setOpenModal(false);
-      reset();
+      resetEditForm();
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || "Update failed");
@@ -117,20 +137,20 @@ const Shifts = () => {
     queryFn: fetchShifts,
   });
 
-  const onSubmit = (data) => {
-    if (modalMode === "edit") {
-      const payload = {
-        type: "shifts",
-        itemId: selectedItem._id,
-        name: data.shiftName,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        isActive: data.isActive === "true",
-      };
-      updateMutation.mutate(payload);
-    } else {
-      addMutation.mutate(data);
-    }
+  const onAddSubmit = (data) => {
+    addMutation.mutate(data);
+  };
+
+  const onEditSubmit = (data) => {
+    const payload = {
+      type: "shifts",
+      itemId: selectedItem._id,
+      name: data.shiftName,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      isActive: data.isActive === "true",
+    };
+    updateMutation.mutate(payload);
   };
 
   const departmentsColumn = [
@@ -202,6 +222,19 @@ const Shifts = () => {
                   onClick: () => handleEdit(params.data),
                 },
                 {
+                  label: "Mark As Inactive",
+                  onClick: () =>
+                    updateMutation.mutate({
+                      type: "shifts",
+                      itemId: params.data._id,
+                      name: params.data.shift,
+                      startTime: params.data.startTime,
+                      endTime: params.data.endTime,
+                      isActive: false,
+                    }),
+                },
+
+                {
                   label: "Delete",
                   onClick: () => handleDelete(params.data),
                 },
@@ -215,12 +248,12 @@ const Shifts = () => {
 
   useEffect(() => {
     if (modalMode === "edit" && selectedItem) {
-      setValue("shiftName", selectedItem?.shift);
-      setValue("isActive", selectedItem?.status);
-      setValue("startTime", dayjs(selectedItem?.startTime));
-      setValue("endTime", dayjs(selectedItem?.endTime));
+      setEditValue("shiftName", selectedItem?.shift);
+      setEditValue("isActive", selectedItem?.status);
+      setEditValue("startTime", dayjs(selectedItem?.startTime));
+      setEditValue("endTime", dayjs(selectedItem?.endTime));
     }
-  }, [modalMode, selectedItem, setValue]);
+  }, [modalMode, selectedItem, setEditValue]);
 
   const transformedData = isPending
     ? []
@@ -234,7 +267,10 @@ const Shifts = () => {
           searchColumn={"Shifts"}
           tableTitle={"Shift List"}
           buttonTitle={"Add Shift List"}
-          handleClick={() => setOpenModal(true)}
+          handleClick={() => {
+            setModalMode("add");
+            setOpenModal(true);
+          }}
           data={[
             ...transformedData.map((shift, index) => ({
               id: index + 1, // Auto-increment Sr No
@@ -252,93 +288,184 @@ const Shifts = () => {
           <MuiModal
             title={modalMode === "add" ? "Add Shift" : "Update Shift"}
             open={openModal}
-            onClose={() => setOpenModal(false)}>
-            {modalMode === "add" ||
-              (modalMode === "edit" && (
-                <div>
-                  <form
-                    onSubmit={handleSubmit(onSubmit)}
-                    className="flex flex-col gap-4">
-                    <Controller
-                      name="shiftName"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          fullWidth
-                          label={"Shift Name"}
-                        />
-                      )}
+            onClose={() => setOpenModal(false)}
+          >
+            {modalMode === "add" && (
+              <form
+                onSubmit={handleAddSubmit(onAddSubmit)}
+                className="flex flex-col gap-4"
+              >
+                <Controller
+                  name="shiftName"
+                  control={addControl}
+                  rules={{
+                    required: "Please provide a shift name",
+                    validate: { isAlphanumeric, noOnlyWhitespace },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      fullWidth
+                      label="Shift Name"
+                      error={!!addingErrors.shiftName}
+                      helperText={addingErrors.shiftName?.message}
                     />
+                  )}
+                />
 
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <Controller
-                        name="startTime"
-                        control={control}
-                        render={({ field }) => (
-                          <TimePicker
-                            {...field}
-                            slotProps={{ textField: { size: "small" } }}
-                            label={"Select Start Time"}
-                            render={(params) => (
-                              <TextField size="small" {...params} fullWidth />
-                            )}
-                          />
-                        )}
-                      />
-                    </LocalizationProvider>
-
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <Controller
-                        name="endTime"
-                        control={control}
-                        render={({ field }) => (
-                          <TimePicker
-                            {...field}
-                            label={"Select End Time"}
-                            slotProps={{ textField: { size: "small" } }}
-                            renderInput={(params) => (
-                              <TextField {...params} size="small" fullWidth />
-                            )}
-                          />
-                        )}
-                      />
-                    </LocalizationProvider>
-
-                    {modalMode === "edit" && (
-                      <Controller
-                        name="isActive"
-                        control={control}
-                        render={({ field, fieldState }) => (
-                          <FormControl fullWidth error={!!fieldState.error}>
-                            <Select {...field} size="small" displayEmpty>
-                              <MenuItem value="" disabled>
-                                Select Active Status
-                              </MenuItem>
-                              <MenuItem value="true">Yes</MenuItem>
-                              <MenuItem value="false">No</MenuItem>
-                            </Select>
-                          </FormControl>
-                        )}
-                      />
-                    )}
-                    <PrimaryButton
-                      title="Update Shift"
-                      type="submit"
-                      isLoading={isPending}
-                      disabled={isPending}
+                <Controller
+                  name="startTime"
+                  control={addControl}
+                  rules={{
+                    required: "Start time is required",
+                    validate: {  noOnlyWhitespace },
+                  }}
+                  render={({ field }) => (
+                    <TimePicker
+                      label="Select Start Time"
+                      value={field.value}
+                      onChange={(time) => field.onChange(time)}
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          error: !!addingErrors.startTime,
+                          helperText: addingErrors.startTime?.message,
+                        },
+                      }}
                     />
-                  </form>
-                </div>
-              ))}
+                  )}
+                />
+
+                <Controller
+                  name="endTime"
+                  control={addControl}
+                  rules={{
+                    required: "End time is required",
+                    validate: {  noOnlyWhitespace },
+                  }}
+                  render={({ field }) => (
+                    <TimePicker
+                      label="Select End Time"
+                      value={field.value}
+                      onChange={(time) => field.onChange(time)}
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          error: !!addingErrors.endTime,
+                          helperText: addingErrors.endTime?.message,
+                        },
+                      }}
+                    />
+                  )}
+                />
+
+                <PrimaryButton
+                  title="Add Shift"
+                  type="submit"
+                  isLoading={isPending}
+                />
+              </form>
+            )}
+            {modalMode === "edit" && (
+              <form
+                onSubmit={handleEditSubmit(onEditSubmit)}
+                className="flex flex-col gap-4"
+              >
+                <Controller
+                  name="shiftName"
+                  control={editControl}
+                  rules={{
+                    required: "Please provide a shift name",
+                    validate: { isAlphanumeric, noOnlyWhitespace },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      fullWidth
+                      label="Shift Name"
+                      error={!!editingErrors.shiftName}
+                      helperText={editingErrors.shiftName?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="startTime"
+                  control={editControl}
+                  rules={{
+                    required: "Start time is required",
+                    validate: { noOnlyWhitespace },
+                  }}
+                  render={({ field }) => (
+                    <TimePicker
+                      {...field}
+                      label="Select Start Time"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          error: !!editingErrors.startTime,
+                          helperText: editingErrors.startTime?.message,
+                        },
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="endTime"
+                  control={editControl}
+                  rules={{
+                    required: "End time is required",
+                    validate: { noOnlyWhitespace },
+                  }}
+                  render={({ field }) => (
+                    <TimePicker
+                      {...field}
+                      label="Select End Time"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          error: !!editingErrors.endTime,
+                          helperText: editingErrors.endTime?.message,
+                        },
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="isActive"
+                  control={editControl}
+                  render={({ field, fieldState }) => (
+                    <FormControl fullWidth error={!!fieldState.error}>
+                      <Select {...field} size="small" displayEmpty>
+                        <MenuItem value="" disabled>
+                          Select Active Status
+                        </MenuItem>
+                        <MenuItem value="true">Yes</MenuItem>
+                        <MenuItem value="false">No</MenuItem>
+                      </Select>
+                    </FormControl>
+                  )}
+                />
+
+                <PrimaryButton
+                  title="Update Shift"
+                  type="submit"
+                  isLoading={isPending}
+                />
+              </form>
+            )}
           </MuiModal>
 
           {modalMode === "view" && (
             <MuiModal
               open={openModal}
               onClose={() => setOpenModal(false)}
-              title={"Shift Details"}>
+              title={"Shift Details"}
+            >
               <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[70vh]">
                 <DetalisFormatted
                   title="Shift Name"

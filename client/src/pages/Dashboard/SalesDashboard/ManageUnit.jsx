@@ -2,7 +2,7 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import AgTable from "../../../components/AgTable";
 import PageFrame from "../../../components/Pages/PageFrame";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import MuiModal from "../../../components/MuiModal";
 import { useState, useEffect } from "react";
 import { TextField } from "@mui/material";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { queryClient } from "../../../main";
 import { HiPencilSquare } from "react-icons/hi2";
 import { MenuItem } from "@mui/material";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 
 export default function ManageUnit() {
   const [openEdit, setOpenEdit] = useState(false);
@@ -24,6 +25,7 @@ export default function ManageUnit() {
     handleSubmit,
     setValue,
     unregister,
+    control,
     formState: { errors },
   } = useForm({ mode: "onChange", defaultValues: { buildingId: "" } });
 
@@ -189,76 +191,129 @@ export default function ManageUnit() {
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           {modalMode === "add" && (
             <>
-              <TextField
-                label="Unit Name"
-                fullWidth
-                size="small"
-                {...register("unitName", { required: true })}
-                error={!!errors.unitName}
-                helperText={errors.unitName ? "Required" : ""}
+              <Controller
+                control={control}
+                name="unitName"
+                rules={{
+                  required: "Unit Name is required",
+                  validate: { isAlphanumeric, noOnlyWhitespace },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Unit Name"
+                    fullWidth
+                    size="small"
+                    error={!!errors.unitName}
+                    helperText={errors.unitName?.message}
+                  />
+                )}
               />
 
-              <TextField
-                label="Unit No"
-                fullWidth
-                size="small"
-                {...register("unitNo", { required: true })}
-                error={!!errors.unitNo}
-                helperText={errors.unitNo ? "Required" : ""}
+              <Controller
+                control={control}
+                name="unitNo"
+                rules={{
+                  required: "Unit No is required",
+                  validate: { isAlphanumeric, noOnlyWhitespace },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Unit No"
+                    fullWidth
+                    size="small"
+                    error={!!errors.unitNo}
+                    helperText={errors.unitNo?.message}
+                  />
+                )}
               />
 
-              <TextField
-                label="Sqft"
-                type="number"
-                fullWidth
-                size="small"
-                {...register("sqft", { required: true, min: 0 })}
-                error={!!errors.sqft}
-                helperText={errors.sqft ? "Required" : ""}
+              <Controller
+                control={control}
+                name="sqft"
+                rules={{
+                  required: "Sqft is required",
+                  min: { value: 0, message: "Sqft must be at least 0" },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Sqft"
+                    type="number"
+                    fullWidth
+                    size="small"
+                    error={!!errors.sqft}
+                    helperText={errors.sqft?.message}
+                  />
+                )}
               />
-
-              <TextField
-                labelId="buildingId-label"
-                id="buildingId"
-                select
-                size="small"
-                label="Building"
-                defaultValue=""
-                {...register("buildingId", {
-                  required: "Building is required",
-                })}
-                error={!!errors.buildingId}
-              >
-                <MenuItem value="">
-                  <em>Select Building</em>
-                </MenuItem>
-                {buildings?.map((building) => (
-                  <MenuItem key={building._id} value={building._id}>
-                    {building.buildingName}
-                  </MenuItem>
-                ))}
-              </TextField>
+              <Controller
+                control={control}
+                name="buildingId"
+                rules={{ required: "Building is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    select
+                    size="small"
+                    fullWidth
+                    label="Building"
+                    error={!!errors.buildingId}
+                    helperText={errors.buildingId?.message}
+                  >
+                    <MenuItem value="">
+                      <em>Select Building</em>
+                    </MenuItem>
+                    {buildings?.map((building) => (
+                      <MenuItem key={building._id} value={building._id}>
+                        {building.buildingName}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
             </>
           )}
 
-          <TextField
-            label="Open Desks"
-            type="number"
-            size="small"
-            fullWidth
-            {...register("openDesks", { required: true, min: 0 })}
-            error={!!errors.openDesks}
-            helperText={errors.openDesks ? "Required" : ""}
+          <Controller
+            control={control}
+            name="openDesks"
+            rules={{
+              required: "Open Desks is required",
+              min: { value: 0, message: "Open Desks must be 0 or more" },
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Open Desks"
+                type="number"
+                fullWidth
+                size="small"
+                error={!!errors.openDesks}
+                helperText={errors.openDesks?.message}
+              />
+            )}
           />
 
-          <TextField
-            label="Cabin Desks"
-            type="number"
-            fullWidth
-            size="small"
-            {...register("cabinDesks", { required: true, min: 0 })}
-            error={!!errors.cabinDesks}
-            helperText={errors.cabinDesks ? "Required" : ""}
+          <Controller
+            control={control}
+            name="cabinDesks"
+            rules={{
+              required: "Cabin Desks is required",
+              min: { value: 0, message: "Cabin Desks must be 0 or more" },
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Cabin Desks"
+                type="number"
+                fullWidth
+                size="small"
+                error={!!errors.cabinDesks}
+                helperText={errors.cabinDesks?.message}
+              />
+            )}
           />
 
           <PrimaryButton

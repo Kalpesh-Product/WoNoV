@@ -35,8 +35,8 @@ const WorkLocations = () => {
   const {
     handleSubmit,
     control,
+    reset,
     formState: { errors },
-    reset
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -66,6 +66,7 @@ const WorkLocations = () => {
         return response.data;
       },
       onSuccess: (data) => {
+        reset();
         toast.success(data.message || "Work Location Added");
         queryClient.invalidateQueries(["workLocation"]);
         reset();

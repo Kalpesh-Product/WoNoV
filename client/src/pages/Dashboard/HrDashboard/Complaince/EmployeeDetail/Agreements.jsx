@@ -11,7 +11,7 @@ import { useSelector } from "react-redux";
 
 const Agreements = () => {
   const axios = useAxiosPrivate();
-    const id = useSelector((state) => state.hr.selectedEmployee);
+  const id = useSelector((state) => state.hr.selectedEmployee);
   const name = localStorage.getItem("employeeName") || "Employee";
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -26,8 +26,33 @@ const Agreements = () => {
     },
     {
       field: "name",
-      headerName: "Agreement Name",
+      headerName: "Agreement Type",
       flex: 1,
+      valueFormatter: (params) =>
+        params.value
+          .replace(/([A-Z])/g, " $1")
+          .replace(/^./, (str) => str.toUpperCase()), // Beautify key like 'leavePolicy' -> 'Leave Policy'
+    },
+    {
+      field: "value",
+      headerName: "Details",
+      flex: 2,
+      cellRenderer: (params) => {
+        const value = params.value;
+        const isUrl = typeof value === "string" && value.startsWith("http");
+        return isUrl ? (
+          <a
+            href={value}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline"
+          >
+            Open Document
+          </a>
+        ) : (
+          <span>{value}</span>
+        );
+      },
     },
     {
       field: "status",
@@ -56,7 +81,6 @@ const Agreements = () => {
       },
     },
   ];
-
 
   const { data: agreements = [], isLoading } = useQuery({
     queryKey: ["agreements"],
@@ -88,29 +112,36 @@ const Agreements = () => {
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
-        {/* <div>
-          <AgTable
-            key={agreements.length}
-            search={true}
-            searchColumn={"Agreement Name"}
-            tableTitle={`${name}'s Agreement List`}
-            buttonTitle={"Add Agreement"}
-            handleClick={() => setModalOpen(true)}
-            data={agreements.map((agreement, index) => ({
-              id: index + 1,
-              name: agreement.name,
-              status: agreement.isActive,
-            }))}
-            columns={agreementColumn}
-          />
-        </div> */}
+        <AgTable
+          key={agreements.length}
+          search={true}
+          searchColumn={"Agreement Name"}
+          tableTitle={`${name}'s Agreement List`}
+          buttonTitle={"Add Agreement"}
+          handleClick={() => setModalOpen(true)}
+          data={
+            isLoading
+              ? []
+              : Object.entries(agreements?.policies).map(
+                  ([key, value], index) => ({
+                    id: index + 1,
+                    name: key,
+                    value, // store the actual URL or text value
+                    status:
+                      typeof value === "string" && value.startsWith("http"), // show Active only for valid URLs
+                  })
+                )
+          }
+          columns={agreementColumn}
+        />
       </PageFrame>
 
       {/* Modal for adding Agreement */}
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Add New Agreement">
+        title="Add New Agreement"
+      >
         <div>
           <TextField
             label="Agreement Name"

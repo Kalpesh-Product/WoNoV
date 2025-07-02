@@ -533,7 +533,7 @@ const updateCompanySubItem = async (req, res) => {
     if (!updated)
       return res.status(404).json({ message: `${type} item not found` });
 
-    await foundCompany.save();
+    await foundCompany.save({ validateBeforeSave: false });
     res.status(200).json({ message: `${type} updated successfully` });
   } catch (error) {
     res
