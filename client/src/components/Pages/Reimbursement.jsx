@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import PageFrame from "./PageFrame";
 import UploadFileInput from "../UploadFileInput";
 import html2pdf from "html2pdf.js";
+import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
@@ -64,6 +65,7 @@ const Reimbursement = () => {
       invoiceNo: "",
       gstIn: "",
     },
+    mode: "onChange",
   });
   const { data: departmentBudget = [], isPending: isDepartmentLoading } =
     useQuery({
@@ -177,51 +179,48 @@ const Reimbursement = () => {
       formData.append("invoice", values.invoiceFile);
     }
 
-   const onUpload = async () => {
-  const values = getValues();
-  values.particulars = fields;
+    const onUpload = async () => {
+      const values = getValues();
+      values.particulars = fields;
 
-  const formData = new FormData();
-  // Append all fields...
-  formData.append("gstIn", values.gstIn || "");
-  formData.append("invoiceNo", values.invoiceNo || "");
-  if (values.invoiceAttached && values.invoiceFile instanceof File) {
-    formData.append("invoice", values.invoiceFile);
-  }
+      const formData = new FormData();
+      // Append all fields...
+      formData.append("gstIn", values.gstIn || "");
+      formData.append("invoiceNo", values.invoiceNo || "");
+      if (values.invoiceAttached && values.invoiceFile instanceof File) {
+        formData.append("invoice", values.invoiceFile);
+      }
+    };
 
-
-};
-
-  if (values.voucherFile instanceof File) {
-    formData.append("voucher", values.voucherFile);
-    submitRequest(formData);
-    return
-  } else {
-    try {
-      const pdfBlob = await html2pdf()
-        .set({
-          margin: 0.2,
-          filename: "Voucher_Form.pdf",
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 1, useCORS: true },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        })
-        .from(formRef.current)
-        .outputPdf("blob");
-
-      const file = new File([pdfBlob], "Voucher_Form.pdf", {
-        type: "application/pdf",
-      });
-
-      formData.append("voucher", file);
+    if (values.voucherFile instanceof File) {
+      formData.append("voucher", values.voucherFile);
       submitRequest(formData);
-      return
-    } catch (err) {
-      toast.error("Failed to generate voucher PDF.");
-      console.error(err);
-    }
-  }
+      return;
+    } else {
+      try {
+        const pdfBlob = await html2pdf()
+          .set({
+            margin: 0.2,
+            filename: "Voucher_Form.pdf",
+            image: { type: "jpeg", quality: 0.98 },
+            html2canvas: { scale: 1, useCORS: true },
+            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          })
+          .from(formRef.current)
+          .outputPdf("blob");
 
+        const file = new File([pdfBlob], "Voucher_Form.pdf", {
+          type: "application/pdf",
+        });
+
+        formData.append("voucher", file);
+        submitRequest(formData);
+        return;
+      } catch (err) {
+        toast.error("Failed to generate voucher PDF.");
+        console.error(err);
+      }
+    }
 
     submitRequest(formData);
   };
@@ -291,7 +290,10 @@ const Reimbursement = () => {
               <Controller
                 name="location"
                 control={control}
-                rules={{ required: "Location is required" }}
+                rules={{
+                  required: "Location is required",
+                  validate: { noOnlyWhitespace },
+                }}
                 render={({ field, fieldState }) => (
                   <TextField
                     size="small"
@@ -427,7 +429,10 @@ const Reimbursement = () => {
               <Controller
                 name="expanseName"
                 control={control}
-                rules={{ required: "Expense Name is required" }}
+                rules={{
+                  required: "Expense Name is required",
+                  validate: { isAlphanumeric, noOnlyWhitespace },
+                }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
@@ -448,7 +453,10 @@ const Reimbursement = () => {
               <Controller
                 name="particularName"
                 control={control}
-                rules={{ required: "Particular name is required" }}
+                rules={{
+                  required: "Particular name is required",
+                  validate: { isAlphanumeric, noOnlyWhitespace },
+                }}
                 render={({ field, fieldState }) => (
                   <TextField
                     label="Particulars"
