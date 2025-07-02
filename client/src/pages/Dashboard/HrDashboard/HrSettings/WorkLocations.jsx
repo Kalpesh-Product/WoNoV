@@ -34,6 +34,7 @@ const WorkLocations = () => {
   const {
     handleSubmit,
     control,
+    reset,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -63,6 +64,7 @@ const WorkLocations = () => {
         return response.data;
       },
       onSuccess: (data) => {
+        reset();
         toast.success(data.message || "Work Location Added");
         queryClient.invalidateQueries(["workLocation"]);
         setOpenModal(false);
@@ -184,11 +186,13 @@ const WorkLocations = () => {
       <MuiModal
         open={openModal}
         onClose={handleCloseModal}
-        title={"Add Work Location"}>
+        title={"Add Work Location"}
+      >
         <div>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4">
+            className="flex flex-col gap-4"
+          >
             <Controller
               name="workLocation"
               rules={{ required: "Work location is required" }}
@@ -240,7 +244,8 @@ const WorkLocations = () => {
                     // Reset dependent fields
                     control.setValue("state", "");
                     control.setValue("city", "");
-                  }}>
+                  }}
+                >
                   <MenuItem value="">Select a Country</MenuItem>
                   {countries.map((item) => (
                     <MenuItem key={item.isoCode} value={item.isoCode}>
@@ -270,7 +275,8 @@ const WorkLocations = () => {
                       e.target.value
                     );
                     control.setValue("city", "");
-                  }}>
+                  }}
+                >
                   <MenuItem value="">Select a State</MenuItem>
                   {states.map((item) => (
                     <MenuItem value={item.isoCode} key={item.isoCode}>
@@ -292,12 +298,14 @@ const WorkLocations = () => {
                   select
                   label="City"
                   fullWidth
-                  disabled={!control._formValues.state}>
+                  disabled={!control._formValues.state}
+                >
                   <MenuItem value="">Select a City</MenuItem>
                   {cities.map((item) => (
                     <MenuItem
                       value={item.name}
-                      key={`${item.name}-${item.stateCode}-${item.latitude}`}>
+                      key={`${item.name}-${item.stateCode}-${item.latitude}`}
+                    >
                       {item.name}
                     </MenuItem>
                   ))}
