@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+
 const payrollSchema = new mongoose.Schema(
   {
     employee: {
@@ -10,22 +11,10 @@ const payrollSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    //calculated salary
-    salary: {
-      type: Number,
-      required: true,
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
     },
-    deductions: [
-      {
-        name: {
-          type: String,
-        },
-        amount: {
-          type: Number,
-        },
-      },
-    ],
-    reimbursment: Number,
     payslip: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Payslip",
@@ -36,10 +25,69 @@ const payrollSchema = new mongoose.Schema(
       enum: ["Completed", "Pending", "Rejected"],
       default: "Pending",
     },
-    company: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
-    },
+
+    // Core Salary Breakdown
+    basic: Number,
+    earnedBasic: Number,
+    calculatedBasic: Number,
+    pfApplicableAllowances: Number,
+    actualGross: Number,
+    gross: Number,
+    netAmount: Number,
+
+    // TDS & Taxes
+    incomeTax: Number,
+    surcharge: Number,
+    cess: Number,
+    totalTds: Number,
+
+    // Attendance
+    paidDays: Number,
+    lopDays: Number,
+    lopAmount: Number,
+
+    // ESI/PT Grosses
+    earnedGrossOfEsi: Number,
+    earnedGrossOfPt: Number,
+
+    // Employer Contributions
+    employerPf: Number,
+    employerEsi: Number,
+    employerLwf: Number,
+
+    // Allowances & Earnings
+    hra: Number,
+    childrenEducationAllowance: Number,
+    bonus: Number,
+    commissions: Number,
+    overTime: Number,
+    specialAllowance: Number,
+    leaveEncashment: Number,
+    expenses: Number,
+    dearnessAllowance: Number,
+    gratuity: Number,
+    medicalAllowance: Number,
+    conveyanceAllowance: Number,
+    otherAllowance: Number,
+    arrears: Number,
+
+    // Deductions
+    employeePf: Number,
+    employeesStateInsurance: Number,
+    professionTax: Number,
+    adjustments: Number,
+    additionalIncomeTax: Number,
+    reduceIncomeTax: Number,
+    voluntaryProvidentFund: Number,
+    lwf: Number, // Employee LWF
+    recovery: Number,
+
+    // Reimbursements
+    reimbursment: Number,
+
+    // Bank Info (optional but useful for backend validation)
+    ifscCode: String,
+    accountNumber: String,
   },
   { timestamps: true }
 );
