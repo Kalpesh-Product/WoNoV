@@ -18,6 +18,7 @@ import ThreeDotMenu from "../ThreeDotMenu";
 import YearWiseTable from "../Tables/YearWiseTable";
 import SecondaryButton from "../SecondaryButton";
 import DangerButton from "../DangerButton";
+import { noOnlyWhitespace, isAlphanumeric } from "../../utils/validators";
 
 const SopUpload = () => {
   const axios = useAxiosPrivate();
@@ -254,22 +255,17 @@ const SopUpload = () => {
                 name="documentName"
                 control={control}
                 rules={{
-                  required: "Document Name is Required",
-                  pattern: {
-                    value: /^[a-zA-Z0-9 _-]+$/,
-                    message:
-                      "Only alphanumeric characters, spaces, underscores and hyphens are allowed.",
+                  required: "Document Name is required",
+                  validate: {
+                    noOnlyWhitespace,
+                    isAlphanumeric,
                   },
-                  validate: (value) =>
-                    value.trim().length > 0 ||
-                    "Document name cannot be only whitespace",
                 }}
                 render={({ field }) => (
                   <TextField
-                    name="documentName"
+                    {...field}
                     label="Document Name"
                     size="small"
-                    {...field}
                     fullWidth
                     error={!!errors.documentName}
                     helperText={errors?.documentName?.message}
@@ -314,14 +310,10 @@ const SopUpload = () => {
                 control={controlEdit}
                 rules={{
                   required: "Document Name is Required",
-                  pattern: {
-                    value: /^[a-zA-Z0-9 _-]+$/,
-                    message:
-                      "Only alphanumeric characters, spaces, underscores and hyphens are allowed.",
+                  validate: {
+                    noOnlyWhitespace,
+                    isAlphanumeric,
                   },
-                  validate: (value) =>
-                    value.trim().length > 0 ||
-                    "Document name cannot be only whitespace",
                 }}
                 render={({ field }) => (
                   <TextField
