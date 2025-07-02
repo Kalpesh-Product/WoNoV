@@ -1,9 +1,4 @@
 import { useState, useRef } from "react";
-import Template from "../../../../utils/Template.png";
-import Template2 from "../../../../utils/Template1.png";
-import Template1 from "../../../../utils/Template2.png";
-import Template3 from "../../../../utils/Template3.png";
-import Template4 from "../../../../utils/Template4.png";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import MuiModal from "../../../../components/MuiModal";
 import { toast } from "sonner";
@@ -15,6 +10,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
 import { queryClient } from "../../../../main";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 
 const Templates = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -34,6 +30,7 @@ const Templates = () => {
       file: null,
       type: "template",
     },
+    mode: "onChange",
   });
   const watchedFile = watch("file");
   const { data: templatesData = [], isLoading: isTemplatesLoading } = useQuery({
@@ -154,7 +151,6 @@ const Templates = () => {
                         "_"
                       ); // sanitize filename
                       const fileName = `${safeName}.${extension}`;
-                  
 
                       const downloadUrl = template.documentLink.replace(
                         "/upload/",
@@ -168,7 +164,8 @@ const Templates = () => {
                       link.click();
                       document.body.removeChild(link);
                     }}
-                    className="bg-white shadow-md rounded-lg overflow-hidden border cursor-pointer">
+                    className="bg-white shadow-md rounded-lg overflow-hidden border cursor-pointer"
+                  >
                     <div className="h-48 bg-gray-100 overflow-hidden rounded">
                       {getFilePreview(template.documentLink, template.name)}
                     </div>
@@ -193,13 +190,17 @@ const Templates = () => {
         <MuiModal
           open={openModal}
           onClose={() => setOpenModal(false)}
-          title="Add New Template">
+          title="Add New Template"
+        >
           <form onSubmit={handleSubmit(handleAddTemplate)}>
             <Box display="flex" flexDirection="column" gap={3}>
               <Controller
                 control={control}
                 name="documentName"
-                rules={{ required: "Document Name is required" }}
+                rules={{
+                  required: "Document Name is required",
+                  validate: { isAlphanumeric, noOnlyWhitespace },
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -207,8 +208,8 @@ const Templates = () => {
                     variant="outlined"
                     size="small"
                     fullWidth
-                    error={!!errors.title}
-                    helperText={errors.title?.message}
+                    error={!!errors.documentName}
+                    helperText={errors.documentName?.message}
                   />
                 )}
               />
@@ -217,7 +218,9 @@ const Templates = () => {
               <Controller
                 control={control}
                 name="file"
-                rules={{ required: "File is required" }}
+                rules={{
+                  required: "File is required",
+                }}
                 render={({ field }) => (
                   <>
                     <input
@@ -247,7 +250,8 @@ const Templates = () => {
                           <IconButton
                             color="primary"
                             component="label"
-                            onClick={() => imageInputRef.current?.click()}>
+                            onClick={() => imageInputRef.current?.click()}
+                          >
                             <LuImageUp />
                           </IconButton>
                         ),

@@ -13,6 +13,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 
 const HrEvents = ({ title }) => {
   const axios = useAxiosPrivate();
@@ -32,6 +33,7 @@ const HrEvents = ({ title }) => {
       start: null,
       end: null,
     },
+    mode: "onChange",
   });
 
   const columns = [
@@ -117,7 +119,10 @@ const HrEvents = ({ title }) => {
               <Controller
                 name="title"
                 control={control}
-                rules={{ required: "Event title is required" }}
+                rules={{
+                  required: "Event title is required",
+                  validate: { isAlphanumeric, noOnlyWhitespace },
+                }}
                 render={({ field }) => (
                   <TextField
                     label="Title"
@@ -133,7 +138,10 @@ const HrEvents = ({ title }) => {
               <Controller
                 name="description"
                 control={control}
-                rules={{ required: "Event Description is required" }}
+                rules={{
+                  required: "Event Description is required",
+                  validate: { isAlphanumeric, noOnlyWhitespace },
+                }}
                 render={({ field }) => (
                   <TextField
                     label="Description"
@@ -151,7 +159,10 @@ const HrEvents = ({ title }) => {
                 <Controller
                   name="start"
                   control={control}
-                  rules={{ required: "Start Date is required" }}
+                  rules={{
+                    required: "Start Date is required",
+                    validate: { isAlphanumeric, noOnlyWhitespace },
+                  }}
                   render={({ field }) => (
                     <DatePicker
                       label="Start Date"
@@ -171,7 +182,10 @@ const HrEvents = ({ title }) => {
                 <Controller
                   name="end"
                   control={control}
-                  rules={{ required: "End Date is required" }}
+                  rules={{
+                    required: "End Date is required",
+                    validate: { isAlphanumeric, noOnlyWhitespace },
+                  }}
                   render={({ field }) => (
                     <DatePicker
                       label="End Date"

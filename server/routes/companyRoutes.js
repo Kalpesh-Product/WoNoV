@@ -79,6 +79,7 @@ router.get("/get-company-data", getCompanyData);
 router.post("/update-active-status/:field", updateActiveStatus);
 router.post("/add-company-logo", upload.single("logo"), addCompanyLogo);
 router.get("/get-company-logo", getCompanyLogo);
+router.post("/add-shift", addShift);
 
 // Department and roles
 router.post("/add-department", createDepartment);
