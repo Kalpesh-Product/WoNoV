@@ -323,7 +323,7 @@ const CoWorkingSeats = () => {
 
 
   const columns = [
-    { headerName: "Sr No", field: "srno", maxWidth: 80 },
+    { headerName: "Sr No", field: "srNo", maxWidth: 80 },
     {
       headerName: "Unit No",
       field: "unitNo",
