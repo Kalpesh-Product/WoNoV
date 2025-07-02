@@ -52,8 +52,8 @@ const Shifts = () => {
     },
     mode: "onChange",
   });
-
-  const { addMutation, isPending } = useMutation({
+  const { mutate: addMutation, isPending: isAddPending } = useMutation({
+    mutationKey: ["shifts", "add"],
     mutationFn: async (data) => {
       const response = await axios.post("/api/company/add-shift", {
         shiftName: data.shiftName,
@@ -68,6 +68,7 @@ const Shifts = () => {
       queryClient.invalidateQueries({ queryKey: ["shifts"] });
       setOpenModal(false);
       resetAddForm();
+      // console.log("data", data);
     },
     onError: function (data) {
       toast.error(data.message);
@@ -138,7 +139,7 @@ const Shifts = () => {
   });
 
   const onAddSubmit = (data) => {
-    addMutation.mutate(data);
+    addMutation(data);
   };
 
   const onEditSubmit = (data) => {
@@ -222,7 +223,7 @@ const Shifts = () => {
                   onClick: () => handleEdit(params.data),
                 },
                 {
-                  label: "Mark As Inactive",
+                  label: `${params.data.isActive ? "Mark As Inactive" : "Mark As Active"}`,
                   onClick: () =>
                     updateMutation.mutate({
                       type: "shifts",
@@ -255,7 +256,7 @@ const Shifts = () => {
     }
   }, [modalMode, selectedItem, setEditValue]);
 
-  const transformedData = isPending
+  const transformedData = isAddPending
     ? []
     : shifts.filter((data) => !data.isDeleted);
 
@@ -313,57 +314,58 @@ const Shifts = () => {
                     />
                   )}
                 />
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Controller
+                    name="startTime"
+                    control={addControl}
+                    rules={{
+                      required: "Start time is required",
+                    }}
+                    render={({ field }) => (
+                      <TimePicker
+                        {...field}
+                        label="Select Start Time"
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            error: !!addingErrors.startTime,
+                            helperText: addingErrors.startTime?.message,
+                          },
+                        }}
+                        render={(params) => <TextField {...params} fullWidth />}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
 
-                <Controller
-                  name="startTime"
-                  control={addControl}
-                  rules={{
-                    required: "Start time is required",
-                    validate: {  noOnlyWhitespace },
-                  }}
-                  render={({ field }) => (
-                    <TimePicker
-                      label="Select Start Time"
-                      value={field.value}
-                      onChange={(time) => field.onChange(time)}
-                      slotProps={{
-                        textField: {
-                          size: "small",
-                          error: !!addingErrors.startTime,
-                          helperText: addingErrors.startTime?.message,
-                        },
-                      }}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="endTime"
-                  control={addControl}
-                  rules={{
-                    required: "End time is required",
-                    validate: {  noOnlyWhitespace },
-                  }}
-                  render={({ field }) => (
-                    <TimePicker
-                      label="Select End Time"
-                      value={field.value}
-                      onChange={(time) => field.onChange(time)}
-                      slotProps={{
-                        textField: {
-                          size: "small",
-                          error: !!addingErrors.endTime,
-                          helperText: addingErrors.endTime?.message,
-                        },
-                      }}
-                    />
-                  )}
-                />
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Controller
+                    name="endTime"
+                    control={addControl}
+                    rules={{
+                      required: "End time is required",
+                    }}
+                    render={({ field }) => (
+                      <TimePicker
+                        {...field}
+                        label="Select End Time"
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            error: !!addingErrors.endTime,
+                            helperText: addingErrors.endTime?.message,
+                          },
+                        }}
+                        render={(params) => <TextField {...params} fullWidth />}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
 
                 <PrimaryButton
                   title="Add Shift"
                   type="submit"
-                  isLoading={isPending}
+                  isLoading={isAddPending}
                 />
               </form>
             )}
@@ -396,7 +398,6 @@ const Shifts = () => {
                   control={editControl}
                   rules={{
                     required: "Start time is required",
-                    validate: { noOnlyWhitespace },
                   }}
                   render={({ field }) => (
                     <TimePicker
@@ -418,7 +419,6 @@ const Shifts = () => {
                   control={editControl}
                   rules={{
                     required: "End time is required",
-                    validate: { noOnlyWhitespace },
                   }}
                   render={({ field }) => (
                     <TimePicker
@@ -428,7 +428,7 @@ const Shifts = () => {
                         textField: {
                           size: "small",
                           error: !!editingErrors.endTime,
-                          helperText: editingErrors.endTime?.message,
+                          helperText: editingErrors?.endTime?.message,
                         },
                       }}
                     />
@@ -454,7 +454,7 @@ const Shifts = () => {
                 <PrimaryButton
                   title="Update Shift"
                   type="submit"
-                  isLoading={isPending}
+                  isLoading={isAddPending}
                 />
               </form>
             )}
