@@ -1290,9 +1290,12 @@ export const routes = createBrowserRouter([
                         element: <CheckAvailability />,
                       },
                       {
-                        path: "mix-bag/inventory/:id",
-                        // element: <CoWorkingDetails />,
+                        path: "mix-bag/inventory/:location",
                         element: <BuildingUnits />,
+                      },
+                      {
+                        path: "mix-bag/inventory/:location/:unit",
+                        element: <ViewAvailability />,
                       },
                       {
                         path: "inventory",

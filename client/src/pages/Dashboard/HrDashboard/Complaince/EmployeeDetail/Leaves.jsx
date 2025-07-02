@@ -26,6 +26,10 @@ import MonthWiseTable from "../../../../../components/Tables/MonthWiseTable";
 import PageFrame from "../../../../../components/Pages/PageFrame";
 import ThreeDotMenu from "../../../../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import {
+  noOnlyWhitespace,
+  isAlphanumeric,
+} from "../../../../../utils/validators";
 
 const Leaves = () => {
   const axios = useAxiosPrivate();
@@ -37,6 +41,7 @@ const Leaves = () => {
     handleSubmit,
     formState: { errors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       fromDate: null,
       toDate: null,
@@ -374,11 +379,13 @@ const Leaves = () => {
         open={openModal}
         onClose={() => {
           setOpenModal(false);
-        }}>
+        }}
+      >
         <div>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4">
+            className="flex flex-col gap-4"
+          >
             <Controller
               name="fromDate"
               control={control}
@@ -422,7 +429,12 @@ const Leaves = () => {
             <Controller
               name="hours"
               control={control}
-              rules={{ required: "Hours is required" }}
+              rules={{
+                required: "Hours is required",
+                validate: {
+                  noOnlyWhitespace,
+                },
+              }}
               render={({ field }) => (
                 <TextField
                   size="small"
@@ -444,7 +456,8 @@ const Leaves = () => {
                   fullWidth
                   select
                   label="Leave type"
-                  size="small">
+                  size="small"
+                >
                   {leaveType.map((type) => (
                     <MenuItem key={leaveType.length} value={type}>
                       {type}
@@ -464,7 +477,8 @@ const Leaves = () => {
                   fullWidth
                   select
                   label="Leave period"
-                  size="small">
+                  size="small"
+                >
                   {leavePeriod.map((period) => (
                     <MenuItem key={leavePeriod.length} value={period}>
                       {period}
@@ -475,11 +489,24 @@ const Leaves = () => {
             />
             <Controller
               name="description"
-              rules={{ required: "Please specify your description" }}
+              rules={{
+                required: "Please specify your description",
+                validate: {
+                  noOnlyWhitespace,
+                  isAlphanumeric,
+                },
+              }}
               control={control}
               render={({ field }) => (
                 <>
-                  <TextField {...field} size="small" label="Description" />
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Description"
+                    fullWidth
+                    error={!!errors.description}
+                    helperText={errors?.description?.message}
+                  />
                 </>
               )}
             />

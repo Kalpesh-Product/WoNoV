@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { queryClient } from "../../../../main";
 import Loader from "../../../Loading";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import { noOnlyWhitespace, isAlphanumeric } from "../../../../utils/validators";
 
 const WorkLocations = () => {
   const axios = useAxiosPrivate();
@@ -37,6 +38,7 @@ const WorkLocations = () => {
     reset,
     formState: { errors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       building: "",
       workLocation: "",
@@ -67,6 +69,7 @@ const WorkLocations = () => {
         reset();
         toast.success(data.message || "Work Location Added");
         queryClient.invalidateQueries(["workLocation"]);
+        reset();
         setOpenModal(false);
       },
       onError: (error) => {
@@ -195,7 +198,13 @@ const WorkLocations = () => {
           >
             <Controller
               name="workLocation"
-              rules={{ required: "Work location is required" }}
+              rules={{
+                required: "Work location is required",
+                validate: {
+                  noOnlyWhitespace,
+                  isAlphanumeric,
+                },
+              }}
               control={control}
               render={({ field }) => (
                 <TextField
@@ -210,7 +219,13 @@ const WorkLocations = () => {
             />
             <Controller
               name="address"
-              rules={{ required: "Address is required" }}
+              rules={{
+                required: "Address is required",
+                validate: {
+                  noOnlyWhitespace,
+                  isAlphanumeric,
+                },
+              }}
               control={control}
               render={({ field }) => (
                 <TextField
@@ -238,12 +253,13 @@ const WorkLocations = () => {
                   label="Country"
                   fullWidth
                   onChange={(e) => {
-                    field.onChange(e);
                     const selectedCode = e.target.value;
-                    handleCountrySelect(selectedCode);
-                    // Reset dependent fields
-                    control.setValue("state", "");
-                    control.setValue("city", "");
+                    field.onChange(e); // Let MUI handle its state first
+                    setTimeout(() => {
+                      handleCountrySelect(selectedCode);
+                      control.setValue("state", "");
+                      control.setValue("city", "");
+                    }, 0);
                   }}
                 >
                   <MenuItem value="">Select a Country</MenuItem>
@@ -269,12 +285,15 @@ const WorkLocations = () => {
                   fullWidth
                   disabled={!control._formValues.country}
                   onChange={(e) => {
+                    const selectedStateCode = e.target.value;
                     field.onChange(e);
-                    handleStateSelect(
-                      control._formValues.country,
-                      e.target.value
-                    );
-                    control.setValue("city", "");
+                    setTimeout(() => {
+                      handleStateSelect(
+                        control._formValues.country,
+                        selectedStateCode
+                      );
+                      control.setValue("city", "");
+                    }, 0);
                   }}
                 >
                   <MenuItem value="">Select a State</MenuItem>
@@ -317,6 +336,9 @@ const WorkLocations = () => {
               name="pincode"
               rules={{
                 required: "Pincode is required",
+                validate: {
+                  noOnlyWhitespace,
+                },
                 pattern: {
                   value: /^[1-9][0-9]{5}$/, // Indian 6-digit pincode starting with non-zero
                   message: "Enter a valid 6-digit pincode",

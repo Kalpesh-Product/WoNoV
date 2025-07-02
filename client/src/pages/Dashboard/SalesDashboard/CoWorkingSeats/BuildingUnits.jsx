@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import AgTable from "../../../../components/AgTable";
@@ -7,8 +7,9 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 export default function BuildingUnits() {
   const location = useLocation();
   const axios = useAxiosPrivate();
+  const navigate = useNavigate();
   const { data: unitsData = [], isPending: isUnitsDataPending } = useQuery({
-    queryKey: ["units-data"],
+    queryKey: ["inventory-units-data"],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/company/fetch-units");
@@ -45,8 +46,15 @@ export default function BuildingUnits() {
       cellRenderer: (params) => {
         return (
           <Link
-            className="underline text-blue-500"
-            to={`/app/dashboard/sales-dashboard/mix-bag/inventory/Sunteck%20Kanaka/${params.data.unitName}`}
+            className="underline text-primary"
+            to={`/app/dashboard/sales-dashboard/mix-bag/inventory/${encodeURI(
+              location.state
+            )}/${params.data.unitNo}`}
+            state={{
+              unitId: params.data?.unitId,
+              unitNo: params.data?.unitNo,
+              building: params.data?.buildingName,
+            }}
           >
             {params.data.unitNo}
           </Link>
