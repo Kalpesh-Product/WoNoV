@@ -14,6 +14,7 @@ import ThreeDotMenu from "../ThreeDotMenu";
 import YearWiseTable from "../Tables/YearWiseTable";
 import DangerButton from "../DangerButton";
 import SecondaryButton from "../SecondaryButton";
+import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 
 const PolicyUpload = () => {
   const axios = useAxiosPrivate();
@@ -253,14 +254,10 @@ const PolicyUpload = () => {
                 control={control}
                 rules={{
                   required: "Document Name is Required",
-                  pattern: {
-                    value: /^[a-zA-Z0-9 _-]+$/,
-                    message:
-                      "Only alphanumeric characters, spaces, underscores and hyphens are allowed.",
+                  validate: {
+                    noOnlyWhitespace,
+                    isAlphanumeric,
                   },
-                  validate: (value) =>
-                    value.trim().length > 0 ||
-                    "Document name cannot be only whitespace",
                 }}
                 render={({ field }) => (
                   <TextField
@@ -312,14 +309,10 @@ const PolicyUpload = () => {
                 control={controlEdit}
                 rules={{
                   required: "Document Name is Required",
-                  pattern: {
-                    value: /^[a-zA-Z0-9 _-]+$/,
-                    message:
-                      "Only alphanumeric characters, spaces, underscores and hyphens are allowed.",
+                  validate: {
+                    noOnlyWhitespace,
+                    isAlphanumeric,
                   },
-                  validate: (value) =>
-                    value.trim().length > 0 ||
-                    "Document name cannot be only whitespace",
                 }}
                 render={({ field }) => (
                   <TextField

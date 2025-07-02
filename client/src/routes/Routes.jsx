@@ -379,6 +379,7 @@ import PastEmployees from "../pages/Dashboard/HrDashboard/OnBoarding/PastEmploye
 import HrCommonHandbook from "../pages/HR/HrCommonHandbook";
 import DepartmentPolicies from "../pages/Dashboard/HrDashboard/Complaince/DepartmentPolicies";
 import HrCommonDocuments from "../pages/HR/HrCommonDocuments";
+import BuildingUnits from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/BuildingUnits";
 
 export const routes = createBrowserRouter([
   {
@@ -1284,35 +1285,49 @@ export const routes = createBrowserRouter([
                         element: <SalesMixBag />,
                       },
                       {
-                        path: "mix-bag/co-working-seats",
-                        element: <CoWorkingSeats />,
-                      },
-                      {
-                        path: "mix-bag/co-working-seats/:id",
-                        element: <CoWorkingDetails />,
-                      },
-                      {
-                        path: "co-working-seats",
-                        element: <CoWorkingSeats />,
-                      },
-                      {
-                        path: "co-working-seats/:id",
-                        element: <CoWorkingDetails />,
-                      },
-                      {
-                        path: "mix-bag/co-working-seats/check-availability",
+                        path: "mix-bag/inventory",
+                        // element: <CoWorkingSeats />,
                         element: <CheckAvailability />,
                       },
                       {
-                        path: "co-working-seats/check-availability",
-                        element: <CheckAvailability />,
+                        path: "mix-bag/inventory/:location",
+                        element: <BuildingUnits />,
                       },
                       {
-                        path: "mix-bag/co-working-seats/check-availability/view-availability",
+                        path: "mix-bag/inventory/:location/:unit",
                         element: <ViewAvailability />,
                       },
                       {
-                        path: "co-working-seats/check-availability/view-availability",
+                        path: "inventory",
+                        // element: <CoWorkingSeats />,
+                        element: <CheckAvailability />,
+                      },
+                      {
+                        path: "inventory/:id",
+                        element: <CoWorkingDetails />,
+                      },
+                      {
+                        path: "mix-bag/inventory",
+                        element: <CheckAvailability />,
+                      },
+                      {
+                        path: "inventory",
+                        element: <CheckAvailability />,
+                      },
+                      // {
+                      //   path: "mix-bag/inventory/check-availability",
+                      //   element: <CheckAvailability />,
+                      // },
+                      // {
+                      //   path: "inventory/check-availability",
+                      //   element: <CheckAvailability />,
+                      // },
+                      {
+                        path: "mix-bag/inventory/check-availability/view-availability",
+                        element: <ViewAvailability />,
+                      },
+                      {
+                        path: "inventory/check-availability/view-availability",
                         element: <ViewAvailability />,
                       },
                       {

@@ -37,6 +37,7 @@ const YearWiseTable = ({
 }) => {
   const lastEmittedMonthRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
+  const [selectedRows, setSelectedRows] = useState([]);
   const agGridRef = useRef(null);
   const handleExportPass = () => {
     if (agGridRef.current) {
@@ -157,6 +158,14 @@ const YearWiseTable = ({
     });
   }, [columns, formatDate, formatTime]);
 
+  const finalTableData = useMemo(() => {
+    return filteredData.map((item, index) => ({
+      ...item,
+      srNo: index + 1,
+      date: humanDate(item[dateColumn]),
+    }));
+  }, [filteredData, dateColumn]);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center w-full justify-between">
@@ -173,6 +182,12 @@ const YearWiseTable = ({
           )}
           {exportData && (
             <PrimaryButton title={"Export"} handleSubmit={handleExportPass} />
+          )}
+          {batchButton && selectedRows.length>0 && (
+            <PrimaryButton
+              title={batchButton || "Generate"}
+              handleSubmit={() => handleBatchAction(selectedRows)}
+            />
           )}
         </div>
       </div>
@@ -241,16 +256,12 @@ const YearWiseTable = ({
         tableTitle={tableTitle}
         tableHeight={tableHeight || 300}
         columns={formattedColumns}
-        data={filteredData.map((item, index) => ({
-          ...item,
-          srNo: index + 1,
-          date: humanDate(item[dateColumn]),
-        }))}
+        data={finalTableData}
         hideFilter={filteredData.length <= 9}
         search={search}
         dateColumn={dateColumn}
         isRowSelectable={isRowSelectable}
-        handleBatchAction={handleBatchAction}
+        onSelectionChange={(rows) => setSelectedRows(rows)}
         batchButton={batchButton}
         hideTitle={hideTitle}
       />

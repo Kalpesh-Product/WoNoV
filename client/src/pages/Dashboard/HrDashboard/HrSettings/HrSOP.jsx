@@ -10,6 +10,8 @@ import { LuImageUp } from "react-icons/lu";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import humanDate from "../../../../utils/humanDateForamt";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 
 const HrSOP = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -99,6 +101,24 @@ const HrSOP = () => {
     },
   });
 
+  const makeInactiveSopMutation = useMutation({
+    mutationFn: async (payload) => {
+      const response = await axios.patch(
+        "/api/company/update-company-data",
+        payload
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("SOP marked inactive successfully");
+      queryClient.invalidateQueries({ queryKey: ["sops"] });
+      setOpenModal(false);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Delete failed");
+    },
+  });
+
   const handleAddSop = (data) => {
     const formData = new FormData();
     formData.append("documentName", data.sopName);
@@ -118,8 +138,14 @@ const HrSOP = () => {
     window.open(row.sopLink, "_blank");
   };
 
-  const handleDelete = (row) => {
-    setModalType("delete");
+  // const handleDelete = (row) => {
+  //   setModalType("delete");
+  //   setSelectedSop(row);
+  //   setOpenModal(true);
+  // };
+
+  const handleInactive = (row) => {
+    setModalType("inactive");
     setSelectedSop(row);
     setOpenModal(true);
   };
@@ -143,6 +169,16 @@ const HrSOP = () => {
     });
   };
 
+  const handleConfirmInactive = () => {
+    makeInactiveSopMutation.mutate({
+      type: "sop",
+      itemId: selectedSop.mongoId,
+      oldDocumentName: selectedSop.sopname,
+      newDocumentName: null,
+      isActive: false,
+    });
+  };
+
   const departmentsColumn = [
     { field: "id", headerName: "Sr No" },
     {
@@ -153,11 +189,22 @@ const HrSOP = () => {
           href={params.data.sopLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary cursor-pointer hover:underline">
+          className="text-primary cursor-pointer hover:underline"
+        >
           {params.value}
         </a>
       ),
       flex: 1,
+    },
+    {
+      field: "uploadedDate",
+      headerName: "Uploaded Date",
+      width: 150,
+    },
+    {
+      field: "updatedDate",
+      headerName: "Updated Date",
+      width: 150,
     },
     {
       field: "status",
@@ -187,10 +234,16 @@ const HrSOP = () => {
           { label: "Edit", onClick: () => handleEdit(params.data) },
         ];
 
+        // if (isActive) {
+        //   menuItems.push({
+        //     label: "Delete",
+        //     onClick: () => handleDelete(params.data),
+        //   });
+        // }
         if (isActive) {
           menuItems.push({
-            label: "Delete",
-            onClick: () => handleDelete(params.data),
+            label: "Mark As Inactive",
+            onClick: () => handleInactive(params.data),
           });
         }
 
@@ -213,10 +266,12 @@ const HrSOP = () => {
           sopname: sop.name,
           status: sop.isActive,
           sopLink: sop.documentLink,
+          uploadedDate: humanDate(sop.createdAt),
+          updatedDate: humanDate(sop.updatedAt),
         }))}
         handleClick={() => {
           setModalType("add");
-          reset();
+          reset({ sopName: "", file: null });
           setOpenModal(true);
         }}
         columns={departmentsColumn}
@@ -228,17 +283,21 @@ const HrSOP = () => {
         title={
           modalType === "edit"
             ? "Edit SOP Name"
-            : modalType === "delete"
-            ? "Confirm Delete"
+            : modalType === "inactive"
+            ? "Mark SOP As Inactive"
             : "Add New SOP"
-        }>
-        {modalType === "delete" ? (
+        }
+      >
+        {modalType === "inactive" ? (
           <div className="space-y-4">
-            <p>Are you sure you want to delete this SOP?</p>
+            <p>
+              Are you sure you want to mark <b>{selectedSop?.sopname}</b> as
+              inactive?
+            </p>
             <DialogActions>
               <PrimaryButton
-                title="Delete"
-                handleSubmit={handleConfirmDelete}
+                title="Confirm"
+                handleSubmit={handleConfirmInactive}
               />
               <PrimaryButton
                 title="Cancel"
@@ -251,11 +310,15 @@ const HrSOP = () => {
             onSubmit={handleSubmit(
               modalType === "edit" ? handleUpdateName : handleAddSop
             )}
-            className="flex flex-col gap-4">
+            className="flex flex-col gap-4"
+          >
             <Controller
               name="sopName"
               control={control}
-              rules={{ required: "SOP Name is Required" }}
+              rules={{
+                required: "SOP Name is Required",
+                validate: { noOnlyWhitespace, isAlphanumeric },
+              }}
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -296,7 +359,8 @@ const HrSOP = () => {
                           <IconButton
                             color="primary"
                             component="label"
-                            htmlFor="image-upload">
+                            htmlFor="image-upload"
+                          >
                             <LuImageUp />
                           </IconButton>
                         ),

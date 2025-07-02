@@ -10,6 +10,7 @@ import humanTime from "../../../../utils/humanTime";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import humanDate from "../../../../utils/humanDateForamt";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const ViewPayroll = () => {
   const payrollColumns = [
@@ -52,7 +53,7 @@ const ViewPayroll = () => {
   const { empId } = location.state;
   const axios = useAxiosPrivate();
 
-  const { data: userPayrollData, isLoading } = useQuery({
+  const { data: userPayrollData = [], isLoading } = useQuery({
     queryKey: ["userPayroll"],
     queryFn: async () => {
       try {
@@ -117,25 +118,22 @@ const ViewPayroll = () => {
   };
 
   const paymentBreakup = isLoading ? [] : userPayrollData.paymentBreakup;
+  console.log(paymentBreakup);
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection
-        layout={1}
-        border
-        title={"Attendance"}
-        button={true}
-        buttonTitle={"Edit"}
-      >
+      <PageFrame>
         <YearWiseTable
           key={attendanceData.map((item) => item.id)}
           search={true}
           dateColumn={"inTime"}
+          tableTitle={"Attendance"}
           formatTime
           data={attendanceData}
           columns={payrollColumns}
         />
-      </WidgetSection>
+      </PageFrame>
+
       <WidgetSection
         layout={1}
         border
@@ -195,11 +193,35 @@ const ViewPayroll = () => {
                   </span>
                 </div>
               </div>
-              <div className="flex flex-col w-full">
-                <span className="text-content">Month</span>{" "}
-                <span className="text-content text-gray-600">
-                  {new Date().toLocaleString("default",{month : 'long', year:'numeric'})}
-                </span>
+              <div className="flex gap-4  items-center w-full">
+                <div className="flex flex-col w-full">
+                  <span className="text-content">Start Date</span>
+                  <span className="text-content text-gray-600">
+                    {new Date(
+                      new Date().getFullYear(),
+                      new Date().getMonth(),
+                      1
+                    ).toLocaleDateString("default", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+                <div className="flex flex-col w-full">
+                  <span className="text-content">End Date</span>
+                  <span className="text-content text-gray-600">
+                    {new Date(
+                      new Date().getFullYear(),
+                      new Date().getMonth() + 1,
+                      0
+                    ).toLocaleDateString("default", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -210,10 +232,43 @@ const ViewPayroll = () => {
                 </span>
               </div>
               <div className="flex flex-col text-content py-4 gap-4">
-                <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
-                  <span>Basic Pay</span>
-                  <span>{inrFormat(paymentBreakup.basicPay) || 0}</span>
+                <div className="flex flex-col text-content py-4 gap-4">
+                  <div className="flex justify-between py-1 border-b border-borderGray">
+                    <span>Basic Pay</span>
+                    <span>{inrFormat(paymentBreakup.basic) || 0}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-borderGray">
+                    <span>HRA</span>
+                    <span>{inrFormat(paymentBreakup.hra) || 0}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-borderGray">
+                    <span>Special Allowance</span>
+                    <span>
+                      {inrFormat(paymentBreakup.specialAllowance) || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-borderGray">
+                    <span>Bonus</span>
+                    <span>{inrFormat(paymentBreakup.bonus) || 0}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-borderGray">
+                    <span>Other Allowance</span>
+                    <span>{inrFormat(paymentBreakup.otherAllowance) || 0}</span>
+                  </div>
+                  <div className="flex justify-between py-1 font-semibold">
+                    <span>Total Earnings</span>
+                    <span>
+                      {inrFormat(
+                        (paymentBreakup.basic || 0) +
+                          (paymentBreakup.hra || 0) +
+                          (paymentBreakup.specialAllowance || 0) +
+                          (paymentBreakup.bonus || 0) +
+                          (paymentBreakup.otherAllowance || 0)
+                      )}
+                    </span>
+                  </div>
                 </div>
+
                 {/* <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
                   <span>House Rent Allowance (HRA)</span>
                   <span>INR 15,000</span>
@@ -235,9 +290,39 @@ const ViewPayroll = () => {
                 </span>
               </div>
               <div className="flex flex-col text-content py-4 gap-4">
-                <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
+                <div className="flex justify-between py-1 border-b border-borderGray">
                   <span>PF</span>
-                  <span>{inrFormat(paymentBreakup.pf) || 0}</span>
+                  <span>{inrFormat(paymentBreakup.employeePf) || 0}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-borderGray">
+                  <span>ESI</span>
+                  <span>
+                    {inrFormat(paymentBreakup.employeesStateInsurance) || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-borderGray">
+                  <span>Professional Tax</span>
+                  <span>{inrFormat(paymentBreakup.professionTax) || 0}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-borderGray">
+                  <span>Income Tax</span>
+                  <span>{inrFormat(paymentBreakup.incomeTax) || 0}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-borderGray">
+                  <span>Other Deductions</span>
+                  <span>{inrFormat(paymentBreakup.recovery) || 0}</span>
+                </div>
+                <div className="flex justify-between py-1 font-semibold">
+                  <span>Total Deductions</span>
+                  <span>
+                    {inrFormat(
+                      (paymentBreakup.employeePf || 0) +
+                        (paymentBreakup.employeesStateInsurance || 0) +
+                        (paymentBreakup.professionTax || 0) +
+                        (paymentBreakup.incomeTax || 0) +
+                        (paymentBreakup.recovery || 0)
+                    )}
+                  </span>
                 </div>
               </div>
             </div>
@@ -245,7 +330,7 @@ const ViewPayroll = () => {
             <div className="text-sm text-right font-semibold text-gray-800">
               <span>Net Pay : </span>{" "}
               <span className="text-lg">
-                {inrFormat(paymentBreakup.basicPay - paymentBreakup.pf)}
+                {inrFormat(paymentBreakup.netAmount || 0)}
               </span>
             </div>
 

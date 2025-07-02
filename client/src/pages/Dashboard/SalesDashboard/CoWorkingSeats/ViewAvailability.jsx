@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Tabs, Tab, Skeleton } from "@mui/material";
+import { Tabs, Tab, Skeleton, CircularProgress } from "@mui/material";
 import AgTable from "../../../../components/AgTable";
 import occupied from "../../../../assets/biznest/occupancy/occupied-701.jpeg";
 import cleared from "../../../../assets/biznest/occupancy/clear-701.png";
@@ -32,12 +32,13 @@ const ViewAvailability = () => {
     setTabIndex(newValue);
   };
   const location = useLocation();
+  const { unitId, unitNo, building } = location.state;
   const unit = location.state?.unitId || "";
   const params = new URLSearchParams(location.search);
   const locationParam = params.get("location") || "Unknown Location";
+  console.log("locations param : ", location);
   const floorParam = params.get("floor") || "Unknown Floor";
   const axios = useAxiosPrivate();
-
   const formatUnitDisplay = (unitNo, buildingName = "") => {
     const match = unitNo?.match(/^([\d]+)\(?([A-Za-z]*)\)?$/);
     if (!match) return `${unitNo || "N/A"} ${buildingName}`;
@@ -53,6 +54,7 @@ const ViewAvailability = () => {
   const {
     data: unitDetails = {},
     isLoading: isUnitsLoading,
+    isFetching,
     error,
   } = useQuery({
     queryKey: ["unitDetails"],
@@ -62,6 +64,7 @@ const ViewAvailability = () => {
       });
       return response.data || {};
     },
+    enabled: !!unit,
   });
 
   const totalOccupied = Number(unitDetails?.totalOccupiedDesks) || 0;
@@ -109,13 +112,21 @@ const ViewAvailability = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="h-screen flex justify-center items-center">
-        No Data Available
-      </div>
-    );
-  }
+if (isUnitsLoading || isFetching) {
+  return (
+    <div className="h-[80vh] flex justify-center items-center">
+      <CircularProgress />
+    </div>
+  );
+}
+
+if (!unitDetails || error) {
+  return (
+    <div className="h-screen flex justify-center items-center">
+      No Data Available
+    </div>
+  );
+}
 
   const tableData = (unitDetails?.clientDetails || []).map((data, index) => ({
     id: index + 1,
@@ -184,14 +195,30 @@ const ViewAvailability = () => {
       )}
 
       <WidgetSection layout={4} padding>
-        <DataCard data={totalDesks} title="Total Desks" description="Last Month : Apr-25" />
-        <DataCard data={totalActualOccupied} title="Occupied Desks" description="Last Month : Apr-25" />
-        <DataCard data={occupancyPercent} title="Occupancy %" description="Last Month : Apr-25" />
-        <DataCard data={totalDesks - totalActualOccupied} title="Free Desks" description="Last Month : Apr-25" />
+        <DataCard
+          data={totalDesks}
+          title="Total Desks"
+          description="Last Month : Apr-25"
+        />
+        <DataCard
+          data={totalActualOccupied}
+          title="Occupied Desks"
+          description="Last Month : Apr-25"
+        />
+        <DataCard
+          data={occupancyPercent}
+          title="Occupancy %"
+          description="Last Month : Apr-25"
+        />
+        <DataCard
+          data={totalDesks - totalActualOccupied}
+          title="Free Desks"
+          description="Last Month : Apr-25"
+        />
       </WidgetSection>
 
       <WidgetSection
-        title={`Occupancy details of ${formatUnitDisplay(floorParam)} ${locationParam}`}
+        title={`Occupancy details of ${building} - ${unitNo}`}
         border
         TitleAmount={`TOTAL OCCUPIED : ${totalOccupied}`}
       >
@@ -239,7 +266,9 @@ const ViewAvailability = () => {
           data={{
             ...viewDetails,
             date: viewDetails?.date
-              ? dayjs(new Date(viewDetails.date.split("-").reverse().join("-"))).format("DD-MM-YYYY")
+              ? dayjs(
+                  new Date(viewDetails.date.split("-").reverse().join("-"))
+                ).format("DD-MM-YYYY")
               : "-",
           }}
           title="member details"
@@ -280,7 +309,11 @@ const ViewAvailability = () => {
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
             <MdUploadFile className="text-4xl text-gray-500" />
             <span className="text-gray-500">Click to upload</span>
-            <input type="file" className="hidden" onChange={handleClearedFileChange} />
+            <input
+              type="file"
+              className="hidden"
+              onChange={handleClearedFileChange}
+            />
           </label>
           {clearedFile && (
             <div className="mt-4 text-gray-700">

@@ -223,7 +223,7 @@ const CheckAvailability = () => {
     ).entries()
   );
 
-  const formatUnitDisplay = (buildingName, unitNo ) => {
+  const formatUnitDisplay = (buildingName, unitNo) => {
     if (typeof unitNo !== "string")
       return `${unitNo || "Unknown"} ${buildingName}`;
 
@@ -261,11 +261,11 @@ const CheckAvailability = () => {
     const { location, floor } = data;
     address.pathname?.includes("mix-bag")
       ? navigate(
-          `/app/dashboard/sales-dashboard/mix-bag/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`,
+          `/app/dashboard/sales-dashboard/mix-bag/inventory/check-availability/view-availability?location=${location}&floor=${floor}`,
           { state: { unitId: selectedUnitId[0] } }
         )
       : navigate(
-          `/app/dashboard/sales-dashboard/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`,
+          `/app/dashboard/sales-dashboard/inventory/check-availability/view-availability?location=${location}&floor=${floor}`,
           { state: { unitId: selectedUnitId[0] } }
         );
   };
@@ -396,6 +396,13 @@ const CheckAvailability = () => {
             data={barGraphSeries}
             options={barGraphOptions}
             height={400}
+            handleClick={(buildingName) => {
+              const encodedName = encodeURIComponent(buildingName);
+              navigate(
+                `/app/dashboard/sales-dashboard/mix-bag/inventory/${encodedName}`,
+                { state: buildingName }
+              );
+            }}
           />
         ) : (
           <div className="text-center text-gray-500 text-sm py-10">
@@ -428,6 +435,7 @@ const CheckAvailability = () => {
           descriptionData={inventoryCards.freeInventory}
         />
       </WidgetSection>
+
       <div className="border-default border-borderGray p-4 rounded-md text-center">
         <h2 className="font-pregular text-title text-primary mt-20 mb-10 uppercase">
           Check Inventory
@@ -489,7 +497,7 @@ const CheckAvailability = () => {
                           <MenuItem key={unit._id} value={unit.unitNo}>
                             {formatUnitDisplay(
                               unit.building.buildingName,
-                              unit.unitNo,
+                              unit.unitNo
                             )}
                           </MenuItem>
                         ))

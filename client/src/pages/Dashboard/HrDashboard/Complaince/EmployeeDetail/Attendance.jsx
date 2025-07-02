@@ -25,16 +25,26 @@ import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import MonthWiseTable from "../../../../../components/Tables/MonthWiseTable";
 import { formatDuration } from "../../../../../utils/dateFormat";
+import {
+  isAlphanumeric,
+  noOnlyWhitespace,
+} from "../../../../../utils/validators";
 
 const Attendance = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
-  const { control, reset, handleSubmit } = useForm({
+  const {
+    control,
+    reset,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    mode: "onChange",
     defaultValues: {
       targetedDay: null,
       inTime: null,
       outTime: null,
-      reason:""
+      reason: "",
     },
   });
   const [openModal, setOpenModal] = useState(false);
@@ -78,7 +88,12 @@ const Attendance = () => {
   });
   const attendanceColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "date", headerName: "Date", width: 200,cellRenderer: (params)=>((params.value))},
+    {
+      field: "date",
+      headerName: "Date",
+      width: 200,
+      cellRenderer: (params) => params.value,
+    },
     { field: "inTime", headerName: "In Time" },
     { field: "outTime", headerName: "Out Time" },
     { field: "workHours", headerName: "Work Hours" },
@@ -368,7 +383,7 @@ const Attendance = () => {
                 !isLoading && attendance.length > 0
                   ? attendance.map((record, index) => ({
                       id: index + 1,
-                      date: record?.inTime ?  record?.inTime : "N/A",
+                      date: record?.inTime ? record?.inTime : "N/A",
                       inTime: record?.inTime ? humanTime(record.inTime) : "N/A",
                       outTime: record?.outTime
                         ? humanTime(record.outTime)
@@ -463,23 +478,31 @@ const Attendance = () => {
                 )}
               />
             </LocalizationProvider>
-               <Controller
-            name="reason"
-            rules={{ required: "Please specify your reason" }}
-            control={control}
-            render={({ field }) => (
-              <>
-                <TextField
-                  {...field}
-                  size="small"
-                  label="Reason"
-                  fullWidth
-                  multiline
-                  rows={3} // ← Change this number to increase/decrease height
-                />
-              </>
-            )}
-          />
+            <Controller
+              name="reason"
+              rules={{
+                required: "Please specify your reason",
+                validate: {
+                  noOnlyWhitespace,
+                  isAlphanumeric,
+                },
+              }}
+              control={control}
+              render={({ field }) => (
+                <>
+                  <TextField
+                    {...field}
+                    size="small"
+                    label="Reason"
+                    fullWidth
+                    multiline
+                    rows={3}
+                    error={!!errors.reason}
+                    helperText={errors?.reason?.message}
+                  />
+                </>
+              )}
+            />
 
             <div className="flex items-center justify-center gap-4">
               <SecondaryButton

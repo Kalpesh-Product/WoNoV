@@ -5,6 +5,10 @@ const assetsSchema = new mongoose.Schema({
     type: String,
     enum: ["Physical", "Digital"],
   },
+  assetId: {
+    type: String,
+    required: true,
+  },
   vendor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Vendor",
@@ -55,10 +59,6 @@ const assetsSchema = new mongoose.Schema({
     ref: "Unit",
   },
   assignedTo: {
-    room: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Room",
-    },
     person: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
@@ -67,7 +67,11 @@ const assetsSchema = new mongoose.Schema({
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "AssetCategory",
-  }
+  },
+  isUnderMaintenance: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const Asset = mongoose.model("Asset", assetsSchema);

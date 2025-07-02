@@ -5,19 +5,33 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import MuiModal from "../../../../components/MuiModal";
 import { toast } from "sonner";
-import { TextField, Button } from "@mui/material";
+import { TextField } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { DatePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import humanDate from "../../../../utils/humanDateForamt";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
+import { Controller, useForm } from "react-hook-form";
 
 const HoildaysEvents = ({ title }) => {
   const axios = useAxiosPrivate();
   const [modalOpen, setModalOpen] = useState(false);
-  const [newEvent, setNewEvent] = useState({ title: "", startDate: "" });
   const [localEvents, setLocalEvents] = useState([]);
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
+    mode: "onChange",
+    defaultValues: {
+      title: "",
+      startDate: null,
+    },
+  });
 
   const columns = [
     { field: "srNo", headerName: "SR No", width: 100 },
@@ -44,22 +58,26 @@ const HoildaysEvents = ({ title }) => {
       return {
         id: index + 1,
         title: holiday.title,
-        day: date.format("dddd"), // e.g., "Monday"
+        day: date.format("dddd"),
         start: date,
       };
     }
   );
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!newEvent.title || !newEvent.startDate) {
+  const onSubmit = (data) => {
+    if (!data.title || !data.startDate) {
       toast.error("Please fill all fields");
       return;
     }
 
+    const newEvent = {
+      title: data.title.trim(),
+      start: data.startDate,
+    };
+
     setLocalEvents((prev) => [...prev, newEvent]);
     toast.success("Holiday/Event added successfully!");
-    setNewEvent({ title: "", startDate: "" });
+    reset();
     setModalOpen(false);
   };
 
@@ -79,29 +97,56 @@ const HoildaysEvents = ({ title }) => {
 
         <MuiModal
           open={modalOpen}
-          onClose={() => setModalOpen(false)}
+          onClose={() => {
+            setModalOpen(false);
+            reset();
+          }}
           title="Add Holiday"
         >
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <TextField
-                label="Title"
-                fullWidth
-                size="small"
-                value={newEvent.title}
-                onChange={(e) =>
-                  setNewEvent({ ...newEvent, title: e.target.value })
-                }
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="flex flex-col gap-4"
+            >
+              <Controller
+                name="title"
+                control={control}
+                rules={{
+                  required: "Title is required",
+                  validate: {
+                    noOnlyWhitespace,
+                    isAlphanumeric,
+                  },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Title"
+                    fullWidth
+                    size="small"
+                    error={!!errors.title}
+                    helperText={errors?.title?.message}
+                  />
+                )}
               />
-              <DatePicker
-                label="Date"
-                slotProps={{ textField: { size: "small" } }}
-                value={newEvent.startDate ? dayjs(newEvent.startDate) : null}
-                onChange={(newDate) =>
-                  setNewEvent({ ...newEvent, startDate: newDate })
-                }
-                renderInput={(params) => (
-                  <TextField size="small" {...params} fullWidth />
+
+              <Controller
+                name="startDate"
+                control={control}
+                rules={{ required: "Date is required" }}
+                render={({ field }) => (
+                  <DatePicker
+                    label="Date"
+                    value={field.value}
+                    onChange={(val) => field.onChange(val)}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        error: !!errors.startDate,
+                        helperText: errors?.startDate?.message,
+                      },
+                    }}
+                  />
                 )}
               />
 

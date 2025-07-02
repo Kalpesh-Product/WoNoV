@@ -38,6 +38,7 @@ const AgTableComponent = React.memo(
     batchButton,
     hideTitle,
     tableRef,
+    onSelectionChange
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -125,9 +126,13 @@ const AgTableComponent = React.memo(
       setFilterDrawerOpen(false);
     };
 
-    const handleSelectionChanged = useCallback((params) => {
-      setSelectedRows(params.api.getSelectedRows()); // ✅ Update selected rows
-    }, []);
+const handleSelectionChanged = useCallback((params) => {
+  const rows = params.api.getSelectedRows();
+  setSelectedRows(rows);
+  if (typeof onSelectionChange === "function") {
+    onSelectionChange(rows);
+  }
+}, [onSelectionChange]);
 
     const handleActionClick = () => {
       handleBatchAction(selectedRows);
@@ -188,8 +193,8 @@ const AgTableComponent = React.memo(
                 ""
               )}
 
-              {batchButton ? (
-                <>
+              {/* {batchButton ? (
+                <div cla>
                   <PrimaryButton
                     title={batchButton || ""}
                     handleSubmit={handleActionClick}
@@ -198,7 +203,7 @@ const AgTableComponent = React.memo(
                 </>
               ) : (
                 ""
-              )}
+              )} */}
             </div>
           </div>
         </div>

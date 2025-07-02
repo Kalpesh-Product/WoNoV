@@ -185,7 +185,8 @@ const Inventory = () => {
           onClick={() => {
             handleDetailsClick(params.data);
           }}
-          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center">
+          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
+        >
           <span className="text-subtitle">
             <MdOutlineRemoveRedEye />
           </span>
@@ -215,12 +216,47 @@ const Inventory = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === "view" ? "View Details" : "Add Inventory"}>
+        title={modalMode === "view" ? "View Details" : "Add Inventory"}
+      >
         {modalMode === "add" && (
           <div>
             <form
               onSubmit={handleSubmit(handleFormSubmit)}
-              className="grid grid-cols-2 gap-4">
+              className="grid grid-cols-2 gap-4"
+            >
+              <Controller
+                name="category"
+                control={control}
+                rules={{ required: "Category required" }}
+                render={({ field }) => (
+                  <TextField
+                    className="col-span-2"
+                    {...field}
+                    label="Category"
+                    size="small"
+                    fullWidth
+                    select
+                    error={!!errors.category}
+                    helperText={errors.category?.message}
+                  >
+                    {/* Replace with your actual options */}
+                    <MenuItem value="">Select category</MenuItem>
+                    {department.name === "Administration"
+                      ? adminCategories.map((m) => (
+                          <MenuItem key={m.id} value={m.name}>
+                            {m.name}
+                          </MenuItem>
+                        ))
+                      : department.name === "Maintenance"
+                      ? maintainanceCategories.map((m) => (
+                          <MenuItem key={m.id} value={m.name}>
+                            {m.name}
+                          </MenuItem>
+                        ))
+                      : []}
+                  </TextField>
+                )}
+              />
               <Controller
                 name="itemName"
                 control={control}
@@ -353,39 +389,6 @@ const Inventory = () => {
                     error={!!errors.closingInventoryUnits}
                     helperText={errors.closingInventoryUnits?.message}
                   />
-                )}
-              />
-
-              <Controller
-                name="category"
-                control={control}
-                rules={{ required: "Category required" }}
-                render={({ field }) => (
-                  <TextField
-                    className="col-span-2"
-                    {...field}
-                    label="Category"
-                    size="small"
-                    fullWidth
-                    select
-                    error={!!errors.category}
-                    helperText={errors.category?.message}>
-                    {/* Replace with your actual options */}
-                    <MenuItem value="">Select category</MenuItem>
-                    {department.name === "Administration"
-                      ? adminCategories.map((m) => (
-                          <MenuItem key={m.id} value={m.name}>
-                            {m.name}
-                          </MenuItem>
-                        ))
-                      : department.name === "Maintenance"
-                      ? maintainanceCategories.map((m) => (
-                          <MenuItem key={m.id} value={m.name}>
-                            {m.name}
-                          </MenuItem>
-                        ))
-                      : []}
-                  </TextField>
                 )}
               />
 
