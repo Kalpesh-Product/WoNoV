@@ -215,6 +215,86 @@ const generatePayroll = async (req, res, next) => {
   }
 };
 
+// const fetchPayrolls = async (req, res, next) => {
+//   const { company } = req;
+
+//   try {
+//     const currentMonthStart = startOfMonth(new Date());
+
+//     // Fetch all users
+//     const allUsers = await User.find({ company, isActive: true })
+//       .populate("departments")
+//       .populate("role")
+//       .select("firstName lastName empId email departments role")
+//       .lean();
+
+//     // Fetch all payrolls
+//     const allPayrolls = await Payroll.find({}).populate("payslip").lean();
+
+//     const payrollMap = {};
+
+//     for (const payroll of allPayrolls) {
+//       const empId = payroll.employee.toString();
+
+//       if (!payrollMap[empId]) {
+//         payrollMap[empId] = [];
+//       }
+
+//       payrollMap[empId].push({
+//         month: payroll.month,
+//         totalSalary: payroll.salary,
+//         reimbursment: payroll.reimbursment,
+//         deductions: payroll.deductions,
+//         status: payroll.status || "Completed",
+//         payslip: payroll.payslip
+//           ? {
+//               payslipName: payroll.payslip.payslipName,
+//               payslipLink: payroll.payslip.payslipLink,
+//               earnings: payroll.payslip.earnings,
+//               createdAt: payroll.payslip.createdAt,
+//             }
+//           : null,
+//       });
+//     }
+
+//     // Build response per user
+//     const transformedResponse = allUsers.map((user) => {
+//       const userId = user._id.toString();
+//       const userPayrolls = payrollMap[userId] || [];
+
+//       // Check if current month already exists
+//       const hasCurrentMonth = userPayrolls.some((entry) =>
+//         isSameMonth(startOfMonth(new Date(entry.month)), currentMonthStart)
+//       );
+
+//       if (!hasCurrentMonth) {
+//         userPayrolls.push({
+//           month: currentMonthStart,
+//           totalSalary: 0,
+//           reimbursment: 0,
+//           deductions: [],
+//           status: "Pending",
+//           payslip: null,
+//         });
+//       }
+
+//       return {
+//         employeeId: userId,
+//         name: `${user.firstName} ${user.lastName}`,
+//         empId: user.empId,
+//         email: user.email,
+//         departments: user.departments,
+//         role: user.role,
+//         months: userPayrolls,
+//       };
+//     });
+
+//     res.status(200).json(transformedResponse);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const fetchPayrolls = async (req, res, next) => {
   const { company } = req;
 
@@ -231,14 +311,11 @@ const fetchPayrolls = async (req, res, next) => {
     // Fetch all payrolls
     const allPayrolls = await Payroll.find({}).populate("payslip").lean();
 
+    // Group payrolls by employee
     const payrollMap = {};
-
     for (const payroll of allPayrolls) {
       const empId = payroll.employee.toString();
-
-      if (!payrollMap[empId]) {
-        payrollMap[empId] = [];
-      }
+      if (!payrollMap[empId]) payrollMap[empId] = [];
 
       payrollMap[empId].push({
         month: payroll.month,
@@ -257,12 +334,13 @@ const fetchPayrolls = async (req, res, next) => {
       });
     }
 
-    // Build response per user
-    const transformedResponse = allUsers.map((user) => {
+    // Final flattened list
+    const flattenedResponse = [];
+
+    for (const user of allUsers) {
       const userId = user._id.toString();
       const userPayrolls = payrollMap[userId] || [];
 
-      // Check if current month already exists
       const hasCurrentMonth = userPayrolls.some((entry) =>
         isSameMonth(startOfMonth(new Date(entry.month)), currentMonthStart)
       );
@@ -278,18 +356,26 @@ const fetchPayrolls = async (req, res, next) => {
         });
       }
 
-      return {
-        employeeId: userId,
-        name: `${user.firstName} ${user.lastName}`,
-        empId: user.empId,
-        email: user.email,
-        departments: user.departments,
-        role: user.role,
-        months: userPayrolls,
-      };
-    });
+      // Now push individual objects per month
+      for (const payroll of userPayrolls) {
+        flattenedResponse.push({
+          employeeId: userId,
+          empId: user.empId,
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          departments: user.departments,
+          role: user.role,
+          month: payroll.month,
+          totalSalary: payroll.totalSalary,
+          reimbursment: payroll.reimbursment,
+          deductions: payroll.deductions,
+          status: payroll.status,
+          payslip: payroll.payslip,
+        });
+      }
+    }
 
-    res.status(200).json(transformedResponse);
+    res.status(200).json(flattenedResponse);
   } catch (error) {
     next(error);
   }

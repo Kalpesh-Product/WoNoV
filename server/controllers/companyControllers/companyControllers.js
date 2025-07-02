@@ -487,7 +487,7 @@ const updateCompanySubItem = async (req, res) => {
 
     if (!["policies", "sop", "shifts", "employeeTypes"].includes(type)) {
       throw new CustomError(
-        "Invalid document type. Allowed values: sop, policy, shift,employeeTypes",
+        "Invalid document type. Allowed values: sop, policies, shift,employeeTypes",
         logPath,
         logAction,
         logSourceKey
@@ -511,7 +511,6 @@ const updateCompanySubItem = async (req, res) => {
     const key = typeMap[type];
 
     item = foundCompany[key].id(itemId);
-    console.log("isdeleted", foundCompany[key].id(itemId));
     if (item) {
       if (name !== undefined) item.name = name;
       if (isActive !== undefined) item.isActive = isActive;
@@ -527,6 +526,7 @@ const updateCompanySubItem = async (req, res) => {
           item.endTime = parsedEndTime;
         }
       }
+      item.updatedAt = new Date();
       updated = true;
     }
 
