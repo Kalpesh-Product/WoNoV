@@ -228,14 +228,13 @@ const HrPayroll = () => {
   const handleBatchAction = async (selectedRows) => {
     const preparedData = await Promise.all(
       selectedRows.map(async (item) => {
-        const monthData = item.months?.[0] || {};
         const payload = {
           name: item.employeeName,
           userId: item.employeeId,
           email: item.email,
           month: item.month,
-          totalSalary: monthData.totalSalary,
-          deductions: monthData.deductions,
+          totalSalary: item.totalSalary,
+          deductions: item.deductions,
           departmentName: item.departmentName?.[0],
           empId: item.empId,
         };
