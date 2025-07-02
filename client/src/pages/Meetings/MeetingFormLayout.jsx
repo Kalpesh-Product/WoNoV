@@ -53,7 +53,6 @@ const MeetingFormLayout = () => {
 
   const roles = auth.user.role.map((role) => role.roleTitle);
 
-
   if (
     roles.includes("Master Admin") ||
     roles.includes("Super Admin") ||
@@ -128,7 +127,9 @@ const MeetingFormLayout = () => {
     queryFn: async () => {
       if (company === "6799f0cd6a01edbe1bc3fcea") {
         const response = await axios.get("/api/users/fetch-users");
-        return response.data.filter((user) => user._id !== auth.user?._id);
+        return response.data
+          .filter((user) => user._id !== auth.user?._id)
+          .filter((u) => u.isActive === true);
       } else {
         const response = await axios.get("/api/sales/co-working-clients");
         const activeClients = response.data.filter((item) => item.isActive);

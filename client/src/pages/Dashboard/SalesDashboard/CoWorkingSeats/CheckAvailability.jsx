@@ -223,7 +223,7 @@ const CheckAvailability = () => {
     ).entries()
   );
 
-  const formatUnitDisplay = (buildingName, unitNo ) => {
+  const formatUnitDisplay = (buildingName, unitNo) => {
     if (typeof unitNo !== "string")
       return `${unitNo || "Unknown"} ${buildingName}`;
 
@@ -261,11 +261,11 @@ const CheckAvailability = () => {
     const { location, floor } = data;
     address.pathname?.includes("mix-bag")
       ? navigate(
-          `/app/dashboard/sales-dashboard/mix-bag/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`,
+          `/app/dashboard/sales-dashboard/mix-bag/inventory/check-availability/view-availability?location=${location}&floor=${floor}`,
           { state: { unitId: selectedUnitId[0] } }
         )
       : navigate(
-          `/app/dashboard/sales-dashboard/co-working-seats/check-availability/view-availability?location=${location}&floor=${floor}`,
+          `/app/dashboard/sales-dashboard/inventory/check-availability/view-availability?location=${location}&floor=${floor}`,
           { state: { unitId: selectedUnitId[0] } }
         );
   };
@@ -396,6 +396,13 @@ const CheckAvailability = () => {
             data={barGraphSeries}
             options={barGraphOptions}
             height={400}
+            handleClick={(buildingName) => {
+              const encodedName = encodeURIComponent(buildingName);
+              navigate(
+                `/app/dashboard/sales-dashboard/mix-bag/inventory/${encodedName}`,
+                { state: buildingName }
+              );
+            }}
           />
         ) : (
           <div className="text-center text-gray-500 text-sm py-10">
@@ -428,88 +435,6 @@ const CheckAvailability = () => {
           descriptionData={inventoryCards.freeInventory}
         />
       </WidgetSection>
-      <div className="border-default border-borderGray p-4 rounded-md text-center">
-        <h2 className="font-pregular text-title text-primary mt-20 mb-10 uppercase">
-          Check Inventory
-        </h2>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col items-center"
-        >
-          <div className="flex justify-center gap-4 mb-10 px-20 w-full">
-            {/* Location Dropdown */}
-            <FormControl className="w-1/2">
-              <InputLabel>Select Location</InputLabel>
-              <Controller
-                name="location"
-                control={control}
-                render={({ field }) => (
-                  <Select {...field} label="Select Location">
-                    <MenuItem value="" disabled>
-                      Select Location
-                    </MenuItem>
-                    {uniqueBuildings.length > 0 ? (
-                      uniqueBuildings.map(([id, name]) => (
-                        <MenuItem key={id} value={name}>
-                          {name}
-                        </MenuItem>
-                      ))
-                    ) : (
-                      <MenuItem disabled>No locations available</MenuItem>
-                    )}
-                  </Select>
-                )}
-              />
-            </FormControl>
-
-            {/* Meeting Room Dropdown */}
-            <FormControl className="w-1/2">
-              <InputLabel>Select Floor</InputLabel>
-              <Controller
-                name="floor"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    {...field}
-                    label="Select Floor"
-                    disabled={!selectedLocation}
-                    value={field.value}
-                    onChange={(event) => field.onChange(event.target.value)}
-                  >
-                    <MenuItem value="">Select Floor</MenuItem>
-                    {workLocations.length > 0 ? (
-                      workLocations
-                        .filter(
-                          (unit) =>
-                            unit.building &&
-                            unit.building.buildingName === selectedLocation
-                        )
-                        .sort(sortByUnitNo)
-                        .map((unit) => (
-                          <MenuItem key={unit._id} value={unit.unitNo}>
-                            {formatUnitDisplay(
-                              unit.building.buildingName,
-                              unit.unitNo,
-                            )}
-                          </MenuItem>
-                        ))
-                    ) : (
-                      <MenuItem disabled>No floors found</MenuItem>
-                    )}
-                  </Select>
-                )}
-              />
-            </FormControl>
-          </div>
-
-          <PrimaryButton
-            title="Check Availability"
-            type="submit"
-            fontSize="text-content"
-            externalStyles="w-48 mb-20"
-          />
-        </form>
-      </div>
     </div>
   );
 };
