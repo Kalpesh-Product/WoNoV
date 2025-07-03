@@ -696,7 +696,7 @@ export const routes = createBrowserRouter([
                             element: <FinanceViewVoucher />,
                           },
                           {
-                            path: "voucher",
+                            path: "voucher-history",
                             element: <VoucherCreation />,
                           },
                           {

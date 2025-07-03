@@ -10,8 +10,8 @@ const BillingsLayout = () => {
   const tabs = [
     { label: "Client-Invoice", path: "client-invoice" },
     { label: "Department-Invoice", path: "department-invoice" },
-    { label: "Voucher", path: "voucher" },
     { label: "Pending Approvals", path: "pending-approvals" },
+    { label: "Voucher History", path: "voucher-history" },
   ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
