@@ -107,7 +107,7 @@ const HouseKeepingMembersList = () => {
       queryFn: async () => {
         try {
           const response = await axios.get("/api/company/housekeeping-members");
-          return response.data;
+          return response.data.filter((m) => !m.isDeleted);
         } catch (error) {
           toast.error(error.message);
         }
@@ -643,8 +643,9 @@ const HouseKeepingMembersList = () => {
         {modalMode === "delete" && selectedUser && (
           <div className="flex flex-col justify-center items-center gap-4 w-full">
             <p className="text-content text-center">
-              Are you sure you want to <strong className="text-red-600">DELETE</strong> this
-              housekeeping member?
+              Are you sure you want to{" "}
+              <strong className="text-red-600">DELETE</strong> this housekeeping
+              member?
             </p>
             <div className="flex gap-4">
               <SecondaryButton

@@ -76,7 +76,7 @@ const HousekeepingTeamMembersSchedule = () => {
     isLoading: locationsLoading,
     error: locationsError,
   } = useQuery({
-    queryKey: ["units"],
+    queryKey: ["units-data"],
     queryFn: async () => {
       const response = await axios.get("/api/company/fetch-units");
 
@@ -84,7 +84,7 @@ const HousekeepingTeamMembersSchedule = () => {
     },
   });
 
-    const { data: houseKeepingData, isPending: isHouseKeepingPending } = useQuery(
+  const { data: houseKeepingData, isPending: isHouseKeepingPending } = useQuery(
     {
       queryKey: ["housekeeping-staff"],
       queryFn: async () => {
@@ -305,11 +305,16 @@ const HousekeepingTeamMembersSchedule = () => {
 
   const { mutate: assignMember, isPending: isAssignMemberPending } =
     useMutation({
-      mutationKey: ["assignMember"],
+      mutationKey: ["assign-houskeeping"],
       mutationFn: async (data) => {
         const response = await axios.post(
-          "/api/administration/assign-weekly-unit",
-          { ...data, department: department?._id }
+          "/api/company/assign-new-housekeeping-schedule",
+          {
+            unitId: data.location,
+            memberId: data.employee,
+            startDate: data.startDate,
+            endDate: data.endDate,
+          }
         );
         return response.data;
       },
@@ -363,7 +368,7 @@ const HousekeepingTeamMembersSchedule = () => {
         <span
           role="button"
           onClick={() => {
-            navigate(`${params.value}`, {
+            navigate(`/app/dashboard/admin-dashboard/mix-bag/housekeeping-members/member-schedule/${params.value}`, {
               state: {
                 id: params.data.mongoId,
                 name: params.value,
@@ -396,12 +401,12 @@ const HousekeepingTeamMembersSchedule = () => {
           >
             <MdOutlineRemoveRedEye />
           </span>
-          <span
+          {/* <span
             onClick={() => handleEditUser(params.data)}
             className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
           >
             <HiOutlinePencilSquare />
-          </span>
+          </span> */}
         </div>
       ),
     },
@@ -444,7 +449,7 @@ const HousekeepingTeamMembersSchedule = () => {
             key={unitAssignees.length}
             search={true}
             tableTitle={"Housekeeping Weekly Rotation Schedule"}
-            buttonTitle={"Assign Member"}
+            buttonTitle={"Assign Housekeeping Member"}
             data={unitsData}
             columns={unitColumns}
             handleClick={handleAddUser}

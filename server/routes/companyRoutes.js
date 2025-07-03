@@ -18,6 +18,8 @@ const {
   getHouseKeepingStaff,
   softDeleteHouseKeepingMember,
   updateHouseKeepingMember,
+  assignHouseKeepingMember,
+  getHouseKeepingAssignments,
 } = require("../controllers/companyControllers/houseKeepingController");
 
 const {
@@ -139,6 +141,8 @@ router.delete(
   "/soft-delete-housekeeping-member/:id",
   softDeleteHouseKeepingMember
 );
+router.post("/assign-new-housekeeping-schedule", assignHouseKeepingMember);
+router.get("/get-housekeeping-schedule", getHouseKeepingAssignments);
 
 // Company Documents
 router.post(
