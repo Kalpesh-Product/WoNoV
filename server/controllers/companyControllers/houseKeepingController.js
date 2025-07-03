@@ -149,14 +149,17 @@ const assignHouseKeepingMember = async (req, res, next) => {
       return res.status(400).json({ message: "Please fill all fields" });
     }
 
-    const existingMember = await HouseKeepingStaff.findOne({
-      _id: memberId,
-      isDeleted: false,
-    });
+    // const existingMember = await HouseKeepingStaff.findOne({
+    //   _id: memberId,
+    //   isDeleted: false,
+    // })
+    //   .lean()
+    //   .exec();
 
-    if (!existingMember) {
-      return res.status(404).json({ message: "No such member exists" });
-    }
+
+    // if (!existingMember) {
+    //   return res.status(404).json({ message: "No such member exists" });
+    // }
 
     const validStartDate = new Date(startDate);
     const validEndDate = new Date(endDate);

@@ -822,12 +822,17 @@ export const routes = createBrowserRouter([
                             path: "member-onboard",
                             element: <HouseKeepingOnboard />,
                           },
+                          {
+                            path: "member-schedule",
+                            element: <HousekeepingTeamMembersSchedule />,
+                          },
+                          {
+                            path: "member-schedule/:id",
+                            element: <HousekeepingTeamMembersCalendar />,
+                          },
                         ],
                       },
-                      {
-                        path: "housekeeping-members-calendar/:id",
-                        element: <HousekeepingTeamMembersCalendar />,
-                      },
+
                       {
                         path: "holidays-events",
                         element: <AdminHolidaysEvents />,
