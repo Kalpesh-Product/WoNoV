@@ -19,12 +19,26 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import useAuth from "../../hooks/useAuth";
+import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 
 const MeetingSettings = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient(); // React Query client to refetch rooms
   const [openModal, setOpenModal] = useState(false);
-  const { control, reset, handleSubmit, watch } = useForm();
+  const {
+    control,
+    reset,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm({
+    mode: "onChange",
+    defaultValues: {
+      roomName: "",
+      seats: 0,
+      description: "",
+    },
+  });
   const watchLocation = watch("location"); // 👈 Add this
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -37,8 +51,13 @@ const MeetingSettings = () => {
     handleSubmit: handleEditSubmit,
     reset: resetEditForm,
     watch: editWatch,
+    formState: { errors: editErrors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
+      roomName: "",
+      seats: 0,
+      description: "",
       location: selectedRoom?.location?.building?._id,
     },
   });
@@ -56,7 +75,6 @@ const MeetingSettings = () => {
       });
     }
   }, [selectedRoom, resetEditForm]);
-
 
   const handleOpenEditModal = (room) => {
     setSelectedRoom(room);
@@ -154,7 +172,7 @@ const MeetingSettings = () => {
       handleCloseModal();
       reset(); // Reset form fields
       inputRef.current.value = null;
-    }
+    },
   });
 
   // Handle form submission
@@ -264,6 +282,13 @@ const MeetingSettings = () => {
               <Controller
                 name="roomName"
                 control={control}
+                rules={{
+                  required: "Room Name is Required",
+                  validate: {
+                    noOnlyWhitespace,
+                    isAlphanumeric,
+                  },
+                }}
                 defaultValue=""
                 render={({ field }) => (
                   <TextField
@@ -272,27 +297,38 @@ const MeetingSettings = () => {
                     variant="outlined"
                     size="small"
                     fullWidth
+                    error={!!errors.roomName}
+                    helperText={errors?.roomName?.message}
                   />
                 )}
               />
               <Controller
                 name="seats"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Seats are required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     label="Seats"
                     variant="outlined"
+                    type="number"
                     size="small"
                     fullWidth
+                    error={!!errors.seats}
+                    helperText={errors?.seats?.message}
                   />
                 )}
               />
               <Controller
                 name="description"
                 control={control}
-                defaultValue=""
+                rules={{
+                  required: "Description is Required",
+                  validate: {
+                    noOnlyWhitespace,
+                    isAlphanumeric,
+                  },
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -300,6 +336,8 @@ const MeetingSettings = () => {
                     multiline
                     rows={5}
                     variant="outlined"
+                    error={!!errors.description}
+                    helperText={errors?.description?.message}
                     fullWidth
                   />
                 )}
@@ -307,7 +345,7 @@ const MeetingSettings = () => {
               <Controller
                 name="location"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Location is required" }}
                 render={({ field }) => (
                   <FormControl size="small" fullWidth>
                     <InputLabel>Location</InputLabel>
@@ -330,7 +368,7 @@ const MeetingSettings = () => {
               <Controller
                 name="unit"
                 control={control}
-                defaultValue=""
+                rules={{ required: "Unit is required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -413,7 +451,13 @@ const MeetingSettings = () => {
               <Controller
                 name="roomName"
                 control={editControl}
-                defaultValue=""
+                rules={{
+                  required: "Room Name is required",
+                  validate: {
+                    noOnlyWhitespace,
+                    isAlphanumeric,
+                  },
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -421,19 +465,22 @@ const MeetingSettings = () => {
                     variant="outlined"
                     size="small"
                     fullWidth
+                    error={!!editErrors?.roomName}
+                    helperText={editErrors?.roomName?.message}
                   />
                 )}
               />
               <Controller
                 name="seats"
                 control={editControl}
-                defaultValue=""
+                rules={{ required: "Seats are required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     label="Seats"
                     variant="outlined"
                     size="small"
+                    type="number"
                     fullWidth
                   />
                 )}
@@ -441,7 +488,12 @@ const MeetingSettings = () => {
               <Controller
                 name="description"
                 control={editControl}
-                defaultValue=""
+                rules={{
+                  validate: {
+                    noOnlyWhitespace,
+                    isAlphanumeric,
+                  },
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -450,6 +502,8 @@ const MeetingSettings = () => {
                     rows={5}
                     variant="outlined"
                     fullWidth
+                    error={!!editErrors?.description}
+                    helperText={errors?.description?.message}
                   />
                 )}
               />

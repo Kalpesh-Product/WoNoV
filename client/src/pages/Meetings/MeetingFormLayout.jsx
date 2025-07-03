@@ -37,6 +37,7 @@ import { queryClient } from "../../main";
 import humanDate from "../../utils/humanDateForamt";
 import useAuth from "../../hooks/useAuth";
 import { useFieldArray } from "react-hook-form";
+import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 
 const MeetingFormLayout = () => {
   const { auth } = useAuth();
@@ -65,7 +66,13 @@ const MeetingFormLayout = () => {
   // Inside your component, add this state
   const [participantCount, setParticipantCount] = useState(1);
 
-  const { control, handleSubmit, setValue, watch } = useForm({
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm({
     defaultValues: {
       meetingType: "Internal",
       startDate: null, // Ensure null
@@ -735,6 +742,11 @@ const MeetingFormLayout = () => {
               <Controller
                 name="subject"
                 control={control}
+                rules={{
+                  validate: {
+                    noOnlyWhitespace,
+                  },
+                }}
                 render={({ field }) => (
                   <TextField
                     label={"Subject"}
@@ -744,6 +756,8 @@ const MeetingFormLayout = () => {
                     multiline
                     rows={3}
                     size="small"
+                    error={!!errors.subject}
+                    helperText={errors?.subject?.message}
                   />
                 )}
               />
@@ -752,6 +766,11 @@ const MeetingFormLayout = () => {
               <Controller
                 name="agenda"
                 control={control}
+                rules={{
+                  validate: {
+                    noOnlyWhitespace,
+                  },
+                }}
                 render={({ field }) => (
                   <TextField
                     label={"Agenda"}
@@ -761,6 +780,8 @@ const MeetingFormLayout = () => {
                     multiline
                     rows={3}
                     size="small"
+                    error={!!errors.agenda}
+                    helperText={errors?.agenda?.message}
                   />
                 )}
               />
