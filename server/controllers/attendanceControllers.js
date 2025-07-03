@@ -680,7 +680,6 @@ const approveCorrectionRequest = async (req, res, next) => {
           breakCount: breaks.length,
           status: "Approved",
         },
-        $unset: { rejectedBy: "" },
       },
       { new: true }
     );
@@ -730,16 +729,30 @@ const rejectCorrectionRequest = async (req, res, next) => {
       );
     }
 
-    const updatedAttendance = await AttendanceCorrection.findOneAndUpdate(
-      { _id: attendanceId },
+    const updatedAttendanceCorrection =
+      await AttendanceCorrection.findOneAndUpdate(
+        { _id: attendanceId },
+        {
+          $set: { status: "Rejected", rejectedBy: user },
+          $unset: { approvedBy: "" },
+        },
+        { new: true }
+      );
+
+    const updatedAttendance = await Attendance.findOneAndUpdate(
       {
-        $set: { status: "Rejected", rejectedBy: user },
-        $unset: { approvedBy: "" },
+        user: updatedAttendanceCorrection.user,
+        inTime: updatedAttendanceCorrection.originalInTime,
+      },
+      {
+        $set: {
+          status: "Rejected",
+        },
       },
       { new: true }
     );
 
-    if (!updatedAttendance) {
+    if (!updatedAttendanceCorrection || !updatedAttendance) {
       throw new CustomError(
         "Failed to reject the correction request",
         logPath,

@@ -33,7 +33,11 @@ const attendanceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
     },
-    //Unused, must be removed later
+    status: {
+      type: String,
+      enum: ["Pending", "Approved", "Rejected"],
+      default: "Approved",
+    },
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
