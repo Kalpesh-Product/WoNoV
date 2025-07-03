@@ -205,7 +205,7 @@ const HrPayroll = () => {
           status: item.status,
           totalSalary: item.totalSalary,
           departmentName: item.departments?.map((item) => item.name || "null"),
-          month: item.month,
+          monthDate: item.month,
         }))
         .sort((a, b) =>
           a.employeeName?.localeCompare(b.employeeName, undefined, {
@@ -310,7 +310,7 @@ const HrPayroll = () => {
       <PageFrame>
         <YearWiseTable
           search={true}
-          dateColumn={"month"}
+          dateColumn={"monthDate"}
           checkAll={true}
           checkbox
           isRowSelectable={(rowNode) => {
