@@ -393,9 +393,10 @@ const TeamMembersSchedule = () => {
     },
   ];
 
-
   //---------------------------------------Event Handlers------------------------------//
-
+  useEffect(() => {
+    console.log("selected User : ", selectedUser);
+  }, [selectedUser]);
   const handleViewUser = (user) => {
     setModalMode("view");
     setSelectedUser(user);
@@ -428,7 +429,7 @@ const TeamMembersSchedule = () => {
       <PageFrame>
         {!isUnitAssignees ? (
           <AgTable
-            key={unitAssignees.length}
+            // key={unitAssignees.length}
             search={true}
             tableTitle={"Weekly Rotation Schedule"}
             buttonTitle={"Assign Member"}
@@ -531,7 +532,7 @@ const TeamMembersSchedule = () => {
                     <>
                       <div className="my-4">
                         <span className="text-subtitle text-primary font-pmedium">
-                          Assigned Details
+                          Assigned History
                         </span>
                       </div>
 
@@ -622,7 +623,7 @@ const TeamMembersSchedule = () => {
 
         {modalMode === "view" && selectedUser && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <DetalisFormatted title="Name" detail={selectedUser.name} />
+            <DetalisFormatted title="Name" detail={selectedUser.lead} />
             <DetalisFormatted
               title="Member Status"
               gap={"w-full"}
@@ -630,12 +631,12 @@ const TeamMembersSchedule = () => {
             />
             <DetalisFormatted
               title="Unit Name"
-              detail={selectedUser.location?.unitNo}
+              detail={selectedUser?.unitNo}
             />
             <DetalisFormatted
               title="Building Name"
               gap={"w-full"}
-              detail={selectedUser.location?.building?.buildingName}
+              detail={selectedUser.building?.buildingName}
             />
 
             {/* DateRange picker view-only */}
