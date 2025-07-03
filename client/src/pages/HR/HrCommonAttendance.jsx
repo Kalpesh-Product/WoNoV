@@ -29,7 +29,12 @@ const HrCommonAttendance = () => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
 
-  const { control, reset, handleSubmit,formState: {errors} } = useForm({
+  const {
+    control,
+    reset,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
     defaultValues: {
       targetedDay: null,
       inTime: null,
@@ -94,9 +99,8 @@ const HrCommonAttendance = () => {
   });
 
   const onSubmit = (data) => {
-     console.log("dataa",data)
     if (!auth?.user?.empId) return toast.error("User not found");
-   
+
     correctionPost(data);
   };
 
@@ -213,11 +217,11 @@ const HrCommonAttendance = () => {
           </LocalizationProvider>
           <Controller
             name="reason"
+            control={control}
             rules={{
               required: "Please specify your reason",
               validate: { noOnlyWhitespace, isAlphanumeric },
             }}
-            control={control}
             render={({ field }) => (
               <>
                 <TextField
@@ -246,6 +250,11 @@ const HrCommonAttendance = () => {
               disabled={correctionPending}
             />
           </div>
+          {/* {Object.keys(errors).length > 0 && (
+            <pre className="text-red-500">
+              {JSON.stringify(errors, null, 2)}
+            </pre>
+          )} */}
         </form>
       </MuiModal>
     </div>

@@ -493,6 +493,15 @@ const correctAttendance = async (req, res, next) => {
       );
     }
 
+    if (!inTime && !outTime) {
+      throw new CustomError(
+        "Provide the time to be corrected",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const targetedDate = new Date(targetedDay);
     const currentDate = new Date();
 

@@ -64,7 +64,7 @@ const ClockInOutAttendance = () => {
 
     if (hasClockedIn && clockIn && serverNow) {
       setStartTime(clockIn);
-      setClockedInStatus(hasClockedIn)
+      setClockedInStatus(hasClockedIn);
       const calculatedOffset = computeOffset(new Date());
       setOffset(calculatedOffset);
       setElapsedTime(getElapsedSecondsWithOffset(clockIn, calculatedOffset));
@@ -289,8 +289,17 @@ const ClockInOutAttendance = () => {
 
   const calculateTotalHours = (breaksHours, startTime, endTime, type) => {
     if (type === "workhours") {
-      const workDuration = (new Date(endTime) - new Date(startTime)) / 1000;
-      return formatTime(workDuration);
+      const rawWorkSeconds = (new Date(endTime) - new Date(startTime)) / 1000;
+
+      const breakDuration = breaksHours.reduce((total, brk) => {
+        if (brk.start && brk.end) {
+          return total + (new Date(brk.end) - new Date(brk.start)) / 1000;
+        }
+        return total;
+      }, 0);
+
+      const netWorkSeconds = rawWorkSeconds - breakDuration;
+      return formatTime(netWorkSeconds > 0 ? netWorkSeconds : 0);
     } else {
       const breakDuration = breaksHours.reduce((total, brk) => {
         const start = brk.start;
@@ -410,7 +419,9 @@ const ClockInOutAttendance = () => {
               <div
                 key={index}
                 className={`flex flex-col gap-2 justify-center text-center ${
-                  index !== timeStats.length - 1 ? "border-r-[1px] border-borderGray pr-4" : ""
+                  index !== timeStats.length - 1
+                    ? "border-r-[1px] border-borderGray pr-4"
+                    : ""
                 }`}
               >
                 <span className="text-muted">{stat.label}</span>
