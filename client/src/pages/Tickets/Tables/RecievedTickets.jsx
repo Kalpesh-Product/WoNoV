@@ -244,26 +244,29 @@ const RecievedTickets = ({ title, departmentId }) => {
           <div
             role="button"
             onClick={() => handleViewTicket(params.data)}
-            className="p-2 rounded-full hover:bg-borderGray cursor-pointer">
+            className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
+          >
             <MdOutlineRemoveRedEye />
           </div>
           <ThreeDotMenu
             rowId={params.data.id}
             menuItems={[
               // Conditionally add "Accept"
-               ...(auth.user.role.length > 0 &&
-              (auth.user.role[0].roleTitle !== "Master Admin" &&
-                auth.user.role[0].roleTitle !== "Super Admin" 
+              ...(auth.user.role.length > 0 &&
+              // Case 1: If user is in Top Management & ticket is for Top Management
+              ((auth.user.role[0].roleTitle === "Top Management" &&
+                params.data.raisedToDepartment === "Top Management") ||
+                // Case 2: If user is not Top Management
+                auth.user.role[0].roleTitle !== "Top Management")
                 ? [
                     {
-                label: "Accept",
-                onClick: () => acceptMutate(params.data),
-                isLoading: isLoading,
-              },
-                   
+                      label: "Accept",
+                      onClick: () => acceptMutate(params.data),
+                      isLoading: isLoading,
+                    },
                   ]
-                : [])
-               ),
+                : []),
+              
               // {
               //   label: "Accept",
               //   onClick: () => acceptMutate(params.data),
@@ -284,7 +287,7 @@ const RecievedTickets = ({ title, departmentId }) => {
                       onClick: () => handleRejectClick(params.data), // ✅ open modal
                     },
                   ]
-                : []),
+                : [])
             ]}
           />
         </div>
@@ -316,7 +319,8 @@ const RecievedTickets = ({ title, departmentId }) => {
       <MuiModal
         open={openView}
         onClose={() => setOpenView(false)}
-        title={"View Ticket"}>
+        title={"View Ticket"}
+      >
         {selectedTicket && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
@@ -397,7 +401,8 @@ const RecievedTickets = ({ title, departmentId }) => {
         open={rejectModalOpen}
         setOpen={setRejectModalOpen}
         title="Reject Ticket"
-        onClose={() => setRejectModalOpen(false)}>
+        onClose={() => setRejectModalOpen(false)}
+      >
         <div className="flex flex-col gap-4">
           <textarea
             placeholder="Please mention the reason for rejection..."
@@ -412,7 +417,8 @@ const RecievedTickets = ({ title, departmentId }) => {
               !rejectionReason.trim() || rejectPending
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-red-600 hover:bg-red-700"
-            } text-white px-4 py-2 rounded transition`}>
+            } text-white px-4 py-2 rounded transition`}
+          >
             {rejectPending ? "Submitting..." : "Submit Rejection"}
           </button>
         </div>

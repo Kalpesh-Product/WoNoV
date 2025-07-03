@@ -18,6 +18,7 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import { IoMdClose } from "react-icons/io";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 
 const AssignedTickets = ({ title, departmentId }) => {
   const [openModal, setopenModal] = useState(false);
@@ -387,7 +388,8 @@ const AssignedTickets = ({ title, departmentId }) => {
       <MuiModal
         open={openModal}
         onClose={() => setopenModal(false)}
-        title="Assign Tickets">
+        title="Assign Tickets"
+      >
         <form onSubmit={handleSubmit(onSubmit)}>
           <ul>
             {!isSubOrdinates ? (
@@ -422,7 +424,8 @@ const AssignedTickets = ({ title, departmentId }) => {
         <div>
           <form
             onSubmit={handleEscalateTicketSubmit(onEscalate)}
-            className="grid grid-cols-1 gap-4">
+            className="grid grid-cols-1 gap-4"
+          >
             <Controller
               name="departmentIds"
               control={escalateFormControl}
@@ -472,7 +475,10 @@ const AssignedTickets = ({ title, departmentId }) => {
             <Controller
               name="description"
               control={escalateFormControl}
-              rules={{ required: "Escalation description is required" }}
+              rules={{
+                required: "Escalation description is required",
+                validate: { noOnlyWhitespace, isAlphanumeric },
+              }}
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -498,7 +504,8 @@ const AssignedTickets = ({ title, departmentId }) => {
       <MuiModal
         open={openView}
         onClose={() => setOpenView(false)}
-        title="View Assigned Ticket">
+        title="View Assigned Ticket"
+      >
         {selectedTicket && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted

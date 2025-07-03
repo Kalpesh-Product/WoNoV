@@ -24,6 +24,7 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import humanTime from "../../utils/humanTime";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import humanDate from "../../utils/humanDateForamt";
+import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 
 const RaiseTicket = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -451,8 +452,11 @@ const RaiseTicket = () => {
               <div>
                 <Controller
                   name="message"
-                  rules={{ required: "Please specify your message" }}
                   control={control}
+                  rules={{
+                    required: "Please specify your message",
+                    validate: { noOnlyWhitespace, isAlphanumeric },
+                  }}
                   render={({ field }) => (
                     <>
                       <TextField
