@@ -380,6 +380,8 @@ import HrCommonHandbook from "../pages/HR/HrCommonHandbook";
 import DepartmentPolicies from "../pages/Dashboard/HrDashboard/Complaince/DepartmentPolicies";
 import HrCommonDocuments from "../pages/HR/HrCommonDocuments";
 import BuildingUnits from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/BuildingUnits";
+import HouseKeepingMembersList from "../pages/Dashboard/AdminDashboard/HouseKeepingMembersList";
+import HouseKeepingLayout from "../pages/Dashboard/AdminDashboard/HouseKeepingLayout";
 
 export const routes = createBrowserRouter([
   {
@@ -808,8 +810,18 @@ export const routes = createBrowserRouter([
                         element: <TeamMemberDetails />,
                       },
                       {
-                        path: "mix-bag/housekeeping-members-schedule",
-                        element: <HousekeepingTeamMembersSchedule />,
+                        path: "mix-bag/housekeeping-members",
+                        element: <HouseKeepingLayout />,
+                        children: [
+                          {
+                            path: "members-list",
+                            element: <HouseKeepingMembersList />,
+                          },
+                          {
+                            path: "mix-bag/housekeeping-members-schedule",
+                            element: <HousekeepingTeamMembersSchedule />,
+                          },
+                        ],
                       },
                       {
                         path: "housekeeping-members-calendar/:id",
@@ -820,7 +832,7 @@ export const routes = createBrowserRouter([
                         element: <AdminHolidaysEvents />,
                       },
                       {
-                        path: "client-members",
+                        path: "mix-bag/client-members",
                         element: <AdminClientLayout />,
                         children: [
                           {

@@ -302,4 +302,89 @@ const fetchVendors = async (req, res, next) => {
   return res.status(200).json(vendors);
 };
 
-module.exports = { onboardVendor, fetchVendors, updateVendor };
+const bulkInsertVendors = async (req, res, next) => {
+  try {
+    const file = req.file;
+    const { departmentId } = req.params;
+    const company = req.company;
+
+    if (!file) {
+      return res.status(400).json({ message: "Please provide a csv file" });
+    }
+
+    const csvData = file.buffer.toString("utf-8").trim();
+    const vendors = [];
+
+    const parseCSV = () =>
+      new Promise((resolve, reject) => {
+        Readable.from(csvData)
+          .pipe(csvParser())
+          .on("data", (row) => {
+            const vendor = {
+              name: row["Vendor Name"]?.trim(),
+              companyName: row["Company Name"]?.trim(),
+              onboardingDate: row["Onboarding Date"]
+                ? new Date(row["Onboarding Date"])
+                : undefined,
+              email: row["Email Id"]?.toLowerCase().trim(),
+              mobile: row["Mobile No"]?.trim(),
+              address: row["Address"]?.trim(),
+              country: row["Country"]?.trim(),
+              state: row["State"]?.trim(),
+              city: row["City"]?.trim(),
+              pinCode: row["Pin Code"]?.trim(),
+              panIdNo: row["PAN"]?.trim(),
+              gstIn: row["GSTIN"]?.trim(),
+              partyType: row["Party Type (Domestic / International)"]?.trim(),
+              status: row["Vendor Status (Active / Inactive)"]?.trim(),
+              bankName: row["Bank Name"]?.trim(),
+              accountNumber: row["Account No"]?.trim(),
+              ifscCode: row["IFSC Code"]?.trim(),
+
+              departmentId,
+              company: company._id,
+            };
+
+            vendors.push(vendor);
+          })
+          .on("end", resolve)
+          .on("error", reject);
+      });
+
+    await parseCSV();
+
+    // Optional: check for required fields and filter invalid rows
+    const validVendors = vendors.filter(
+      (v) => v.name && v.email && v.companyName && v.address
+    );
+
+    if (!validVendors.length) {
+      return res
+        .status(400)
+        .json({ message: "No valid vendor records found in the file." });
+    }
+
+    const insertedVendors = await Vendor.insertMany(validVendors, {
+      ordered: false,
+    });
+
+    res.status(201).json({
+      message: `${insertedVendors.length} vendors inserted successfully.`,
+      data: insertedVendors,
+    });
+  } catch (error) {
+    if (error.name === "BulkWriteError") {
+      return res
+        .status(409)
+        .json({ message: "Duplicate entries found", error: error.message });
+    }
+    next(error);
+  }
+};
+
+module.exports = {
+  onboardVendor,
+  fetchVendors,
+  updateVendor,
+  bulkInsertVendors,
+};

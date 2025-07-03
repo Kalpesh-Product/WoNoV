@@ -129,6 +129,7 @@ const AdminClientsData = () => {
         <div className="w-full">
           <AgTable
             search={true}
+            tableTitle={"Client Memebers Data"}
             key={clientsData.length}
             data={[
               ...clientsData.map((item, index) => ({
