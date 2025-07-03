@@ -346,6 +346,8 @@ const handleSelectionChanged = useCallback((params) => {
             pagination={false}
             isRowSelectable={isRowSelectable}
             paginationPageSize={paginationPageSize}
+            suppressCellSelection={false}
+            enableCellTextSelection={true}
             rowHeight={50}
             rowSelection={
               enableCheckbox ? (checkAll ? "multiple" : "single") : rowSelection

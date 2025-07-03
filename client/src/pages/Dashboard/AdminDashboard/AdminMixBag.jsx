@@ -16,7 +16,7 @@ const AdminMixBag = () => {
     },
     {
       title: "Housekeeping Members",
-      route: "/app/dashboard/admin-dashboard/mix-bag/housekeeping-members-schedule",
+      route: "/app/dashboard/admin-dashboard/mix-bag/housekeeping-members",
     },
     {
       title: "Holidays & Events",
