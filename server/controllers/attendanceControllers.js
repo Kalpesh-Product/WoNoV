@@ -431,7 +431,38 @@ const getAttendance = async (req, res, next) => {
       return res.status(200).json([]);
     }
 
-    return res.status(200).json(attendances);
+    const attendancesRequests = await AttendanceCorrection.find({
+      user: user._id,
+      company,
+      status: "Pending",
+    })
+      .lean()
+      .exec();
+
+    let transformedAttendances = attendances.map((attendance) => ({
+      ...attendance,
+      correctionId: null,
+    }));
+
+    if (attendancesRequests && attendancesRequests.length > 0) {
+      transformedAttendances = attendances.map((attendance) => {
+        const updateAttendances = attendancesRequests.map((request) => {
+          const isPending = attendance.status === "Pending";
+          const attendanceInTime = attendance.inTime;
+          const requestInTime = request.originalInTime;
+          const matchedAttendance =
+            new Date(attendanceInTime).toString() ===
+            new Date(requestInTime).toString();
+          return {
+            ...attendance,
+            correctionId: matchedAttendance && isPending ? request._id : null,
+          };
+        });
+        return updateAttendances;
+      });
+    }
+
+    return res.status(200).json(transformedAttendances);
   } catch (error) {
     next(error);
   }
