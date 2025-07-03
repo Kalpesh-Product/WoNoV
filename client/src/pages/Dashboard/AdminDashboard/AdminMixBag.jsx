@@ -24,7 +24,7 @@ const AdminMixBag = () => {
     },
     {
       title: "Client Members",
-      route: "/app/dashboard/admin-dashboard/client-members",
+      route: "/app/dashboard/admin-dashboard/mix-bag/client-members",
     },
   ];
 

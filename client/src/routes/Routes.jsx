@@ -820,7 +820,7 @@ export const routes = createBrowserRouter([
                         element: <AdminHolidaysEvents />,
                       },
                       {
-                        path: "client-members",
+                        path: "mix-bag/client-members",
                         element: <AdminClientLayout />,
                         children: [
                           {

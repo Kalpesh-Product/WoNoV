@@ -11,9 +11,9 @@ const AdminClientLayout = () => {
     { label: "Client-Member Onboarding", path: "client-members-onboard" },
   ];
   useEffect(() => {
-    if (location.pathname === "/app/dashboard/admin-dashboard/client-members") {
+    if (location.pathname === "/app/dashboard/admin-dashboard/mix-bag/client-members") {
       navigate(
-        "/app/dashboard/admin-dashboard/client-members/client-members-data",
+        "/app/dashboard/admin-dashboard/mix-bag/client-members/client-members-data",
         {
           replace: true,
         }

@@ -14,6 +14,12 @@ import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import { queryClient } from "../../../main";
 import { inrFormat } from "../../../utils/currencyFormat";
+import {
+  isAlphanumeric,
+  isValidEmail,
+  noOnlyWhitespace,
+  isValidPhoneNumber,
+} from "../../../utils/validators";
 
 const maintainanceCategories = [
   { id: 1, name: "Electrical" },
@@ -41,6 +47,7 @@ const Inventory = () => {
     control,
     formState: { errors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       itemName: "",
       department: "",
@@ -260,7 +267,13 @@ const Inventory = () => {
               <Controller
                 name="itemName"
                 control={control}
-                rules={{ required: "Item name is required" }}
+                rules={{
+                  required: "Item name is required",
+                  validate: {
+                    isAlphanumeric,
+                    noOnlyWhitespace,
+                  },
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}
