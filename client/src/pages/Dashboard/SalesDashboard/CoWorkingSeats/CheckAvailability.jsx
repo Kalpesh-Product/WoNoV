@@ -317,12 +317,16 @@ const CheckAvailability = () => {
       {
         title: "ST Inventory",
         value: String(Number(inventoryStats.ST?.total) || 0),
-        route: "#",
+        route:
+          "/app/dashboard/sales-dashboard/mix-bag/inventory/Sunteck%20Kanaka",
+        stateData: "Sunteck Kanaka",
       },
       {
         title: "DTC Inventory",
         value: String(Number(inventoryStats.DTC?.total) || 0),
-        route: "#",
+        route:
+          "/app/dashboard/sales-dashboard/mix-bag/inventory/Dempo%20Trade%20Centre",
+        stateData: "Dempo Trade Centre",
       },
       {
         title: "Total Inventory",
@@ -337,12 +341,16 @@ const CheckAvailability = () => {
       {
         title: "ST Occupancy",
         value: String(Number(inventoryStats.ST?.occupied) || 0),
-        route: "#",
+        route:
+          "/app/dashboard/sales-dashboard/mix-bag/inventory/Sunteck%20Kanaka",
+        stateData: "Sunteck Kanaka",
       },
       {
         title: "DTC Occupancy",
         value: String(Number(inventoryStats.DTC?.occupied) || 0),
-        route: "#",
+        route:
+          "/app/dashboard/sales-dashboard/mix-bag/inventory/Dempo%20Trade%20Centre",
+        stateData: "Dempo Trade Centre",
       },
       {
         title: "Total Occupancy",
@@ -360,7 +368,9 @@ const CheckAvailability = () => {
           (Number(inventoryStats.ST?.total) || 0) -
             (Number(inventoryStats.ST?.occupied) || 0)
         ),
-        route: "#",
+        route:
+          "/app/dashboard/sales-dashboard/mix-bag/inventory/Sunteck%20Kanaka",
+        stateData: "Sunteck Kanaka",
       },
       {
         title: "DTC Free Inventory",
@@ -368,7 +378,9 @@ const CheckAvailability = () => {
           (Number(inventoryStats.DTC?.total) || 0) -
             (Number(inventoryStats.DTC?.occupied) || 0)
         ),
-        route: "#",
+        route:
+          "/app/dashboard/sales-dashboard/mix-bag/inventory/Dempo%20Trade%20Centre",
+        stateData: "Dempo Trade Centre",
       },
       {
         title: "Total Free Inventory",
