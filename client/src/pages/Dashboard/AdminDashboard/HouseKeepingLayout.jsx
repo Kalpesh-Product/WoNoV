@@ -1,33 +1,34 @@
-import React, { useEffect } from "react";
 import { Tab, Tabs } from "@mui/material";
+import React, { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
-const AdminClientLayout = () => {
+const HouseKeepingLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Map routes to tabs
   const tabs = [
-    { label: "Clients", path: "client-members-data" },
-    { label: "Client-Member Onboarding", path: "client-members-onboard" },
+    { label: "Members List", path: "members-list" },
+    { label: "Member Onboard", path: "member-onboard" },
+    { label: "Assign Rotation", path: "" },
   ];
+
   useEffect(() => {
-    if (location.pathname === "/app/dashboard/admin-dashboard/mix-bag/client-members") {
-      navigate(
-        "/app/dashboard/admin-dashboard/mix-bag/client-members/client-members-data",
-        {
-          replace: true,
-        }
-      );
+    if (location.pathname === "/app/dashboard/admin-dashboard/mix-bag/housekeeping-members") {
+      navigate("/app/dashboard/admin-dashboard/mix-bag/housekeeping-members/members-list", {
+        replace: true,
+      });
     }
   }, [location, navigate]);
 
   // Determine whether to show the tabs
-  const showTabs = !location.pathname.includes("client-members-data/");
+  const showTabs = !location.pathname.includes("budget/");
 
   // Determine active tab based on location
   const activeTab = tabs.findIndex((tab) =>
     location.pathname.includes(tab.path)
   );
+
   return (
     <div className="p-4">
       {/* Render tabs only if the current route is not EmployeeDetails */}
@@ -50,7 +51,8 @@ const AdminClientLayout = () => {
               backgroundColor: "#1E3D73",
               color: "white",
             },
-          }}>
+          }}
+        >
           {tabs.map((tab, index) => (
             <NavLink
               key={index}
@@ -64,7 +66,8 @@ const AdminClientLayout = () => {
                 padding: "12px 16px",
                 display: "block",
                 backgroundColor: isActive ? "#1E3D73" : "white",
-              })}>
+              })}
+            >
               {tab.label}
             </NavLink>
           ))}
@@ -78,4 +81,4 @@ const AdminClientLayout = () => {
   );
 };
 
-export default AdminClientLayout;
+export default HouseKeepingLayout;

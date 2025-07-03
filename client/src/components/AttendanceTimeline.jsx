@@ -32,14 +32,17 @@ const AttendanceTimeline = () => {
     return state.user;
   });
   const empID = auth?.user?.empId;
+    const [clockedInStatus, setClockedInStatus] = useState(hasClockedIn);
 
   // Boot with server timestamps
   useEffect(() => {
     const clockIn = auth?.user?.clockInDetails?.clockInTime;
     const serverNow = auth?.user?.time;
+       const hasClockedIn = auth?.user?.clockInDetails?.hasClockedIn;
 
     if (auth?.user?.clockInDetails?.hasClockedIn && clockIn && serverNow) {
       setStartTime(clockIn);
+      setClockedInStatus(hasClockedIn)
       const calculatedOffset = computeOffset(serverNow);
       setOffset(calculatedOffset);
       setElapsedTime(getElapsedSecondsWithOffset(clockIn, calculatedOffset));
@@ -140,7 +143,7 @@ return (
 
         {/* Breaks */}
         {todayAttendance?.breaks?.map((brk, index) => (
-          <div key={index} className="flex flex-col gap-1 items-start">
+          <div key={index} className="flex flex-col gap-1 items-start motion-preset-slide-up-sm">
             <div className="w-[1px] h-4 bg-borderGray ml-1" />
 
             <div className="flex justify-between items-center w-full">
@@ -154,7 +157,7 @@ return (
             {brk.endBreak && (
               <>
                 <div className="w-[1px] h-4 bg-borderGray ml-1" />
-                <div className="flex justify-between items-center w-full">
+                <div className="flex justify-between items-center w-full motion-preset-slide-up-sm">
                   <div className="flex gap-2 items-center">
                     <BsCup />
                     <span className="text-muted">Break End</span>

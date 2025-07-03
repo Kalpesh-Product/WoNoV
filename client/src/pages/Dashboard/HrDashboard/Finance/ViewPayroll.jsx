@@ -1,18 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { useLocation } from "react-router-dom";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import humanTime from "../../../../utils/humanTime";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import humanDate from "../../../../utils/humanDateForamt";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import { CircularProgress } from "@mui/material";
+import MuiModal from "../../../../components/MuiModal";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
+import { queryClient } from "../../../../main";
+import { toast } from "sonner";
+import StatusChip from "../../../../components/StatusChip";
 
 const ViewPayroll = () => {
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
   const payrollColumns = [
     { field: "srNo", headerName: "SrNo", flex: 1 },
     { field: "empId", headerName: "Employee ID", flex: 1 },
@@ -35,10 +44,52 @@ const ViewPayroll = () => {
       cellRenderer: (params) => humanTime(params.value),
     },
     // { field: "workHours", headerName: "Work Hours", flex: 1 },
-    { field: "breakDuration", headerName: "Break Hours", flex: 1 },
+    {
+      field: "breakDuration",
+      headerName: "Break Hours",
+      cellRenderer: (params) => params.value.toFixed(),
+    },
     // { field: "totalHours", headerName: "Total Hours", flex: 1 },
     { field: "entryType", headerName: "Entry Type", flex: 1 },
-    // { field: "paydeduction", headerName: "Pay Deduction", flex: 1 },
+    {
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      cellRenderer: (params) => {
+        const { status, _id, id } = params.data;
+        const menuItems = [
+          {
+            label: "View",
+            onClick: () => handleViewUser(params.data),
+            isLoading: isLoading,
+          },
+        ];
+
+        if (status !== "Approved" && status !== "Rejected") {
+          menuItems.unshift(
+            {
+              label: "Approve",
+              onClick: () => approveRequest(params.data.correctionId),
+              isLoading: isLoading,
+            },
+            {
+              label: "Reject",
+              onClick: () => rejectRequest(params.data.correctionId),
+              isLoading: isLoading,
+            }
+          );
+        }
+        return (
+          <div className="flex items-center gap-4 py-2">
+            <ThreeDotMenu rowId={id} menuItems={menuItems} />
+          </div>
+        );
+      },
+    },
   ];
   const leavesRecord = [
     { field: "srNo", headerName: "SrNo", flex: 1 },
@@ -47,7 +98,29 @@ const ViewPayroll = () => {
     { field: "leaveType", headerName: "Leave Type" },
     { field: "leavePeriod", headerName: "Leave Period" },
     { field: "description", headerName: "Description", flex: 1 },
-    // { field: "paydeduction", headerName: "Pay Deduction", width: 100 },
+    { field: "status", headerName: "Status", cellRenderer : (params)=> (
+      <StatusChip status={params.value} />
+    ) },
+     {
+      field: "action",
+      headerName: "Action",
+      cellRenderer: (params) => (
+        <div>
+          {params.data.status === "Pending" ? (
+
+            <ThreeDotMenu
+              rowId={params.data.id}
+              menuItems={[
+                { label: "Accept", onClick: () => approveLeave(params.data.id) },
+                { label: "Reject", onClick: () => rejectLeave(params.data.id) },
+              ]}
+            />
+          ) : (
+            ""
+          )}
+        </div>
+      ),
+    },
   ];
   const location = useLocation();
   const { empId } = location.state;
@@ -69,6 +142,80 @@ const ViewPayroll = () => {
       }
     },
   });
+//Attendance correction
+  const { mutate: approveRequest, isPending: approveRequestPending } =
+    useMutation({
+      mutationFn: async (id) => {
+        const response = await axios.patch(
+          `/api/attendance/approve-correct-attendance/${id}`
+        );
+        return response.data;
+      },
+      onSuccess: function (data) {
+        toast.success(data.message);
+        queryClient.invalidateQueries({ queryKey: ["userPayroll"] });
+        setSelectedRequest(null);
+        setOpenModal(false);
+      },
+      onError: function (error) {
+        toast.error(error.response.data.message);
+      },
+    });
+
+  const { mutate: rejectRequest, isPending: rejectRequestPending } =
+    useMutation({
+      mutationFn: async (id) => {
+        const response = await axios.patch(
+          `/api/attendance/reject-correct-attendance/${id}`
+        );
+        return response.data;
+      },
+      onSuccess: function (data) {
+        toast.success(data.message);
+        queryClient.invalidateQueries(["userPayroll"]);
+        setSelectedRequest(null);
+        setOpenModal(false);
+      },
+      onError: function (error) {
+        toast.error(error.response.data.message);
+      },
+    });
+
+  const handleViewUser = (data) => {
+    setSelectedRequest(data);
+    setOpenModal(true);
+  };
+
+
+//Leaves correction
+
+  const { mutate: approveLeave, isPending: isApproving } = useMutation({
+    mutationFn: async (leaveId) => {
+      const res = await axios.patch(`/api/leaves/approve-leave/${leaveId}`);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Leave Approved");
+      queryClient.invalidateQueries({ queryKey: ["userPayrolls"] });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Approval failed");
+    },
+  });
+
+  const { mutate: rejectLeave, isPending: isRejecting } = useMutation({
+    mutationFn: async (leaveId) => {
+      const res = await axios.patch(`/api/leaves/reject-leave/${leaveId}`);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Leave Rejected");
+      queryClient.invalidateQueries({ queryKey: ["userPayroll"] });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Rejection failed");
+    },
+  });
 
   const attendanceData = isLoading
     ? []
@@ -76,6 +223,7 @@ const ViewPayroll = () => {
         return {
           ...item,
           id: item._id,
+          correctionId : item.correctionId,
           date: item.inTime,
           inTime: item.inTime,
           outTime: item.outTime,
@@ -90,6 +238,7 @@ const ViewPayroll = () => {
     : userPayrollData.leaves.map((item) => {
         return {
           ...item,
+          id : item._id,
           name: `${item.takenBy?.firstName} ${item.takenBy?.lastName}`,
           email: item.takenBy?.email,
           empId: item.takenBy?.empId,
@@ -118,15 +267,14 @@ const ViewPayroll = () => {
   };
 
   const paymentBreakup = isLoading ? [] : userPayrollData.paymentBreakup;
-  console.log(paymentBreakup);
 
   return (
     <div className="flex flex-col gap-4">
       <PageFrame>
         <YearWiseTable
-          key={attendanceData.map((item) => item.id)}
+          key={attendanceData.length}
           search={true}
-          dateColumn={"inTime"}
+          dateColumn={"date"}
           tableTitle={"Attendance"}
           formatTime
           data={attendanceData}
@@ -134,22 +282,17 @@ const ViewPayroll = () => {
         />
       </PageFrame>
 
-      <WidgetSection
-        layout={1}
-        border
-        title={"Leaves List"}
-        button={true}
-        buttonTitle={"Edit"}
-      >
+      <PageFrame>
         <YearWiseTable
           key={leavesData.length}
           dateColumn={"fromDate"}
           search={true}
           searchColumn={"Leave Type"}
+          tableTitle={"Leaves List"}
           data={leavesData}
           columns={leavesRecord}
         />
-      </WidgetSection>
+      </PageFrame>
 
       <WidgetSection
         border
@@ -350,6 +493,91 @@ const ViewPayroll = () => {
           </div>
         </div>
       </WidgetSection>
+      <MuiModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        title={"Attendance Request Details"}
+      >
+        {selectedRequest ? (
+          <div className="flex flex-col gap-4">
+            {/* 🧑‍💼 Employee Details */}
+            <div className=" pb-2">
+              <div className="mb-4">
+                <span className="text-subtitle font-pmedium text-black ">
+                  Employee Details
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                <DetalisFormatted
+                  title="Employee ID"
+                  detail={selectedRequest?.empId}
+                />
+                <DetalisFormatted title="Name" detail={selectedRequest?.name} />
+                <DetalisFormatted
+                  title="Reason"
+                  detail={selectedRequest?.reason}
+                />
+              </div>
+            </div>
+
+            {/* 📅 Request Information */}
+            <div className=" pb-2">
+              <div className="mb-4">
+                <span className="text-subtitle font-pmedium text-black mb-4">
+                  Request Information
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <DetalisFormatted
+                  title="Raised Date"
+                  detail={humanDate(selectedRequest?.createdAt)}
+                />
+                <DetalisFormatted
+                  title="Attendance Date"
+                  detail={selectedRequest?.requestDay}
+                />
+                <DetalisFormatted
+                  title="Status"
+                  detail={selectedRequest?.status}
+                />
+              </div>
+            </div>
+
+            {/* ⏰ Attendance Timing */}
+            <div>
+              <div className="mb-4">
+                <span className="text-subtitle font-pmedium text-black mb-4">
+                  Attendance Timing
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <DetalisFormatted
+                  title="Start Time"
+                  detail={humanTime(selectedRequest?.inTime)}
+                />
+                <DetalisFormatted
+                  title="End Time"
+                  detail={humanTime(selectedRequest?.outTime)}
+                />
+                <DetalisFormatted
+                  title="Original Start Time"
+                  detail={selectedRequest?.originalInTime}
+                />
+                <DetalisFormatted
+                  title="Original End Time"
+                  detail={selectedRequest?.originalOutTime}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center items-center py-6">
+            <CircularProgress />
+          </div>
+        )}
+      </MuiModal>
     </div>
   );
 };

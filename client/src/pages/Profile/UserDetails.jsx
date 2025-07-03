@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
@@ -22,6 +22,13 @@ import { toast } from "sonner";
 import PageFrame from "../../components/Pages/PageFrame";
 import PrimaryButton from "../../components/PrimaryButton";
 import SecondaryButton from "../../components/SecondaryButton";
+import {
+  isAlphanumeric,
+  noOnlyWhitespace,
+  isValidEmail,
+  isValidPhoneNumber,
+  isValidPinCode,
+} from "../../utils/validators";
 
 const UserDetails = () => {
   const axios = useAxiosPrivate();
@@ -103,9 +110,22 @@ const UserDetails = () => {
     },
   });
 
-  const { control, handleSubmit, reset } = useForm({
-    values: userDetails || {},
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
+    mode: "onChange",
+    defaultValues: {},
   });
+
+  // Reset when data is loaded
+  useEffect(() => {
+    if (userDetails) {
+      reset(userDetails);
+    }
+  }, [userDetails, reset]);
 
   const mutation = useMutation({
     mutationFn: async (updatedData) => {
@@ -413,12 +433,15 @@ const UserDetails = () => {
                             <Controller
                               name={name}
                               control={control}
-                              render={({ field }) => (
+                              rules={{ required: `${label} is required` }}
+                              render={({ field, fieldState: { error } }) => (
                                 <TextField
                                   size="small"
                                   select
                                   {...field}
                                   label={label}
+                                  error={!!error}
+                                  helperText={error?.message}
                                 >
                                   {options.map((opt) => (
                                     <MenuItem key={opt} value={opt}>
@@ -443,7 +466,8 @@ const UserDetails = () => {
                           <Controller
                             name={name}
                             control={control}
-                            render={({ field }) => (
+                            rules={{ required: `${label} is required` }}
+                            render={({ field, fieldState: { error } }) => (
                               <DatePicker
                                 label={label}
                                 format="DD-MM-YYYY"
@@ -452,7 +476,12 @@ const UserDetails = () => {
                                   field.onChange(date ? date.toISOString() : "")
                                 }
                                 slotProps={{
-                                  textField: { fullWidth: true, size: "small" },
+                                  textField: {
+                                    fullWidth: true,
+                                    size: "small",
+                                    error: !!error,
+                                    helperText: error?.message,
+                                  },
                                 }}
                               />
                             )}
@@ -495,12 +524,43 @@ const UserDetails = () => {
                         <Controller
                           name={name}
                           control={control}
-                          render={({ field }) => (
+                          rules={{
+                            ...([
+                              "firstName",
+                              "lastName",
+                              "mobilePhone",
+                              "pinCode",
+                              "email",
+                            ].includes(name)
+                              ? { required: `${label} is required` }
+                              : {}),
+
+                            validate: {
+                              // noOnlyWhitespace,
+                              ...([
+                                "firstName",
+                                // "middleName",
+                                "lastName",
+                                // "addressLine1",
+                                // "addressLine2",
+                              ].includes(name)
+                                ? { isAlphanumeric }
+                                : {}),
+                              ...(name === "email" ? { isValidEmail } : {}),
+                              ...(name === "mobilePhone"
+                                ? { isValidPhoneNumber }
+                                : {}),
+                              ...(name === "pinCode" ? { isValidPinCode } : {}),
+                            },
+                          }}
+                          render={({ field, fieldState: { error } }) => (
                             <TextField
+                              {...field}
                               size="small"
                               fullWidth
                               label={label}
-                              {...field}
+                              error={!!error}
+                              helperText={error?.message}
                             />
                           )}
                         />

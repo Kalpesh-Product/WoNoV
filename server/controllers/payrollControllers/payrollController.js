@@ -10,6 +10,7 @@ const Company = require("../../models/hr/Company");
 const { startOfMonth, isSameMonth } = require("date-fns");
 const Leave = require("../../models/hr/Leaves");
 const Attendance = require("../../models/hr/Attendance");
+const AttendanceCorrection = require("../../models/hr/AttendanceCorrection");
 
 const generatePayroll = async (req, res, next) => {
   const logPath = "payrolls/PayrollLog";
@@ -395,6 +396,43 @@ const fetchUserPayroll = async (req, res, next) => {
       populate: [{ path: "departments" }, { path: "role" }],
     });
 
+    const attendancesRequests = await AttendanceCorrection.find({
+      user: userId,
+      company,
+      status: "Pending",
+    })
+      .lean()
+      .exec();
+
+    let transformedAttendances = attendances.map((attendance) => ({
+      ...attendance._doc,
+      correctionId: null,
+    }));
+
+    if (attendancesRequests && attendancesRequests.length > 0) {
+      transformedAttendances = attendances.map((attendance) => {
+        const matchingRequest = attendancesRequests.find((request) => {
+          const isPending = attendance.status === "Pending";
+          const attendanceInTime = attendance.inTime;
+          const requestInTime = request.originalInTime;
+
+          const attendanceOutTime = attendance.outTime;
+          const requestOutTime = request.originalOutTime;
+          const matchedAttendance =
+            new Date(attendanceInTime).toString() ===
+              new Date(requestInTime).toString() ||
+            new Date(attendanceOutTime).toString() ===
+              new Date(requestOutTime).toString();
+          return matchedAttendance && isPending;
+        });
+
+        return {
+          ...attendance._doc,
+          correctionId: matchingRequest ? matchingRequest._id : null,
+        };
+      });
+    }
+
     const leaves = await Leave.find({ takenBy: userId }).populate({
       path: "takenBy",
       select: "firstName lastName empId email departments role",
@@ -406,7 +444,11 @@ const fetchUserPayroll = async (req, res, next) => {
       pf: 4000,
     };
 
-    const transformedResponse = { attendances, leaves, paymentBreakup };
+    const transformedResponse = {
+      attendances: transformedAttendances,
+      leaves,
+      paymentBreakup,
+    };
 
     res.status(200).json(transformedResponse);
   } catch (error) {

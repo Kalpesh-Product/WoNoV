@@ -98,7 +98,7 @@ const VoucherCreation = () => {
           dateColumn={"approvedAt"}
           columns={invoiceCreationColumns}
           search
-          tableTitle={"Voucher"}
+          tableTitle={"Voucher History"}
           tableHeight={450}
           handleClick={() => {
             setViewVoucherModal(true);

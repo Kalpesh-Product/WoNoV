@@ -64,6 +64,7 @@ const ClockInOutAttendance = () => {
 
     if (hasClockedIn && clockIn && serverNow) {
       setStartTime(clockIn);
+      setClockedInStatus(hasClockedIn);
       const calculatedOffset = computeOffset(new Date());
       setOffset(calculatedOffset);
       setElapsedTime(getElapsedSecondsWithOffset(clockIn, calculatedOffset));
@@ -145,11 +146,11 @@ const ClockInOutAttendance = () => {
       setClockedInStatus(false);
       setTotalHours((prev) => ({
         ...prev,
-        workHours: calculateTotalHours([], startTime, outTime, "workhours"),
+        workHours: calculateTotalHours(breakHours, startTime, outTime, "workhours"),
       }));
       dispatch(setClockOutTime(outTime));
       dispatch(
-        setWorkHours(calculateTotalHours([], startTime, outTime, "workhours"))
+        setWorkHours(calculateTotalHours(breakHours, startTime, outTime, "workhours"))
       );
       dispatch(setHasClockedIn(false));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
@@ -171,7 +172,7 @@ const ClockInOutAttendance = () => {
       setOffset(0); // start fresh
       setTotalHours((prev) => ({
         ...prev,
-        workHours: calculateTotalHours([], startTime, breakTime, "workhours"),
+        workHours: calculateTotalHours(breakHours, startTime, breakTime, "workhours"),
       }));
       const updatedBreaks = [...breaks];
       if (
@@ -189,7 +190,7 @@ const ClockInOutAttendance = () => {
       // dispatch(setClockOutTime(breakTime));
 
       dispatch(
-        setWorkHours(calculateTotalHours([], startTime, breakTime, "workhours"))
+        setWorkHours(calculateTotalHours(breakHours, startTime, breakTime, "workhours"))
       );
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
@@ -288,8 +289,21 @@ const ClockInOutAttendance = () => {
 
   const calculateTotalHours = (breaksHours, startTime, endTime, type) => {
     if (type === "workhours") {
-      const workDuration = (new Date(endTime) - new Date(startTime)) / 1000;
-      return formatTime(workDuration);
+      const rawWorkSeconds = (new Date(endTime) - new Date(startTime)) / 1000;
+
+      const breakDuration = breaksHours.reduce((total, brk) => {
+        if (brk.start && brk.end) {
+          return total + (new Date(brk.end) - new Date(brk.start)) / 1000;
+        }
+        return total;
+      }, 0);
+
+      const netWorkSeconds = rawWorkSeconds - breakDuration;
+
+      console.log("rawWorkSeconds",rawWorkSeconds)
+      console.log("breakHours",breakDuration)
+      console.log("netWorkSeconds",netWorkSeconds)
+      return formatTime(netWorkSeconds > 0 ? netWorkSeconds : 0);
     } else {
       const breakDuration = breaksHours.reduce((total, brk) => {
         const start = brk.start;
@@ -380,7 +394,7 @@ const ClockInOutAttendance = () => {
                 : "Clock In"}
             </button>
 
-            {clockInTime && !clockOutTime && (
+            {clockedInStatus && (
               <button
                 onClick={takeBreak ? handleEnBreak : handleStartBreak}
                 className={`h-40 w-40 rounded-full ${
@@ -409,7 +423,9 @@ const ClockInOutAttendance = () => {
               <div
                 key={index}
                 className={`flex flex-col gap-2 justify-center text-center ${
-                  index !== timeStats.length - 1 ? "border-r-[1px] border-borderGray pr-4" : ""
+                  index !== timeStats.length - 1
+                    ? "border-r-[1px] border-borderGray pr-4"
+                    : ""
                 }`}
               >
                 <span className="text-muted">{stat.label}</span>

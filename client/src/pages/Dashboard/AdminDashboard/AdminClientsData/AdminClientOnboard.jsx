@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import { queryClient } from "../../../../main";
+import { isAlphanumeric, noOnlyWhitespace, isValidEmail, isValidPhoneNumber } from "../../../../utils/validators";
 
 const AdminClientOnboard = () => {
   const dispatch = useDispatch();
@@ -25,6 +26,7 @@ const AdminClientOnboard = () => {
     watch,
     formState: { errors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       client: "",
       name: "",
@@ -209,7 +211,13 @@ const AdminClientOnboard = () => {
                 <Controller
                   name="client"
                   control={control}
-                  rules={{ required: "Client Company is required" }}
+                  rules={{
+                    required: "Client Company is required",
+                    validate: {
+                      isAlphanumeric,
+                      noOnlyWhitespace,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -234,7 +242,13 @@ const AdminClientOnboard = () => {
                 <Controller
                   name="name"
                   control={control}
-                  rules={{ required: "Client Name is required" }}
+                  rules={{
+                    required: "Client Name is required",
+                    validate: {
+                      isAlphanumeric,
+                      noOnlyWhitespace,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -250,7 +264,13 @@ const AdminClientOnboard = () => {
                 <Controller
                   name="email"
                   control={control}
-                  rules={{ required: "Email is required" }}
+                  rules={{
+                    required: "Email is required",
+                    validate: {
+                      noOnlyWhitespace,
+                      isValidEmail
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -265,7 +285,10 @@ const AdminClientOnboard = () => {
                 <Controller
                   name="phone"
                   control={control}
-                  rules={{ required: "Phone is required" }}
+                  rules={{ required: "Phone is required",  validate: {
+                      isAlphanumeric,
+                      isValidPhoneNumber
+                    }, }}
                   render={({ field }) => (
                     <TextField
                       {...field}
