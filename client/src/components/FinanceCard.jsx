@@ -7,6 +7,7 @@ const FinanceCard = ({
   highlightNegativePositive,
   disableColorChange,
   titleCenter,
+  stateData
 }) => {
   const navigate = useNavigate();
 
@@ -48,12 +49,13 @@ const FinanceCard = ({
             <>
               <div key={index} className="flex justify-between items-center ">
                 <span
-                  onClick={() => navigate(item.route ? item.route : "")}
-                  className="text-content text-primary cursor-pointer hover:underline">
+                  onClick={() => navigate(item.route || "", { state: item.stateData || {} })}
+
+                  className={`text-content   ${item.route !== "#" ? "hover:underline cursor-pointer text-primary" : "text-black"} `}>
                   {item.title}
                 </span>
                 <span
-                  className={`text-content p-2 rounded-md cursor-pointer hover:underline ${
+                  className={`text-content p-2 rounded-md   ${
                     disableColorChange ? null : dynamicColor
                   }`}>
                   {item.value}

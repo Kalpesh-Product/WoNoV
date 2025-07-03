@@ -22,18 +22,24 @@ import { queryClient } from "../../main";
 import { toast } from "sonner";
 import MonthWiseTable from "../../components/Tables/MonthWiseTable";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
+import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 
 const HrCommonAttendance = () => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
 
-  const { control, reset, handleSubmit } = useForm({
+  const {
+    control,
+    reset,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
     defaultValues: {
       targetedDay: null,
       inTime: null,
       outTime: null,
-      reason:""
+      reason: "",
     },
   });
 
@@ -94,6 +100,7 @@ const HrCommonAttendance = () => {
 
   const onSubmit = (data) => {
     if (!auth?.user?.empId) return toast.error("User not found");
+
     correctionPost(data);
   };
 
@@ -210,8 +217,11 @@ const HrCommonAttendance = () => {
           </LocalizationProvider>
           <Controller
             name="reason"
-            rules={{ required: "Please specify your reason" }}
             control={control}
+            rules={{
+              required: "Please specify your reason",
+              validate: { noOnlyWhitespace, isAlphanumeric },
+            }}
             render={({ field }) => (
               <>
                 <TextField
@@ -221,6 +231,8 @@ const HrCommonAttendance = () => {
                   fullWidth
                   multiline
                   rows={3} // ← Change this number to increase/decrease height
+                  error={!!errors?.reason}
+                  helperText={errors?.reason?.message}
                 />
               </>
             )}
@@ -238,6 +250,11 @@ const HrCommonAttendance = () => {
               disabled={correctionPending}
             />
           </div>
+          {/* {Object.keys(errors).length > 0 && (
+            <pre className="text-red-500">
+              {JSON.stringify(errors, null, 2)}
+            </pre>
+          )} */}
         </form>
       </MuiModal>
     </div>

@@ -25,6 +25,7 @@ import CustomRating from "../../components/CustomRating";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import humanDate from "../../utils/humanDateForamt";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
+import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 
 const BookMeetings = () => {
   // ------------------------------Initializations ------------------------------------//
@@ -58,6 +59,7 @@ const BookMeetings = () => {
     control: reviewControl,
     formState: { errors: reviewErrors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       review: "",
       rating: 0,
@@ -398,7 +400,13 @@ const BookMeetings = () => {
           <Controller
             name="review"
             control={reviewControl}
-            rules={{ required: "Review is required" }}
+            rules={{
+              required: "Review is required",
+              validate: {
+                noOnlyWhitespace,
+                isAlphanumeric,
+              },
+            }}
             render={({ field }) => (
               <TextField
                 {...field}

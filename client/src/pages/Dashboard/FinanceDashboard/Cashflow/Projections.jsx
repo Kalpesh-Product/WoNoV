@@ -179,10 +179,10 @@ const Projections = () => {
     setViewModalOpen(true);
   };
 
-  const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
-    const numericalPnL = parseInt(item.pnl.replace(/,/g, ""), 10);
-    return sum + numericalPnL;
-  }, 0);
+  // const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
+  //   const numericalPnL = parseInt(item.pnl.replace(/,/g, ""), 10);
+  //   return sum + numericalPnL;
+  // }, 0);
 
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const techWidgets = [

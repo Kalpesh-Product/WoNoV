@@ -14,6 +14,7 @@ import MuiModal from "../../components/MuiModal";
 import dayjs from "dayjs";
 import MonthWiseTable from "../../components/Tables/MonthWiseTable";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
+import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 
 const HrCommonLeaves = () => {
   const { auth } = useAuth();
@@ -40,7 +41,7 @@ const HrCommonLeaves = () => {
       leavePeriod: "",
       hours: 0,
       description: "",
-    },
+    },mode:'onChange'
   });
 
   const leavePeriod = watch("leavePeriod");
@@ -69,6 +70,9 @@ const HrCommonLeaves = () => {
     setValue("hours", 0);
 
     if (leavePeriod === "Partial" && fromDate) {
+      setValue("toDate", fromDate); // 👈 Set toDate same as fromDate
+    }
+    if (leavePeriod === "Single" && fromDate) {
       setValue("toDate", fromDate); // 👈 Set toDate same as fromDate
     }
   }, [leavePeriod, fromDate, setValue]);
@@ -141,6 +145,49 @@ const HrCommonLeaves = () => {
       >
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           {/* Leave Type */}
+
+          <Controller
+            name="leaveType"
+            control={control}
+            rules={{ required: "Leave type is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                select
+                label="Leave type"
+                size="small"
+              >
+                {leaveType.map((type, idx) => (
+                  <MenuItem key={idx} value={type}>
+                    {type}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+
+          {/* Leave Period */}
+          <Controller
+            name="leavePeriod"
+            control={control}
+            rules={{ required: "Leave period is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                select
+                label="Leave period"
+                size="small"
+              >
+                {leavePeriodOptions.map((option, idx) => (
+                  <MenuItem key={idx} value={option}>
+                    {option}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
           <div className="grid grid-cols-2 gap-4">
             {/* From Date */}
             <Controller
@@ -185,48 +232,6 @@ const HrCommonLeaves = () => {
               )}
             />
           </div>
-          <Controller
-            name="leaveType"
-            control={control}
-            rules={{ required: "Leave type is required" }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                select
-                label="Leave type"
-                size="small"
-              >
-                {leaveType.map((type, idx) => (
-                  <MenuItem key={idx} value={type}>
-                    {type}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
-
-          {/* Leave Period */}
-          <Controller
-            name="leavePeriod"
-            control={control}
-            rules={{ required: "Leave period is required" }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                select
-                label="Leave period"
-                size="small"
-              >
-                {leavePeriodOptions.map((option, idx) => (
-                  <MenuItem key={idx} value={option}>
-                    {option}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
 
           {/* Hours */}
           <Controller
@@ -248,7 +253,10 @@ const HrCommonLeaves = () => {
           {/* Description */}
           <Controller
             name="description"
-            rules={{ required: "Description is required" }}
+            rules={{ required: "Description is required", validate:{
+              isAlphanumeric,
+              noOnlyWhitespace
+            } }}
             control={control}
             render={({ field }) => (
               <TextField
@@ -257,6 +265,8 @@ const HrCommonLeaves = () => {
                 label="Description"
                 multiline
                 rows={4}
+                error={!!errors.description}
+                helperText={errors?.description?.message}
               />
             )}
           />

@@ -11,6 +11,12 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import PageFrame from "../../../components/Pages/PageFrame";
+import {
+  isAlphanumeric,
+  isValidEmail,
+  isValidPhoneNumber,
+  noOnlyWhitespace,
+} from "../../../utils/validators";
 
 const AddClient = () => {
   const {
@@ -172,7 +178,13 @@ const AddClient = () => {
                   <Controller
                     name="firstName"
                     control={control}
-                    rules={{ required: "First Name is required" }}
+                    rules={{
+                      required: "First Name is required",
+                      validate: {
+                        noOnlyWhitespace,
+                        isAlphanumeric,
+                      },
+                    }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -187,7 +199,13 @@ const AddClient = () => {
                   <Controller
                     name="lastName"
                     control={control}
-                    rules={{ required: "Last Name is required" }}
+                    rules={{
+                      required: "Last Name is required",
+                      validate: {
+                        noOnlyWhitespace,
+                        isAlphanumeric,
+                      },
+                    }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -205,11 +223,17 @@ const AddClient = () => {
                   <Controller
                     name="phoneNumber"
                     control={control}
-                    rules={{ required: "Phone Number is required" }}
+                    rules={{
+                      required: "Phone Number is required",
+                      validate: {
+                        isValidPhoneNumber,
+                      },
+                    }}
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
+                        type="number"
                         label="Phone"
                         error={!!errors.phoneNumber}
                         helperText={errors.phoneNumber?.message}
@@ -229,7 +253,8 @@ const AddClient = () => {
                         helperText={errors.gender?.message}
                         size="small"
                         label="Gender"
-                        fullWidth>
+                        fullWidth
+                      >
                         <MenuItem value="" disabled>
                           Select Gender
                         </MenuItem>
@@ -242,6 +267,13 @@ const AddClient = () => {
                 <Controller
                   name="email"
                   control={control}
+                  rules={{
+                    required: "Email is required",
+                    validate: {
+                      isValidEmail,
+                      noOnlyWhitespace,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -257,7 +289,13 @@ const AddClient = () => {
                 <Controller
                   name="purposeOfVisit"
                   control={control}
-                  rules={{ required: "Purpose is required" }}
+                  rules={{
+                    required: "Purpose is required",
+                    validate: {
+                      noOnlyWhitespace,
+                      isAlphanumeric,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -337,7 +375,13 @@ const AddClient = () => {
                 <Controller
                   name="clientCompany"
                   control={control}
-                  rules={{ required: "Client Company is required" }}
+                  rules={{
+                    required: "Client Company is required",
+                    validate: {
+                      noOnlyWhitespace,
+                      isAlphanumeric,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -353,7 +397,13 @@ const AddClient = () => {
                 <Controller
                   name="sector"
                   control={control}
-                  rules={{ required: "Sector is required" }}
+                  rules={{
+                    required: "Sector is required",
+                    validate: {
+                      noOnlyWhitespace,
+                      isAlphanumeric,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -379,7 +429,8 @@ const AddClient = () => {
                         field.onChange(e);
                         handleStateSelect(e.target.value);
                       }}
-                      fullWidth>
+                      fullWidth
+                    >
                       <MenuItem value="">Select a State</MenuItem>
                       {states.map((item) => (
                         <MenuItem value={item.isoCode} key={item.isoCode}>
@@ -398,12 +449,14 @@ const AddClient = () => {
                       size="small"
                       select
                       label="City"
-                      fullWidth>
+                      fullWidth
+                    >
                       <MenuItem value="">Select a City</MenuItem>
                       {cities.map((item) => (
                         <MenuItem
                           value={item.name}
-                          key={`${item.name}-${item.stateCode}-${item.latitude}`}>
+                          key={`${item.name}-${item.stateCode}-${item.latitude}`}
+                        >
                           {item.name}
                         </MenuItem>
                       ))}
@@ -427,7 +480,8 @@ const AddClient = () => {
                       select
                       error={!!errors.idProof?.idType}
                       helperText={errors.idProof?.idType?.message}
-                      fullWidth>
+                      fullWidth
+                    >
                       <MenuItem value="" disabled>
                         Select Id Type
                       </MenuItem>

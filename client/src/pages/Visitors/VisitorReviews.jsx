@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { queryClient } from "../../main";
 import humanDate from "../../utils/humanDateForamt";
 import PageFrame from "../../components/Pages/PageFrame";
+import { noOnlyWhitespace } from "../../utils/validators";
 
 const VisitorReviews = () => {
   const axios = useAxiosPrivate();
@@ -128,7 +129,8 @@ const VisitorReviews = () => {
                 params.value === "Reply Review" ? (
                   <div
                     className="flex flex-row items-center justify-center gap-2"
-                    onClick={handleClick}>
+                    onClick={handleClick}
+                  >
                     <PiArrowBendLeftDownBold />
                     {params.value}
                   </div>
@@ -201,7 +203,8 @@ const VisitorReviews = () => {
         <MuiAside
           open={openSidebar}
           onClose={() => setOpenSidebar(false)}
-          title={"Reviews"}>
+          title={"Reviews"}
+        >
           <div className="p-2 space-y-6">
             <h1 className="font-pmedium text-subtitle">
               {reviewData.nameofreview}
@@ -215,11 +218,17 @@ const VisitorReviews = () => {
             <div className="mt-5">
               <form
                 onSubmit={handleSubmit(replyReview)}
-                className="flex flex-col gap-4">
+                className="flex flex-col gap-4"
+              >
                 <Controller
                   name="reply"
                   control={control}
-                  rules={{ required: "Please add a review" }}
+                  rules={{
+                    required: "Please add a review",
+                    validate: {
+                      noOnlyWhitespace,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
