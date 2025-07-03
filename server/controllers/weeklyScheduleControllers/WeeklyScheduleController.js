@@ -59,19 +59,19 @@ const assignWeeklyUnit = async (req, res, next) => {
       throw new CustomError("Unit not found", logPath, logAction, logSourceKey);
     }
 
-    const isAlreadyAssigned = await WeeklySchedule.findOne({
-      "employee.id": foundUser._id,
-      startDate: { $lte: endDate },
-      endDate: { $gte: startDate },
-    })
-      .lean()
-      .exec();
+    // const isAlreadyAssigned = await WeeklySchedule.findOne({
+    //   "employee.id": foundUser._id,
+    //   startDate: { $lte: endDate },
+    //   endDate: { $gte: startDate },
+    // })
+    //   .lean()
+    //   .exec();
 
-    if (isAlreadyAssigned) {
-      return res.status(400).json({
-        message: "Employee is already assigned to this location",
-      });
-    }
+    // if (isAlreadyAssigned) {
+    //   return res.status(400).json({
+    //     message: "Employee is already assigned to this location",
+    //   });
+    // }
 
     // Create a new WeeklyUnit document
     const newAssignedUnit = new WeeklySchedule({

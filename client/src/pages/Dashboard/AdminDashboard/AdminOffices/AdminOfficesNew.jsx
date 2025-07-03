@@ -88,10 +88,8 @@ const AdminOfficesNew = () => {
     occupied: unit.clientsCount,
   }));
 
-
   const maxY = Math.max(...chartData.map((item) => item.occupied), 5);
   const roundedMax = Math.ceil(maxY / 5) * 5;
-
 
   const inrFormat = (val) => val.toLocaleString("en-IN");
 
@@ -101,7 +99,7 @@ const AdminOfficesNew = () => {
       data: chartData.map((item) => item.occupied),
     },
   ];
-  const totalOffices = chartData.reduce((sum,item)=>(item.occupied + sum),0)
+  const totalOffices = chartData.reduce((sum, item) => item.occupied + sum, 0);
 
   const expenseOptions = {
     chart: {
@@ -125,6 +123,9 @@ const AdminOfficesNew = () => {
       style: { fontSize: "12px", colors: ["#000"] },
       offsetY: -22,
     },
+    tooltip: {
+      enabled: false, // ⛔ disables tooltip on hover
+    },
     yaxis: {
       max: roundedMax,
       title: { text: "Client Count" },
@@ -138,12 +139,21 @@ const AdminOfficesNew = () => {
     legend: {
       show: true,
       position: "top",
+      onItemHover: {
+        highlightDataSeries: false, // ⛔ disables hover highlight on legend
+      },
     },
   };
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      <WidgetSection layout={1} border padding title={"admin offices"} TitleAmount={`Total clients: ${totalOffices}`}>
+      <WidgetSection
+        layout={1}
+        border
+        padding
+        title={"admin offices"}
+        TitleAmount={`Total clients: ${totalOffices}`}
+      >
         <NormalBarGraph data={barGraphSeries} options={expenseOptions} />
       </WidgetSection>
       <PageFrame>
