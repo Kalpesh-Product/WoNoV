@@ -382,6 +382,7 @@ import HrCommonDocuments from "../pages/HR/HrCommonDocuments";
 import BuildingUnits from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/BuildingUnits";
 import HouseKeepingMembersList from "../pages/Dashboard/AdminDashboard/HouseKeepingMembersList";
 import HouseKeepingLayout from "../pages/Dashboard/AdminDashboard/HouseKeepingLayout";
+import HouseKeepingOnboard from "../pages/Dashboard/AdminDashboard/HouseKeepingOnboard";
 
 export const routes = createBrowserRouter([
   {
@@ -818,8 +819,8 @@ export const routes = createBrowserRouter([
                             element: <HouseKeepingMembersList />,
                           },
                           {
-                            path: "mix-bag/housekeeping-members-schedule",
-                            element: <HousekeepingTeamMembersSchedule />,
+                            path: "member-onboard",
+                            element: <HouseKeepingOnboard />,
                           },
                         ],
                       },

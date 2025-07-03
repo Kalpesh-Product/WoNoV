@@ -198,7 +198,7 @@ const HouseKeepingMembersList = () => {
           <AgTable
             key={houseKeepingData.length}
             search={true}
-            tableTitle={"Housekeeping Members Schedule"}
+            tableTitle={"Housekeeping Members List"}
             // buttonTitle={"Assign Member"}
             data={transformedData}
             columns={memberColumns}
