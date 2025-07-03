@@ -73,12 +73,12 @@ const ViewPayroll = () => {
           menuItems.unshift(
             {
               label: "Approve",
-              onClick: () => approveRequest(params.data.id),
+              onClick: () => approveRequest(params.data.correctionId),
               isLoading: isLoading,
             },
             {
               label: "Reject",
-              onClick: () => rejectRequest(params.data.id),
+              onClick: () => rejectRequest(params.data.correctionId),
               isLoading: isLoading,
             }
           );
@@ -153,7 +153,7 @@ const ViewPayroll = () => {
       },
       onSuccess: function (data) {
         toast.success(data.message);
-        queryClient.invalidateQueries({ queryKey: ["pending-requests"] });
+        queryClient.invalidateQueries({ queryKey: ["userPayroll"] });
         setSelectedRequest(null);
         setOpenModal(false);
       },
@@ -172,7 +172,7 @@ const ViewPayroll = () => {
       },
       onSuccess: function (data) {
         toast.success(data.message);
-        queryClient.invalidateQueries(["pending-requests"]);
+        queryClient.invalidateQueries(["userPayroll"]);
         setSelectedRequest(null);
         setOpenModal(false);
       },
@@ -223,6 +223,7 @@ const ViewPayroll = () => {
         return {
           ...item,
           id: item._id,
+          correctionId : item.correctionId,
           date: item.inTime,
           inTime: item.inTime,
           outTime: item.outTime,
@@ -271,7 +272,7 @@ const ViewPayroll = () => {
     <div className="flex flex-col gap-4">
       <PageFrame>
         <YearWiseTable
-          key={attendanceData.map((item) => item.id)}
+          key={attendanceData.length}
           search={true}
           dateColumn={"date"}
           tableTitle={"Attendance"}
