@@ -41,7 +41,7 @@ const addNewHouseKeepingMember = async (req, res, next) => {
       state,
       city,
       pinCode,
-      manager: "798bf34e469e809084e24c6",
+      manager: "6798bf34e469e809084e24c6",
       department: "6798bae6e469e809084e24a4", // hardcoded for now
     });
 
