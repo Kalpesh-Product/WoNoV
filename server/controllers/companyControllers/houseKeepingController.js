@@ -3,22 +3,52 @@ const Users = require("../../models/hr/UserData");
 
 const addNewHouseKeepingMember = async (req, res, next) => {
   try {
-    const { name, gender, manager } = req.body;
-    if (!name || !gender || !manager) {
+    const {
+      firstName,
+      middleName,
+      lastName,
+      gender,
+      dateOfBirth,
+      mobilePhone,
+      email,
+      addressLine1,
+      addressLine2,
+      country,
+      state,
+      city,
+      pinCode,
+      unit,
+      manager,
+    } = req.body;
+
+    // Basic validation
+    if (!firstName || !gender || !manager) {
       return res
         .status(400)
         .json({ message: "Please provide the valid details" });
     }
 
     const newHouseKeepingStaff = new HouseKeepingStaff({
-      name,
+      firstName,
+      middleName,
+      lastName,
       gender,
-      manager,
+      dateOfBirth,
+      mobilePhone,
+      email,
+      addressLine1,
+      addressLine2,
+      country,
+      state,
+      city,
+      pinCode,
       unit,
-      department: "6798bae6e469e809084e24a4",
+      manager,
+      department: "6798bae6e469e809084e24a4", // hardcoded for now
     });
 
     const savedHouseKeepingStaff = await newHouseKeepingStaff.save();
+
     res.status(201).json({
       message: "House Keeping Staff Added Successfully",
       savedHouseKeepingStaff,
@@ -38,20 +68,24 @@ const getHouseKeepingStaff = async (req, res, next) => {
       .lean()
       .exec();
 
-    const managerRoleId = houseKeepingStaff[0].manager._id.toString();
-    const manager = await Users.findOne({
-      role: managerRoleId,
-      isActive: true,
-    })
-      .lean()
-      .exec();
+    const staff = await Promise.all(
+      houseKeepingStaff.map(async (staffMember) => {
+        const managerRoleId = staffMember.manager?._id?.toString();
 
-    const staff = houseKeepingStaff.map((staff) => {
-      return {
-        ...staff,
-        manager,
-      };
-    });
+        const managerUser = await Users.findOne({
+          role: managerRoleId,
+          isActive: true,
+        })
+          .select("firstName lastName email mobileNumber")
+          .lean()
+          .exec();
+
+        return {
+          ...staffMember,
+          managerUser,
+        };
+      })
+    );
 
     return res.status(200).json(staff);
   } catch (error) {
@@ -59,4 +93,57 @@ const getHouseKeepingStaff = async (req, res, next) => {
   }
 };
 
-module.exports = { addNewHouseKeepingMember, getHouseKeepingStaff };
+const updateHouseKeepingMember = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const updatedStaff = await HouseKeepingStaff.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      { $set: updates },
+      { new: true }
+    );
+
+    if (!updatedStaff) {
+      return res
+        .status(404)
+        .json({ message: "Staff not found or already deleted." });
+    }
+
+    res.status(200).json({
+      message: "House Keeping Staff Updated Successfully",
+      updatedStaff,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const softDeleteHouseKeepingMember = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const deleted = await HouseKeepingStaff.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      { $set: { isDeleted: true } },
+      { new: true }
+    );
+
+    if (!deleted) {
+      return res
+        .status(404)
+        .json({ message: "Staff not found or already deleted." });
+    }
+
+    res.status(200).json({ message: "Staff soft deleted successfully." });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  getHouseKeepingStaff,
+  addNewHouseKeepingMember,
+  updateHouseKeepingMember,
+  softDeleteHouseKeepingMember,
+};
