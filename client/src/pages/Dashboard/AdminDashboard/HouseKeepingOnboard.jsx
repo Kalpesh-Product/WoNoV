@@ -57,6 +57,7 @@ const HouseKeepingOnboard = () => {
     },
     onSuccess: (data) => {
       toast.success(data.message || "Employee onboarded successfully!");
+      reset(),
       queryClient.invalidateQueries({ queryKey: ["housekeeping-staff"] });
     },
     onError: (error) => {
