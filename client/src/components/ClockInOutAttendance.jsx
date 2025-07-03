@@ -64,6 +64,7 @@ const ClockInOutAttendance = () => {
 
     if (hasClockedIn && clockIn && serverNow) {
       setStartTime(clockIn);
+      setClockedInStatus(hasClockedIn)
       const calculatedOffset = computeOffset(new Date());
       setOffset(calculatedOffset);
       setElapsedTime(getElapsedSecondsWithOffset(clockIn, calculatedOffset));
@@ -380,7 +381,7 @@ const ClockInOutAttendance = () => {
                 : "Clock In"}
             </button>
 
-            {clockInTime && !clockOutTime && (
+            {clockedInStatus && (
               <button
                 onClick={takeBreak ? handleEnBreak : handleStartBreak}
                 className={`h-40 w-40 rounded-full ${

@@ -32,14 +32,17 @@ const AttendanceTimeline = () => {
     return state.user;
   });
   const empID = auth?.user?.empId;
+    const [clockedInStatus, setClockedInStatus] = useState(hasClockedIn);
 
   // Boot with server timestamps
   useEffect(() => {
     const clockIn = auth?.user?.clockInDetails?.clockInTime;
     const serverNow = auth?.user?.time;
+       const hasClockedIn = auth?.user?.clockInDetails?.hasClockedIn;
 
     if (auth?.user?.clockInDetails?.hasClockedIn && clockIn && serverNow) {
       setStartTime(clockIn);
+      setClockedInStatus(hasClockedIn)
       const calculatedOffset = computeOffset(serverNow);
       setOffset(calculatedOffset);
       setElapsedTime(getElapsedSecondsWithOffset(clockIn, calculatedOffset));
