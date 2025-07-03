@@ -415,9 +415,14 @@ const fetchUserPayroll = async (req, res, next) => {
           const isPending = attendance.status === "Pending";
           const attendanceInTime = attendance.inTime;
           const requestInTime = request.originalInTime;
+
+          const attendanceOutTime = attendance.outTime;
+          const requestOutTime = request.originalOutTime;
           const matchedAttendance =
             new Date(attendanceInTime).toString() ===
-            new Date(requestInTime).toString();
+              new Date(requestInTime).toString() ||
+            new Date(attendanceOutTime).toString() ===
+              new Date(requestOutTime).toString();
           return matchedAttendance && isPending;
         });
 

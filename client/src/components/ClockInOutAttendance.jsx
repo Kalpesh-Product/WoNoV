@@ -146,11 +146,11 @@ const ClockInOutAttendance = () => {
       setClockedInStatus(false);
       setTotalHours((prev) => ({
         ...prev,
-        workHours: calculateTotalHours([], startTime, outTime, "workhours"),
+        workHours: calculateTotalHours(breakHours, startTime, outTime, "workhours"),
       }));
       dispatch(setClockOutTime(outTime));
       dispatch(
-        setWorkHours(calculateTotalHours([], startTime, outTime, "workhours"))
+        setWorkHours(calculateTotalHours(breakHours, startTime, outTime, "workhours"))
       );
       dispatch(setHasClockedIn(false));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
@@ -172,7 +172,7 @@ const ClockInOutAttendance = () => {
       setOffset(0); // start fresh
       setTotalHours((prev) => ({
         ...prev,
-        workHours: calculateTotalHours([], startTime, breakTime, "workhours"),
+        workHours: calculateTotalHours(breakHours, startTime, breakTime, "workhours"),
       }));
       const updatedBreaks = [...breaks];
       if (
@@ -190,7 +190,7 @@ const ClockInOutAttendance = () => {
       // dispatch(setClockOutTime(breakTime));
 
       dispatch(
-        setWorkHours(calculateTotalHours([], startTime, breakTime, "workhours"))
+        setWorkHours(calculateTotalHours(breakHours, startTime, breakTime, "workhours"))
       );
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
@@ -299,6 +299,10 @@ const ClockInOutAttendance = () => {
       }, 0);
 
       const netWorkSeconds = rawWorkSeconds - breakDuration;
+
+      console.log("rawWorkSeconds",rawWorkSeconds)
+      console.log("breakHours",breakDuration)
+      console.log("netWorkSeconds",netWorkSeconds)
       return formatTime(netWorkSeconds > 0 ? netWorkSeconds : 0);
     } else {
       const breakDuration = breaksHours.reduce((total, brk) => {
