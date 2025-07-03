@@ -493,6 +493,15 @@ const correctAttendance = async (req, res, next) => {
       );
     }
 
+    if (!inTime && !outTime) {
+      throw new CustomError(
+        "Provide the time to be corrected",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
     const targetedDate = new Date(targetedDay);
     const currentDate = new Date();
 
@@ -603,7 +612,26 @@ const correctAttendance = async (req, res, next) => {
       company,
     });
 
-    await newRequest.save();
+    const savedRequest = await newRequest.save();
+
+    const updatedAttendance = await Attendance.findOneAndUpdate(
+      {
+        user: savedRequest.user,
+        inTime: savedRequest.originalInTime,
+      },
+      {
+        $set: {
+          status: "Pending",
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedAttendance) {
+      return res
+        .status(400)
+        .json({ message: "Failed to update attendance status" });
+    }
 
     return res.status(200).json({
       message: "Correction request submitted successfully",
