@@ -73,12 +73,12 @@ const ViewPayroll = () => {
           menuItems.unshift(
             {
               label: "Approve",
-              onClick: () => approveRequest(params.data._id),
+              onClick: () => approveRequest(params.data.id),
               isLoading: isLoading,
             },
             {
               label: "Reject",
-              onClick: () => rejectRequest(params.data._id),
+              onClick: () => rejectRequest(params.data.id),
               isLoading: isLoading,
             }
           );
@@ -98,7 +98,29 @@ const ViewPayroll = () => {
     { field: "leaveType", headerName: "Leave Type" },
     { field: "leavePeriod", headerName: "Leave Period" },
     { field: "description", headerName: "Description", flex: 1 },
-    // { field: "paydeduction", headerName: "Pay Deduction", width: 100 },
+    { field: "status", headerName: "Status", cellRenderer : (params)=> (
+      <StatusChip status={params.value} />
+    ) },
+     {
+      field: "action",
+      headerName: "Action",
+      cellRenderer: (params) => (
+        <div>
+          {params.data.status === "Pending" ? (
+
+            <ThreeDotMenu
+              rowId={params.data.id}
+              menuItems={[
+                { label: "Accept", onClick: () => approveLeave(params.data.id) },
+                { label: "Reject", onClick: () => rejectLeave(params.data.id) },
+              ]}
+            />
+          ) : (
+            ""
+          )}
+        </div>
+      ),
+    },
   ];
   const location = useLocation();
   const { empId } = location.state;
@@ -120,7 +142,7 @@ const ViewPayroll = () => {
       }
     },
   });
-
+//Attendance correction
   const { mutate: approveRequest, isPending: approveRequestPending } =
     useMutation({
       mutationFn: async (id) => {
@@ -164,6 +186,37 @@ const ViewPayroll = () => {
     setOpenModal(true);
   };
 
+
+//Leaves correction
+
+  const { mutate: approveLeave, isPending: isApproving } = useMutation({
+    mutationFn: async (leaveId) => {
+      const res = await axios.patch(`/api/leaves/approve-leave/${leaveId}`);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Leave Approved");
+      queryClient.invalidateQueries({ queryKey: ["userPayrolls"] });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Approval failed");
+    },
+  });
+
+  const { mutate: rejectLeave, isPending: isRejecting } = useMutation({
+    mutationFn: async (leaveId) => {
+      const res = await axios.patch(`/api/leaves/reject-leave/${leaveId}`);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Leave Rejected");
+      queryClient.invalidateQueries({ queryKey: ["userPayroll"] });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Rejection failed");
+    },
+  });
+
   const attendanceData = isLoading
     ? []
     : userPayrollData.attendances.map((item) => {
@@ -184,6 +237,7 @@ const ViewPayroll = () => {
     : userPayrollData.leaves.map((item) => {
         return {
           ...item,
+          id : item._id,
           name: `${item.takenBy?.firstName} ${item.takenBy?.lastName}`,
           email: item.takenBy?.email,
           empId: item.takenBy?.empId,
@@ -212,7 +266,6 @@ const ViewPayroll = () => {
   };
 
   const paymentBreakup = isLoading ? [] : userPayrollData.paymentBreakup;
-  console.log(paymentBreakup);
 
   return (
     <div className="flex flex-col gap-4">
@@ -228,22 +281,17 @@ const ViewPayroll = () => {
         />
       </PageFrame>
 
-      <WidgetSection
-        layout={1}
-        border
-        title={"Leaves List"}
-        button={true}
-        buttonTitle={"Edit"}
-      >
+      <PageFrame>
         <YearWiseTable
           key={leavesData.length}
           dateColumn={"fromDate"}
           search={true}
           searchColumn={"Leave Type"}
+          tableTitle={"Leaves List"}
           data={leavesData}
           columns={leavesRecord}
         />
-      </WidgetSection>
+      </PageFrame>
 
       <WidgetSection
         border
