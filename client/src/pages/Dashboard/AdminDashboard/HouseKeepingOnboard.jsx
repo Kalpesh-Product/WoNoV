@@ -48,7 +48,6 @@ const HouseKeepingOnboard = () => {
 
   const { mutate: submitEmployee, isPending } = useMutation({
     mutationFn: async (formData) => {
-      console.log("Submitted Data:", formData);
       const response = await axios.post(
         "/api/company/add-housekeeping-member",
         formData
@@ -79,7 +78,7 @@ const HouseKeepingOnboard = () => {
       <div className="h-[65vh] overflow-y-auto">
         <div>
           <span className="text-primary font-pmedium text-title uppercase">
-            employee onboarding
+            housekeeping member onboarding
           </span>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="">
