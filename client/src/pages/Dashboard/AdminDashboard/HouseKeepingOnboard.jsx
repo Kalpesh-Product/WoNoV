@@ -9,6 +9,13 @@ import CountryStateCitySelector from "../../../components/CountryStateCitySelect
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { queryClient } from "../../../main";
+import {
+  isAlphanumeric,
+  noOnlyWhitespace,
+  isValidPhoneNumber,
+  isValidPinCode,
+} from "../../../utils/validators";
 
 const HouseKeepingOnboard = () => {
   const {
@@ -41,13 +48,16 @@ const HouseKeepingOnboard = () => {
 
   const { mutate: submitEmployee, isPending } = useMutation({
     mutationFn: async (formData) => {
-         console.log("Submitted Data:", formData);
-      const response = await axios.post("/api/housekeeping/onboard", formData);
+      console.log("Submitted Data:", formData);
+      const response = await axios.post(
+        "/api/company/add-housekeeping-member",
+        formData
+      );
       return response.data;
     },
     onSuccess: (data) => {
-      toast.success("Employee onboarded successfully!");
-      console.log("Submitted Data:", data);
+      toast.success(data.message || "Employee onboarded successfully!");
+      queryClient.invalidateQueries({ queryKey: ["housekeeping-staff"] });
     },
     onError: (error) => {
       console.error("Submission failed:", error);
@@ -85,7 +95,13 @@ const HouseKeepingOnboard = () => {
                   <Controller
                     name="firstName"
                     control={control}
-                    rules={{ required: "First Name is Required" }}
+                    rules={{
+                      required: "First Name is Required",
+                      validate: {
+                        isAlphanumeric,
+                        noOnlyWhitespace,
+                      },
+                    }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -101,7 +117,13 @@ const HouseKeepingOnboard = () => {
                   <Controller
                     name="middleName"
                     control={control}
-                    rules={{ required: "Middle Name is Required" }}
+                    rules={{
+                      required: "Middle Name is Required",
+                      validate: {
+                        isAlphanumeric,
+                        noOnlyWhitespace,
+                      },
+                    }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -116,7 +138,13 @@ const HouseKeepingOnboard = () => {
                   <Controller
                     name="lastName"
                     control={control}
-                    rules={{ required: "Last Name is required" }}
+                    rules={{
+                      required: "Last Name is required",
+                      validate: {
+                        isAlphanumeric,
+                        noOnlyWhitespace,
+                      },
+                    }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -179,6 +207,10 @@ const HouseKeepingOnboard = () => {
                       value: /^[0-9]{10}$/,
                       message: "Enter a valid 10-digit number",
                     },
+                    validate: {
+                      isValidPhoneNumber,
+                      noOnlyWhitespace,
+                    },
                   }}
                   render={({ field }) => (
                     <TextField
@@ -188,21 +220,6 @@ const HouseKeepingOnboard = () => {
                       fullWidth
                       helperText={errors?.mobilePhone?.message}
                       error={!!errors.mobilePhone}
-                    />
-                  )}
-                />
-                <Controller
-                  name="email"
-                  control={control}
-                  rules={{ required: "Email is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Email"
-                      fullWidth
-                      helperText={errors?.lastName?.message}
-                      error={!!errors.lastName}
                     />
                   )}
                 />
@@ -219,26 +236,42 @@ const HouseKeepingOnboard = () => {
                 <Controller
                   name="addressLine1"
                   control={control}
-                  defaultValue=""
+                  rules={{
+                    required: "Address Line 1 is Required",
+                    validate: {
+                      isAlphanumeric,
+                      noOnlyWhitespace,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Address Line 1"
                       fullWidth
+                      error={!!errors.addressLine1}
+                      helperText={errors?.addressLine1?.message}
                     />
                   )}
                 />
                 <Controller
                   name="addressLine2"
                   control={control}
-                  defaultValue=""
+                  rules={{
+                    required: "Address Line 2 is Required",
+                    validate: {
+                      isAlphanumeric,
+                      noOnlyWhitespace,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Address Line 2"
                       fullWidth
+                      error={!!errors.addressLine2}
+                      helperText={errors?.addressLine2?.message}
                     />
                   )}
                 />
@@ -294,12 +327,20 @@ const HouseKeepingOnboard = () => {
                   <Controller
                     name="pinCode"
                     control={control}
+                    rules={{
+                      required: "Pin Code is Required",
+                      validate: {
+                        isAlphanumeric,
+                        isValidPinCode
+                      },
+                    }}
                     defaultValue=""
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
                         label="Pin Code"
+                        type="number"
                         fullWidth
                       />
                     )}
