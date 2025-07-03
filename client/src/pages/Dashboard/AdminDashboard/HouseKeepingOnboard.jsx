@@ -5,12 +5,18 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import { DesktopDatePicker } from "@mui/x-date-pickers";
 import PageFrame from "../../../components/Pages/PageFrame";
+import CountryStateCitySelector from "../../../components/CountryStateCitySelector";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const HouseKeepingOnboard = () => {
   const {
     control,
     handleSubmit,
     reset,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -18,15 +24,40 @@ const HouseKeepingOnboard = () => {
       middleName: "",
       lastName: "",
       gender: "",
-      dob: null,
-      mobileNumber: "",
-      startDate: null,
-      reportsTo: "",
+      dateOfBirth: null,
+      mobilePhone: "",
+      email: "",
+      addressLine1: "",
+      addressLine2: "",
+      country: "",
+      state: "",
+      city: "",
+      pinCode: "",
+    },
+    mode: "onChange",
+  });
 
+  const axios = useAxiosPrivate();
+
+  const { mutate: submitEmployee, isPending } = useMutation({
+    mutationFn: async (formData) => {
+         console.log("Submitted Data:", formData);
+      const response = await axios.post("/api/housekeeping/onboard", formData);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success("Employee onboarded successfully!");
+      console.log("Submitted Data:", data);
+    },
+    onError: (error) => {
+      console.error("Submission failed:", error);
+      toast.error("Something went wrong.");
     },
   });
 
-  const onSubmit = (data) => {};
+  const onSubmit = (data) => {
+    submitEmployee(data);
+  };
 
   const handleReset = () => {
     reset();
@@ -36,7 +67,9 @@ const HouseKeepingOnboard = () => {
     <PageFrame>
       <div className="h-[65vh] overflow-y-auto">
         <div>
-          <span className="text-primary font-pmedium text-title uppercase">employee onboarding</span>
+          <span className="text-primary font-pmedium text-title uppercase">
+            employee onboarding
+          </span>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="">
           <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
@@ -109,7 +142,8 @@ const HouseKeepingOnboard = () => {
                         select
                         fullWidth
                         helperText={errors?.gender?.message}
-                        error={!!errors.gender}>
+                        error={!!errors.gender}
+                      >
                         <MenuItem value="" disabled>
                           Select a Gender
                         </MenuItem>
@@ -120,12 +154,12 @@ const HouseKeepingOnboard = () => {
                   />
 
                   <Controller
-                    name="dob"
+                    name="dateOfBirth"
                     control={control}
                     rules={{ required: "Date of Birth is required" }}
                     render={({ field }) => (
                       <DesktopDatePicker
-                        inputFormat=""
+                        format="DD-MM-YYYY"
                         slotProps={{ textField: { size: "small" } }}
                         label="Date of Birth"
                         {...field}
@@ -209,7 +243,7 @@ const HouseKeepingOnboard = () => {
                   )}
                 />
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 ">
-                  <Controller
+                  {/* <Controller
                     name="country"
                     control={control}
                     defaultValue=""
@@ -248,6 +282,13 @@ const HouseKeepingOnboard = () => {
                         fullWidth
                       />
                     )}
+                  /> */}
+
+                  <CountryStateCitySelector
+                    control={control}
+                    getValues={getValues}
+                    setValue={setValue}
+                    errors={errors}
                   />
 
                   <Controller
@@ -266,12 +307,16 @@ const HouseKeepingOnboard = () => {
                 </div>
               </div>
             </div>
-
           </div>
 
           {/* Submit Button */}
           <div className="flex items-center justify-center gap-4">
-            <PrimaryButton type="submit" title={"Submit"} />
+            <PrimaryButton
+              type="submit"
+              title={"Submit"}
+              disabled={isPending}
+            />
+
             <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
           </div>
         </form>
