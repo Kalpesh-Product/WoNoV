@@ -21,7 +21,7 @@ const addNewHouseKeepingMember = async (req, res, next) => {
     } = req.body;
 
     // Basic validation
-    if (!firstName || !gender || !manager) {
+    if (!firstName || !gender) {
       return res
         .status(400)
         .json({ message: "Please provide the valid details" });
