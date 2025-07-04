@@ -72,7 +72,7 @@ const houseKeepingStaffSchema = new mongoose.Schema(
     secondaryEmergencyContactNumber: { type: String },
     houseKeepingType: {
       type: String,
-      enum: ["self", "Third Party"],
+      enum: ["Self", "Third Party"],
     },
     isActive: {
       type: Boolean,
