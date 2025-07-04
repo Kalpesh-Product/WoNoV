@@ -275,22 +275,10 @@ const assignHouseKeepingMember = async (req, res, next) => {
 
 const getHouseKeepingAssignments = async (req, res, next) => {
   try {
-    const { memberId, unitId, fromDate, toDate } = req.query;
+    const { unitId } = req.query;
 
     const query = {};
-
-    if (memberId) query.housekeepingMember = memberId;
     if (unitId) query.unit = unitId;
-
-    if (fromDate && toDate) {
-      const start = new Date(fromDate);
-      const end = new Date(toDate);
-      if (isNaN(start) || isNaN(end)) {
-        return res.status(400).json({ message: "Invalid date range" });
-      }
-
-      query.$or = [{ startDate: { $lte: end }, endDate: { $gte: start } }];
-    }
 
     const schedules = await HouseKeepingSchedule.find(query)
       .populate("housekeepingMember", "name employeeId") // customize fields
