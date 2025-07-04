@@ -278,9 +278,8 @@ const getHouseKeepingAssignments = async (req, res, next) => {
     const { unitId } = req.query;
 
     const query = {};
-    if (unitId) query.unit = unitId;
 
-    const schedules = await HouseKeepingSchedule.find(query)
+    const schedules = await HouseKeepingSchedule.find({ unit: unitId    })
       .populate("housekeepingMember", "name employeeId") // customize fields
       .populate("unit", "unitName floorNumber"); // customize fields
 

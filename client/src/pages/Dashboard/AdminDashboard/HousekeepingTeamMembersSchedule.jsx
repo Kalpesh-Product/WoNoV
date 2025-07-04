@@ -312,7 +312,6 @@ const HousekeepingTeamMembersSchedule = () => {
     {
       field: "unitNo",
       headerName: "Unit No",
-      flex: 1,
       cellRenderer: (params) => (
         <span
           role="button"
@@ -333,8 +332,8 @@ const HousekeepingTeamMembersSchedule = () => {
         </span>
       ),
     },
-    { field: "unitName", headerName: "Unit Name", flex: 1 },
-    { field: "buildingName", headerName: "Building", flex: 1 },
+    { field: "unitName", headerName: "Unit Name" },
+    { field: "buildingName", headerName: "Building" },
     {
       field: "lead",
       headerName: "Primary Lead",
@@ -498,7 +497,7 @@ const HousekeepingTeamMembersSchedule = () => {
                         {!isHouseKeepingPending ? (
                           houseKeepingData.map((item) => (
                             <MenuItem key={item._id} value={item._id}>
-                              {item.name}
+                              {item.firstName} {item.lastName}
                             </MenuItem>
                           ))
                         ) : (

@@ -32,6 +32,7 @@ const HousekeepingTeamMembersCalendar = () => {
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["schedule"] });
   }, []);
+  console.log("passedData : ", passedData);
 
   const [calendarEvents, setCalendarEvents] = useState([]);
 
@@ -58,7 +59,7 @@ const HousekeepingTeamMembersCalendar = () => {
     queryKey: ["schedule"],
     queryFn: async () => {
       const res = await axios.get(
-        `/api/weekly-unit/get-unit-schedule?unitId=${passedData.id}&department=${department._id}`
+        `/api/company/get-housekeeping-schedule?unitId=${passedData?.id}`
       );
       return res.data;
     },
