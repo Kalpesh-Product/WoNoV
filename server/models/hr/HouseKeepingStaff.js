@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const HouseKeepingStaff = new mongoose.Schema(
+const houseKeepingStaffSchema = new mongoose.Schema(
   {
     // Basic Information
     firstName: { type: String, required: true },
@@ -82,5 +82,5 @@ const HouseKeepingStaff = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Employee = mongoose.model("Housekeepingmember", HouseKeepingStaff);
-module.exports = Employee;
+const HouseKeepingStaff = mongoose.model("Housekeepingstaff", houseKeepingStaffSchema);
+module.exports = HouseKeepingStaff;
