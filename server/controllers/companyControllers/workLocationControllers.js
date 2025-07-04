@@ -457,6 +457,19 @@ const fetchUnits = async (req, res, next) => {
   }
 };
 
+const fetchSimpleUnits = async (req, res, next) => {
+  try {
+    const units = await Unit.find()
+      .populate([{ path: "building", select: "buildingName" }])
+      .lean()
+      .exec();
+
+    return res.status(200).json(units);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const uploadUnitImage = async (req, res, next) => {
   try {
     const { unitId, imageType } = req.body;
@@ -607,4 +620,5 @@ module.exports = {
   fetchBuildings,
   assignPrimaryUnit,
   updateUnit,
+  fetchSimpleUnits
 };
