@@ -10,48 +10,115 @@ const addNewHouseKeepingMember = async (req, res, next) => {
       middleName,
       lastName,
       gender,
+      role,
+      companyEmail,
+      password,
+      phoneNumber,
       dateOfBirth,
-      mobilePhone,
-      email,
-      addressLine1,
-      addressLine2,
-      country,
-      state,
+      dateOfJoining,
+      workBuilding,
+      designation,
+      qualification,
+      shiftPolicy,
+      workSchdulePolicy,
+      leavePolicy,
+      holidayPolicy,
+      address,
+      presentAddress,
       city,
+      state,
       pinCode,
-      manager,
+      bankISFC,
+      bankName,
+      branchName,
+      accountName,
+      accountNumber,
+      aadharNumber,
+      PANCardNumber,
+      pfAccountNumber,
+      pfUAN,
+      ESIAccountNumber,
+      includeInPayroll,
+      employeeGrid,
+      professionalTaxExemption,
+      includePf,
+      employeePfContribution,
+      employeePf,
+      fatherName,
+      employementType,
+      employeeLeaveAndCount,
+      motherName,
+      martialStatus,
+      houseKeepingType,
+      primaryEmergencyContactName,
+      primaryEmergencyContactNumber,
+      secondayEmergencyContactName,
+      secondaryEmergencyContactNumber,
     } = req.body;
 
-    // Basic validation
+    // Required field validation
     if (!firstName || !gender) {
-      return res
-        .status(400)
-        .json({ message: "Please provide the valid details" });
+      return res.status(400).json({ message: "Please provide valid details" });
     }
 
-    const newHouseKeepingStaff = new HouseKeepingStaff({
+    const newEmployee = new HouseKeepingStaff({
       firstName,
       middleName,
       lastName,
       gender,
+      role,
+      companyEmail,
+      password,
+      phoneNumber,
       dateOfBirth,
-      mobilePhone,
-      email,
-      addressLine1,
-      addressLine2,
-      country,
-      state,
-      city,
-      pinCode,
+      employementType,
+      houseKeepingType,
+      employeeLeaveAndCount,
+      department: "6798bae6e469e809084e24a4",
+      dateOfJoining,
+      workBuilding,
       manager: "6798bf34e469e809084e24c6",
-      department: "6798bae6e469e809084e24a4", // hardcoded for now
+      designation,
+      qualification,
+      shiftPolicy,
+      workSchdulePolicy,
+      leavePolicy,
+      holidayPolicy,
+      address,
+      presentAddress,
+      city,
+      state,
+      pinCode,
+      bankISFC,
+      bankName,
+      branchName,
+      accountName,
+      accountNumber,
+      aadharNumber,
+      PANCardNumber,
+      pfAccountNumber,
+      pfUAN,
+      ESIAccountNumber,
+      includeInPayroll,
+      employeeGrid,
+      professionalTaxExemption,
+      includePf,
+      employeePfContribution,
+      employeePf,
+      fatherName,
+      motherName,
+      martialStatus,
+      primaryEmergencyContactName,
+      primaryEmergencyContactNumber,
+      secondayEmergencyContactName,
+      secondaryEmergencyContactNumber,
     });
 
-    const savedHouseKeepingStaff = await newHouseKeepingStaff.save();
+    const savedEmployee = await newEmployee.save();
 
     res.status(201).json({
-      message: "House Keeping Staff Added Successfully",
-      savedHouseKeepingStaff,
+      message: "Employee added successfully",
+      employee: savedEmployee,
     });
   } catch (error) {
     next(error);
@@ -99,7 +166,7 @@ const updateHouseKeepingMember = async (req, res, next) => {
     const updates = req.body;
 
     const updatedStaff = await HouseKeepingStaff.findOneAndUpdate(
-      { _id: id, isDeleted: false },
+      { _id: id, isActive: false },
       { $set: updates },
       { new: true }
     );
@@ -124,8 +191,8 @@ const softDeleteHouseKeepingMember = async (req, res, next) => {
     const { id } = req.params;
 
     const deleted = await HouseKeepingStaff.findOneAndUpdate(
-      { _id: id, isDeleted: false },
-      { $set: { isDeleted: true } },
+      { _id: id, isActive: true },
+      { $set: { isActive: false } },
       { new: true }
     );
 
@@ -149,17 +216,15 @@ const assignHouseKeepingMember = async (req, res, next) => {
       return res.status(400).json({ message: "Please fill all fields" });
     }
 
-    // const existingMember = await HouseKeepingStaff.findOne({
-    //   _id: memberId,
-    //   isDeleted: false,
-    // })
-    //   .lean()
-    //   .exec();
+    const existingMember = await HouseKeepingStaff.findOne({
+      _id: memberId,
+    })
+      .lean()
+      .exec();
 
-
-    // if (!existingMember) {
-    //   return res.status(404).json({ message: "No such member exists" });
-    // }
+    if (!existingMember) {
+      return res.status(404).json({ message: "No such member exists" });
+    }
 
     const validStartDate = new Date(startDate);
     const validEndDate = new Date(endDate);
@@ -210,25 +275,12 @@ const assignHouseKeepingMember = async (req, res, next) => {
 
 const getHouseKeepingAssignments = async (req, res, next) => {
   try {
-    const { memberId, unitId, fromDate, toDate } = req.query;
+    const { unitId } = req.query;
 
     const query = {};
 
-    if (memberId) query.housekeepingMember = memberId;
-    if (unitId) query.unit = unitId;
-
-    if (fromDate && toDate) {
-      const start = new Date(fromDate);
-      const end = new Date(toDate);
-      if (isNaN(start) || isNaN(end)) {
-        return res.status(400).json({ message: "Invalid date range" });
-      }
-
-      query.$or = [{ startDate: { $lte: end }, endDate: { $gte: start } }];
-    }
-
-    const schedules = await HouseKeepingSchedule.find(query)
-      .populate("housekeepingMember", "name employeeId") // customize fields
+    const schedules = await HouseKeepingSchedule.find({ unit: unitId })
+      .populate("housekeepingMember", "firstName lastName gender") // customize fields
       .populate("unit", "unitName floorNumber"); // customize fields
 
     return res.status(200).json({

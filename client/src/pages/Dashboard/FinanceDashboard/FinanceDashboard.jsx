@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useDispatch } from "react-redux";
+import { setTotalExpense, setTotalIncome } from "../../../redux/slices/financeSlice";
 
 const FinanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -215,6 +216,17 @@ const FinanceDashboard = () => {
   const totalExpense = currentExpenseSeries
     ? currentExpenseSeries.data.reduce((acc, val) => acc + val, 0)
     : 0;
+
+ useEffect(() => {
+  if (totalIncomeAmount) {
+    dispatch(setTotalIncome(totalIncomeAmount));
+  }
+
+  if (totalExpense) {
+    dispatch(setTotalExpense(totalExpense));
+  }
+}, [totalIncomeAmount, totalExpense, dispatch,setIsSidebarOpen]);
+
 
   //------------------Expensedata----------------------//
 

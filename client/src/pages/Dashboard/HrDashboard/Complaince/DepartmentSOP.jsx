@@ -16,7 +16,9 @@ const DepartmentSOP = () => {
           documentType ? documentType : "sop"
         }`
       );
-      const filtered = response.data.documents.sopDocuments;
+      const sopDocuments = response.data?.documents?.sopDocuments;
+      const policyDocuments = response.data?.documents?.policyDocuments;
+      const filtered = documentType === "sop" ? sopDocuments : policyDocuments;
       return filtered;
     },
     enabled: !!departmentId,

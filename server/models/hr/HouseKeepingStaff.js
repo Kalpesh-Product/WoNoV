@@ -1,44 +1,86 @@
 const mongoose = require("mongoose");
 
-const houseKeepingSchema = new mongoose.Schema({
-  // Basic Information
-  firstName: { type: String, required: true },
-  middleName: { type: String },
-  lastName: { type: String },
-  gender: {
-    type: String,
-    enum: ["male", "female", "other"],
-  },
-  dateOfBirth: { type: Date },
-  mobilePhone: { type: String },
-  email: { type: String },
+const houseKeepingStaffSchema = new mongoose.Schema(
+  {
+    // Basic Information
+    firstName: { type: String, required: true },
+    middleName: { type: String },
+    lastName: { type: String },
+    gender: { type: String, enum: ["Male", "Female"] },
+    role: { type: String },
+    companyEmail: { type: String },
+    password: { type: String },
+    phoneNumber: { type: String },
+    dateOfBirth: { type: Date },
+    employementType: { type: String },
+    employeeLeaveAndCount: { type: String },
+    department: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
+    dateOfJoining: { type: Date },
+    workBuilding: { type: String },
+    manager: { type: mongoose.Schema.Types.ObjectId, ref: "Role" },
+    designation: { type: String },
+    qualification: { type: String },
+    shiftPolicy: { type: String },
+    workSchdulePolicy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "WorkSchedulePolicy",
+    },
+    leavePolicy: { type: String },
+    holidayPolicy: {
+      type: String,
+    },
 
-  // Home Address Information
-  addressLine1: { type: String },
-  addressLine2: { type: String },
-  country: { type: String },
-  state: { type: String },
-  city: { type: String },
-  pinCode: { type: String },
+    // Address Info
+    address: { type: String },
+    presentAddress: { type: String },
+    city: { type: String },
+    state: { type: String },
+    pinCode: { type: String },
 
-  // Original fields
-  unit: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Unit",
-  },
-  manager: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Role",
-  },
-  department: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Department",
-  },
-  isDeleted: { type: Boolean, default: false },
-});
+    // Bank Info
+    bankISFC: { type: String },
+    bankName: { type: String },
+    branchName: { type: String },
+    accountName: { type: String },
+    accountNumber: { type: String },
 
-const HouseKeepingStaff = mongoose.model(
-  "HouseKeepingStaff",
-  houseKeepingSchema
+    // Identity
+    aadharNumber: { type: String },
+    PANCardNumber: { type: String },
+    pfAccountNumber: { type: String },
+    pfUAN: { type: String },
+    ESIAccountNumber: { type: String },
+
+    // Payroll
+    includeInPayroll: { type: Boolean, default: true },
+    employeeGrid: { type: String },
+    professionalTaxExemption: { type: Boolean },
+    includePf: { type: Boolean },
+    employeePfContribution: { type: Number },
+    employeePf: { type: Number },
+
+    // Family & Emergency
+    fatherName: { type: String },
+    motherName: { type: String },
+    martialStatus: {
+      type: String,
+      enum: ["single", "married", "divorced", "widowed"],
+    },
+    primaryEmergencyContactName: { type: String },
+    primaryEmergencyContactNumber: { type: String },
+    secondayEmergencyContactName: { type: String },
+    secondaryEmergencyContactNumber: { type: String },
+    houseKeepingType: {
+      type: String,
+      enum: ["Self", "Third Party"],
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  { timestamps: true }
 );
+
+const HouseKeepingStaff = mongoose.model("Housekeepingstaff", houseKeepingStaffSchema);
 module.exports = HouseKeepingStaff;

@@ -33,9 +33,9 @@ const HouseKeepingOnboard = () => {
       gender: "",
       dateOfBirth: null,
       mobilePhone: "",
+      houseKeepingType: "",
       email: "",
-      addressLine1: "",
-      addressLine2: "",
+      address: "",
       country: "",
       state: "",
       city: "",
@@ -57,7 +57,7 @@ const HouseKeepingOnboard = () => {
     onSuccess: (data) => {
       toast.success(data.message || "Employee onboarded successfully!");
       reset(),
-      queryClient.invalidateQueries({ queryKey: ["housekeeping-staff"] });
+        queryClient.invalidateQueries({ queryKey: ["housekeeping-staff"] });
     },
     onError: (error) => {
       console.error("Submission failed:", error);
@@ -175,8 +175,8 @@ const HouseKeepingOnboard = () => {
                         <MenuItem value="" disabled>
                           Select a Gender
                         </MenuItem>
-                        <MenuItem value="male">Male</MenuItem>
-                        <MenuItem value="female">Female</MenuItem>
+                        <MenuItem value="Male">Male</MenuItem>
+                        <MenuItem value="Female">Female</MenuItem>
                       </TextField>
                     )}
                   />
@@ -188,7 +188,14 @@ const HouseKeepingOnboard = () => {
                     render={({ field }) => (
                       <DesktopDatePicker
                         format="DD-MM-YYYY"
-                        slotProps={{ textField: { size: "small" } }}
+                        disableFuture
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            error: !!errors.dateOfBirth,
+                            helperText: errors?.dateOfBirth?.message,
+                          },
+                        }}
                         label="Date of Birth"
                         {...field}
                         renderInput={(params) => (
@@ -223,6 +230,28 @@ const HouseKeepingOnboard = () => {
                     />
                   )}
                 />
+                <Controller
+                  name="houseKeepingType"
+                  control={control}
+                  rules={{ required: "Type is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      fullWidth
+                      label="Member Type"
+                      size="small"
+                      error={!!errors.houseKeepingType}
+                      helperText={errors?.houseKeepingType?.message}
+                    >
+                      <MenuItem value="" disabled>
+                        Select a Member Type
+                      </MenuItem>
+                      <MenuItem value="Self">Self</MenuItem>
+                      <MenuItem value="Third Party">Third Party</MenuItem>
+                    </TextField>
+                  )}
+                />
               </div>
             </div>
             <div>
@@ -234,12 +263,11 @@ const HouseKeepingOnboard = () => {
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
                 <Controller
-                  name="addressLine1"
+                  name="address"
                   control={control}
                   rules={{
-                    required: "Address Line 1 is Required",
+                    required: "Address is Required",
                     validate: {
-                      isAlphanumeric,
                       noOnlyWhitespace,
                     },
                   }}
@@ -247,76 +275,16 @@ const HouseKeepingOnboard = () => {
                     <TextField
                       {...field}
                       size="small"
-                      label="Address Line 1"
+                      label="Address"
                       fullWidth
-                      error={!!errors.addressLine1}
-                      helperText={errors?.addressLine1?.message}
-                    />
-                  )}
-                />
-                <Controller
-                  name="addressLine2"
-                  control={control}
-                  rules={{
-                    required: "Address Line 2 is Required",
-                    validate: {
-                      isAlphanumeric,
-                      noOnlyWhitespace,
-                    },
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Address Line 2"
-                      fullWidth
-                      error={!!errors.addressLine2}
-                      helperText={errors?.addressLine2?.message}
+                      multiline
+                      rows={3}
+                      error={!!errors.address}
+                      helperText={errors?.address?.message}
                     />
                   )}
                 />
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 ">
-                  {/* <Controller
-                    name="country"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Country"
-                        fullWidth
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="state"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="State"
-                        fullWidth
-                      />
-                    )}
-                  />
-
-                  <Controller
-                    name="city"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="City"
-                        fullWidth
-                      />
-                    )}
-                  /> */}
-
                   <CountryStateCitySelector
                     control={control}
                     getValues={getValues}
@@ -331,7 +299,7 @@ const HouseKeepingOnboard = () => {
                       required: "Pin Code is Required",
                       validate: {
                         isAlphanumeric,
-                        isValidPinCode
+                        isValidPinCode,
                       },
                     }}
                     defaultValue=""
