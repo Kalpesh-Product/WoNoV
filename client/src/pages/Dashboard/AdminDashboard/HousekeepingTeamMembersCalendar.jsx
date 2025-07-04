@@ -85,12 +85,12 @@ const HousekeepingTeamMembersCalendar = () => {
     const allEvents = [];
 
     unitSchedule.forEach((schedule) => {
-      const empId = schedule?.employee?.id;
+      const empId = schedule?.housekeepingMember;
       const empName = empId
         ? `${empId.firstName ?? ""} ${empId.lastName ?? ""}`.trim()
         : "Unknown";
 
-      const unitName = schedule?.location?.unitName || "N/A";
+      const unitName = schedule?.unit?.unitName || "N/A";
       const manager = schedule?.manager || "N/A";
       const start = dayjs(schedule?.startDate);
       const end = dayjs(schedule?.endDate);
@@ -215,7 +215,7 @@ const HousekeepingTeamMembersCalendar = () => {
   }, [modalType, selectedEvent]);
 
   return (
-    <div className="flex flex-col gap-4 bg-white p-4">
+    <div className="flex flex-col gap-4 bg-white">
       <PageFrame>
         <div className="mb-4">
           <span className="text-title font-pmedium text-primary ">
