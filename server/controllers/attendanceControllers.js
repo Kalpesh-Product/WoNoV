@@ -304,7 +304,7 @@ const endBreak = async (req, res, next) => {
 
     if (!attendance) {
       throw new CustomError(
-        "No clock in record exists",
+        "No clock in record exists for today",
         logPath,
         logAction,
         logSourceKey
@@ -676,7 +676,14 @@ const approveCorrectionRequest = async (req, res, next) => {
       );
     }
 
-    const { user: userId, inTime, outTime, breaks = [] } = correction;
+    const {
+      user: userId,
+      inTime,
+      outTime,
+      breaks = [],
+      originalInTime,
+      originalOutTime,
+    } = correction;
 
     // ✅ Build date range to find original attendance
     const targetDate = new Date(inTime || correction.createdAt);
@@ -697,12 +704,17 @@ const approveCorrectionRequest = async (req, res, next) => {
     const updatedAttendance = await Attendance.findOneAndUpdate(
       {
         user: userId,
-        inTime: { $gte: startOfDay, $lte: endOfDay },
+        $or: [
+          {
+            inTime: originalInTime,
+          },
+          { outTime: originalOutTime },
+        ],
       },
       {
         $set: {
-          inTime,
-          outTime,
+          inTime: inTime ? inTime : originalInTime,
+          outTime: outTime ? outTime : originalOutTime,
           breaks: breaks.length > 0 ? breaks : [],
           breakDuration: breakDurationInMinutes,
           breakCount: breaks.length,
@@ -712,6 +724,7 @@ const approveCorrectionRequest = async (req, res, next) => {
       { new: true }
     );
 
+    console.log("updatedAttendance", updatedAttendance);
     if (!updatedAttendance) {
       throw new CustomError(
         "Failed to approve and update attendance record",

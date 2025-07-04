@@ -44,7 +44,7 @@ const HrLeaves = () => {
 
     while (date.isSameOrBefore(endDate, "month")) {
       months.push({
-        label: date.format("MMMM YYYY"),
+        label: date.format("MMM-YY"),
         value: date.format("YYYY-MM"),
       });
       date = date.add(1, "month");

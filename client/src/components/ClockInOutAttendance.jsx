@@ -140,18 +140,21 @@ const ClockInOutAttendance = () => {
     onSuccess: ({ data, outTime }) => {
       toast.success("Clocked out successfully!");
       setStartTime(null);
-      setClockTime((prev) => ({ ...prev, endTime: outTime }));
-      setElapsedTime(0);
-      setOffset(0);
-      setClockedInStatus(false);
-      setTotalHours((prev) => ({
+      if(clockInTime){ // avoid showing clock-out time if clocking out for prev day
+        setClockTime((prev) => ({ ...prev, endTime: outTime }));
+          setTotalHours((prev) => ({
         ...prev,
-        workHours: calculateTotalHours(breakHours, startTime, outTime, "workhours"),
+        workHours: calculateTotalHours(breaks, startTime, outTime, "workhours"),
       }));
       dispatch(setClockOutTime(outTime));
       dispatch(
-        setWorkHours(calculateTotalHours(breakHours, startTime, outTime, "workhours"))
+        setWorkHours(calculateTotalHours(breaks, startTime, outTime, "workhours"))
       );
+      }
+      setElapsedTime(0);
+      setOffset(0);
+      setClockedInStatus(false);
+    
       dispatch(setHasClockedIn(false));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
@@ -172,7 +175,7 @@ const ClockInOutAttendance = () => {
       setOffset(0); // start fresh
       setTotalHours((prev) => ({
         ...prev,
-        workHours: calculateTotalHours(breakHours, startTime, breakTime, "workhours"),
+        workHours: calculateTotalHours(breaks, startTime, breakTime, "workhours"),
       }));
       const updatedBreaks = [...breaks];
       if (
@@ -190,7 +193,7 @@ const ClockInOutAttendance = () => {
       // dispatch(setClockOutTime(breakTime));
 
       dispatch(
-        setWorkHours(calculateTotalHours(breakHours, startTime, breakTime, "workhours"))
+        setWorkHours(calculateTotalHours(breaks, startTime, breakTime, "workhours"))
       );
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
@@ -287,11 +290,12 @@ const ClockInOutAttendance = () => {
     return `${hrs}:${mins}:${secs}`;
   };
 
-  const calculateTotalHours = (breaksHours, startTime, endTime, type) => {
+  const calculateTotalHours = (breakTimings, startTime, endTime, type) => {
     if (type === "workhours") {
       const rawWorkSeconds = (new Date(endTime) - new Date(startTime)) / 1000;
 
-      const breakDuration = breaksHours.reduce((total, brk) => {
+      console.log("breakhours",breakTimings)
+      const breakDuration = breakTimings.reduce((total, brk) => {
         if (brk.start && brk.end) {
           return total + (new Date(brk.end) - new Date(brk.start)) / 1000;
         }
@@ -299,13 +303,9 @@ const ClockInOutAttendance = () => {
       }, 0);
 
       const netWorkSeconds = rawWorkSeconds - breakDuration;
-
-      console.log("rawWorkSeconds",rawWorkSeconds)
-      console.log("breakHours",breakDuration)
-      console.log("netWorkSeconds",netWorkSeconds)
       return formatTime(netWorkSeconds > 0 ? netWorkSeconds : 0);
     } else {
-      const breakDuration = breaksHours.reduce((total, brk) => {
+      const breakDuration = breakTimings.reduce((total, brk) => {
         const start = brk.start;
         const end = brk.end;
         if (start && end) {

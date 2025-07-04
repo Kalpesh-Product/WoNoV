@@ -15,7 +15,7 @@ const visitorSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: true,
+      // required: true,
     },
     gender: {
       type: String,
@@ -99,6 +99,9 @@ const visitorSchema = new mongoose.Schema(
       default: "Walk In",
     },
     visitorCompany: {
+      type: String, //Add Visitor form
+    },
+    toMeetCompany: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CoworkingClient", //Add Visitor form
     },
