@@ -15,12 +15,8 @@ const addNewHouseKeepingMember = async (req, res, next) => {
       password,
       phoneNumber,
       dateOfBirth,
-      employeementType,
-      employeeLeaveAndCount,
-      department,
       dateOfJoining,
       workBuilding,
-      manager,
       designation,
       qualification,
       shiftPolicy,
@@ -49,8 +45,10 @@ const addNewHouseKeepingMember = async (req, res, next) => {
       employeePfContribution,
       employeePf,
       fatherName,
+      employementType,
       motherName,
       martialStatus,
+      houseKeepingType,
       primaryEmergencyContactName,
       primaryEmergencyContactNumber,
       secondayEmergencyContactName,
@@ -72,7 +70,8 @@ const addNewHouseKeepingMember = async (req, res, next) => {
       password,
       phoneNumber,
       dateOfBirth,
-      employeementType,
+      employementType,
+      houseKeepingType,
       employeeLeaveAndCount,
       department: "6798bae6e469e809084e24a4",
       dateOfJoining,
@@ -135,7 +134,6 @@ const getHouseKeepingStaff = async (req, res, next) => {
       .lean()
       .exec();
 
-
     const staff = await Promise.all(
       houseKeepingStaff.map(async (staffMember) => {
         const managerRoleId = staffMember.manager?._id?.toString();
@@ -192,8 +190,8 @@ const softDeleteHouseKeepingMember = async (req, res, next) => {
     const { id } = req.params;
 
     const deleted = await HouseKeepingStaff.findOneAndUpdate(
-      { _id: id, isDeleted: false },
-      { $set: { isDeleted: true } },
+      { _id: id, isActive: false },
+      { $set: { isActive: true } },
       { new: true }
     );
 
