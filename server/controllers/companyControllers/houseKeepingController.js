@@ -135,7 +135,6 @@ const getHouseKeepingStaff = async (req, res, next) => {
       .lean()
       .exec();
 
-    console.log(houseKeepingStaff.length);
 
     const staff = await Promise.all(
       houseKeepingStaff.map(async (staffMember) => {
