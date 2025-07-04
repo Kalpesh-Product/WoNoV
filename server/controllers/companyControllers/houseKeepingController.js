@@ -191,8 +191,8 @@ const softDeleteHouseKeepingMember = async (req, res, next) => {
     const { id } = req.params;
 
     const deleted = await HouseKeepingStaff.findOneAndUpdate(
-      { _id: id, isActive: false },
-      { $set: { isActive: true } },
+      { _id: id, isActive: true },
+      { $set: { isActive: false } },
       { new: true }
     );
 
