@@ -61,7 +61,7 @@ const HousekeepingTeamMembersCalendar = () => {
       const res = await axios.get(
         `/api/company/get-housekeeping-schedule?unitId=${passedData?.id}`
       );
-      return res.data;
+      return res.data?.data;
     },
     refetchOnWindowFocus: false,
   });
