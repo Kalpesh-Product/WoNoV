@@ -10,48 +10,115 @@ const addNewHouseKeepingMember = async (req, res, next) => {
       middleName,
       lastName,
       gender,
+      role,
+      companyEmail,
+      password,
+      phoneNumber,
       dateOfBirth,
-      mobilePhone,
-      email,
-      addressLine1,
-      addressLine2,
-      country,
-      state,
-      city,
-      pinCode,
+      employeementType,
+      employeeLeaveAndCount,
+      department,
+      dateOfJoining,
+      workBuilding,
       manager,
+      designation,
+      qualification,
+      shiftPolicy,
+      workSchdulePolicy,
+      leavePolicy,
+      holidayPolicy,
+      address,
+      presentAddress,
+      city,
+      state,
+      pinCode,
+      bankISFC,
+      bankName,
+      branchName,
+      accountName,
+      accountNumber,
+      aadharNumber,
+      PANCardNumber,
+      pfAccountNumber,
+      pfUAN,
+      ESIAccountNumber,
+      includeInPayroll,
+      employeeGrid,
+      professionalTaxExemption,
+      includePf,
+      employeePfContribution,
+      employeePf,
+      fatherName,
+      motherName,
+      martialStatus,
+      primaryEmergencyContactName,
+      primaryEmergencyContactNumber,
+      secondayEmergencyContactName,
+      secondaryEmergencyContactNumber,
     } = req.body;
 
-    // Basic validation
+    // Required field validation
     if (!firstName || !gender) {
-      return res
-        .status(400)
-        .json({ message: "Please provide the valid details" });
+      return res.status(400).json({ message: "Please provide valid details" });
     }
 
-    const newHouseKeepingStaff = new HouseKeepingStaff({
+    const newEmployee = new HouseKeepingStaff({
       firstName,
       middleName,
       lastName,
       gender,
+      role,
+      companyEmail,
+      password,
+      phoneNumber,
       dateOfBirth,
-      mobilePhone,
-      email,
-      addressLine1,
-      addressLine2,
-      country,
-      state,
-      city,
-      pinCode,
+      employeementType,
+      employeeLeaveAndCount,
+      department: "6798bae6e469e809084e24a4",
+      dateOfJoining,
+      workBuilding,
       manager: "6798bf34e469e809084e24c6",
-      department: "6798bae6e469e809084e24a4", // hardcoded for now
+      designation,
+      qualification,
+      shiftPolicy,
+      workSchdulePolicy,
+      leavePolicy,
+      holidayPolicy,
+      address,
+      presentAddress,
+      city,
+      state,
+      pinCode,
+      bankISFC,
+      bankName,
+      branchName,
+      accountName,
+      accountNumber,
+      aadharNumber,
+      PANCardNumber,
+      pfAccountNumber,
+      pfUAN,
+      ESIAccountNumber,
+      includeInPayroll,
+      employeeGrid,
+      professionalTaxExemption,
+      includePf,
+      employeePfContribution,
+      employeePf,
+      fatherName,
+      motherName,
+      martialStatus,
+      primaryEmergencyContactName,
+      primaryEmergencyContactNumber,
+      secondayEmergencyContactName,
+      secondaryEmergencyContactNumber,
     });
 
-    const savedHouseKeepingStaff = await newHouseKeepingStaff.save();
+    const savedEmployee = await newEmployee.save();
 
     res.status(201).json({
-      message: "House Keeping Staff Added Successfully",
-      savedHouseKeepingStaff,
+      message: "Employee added successfully",
+      employee: savedEmployee,
     });
   } catch (error) {
     next(error);
@@ -149,17 +216,15 @@ const assignHouseKeepingMember = async (req, res, next) => {
       return res.status(400).json({ message: "Please fill all fields" });
     }
 
-    // const existingMember = await HouseKeepingStaff.findOne({
-    //   _id: memberId,
-    //   isDeleted: false,
-    // })
-    //   .lean()
-    //   .exec();
+    const existingMember = await HouseKeepingStaff.findOne({
+      _id: memberId,
+    })
+      .lean()
+      .exec();
 
-
-    // if (!existingMember) {
-    //   return res.status(404).json({ message: "No such member exists" });
-    // }
+    if (!existingMember) {
+      return res.status(404).json({ message: "No such member exists" });
+    }
 
     const validStartDate = new Date(startDate);
     const validEndDate = new Date(endDate);
