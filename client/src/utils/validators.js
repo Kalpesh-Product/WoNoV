@@ -14,3 +14,7 @@ export const isValidEmail = (value) =>
 // Valid 10-digit phone number (India, no start digit check)
 export const isValidPhoneNumber = (value) =>
   /^\d{10}$/.test(value) || "Enter a valid 10-digit phone number.";
+// Valid 6-digit Indian pincode (does not start with 0)
+export const isValidPinCode = (value) =>
+  /^[1-9][0-9]{5}$/.test(value) || "Enter a valid 6-digit pin code.";
+

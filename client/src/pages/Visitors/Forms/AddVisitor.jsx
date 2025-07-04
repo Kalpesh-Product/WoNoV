@@ -15,6 +15,11 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import PageFrame from "../../../components/Pages/PageFrame";
+import {
+  isAlphanumeric,
+  isValidPhoneNumber,
+  noOnlyWhitespace,
+} from "../../../utils/validators";
 
 const AddVisitor = () => {
   const {
@@ -159,9 +164,9 @@ const AddVisitor = () => {
     reset();
   };
 
-  useEffect(()=>{
-    setValue("checkIn", dayjs(new Date()))
-  },[])
+  useEffect(() => {
+    setValue("checkIn", dayjs(new Date()));
+  }, []);
 
   return (
     <div className=" p-4">
@@ -179,7 +184,13 @@ const AddVisitor = () => {
                 <Controller
                   name="firstName"
                   control={control}
-                  rules={{ required: "First Name is required" }}
+                  rules={{
+                    required: "First Name is required",
+                    validate: {
+                      noOnlyWhitespace,
+                      isAlphanumeric,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -194,7 +205,13 @@ const AddVisitor = () => {
                 <Controller
                   name="lastName"
                   control={control}
-                  rules={{ required: "Last Name is required" }}
+                  rules={{
+                    required: "Last Name is required",
+                    validate: {
+                      noOnlyWhitespace,
+                      isAlphanumeric,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -209,12 +226,18 @@ const AddVisitor = () => {
                 <Controller
                   name="phoneNumber"
                   control={control}
-                  rules={{ required: "Phone Number is required" }}
+                  rules={{
+                    required: "Phone Number is required",
+                    validate: {
+                      isValidPhoneNumber,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Phone"
+                      type="number"
                       error={!!errors.phoneNumber}
                       helperText={errors.phoneNumber?.message}
                       fullWidth
@@ -296,7 +319,13 @@ const AddVisitor = () => {
                 <Controller
                   name="purposeOfVisit"
                   control={control}
-                  rules={{ required: "Purpose is required" }}
+                  rules={{
+                    required: "Purpose is required",
+                    validate: {
+                      noOnlyWhitespace,
+                      isAlphanumeric,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -454,25 +483,29 @@ const AddVisitor = () => {
                       control={control}
                       rules={{ required: "Scheduled date is required" }}
                       render={({ field }) => {
-                        const visitType = visitorType !== "Scheduled" ? dayjs(new Date()) : field.value
+                        const visitType =
+                          visitorType !== "Scheduled"
+                            ? dayjs(new Date())
+                            : field.value;
                         return (
-                        <DatePicker
-                          {...field}
-                          format="DD-MM-YYYY"
-                          label={"Scheduled Date"}
-                          disabled={visitorType !== "Scheduled"}
-                          value={visitType}
-                          onChange={(e) => field.onChange(e)}
-                          slotProps={{
-                            textField: {
-                              fullWidth: true,
-                              size: "small",
-                              error: !!errors.scheduledDate,
-                              helperText: errors.scheduledDate?.message,
-                            },
-                          }}
-                        />
-                      )}}
+                          <DatePicker
+                            {...field}
+                            format="DD-MM-YYYY"
+                            label={"Scheduled Date"}
+                            disabled={visitorType !== "Scheduled"}
+                            value={visitType}
+                            onChange={(e) => field.onChange(e)}
+                            slotProps={{
+                              textField: {
+                                fullWidth: true,
+                                size: "small",
+                                error: !!errors.scheduledDate,
+                                helperText: errors.scheduledDate?.message,
+                              },
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </LocalizationProvider>
 

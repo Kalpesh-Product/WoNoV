@@ -9,15 +9,21 @@ const HouseKeepingLayout = () => {
   // Map routes to tabs
   const tabs = [
     { label: "Members List", path: "members-list" },
-    { label: "Payment Schedule", path: "payment-schedule" },
-    { label: "Voucher", path: "voucher" },
+    { label: "Member Onboard", path: "member-onboard" },
+    { label: "Assign Rotation", path: "member-schedule" },
   ];
 
   useEffect(() => {
-    if (location.pathname === "/app/dashboard/admin-dashboard/mix-bag/housekeeping-members") {
-      navigate("/app/dashboard/admin-dashboard/mix-bag/housekeeping-members/members-list", {
-        replace: true,
-      });
+    if (
+      location.pathname ===
+      "/app/dashboard/admin-dashboard/mix-bag/housekeeping-members"
+    ) {
+      navigate(
+        "/app/dashboard/admin-dashboard/mix-bag/housekeeping-members/members-list",
+        {
+          replace: true,
+        }
+      );
     }
   }, [location, navigate]);
 

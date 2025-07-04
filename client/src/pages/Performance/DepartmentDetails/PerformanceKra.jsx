@@ -20,6 +20,7 @@ import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { InsertEmoticonTwoTone } from "@mui/icons-material";
 import PageFrame from "../../../components/Pages/PageFrame";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
@@ -51,6 +52,7 @@ const PerformanceKra = () => {
     formState: { errors },
     reset,
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       dailyKra: "",
       description: "",
@@ -298,7 +300,13 @@ const PerformanceKra = () => {
           <Controller
             name="dailyKra"
             control={control}
-            rules={{ required: "Daily KRA is required" }}
+            rules={{
+              required: "Daily KRA is required",
+              validate: {
+                noOnlyWhitespace,
+                isAlphanumeric,
+              },
+            }}
             render={({ field }) => (
               <TextField
                 {...field}
