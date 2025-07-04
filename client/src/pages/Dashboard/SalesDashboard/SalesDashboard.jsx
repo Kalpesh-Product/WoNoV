@@ -393,7 +393,7 @@ const SalesDashboard = () => {
           const selectedMonthAbbr = financialYearMonths[config.dataPointIndex];
           const selectedMonthFull = monthShortToFull[selectedMonthAbbr];
           navigate(
-            `unique-leads?month=${encodeURIComponent(selectedMonthFull)}`
+            `unique-leads?month=${encodeURIComponent(selectedMonthAbbr)}`
           );
         },
       },

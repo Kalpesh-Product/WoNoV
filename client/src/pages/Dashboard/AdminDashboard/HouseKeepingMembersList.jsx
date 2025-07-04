@@ -42,20 +42,6 @@ const HouseKeepingMembersList = () => {
     endDate: new Date(),
     key: "selection",
   });
-  const {
-    handleSubmit,
-    control,
-    setValue,
-    reset,
-    formState: { errors },
-  } = useForm({
-    defaultValues: {
-      employee: "",
-      location: "",
-      startDate: new Date(),
-      endDate: new Date(),
-    },
-  });
 
   const {
     control: editControl,
@@ -70,15 +56,11 @@ const HouseKeepingMembersList = () => {
       middleName: "",
       lastName: "",
       gender: "",
+      houseKeepingType: "",
       dateOfBirth: null,
       mobilePhone: "",
       email: "",
-      addressLine1: "",
-      addressLine2: "",
-      country: "",
-      state: "",
-      city: "",
-      pinCode: "",
+      address: "",
     },
     mode: "onChange",
   });
@@ -93,10 +75,10 @@ const HouseKeepingMembersList = () => {
       setEditValue("middleName", selectedUser?.middleName);
       setEditValue("lastName", selectedUser?.lastName);
       setEditValue("gender", selectedUser?.gender);
-      setEditValue("mobilePhone", selectedUser?.mobilePhone);
-      setEditValue("addressLine1", selectedUser?.addressLine1);
-      setEditValue("addressLine2", selectedUser?.addressLine2);
+      setEditValue("mobilePhone", selectedUser?.phoneNumber);
+      setEditValue("address", selectedUser?.address);
       setEditValue("firstName", selectedUser?.firstName);
+      setEditValue("houseKeepingType", selectedUser?.houseKeepingType);
       setEditValue("dateOfBirth", dayjs(selectedUser?.dateOfBirth));
     }
   }, [selectedUser]);
@@ -107,63 +89,13 @@ const HouseKeepingMembersList = () => {
       queryFn: async () => {
         try {
           const response = await axios.get("/api/company/housekeeping-members");
-          return response.data.filter((m) => !m.isDeleted);
+          return response.data.filter((m) => m.isActive);
         } catch (error) {
           toast.error(error.message);
         }
       },
     }
   );
-
-  const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
-    queryKey: ["employees"],
-    queryFn: async () => {
-      try {
-        const adminDepId = "6798bae6e469e809084e24a4";
-        const response = await axios.get(`/api/users/fetch-users`, {
-          params: {
-            deptId: adminDepId,
-          },
-        });
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
-
-  const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
-    queryKey: ["unitsData"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/company/fetch-units");
-        return response.data;
-      } catch (error) {
-        console.error("Error fetching clients data:", error);
-      }
-    },
-  });
-
-  const { mutate: assignMember, isPending: isAssignMemberPending } =
-    useMutation({
-      mutationKey: ["assignMember"],
-      mutationFn: async (data) => {
-        const response = await axios.post(
-          "/api/administration/assign-weekly-unit",
-          data
-        );
-        return response.data;
-      },
-      onSuccess: (data) => {
-        queryClient.invalidateQueries({ queryKey: ["unitAssignees"] });
-        toast.success(data.message || "Data submitted successfully!");
-        reset();
-        setIsModalOpen(false);
-      },
-      onError: (error) => {
-        toast.error(error.message || "Error submitting data");
-      },
-    });
 
   const handleEditUser = (user) => {
     setModalMode("edit");
@@ -219,6 +151,7 @@ const HouseKeepingMembersList = () => {
 
   const memberColumns = [
     { field: "id", headerName: "Sr No", width: 100 },
+    { field: "houseKeepingType", headerName: "Type" },
     { field: "firstName", headerName: "First Name", flex: 1 },
     { field: "middleName", headerName: "Middle Name", flex: 1 },
     { field: "lastName", headerName: "Last Name", flex: 1 },
@@ -251,6 +184,7 @@ const HouseKeepingMembersList = () => {
     middleName: member.middleName || "N/A",
     lastName: member.lastName || "N/A",
     gender: member.gender || "N/A",
+    type: member.type || "Third Party",
     manager:
       member.managerUser?.firstName && member.managerUser?.lastName
         ? `${member.managerUser.firstName} ${member.managerUser.lastName}`
@@ -260,18 +194,6 @@ const HouseKeepingMembersList = () => {
   const handleAddUser = () => {
     setModalMode("add");
     setIsModalOpen(true);
-  };
-
-  const handleDateSelect = (ranges) => {
-    const { startDate, endDate } = ranges.selection;
-    setSelectionRange(ranges.selection);
-    // Update form state
-    setValue("startDate", startDate);
-    setValue("endDate", endDate);
-  };
-
-  const handleFormSubmit = (data) => {
-    assignMember(data);
   };
 
   return (
@@ -486,8 +408,8 @@ const HouseKeepingMembersList = () => {
                             <MenuItem value="" disabled>
                               Select a Gender
                             </MenuItem>
-                            <MenuItem value="male">Male</MenuItem>
-                            <MenuItem value="female">Female</MenuItem>
+                            <MenuItem value="Male">Male</MenuItem>
+                            <MenuItem value="Female">Female</MenuItem>
                           </TextField>
                         )}
                       />
@@ -520,7 +442,6 @@ const HouseKeepingMembersList = () => {
                         },
                         validate: {
                           isValidPhoneNumber,
-                          noOnlyWhitespace,
                         },
                       }}
                       render={({ field }) => (
@@ -534,90 +455,28 @@ const HouseKeepingMembersList = () => {
                         />
                       )}
                     />
-                  </div>
-                </div>
-                <div>
-                  {/* Section: Home Address Information */}
-                  <div className="py-4 border-b-default border-borderGray">
-                    <span className="text-subtitle font-pmedium">
-                      Home Address Information
-                    </span>
-                  </div>
-                  <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
                     <Controller
-                      name="addressLine1"
+                      name="houseKeepingType"
                       control={editControl}
-                      rules={{
-                        required: "Address Line 1 is Required",
-                        validate: {
-                          isAlphanumeric,
-                          noOnlyWhitespace,
-                        },
-                      }}
+                      rules={{ required: "Type is required" }}
                       render={({ field }) => (
                         <TextField
                           {...field}
-                          size="small"
-                          label="Address Line 1"
+                          select
                           fullWidth
-                          error={!!editErrors.addressLine1}
-                          helperText={editErrors?.addressLine1?.message}
-                        />
+                          label="Member Type"
+                          size="small"
+                          error={!!editErrors.houseKeepingType}
+                          helperText={editErrors?.houseKeepingType?.message}
+                        >
+                          <MenuItem value="" disabled>
+                            Select a Member Type
+                          </MenuItem>
+                          <MenuItem value="Self">Self</MenuItem>
+                          <MenuItem value="Third Party">Third Party</MenuItem>
+                        </TextField>
                       )}
                     />
-                    <Controller
-                      name="addressLine2"
-                      control={editControl}
-                      rules={{
-                        required: "Address Line 2 is Required",
-                        validate: {
-                          isAlphanumeric,
-                          noOnlyWhitespace,
-                        },
-                      }}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label="Address Line 2"
-                          fullWidth
-                          error={!!editErrors.addressLine2}
-                          helperText={editErrors?.addressLine2?.message}
-                        />
-                      )}
-                    />
-                    <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 ">
-                      <CountryStateCitySelector
-                        control={editControl}
-                        getValues={getValues}
-                        setValue={setEditValue}
-                        errors={errors}
-                      />
-
-                      <Controller
-                        name="pinCode"
-                        control={editControl}
-                        rules={{
-                          required: "Pin Code is Required",
-                          validate: {
-                            isAlphanumeric,
-                            isValidPinCode,
-                          },
-                        }}
-                        defaultValue=""
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Pin Code"
-                            type="number"
-                            fullWidth
-                            error={!!editErrors.pinCode}
-                            helperText={editErrors?.pinCode?.message}
-                          />
-                        )}
-                      />
-                    </div>
                   </div>
                 </div>
               </div>

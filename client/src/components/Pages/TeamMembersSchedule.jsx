@@ -131,7 +131,7 @@ const TeamMembersSchedule = () => {
           openDesks: unit.openDesks,
           cabinDesks: unit.cabinDesks,
           lead:
-            department.name === "Administration"
+            department?.name === "Administration"
               ? `${unit?.adminLead?.firstName} ${unit?.adminLead?.lastName}`
               : department.name === "Maintenance"
               ? `${unit?.maintenanceLead?.firstName} ${unit?.maintenanceLead?.lastName}`
@@ -160,7 +160,7 @@ const TeamMembersSchedule = () => {
       try {
         const response = await axios.get("/api/users/fetch-users", {
           params: {
-            deptId: department._id,
+            deptId: department?._id,
           },
         });
         return response.data;
@@ -393,14 +393,38 @@ const TeamMembersSchedule = () => {
     },
   ];
 
-
   //---------------------------------------Event Handlers------------------------------//
+  useEffect(() => {
+    console.log("selected User : ", selectedUser);
+  }, [selectedUser]);
+const handleViewUser = async (user) => {
+  try {
+    const response = await axios.get(
+      `/api/weekly-unit/get-unit-schedule?unitId=${user._id}&department=${department?._id}`
+    );
+    const matchingSchedule = response.data?.[0]; // adjust as needed
 
-  const handleViewUser = (user) => {
+    if (matchingSchedule) {
+      setSelectedUser({
+        ...user,
+        startDate: matchingSchedule.startDate,
+        endDate: matchingSchedule.endDate,
+        substitutions: matchingSchedule.substitutions || [],
+        isEmployeeActive: matchingSchedule.employee?.isActive ?? true,
+      });
+    } else {
+      toast.warning("No schedule found for this unit.");
+      setSelectedUser(user);
+    }
+
     setModalMode("view");
-    setSelectedUser(user);
     setIsModalOpen(true);
-  };
+  } catch (error) {
+    console.error("Error fetching schedule details:", error);
+    toast.error("Failed to load schedule details.");
+  }
+};
+
   const handleAddUser = () => {
     setModalMode("add");
     setIsModalOpen(true);
@@ -428,7 +452,7 @@ const TeamMembersSchedule = () => {
       <PageFrame>
         {!isUnitAssignees ? (
           <AgTable
-            key={unitAssignees.length}
+            // key={unitAssignees.length}
             search={true}
             tableTitle={"Weekly Rotation Schedule"}
             buttonTitle={"Assign Member"}
@@ -531,7 +555,7 @@ const TeamMembersSchedule = () => {
                     <>
                       <div className="my-4">
                         <span className="text-subtitle text-primary font-pmedium">
-                          Assigned Details
+                          Assigned History
                         </span>
                       </div>
 
@@ -622,7 +646,7 @@ const TeamMembersSchedule = () => {
 
         {modalMode === "view" && selectedUser && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <DetalisFormatted title="Name" detail={selectedUser.name} />
+            <DetalisFormatted title="Name" detail={selectedUser.lead} />
             <DetalisFormatted
               title="Member Status"
               gap={"w-full"}
@@ -630,12 +654,12 @@ const TeamMembersSchedule = () => {
             />
             <DetalisFormatted
               title="Unit Name"
-              detail={selectedUser.location?.unitNo}
+              detail={selectedUser?.unitNo}
             />
             <DetalisFormatted
               title="Building Name"
               gap={"w-full"}
-              detail={selectedUser.location?.building?.buildingName}
+              detail={selectedUser.building?.buildingName}
             />
 
             {/* DateRange picker view-only */}

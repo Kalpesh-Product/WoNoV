@@ -162,6 +162,9 @@ const addVisitor = async (req, res, next) => {
       );
     }
 
+    if (visitorFlag === "Client" && !email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
     // Scheduled-specific checks
     if (isScheduled) {
       if (!scheduledDate) {

@@ -29,6 +29,7 @@ import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 import useAuth from "../../../hooks/useAuth";
 import DateWiseTable from "../../../components/Tables/DateWiseTable";
 import PageFrame from "../../../components/Pages/PageFrame";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 
 const DailyTasks = () => {
   const axios = useAxiosPrivate();
@@ -52,7 +53,7 @@ const DailyTasks = () => {
   } = useForm({
     mode: "onChange",
     defaultValues: {
-      kraName: "",
+      taskName: "",
       startDate: null,
       endDate: null,
       description: "",
@@ -190,7 +191,8 @@ const DailyTasks = () => {
           <div
             role="button"
             onClick={() => updateMonthlyKpa(params.data.id)}
-            className="p-2">
+            className="p-2"
+          >
             <PrimaryButton
               disabled={!params.node.selected}
               title={"Mark As Done"}
@@ -237,7 +239,8 @@ const DailyTasks = () => {
             setSelectedTask(params.data);
             setOpenModal(true);
           }}
-          className="text-primary underline cursor-pointer">
+          className="text-primary underline cursor-pointer"
+        >
           {params.value}
         </div>
       ),
@@ -368,15 +371,23 @@ const DailyTasks = () => {
             : modalMode === "view"
             ? "Completed task"
             : "View Task"
-        }>
+        }
+      >
         {modalMode === "add-task" && (
           <form
             onSubmit={submitDailyKra(handleFormSubmit)}
-            className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+            className="grid grid-cols-1 lg:grid-cols-1 gap-4"
+          >
             <Controller
               name="taskName"
               control={control}
-              rules={{ required: "Task Name is required" }}
+              rules={{
+                required: "Task Name is required",
+                validate: {
+                  noOnlyWhitespace,
+                  isAlphanumeric,
+                },
+              }}
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -391,7 +402,13 @@ const DailyTasks = () => {
             <Controller
               name="description"
               control={control}
-              rules={{ required: "Description is required" }}
+              rules={{
+                required: "Description is required",
+                validate: {
+                  noOnlyWhitespace,
+                  isAlphanumeric,
+                },
+              }}
               render={({ field }) => (
                 <TextField
                   {...field}

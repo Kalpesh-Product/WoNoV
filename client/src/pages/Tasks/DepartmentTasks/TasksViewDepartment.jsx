@@ -25,6 +25,7 @@ import {
 import dayjs from "dayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import PageFrame from "../../../components/Pages/PageFrame";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 
 const TasksViewDepartment = () => {
   const axios = useAxiosPrivate();
@@ -41,6 +42,7 @@ const TasksViewDepartment = () => {
     control,
     formState: { errors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       taskName: "",
       description: "",
@@ -147,7 +149,8 @@ const TasksViewDepartment = () => {
             setSelectedTask(params.data);
             setOpenMultiModal(true);
           }}
-          className="text-primary underline cursor-pointer">
+          className="text-primary underline cursor-pointer"
+        >
           {params.value}
         </div>
       ),
@@ -195,7 +198,8 @@ const TasksViewDepartment = () => {
           <div
             role="button"
             onClick={() => updateDailyKra(params.data.id)}
-            className="p-2">
+            className="p-2"
+          >
             <PrimaryButton
               title={"Mark As Done"}
               disabled={!params.node.selected}
@@ -219,7 +223,8 @@ const TasksViewDepartment = () => {
             setSelectedTask(params.data);
             setOpenMultiModal(true);
           }}
-          className="text-primary underline cursor-pointer">
+          className="text-primary underline cursor-pointer"
+        >
           {params.value}
         </div>
       ),
@@ -340,14 +345,22 @@ const TasksViewDepartment = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Department Task"}>
+        title={"Add Department Task"}
+      >
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
-          className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+          className="grid grid-cols-1 lg:grid-cols-1 gap-4"
+        >
           <Controller
             name="taskName"
             control={control}
-            rules={{ required: "Task Name is required" }}
+            rules={{
+              required: "Task Name is required",
+              validate: {
+                noOnlyWhitespace,
+                isAlphanumeric,
+              },
+            }}
             render={({ field }) => (
               <TextField
                 {...field}
@@ -362,7 +375,13 @@ const TasksViewDepartment = () => {
           <Controller
             name="description"
             control={control}
-            rules={{ required: "Description is required" }}
+            rules={{
+              required: "Description is required",
+              validate: {
+                noOnlyWhitespace,
+                isAlphanumeric,
+              },
+            }}
             render={({ field }) => (
               <TextField
                 {...field}
@@ -499,7 +518,8 @@ const TasksViewDepartment = () => {
             : modalMode === "completed"
             ? "Completed Tasks"
             : ""
-        }>
+        }
+      >
         {modalMode === "view" && selectedTask && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <div className="col-span-1">

@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 
 const PerformanceMonthly = () => {
   const axios = useAxiosPrivate();
@@ -49,7 +50,7 @@ const PerformanceMonthly = () => {
   } = useForm({
     mode: "onChange",
     defaultValues: {
-      kraName: "",
+      kpaName: "",
       startDate: null,
       endDate: null,
       description: "",
@@ -95,7 +96,6 @@ const PerformanceMonthly = () => {
   const { mutate: updateMonthlyKpa, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateMonthlyKpa"],
     mutationFn: async (data) => {
-
       const response = await axios.patch(
         `/api/performance/update-status/${data}/KPA`
       );
@@ -269,7 +269,7 @@ const PerformanceMonthly = () => {
           {!isCompletedLoading ? (
             <WidgetSection padding layout={1}>
               <YearWiseTable
-              exportData={true}
+                exportData={true}
                 tableTitle={`COMPLETED - MONTHLY KPA`}
                 key={completedEntries.length}
                 data={[
@@ -306,15 +306,21 @@ const PerformanceMonthly = () => {
           <Controller
             name="kpaName"
             control={control}
-            rules={{ required: "KPA Name is required" }}
+            rules={{
+              required: "KPA Name is required",
+              validate: {
+                noOnlyWhitespace,
+                isAlphanumeric,
+              },
+            }}
             render={({ field }) => (
               <TextField
                 {...field}
                 size="small"
                 label={"KPA Name"}
                 fullWidth
-                error={!!errors?.kraName?.message}
-                helperText={errors?.kraName?.message}
+                error={!!errors?.kpaName?.message}
+                helperText={errors?.kpaName?.message}
               />
             )}
           />

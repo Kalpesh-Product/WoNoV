@@ -596,8 +596,6 @@ const approveFinanceBudget = async (req, res, next) => {
       fSrNo,
       particulars,
       modeOfPayment,
-      chequeNo,
-      chequeDate,
       advanceAmount,
       expectedDateInvoice,
     };
@@ -609,6 +607,19 @@ const approveFinanceBudget = async (req, res, next) => {
     if (missingFields.length > 0) {
       throw new CustomError(
         `Missing required fields: ${missingFields.join(", ")}`,
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (
+      modeOfPayment &&
+      modeOfPayment === "Cheque" &&
+      (!chequeDate || !chequeNo)
+    ) {
+      throw new CustomError(
+        "Missing cheque number or cheque date",
         logPath,
         logAction,
         logSourceKey

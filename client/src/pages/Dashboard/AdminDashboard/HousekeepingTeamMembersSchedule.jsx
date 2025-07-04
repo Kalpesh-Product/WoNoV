@@ -70,19 +70,7 @@ const HousekeepingTeamMembersSchedule = () => {
     setPrimaryValue("unitId", selectedUser?.unitNo);
   }, [selectedUser]);
   const selectedLocation = watch("location");
-  const selectedUnit = watch("unitId");
-  const {
-    data: units = [],
-    isLoading: locationsLoading,
-    error: locationsError,
-  } = useQuery({
-    queryKey: ["units-data"],
-    queryFn: async () => {
-      const response = await axios.get("/api/company/fetch-units");
 
-      return response.data;
-    },
-  });
 
   const { data: houseKeepingData, isPending: isHouseKeepingPending } = useQuery(
     {
@@ -98,40 +86,14 @@ const HousekeepingTeamMembersSchedule = () => {
     }
   );
 
-  const selectedUnitId = useMemo(() => {
-    if (!selectedUnit || !selectedLocation) return null;
-    const unit = units.find(
-      (unit) =>
-        unit.unitNo === selectedUnit &&
-        unit.building?.buildingName === selectedLocation // use ?. here too
-    );
-    return unit ? unit._id : null;
-  }, [selectedUnit, selectedLocation, units]);
-
-  const uniqueBuildings = Array.from(
-    new Map(
-      units.length > 0
-        ? units.map((loc) => [
-            loc.building?._id ?? `unknown-${loc.unitNo}`,
-            loc.building?.buildingName ?? "Unknown Building",
-          ])
-        : []
-    ).entries()
-  );
-
-  const {
-    handleSubmit: updateUser,
-    reset: updateUserReset,
-    control: updateUserControl,
-  } = useForm({
-    defaultValues: {
-      meetingId: "",
-    },
-  });
 
   //----------------------------------------API---------------------------------------//
-  const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
-    queryKey: ["unitsData"],
+  const {
+    data: unitsData = [],
+    isPending: isUnitsPending,
+    isSuccess,
+  } = useQuery({
+    queryKey: ["houseKeepingUnitsData"],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/company/fetch-units");
@@ -145,9 +107,9 @@ const HousekeepingTeamMembersSchedule = () => {
           openDesks: unit.openDesks,
           cabinDesks: unit.cabinDesks,
           lead:
-            department.name === "Administration"
+            department?.name === "Administration"
               ? `${unit?.adminLead?.firstName} ${unit?.adminLead?.lastName}`
-              : department.name === "Maintenance"
+              : department?.name === "Maintenance"
               ? `${unit?.maintenanceLead?.firstName} ${unit?.maintenanceLead?.lastName}`
               : `${unit?.itLead?.firstName} ${unit?.itLead?.lastName}`,
         }));
@@ -177,19 +139,6 @@ const HousekeepingTeamMembersSchedule = () => {
             deptId: department._id,
           },
         });
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
-  const { data: unitAssignees = [], isLoading: isUnitAssignees } = useQuery({
-    queryKey: ["unitAssignees"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get(
-          `/api/weekly-unit/get-primary-units?id=${department?._id}&name=${department?.name}`
-        );
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -363,17 +312,19 @@ const HousekeepingTeamMembersSchedule = () => {
     {
       field: "unitNo",
       headerName: "Unit No",
-      flex: 1,
       cellRenderer: (params) => (
         <span
           role="button"
           onClick={() => {
-            navigate(`/app/dashboard/admin-dashboard/mix-bag/housekeeping-members/member-schedule/${params.value}`, {
-              state: {
-                id: params.data.mongoId,
-                name: params.value,
-              },
-            });
+            navigate(
+              `/app/dashboard/admin-dashboard/mix-bag/housekeeping-members/member-schedule/${params.value}`,
+              {
+                state: {
+                  id: params.data.mongoId,
+                  name: params.value,
+                },
+              }
+            );
           }}
           className="underline text-primary cursor-pointer"
         >
@@ -381,8 +332,8 @@ const HousekeepingTeamMembersSchedule = () => {
         </span>
       ),
     },
-    { field: "unitName", headerName: "Unit Name", flex: 1 },
-    { field: "buildingName", headerName: "Building", flex: 1 },
+    { field: "unitName", headerName: "Unit Name" },
+    { field: "buildingName", headerName: "Building" },
     {
       field: "lead",
       headerName: "Primary Lead",
@@ -441,23 +392,38 @@ const HousekeepingTeamMembersSchedule = () => {
   };
   //---------------------------------------Event Handlers------------------------------//
 
+  if (isUnitsPending) {
+    return (
+      <div className="flex justify-center items-center h-[60vh]">
+        <CircularProgress color="#1E3D73" />
+      </div>
+    );
+  }
+
+  if (!Array.isArray(unitsData) || unitsData.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-[60vh]">
+        <p className="text-gray-500">No units found.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4">
+    <div>
       <PageFrame>
-        {!isUnitAssignees ? (
+        {isUnitsPending ? (
+          <CircularProgress />
+        ) : isSuccess && unitsData.length > 0 ? (
           <AgTable
-            key={unitAssignees.length}
-            search={true}
-            tableTitle={"Housekeeping Weekly Rotation Schedule"}
-            buttonTitle={"Assign Housekeeping Member"}
+            search
+            tableTitle="Housekeeping Weekly Rotation Schedule"
+            buttonTitle="Assign Housekeeping Member"
             data={unitsData}
             columns={unitColumns}
             handleClick={handleAddUser}
           />
         ) : (
-          <div className="flex justify-center items-center h-[60vh]">
-            <CircularProgress color="#1E3D73" />
-          </div>
+          <p className="text-center text-gray-500">No units found.</p>
         )}
       </PageFrame>
 
@@ -531,7 +497,7 @@ const HousekeepingTeamMembersSchedule = () => {
                         {!isHouseKeepingPending ? (
                           houseKeepingData.map((item) => (
                             <MenuItem key={item._id} value={item._id}>
-                              {item.name}
+                              {item.firstName} {item.lastName}
                             </MenuItem>
                           ))
                         ) : (
@@ -759,7 +725,7 @@ const HousekeepingTeamMembersSchedule = () => {
                   >
                     <MenuItem value="">Select Unit</MenuItem>
 
-                    {units
+                    {unitsData
                       .filter(
                         (unit) =>
                           unit.building &&

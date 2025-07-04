@@ -30,6 +30,7 @@ const VisitorReports = () => {
 
   const meetingReportsColumn = [
     { field: "srNo", headerName: "Sr No" },
+    { field: "visitorType", headerName: "Type" },
     { field: "name", headerName: "Name" },
     { field: "address", headerName: "Address" },
     { field: "email", headerName: "Email" },
@@ -64,6 +65,7 @@ const VisitorReports = () => {
     checkIn: humanTime(visitor.checkIn),
     checkOut: humanTime(visitor.checkOut),
     rawData: visitor, // Pass full object for modal
+    visitorType : visitor.visitorFlag || "-",
   }));
 
   return (

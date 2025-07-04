@@ -22,6 +22,7 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanTime from "../../../utils/humanTime";
 
 import humanDate from "./../../../utils/humanDateForamt";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 
 const AcceptedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
@@ -170,7 +171,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
     if (!selectedTicketId) return;
     getSupport({ ticketId: selectedTicketId, reason: data.reason });
   };
-  const onEscalate = (ticketDetails) => {;
+  const onEscalate = (ticketDetails) => {
     if (!ticketDetails) return;
     escalateTicket({
       ticketId: esCalatedTicket.id,
@@ -286,14 +287,19 @@ const AcceptedTickets = ({ title, departmentId }) => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Support Ticket"}>
+        title={"Support Ticket"}
+      >
         <form
           onSubmit={handleSupportTicketSubmit(onSubmit)}
-          className="flex flex-col gap-4">
+          className="flex flex-col gap-4"
+        >
           <Controller
             name="reason"
             control={supportTicketControl}
-            rules={{ required: "Reason is required" }}
+            rules={{
+              required: "Reason is required",
+              validate: { noOnlyWhitespace, isAlphanumeric },
+            }}
             render={({ field }) => (
               <TextField
                 {...field}
@@ -318,7 +324,8 @@ const AcceptedTickets = ({ title, departmentId }) => {
         <div>
           <form
             onSubmit={handleEscalateTicketSubmit(onEscalate)}
-            className="grid grid-cols-1 gap-4">
+            className="grid grid-cols-1 gap-4"
+          >
             <Controller
               name="departmentIds"
               control={escalateFormControl}
@@ -384,7 +391,8 @@ const AcceptedTickets = ({ title, departmentId }) => {
       <MuiModal
         open={openView}
         onClose={() => setOpenView(false)}
-        title="View Accepted Ticket">
+        title="View Accepted Ticket"
+      >
         {selectedTicket && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
