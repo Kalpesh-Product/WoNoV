@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const housekeepingSchema = new mongoose.Schema({
   housekeepingMember: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "HouseKeepingStaff",
+    ref: "Housekeepingstaff",
   },
   unit: {
     type: mongoose.Schema.Types.ObjectId,
