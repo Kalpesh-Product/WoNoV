@@ -62,6 +62,7 @@ const ClockInOutAttendance = () => {
     const hasClockedIn = auth?.user?.clockInDetails?.hasClockedIn;
     const serverNow = auth?.user?.time;
 
+    
     if (hasClockedIn && clockIn && serverNow) {
       setStartTime(clockIn);
       setClockedInStatus(hasClockedIn);
@@ -294,7 +295,6 @@ const ClockInOutAttendance = () => {
     if (type === "workhours") {
       const rawWorkSeconds = (new Date(endTime) - new Date(startTime)) / 1000;
 
-      console.log("breakhours",breakTimings)
       const breakDuration = breakTimings.reduce((total, brk) => {
         if (brk.start && brk.end) {
           return total + (new Date(brk.end) - new Date(brk.start)) / 1000;
@@ -351,7 +351,7 @@ const ClockInOutAttendance = () => {
   const timeStats = [
     {
       label: "Clock-in Time",
-      value: clockTime.startTime ? humanTime(clockTime.startTime) : "0h:0m:0s",
+      value: clockTime.startTime && !hasClockedIn ? humanTime(clockTime.startTime) : "0h:0m:0s", // avoid clock-in time if clocking out for prev day
     },
     {
       label: "Work Hours",
@@ -411,7 +411,7 @@ const ClockInOutAttendance = () => {
             )}
           </div>
           <div className="text-subtitle text-primary font-pmedium font-medium mb-4 pt-4">
-            {clockTime.startTime && !clockTime.outTime
+            { hasClockedIn 
               ? `${formatElapsedTime(elapsedTime)}`
               : clockOutTime
               ? "Clocked Out"
