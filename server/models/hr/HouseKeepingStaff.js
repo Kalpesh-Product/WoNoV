@@ -74,6 +74,10 @@ const HouseKeepingStaff = new mongoose.Schema(
       type: String,
       enum: ["Self", "Third Party"],
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );
