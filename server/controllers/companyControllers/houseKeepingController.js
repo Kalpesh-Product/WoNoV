@@ -46,6 +46,7 @@ const addNewHouseKeepingMember = async (req, res, next) => {
       employeePf,
       fatherName,
       employementType,
+      employeeLeaveAndCount,
       motherName,
       martialStatus,
       houseKeepingType,
