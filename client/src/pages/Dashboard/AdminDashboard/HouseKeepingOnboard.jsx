@@ -188,6 +188,7 @@ const HouseKeepingOnboard = () => {
                     render={({ field }) => (
                       <DesktopDatePicker
                         format="DD-MM-YYYY"
+                        disableFuture
                         slotProps={{
                           textField: {
                             size: "small",

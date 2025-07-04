@@ -89,7 +89,7 @@ const HouseKeepingMembersList = () => {
       queryFn: async () => {
         try {
           const response = await axios.get("/api/company/housekeeping-members");
-          return response.data.filter((m) => !m.isDeleted);
+          return response.data.filter((m) => m.isActive);
         } catch (error) {
           toast.error(error.message);
         }
