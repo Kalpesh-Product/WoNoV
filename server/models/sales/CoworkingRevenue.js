@@ -2,9 +2,9 @@ const mongoose = require("mongoose");
 
 const coworkingClientRevenue = new mongoose.Schema(
   {
-    clientName: {
-      type: String,
-      required: true,
+    client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CoworkingClient",
     },
     channel: {
       type: String,
@@ -18,7 +18,7 @@ const coworkingClientRevenue = new mongoose.Schema(
       required: true,
     },
     occupation: {
-      type: String, // You can change to Boolean if it's just occupied/vacant
+      type: String,
     },
     revenue: {
       type: Number,
