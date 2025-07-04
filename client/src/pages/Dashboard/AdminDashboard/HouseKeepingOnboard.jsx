@@ -175,8 +175,8 @@ const HouseKeepingOnboard = () => {
                         <MenuItem value="" disabled>
                           Select a Gender
                         </MenuItem>
-                        <MenuItem value="male">Male</MenuItem>
-                        <MenuItem value="female">Female</MenuItem>
+                        <MenuItem value="Male">Male</MenuItem>
+                        <MenuItem value="Female">Female</MenuItem>
                       </TextField>
                     )}
                   />
@@ -188,7 +188,13 @@ const HouseKeepingOnboard = () => {
                     render={({ field }) => (
                       <DesktopDatePicker
                         format="DD-MM-YYYY"
-                        slotProps={{ textField: { size: "small" } }}
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            error: !!errors.dateOfBirth,
+                            helperText: errors?.dateOfBirth?.message,
+                          },
+                        }}
                         label="Date of Birth"
                         {...field}
                         renderInput={(params) => (
@@ -240,10 +246,8 @@ const HouseKeepingOnboard = () => {
                       <MenuItem value="" disabled>
                         Select a Member Type
                       </MenuItem>
-                      <MenuItem value="self">Self</MenuItem>
-                      <MenuItem value="thirdParty">
-                        Third Party
-                      </MenuItem>
+                      <MenuItem value="Self">Self</MenuItem>
+                      <MenuItem value="Third Party">Third Party</MenuItem>
                     </TextField>
                   )}
                 />
