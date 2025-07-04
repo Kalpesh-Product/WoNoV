@@ -292,28 +292,36 @@ const ClockInOutAttendance = () => {
   };
 
   const calculateTotalHours = (breakTimings, startTime, endTime, type) => {
+    console.log("clockout")
     if (type === "workhours") {
-      const rawWorkSeconds = (new Date(endTime) - new Date(startTime)) / 1000;
+      const totalSeconds = (new Date(endTime) - new Date(startTime)) / 1000;
 
       const breakDuration = breakTimings.reduce((total, brk) => {
         if (brk.start && brk.end) {
+             console.log("start work",brk.start)
           return total + (new Date(brk.end) - new Date(brk.start)) / 1000;
         }
         return total;
       }, 0);
 
-      const netWorkSeconds = rawWorkSeconds - breakDuration;
+      // console.log("break secs",breakDuration)
+      // console.log("total secs",totalSeconds)
+
+      const netWorkSeconds = totalSeconds - breakDuration;
+      //  console.log("work secs",netWorkSeconds)
       return formatTime(netWorkSeconds > 0 ? netWorkSeconds : 0);
     } else {
       const breakDuration = breakTimings.reduce((total, brk) => {
         const start = brk.start;
         const end = brk.end;
+        console.log("start break",start)
         if (start && end) {
           return total + (new Date(end) - new Date(start)) / 1000;
         }
         return total;
       }, 0);
 
+      console.log("breaks calc",breakDuration)
       return formatTime(breakDuration);
     }
   };
