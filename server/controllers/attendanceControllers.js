@@ -304,7 +304,7 @@ const endBreak = async (req, res, next) => {
 
     if (!attendance) {
       throw new CustomError(
-        "No clock in record exists",
+        "No clock in record exists for today",
         logPath,
         logAction,
         logSourceKey

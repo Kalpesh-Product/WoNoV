@@ -324,7 +324,12 @@ const AddClient = () => {
                           {...field}
                           label={"Check-In Time"}
                           slotProps={{
-                            textField: { size: "small", fullWidth: true },
+                            textField: {
+                              size: "small",
+                              fullWidth: true,
+                              error: !!errors.checkIn,
+                              helperText: errors.checkIn?.message,
+                            },
                           }}
                           render={(params) => (
                             <TextField

@@ -8,6 +8,7 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
+import humanTime from "../../utils/humanTime";
 
 const TicketsHistory = ({ pageTitle }) => {
   const axios = useAxiosPrivate();
@@ -131,6 +132,16 @@ const TicketsHistory = ({ pageTitle }) => {
                 status: ticket.status,
                 priority: ticket.priority,
                 date: ticket.createdAt,
+                 acceptedBy: ticket?.acceptedBy
+                  ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
+                  : "None",
+                closedBy: ticket?.closedBy
+                  ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
+                  : "None",
+                acceptedAt: ticket?.acceptedAt ,
+                closedAt: ticket.closedAt ? ticket.closedAt : "None",
+                image: ticket.image ? ticket.image.url : null,
+                raisedAt: ticket.createdAt,
               }))}
               columns={recievedTicketsColumns}
               paginationPageSize={10}
@@ -142,30 +153,51 @@ const TicketsHistory = ({ pageTitle }) => {
       <MuiModal
         open={openModal && viewTicketDetails}
         onClose={() => setOpenModal(false)}
-        title={"View Ticket Details"}
+        title={"Ticket Details"}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
           <DetalisFormatted
             title="Raised By"
-            detail={viewTicketDetails?.raisedBy}
+            detail={viewTicketDetails?.raisedBy || "Unknown"}
           />
           <DetalisFormatted
             title="Raised To"
-            detail={viewTicketDetails?.raisedTo}
+            detail={viewTicketDetails?.raisedTo || "N/A"}
           />
           <DetalisFormatted
             title="Ticket Title"
-            detail={viewTicketDetails?.ticketTitle}
+            detail={viewTicketDetails?.ticketTitle || "N/A"}
           />
           <DetalisFormatted
             title="Description"
-            detail={viewTicketDetails?.description}
+            detail={viewTicketDetails?.description || "N/A"}
           />
           <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
           <DetalisFormatted
             title="Priority"
             detail={viewTicketDetails?.priority}
           />
+             <DetalisFormatted
+            title="Accepted by"
+            detail={viewTicketDetails?.acceptedBy || "Unknown"}
+          />
+          <DetalisFormatted
+            title="Accepted at"
+            detail={viewTicketDetails.acceptedAt ?humanTime(viewTicketDetails?.acceptedAt) : "N/A"}
+          />
+          <DetalisFormatted
+            title="Closed by"
+            detail={viewTicketDetails?.closedBy || "Unknown"}
+          />
+          {viewTicketDetails.image && (
+            <div className="lg:col-span-1">
+              <img
+                src={viewTicketDetails.image}
+                alt="Ticket Attachment"
+                className="max-w-full max-h-96 rounded border"
+              />
+            </div>
+          )}
         </div>
       </MuiModal>
     </>

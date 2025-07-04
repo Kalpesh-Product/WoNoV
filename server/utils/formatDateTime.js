@@ -57,7 +57,7 @@ const formatDuration = (startTime, endTime) => {
   const { hours = 0, minutes = 0 } = duration;
   const totalMinutes = hours * 60 + minutes;
 
-  return `${totalMinutes}m`;
+  return `${totalMinutes}min`;
 };
 
 module.exports = { formatDate, formatWithOrdinal, formatTime, formatDuration };

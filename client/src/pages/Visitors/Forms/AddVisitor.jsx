@@ -45,7 +45,7 @@ const AddVisitor = () => {
       toMeet: "",
       department: "",
       clientToMeet: "",
-      clientCompany: "",
+      toMeetCompany: "",
       visitorType: "",
       visitorCompany: "",
       paymentAmount: "",
@@ -54,7 +54,7 @@ const AddVisitor = () => {
     },
   });
 
-  const selectedCompany = watch("clientCompany");
+  const selectedCompany = watch("toMeetCompany");
   const selectedIdType = watch("idProof.idType");
   const visitorType = watch("visitorType");
 
@@ -139,8 +139,7 @@ const AddVisitor = () => {
     },
   });
   const onSubmit = (data) => {
-    console.log("data", data);
-    const isBiznest = data.clientCompany === "6799f0cd6a01edbe1bc3fcea";
+    const isBiznest = data.toMeetCompany === "6799f0cd6a01edbe1bc3fcea";
 
     const payload = {
       ...data,
@@ -304,7 +303,7 @@ const AddVisitor = () => {
                   )}
                 />
                 <Controller
-                  name="visitorComapany"
+                  name="visitorCompany"
                   control={control}
                   render={({ field }) => (
                     <TextField
@@ -345,7 +344,7 @@ const AddVisitor = () => {
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4 p-4 ">
                 <Controller
-                  name="clientCompany"
+                  name="toMeetCompany"
                   control={control}
                   render={({ field }) => (
                     <TextField
@@ -481,7 +480,6 @@ const AddVisitor = () => {
                     <Controller
                       name="scheduledDate"
                       control={control}
-                      rules={{ required: "Scheduled date is required" }}
                       render={({ field }) => {
                         const visitType =
                           visitorType !== "Scheduled"
@@ -521,8 +519,8 @@ const AddVisitor = () => {
                           slotProps={{
                             textField: {
                               size: "small",
-                              error: !!errors.checkOut,
-                              helperText: errors.checkOut?.message,
+                              error: !!errors.checkIn,
+                              helperText: errors.checkIn?.message,
                             },
                           }}
                           render={(params) => (
