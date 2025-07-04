@@ -645,7 +645,7 @@ const VisitorDashboard = () => {
               Title="Visitors Today"
               columns={visitorsColumns}
               rows={[
-                ...visitorsData.map((item, index) => ({
+                ...todaysVisitors.map((item, index) => ({
                   id: index + 1,
                   firstName: item.firstName,
                   lastName: item.lastName,

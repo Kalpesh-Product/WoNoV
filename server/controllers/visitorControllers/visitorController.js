@@ -137,10 +137,11 @@ const addVisitor = async (req, res, next) => {
       scheduledDate,
       toMeet,
       clientToMeet,
+      toMeetCompany,
       clientCompany,
       department,
       visitorType,
-      visitorCompanyId,
+      visitorCompany,
       visitorFlag,
     } = req.body;
 
@@ -149,13 +150,29 @@ const addVisitor = async (req, res, next) => {
     const clockOut = checkOut ? new Date(checkOut) : null;
     const isScheduled = visitorType === "Scheduled";
 
+    console.log("toMeetCompany", toMeetCompany);
     // Validate IDs
-    if (
-      visitorCompanyId &&
-      !mongoose.Types.ObjectId.isValid(visitorCompanyId)
-    ) {
+    if (toMeetCompany && !mongoose.Types.ObjectId.isValid(toMeetCompany)) {
       throw new CustomError(
-        "Invalid visitor company Id provided",
+        "Invalid to meet company's ID provided",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (toMeetCompany && !toMeet) {
+      throw new CustomError(
+        "Missing person to meet field",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (toMeet && !mongoose.Types.ObjectId.isValid(toMeet)) {
+      throw new CustomError(
+        "Invalid to meet ID provided",
         logPath,
         logAction,
         logSourceKey
@@ -165,6 +182,19 @@ const addVisitor = async (req, res, next) => {
     if (visitorFlag === "Client" && !email) {
       return res.status(400).json({ message: "Email is required" });
     }
+
+    if (
+      (visitorType === "Walk In" && !firstName) ||
+      !lastName ||
+      !phoneNumber ||
+      !gender ||
+      !purposeOfVisit
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Missing required fields for walk-in visitor" });
+    }
+
     // Scheduled-specific checks
     if (isScheduled) {
       if (!scheduledDate) {
@@ -176,6 +206,21 @@ const addVisitor = async (req, res, next) => {
         );
       }
 
+      if (
+        !firstName ||
+        !lastName ||
+        !phoneNumber ||
+        !gender ||
+        !purposeOfVisit ||
+        !visitorCompany ||
+        !clientToMeet ||
+        !toMeetCompany ||
+        !toMeet
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Missing required fields for scheduled visitor" });
+      }
       // if (!scheduledStartTime || !scheduledEndTime) {
       //   throw new CustomError(
       //     "Missing scheduled start/end time for scheduled visitor",
@@ -184,15 +229,6 @@ const addVisitor = async (req, res, next) => {
       //     logSourceKey
       //   );
       // }
-
-      if (!toMeet) {
-        throw new CustomError(
-          "Missing person to meet for scheduled visitor",
-          logPath,
-          logAction,
-          logSourceKey
-        );
-      }
 
       // Prevent overlap: check if any scheduled visitor is meeting the same person at overlapping time
       const overlappingVisitor = await Visitor.findOne({
@@ -250,12 +286,12 @@ const addVisitor = async (req, res, next) => {
     }
 
     // Resolve visitor company
-    let visitorCompany = null;
-    const isClient = company !== visitorCompanyId;
+    let companyToMeet = null;
+    const isClient = company !== toMeetCompany;
 
-    if (visitorCompanyId && isClient) {
-      visitorCompany = await CoworkingClient.findById(visitorCompanyId);
-      if (!visitorCompany) {
+    if (toMeetCompany && isClient) {
+      companyToMeet = await CoworkingClient.findById(toMeetCompany);
+      if (!companyToMeet) {
         throw new CustomError(
           "Client company not found",
           logPath,
@@ -263,9 +299,9 @@ const addVisitor = async (req, res, next) => {
           logSourceKey
         );
       }
-    } else if (visitorCompanyId) {
-      visitorCompany = await Company.findById(visitorCompanyId);
-      if (!visitorCompany) {
+    } else if (toMeetCompany) {
+      companyToMeet = await Company.findById(toMeetCompany);
+      if (!companyToMeet) {
         throw new CustomError(
           "Company not found",
           logPath,
@@ -302,6 +338,7 @@ const addVisitor = async (req, res, next) => {
       // scheduledEndTime: scheduledEndTime ? new Date(scheduledEndTime) : null,
       scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
       toMeet: isDepartmentEmpty ? null : toMeet,
+      toMeetCompany: companyToMeet || null,
       clientToMeet: clientToMeet || null,
       clientCompany: clientCompany || null,
       sector,
