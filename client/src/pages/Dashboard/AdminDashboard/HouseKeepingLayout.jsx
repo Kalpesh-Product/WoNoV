@@ -10,14 +10,20 @@ const HouseKeepingLayout = () => {
   const tabs = [
     { label: "Members List", path: "members-list" },
     { label: "Member Onboard", path: "member-onboard" },
-    { label: "Assign Rotation", path: "" },
+    { label: "Assign Rotation", path: "member-schedule" },
   ];
 
   useEffect(() => {
-    if (location.pathname === "/app/dashboard/admin-dashboard/mix-bag/housekeeping-members") {
-      navigate("/app/dashboard/admin-dashboard/mix-bag/housekeeping-members/members-list", {
-        replace: true,
-      });
+    if (
+      location.pathname ===
+      "/app/dashboard/admin-dashboard/mix-bag/housekeeping-members"
+    ) {
+      navigate(
+        "/app/dashboard/admin-dashboard/mix-bag/housekeeping-members/members-list",
+        {
+          replace: true,
+        }
+      );
     }
   }, [location, navigate]);
 
