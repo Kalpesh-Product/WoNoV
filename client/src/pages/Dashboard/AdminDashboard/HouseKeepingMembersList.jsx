@@ -331,7 +331,6 @@ const HouseKeepingMembersList = () => {
                         rules={{
                           required: "First Name is Required",
                           validate: {
-                            isAlphanumeric,
                             noOnlyWhitespace,
                           },
                         }}
@@ -351,9 +350,7 @@ const HouseKeepingMembersList = () => {
                         name="middleName"
                         control={editControl}
                         rules={{
-                          required: "Middle Name is Required",
                           validate: {
-                            isAlphanumeric,
                             noOnlyWhitespace,
                           },
                         }}
@@ -372,9 +369,7 @@ const HouseKeepingMembersList = () => {
                         name="lastName"
                         control={editControl}
                         rules={{
-                          required: "Last Name is required",
                           validate: {
-                            isAlphanumeric,
                             noOnlyWhitespace,
                           },
                         }}
@@ -435,13 +430,11 @@ const HouseKeepingMembersList = () => {
                       name="mobilePhone"
                       control={editControl}
                       rules={{
-                        required: "Mobile number is required",
-                        pattern: {
-                          value: /^[0-9]{10}$/,
-                          message: "Enter a valid 10-digit number",
-                        },
                         validate: {
-                          isValidPhoneNumber,
+                          isValid: (value) =>
+                            value === "" ||
+                            isValidPhoneNumber(value) ||
+                            "Enter a valid phone number",
                         },
                       }}
                       render={({ field }) => (
