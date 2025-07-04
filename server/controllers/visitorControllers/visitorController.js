@@ -150,7 +150,6 @@ const addVisitor = async (req, res, next) => {
     const clockOut = checkOut ? new Date(checkOut) : null;
     const isScheduled = visitorType === "Scheduled";
 
-    console.log("toMeetCompany", toMeetCompany);
     // Validate IDs
     if (toMeetCompany && !mongoose.Types.ObjectId.isValid(toMeetCompany)) {
       throw new CustomError(
