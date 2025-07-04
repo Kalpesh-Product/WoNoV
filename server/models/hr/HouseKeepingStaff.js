@@ -6,7 +6,7 @@ const houseKeepingStaffSchema = new mongoose.Schema(
     firstName: { type: String, required: true },
     middleName: { type: String },
     lastName: { type: String },
-    gender: { type: String, enum: ["male", "female", "other"] },
+    gender: { type: String, enum: ["Male", "Female"] },
     role: { type: String },
     companyEmail: { type: String },
     password: { type: String },
@@ -72,7 +72,7 @@ const houseKeepingStaffSchema = new mongoose.Schema(
     secondaryEmergencyContactNumber: { type: String },
     houseKeepingType: {
       type: String,
-      enum: ["Self", "Third Party"],
+      enum: ["self", "Third Party"],
     },
     isActive: {
       type: Boolean,
