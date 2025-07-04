@@ -60,12 +60,7 @@ const HouseKeepingMembersList = () => {
       dateOfBirth: null,
       mobilePhone: "",
       email: "",
-      addressLine1: "",
-      addressLine2: "",
-      country: "",
-      state: "",
-      city: "",
-      pinCode: "",
+      address: "",
     },
     mode: "onChange",
   });
@@ -81,8 +76,7 @@ const HouseKeepingMembersList = () => {
       setEditValue("lastName", selectedUser?.lastName);
       setEditValue("gender", selectedUser?.gender);
       setEditValue("mobilePhone", selectedUser?.phoneNumber);
-      setEditValue("addressLine1", selectedUser?.addressLine1);
-      setEditValue("addressLine2", selectedUser?.addressLine2);
+      setEditValue("address", selectedUser?.address);
       setEditValue("firstName", selectedUser?.firstName);
       setEditValue("houseKeepingType", selectedUser?.houseKeepingType);
       setEditValue("dateOfBirth", dayjs(selectedUser?.dateOfBirth));
@@ -157,7 +151,7 @@ const HouseKeepingMembersList = () => {
 
   const memberColumns = [
     { field: "id", headerName: "Sr No", width: 100 },
-    { field: "type", headerName: "Type" },
+    { field: "houseKeepingType", headerName: "Type" },
     { field: "firstName", headerName: "First Name", flex: 1 },
     { field: "middleName", headerName: "Middle Name", flex: 1 },
     { field: "lastName", headerName: "Last Name", flex: 1 },
@@ -190,7 +184,7 @@ const HouseKeepingMembersList = () => {
     middleName: member.middleName || "N/A",
     lastName: member.lastName || "N/A",
     gender: member.gender || "N/A",
-    type : member.type || "Third Party",
+    type: member.type || "Third Party",
     manager:
       member.managerUser?.firstName && member.managerUser?.lastName
         ? `${member.managerUser.firstName} ${member.managerUser.lastName}`
@@ -448,7 +442,6 @@ const HouseKeepingMembersList = () => {
                         },
                         validate: {
                           isValidPhoneNumber,
-                          noOnlyWhitespace,
                         },
                       }}
                       render={({ field }) => (
@@ -480,96 +473,10 @@ const HouseKeepingMembersList = () => {
                             Select a Member Type
                           </MenuItem>
                           <MenuItem value="Self">Self</MenuItem>
-                          <MenuItem value="Third Party">
-                            Third Party
-                          </MenuItem>
+                          <MenuItem value="Third Party">Third Party</MenuItem>
                         </TextField>
                       )}
                     />
-                  </div>
-                </div>
-                <div>
-                  {/* Section: Home Address Information */}
-                  <div className="py-4 border-b-default border-borderGray">
-                    <span className="text-subtitle font-pmedium">
-                      Home Address Information
-                    </span>
-                  </div>
-                  <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                    <Controller
-                      name="addressLine1"
-                      control={editControl}
-                      rules={{
-                        required: "Address Line 1 is Required",
-                        validate: {
-                          isAlphanumeric,
-                          noOnlyWhitespace,
-                        },
-                      }}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label="Address Line 1"
-                          fullWidth
-                          error={!!editErrors.addressLine1}
-                          helperText={editErrors?.addressLine1?.message}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="addressLine2"
-                      control={editControl}
-                      rules={{
-                        required: "Address Line 2 is Required",
-                        validate: {
-                          isAlphanumeric,
-                          noOnlyWhitespace,
-                        },
-                      }}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label="Address Line 2"
-                          fullWidth
-                          error={!!editErrors.addressLine2}
-                          helperText={editErrors?.addressLine2?.message}
-                        />
-                      )}
-                    />
-                    <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 ">
-                      <CountryStateCitySelector
-                        control={editControl}
-                        getValues={getValues}
-                        setValue={setEditValue}
-                        errors={editErrors}
-                      />
-
-                      <Controller
-                        name="pinCode"
-                        control={editControl}
-                        rules={{
-                          required: "Pin Code is Required",
-                          validate: {
-                            isAlphanumeric,
-                            isValidPinCode,
-                          },
-                        }}
-                        defaultValue=""
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Pin Code"
-                            type="number"
-                            fullWidth
-                            error={!!editErrors.pinCode}
-                            helperText={editErrors?.pinCode?.message}
-                          />
-                        )}
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
