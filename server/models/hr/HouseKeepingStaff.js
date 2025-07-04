@@ -12,7 +12,7 @@ const houseKeepingStaffSchema = new mongoose.Schema(
     password: { type: String },
     phoneNumber: { type: String },
     dateOfBirth: { type: Date },
-    employeementType: { type: String },
+    employementType: { type: String },
     employeeLeaveAndCount: { type: String },
     department: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
     dateOfJoining: { type: Date },
