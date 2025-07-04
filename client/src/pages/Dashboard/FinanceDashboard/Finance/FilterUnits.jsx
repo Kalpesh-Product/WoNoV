@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-const CheckAvailability = () => {
+const CheckAvailability = ({ landlord }) => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
 
@@ -35,7 +35,7 @@ const CheckAvailability = () => {
   } = useQuery({
     queryKey: ["units"],
     queryFn: async () => {
-      const response = await axios.get("/api/company/fetch-units");
+      const response = await axios.get("/api/company/fetch-simple-units");
 
       return response.data;
     },
@@ -50,7 +50,6 @@ const CheckAvailability = () => {
     );
     return unit ? unit._id : null;
   }, [selectedUnit, selectedLocation, units]);
-
 
   const uniqueBuildings = Array.from(
     new Map(
@@ -82,7 +81,8 @@ const CheckAvailability = () => {
       </h2>
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col items-center">
+        className="flex flex-col items-center"
+      >
         <div className="flex justify-center gap-4 mb-10 px-20 w-full">
           {/* Location Dropdown */}
           <FormControl className="w-1/2">
@@ -125,7 +125,8 @@ const CheckAvailability = () => {
                   label="Select Unit"
                   disabled={!selectedLocation}
                   value={field.value}
-                  onChange={(event) => field.onChange(event.target.value)}>
+                  onChange={(event) => field.onChange(event.target.value)}
+                >
                   <MenuItem value="">Select Unit</MenuItem>
 
                   {/* {units.map((unit) =>
