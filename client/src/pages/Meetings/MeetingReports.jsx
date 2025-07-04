@@ -13,6 +13,8 @@ import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
 import useAuth from "../../hooks/useAuth";
+import humanDate from "../../utils/humanDateForamt";
+import humanTime from "../../utils/humanTime";
 
 const MeetingReports = () => {
   const axios = useAxiosPrivate();
@@ -130,33 +132,35 @@ const MeetingReports = () => {
               dateColumn={"date"}
               tableTitle={"Meetings Reports"}
               data={[
-                ...meetingReportsData.map((item, index) => ({
-                  srNo: index + 1,
-                  id: index + 1,
-                  department: item.department,
-                  roomName: item.roomName,
-                  unitNo: item.location?.unitNo,
-                  unitName: item.location?.unitName,
-                  buildingName: item.location?.building?.buildingName,
-                  meetingType: item.meetingType,
-                  housekeepingStatus: item.housekeepingStatus,
-                  date: item.date,
-                  startTime: item.startTime,
-                  endTime: item.endTime,
-                  duration: item.duration,
-                  meetingStatus: item.meetingStatus,
-                  agenda: item.agenda,
-                  subject: item.subject,
-                  housekeepingChecklist: item.housekeepingChecklist,
-                  participants: item.participants
-                    ?.map(
-                      (p) =>
-                        `${p.firstName || ""} ${p.lastName || ""} (${
-                          p.email || ""
-                        })`
-                    )
-                    .join(", "),
-                })),
+                ...meetingReportsData.map((item, index) => {
+
+                  return {
+                    srNo: index + 1,
+                    id: index + 1,
+                    bookedBy: item.bookedBy
+                      ? `${item.bookedBy.firstName} ${item.bookedBy.lastName}`
+                      : item.clientBookedBy?.employeeName || "Unknown",
+                    receptionist: item?.receptionist,
+                    department: item.department,
+                    roomName: item.roomName,
+                    location: item.location?.unitNo,
+                    unitName: item.location?.unitName,
+                    buildingName: item.location?.building?.buildingName,
+                    meetingType: item.meetingType,
+                    housekeepingStatus: item.housekeepingStatus,
+                    date: item.date,
+                    startTime: item.startTime,
+                    endTime: item.endTime,
+                    duration: item.duration,
+                    meetingStatus: item.meetingStatus,
+                    agenda: item.agenda,
+                    subject: item.subject,
+                    housekeepingChecklist: item.housekeepingChecklist,
+                    participants: item.participants
+                      ?.map((p) => `${p.firstName || ""} ${p.lastName || ""}`)
+                      .join(", "),
+                  };
+                }),
               ]}
               columns={meetingReportsColumn}
             />
@@ -165,70 +169,89 @@ const MeetingReports = () => {
           )}
         </div>
       </PageFrame>
+
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
         title={"Meeting Details"}
       >
         {!isMeetingsPending && selectedMeeting ? (
-          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
-            <DetalisFormatted
-              title="Department"
-              detail={selectedMeeting?.department}
-            />
-            <DetalisFormatted
-              title="Room Name"
-              detail={selectedMeeting?.roomName}
-            />
-            <DetalisFormatted
-              title="Unit No"
-              detail={selectedMeeting?.unitNo}
-            />
-            <DetalisFormatted
-              title="Unit Name"
-              detail={selectedMeeting?.unitName}
-            />
-            <DetalisFormatted
-              title="Building"
-              detail={selectedMeeting?.buildingName}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4 w-full">
+            {/* Section 1: Basic Info */}
+            <div className="font-bold">Basic Info</div>
             <DetalisFormatted
               title="Meeting Type"
-              detail={selectedMeeting?.meetingType}
+              detail={selectedMeeting?.meetingType || "N/A"}
             />
             <DetalisFormatted
-              title="Housekeeping Status"
-              detail={selectedMeeting?.housekeepingStatus}
-            />
-            <DetalisFormatted title="Date" detail={selectedMeeting?.date} />
-            <DetalisFormatted
-              title="Start Time"
-              detail={selectedMeeting?.startTime}
+              title="Subject"
+              detail={selectedMeeting?.subject || "N/A"}
             />
             <DetalisFormatted
-              title="End Time"
-              detail={selectedMeeting?.endTime}
+              title="Agenda"
+              detail={selectedMeeting?.agenda || "N/A"}
+            />
+            <DetalisFormatted
+              title="Date"
+              detail={
+                selectedMeeting?.date ? selectedMeeting?.date : "N/A"
+              }
+            />
+            <DetalisFormatted
+              title="Time"
+              detail={`${humanTime(selectedMeeting?.startTime)} - ${humanTime(
+                selectedMeeting?.endTime
+              )}`}
             />
             <DetalisFormatted
               title="Duration"
-              detail={selectedMeeting?.duration}
+              detail={selectedMeeting?.duration || "N/A"}
             />
             <DetalisFormatted
               title="Meeting Status"
-              detail={selectedMeeting?.meetingStatus}
-            />
-            <DetalisFormatted title="Agenda" detail={selectedMeeting?.agenda} />
-            <DetalisFormatted
-              title="Subject"
-              detail={selectedMeeting?.subject}
+              detail={selectedMeeting?.meetingStatus || "N/A"}
             />
             <DetalisFormatted
-              title="Participants"
-              detail={selectedMeeting?.participants}
+              title="Housekeeping Status"
+              detail={selectedMeeting?.housekeepingStatus || "N/A"}
+            />
+
+            {/* Section 2: People Involved */}
+            <br />
+            <div className="font-bold">People Involved</div>
+            {selectedMeeting?.participants?.length > 0 && (
+              <DetalisFormatted
+                title="Participants"
+                detail={selectedMeeting?.participants || "Unknown"}
+              />
+            )}
+            <DetalisFormatted
+              title="Booked By"
+              detail={selectedMeeting?.bookedBy || "Unknown"}
             />
             <DetalisFormatted
-              title="Company"
-              detail={selectedMeeting?.company}
+              title="Receptionist"
+              detail={selectedMeeting?.receptionist || "Unknown"}
+            />
+            <DetalisFormatted
+              title="Department"
+              detail={selectedMeeting?.department || "Top Management"}
+            />
+
+            {/* Section 3: Venue Details */}
+            <br />
+            <div className="font-bold">Venue Details</div>
+            <DetalisFormatted
+              title="Room"
+              detail={selectedMeeting?.roomName || "N/A"}
+            />
+            <DetalisFormatted
+              title="Location"
+              detail={selectedMeeting?.location || "N/A"}
+            />
+            <DetalisFormatted
+              title="Building"
+              detail={selectedMeeting?.buildingName || "N/A"}
             />
           </div>
         ) : (
