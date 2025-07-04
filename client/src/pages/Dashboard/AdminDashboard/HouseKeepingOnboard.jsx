@@ -35,7 +35,7 @@ const HouseKeepingOnboard = () => {
       mobilePhone: "",
       houseKeepingType: "",
       email: "",
-      addressLine1: "",
+      address: "",
       country: "",
       state: "",
       city: "",
@@ -258,12 +258,11 @@ const HouseKeepingOnboard = () => {
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
                 <Controller
-                  name="addressLine1"
+                  name="address"
                   control={control}
                   rules={{
-                    required: "Address Line 1 is Required",
+                    required: "Address is Required",
                     validate: {
-                      isAlphanumeric,
                       noOnlyWhitespace,
                     },
                   }}
@@ -271,76 +270,16 @@ const HouseKeepingOnboard = () => {
                     <TextField
                       {...field}
                       size="small"
-                      label="Address Line 1"
+                      label="Address"
                       fullWidth
-                      error={!!errors.addressLine1}
-                      helperText={errors?.addressLine1?.message}
-                    />
-                  )}
-                />
-                <Controller
-                  name="addressLine2"
-                  control={control}
-                  rules={{
-                    required: "Address Line 2 is Required",
-                    validate: {
-                      isAlphanumeric,
-                      noOnlyWhitespace,
-                    },
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Address Line 2"
-                      fullWidth
-                      error={!!errors.addressLine2}
-                      helperText={errors?.addressLine2?.message}
+                      multiline
+                      rows={3}
+                      error={!!errors.address}
+                      helperText={errors?.address?.message}
                     />
                   )}
                 />
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 ">
-                  {/* <Controller
-                    name="country"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Country"
-                        fullWidth
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="state"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="State"
-                        fullWidth
-                      />
-                    )}
-                  />
-
-                  <Controller
-                    name="city"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="City"
-                        fullWidth
-                      />
-                    )}
-                  /> */}
-
                   <CountryStateCitySelector
                     control={control}
                     getValues={getValues}
