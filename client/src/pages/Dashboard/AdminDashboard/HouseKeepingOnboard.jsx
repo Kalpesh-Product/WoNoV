@@ -33,9 +33,9 @@ const HouseKeepingOnboard = () => {
       gender: "",
       dateOfBirth: null,
       mobilePhone: "",
+      houseKeepingType: "",
       email: "",
       addressLine1: "",
-      addressLine2: "",
       country: "",
       state: "",
       city: "",
@@ -57,7 +57,7 @@ const HouseKeepingOnboard = () => {
     onSuccess: (data) => {
       toast.success(data.message || "Employee onboarded successfully!");
       reset(),
-      queryClient.invalidateQueries({ queryKey: ["housekeeping-staff"] });
+        queryClient.invalidateQueries({ queryKey: ["housekeeping-staff"] });
     },
     onError: (error) => {
       console.error("Submission failed:", error);
@@ -223,6 +223,30 @@ const HouseKeepingOnboard = () => {
                     />
                   )}
                 />
+                <Controller
+                  name="houseKeepingType"
+                  control={control}
+                  rules={{ required: "Type is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      fullWidth
+                      label="Member Type"
+                      size="small"
+                      error={!!errors.houseKeepingType}
+                      helperText={errors?.houseKeepingType?.message}
+                    >
+                      <MenuItem value="" disabled>
+                        Select a Member Type
+                      </MenuItem>
+                      <MenuItem value="self">Self</MenuItem>
+                      <MenuItem value="thirdParty">
+                        Third Party
+                      </MenuItem>
+                    </TextField>
+                  )}
+                />
               </div>
             </div>
             <div>
@@ -331,7 +355,7 @@ const HouseKeepingOnboard = () => {
                       required: "Pin Code is Required",
                       validate: {
                         isAlphanumeric,
-                        isValidPinCode
+                        isValidPinCode,
                       },
                     }}
                     defaultValue=""

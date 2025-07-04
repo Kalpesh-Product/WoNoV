@@ -42,20 +42,6 @@ const HouseKeepingMembersList = () => {
     endDate: new Date(),
     key: "selection",
   });
-  const {
-    handleSubmit,
-    control,
-    setValue,
-    reset,
-    formState: { errors },
-  } = useForm({
-    defaultValues: {
-      employee: "",
-      location: "",
-      startDate: new Date(),
-      endDate: new Date(),
-    },
-  });
 
   const {
     control: editControl,
@@ -70,6 +56,7 @@ const HouseKeepingMembersList = () => {
       middleName: "",
       lastName: "",
       gender: "",
+      houseKeepingType: "",
       dateOfBirth: null,
       mobilePhone: "",
       email: "",
@@ -93,10 +80,11 @@ const HouseKeepingMembersList = () => {
       setEditValue("middleName", selectedUser?.middleName);
       setEditValue("lastName", selectedUser?.lastName);
       setEditValue("gender", selectedUser?.gender);
-      setEditValue("mobilePhone", selectedUser?.mobilePhone);
+      setEditValue("mobilePhone", selectedUser?.phoneNumber);
       setEditValue("addressLine1", selectedUser?.addressLine1);
       setEditValue("addressLine2", selectedUser?.addressLine2);
       setEditValue("firstName", selectedUser?.firstName);
+      setEditValue("houseKeepingType", selectedUser?.houseKeepingType);
       setEditValue("dateOfBirth", dayjs(selectedUser?.dateOfBirth));
     }
   }, [selectedUser]);
@@ -114,56 +102,6 @@ const HouseKeepingMembersList = () => {
       },
     }
   );
-
-  const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
-    queryKey: ["employees"],
-    queryFn: async () => {
-      try {
-        const adminDepId = "6798bae6e469e809084e24a4";
-        const response = await axios.get(`/api/users/fetch-users`, {
-          params: {
-            deptId: adminDepId,
-          },
-        });
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
-
-  const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
-    queryKey: ["unitsData"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/company/fetch-units");
-        return response.data;
-      } catch (error) {
-        console.error("Error fetching clients data:", error);
-      }
-    },
-  });
-
-  const { mutate: assignMember, isPending: isAssignMemberPending } =
-    useMutation({
-      mutationKey: ["assignMember"],
-      mutationFn: async (data) => {
-        const response = await axios.post(
-          "/api/administration/assign-weekly-unit",
-          data
-        );
-        return response.data;
-      },
-      onSuccess: (data) => {
-        queryClient.invalidateQueries({ queryKey: ["unitAssignees"] });
-        toast.success(data.message || "Data submitted successfully!");
-        reset();
-        setIsModalOpen(false);
-      },
-      onError: (error) => {
-        toast.error(error.message || "Error submitting data");
-      },
-    });
 
   const handleEditUser = (user) => {
     setModalMode("edit");
@@ -219,6 +157,7 @@ const HouseKeepingMembersList = () => {
 
   const memberColumns = [
     { field: "id", headerName: "Sr No", width: 100 },
+    { field: "type", headerName: "Type" },
     { field: "firstName", headerName: "First Name", flex: 1 },
     { field: "middleName", headerName: "Middle Name", flex: 1 },
     { field: "lastName", headerName: "Last Name", flex: 1 },
@@ -251,6 +190,7 @@ const HouseKeepingMembersList = () => {
     middleName: member.middleName || "N/A",
     lastName: member.lastName || "N/A",
     gender: member.gender || "N/A",
+    type : member.type || "Third Party",
     manager:
       member.managerUser?.firstName && member.managerUser?.lastName
         ? `${member.managerUser.firstName} ${member.managerUser.lastName}`
@@ -260,18 +200,6 @@ const HouseKeepingMembersList = () => {
   const handleAddUser = () => {
     setModalMode("add");
     setIsModalOpen(true);
-  };
-
-  const handleDateSelect = (ranges) => {
-    const { startDate, endDate } = ranges.selection;
-    setSelectionRange(ranges.selection);
-    // Update form state
-    setValue("startDate", startDate);
-    setValue("endDate", endDate);
-  };
-
-  const handleFormSubmit = (data) => {
-    assignMember(data);
   };
 
   return (
@@ -486,8 +414,8 @@ const HouseKeepingMembersList = () => {
                             <MenuItem value="" disabled>
                               Select a Gender
                             </MenuItem>
-                            <MenuItem value="male">Male</MenuItem>
-                            <MenuItem value="female">Female</MenuItem>
+                            <MenuItem value="Male">Male</MenuItem>
+                            <MenuItem value="Female">Female</MenuItem>
                           </TextField>
                         )}
                       />
@@ -532,6 +460,30 @@ const HouseKeepingMembersList = () => {
                           helperText={editErrors?.mobilePhone?.message}
                           error={!!editErrors.mobilePhone}
                         />
+                      )}
+                    />
+                    <Controller
+                      name="houseKeepingType"
+                      control={editControl}
+                      rules={{ required: "Type is required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          select
+                          fullWidth
+                          label="Member Type"
+                          size="small"
+                          error={!!editErrors.houseKeepingType}
+                          helperText={editErrors?.houseKeepingType?.message}
+                        >
+                          <MenuItem value="" disabled>
+                            Select a Member Type
+                          </MenuItem>
+                          <MenuItem value="Self">Self</MenuItem>
+                          <MenuItem value="Third Party">
+                            Third Party
+                          </MenuItem>
+                        </TextField>
                       )}
                     />
                   </div>
@@ -591,7 +543,7 @@ const HouseKeepingMembersList = () => {
                         control={editControl}
                         getValues={getValues}
                         setValue={setEditValue}
-                        errors={errors}
+                        errors={editErrors}
                       />
 
                       <Controller

@@ -131,7 +131,7 @@ const TeamMembersSchedule = () => {
           openDesks: unit.openDesks,
           cabinDesks: unit.cabinDesks,
           lead:
-            department.name === "Administration"
+            department?.name === "Administration"
               ? `${unit?.adminLead?.firstName} ${unit?.adminLead?.lastName}`
               : department.name === "Maintenance"
               ? `${unit?.maintenanceLead?.firstName} ${unit?.maintenanceLead?.lastName}`
@@ -160,7 +160,7 @@ const TeamMembersSchedule = () => {
       try {
         const response = await axios.get("/api/users/fetch-users", {
           params: {
-            deptId: department._id,
+            deptId: department?._id,
           },
         });
         return response.data;
@@ -397,11 +397,34 @@ const TeamMembersSchedule = () => {
   useEffect(() => {
     console.log("selected User : ", selectedUser);
   }, [selectedUser]);
-  const handleViewUser = (user) => {
+const handleViewUser = async (user) => {
+  try {
+    const response = await axios.get(
+      `/api/weekly-unit/get-unit-schedule?unitId=${user._id}&department=${department?._id}`
+    );
+    const matchingSchedule = response.data?.[0]; // adjust as needed
+
+    if (matchingSchedule) {
+      setSelectedUser({
+        ...user,
+        startDate: matchingSchedule.startDate,
+        endDate: matchingSchedule.endDate,
+        substitutions: matchingSchedule.substitutions || [],
+        isEmployeeActive: matchingSchedule.employee?.isActive ?? true,
+      });
+    } else {
+      toast.warning("No schedule found for this unit.");
+      setSelectedUser(user);
+    }
+
     setModalMode("view");
-    setSelectedUser(user);
     setIsModalOpen(true);
-  };
+  } catch (error) {
+    console.error("Error fetching schedule details:", error);
+    toast.error("Failed to load schedule details.");
+  }
+};
+
   const handleAddUser = () => {
     setModalMode("add");
     setIsModalOpen(true);
