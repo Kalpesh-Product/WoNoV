@@ -19,6 +19,7 @@ import YearWiseTable from "../Tables/YearWiseTable";
 import SecondaryButton from "../SecondaryButton";
 import DangerButton from "../DangerButton";
 import { noOnlyWhitespace, isAlphanumeric } from "../../utils/validators";
+import humanDate from "../../utils/humanDateForamt";
 
 const SopUpload = () => {
   const axios = useAxiosPrivate();
@@ -214,6 +215,7 @@ const SopUpload = () => {
             documentLink: item?.documentLink || "#",
             date: item.createdAt,
             status: item.isActive ? "Active" : "-",
+            updatedAt : humanDate(item.updatedAt),
           }))
           .filter((item) => item.isActive === true)
       : [];

@@ -15,7 +15,7 @@ import { queryClient } from "../../../main";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import { IoMdClose } from "react-icons/io";
 import DetalisFormatted from "../../../components/DetalisFormatted";
@@ -183,7 +183,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
   const recievedTicketsColumns = [
     { field: "srNo", headerName: "Sr No" },
     { field: "acceptedBy", headerName: "Accepted By" },
-    { field: "raisedBy", headerName: "Raised By" },
+    { field: "raisedUser", headerName: "Raised By" },
     {
       field: "raisedToDepartment",
       headerName: "From Department",
@@ -209,6 +209,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
     {
       field: "actions",
       headerName: "Actions",
+            pinned : 'right',
       cellRenderer: (params) => (
         <div className="flex gap-2">
           <ThreeDotMenu
@@ -249,15 +250,18 @@ const AcceptedTickets = ({ title, departmentId }) => {
             // hideFilter
             data={[
               ...acceptedTickets.map((ticket, index) => ({
+                ...ticket,
                 srNo: index + 1,
                 id: ticket._id,
-                raisedBy: ticket.raisedBy
-                  ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`
-                  : "Unknown",
+                raisedUser: `${ticket.raisedBy?.firstName || ""} ${
+                  ticket.raisedBy?.lastName || ""
+                }`,
 
                 description: ticket.description,
-                raisedToDepartment:
-                  ticket.raisedBy.departments.map((dept) => dept.name) || "N/A",
+                raisedByDepartment:
+                  ticket.raisedBy?.departments?.map((dept) => dept.name) ||
+                  "N/A",
+                raisedToDepartment: ticket.raisedToDepartment?.name,
                 ticketTitle: ticket?.ticket || "No Title",
                 status: ticket.status || "Pending",
                 acceptedBy: ticket?.acceptedBy
@@ -405,19 +409,20 @@ const AcceptedTickets = ({ title, departmentId }) => {
             />
             <DetalisFormatted
               title="Raised By"
-              detail={selectedTicket.raisedBy}
+              detail={selectedTicket.raisedUser}
             />
             <DetalisFormatted
               title="Raised At"
-              detail={humanDate(new Date(selectedTicket.raisedDate))}
+              detail={humanDate(selectedTicket.createdAt)}
             />
             <DetalisFormatted
               title="From Department"
-              detail={
-                Array.isArray(selectedTicket.selectedDepartment)
-                  ? selectedTicket.selectedDepartment.join(", ")
-                  : selectedTicket.selectedDepartment
-              }
+              // detail={
+              //   Array.isArray(selectedTicket.selectedDepartment)
+              //     ? selectedTicket.selectedDepartment.join(", ")
+              //     : selectedTicket.selectedDepartment
+              // }
+              detail={selectedTicket?.raisedByDepartment}
             />
             <DetalisFormatted
               title="Raised To Department"

@@ -15,6 +15,7 @@ import { useEffect } from "react";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import { queryClient } from "../../../../main";
 import { noOnlyWhitespace, isAlphanumeric } from "../../../../utils/validators";
+import DangerButton from "../../../../components/DangerButton";
 
 const EmployeeType = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -58,13 +59,17 @@ const EmployeeType = () => {
   };
 
   const handleDelete = (item) => {
-    const payload = {
-      type: "employeeTypes",
-      itemId: item._id,
-      isDeleted: true,
-    };
     setModalMode("delete");
     setSelectedItem(item);
+    setOpenModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    const payload = {
+      type: "employeeTypes",
+      itemId: selectedItem._id,
+      isDeleted: true,
+    };
     updateEmployeeTypeMutation.mutate(payload);
   };
 
@@ -242,6 +247,8 @@ const EmployeeType = () => {
               ? "Add Employee Type"
               : modalMode === "edit"
               ? "Edit Employee Type"
+              : modalMode === "delete"
+              ? "Confirm Delete"
               : "Employee Type Details"
           }
           onClose={() => setOpenModal(false)}
@@ -256,6 +263,22 @@ const EmployeeType = () => {
                 title="Status"
                 detail={selectedItem?.status ? "Active" : "Inactive"}
               />
+            </div>
+          ) : modalMode === "delete" ? (
+            <div className="space-y-4">
+              <p>
+                Are you sure you want to delete <b>{selectedItem?.name}</b>?
+              </p>
+              <div className="flex gap-4 justify-end">
+                <SecondaryButton
+                  title="Cancel"
+                  handleSubmit={() => setOpenModal(false)}
+                />
+                <DangerButton
+                  title="Confirm Delete"
+                  handleSubmit={handleConfirmDelete}
+                />
+              </div>
             </div>
           ) : (
             <form

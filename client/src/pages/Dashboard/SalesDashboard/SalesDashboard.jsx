@@ -13,8 +13,6 @@ import { inrFormat } from "../../../utils/currencyFormat";
 import {
   financialYearMonths,
   sourcingChannelsOptions,
-  clientGenderData,
-  clientGenderPieChartOptions,
   upcomingBirthdaysColumns,
   calculateCompletedTime,
 } from "./SalesData/SalesData";
@@ -243,13 +241,18 @@ const SalesDashboard = () => {
     cardTitle: "REVENUE",
     descriptionData: [
       {
-        title: "FY 2024-25",
+        title: selectedFiscalYear,
         value: `INR ${inrFormat(totalValue) || 0}`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
-        title: "March 2025",
-        value: `INR ${inrFormat(finalRevenueGraph[11]) || 0}`,
+        title:
+          selectedFiscalYear === "FY 2024-25" ? "March 2025" : "March 2026",
+        value: `INR ${
+          selectedFiscalYear === "FY 2024-25"
+            ? inrFormat(finalRevenueGraph[11])
+            : 0
+        }`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
@@ -269,6 +272,7 @@ const SalesDashboard = () => {
       },
     ],
   };
+
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
 
   const totalOccupiedSeats = clientsData
@@ -798,7 +802,7 @@ const SalesDashboard = () => {
       ],
     },
     {
-      layout: 6,
+      layout: 5,
       widgets: [
         <Card route={"turnover"} title={"Turnover"} icon={<RiPagesLine />} />,
         <Card
@@ -811,7 +815,7 @@ const SalesDashboard = () => {
           title={"Mix Bag"}
           icon={<MdFormatListBulleted />}
         />,
-        <Card route={""} title={"Reports"} icon={<CgProfile />} />,
+        // <Card route={""} title={"Reports"} icon={<CgProfile />} />,
         <Card
           route={"/app/dashboard/sales-dashboard/data"}
           title={"Data"}
@@ -903,7 +907,7 @@ const SalesDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection layout={1} title={"Gender-wise data"} border>
+        <WidgetSection layout={1} title={"Client Gender Wise Data"} border>
           <PieChartMui data={[]} options={[]} />
         </WidgetSection>,
         <WidgetSection layout={1} title={"India-wise Members"} border>

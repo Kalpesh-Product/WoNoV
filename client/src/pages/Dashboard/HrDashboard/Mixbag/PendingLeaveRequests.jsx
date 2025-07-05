@@ -113,6 +113,7 @@ export default function PendingLeaveRequests() {
     <div>
       <PageFrame>
         <YearWiseTable
+          key={leavesData?.length}
           data={leavesData}
           columns={leaveColumns}
           dateColumn="fromDate"

@@ -143,7 +143,7 @@ const updateCompanyDocument = async (req, res, next) => {
   }
 };
 
-const deleteCompanyDocument = async (req, res, next) => {
+const toggleCompanyDocumentStatus = async (req, res, next) => {
   const user = req.user;
   const { documentId } = req.body; // Use MongoDB _id
 
@@ -157,23 +157,22 @@ const deleteCompanyDocument = async (req, res, next) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    // Document arrays to search in
     const docFields = ["templates", "sop", "policies", "agreements"];
-
-    // Fetch full company document
     const company = await Company.findById(foundUser.company._id);
 
     let found = false;
     let targetDocumentId = null;
+    let newStatus = null;
 
     for (const field of docFields) {
       const docArray = company[field];
 
       const doc = docArray.find((doc) => doc._id.toString() === documentId);
       if (doc) {
-        doc.isActive = false;
+        doc.isActive = !doc.isActive; // Toggle status
         found = true;
         targetDocumentId = doc.documentId;
+        newStatus = doc.isActive;
         break;
       }
     }
@@ -186,8 +185,8 @@ const deleteCompanyDocument = async (req, res, next) => {
 
     await company.save();
 
-    // Delete from Cloudinary using the actual documentId
-    if (targetDocumentId) {
+    // If the document is being toggled *off*, delete it from Cloudinary
+    if (!newStatus && targetDocumentId) {
       const cloudRes = await handleDocumentDelete(targetDocumentId);
       if (cloudRes.result !== "ok") {
         return res
@@ -196,9 +195,11 @@ const deleteCompanyDocument = async (req, res, next) => {
       }
     }
 
-    return res
-      .status(200)
-      .json({ message: "Document marked as inactive successfully" });
+    return res.status(200).json({
+      message: `Document ${
+        newStatus ? "activated" : "deactivated"
+      } successfully`,
+    });
   } catch (error) {
     next(error);
   }
@@ -994,7 +995,7 @@ module.exports = {
   getComplianceDocuments,
   uploadComplianceDocument,
   updateCompanyDocument,
-  deleteCompanyDocument,
+  toggleCompanyDocumentStatus,
   updateDepartmentDocument,
   deleteDepartmentDocument,
   handleDepartmentTemplateUpload,

@@ -3,11 +3,21 @@ import { useQuery } from "@tanstack/react-query";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import AgTable from "../../../../components/AgTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { useSelector, useDispatch } from "react-redux";
+import { setBuildingName } from "../../../../redux/slices/salesSlice";
+import { useEffect } from "react";
 
 export default function BuildingUnits() {
+  const dispatch = useDispatch();
   const location = useLocation();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
+  const buildingName = useSelector((state) => state.sales.buildingName);
+  useEffect(() => {
+    if (location?.state && location.state !== buildingName?.title) {
+      dispatch(setBuildingName({ title: location.state }));
+    }
+  }, [location?.state, buildingName?.title, dispatch]);
   const { data: unitsData = [], isPending: isUnitsDataPending } = useQuery({
     queryKey: ["inventory-units-data"],
     queryFn: async () => {
@@ -74,7 +84,9 @@ export default function BuildingUnits() {
           data={tableData}
           columns={columns}
           search
-          tableTitle={`${location.state} units`}
+          tableTitle={`${
+            !location?.state ? buildingName?.title : location.state
+          } units`}
           loading={isUnitsDataPending}
         />
       </PageFrame>

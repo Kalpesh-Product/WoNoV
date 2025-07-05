@@ -24,9 +24,7 @@ const BudgetPage = () => {
   const department = usePageDepartment();
   const queryClient = useQueryClient();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
-  const departmentAccess = [
-    "67b2cf85b9b6ed5cedeb9a2e",
-  ];
+  const departmentAccess = ["67b2cf85b9b6ed5cedeb9a2e"];
 
   const isTop = auth.user.departments.some((item) => {
     return departmentAccess.includes(item._id.toString());
@@ -348,7 +346,7 @@ const BudgetPage = () => {
       <YearlyGraph
         data={expenseRawSeries}
         options={expenseOptions}
-        title={`BIZ Nest ${department?.name} DEPARTMENT EXPENSE`}
+        title={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
         titleAmount={`INR ${inrFormat(totalUtilised)}`}
         onYearChange={setSelectedFiscalYear}
       />
@@ -516,6 +514,7 @@ const BudgetPage = () => {
                 <DatePicker
                   {...field}
                   label="Due Date"
+                  disablePast
                   format="DD-MM-YYYY"
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) =>

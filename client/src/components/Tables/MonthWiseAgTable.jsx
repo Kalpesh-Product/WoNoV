@@ -60,33 +60,31 @@ const MonthWiseAgTable = ({ financialData, passedColumns, title, amount }) => {
     };
   }, [filteredMonths, selectedMonthIndex]);
 
-//   const parseAmount = (amount) => {
-//   if (!amount) return 0;
-//   if (typeof amount === "number") return amount;
-//   return parseFloat(amount.replace(/,/g, "")) || 0;
-// };
+  //   const parseAmount = (amount) => {
+  //   if (!amount) return 0;
+  //   if (typeof amount === "number") return amount;
+  //   return parseFloat(amount.replace(/,/g, "")) || 0;
+  // };
 
-const parseAmount = (amount) => {
-  if (!amount) return 0;
-  if (typeof amount === "number") return amount;
-  return parseFloat(amount.replace(/,/g, "")) || 0;
-};
+  const parseAmount = (amount) => {
+    if (!amount) return 0;
+    if (typeof amount === "number") return amount;
+    return parseFloat(amount.replace(/,/g, "")) || 0;
+  };
 
-const monthTotal = monthData.rows
-  .map((item) => {
-    const revenue = parseAmount(item.revenue);
-    const total = parseAmount(item.totalAmount);
-    const invoice = parseAmount(item.invoiceAmount);
+  const monthTotal = monthData.rows
+    .map((item) => {
+      const revenue = parseAmount(item.revenue);
+      const total = parseAmount(item.totalAmount);
+      const invoice = parseAmount(item.invoiceAmount);
 
-    // Prefer revenue > total > invoice
-    return revenue || total || invoice || 0;
-  })
-  .reduce((sum, item) => sum + item, 0);
-
-
+      // Prefer revenue > total > invoice
+      return revenue || total || invoice || 0;
+    })
+    .reduce((sum, item) => sum + item, 0);
 
   const columns = [
-    { headerName: "Sr No", field: "srNo",width:100 },
+    { headerName: "Sr No", field: "srNo", width: 100 },
     { headerName: "Particulars", field: "particulars" },
     {
       headerName: "Taxable Amount (INR)",
@@ -129,7 +127,8 @@ const monthTotal = monthData.rows
       <WidgetSection
         title={title}
         TitleAmount={amount || `INR ${inrFormat(monthTotal)}`}
-         border>
+        border
+      >
         <div className="flex justify-center items-center space-x-2 px-4 pt-2 ">
           {/* Month Switcher */}
           {filteredMonths.length > 0 && (
@@ -182,27 +181,27 @@ const monthTotal = monthData.rows
           </div>
         </div>
         {/* AgTable */}
-        {monthData.rows.length > 0 ? (
-          <div className="h-72 overflow-y-auto mt-4 px-4">
+        <div className="h-72 mt-4 px-4 overflow-y-auto">
+          {filteredMonths.length === 0 ? (
+            <div className="h-full flex justify-center items-center text-muted">
+              No data available for {selectedFY}
+            </div>
+          ) : monthData.rows.length === 0 ? (
+            <div className="h-full flex justify-center items-center text-muted">
+              No data available for {monthData.month || "selected month"}
+            </div>
+          ) : (
             <AgTable
-              data={
-                monthData.rows
-                  ? monthData.rows.map((item, index) => ({
-                      ...item,
-                      srNo: index + 1,
-                    }))
-                  : []
-              }
+              data={monthData.rows.map((item, index) => ({
+                ...item,
+                srNo: index + 1,
+              }))}
               columns={passedColumns ? passedColumns : columns}
               tableHeight={250}
               hideFilter
             />
-          </div>
-        ) : (
-          <div className="h-72 flex justify-center items-center text-muted">
-            {/* No revenue data for {monthData.month} */}
-          </div>
-        )}
+          )}
+        </div>
       </WidgetSection>
     </div>
   );

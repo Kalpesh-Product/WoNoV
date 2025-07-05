@@ -8,7 +8,7 @@ import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { CircularProgress } from "@mui/material";
 import PageFrame from "../../../../components/Pages/PageFrame";
-import {inrFormat} from "../../../../utils/currencyFormat";
+import { inrFormat } from "../../../../utils/currencyFormat";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 
 const JobApplicationList = () => {
@@ -30,51 +30,20 @@ const JobApplicationList = () => {
   const leavesColumn = [
     { field: "srNo", headerName: "SR No", width: 100 },
     { field: "finalSubmissionDate", headerName: "Submission Date" },
-    { field: "name", headerName: "Name", flex : 1 },
-    { field: "jobPosition", headerName: "Job Position", flex : 1 },
-    // { field: "location", headerName: "Location" },
-    // { field: "mobileNumber", headerName: "Mobile" },
-    // { field: "email", headerName: "Email" },
-    // { field: "submissiondate", headerName: "Submit Date" },
-    // {
-    //   field: "resumeLink",
-    //   headerName: "View Resume",
-    //   cellRenderer: (params) => {
-    //     const pdfPath = params.value;
-
-    //     if (pdfPath && pdfPath !== "Resume") {
-    //       return (
-    //         <a
-    //           href={pdfPath}
-    //           target="_blank"
-    //           rel="noopener noreferrer"
-    //            className="text-primary underline cursor-pointer"
-    //         >
-    //           View Resume
-    //         </a>
-    //       );
-    //     } else {
-    //       return <span>-</span>;
-    //     }
-    //   },
-    // },
-
     {
-      field: "actions",
-      headerName: "Actions",
-      pinned: "right",
-      width: 100,
+      field: "name",
+      headerName: "Name",
+      flex: 1,
       cellRenderer: (params) => (
-        <div className="p-2 mb-2 flex gap-2">
-          <span
-            className="text-subtitle cursor-pointer"
-            onClick={() => handleViewApplicationDetails(params.data)}
-          >
-            <MdOutlineRemoveRedEye />
-          </span>
-        </div>
+        <span
+          className="text-primary underline cursor-pointer"
+          onClick={() => handleViewApplicationDetails(params.data)}
+        >
+          {params.value}
+        </span>
       ),
     },
+    { field: "jobPosition", headerName: "Job Position", flex: 1 },
   ];
 
   const handleViewApplicationDetails = (job) => {
@@ -178,7 +147,9 @@ const JobApplicationList = () => {
               />
               <DetalisFormatted
                 title="Expected Monthly Salary"
-                detail={inrFormat(viewApplicationDetails?.expectedMonthlySalary)}
+                detail={inrFormat(
+                  viewApplicationDetails?.expectedMonthlySalary
+                )}
               />
               <DetalisFormatted
                 title="Joining Time (Days)"
@@ -243,7 +214,7 @@ const JobApplicationList = () => {
                   ) : (
                     <div>
                       <a
-                       className="text-primary underline cursor-pointer"
+                        className="text-primary underline cursor-pointer"
                         href={formatURL(viewApplicationDetails.resumeLink)}
                         target="_blank"
                         rel="noopener noreferrer"

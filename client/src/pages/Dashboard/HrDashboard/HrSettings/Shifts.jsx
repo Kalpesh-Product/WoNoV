@@ -94,8 +94,9 @@ const Shifts = () => {
       isDeleted: true,
     };
     setModalMode("delete");
+    setOpenModal(true)
     setSelectedItem(item);
-    updateMutation.mutate(payload);
+    // updateMutation.mutate(payload);
   };
 
   const updateMutation = useMutation({
@@ -222,20 +223,20 @@ const Shifts = () => {
                   label: "Edit",
                   onClick: () => handleEdit(params.data),
                 },
-                {
-                  label: `${
-                    params.data.status ? "Mark As Inactive" : "Mark As Active"
-                  }`,
-                  onClick: () =>
-                    updateMutation.mutate({
-                      type: "shifts",
-                      itemId: params.data._id,
-                      name: params.data.shift,
-                      startTime: params.data.startTime,
-                      endTime: params.data.endTime,
-                      isActive: !params.data.status, // Correct toggle
-                    }),
-                },
+                // {
+                //   label: `${
+                //     params.data.status ? "Mark As Inactive" : "Mark As Active"
+                //   }`,
+                //   onClick: () =>
+                //     updateMutation.mutate({
+                //       type: "shifts",
+                //       itemId: params.data._id,
+                //       name: params.data.shift,
+                //       startTime: params.data.startTime,
+                //       endTime: params.data.endTime,
+                //       isActive: !params.data.status, // Correct toggle
+                //     }),
+                // },
 
                 {
                   label: "Delete",
@@ -261,6 +262,15 @@ const Shifts = () => {
   const transformedData = isAddPending
     ? []
     : shifts.filter((data) => !data.isDeleted);
+
+  const handleConfirmDelete = () => {
+    const payload = {
+      type: "shifts",
+      itemId: selectedItem._id,
+      isDeleted: true,
+    };
+    updateMutation.mutate(payload);
+  };
 
   return (
     <PageFrame>
@@ -460,42 +470,60 @@ const Shifts = () => {
                 />
               </form>
             )}
-          </MuiModal>
 
-          {modalMode === "view" && (
-            <MuiModal
-              open={openModal}
-              onClose={() => setOpenModal(false)}
-              title={"Shift Details"}
-            >
-              <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[70vh]">
-                <DetalisFormatted
-                  title="Shift Name"
-                  detail={selectedItem?.shift || "N/A"}
-                />
-                <DetalisFormatted
-                  title="Status"
-                  detail={selectedItem?.status ? "Active" : "Inactive"}
-                />
-                <DetalisFormatted
-                  title="Start Time"
-                  detail={
-                    selectedItem?.startTime
-                      ? humanTime(selectedItem.startTime)
-                      : "N/A"
-                  }
-                />
-                <DetalisFormatted
-                  title="End Time"
-                  detail={
-                    selectedItem?.endTime
-                      ? humanTime(selectedItem.endTime)
-                      : "N/A"
-                  }
-                />
+            {modalMode === "delete" && (
+              <div className="space-y-4">
+                <p>
+                  Are you sure you want to delete <b>{selectedItem?.shift}</b>?
+                </p>
+                <div className="flex gap-4 justify-end">
+                  <PrimaryButton
+                    title="Cancel"
+                    handleSubmit={() => setOpenModal(false)}
+                  />
+                  <PrimaryButton
+                    title="Confirm Delete"
+                    handleSubmit={handleConfirmDelete}
+                    isLoading={updateMutation.isPending}
+                  />
+                </div>
               </div>
-            </MuiModal>
-          )}
+            )}
+            {modalMode === "view" && (
+              <MuiModal
+                open={openModal}
+                onClose={() => setOpenModal(false)}
+                title={"Shift Details"}
+              >
+                <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[70vh]">
+                  <DetalisFormatted
+                    title="Shift Name"
+                    detail={selectedItem?.shift || "N/A"}
+                  />
+                  <DetalisFormatted
+                    title="Status"
+                    detail={selectedItem?.status ? "Active" : "Inactive"}
+                  />
+                  <DetalisFormatted
+                    title="Start Time"
+                    detail={
+                      selectedItem?.startTime
+                        ? humanTime(selectedItem.startTime)
+                        : "N/A"
+                    }
+                  />
+                  <DetalisFormatted
+                    title="End Time"
+                    detail={
+                      selectedItem?.endTime
+                        ? humanTime(selectedItem.endTime)
+                        : "N/A"
+                    }
+                  />
+                </div>
+              </MuiModal>
+            )}
+          </MuiModal>
         </div>
       </div>
     </PageFrame>

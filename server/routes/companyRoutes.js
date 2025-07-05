@@ -31,7 +31,7 @@ const {
   getCompanyKyc,
   getComplianceDocuments,
   uploadComplianceDocument,
-  deleteCompanyDocument,
+  toggleCompanyDocumentStatus,
   deleteDepartmentDocument,
   updateCompanyDocument,
   updateDepartmentDocument,
@@ -63,6 +63,7 @@ const {
   fetchBuildings,
   assignPrimaryUnit,
   updateUnit,
+  editBuilding,
 } = require("../controllers/companyControllers/workLocationControllers");
 
 const {
@@ -96,6 +97,7 @@ router.post("/add-leave-type", addLeaveType);
 
 // Locations and units
 router.post("/add-building", addBuilding);
+router.patch("/edit-building/:buildingId", editBuilding);
 router.get("/buildings", fetchBuildings);
 router.post("/add-unit", addUnit);
 router.get("/fetch-units", fetchUnits);
@@ -153,7 +155,7 @@ router.post(
   uploadCompanyDocument
 );
 router.patch("/update-company-document", updateCompanyDocument);
-router.patch("/delete-company-document", deleteCompanyDocument);
+router.patch("/delete-company-document", toggleCompanyDocumentStatus);
 router.get("/get-company-documents/:type", getCompanyDocuments);
 
 // Department Documents

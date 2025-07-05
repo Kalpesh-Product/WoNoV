@@ -173,15 +173,14 @@ const ActualBusinessRevenue = () => {
 
           <div className="flex justify-end">
             <div className="flex items-center gap-4">
-              <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" />
+              {/* <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" /> */}
               <TextField
                 select
                 size="small"
-                variant="standard"
                 label="Month"
                 value={selectedMonth}
                 onChange={handleMonthChange}
-                className="w-[100px]"
+                className="w-[150px]"
                 SelectProps={{
                   IconComponent: KeyboardArrowDownIcon,
                 }}
@@ -192,7 +191,7 @@ const ActualBusinessRevenue = () => {
                   </MenuItem>
                 ))}
               </TextField>
-              <PrimaryButton handleSubmit={handleNextMonth} title="Next" />
+              {/* <PrimaryButton handleSubmit={handleNextMonth} title="Next" /> */}
             </div>
           </div>
 
