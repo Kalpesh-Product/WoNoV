@@ -7,6 +7,7 @@ import { Chip } from "@mui/material";
 const HrCommonAgreements = () => {
   const axios = useAxiosPrivate()
   const agreementColumn = [
+    { field: "srNo", headerName: "Sr No", flex:1 },
     { field: "name", headerName: "Agreement Name", flex:1 },
     {
       field: "status",
@@ -61,7 +62,7 @@ const HrCommonAgreements = () => {
         
           data={[
             ...agreements.map((agreement, index) => ({
-              id: index + 1,  
+              srNo: index + 1,  
               name: agreement.name,  
               status: agreement.isActive 
             })),

@@ -106,7 +106,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
   };
 
   const myMeetingsColumn = [
-    { field: "id", headerName: "Sr No", sort: "desc" },
+    { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "agenda", headerName: "Agenda", flex: 1 },
     { field: "date", headerName: "Date" },
     { field: "roomName", headerName: "Room Name" },
@@ -177,17 +177,37 @@ const MeetingRoomCredits = ({ pageTitle }) => {
                   dateColumn={"date"}
                   tableTitle={"My Meetings"}
                   data={[
-                    ...myMeetings.map((meeting, index) => ({
-                      id: index + 1,
-                      meetingId: meeting._id,
-                      agenda: meeting.agenda,
-                      date: meeting.date,
-                      roomName: meeting.roomName,
-                      reviews: meeting.reviews,
-                      location: meeting.location
-                        ? `${meeting.location?.unitName} - ${meeting.location.unitNo}`
-                        : "N/A",
-                    })),
+                    ...myMeetings.map((meeting, index) => {
+                      
+                      return {
+                        srNo: index + 1,
+                        meetingId: meeting._id,
+                        agenda: meeting.agenda,
+                        client: meeting.client,
+                        roomName: meeting.roomName,
+                        duration: meeting.duration,
+                        meetingStatus: meeting.meetingStatus,
+                        meetingType: meeting.meetingType,
+                        date: meeting.date,
+                        bookedBy: meeting.bookedBy || "Unknown",
+                        receptionist: meeting.receptionist || "Unknown",
+                        reviews: meeting.reviews,
+                        location: meeting.location
+                          ? `${meeting.location?.unitNo}`
+                          : "N/A",
+                        buildingName: meeting.location.building.buildingName,
+                        participants:
+                          meeting.participants
+                            .map((p) => {
+                              return p.employeeName
+                                ? p.employeeName
+                                : p.firstName
+                                ? `${p.firstName} ${p.lastName}`
+                                : "N/A";
+                            })
+                            .join(", ") || "N/A",
+                      };
+                    }),
                   ]}
                   columns={myMeetingsColumn}
                   search
@@ -290,12 +310,12 @@ const MeetingRoomCredits = ({ pageTitle }) => {
               title="Date"
               detail={humanDate(selectedMeeting?.date)}
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title="Time"
               detail={`${humanTime(selectedMeeting.startTime)} - ${humanTime(
                 selectedMeeting.endTime
               )}`}
-            />
+            /> */}
             <DetalisFormatted
               title="Duration"
               detail={selectedMeeting.duration || "N/A"}
@@ -366,15 +386,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
             {selectedMeeting.participants?.length > 0 && (
               <DetalisFormatted
                 title="Participants"
-                detail={selectedMeeting.participants
-                  .map((p) => {
-                    return p.firstName
-                      ? `${p.firstName} ${p.lastName}`
-                      : p.employeeName
-                      ? p.employeeName
-                      : null;
-                  })
-                  .join(", ")}
+                detail={selectedMeeting.participants}
               />
             )}
 
@@ -404,16 +416,16 @@ const MeetingRoomCredits = ({ pageTitle }) => {
             <DetalisFormatted title="Room" detail={selectedMeeting.roomName} />
             <DetalisFormatted
               title="Location"
-              detail={`${selectedMeeting.location?.unitNo} (${selectedMeeting.location?.unitName})`}
+              detail={`${selectedMeeting.location}`}
             />
             <DetalisFormatted
               title="Building"
-              detail={selectedMeeting.location?.building?.buildingName}
+              detail={selectedMeeting.buildingName}
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title="Housekeeping Status"
               detail={selectedMeeting.housekeepingStatus}
-            />
+            /> */}
 
             {/* <DetalisFormatted
                           title={"Department"}

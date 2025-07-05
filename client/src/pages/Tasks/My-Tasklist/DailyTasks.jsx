@@ -83,6 +83,7 @@ const DailyTasks = () => {
     },
   });
 
+ 
   //--------------POST REQUEST FOR MONTHLY KPA-----------------//
   const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
     mutationKey: ["addMonthlyKpa"],
@@ -136,7 +137,7 @@ const DailyTasks = () => {
 
   //--------Column configs----------------//
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "SR no", field: "srno", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskList",
