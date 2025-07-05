@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useSelector } from "react-redux";
 
 const HrCommonPayslips = () => {
-  const employmentID = useSelector((state) => state.hr.selectedEmployee);
+  const employmentID = useSelector((state) => state.hr.selectedEmployeeMongoId);
   console.log(employmentID);
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
