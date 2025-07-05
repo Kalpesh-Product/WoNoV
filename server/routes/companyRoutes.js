@@ -59,6 +59,7 @@ const {
   uploadUnitImage,
   addUnit,
   fetchUnits,
+  fetchSimpleUnits,
   fetchBuildings,
   assignPrimaryUnit,
   updateUnit,
@@ -98,6 +99,7 @@ router.post("/add-building", addBuilding);
 router.get("/buildings", fetchBuildings);
 router.post("/add-unit", addUnit);
 router.get("/fetch-units", fetchUnits);
+router.get("/fetch-simple-units", fetchSimpleUnits);
 router.patch(
   "/update-unit",
   upload.fields([

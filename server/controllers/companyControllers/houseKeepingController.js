@@ -166,7 +166,7 @@ const updateHouseKeepingMember = async (req, res, next) => {
     const updates = req.body;
 
     const updatedStaff = await HouseKeepingStaff.findOneAndUpdate(
-      { _id: id, isActive: false },
+      { _id: id, isActive: true },
       { $set: updates },
       { new: true }
     );
