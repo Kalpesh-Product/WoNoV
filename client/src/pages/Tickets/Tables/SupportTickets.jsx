@@ -248,10 +248,10 @@ const SupportTickets = ({ title, departmentId }) => {
       headerName: "From Department",
       width: 100,
     },
-    { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
+    { field: "ticketTitle", headerName: "Ticket Title", width : 250},
     {
       field: "tickets",
-      headerName: "Tickets",
+      headerName: "Ticket Type",
       cellRenderer: (params) => {
         const statusColorMap = {
           "Assigned Ticket": { backgroundColor: "#ffbac2", color: "#ed0520" }, // Light orange bg, dark orange font

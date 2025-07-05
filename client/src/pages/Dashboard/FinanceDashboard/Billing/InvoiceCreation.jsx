@@ -118,6 +118,17 @@ const InvoiceCreation = () => {
       headerName: "Client",
       field: "clientName",
       flex: 1,
+      cellRenderer: (params) => (
+        <span
+          onClick={() => {
+            setViewDetails(params.data);
+            setViewModal(true);
+          }}
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value}
+        </span>
+      ),
     },
     {
       headerName: "Invoice Name",
@@ -159,31 +170,19 @@ const InvoiceCreation = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
-        <div className="p-2 flex gap-2 items-center">
-          <span
-            className="text-subtitle cursor-pointer"
-            onClick={() => {
-              setViewDetails(params.data);
-              setViewModal(true);
-            }}
-          >
-            <MdOutlineRemoveRedEye />
-          </span>
-
-          <ThreeDotMenu
-            rowId={params.data.id}
-            disabled={params.data.status === "Paid"} // ✅ Disable menu if Paid
-            menuItems={[
-              {
-                label: "Mark As Paid",
-                onClick: () => {
-                  updateInvoice(params.data.id);
-                },
-                disabled: params.data.status === "Paid", // optional: extra safety
+        <ThreeDotMenu
+          rowId={params.data.id}
+          disabled={params.data.status === "Paid"} // ✅ Disable menu if Paid
+          menuItems={[
+            {
+              label: "Mark As Paid",
+              onClick: () => {
+                updateInvoice(params.data.id);
               },
-            ]}
-          />
-        </div>
+              disabled: params.data.status === "Paid", // optional: extra safety
+            },
+          ]}
+        />
       ),
     },
   ];

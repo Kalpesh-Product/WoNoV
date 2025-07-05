@@ -22,7 +22,10 @@ const TicketDashboard = () => {
 
   const roles = auth.user.role.map((role) => role.roleTitle);
   const depts = auth.user.departments.map((dept) => dept.name);
+  const [timeFilter, setTimeFilter] = useState("Yearly");
   const [filteredTotal, setFilteredTotal] = useState(0);
+  const [dateLabel, setDateLabel] = useState("");
+
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
     queryFn: async () => {
@@ -54,48 +57,55 @@ const TicketDashboard = () => {
 
   const todayDate = dayjs().startOf("day");
 
-const ticketsFilteredData = {
-  openTickets: ticketsData.filter(
-    (item) => item.status === "Open" && dayjs(item.createdAt).isSame(todayDate, "day")
-  ).length,
+  const ticketsFilteredData = {
+    openTickets: ticketsData.filter(
+      (item) =>
+        item.status === "Open" && dayjs(item.createdAt).isSame(todayDate, "day")
+    ).length,
 
-  closedTickets: ticketsData.filter(
-    (item) => item.status === "Closed" && dayjs(item.createdAt).isSame(todayDate, "day")
-  ).length,
+    closedTickets: ticketsData.filter(
+      (item) =>
+        item.status === "Closed" &&
+        dayjs(item.createdAt).isSame(todayDate, "day")
+    ).length,
 
-  pendingTickets: ticketsData.filter(
-    (item) => item.status === "Pending" && dayjs(item.createdAt).isSame(todayDate, "day")
-  ).length,
+    pendingTickets: ticketsData.filter(
+      (item) =>
+        item.status === "Pending" &&
+        dayjs(item.createdAt).isSame(todayDate, "day")
+    ).length,
 
-  acceptedTickets: ticketsData
-    .filter(
+    acceptedTickets: ticketsData.filter(
       (item) =>
         item?.acceptedBy?._id === auth.user?._id &&
         item.status === "In Progress" &&
         dayjs(item.createdAt).isSame(todayDate, "day")
     ).length,
 
-  assignedTickets: ticketsData.filter(
-    (item) => item.assignees?.length > 0 && dayjs(item.createdAt).isSame(todayDate, "day")
-  ).length,
-
-  escalatedTickets: ticketsData.filter(
-    (item) =>
-      auth.user.departments.includes(item.raisedToDepartment?._id) &&
-      item.status === "Escalated" &&
-      dayjs(item.createdAt).isSame(todayDate, "day")
-  ).length,
-
-  averagePerformance: (
-    (ticketsData.filter(
+    assignedTickets: ticketsData.filter(
       (item) =>
-        item.status === "Closed" && dayjs(item.createdAt).isSame(todayDate, "day")
-    ).length /
-      ticketsData.filter((item) =>
+        item.assignees?.length > 0 &&
         dayjs(item.createdAt).isSame(todayDate, "day")
-      ).length || 1) * 100
-  ).toFixed(0),
-};
+    ).length,
+
+    escalatedTickets: ticketsData.filter(
+      (item) =>
+        auth.user.departments.includes(item.raisedToDepartment?._id) &&
+        item.status === "Escalated" &&
+        dayjs(item.createdAt).isSame(todayDate, "day")
+    ).length,
+
+    averagePerformance: (
+      (ticketsData.filter(
+        (item) =>
+          item.status === "Closed" &&
+          dayjs(item.createdAt).isSame(todayDate, "day")
+      ).length /
+        ticketsData.filter((item) =>
+          dayjs(item.createdAt).isSame(todayDate, "day")
+        ).length || 1) * 100
+    ).toFixed(0),
+  };
 
   const avg = (
     (ticketsData.filter((item) => item.status === "Closed").length /
@@ -208,13 +218,16 @@ const ticketsFilteredData = {
           layout={1}
           border
           padding
-          title={"Overall Department Raised Tickets"}
+          title={`Overall Department Raised Tickets - ${dateLabel}`}
           TitleAmount={`TOTAL TICKETS : ${filteredTotal}`}
         >
           {!isLoading ? (
             <AreaGraph
               responseData={ticketsData}
               onTotalChange={setFilteredTotal}
+              timeFilter={timeFilter}
+              setTimeFilter={setTimeFilter}
+              onDateLabelChange={setDateLabel}
             />
           ) : (
             <div className="h-72 flex items-center justify-center">
@@ -261,16 +274,9 @@ const ticketsFilteredData = {
           layout={1}
           padding
           border
-          titleLabel={`${new Date(
-            new Date().getFullYear(),
-            new Date().getMonth() - 1
-          ).toLocaleString("default", { month: "short" })}-${new Date(
-            new Date().getFullYear(),
-            new Date().getMonth() - 1
-          )
-            .getFullYear()
-            .toString()
-            .slice(-2)}`}
+          titleLabel={`${new Date().toLocaleString("default", {
+            month: "short",
+          })}-${new Date().getFullYear().toString().slice(-2)}`}
           title={"Total Tickets"}
         >
           <DonutChart
@@ -306,11 +312,12 @@ const ticketsFilteredData = {
             tooltipValue={donutSeries}
             onSliceClick={(index) => {
               const clickedDepartment = masterDepartments[index];
+              console.log("dep : ", clickedDepartment);
 
               const departmentTickets =
                 filterDepartmentTickts(clickedDepartment);
 
-              navigate("department-wise-tickets", {
+              navigate(`manage-tickets/${clickedDepartment}`, {
                 state: { departmentTickets },
               });
             }}

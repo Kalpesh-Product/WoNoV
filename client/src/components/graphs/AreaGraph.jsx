@@ -7,9 +7,13 @@ import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
 dayjs.extend(utc);
 
-const AreaGraph = ({ responseData, onTotalChange }) => {
-  const [timeFilter, setTimeFilter] = useState("Yearly"); // State for the filter
-
+const AreaGraph = ({
+  responseData,
+  onTotalChange,
+  timeFilter,
+  setTimeFilter,
+  onDateLabelChange,
+}) => {
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [data, setData] = useState({
     series: [
@@ -155,6 +159,40 @@ const AreaGraph = ({ responseData, onTotalChange }) => {
         0
       );
       onTotalChange(total);
+    }
+  }, [responseData, timeFilter, currentDate]);
+
+  useEffect(() => {
+    const transformedData = transformData(responseData, timeFilter);
+    setData(transformedData);
+
+    // Total count
+    if (onTotalChange && transformedData?.series?.[0]?.data) {
+      const total = transformedData.series[0].data.reduce(
+        (sum, val) => sum + val,
+        0
+      );
+      onTotalChange(total);
+    }
+
+    // Calculate date label
+    let label = "";
+    if (timeFilter === "Yearly") {
+      const fyStart =
+        currentDate.month() < 3 ? currentDate.year() - 1 : currentDate.year();
+      const fyEnd = fyStart + 1;
+      label = `FY ${fyStart}-${String(fyEnd).slice(-2)}`; // ✅ only last 2 digits of end year
+    } else if (timeFilter === "Monthly") {
+      label = currentDate.format("MMMM YYYY");
+    } else if (timeFilter === "Weekly") {
+      label = `Week ${Math.ceil(currentDate.date() / 7)} - ${currentDate.format(
+        "MMMM"
+      )}`;
+    }
+
+    // Send label to parent
+    if (onDateLabelChange) {
+      onDateLabelChange(label);
     }
   }, [responseData, timeFilter, currentDate]);
 

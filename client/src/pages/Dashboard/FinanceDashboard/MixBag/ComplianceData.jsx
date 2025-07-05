@@ -11,6 +11,7 @@ import UploadFileInput from "../../../../components/UploadFileInput";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import humanDate from "../../../../utils/humanDateForamt";
 import { toast } from "sonner";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 
 const ComplianceData = () => {
   const { id } = useParams();
@@ -29,6 +30,7 @@ const ComplianceData = () => {
     reset,
     formState: { errors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       documentName: "",
       document: null,
@@ -152,7 +154,10 @@ const ComplianceData = () => {
           <Controller
             name="documentName"
             control={control}
-            rules={{ required: "Document name is required" }}
+            rules={{
+              required: "Document name is required",
+              validate: { isAlphanumeric, noOnlyWhitespace },
+            }}
             render={({ field }) => (
               <TextField
                 {...field}
