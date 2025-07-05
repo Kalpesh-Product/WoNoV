@@ -110,9 +110,9 @@ const MyTaskReports = () => {
             <DetalisFormatted title="Completed Date" detail={selectedTask.completedDate} />
             <DetalisFormatted title="Completed Time" detail={selectedTask.completedTime} />
             <DetalisFormatted title="Department" detail={selectedTask.department} />
-            <DetalisFormatted title="Priority" detail={selectedTask.priority} />
+            {/* <DetalisFormatted title="Priority" detail={selectedTask.priority} /> */}
             <DetalisFormatted title="Status" detail={selectedTask.status} />
-            <DetalisFormatted title="Remarks" detail={selectedTask.remarks} />
+            {/* <DetalisFormatted title="Remarks" detail={selectedTask.remarks} /> */}
           </div>
         ) : (
           <CircularProgress />
