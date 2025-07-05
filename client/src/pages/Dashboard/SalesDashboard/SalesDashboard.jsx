@@ -802,7 +802,7 @@ const SalesDashboard = () => {
       ],
     },
     {
-      layout: 6,
+      layout: 5,
       widgets: [
         <Card route={"turnover"} title={"Turnover"} icon={<RiPagesLine />} />,
         <Card
@@ -815,7 +815,7 @@ const SalesDashboard = () => {
           title={"Mix Bag"}
           icon={<MdFormatListBulleted />}
         />,
-        <Card route={""} title={"Reports"} icon={<CgProfile />} />,
+        // <Card route={""} title={"Reports"} icon={<CgProfile />} />,
         <Card
           route={"/app/dashboard/sales-dashboard/data"}
           title={"Data"}
