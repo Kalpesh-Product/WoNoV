@@ -330,7 +330,7 @@ const myTasksData = [
 // -----------------------My Todays Meetings Start--------------------
 
 const myTodayMeetingsColumns = [
-  { id: "id", label: "ID" },
+  { id: "id", label: "Sr No" },
   { id: "meeting", label: "Meeting" },
   { id: "location", label: "Location" },
   {
@@ -342,8 +342,8 @@ const myTodayMeetingsColumns = [
         {row.participants.map((participant, index) => (
           <Avatar
             key={index}
-            alt={participant.name}
-            src={participant.avatar}
+            alt={`${participant?.firstName} ${participant?.lastName}`}
+            src={participant?.avatar}
             sx={{ width: 23, height: 23 }}
           />
         ))}

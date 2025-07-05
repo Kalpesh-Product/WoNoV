@@ -37,7 +37,7 @@ const HrEvents = ({ title }) => {
   });
 
   const columns = [
-    { field: "srNo", headerName: "SR No", width: 100 },
+    { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "title", headerName: "Event", flex: 1 },
     { field: "startDate", headerName: "Date" },
     { field: "day", headerName: "Day" },

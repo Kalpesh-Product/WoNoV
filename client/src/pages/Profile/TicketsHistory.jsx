@@ -26,7 +26,7 @@ const TicketsHistory = ({ pageTitle }) => {
     setOpenModal(true);
   };
   const recievedTicketsColumns = [
-    { field: "id", headerName: "Sr No", width: 80, sort: "desc" },
+    { field: "srNo", headerName: "Sr No", width: 80, sort: "desc" },
     { field: "raisedBy", headerName: "Raised By", width: 150 },
     { field: "raisedTo", headerName: "To Department", width: 150 },
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
@@ -124,7 +124,7 @@ const TicketsHistory = ({ pageTitle }) => {
               key={tickets?.length}
               search
               data={tickets?.map((ticket, index) => ({
-                id: index + 1,
+                srNo: index + 1,
                 raisedBy: ticket.raisedBy.firstName,
                 raisedTo: ticket.raisedToDepartment.name,
                 description: ticket.description,
