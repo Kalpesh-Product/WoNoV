@@ -46,18 +46,19 @@ const DepartmentSOP = () => {
     },
     {
       field: "createdAt",
-      headerName: "Uploaded Date",
-      flex : 1,
-      cellRenderer: (params) => humanDate(params.value),
+      headerName: "Created At",
+      width: 180,
+      valueFormatter: (params) =>
+        params.value ? humanDate(params.value) : "-",
     },
     {
       field: "updatedAt",
-      headerName: "Modified Date",
-      flex : 1,
-      cellRenderer: (params) => humanDate(params.value),
+      headerName: "Updated At",
+      width: 180,
+      valueFormatter: (params) =>
+        params.value ? humanDate(params.value) : "-",
     },
   ];
-
   const tableData = isLoading
     ? []
     : data.map((item, index) => ({
@@ -65,6 +66,8 @@ const DepartmentSOP = () => {
         srNo: index + 1,
         name: item.name,
         documentLink: item.documentLink,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
       }));
 
   console.log("Data", data);
