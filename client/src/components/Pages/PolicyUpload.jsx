@@ -15,6 +15,7 @@ import YearWiseTable from "../Tables/YearWiseTable";
 import DangerButton from "../DangerButton";
 import SecondaryButton from "../SecondaryButton";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
+import humanDate from "../../utils/humanDateForamt";
 
 const PolicyUpload = () => {
   const axios = useAxiosPrivate();
@@ -212,6 +213,7 @@ const PolicyUpload = () => {
             documentLink: item?.documentLink || "#",
             date: item.createdAt,
             status: item.isActive ? "Active" : "-",
+            updatedAt : humanDate(item.updatedAt),
           }))
           .filter((item) => item.isActive === true)
       : [];

@@ -18,3 +18,17 @@ export const isValidPhoneNumber = (value) =>
 export const isValidPinCode = (value) =>
   /^[1-9][0-9]{5}$/.test(value) || "Enter a valid 6-digit pin code.";
 
+// Valid GSTIN (15 characters, alphanumeric, India)
+export const isValidGSTIN = (value) =>
+  /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(value) ||
+  "Enter a valid GSTIN. Example: 27AAPFU0939F1ZV";
+
+// Valid IFSC Code (Indian bank code: 4 letters + 0 + 6 digits)
+export const isValidIFSC = (value) =>
+  /^[A-Z]{4}0[A-Z0-9]{6}$/.test(value) ||
+  "Enter a valid IFSC code. Example: SBIN0005943";
+
+// Valid Bank Account Number (typically 9 to 18 digits)
+export const isValidBankAccount = (value) =>
+  /^\d{9,18}$/.test(value) ||
+  "Enter a valid bank account number (9–18 digits). Example: 123456789012";

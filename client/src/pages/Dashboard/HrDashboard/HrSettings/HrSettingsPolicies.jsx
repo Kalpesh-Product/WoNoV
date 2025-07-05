@@ -32,6 +32,7 @@ const HrSettingsPolicies = () => {
     reset,
     formState: { errors },
   } = useForm({
+    mode:"onChange",
     defaultValues: {
       policyName: "",
       file: null,

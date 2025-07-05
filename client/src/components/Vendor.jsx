@@ -17,7 +17,7 @@ import DetalisFormatted from "./DetalisFormatted";
 import PageFrame from "./Pages/PageFrame";
 import { useQueryClient } from "@tanstack/react-query";
 import humanDate from "../utils/humanDateForamt";
-import { isAlphanumeric, noOnlyWhitespace } from "../utils/validators";
+import { isAlphanumeric, isValidBankAccount, isValidEmail, isValidGSTIN, isValidIFSC, noOnlyWhitespace } from "../utils/validators";
 
 const Vendor = () => {
   const { auth } = useAuth();
@@ -256,7 +256,7 @@ const Vendor = () => {
                       required: "Email is required",
                       validate: {
                         noOnlyWhitespace,
-                        isAlphanumeric,
+                        isValidEmail
                       },
                     }}
                     render={({ field, fieldState: { error } }) => (
@@ -299,7 +299,6 @@ const Vendor = () => {
                       required: "Address is required",
                       validate: {
                         noOnlyWhitespace,
-                        isAlphanumeric,
                       },
                     }}
                     render={({ field, fieldState: { error } }) => (
@@ -548,12 +547,9 @@ const Vendor = () => {
                     rules={{
                       validate: {
                         noOnlyWhitespace,
+                        isValidGSTIN
                       },
-                      pattern: {
-                        value:
-                          /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/,
-                        message: "Invalid GST IN",
-                      },
+
                     }}
                     render={({ field, fieldState: { error } }) => (
                       <TextField
@@ -606,6 +602,7 @@ const Vendor = () => {
                       required: "IFSC Code is required",
                       validate: {
                         noOnlyWhitespace,
+                        isValidIFSC
                       },
                     }}
                     render={({ field, fieldState: { error } }) => (
@@ -694,6 +691,7 @@ const Vendor = () => {
                       required: "Account Number is required",
                       validate: {
                         noOnlyWhitespace,
+                        isValidBankAccount
                       },
                     }}
                     render={({ field, fieldState: { error } }) => (

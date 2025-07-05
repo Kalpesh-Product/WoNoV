@@ -161,7 +161,6 @@ const HrEvents = ({ title }) => {
                   control={control}
                   rules={{
                     required: "Start Date is required",
-                    validate: { isAlphanumeric, noOnlyWhitespace },
                   }}
                   render={({ field }) => (
                     <DatePicker
@@ -184,7 +183,6 @@ const HrEvents = ({ title }) => {
                   control={control}
                   rules={{
                     required: "End Date is required",
-                    validate: { isAlphanumeric, noOnlyWhitespace },
                   }}
                   render={({ field }) => (
                     <DatePicker

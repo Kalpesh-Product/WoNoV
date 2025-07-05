@@ -111,7 +111,7 @@ const InvoiceCreation = () => {
   const invoiceCreationColumns = [
     {
       headerName: "Sr. No",
-      field: "srno",
+      field: "srNo",
       width: 100,
     },
     {
@@ -188,8 +188,7 @@ const InvoiceCreation = () => {
     },
   ];
 
-  const rows = invoiceData.map((item, index) => ({
-    srno: index + 1,
+  const rows = invoiceData.map((item) => ({
     id: item._id,
     clientName: item?.client?.clientName || "N/A",
     invoiceName: item?.invoice?.name || "N/A",
