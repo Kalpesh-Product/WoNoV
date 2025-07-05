@@ -25,6 +25,7 @@ const HrSOP = () => {
     reset,
     formState: { errors },
   } = useForm({
+    mode:'onChange',
     defaultValues: {
       sopName: "",
       file: null,
