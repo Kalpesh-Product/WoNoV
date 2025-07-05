@@ -33,25 +33,23 @@ const AttendanceCompleted = () => {
 
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "name", headerName: "Name", flex: 1 },
+    {
+      field: "name",
+      headerName: "Name",
+      flex: 1,
+      cellRenderer: (params) => (
+        <span
+          className="text-primary cursor-pointer underline"
+          onClick={() => handleViewDetails(params.data)}
+        >
+          {params.value}
+        </span>
+      ),
+    },
     { field: "date", headerName: "Date" },
     { field: "inTime", headerName: "Start Time" },
     { field: "outTime", headerName: "End Time" },
     { field: "status", headerName: "Status" },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 100,
-      pinned: "right",
-      cellRenderer: (params) => (
-        <span
-          className="text-subtitle cursor-pointer"
-          onClick={() => handleViewDetails(params.data)}
-        >
-          <MdOutlineRemoveRedEye />
-        </span>
-      ),
-    },
   ];
 
   const tableData = isLoading
@@ -59,7 +57,7 @@ const AttendanceCompleted = () => {
     : data.map((item) => ({
         ...item,
         empId: item.user?.empId,
-        reason:item.reason,
+        reason: item.reason,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
         date: item.inTime,
         inTime: humanTime(item.inTime),
@@ -78,7 +76,7 @@ const AttendanceCompleted = () => {
     <div className="flex flex-col">
       <PageFrame>
         <YearWiseTable
-         dateColumn={"date"}
+          dateColumn={"date"}
           columns={columns}
           data={!isLoading ? tableData : []}
           tableTitle={"ATTENDANCE REQUESTS"}
@@ -95,18 +93,9 @@ const AttendanceCompleted = () => {
               title="Employee ID"
               detail={selectedRequest?.empId}
             />
-            <DetalisFormatted
-              title="Name"
-              detail={selectedRequest?.name}
-            />
-            <DetalisFormatted
-              title="Reason"
-              detail={selectedRequest?.reason}
-            />
-            <DetalisFormatted
-              title="Date"
-              detail={selectedRequest?.date}
-            />
+            <DetalisFormatted title="Name" detail={selectedRequest?.name} />
+            <DetalisFormatted title="Reason" detail={selectedRequest?.reason} />
+            <DetalisFormatted title="Date" detail={selectedRequest?.date} />
             <DetalisFormatted
               title="Start Time"
               detail={selectedRequest?.inTime}
@@ -123,10 +112,7 @@ const AttendanceCompleted = () => {
               title="Original End Time"
               detail={selectedRequest?.originalOutTime}
             />
-            <DetalisFormatted
-              title="Status"
-              detail={selectedRequest?.status}
-            />
+            <DetalisFormatted title="Status" detail={selectedRequest?.status} />
             {selectedRequest?.approvedBy && (
               <DetalisFormatted
                 title="Approved By"

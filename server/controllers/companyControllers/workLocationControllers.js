@@ -108,6 +108,53 @@ const addBuilding = async (req, res, next) => {
   }
 };
 
+const editBuilding = async (req, res, next) => {
+  const { company } = req;
+  const { buildingId } = req.params;
+  const { buildingName } = req.body;
+
+  try {
+    if (!company || !buildingId || !buildingName) {
+      return res.status(400).json({
+        message: "Company, building ID, and new building name are required",
+      });
+    }
+
+    if (
+      !mongoose.Types.ObjectId.isValid(company) ||
+      !mongoose.Types.ObjectId.isValid(buildingId)
+    ) {
+      return res.status(400).json({
+        message: "Invalid company or building ID",
+      });
+    }
+
+    const existingBuilding = await Building.findOne({
+      _id: buildingId,
+      company,
+    });
+
+    if (!existingBuilding) {
+      return res.status(404).json({
+        message: "Building not found for the specified company",
+      });
+    }
+
+    existingBuilding.buildingName = buildingName;
+    const updatedBuilding = await existingBuilding.save();
+
+    return res.status(200).json({
+      message: "Building name updated successfully",
+      workLocation: updatedBuilding,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "An error occurred while updating the building name",
+      error: error.message,
+    });
+  }
+};
+
 const addUnit = async (req, res, next) => {
   const { company, user, ip } = req;
   const {
@@ -620,5 +667,6 @@ module.exports = {
   fetchBuildings,
   assignPrimaryUnit,
   updateUnit,
-  fetchSimpleUnits
+  fetchSimpleUnits,
+  editBuilding,
 };

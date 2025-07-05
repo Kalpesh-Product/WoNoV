@@ -1,11 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
-} from "@mui/material";
+import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -14,7 +8,6 @@ import { useQuery } from "@tanstack/react-query";
 import WidgetSection from "../../../../components/WidgetSection";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import { useSelector } from "react-redux";
-import DataCard from "../../../../components/DataCard";
 import FinanceCard from "../../../../components/FinanceCard";
 
 const CheckAvailability = () => {
@@ -261,11 +254,11 @@ const CheckAvailability = () => {
     const { location, floor } = data;
     address.pathname?.includes("mix-bag")
       ? navigate(
-          `/app/dashboard/sales-dashboard/mix-bag/inventory/check-availability/view-availability?location=${location}&floor=${floor}`,
+          `/app/dashboard/sales-dashboard/mix-bag/inventory/${location}/${floor}`,
           { state: { unitId: selectedUnitId[0] } }
         )
       : navigate(
-          `/app/dashboard/sales-dashboard/inventory/check-availability/view-availability?location=${location}&floor=${floor}`,
+          `/app/dashboard/sales-dashboard/inventory/${location}/${floor}`,
           { state: { unitId: selectedUnitId[0] } }
         );
   };

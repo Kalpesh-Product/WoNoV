@@ -24,7 +24,7 @@ const SalesMixBag = () => {
     },
     {
       title: "Desks",
-      route: "/app/dashboard/sales-dashboard/mix-bag/co-working-seats",
+      route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
     },
     {
       title:"Manage Units",
