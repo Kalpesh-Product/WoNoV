@@ -31,7 +31,7 @@ const {
   getCompanyKyc,
   getComplianceDocuments,
   uploadComplianceDocument,
-  deleteCompanyDocument,
+  toggleCompanyDocumentStatus,
   deleteDepartmentDocument,
   updateCompanyDocument,
   updateDepartmentDocument,
@@ -155,7 +155,7 @@ router.post(
   uploadCompanyDocument
 );
 router.patch("/update-company-document", updateCompanyDocument);
-router.patch("/delete-company-document", deleteCompanyDocument);
+router.patch("/delete-company-document", toggleCompanyDocumentStatus);
 router.get("/get-company-documents/:type", getCompanyDocuments);
 
 // Department Documents
