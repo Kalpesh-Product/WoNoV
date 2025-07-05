@@ -806,13 +806,14 @@ const MeetingDashboard = () => {
   });
 
   // Convert to heatmap format
-  const heatmapData = timeSlots.map((slot, slotIndex) => ({
-    name: slot,
-    data: days.map((day, dayIndex) => ({
-      x: day,
-      y: day !== "Sat" && day !== "Sun" ? matrix[slotIndex][dayIndex] : 0,
-    })),
-  }));
+const heatmapData = timeSlots.map((slot, slotIndex) => ({
+  name: slot,
+  data: days.map((day, dayIndex) => ({
+    x: day,
+    y: matrix[slotIndex][dayIndex], // No more 0 for Sat/Sun
+  })),
+}));
+
 
   const heatmapOptions = {
     chart: {

@@ -18,7 +18,7 @@ const ManageTicketsHome = () => {
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
   useTopDepartment({
-    additionalTopUserIds: ["67b83885daad0f7bab2f188b"], //mac
+    additionalTopUserIds: ["67b83885daad0f7bab2f188b","67b83885daad0f7bab2f1852"], //mac//Kashif
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       navigate(`/app/tickets/manage-tickets/${currentDepartment}`);

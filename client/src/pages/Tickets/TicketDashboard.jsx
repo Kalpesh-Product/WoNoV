@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import FinanceCard from "../../components/FinanceCard";
 import { CircularProgress } from "@mui/material";
 import { useState } from "react";
+import dayjs from "dayjs";
 
 const TicketDashboard = () => {
   const navigate = useNavigate();
@@ -51,28 +52,50 @@ const TicketDashboard = () => {
   });
   const totalTickets = ticketsData.length || 0;
 
-  const ticketsFilteredData = {
-    openTickets: ticketsData.filter((item) => item.status === "Open").length,
-    closedTickets: ticketsData.filter((item) => item.status === "Closed")
-      .length,
-    pendingTickets: ticketsData.filter((item) => item.status === "Pending")
-      .length,
-    acceptedTickets: ticketsData
-      .filter((item) => item?.accepted?.acceptedBy?._id === auth.user?._id)
-      .filter((item) => item.status === "In Progress").length,
-    assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0)
-      .length,
-    escalatedTickets: ticketsData.filter(
+  const todayDate = dayjs().startOf("day");
+
+const ticketsFilteredData = {
+  openTickets: ticketsData.filter(
+    (item) => item.status === "Open" && dayjs(item.createdAt).isSame(todayDate, "day")
+  ).length,
+
+  closedTickets: ticketsData.filter(
+    (item) => item.status === "Closed" && dayjs(item.createdAt).isSame(todayDate, "day")
+  ).length,
+
+  pendingTickets: ticketsData.filter(
+    (item) => item.status === "Pending" && dayjs(item.createdAt).isSame(todayDate, "day")
+  ).length,
+
+  acceptedTickets: ticketsData
+    .filter(
       (item) =>
-        auth.user.departments.includes(item.raisedToDepartment) &&
-        item.status === "Escalated"
+        item?.acceptedBy?._id === auth.user?._id &&
+        item.status === "In Progress" &&
+        dayjs(item.createdAt).isSame(todayDate, "day")
     ).length,
-    averagePerformance: (
-      (ticketsData.filter((item) => item.status === "Closed").length /
-        ticketsData.length) *
-      100
-    ).toFixed(0),
-  };
+
+  assignedTickets: ticketsData.filter(
+    (item) => item.assignees?.length > 0 && dayjs(item.createdAt).isSame(todayDate, "day")
+  ).length,
+
+  escalatedTickets: ticketsData.filter(
+    (item) =>
+      auth.user.departments.includes(item.raisedToDepartment?._id) &&
+      item.status === "Escalated" &&
+      dayjs(item.createdAt).isSame(todayDate, "day")
+  ).length,
+
+  averagePerformance: (
+    (ticketsData.filter(
+      (item) =>
+        item.status === "Closed" && dayjs(item.createdAt).isSame(todayDate, "day")
+    ).length /
+      ticketsData.filter((item) =>
+        dayjs(item.createdAt).isSame(todayDate, "day")
+      ).length || 1) * 100
+  ).toFixed(0),
+};
 
   const avg = (
     (ticketsData.filter((item) => item.status === "Closed").length /
@@ -305,11 +328,11 @@ const TicketDashboard = () => {
             highlightNegativePositive={true}
             disableColorChange
             descriptionData={[
-              {
-                title: "MT. AV. Performance",
-                value: `${ticketsFilteredData.averagePerformance}%`,
-                route: "/app/tickets/manage-tickets",
-              },
+              // {
+              //   title: "MT. AV. Performance",
+              //   value: `${ticketsFilteredData.averagePerformance}%`,
+              //   route: "/app/tickets/manage-tickets",
+              // },
               {
                 title: "Immediate Attended",
                 value: todayTicketseries[0],

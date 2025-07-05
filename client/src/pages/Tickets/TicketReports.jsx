@@ -46,7 +46,7 @@ const TicketReports = () => {
   });
 
   const kraColumn = [
-    { field: "id", headerName: "Sr No", flex: 1 },
+    { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "ticket", headerName: "Ticket", flex: 1 },
     {
       field: "createdAt",
@@ -106,9 +106,10 @@ const TicketReports = () => {
               search={true}
               exportData={true}
               tableTitle={"Ticket Reports"}
+              hideFilter={false}
               data={[
-                ...ticketsData.map((item, index) => ({
-                  id: index + 1,
+                ...ticketsData.map((item) => ({
+                  ...item,
                   ticket: item.ticket || "",
                   raisedToDepartment: item.raisedToDepartment?.name || "",
                   raisedBy: `${item.raisedBy?.firstName || ""} ${
