@@ -239,6 +239,7 @@ const RecievedTickets = ({ title, departmentId }) => {
     {
       field: "actions",
       headerName: "Actions",
+            pinned : 'right',
       cellRenderer: (params) => (
         <div className="flex items-center gap-2">
           <div

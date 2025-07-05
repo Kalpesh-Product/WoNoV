@@ -516,6 +516,7 @@ const BudgetPage = () => {
                 <DatePicker
                   {...field}
                   label="Due Date"
+                  disablePast
                   format="DD-MM-YYYY"
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) =>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import MuiModal from "../../../../components/MuiModal";
@@ -75,6 +75,10 @@ const PendingApprovals = () => {
       toast.error(error.message || "FAILED TO REJECT REQUEST");
     },
   });
+
+useEffect(()=>{
+  console.log("selected budget : ", selectedBudget);
+},[selectedBudget])
 
   const kraColumn = [
     { field: "srno", headerName: "Sr No", width: 100 },
@@ -265,7 +269,7 @@ const PendingApprovals = () => {
                     href={selectedBudget.voucher?.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 underline"
+                    className="text-blue-600 underline cursor-pointer"
                   >
                     View Voucher
                   </a>

@@ -138,6 +138,7 @@ const HoildaysEvents = ({ title }) => {
                   <DatePicker
                     label="Date"
                     value={field.value}
+                    format="DD-MM-YYYY"
                     onChange={(val) => field.onChange(val)}
                     slotProps={{
                       textField: {
