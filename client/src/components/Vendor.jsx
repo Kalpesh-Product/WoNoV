@@ -17,7 +17,14 @@ import DetalisFormatted from "./DetalisFormatted";
 import PageFrame from "./Pages/PageFrame";
 import { useQueryClient } from "@tanstack/react-query";
 import humanDate from "../utils/humanDateForamt";
-import { isAlphanumeric, isValidBankAccount, isValidEmail, isValidGSTIN, isValidIFSC, noOnlyWhitespace } from "../utils/validators";
+import {
+  isAlphanumeric,
+  isValidBankAccount,
+  isValidEmail,
+  isValidGSTIN,
+  isValidIFSC,
+  noOnlyWhitespace,
+} from "../utils/validators";
 
 const Vendor = () => {
   const { auth } = useAuth();
@@ -25,7 +32,7 @@ const Vendor = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const { control, handleSubmit, reset } = useForm({
-    mode:"onChange"
+    mode: "onChange",
   });
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
@@ -74,6 +81,7 @@ const Vendor = () => {
       return response.data;
     },
     onSuccess: function (data) {
+      reset();
       toast.success(data.message);
       queryClient.invalidateQueries({
         queryKey: ["vendors", department._id],
@@ -144,28 +152,28 @@ const Vendor = () => {
         />
       ),
     },
-    {
-      headerName: "Action",
-      field: "action",
-      width: 150,
-      cellRenderer: (params) => (
-        <>
-          <div className="flex gap-2 items-center">
-            <div
-              onClick={() => {
-                setOpenModal(true);
-                setSelectedVendor(params.data);
-              }}
-              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-            >
-              <span className="text-subtitle">
-                <MdOutlineRemoveRedEye />
-              </span>
-            </div>
-          </div>
-        </>
-      ),
-    },
+    // {
+    //   headerName: "Action",
+    //   field: "action",
+    //   width: 150,
+    //   cellRenderer: (params) => (
+    //     <>
+    //       <div className="flex gap-2 items-center">
+    //         <div
+    //           onClick={() => {
+    //             setOpenModal(true);
+    //             setSelectedVendor(params.data);
+    //           }}
+    //           className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+    //         >
+    //           <span className="text-subtitle">
+    //             <MdOutlineRemoveRedEye />
+    //           </span>
+    //         </div>
+    //       </div>
+    //     </>
+    //   ),
+    // },
   ];
 
   const rows = isVendorFetchingPending
@@ -256,7 +264,7 @@ const Vendor = () => {
                       required: "Email is required",
                       validate: {
                         noOnlyWhitespace,
-                        isValidEmail
+                        isValidEmail,
                       },
                     }}
                     render={({ field, fieldState: { error } }) => (
@@ -547,9 +555,8 @@ const Vendor = () => {
                     rules={{
                       validate: {
                         noOnlyWhitespace,
-                        isValidGSTIN
+                        isValidGSTIN,
                       },
-
                     }}
                     render={({ field, fieldState: { error } }) => (
                       <TextField
@@ -602,7 +609,7 @@ const Vendor = () => {
                       required: "IFSC Code is required",
                       validate: {
                         noOnlyWhitespace,
-                        isValidIFSC
+                        isValidIFSC,
                       },
                     }}
                     render={({ field, fieldState: { error } }) => (
@@ -691,7 +698,7 @@ const Vendor = () => {
                       required: "Account Number is required",
                       validate: {
                         noOnlyWhitespace,
-                        isValidBankAccount
+                        isValidBankAccount,
                       },
                     }}
                     render={({ field, fieldState: { error } }) => (

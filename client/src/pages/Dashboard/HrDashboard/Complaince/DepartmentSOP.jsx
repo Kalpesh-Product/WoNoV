@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import humanDate from "../../../../utils/humanDateForamt";
 
 const DepartmentSOP = () => {
   const location = useLocation();
@@ -26,30 +27,41 @@ const DepartmentSOP = () => {
 
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "name", headerName: "Document Name", flex: 1 },
     {
-      field: "documentLink",
-      headerName: "Document Link",
-      pinned: "right",
-      width: 200,
+      field: "name",
+      headerName: "Document Name",
+      flex: 1,
       cellRenderer: (params) => (
         <>
           <a
             className="text-primary underline cursor-pointer"
-            href={params.value}
+            href={params.data.documentLink}
             target="_blank"
             rel="noopener noreferrer"
           >
-            View {documentType ? documentType : "SOP"}
+            {params.value}
           </a>
         </>
       ),
+    },
+    {
+      field: "createdAt",
+      headerName: "Uploaded Date",
+      flex : 1,
+      cellRenderer: (params) => humanDate(params.value),
+    },
+    {
+      field: "updatedAt",
+      headerName: "Modified Date",
+      flex : 1,
+      cellRenderer: (params) => humanDate(params.value),
     },
   ];
 
   const tableData = isLoading
     ? []
     : data.map((item, index) => ({
+        ...item,
         srNo: index + 1,
         name: item.name,
         documentLink: item.documentLink,

@@ -12,6 +12,7 @@ import { queryClient } from "../../../../main";
 import Loader from "../../../Loading";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { noOnlyWhitespace, isAlphanumeric } from "../../../../utils/validators";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 
 const WorkLocations = () => {
   const axios = useAxiosPrivate();
@@ -137,14 +138,26 @@ const WorkLocations = () => {
     {
       field: "actions",
       headerName: "Actions",
+      width: 150,
       cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-            <span className="text-content text-primary hover:underline cursor-pointer">
-              Make Inactive
-            </span>
-          </div>
-        </>
+        <ThreeDotMenu
+          rowId={params.data.id}
+          menuItems={[
+            {
+              label: "Edit",
+              // onClick: () => {
+              //   handleEdit(params.data);
+              // },
+            },
+            {
+              label: "Mark As Inactive",
+              onClick: () => {
+                console.log("Clicked");
+              },
+              disabled: true,
+            },
+          ]}
+        />
       ),
     },
   ];

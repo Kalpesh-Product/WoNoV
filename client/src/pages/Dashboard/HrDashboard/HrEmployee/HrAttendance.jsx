@@ -207,7 +207,8 @@ const HrAttendance = () => {
                     textAlign: "center",
                     fontWeight: 500,
                     width: "100%",
-                  }}>
+                  }}
+                >
                   {label}
                 </Box>
               </Tooltip>
@@ -262,7 +263,8 @@ const HrAttendance = () => {
                   textAlign: "center",
                   fontWeight: 500,
                   width: "100%",
-                }}>
+                }}
+              >
                 {label}
               </Box>
             </Tooltip>
@@ -309,7 +311,7 @@ const HrAttendance = () => {
   return (
     <PageFrame>
       <div>
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+        <div className="flex flex-col md:flex-row items-center gap-4 mb-4 justify-end">
           <div className="flex gap-2 items-center">
             <TextField
               select
@@ -320,7 +322,8 @@ const HrAttendance = () => {
                 setSelectedFY(fy);
                 setCurrentMonth(fy.start);
               }}
-              className="min-w-[140px]">
+              className="min-w-[140px]"
+            >
               {fyOptions.map((fy) => (
                 <MenuItem key={fy.label} value={fy.label}>
                   {fy.label}
@@ -330,12 +333,11 @@ const HrAttendance = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" />
+            {/* <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" /> */}
 
             <TextField
               select
               size="small"
-              variant="standard"
               value={dayjs(currentMonth).format("YYYY-MM")}
               onChange={(e) => {
                 const [year, month] = e.target.value.split("-");
@@ -345,7 +347,8 @@ const HrAttendance = () => {
               className="min-w-[160px]"
               SelectProps={{
                 IconComponent: KeyboardArrowDownIcon,
-              }}>
+              }}
+            >
               {generateMonthOptions(selectedFY.start, selectedFY.end).map(
                 (option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -355,14 +358,17 @@ const HrAttendance = () => {
               )}
             </TextField>
 
-            <PrimaryButton handleSubmit={handleNextMonth} title="Next" />
+            {/* <PrimaryButton handleSubmit={handleNextMonth} title="Next" /> */}
           </div>
         </div>
 
         {!isLoading ? (
           isMonthWithinFY ? (
             <AgTable
-              data={tableData.map((data,index)=> ({srNo: index+1,...data}))}
+              data={tableData.map((data, index) => ({
+                srNo: index + 1,
+                ...data,
+              }))}
               columns={columns}
               search={true}
               searchColumn="empName"
