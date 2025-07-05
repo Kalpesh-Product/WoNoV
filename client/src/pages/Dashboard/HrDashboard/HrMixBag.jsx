@@ -17,7 +17,7 @@ const HrMixBag = () => {
     },
     {
       title: "Leave Requests",
-      route: "/app/dashboard/HR-dashboard/mix-bag/leaves",
+      route: "/app/dashboard/HR-dashboard/mix-bag/leaves/pending-approvals",
     },
 
   ];

@@ -1,85 +1,44 @@
-import React, { useState } from "react";
-import AgTable from "../../../../../components/AgTable";
-import MuiModal from "../../../../../components/MuiModal";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
-import { inrFormat } from "../../../../../utils/currencyFormat";
-import DetalisFormatted from "../../../../../components/DetalisFormatted";
-import PageFrame from "../../../../../components/Pages/PageFrame";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
+import useAuth from "../../../../../hooks/useAuth";
+import YearWiseTable from "../../../../../components/Tables/YearWiseTable";
+import { toast } from "sonner";
+import { useSelector } from "react-redux";
 
-const Payslip = () => {
-  const name = localStorage.getItem("employeeName") || "Employee";
+const HrCommonPayslips = () => {
+  const employmentID = useSelector((state) => state.hr.selectedEmployee);
+  console.log(employmentID);
+  const axios = useAxiosPrivate();
+  const { auth } = useAuth();
 
-  const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [viewPayslip, setViewPayslip] = useState(null);
-
-  const rows = [
-    {
-      id: 1,
-      payslips: "Dec-24",
-      netPay: "70000",
-      deductions: "5000",
-      issuedBy: "HR Dept",
+  const { data = [], isLoading } = useQuery({
+    queryKey: ["payslips"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/payslip/get-payslips/${employmentID}`
+        );
+        return response.data || [];
+      } catch (error) {
+        console.warn("Failed to fetch payslips:", error.message);
+        return []; // fallback return to avoid crashes
+      }
     },
-    {
-      id: 2,
-      payslips: "Nov-24",
-      netPay: "70000",
-      deductions: "4500",
-      issuedBy: "HR Dept",
-    },
-    {
-      id: 3,
-      payslips: "Oct-24",
-      netPay: "68000",
-      deductions: "6000",
-      issuedBy: "HR Dept",
-    },
-    {
-      id: 4,
-      payslips: "Sep-24",
-      netPay: "69000",
-      deductions: "5500",
-      issuedBy: "HR Dept",
-    },
-    {
-      id: 5,
-      payslips: "Aug-24",
-      netPay: "70000",
-      deductions: "5000",
-      issuedBy: "HR Dept",
-    },
-    {
-      id: 6,
-      payslips: "Jul-24",
-      netPay: "69000",
-      deductions: "5200",
-      issuedBy: "HR Dept",
-    },
-    {
-      id: 7,
-      payslips: "Jun-24",
-      netPay: "68000",
-      deductions: "4800",
-      issuedBy: "HR Dept",
-    },
-  ];
-
-  const handleViewPayslip = (rowData) => {
-    setViewPayslip(rowData);
-    setViewModalOpen(true);
-  };
+  });
 
   const payslipColumns = [
+    { field: "srNo", headerName: "SrNo", width: 100 },
     {
-      headerName: "Sr No",
-      field: "serialNo",
-      valueGetter: (params) => params.node.rowIndex + 1,
-      maxWidth: 100,
-    },
-    {
-      field: "payslips",
-      headerName: "Payslip",
+      field: "month",
+      headerName: "Month",
       flex: 1,
+      cellRenderer: (params) =>
+        params.value
+          ? new Date(params.value).toLocaleDateString("default", {
+              month: "long",
+              year: "numeric",
+            })
+          : "N/A",
     },
     {
       field: "actions",
@@ -87,53 +46,49 @@ const Payslip = () => {
       cellRenderer: (params) => (
         <div className="p-2 mb-2 flex gap-2">
           <span
-            className="text-subtitle cursor-pointer"
-            onClick={() => handleViewPayslip(params.data)}>
-            <MdOutlineRemoveRedEye />
+            role="button"
+            onClick={() => {
+              const link = params.data?.payslipLink;
+              if (link) {
+                window.open(link, "_blank");
+              } else {
+                toast.error("No payslip link available.");
+              }
+            }}
+            className="text-primary hover:underline text-content cursor-pointer"
+          >
+            View Payslip
           </span>
         </div>
       ),
     },
   ];
 
+  const tableData = Array.isArray(data)
+    ? data.map((item, index) => ({
+        id: item._id || index,
+        month: item.month,
+        payslipLink: item.payslipLink,
+        srNo: index + 1,
+      }))
+    : [];
+
   return (
     <div className="flex flex-col gap-8">
-      <PageFrame>
-        <AgTable
-          key={rows.length}
+      <div>
+        <YearWiseTable
+          key={tableData.length}
           search={true}
-          searchColumn={"payslips"}
-          tableTitle={`${name}'s Payslip List`}
-          data={rows}
+          tableHeight={300}
+          searchColumn={"month"}
+          tableTitle={"Payslips"}
+          data={tableData}
           columns={payslipColumns}
+          isLoading={isLoading}
         />
-      </PageFrame>
-
-      {/* Modal for viewing Payslip */}
-      <MuiModal
-        open={viewModalOpen}
-        onClose={() => setViewModalOpen(false)}
-        title="Payslip Detail">
-        {viewPayslip && (
-          <>
-            <DetalisFormatted title="Month" detail={viewPayslip.payslips} />
-            <DetalisFormatted
-              title="Net Pay"
-              detail={`INR ${inrFormat(viewPayslip.netPay) || "N/A"}`}
-            />
-            <DetalisFormatted
-              title="Deductions"
-              detail={`INR ${inrFormat(viewPayslip.deductions) || "N/A"}`}
-            />
-            <DetalisFormatted
-              title="Issued By"
-              detail={viewPayslip.issuedBy || "N/A"}
-            />
-          </>
-        )}
-      </MuiModal>
+      </div>
     </div>
   );
 };
 
-export default Payslip;
+export default HrCommonPayslips;
