@@ -13,6 +13,7 @@ import useAuth from "../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
+import { useTopDepartment } from "../../../hooks/useTopDepartment";
 
 const RecievedTickets = ({ title, departmentId }) => {
   const [open, setOpen] = useState(false);
@@ -23,6 +24,8 @@ const RecievedTickets = ({ title, departmentId }) => {
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [openView, setOpenView] = useState();
+  const topManagementDepartment = "67b2cf85b9b6ed5cedeb9a2e";
+  const { isTop } = useTopDepartment();
 
   const handleRejectClick = (ticket) => {
     setSelectedTicket(ticket);
@@ -249,48 +252,50 @@ const RecievedTickets = ({ title, departmentId }) => {
           >
             <MdOutlineRemoveRedEye />
           </div>
-          <ThreeDotMenu
-            rowId={params.data.id}
-            menuItems={[
-              // Conditionally add "Accept"
-              ...(auth.user.role.length > 0 &&
-              // Case 1: If user is in Top Management & ticket is for Top Management
-              ((auth.user.role[0].roleTitle === "Top Management" &&
-                params.data.raisedToDepartment === "Top Management") ||
-                // Case 2: If user is not Top Management
-                auth.user.role[0].roleTitle !== "Top Management")
-                ? [
-                    {
-                      label: "Accept",
-                      onClick: () => acceptMutate(params.data),
-                      isLoading: isLoading,
-                    },
-                  ]
-                : []),
-              
-              // {
-              //   label: "Accept",
-              //   onClick: () => acceptMutate(params.data),
-              //   isLoading: isLoading,
-              // },
-              // Conditionally add "Assign"
-              ...(auth.user.role.length > 0 &&
-              (auth.user.role[0].roleTitle === "Master Admin" ||
-                auth.user.role[0].roleTitle === "Super Admin" ||
-                auth.user.role[0].roleTitle.endsWith("Admin"))
-                ? [
-                    {
-                      label: "Assign",
-                      onClick: () => handleOpenAssignModal(params.data.id),
-                    },
-                    {
-                      label: "Reject",
-                      onClick: () => handleRejectClick(params.data), // ✅ open modal
-                    },
-                  ]
-                : [])
-            ]}
-          />
+          {(!isTop || (isTop && departmentId === topManagementDepartment)) && (
+            <ThreeDotMenu
+              rowId={params.data.id}
+              menuItems={[
+                // Conditionally add "Accept"
+                ...(auth.user.role.length > 0 &&
+                // Case 1: If user is in Top Management & ticket is for Top Management
+                ((auth.user.role[0].roleTitle === "Top Management" &&
+                  params.data.raisedToDepartment === "Top Management") ||
+                  // Case 2: If user is not Top Management
+                  auth.user.role[0].roleTitle !== "Top Management")
+                  ? [
+                      {
+                        label: "Accept",
+                        onClick: () => acceptMutate(params.data),
+                        isLoading: isLoading,
+                      },
+                    ]
+                  : []),
+
+                // {
+                //   label: "Accept",
+                //   onClick: () => acceptMutate(params.data),
+                //   isLoading: isLoading,
+                // },
+                // Conditionally add "Assign"
+                ...(auth.user.role.length > 0 &&
+                (auth.user.role[0].roleTitle === "Master Admin" ||
+                  auth.user.role[0].roleTitle === "Super Admin" ||
+                  auth.user.role[0].roleTitle.endsWith("Admin"))
+                  ? [
+                      {
+                        label: "Assign",
+                        onClick: () => handleOpenAssignModal(params.data.id),
+                      },
+                      {
+                        label: "Reject",
+                        onClick: () => handleRejectClick(params.data), // ✅ open modal
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          )}
         </div>
       ),
     },

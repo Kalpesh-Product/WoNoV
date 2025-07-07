@@ -110,6 +110,10 @@ const userDataSchema = new mongoose.Schema({
       type: Date,
       default: null,
     },
+    clockOutTime: {
+      type: Date,
+      default: null,
+    },
     breaks: [
       {
         start: {
