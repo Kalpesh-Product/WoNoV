@@ -20,9 +20,9 @@ import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import { IoMdClose } from "react-icons/io";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanTime from "../../../utils/humanTime";
-
 import humanDate from "./../../../utils/humanDateForamt";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import { useTopDepartment } from "../../../hooks/useTopDepartment";
 
 const AcceptedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
@@ -31,6 +31,8 @@ const AcceptedTickets = ({ title, departmentId }) => {
   const [esCalatedTicket, setEscalatedTicket] = useState(null);
   const [openView, setOpenView] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const topManagementDepartment = "67b2cf85b9b6ed5cedeb9a2e";
+  const { isTop } = useTopDepartment();
 
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const {
@@ -209,12 +211,16 @@ const AcceptedTickets = ({ title, departmentId }) => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: (params) => (
-        <div className="flex gap-2">
-          <ThreeDotMenu
-            rowId={params.data.id}
-            menuItems={[
-              { label: "View", onClick: () => handleViewTicket(params.data) }, // 👈 Add this line
+      cellRenderer: (params) => {
+        const commonItems = [
+          { label: "View", onClick: () => handleViewTicket(params.data) },
+        ];
+
+        const showOtherActions =
+          !isTop || (isTop && departmentId === topManagementDepartment);
+
+        const additionalItems = showOtherActions
+          ? [
               { label: "Close", onClick: () => mutate(params.data.id) },
               {
                 label: "Support",
@@ -224,10 +230,18 @@ const AcceptedTickets = ({ title, departmentId }) => {
                 label: "Escalate",
                 onClick: () => handleEscalateTicket(params.data),
               },
-            ]}
-          />
-        </div>
-      ),
+            ]
+          : [];
+
+        return (
+          <div className="flex gap-2">
+            <ThreeDotMenu
+              rowId={params.data.id}
+              menuItems={[...commonItems, ...additionalItems]}
+            />
+          </div>
+        );
+      },
     },
   ];
 
