@@ -11,6 +11,7 @@ import UploadFileInput from "../../../../components/UploadFileInput";
 import { toast } from "sonner";
 import humanDate from "../../../../utils/humanDateForamt";
 import PrimaryButton from "../../../../components/PrimaryButton";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 
 const DirectorData = () => {
   const location = useLocation();
@@ -30,6 +31,7 @@ const DirectorData = () => {
     setValue,
     formState: { errors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       type: isCompany ? "companyKyc" : "directorKyc",
       nameOfDirector: name,
@@ -195,12 +197,21 @@ const DirectorData = () => {
             <Controller
               name="documentName"
               control={control}
+              rules={{
+                required: "Document Name is required",
+                validate: {
+                  isAlphanumeric,
+                  noOnlyWhitespace,
+                },
+              }}
               render={({ field }) => (
                 <TextField
                   {...field}
                   label={"Document Name"}
                   fullWidth
                   size="small"
+                  error={!!errors.documentName}
+                  helperText={errors?.documentName?.message}
                 />
               )}
             />

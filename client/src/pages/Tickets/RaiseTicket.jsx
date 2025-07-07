@@ -151,7 +151,7 @@ const RaiseTicket = () => {
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     { field: "description", headerName: "Description", width: 300 },
     { field: "acceptedBy", headerName: "Accepted By", width: 300 },
-    { field: "acceptedAt", headerName: "Accepted Time", width: 300 },
+    { field: "acceptedAt", headerName: "Accepted Time", width: 300, cellRenderer : (params)=>(humanDate(params.value)) },
 
     {
       field: "priority",
@@ -513,7 +513,7 @@ const RaiseTicket = () => {
                 closedBy: ticket?.closedBy
                   ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
                   : "None",
-                acceptedAt: ticket.acceptedAt ? ticket.acceptedAt : "None",
+                acceptedAt: ticket.acceptedAt,
                 closedAt: ticket.closedAt ? ticket.closedAt : "None",
                 priority: ticket.priority,
                 image: ticket.image ? ticket.image.url : null,

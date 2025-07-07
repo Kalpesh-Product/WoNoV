@@ -35,28 +35,21 @@ const PayrollReports = () => {
   const payrollColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "empId", headerName: "Employee ID", width: 200 },
-    { field: "name", headerName: "Name" },
-    { field: "email", headerName: "Email", flex: 1 },
-    { field: "totalSalary", headerName: "Total Salary (INR)" },
     {
-      field: "actions",
-      headerName: "Actions",
-      pinned: "right",
-      width: 100,
+      field: "name",
+      headerName: "Name",
+      flex: 1,
       cellRenderer: (params) => (
-        <div className="p-2 mb-2 flex gap-2">
-          <span
-            className="text-subtitle cursor-pointer"
-            onClick={() =>{
-              console.log("date",params.data.date)
-              handleViewApplicationDetails(params.data)
-            }}
-          >
-            <MdOutlineRemoveRedEye />
-          </span>
-        </div>
+        <span
+          className="text-primary underline cursor-pointer"
+          onClick={() => handleViewApplicationDetails(params.data)}
+        >
+          {params.value}
+        </span>
       ),
     },
+    { field: "email", headerName: "Email", flex: 1 },
+    { field: "totalSalary", headerName: "Total Salary (INR)" },
   ];
 
   const transformedData = isLoading
@@ -68,8 +61,7 @@ const PayrollReports = () => {
             empId: item.empId,
             employeeName: item.name,
             status: item?.status,
-            totalSalary: inrFormat(
-              item?.totalSalary),
+            totalSalary: inrFormat(item?.totalSalary),
             departmentName: item.departments?.map(
               (item) => item.name || "null"
             ),
@@ -117,10 +109,7 @@ const PayrollReports = () => {
               title="Department"
               detail={selectedEmployee?.departmentName || "N/A"}
             />
-            <DetalisFormatted
-              title="Date"
-              detail={selectedEmployee?.date}
-            />
+            <DetalisFormatted title="Date" detail={selectedEmployee?.date} />
             <DetalisFormatted
               title="Total Salary"
               detail={`INR ${inrFormat(selectedEmployee?.totalSalary)}`}

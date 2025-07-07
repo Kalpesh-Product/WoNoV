@@ -61,7 +61,6 @@ const ManageTickets = () => {
       .length,
   };
 
-
   const widgets = [
     {
       layout: 2,
@@ -75,7 +74,8 @@ const ManageTickets = () => {
           TitleAmount={String(ticketsFilteredData.recievedTickets).padStart(
             2,
             "0"
-          )}>
+          )}
+        >
           <TicketCard
             title={"Open"}
             titleColor={"#1E3D73"}
@@ -107,7 +107,8 @@ const ManageTickets = () => {
           TitleAmount={String(ticketsFilteredData.acceptedTickets).padStart(
             2,
             "0"
-          )}>
+          )}
+        >
           <TicketCard
             title={"Accepted Tickets"}
             data={ticketsFilteredData.acceptedTickets}
@@ -244,7 +245,8 @@ const ManageTickets = () => {
               backgroundColor: "#1E3D73",
               color: "white",
             },
-          }}>
+          }}
+        >
           {tabItems.map((tab, index) => (
             <Tab
               key={index}

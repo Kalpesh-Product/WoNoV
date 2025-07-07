@@ -57,8 +57,8 @@ const ClientAgreements = () => {
           onClick={() =>
             navigate(
               location.pathname.includes("mix-bag")
-                ? `/app/dashboard/finance-dashboard/mix-bag/landlord-agreements/${params.data.name}`
-                : `/app/landlord-agreements/${params.data.name}`,
+                ? `/app/dashboard/finance-dashboard/mix-bag/client-agreements/${params.data.name}`
+                : `/app/client-agreements/${params.data.name}`,
               {
                 state: {
                   files: params.data.files || [],

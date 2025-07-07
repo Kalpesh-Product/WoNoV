@@ -14,10 +14,10 @@ const LeavesLayout = () => {
 
   useEffect(() => {
     if (
-      location.pathname === "/app/dashboard/hr-dashboard/mix-bag/leaves"
+      location.pathname === "/app/dashboard/HR-dashboard/mix-bag/leaves"
     ) {
       navigate(
-        "/app/dashboard/hr-dashboard/mix-bag/leaves/pending-approvals",
+        "/app/dashboard/HR-dashboard/mix-bag/leaves/pending-approvals",
         {
           replace: true,
         }

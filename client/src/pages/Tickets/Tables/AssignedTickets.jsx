@@ -19,6 +19,7 @@ import { IoMdClose } from "react-icons/io";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import { useTopDepartment } from "../../../hooks/useTopDepartment";
 
 const AssignedTickets = ({ title, departmentId }) => {
   const [openModal, setopenModal] = useState(false);
@@ -28,6 +29,8 @@ const AssignedTickets = ({ title, departmentId }) => {
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [openView, setOpenView] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const topManagementDepartment = "67b2cf85b9b6ed5cedeb9a2e";
+  const { isTop } = useTopDepartment();
 
   // Fetch Supported Tickets
   const { data: supportedTickets = [], isLoading } = useQuery({
@@ -196,16 +199,19 @@ const AssignedTickets = ({ title, departmentId }) => {
       field: "actions",
       headerName: "Actions",
             pinned : 'right',
-      cellRenderer: (params) => (
-        <>
-          <ThreeDotMenu
-            rowId={params.data.id}
-            menuItems={[
-              {
-                label: "View",
-                onClick: () => handleViewTicket(params.data),
-              },
+      cellRenderer: (params) => {
+        const commonItems = [
+          {
+            label: "View",
+            onClick: () => handleViewTicket(params.data),
+          },
+        ];
 
+        const showOtherActions =
+          !isTop || (isTop && departmentId === topManagementDepartment);
+
+        const conditionalItems = showOtherActions
+          ? [
               {
                 label: "Re-Assign",
                 onClick: () => handleOpenAssignModal(params.data.id),
@@ -218,10 +224,16 @@ const AssignedTickets = ({ title, departmentId }) => {
                 label: "Close",
                 onClick: () => closeTicket(params.data.id),
               },
-            ]}
+            ]
+          : [];
+
+        return (
+          <ThreeDotMenu
+            rowId={params.data.id}
+            menuItems={[...commonItems, ...conditionalItems]}
           />
-        </>
-      ),
+        );
+      },
     },
   ];
 

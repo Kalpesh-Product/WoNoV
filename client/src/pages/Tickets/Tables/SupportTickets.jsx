@@ -20,6 +20,7 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 
 import humanDate from "./../../../utils/humanDateForamt";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import { useTopDepartment } from "../../../hooks/useTopDepartment";
 
 const SupportTickets = ({ title, departmentId }) => {
   const [openModal, setopenModal] = useState(false);
@@ -29,6 +30,8 @@ const SupportTickets = ({ title, departmentId }) => {
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [openView, setOpenView] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const topManagementDepartment = "67b2cf85b9b6ed5cedeb9a2e";
+  const { isTop } = useTopDepartment();
 
   // Fetch Supported Tickets
   const { data: supportedTickets = [], isLoading } = useQuery({
@@ -248,10 +251,10 @@ const SupportTickets = ({ title, departmentId }) => {
       headerName: "From Department",
       width: 100,
     },
-    { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
+    { field: "ticketTitle", headerName: "Ticket Title", width : 250},
     {
       field: "tickets",
-      headerName: "Tickets",
+      headerName: "Ticket Type",
       cellRenderer: (params) => {
         const statusColorMap = {
           "Assigned Ticket": { backgroundColor: "#ffbac2", color: "#ed0520" }, // Light orange bg, dark orange font
@@ -311,29 +314,41 @@ const SupportTickets = ({ title, departmentId }) => {
       field: "actions",
       headerName: "Actions",
             pinned : 'right',
-      cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data.id}
-          menuItems={[
-            {
-              label: "Close",
-              onClick: () => closeTicket(params.data.id),
-            },
-            {
-              label: "Re-Assign",
-              onClick: () => handleOpenAssignModal(params.data.id),
-            },
-            {
-              label: "Escalate",
-              onClick: () => handleEscalateTicket(params.data),
-            },
-            {
-              label: "View",
-              onClick: () => handleViewTicket(params.data),
-            },
-          ]}
-        />
-      ),
+      cellRenderer: (params) => {
+        const commonItems = [
+          {
+            label: "View",
+            onClick: () => handleViewTicket(params.data),
+          },
+        ];
+
+        const showOtherActions =
+          !isTop || (isTop && departmentId === topManagementDepartment);
+
+        const conditionalItems = showOtherActions
+          ? [
+              {
+                label: "Close",
+                onClick: () => closeTicket(params.data.id),
+              },
+              {
+                label: "Re-Assign",
+                onClick: () => handleOpenAssignModal(params.data.id),
+              },
+              {
+                label: "Escalate",
+                onClick: () => handleEscalateTicket(params.data),
+              },
+            ]
+          : [];
+
+        return (
+          <ThreeDotMenu
+            rowId={params.data.id}
+            menuItems={[...conditionalItems, ...commonItems]}
+          />
+        );
+      },
     },
   ];
 

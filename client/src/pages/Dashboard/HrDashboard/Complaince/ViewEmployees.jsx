@@ -5,7 +5,10 @@ import { Chip } from "@mui/material";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
-import { setSelectedEmployee } from "../../../../redux/slices/hrSlice";
+import {
+  setSelectedEmployee,
+  setSelectedEmployeeMongoId,
+} from "../../../../redux/slices/hrSlice";
 import PageFrame from "../../../../components/Pages/PageFrame";
 
 const ViewEmployees = () => {
@@ -49,7 +52,9 @@ const ViewEmployees = () => {
               `/app/dashboard/HR-dashboard/employee/employee-list/${params.data.employeeName}/edit-details`
             );
             dispatch(setSelectedEmployee(params.data.employmentID));
-          }}>
+            dispatch(setSelectedEmployeeMongoId(params.data.id));
+          }}
+        >
           {params.value}
         </span>
       ),

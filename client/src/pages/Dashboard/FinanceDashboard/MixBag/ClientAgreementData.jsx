@@ -1,12 +1,15 @@
 import { useLocation } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import humanDate from "../../../../utils/humanDateForamt";
+import PageFrame from "../../../../components/Pages/PageFrame";
 
 const ClientAgreementData = () => {
   const location = useLocation();
 
   // Fallbacks if state is missing or malformed
-  const files = Array.isArray(location.state?.files) ? location.state.files : [];
+  const files = Array.isArray(location.state?.files)
+    ? location.state.files
+    : [];
   const name = location.state?.name || "Unknown";
 
   const columns = [
@@ -27,12 +30,14 @@ const ClientAgreementData = () => {
 
   return (
     <div className="p-4">
-      <AgTable
-        columns={columns}
-        data={tableData}
-        tableTitle={`AGREEMENTS -  ${name.toUpperCase()}`}
-        hideFilter
-      />
+      <PageFrame>
+        <AgTable
+          columns={columns}
+          data={tableData}
+          tableTitle={`AGREEMENTS -  ${name.toUpperCase()}`}
+          hideFilter
+        />
+      </PageFrame>
     </div>
   );
 };

@@ -12,6 +12,7 @@ import { queryClient } from "../../../../main";
 import { toast } from "sonner";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 
 const LandlordAgreementData = () => {
   const location = useLocation();
@@ -84,6 +85,7 @@ const LandlordAgreementData = () => {
     setValue,
     formState: { errors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       landLordId: "",
       documentName: "",
@@ -151,13 +153,21 @@ const LandlordAgreementData = () => {
             <Controller
               name="documentName"
               control={control}
-              rules={{ required: "Document Name is Required" }}
+              rules={{
+                required: "Document Name is Required",
+                validate: {
+                  isAlphanumeric,
+                  noOnlyWhitespace,
+                },
+              }}
               render={({ field }) => (
                 <TextField
                   {...field}
                   label="Document Name"
                   fullWidth
                   size="small"
+                  error={!!errors.documentName}
+                  helperText={errors?.documentName?.message}
                 />
               )}
             />

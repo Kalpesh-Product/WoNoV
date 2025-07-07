@@ -231,7 +231,6 @@ const PerformanceKra = () => {
             <WidgetSection padding layout={1}>
               <DateWiseTable
                 formatTime
-                key={departmentKra.length}
                 checkbox={showCheckBox}
                 buttonTitle={"Add Daily KRA"}
                 handleSubmit={() => setOpenModal(true)}
@@ -326,6 +325,8 @@ const PerformanceKra = () => {
             render={({ field, fieldState: { error } }) => (
               <DatePicker
                 label="Assigned Date"
+                disablePast
+                format="DD-MM-YYYY"
                 value={field.value ? dayjs(field.value) : null}
                 onChange={(date) =>
                   field.onChange(date ? date.toISOString() : null)

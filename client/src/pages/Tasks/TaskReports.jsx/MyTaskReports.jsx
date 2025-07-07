@@ -27,46 +27,29 @@ const MyTaskReports = () => {
     setSelectedTask(params.data);
     setOpenModal(true);
   };
+const myTaskReportsColumns = [
+  { field: "srNo", headerName: "Sr No", width: 50 },
+  {
+    field: "taskName",
+    headerName: "Task",
+    width: 250,
+    cellRenderer: (params) => (
+      <span
+        className="text-primary hover:underline cursor-pointer"
+        onClick={() => handleViewDetails(params)}
+      >
+        {params.value}
+      </span>
+    ),
+  },
+  { field: "assignedBy", headerName: "Assigned By", width: 300 },
+  { field: "assignedDate", headerName: "Assigned Date" },
+  { field: "dueDate", headerName: "Due Date" },
+  { field: "completedDate", headerName: "Completed Date" },
+  { field: "completedTime", headerName: "Completed Time" },
+  { field: "department", headerName: "Department" },
+];
 
-  const myTaskReportsColumns = [
-    { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "taskName", headerName: "Task", width: 250 },
-    { field: "assignedBy", headerName: "Assigned By", width: 300 },
-    { field: "assignedDate", headerName: "Assigned Date" },
-    { field: "dueDate", headerName: "Due Date" },
-    { field: "completedDate", headerName: "Completed Date" },
-    { field: "completedTime", headerName: "Completed Time" },
-    { field: "department", headerName: "Department" },
-    // {
-    //   field: "actions",
-    //   headerName: "Actions",
-    //   cellRenderer: (params) => (
-    //     <div className="p-2 mb-2 flex gap-2">
-    //       <span
-    //         className="text-primary hover:underline text-content cursor-pointer"
-    //         onClick={() => handleViewDetails(params)}
-    //       >
-    //         View Details
-    //       </span>
-    //     </div>
-    //   ),
-    // },
-     {
-          field: "actions",
-          headerName: "Actions",
-          width: 100,
-          cellRenderer: (params) => (
-            <div className="p-2 mb-2 flex gap-2">
-              <span
-                className="text-subtitle cursor-pointer"
-                onClick={() => handleViewDetails(params.data)}
-              >
-                <MdOutlineRemoveRedEye />
-              </span>
-            </div>
-          ),
-        },
-  ];
 
   return (
     <div className="flex flex-col gap-8">
