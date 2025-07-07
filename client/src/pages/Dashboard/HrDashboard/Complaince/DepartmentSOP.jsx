@@ -27,7 +27,23 @@ const DepartmentSOP = () => {
 
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "name", headerName: "Document Name", flex: 1 },
+    {
+      field: "name",
+      headerName: "Document Name",
+      flex: 1,
+      cellRenderer: (params) => (
+        <>
+          <a
+            className="text-primary underline cursor-pointer"
+            href={params.data.documentLink}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {params.value}
+          </a>
+        </>
+      ),
+    },
     {
       field: "createdAt",
       headerName: "Created At",
@@ -42,26 +58,11 @@ const DepartmentSOP = () => {
       valueFormatter: (params) =>
         params.value ? humanDate(params.value) : "-",
     },
-    {
-      field: "documentLink",
-      headerName: "Document Link",
-      pinned: "right",
-      width: 200,
-      cellRenderer: (params) => (
-        <a
-          className="text-primary underline cursor-pointer"
-          href={params.value}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          View {documentType ? documentType : "SOP"}
-        </a>
-      ),
-    },
   ];
   const tableData = isLoading
     ? []
     : data.map((item, index) => ({
+        ...item,
         srNo: index + 1,
         name: item.name,
         documentLink: item.documentLink,

@@ -100,14 +100,13 @@ const EscalatedTickets = ({ title, departmentId }) => {
   const rows = isLoading ? [] : transformTicketsData(escalatedTickets);
 
   const recievedTicketsColumns = [
-    { field: "srno", headerName: "Sr No" },
+    { field: "srno", headerName: "Sr No", width : 100 },
     { field: "raisedBy", headerName: "Raised By" },
     {
       field: "selectedDepartment",
       headerName: "From Department",
-      width: 100,
     },
-    { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
+    { field: "ticketTitle", headerName: "Ticket Title", width:250 },
     {
       field: "tickets",
       headerName: "Tickets",
@@ -202,6 +201,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
     {
       field: "action",
       headerName: "Action",
+      pinned : 'right',
       cellRenderer: (params) => (
         <div className="flex items-center gap-2">
           <div

@@ -198,6 +198,7 @@ const AssignedTickets = ({ title, departmentId }) => {
     {
       field: "actions",
       headerName: "Actions",
+            pinned : 'right',
       cellRenderer: (params) => {
         const commonItems = [
           {

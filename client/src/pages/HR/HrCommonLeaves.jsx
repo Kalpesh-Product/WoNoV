@@ -3,7 +3,7 @@ import AgTable from "../../components/AgTable";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAuth from "../../hooks/useAuth";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import PrimaryButton from "../../components/PrimaryButton";
 import SecondaryButton from "../../components/SecondaryButton";
@@ -85,7 +85,38 @@ const HrCommonLeaves = () => {
     { field: "leavePeriod", headerName: "Leave Period" },
     { field: "hours", headerName: "Hours" },
     { field: "description", headerName: "Description" },
-    { field: "status", headerName: "Status" },
+    {
+      field: "status",
+      headerName: "Status",
+      width: 120,
+      pinned: "right",
+      cellRenderer: (params) => {
+        const status = params.value;
+
+        const statusColorMap = {
+          Approved: { backgroundColor: "#DFF5E1", color: "#218739" }, // Light green bg, dark green font
+          Pending: { backgroundColor: "#FFF8E1", color: "#F5A623" }, // Light yellow bg, orange font
+          Rejected: { backgroundColor: "#FDECEA", color: "#D32F2F" }, // Light red bg, red font
+        };
+
+        const { backgroundColor, color } = statusColorMap[status] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+
+        return (
+          <Chip
+            label={status}
+            style={{
+              backgroundColor,
+              color,
+              fontWeight: 500,
+            }}
+            size="small"
+          />
+        );
+      },
+    },
   ];
 
   const { data: leaves = [], isLoading } = useQuery({

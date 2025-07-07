@@ -29,6 +29,7 @@ import { useEffect, useState } from "react";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import { useLocation, useSearchParams } from "react-router-dom";
+import { Task } from "@mui/icons-material";
 const TasksDashboard = () => {
   const axios = useAxiosPrivate();
   const [selectedFY, setSelectedFY] = useState(null);
@@ -282,20 +283,22 @@ const TasksDashboard = () => {
           id: index + 1,
           taskName: task.taskName,
           type: task.workCategory || "N/A",
+          startTime: dayjs(task.assignedDate).format("hh:mm A"),
           endTime: dayjs(task.dueDate).format("hh:mm A"),
         }));
 
   const priorityTasksColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "taskName", label: "Task Name", align: "left" },
-    {
-      id: "type",
-      label: "Type",
-      renderCell: (data) => (
-        <Chip sx={{ color: "#1E3D73" }} label={data.type} />
-      ),
-      align: "left",
-    },
+    // {
+    //   id: "type",
+    //   label: "Type",
+    //   renderCell: (data) => (
+    //     <Chip sx={{ color: "#1E3D73" }} label={data.type} />
+    //   ),
+    //   align: "left",
+    // },
+    { id: "startTime", label: "Start Time", align: "left" },
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
@@ -314,7 +317,7 @@ const TasksDashboard = () => {
     queryKey: ["meetings"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/meetings/get-meetings");
+        const response = await axios.get("/api/meetings/my-meetings");
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -399,8 +402,9 @@ const TasksDashboard = () => {
   //Department-wise Pending Tasks
 
   const calculateDepartmentPendingStats = (tasks) => {
+    
     const departmentMap = tasks.reduce((acc, task) => {
-      const departmentName = task.department?.name || "Unknown";
+      const departmentName = task.department || "Unknown";
       const isPending = task.status === "Pending";
 
       if (!acc[departmentName]) {

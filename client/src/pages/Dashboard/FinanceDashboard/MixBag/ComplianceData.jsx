@@ -11,6 +11,7 @@ import UploadFileInput from "../../../../components/UploadFileInput";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import humanDate from "../../../../utils/humanDateForamt";
 import { toast } from "sonner";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 
 const ComplianceData = () => {
   const { id } = useParams();
@@ -29,6 +30,7 @@ const ComplianceData = () => {
     reset,
     formState: { errors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       documentName: "",
       document: null,
@@ -92,7 +94,24 @@ const ComplianceData = () => {
 
   const columns = [
     { field: "srno", headerName: "Sr No", width: 100 },
-    { field: "label", headerName: "Document", flex: 1 },
+    {
+      field: "label",
+      headerName: "Document",
+      flex: 1,
+      cellRenderer: (params) =>
+        params.value ? (
+          <a
+            href={params.data.documentLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline cursor-pointer"
+          >
+            {params.value}
+          </a>
+        ) : (
+          <span className="text-gray-400 italic">No Link</span>
+        ),
+    },
     {
       field: "uploadedDate",
       headerName: "Uploaded Date",
@@ -104,23 +123,6 @@ const ComplianceData = () => {
       headerName: "Last Modified",
       flex: 1,
       cellRenderer: (params) => humanDate(params.value),
-    },
-    {
-      field: "documentLink",
-      headerName: "View Link",
-      flex: 1,
-      cellRenderer: (params) =>
-        params.value ? (
-          <a
-            href={params.value}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary underline cursor-pointer">
-            View
-          </a>
-        ) : (
-          <span className="text-gray-400 italic">No Link</span>
-        ),
     },
   ];
 
@@ -146,12 +148,16 @@ const ComplianceData = () => {
           setOpenModal(false);
           reset();
         }}
-        title="Add Document">
+        title="Add Document"
+      >
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
           <Controller
             name="documentName"
             control={control}
-            rules={{ required: "Document name is required" }}
+            rules={{
+              required: "Document name is required",
+              validate: { isAlphanumeric, noOnlyWhitespace },
+            }}
             render={({ field }) => (
               <TextField
                 {...field}

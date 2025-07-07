@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip, CircularProgress } from "@mui/material";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -34,6 +34,7 @@ const ClosedTickets = ({ title, departmentId }) => {
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => ({
+          ...ticket,
           srNo: index + 1,
           id: ticket._id,
           raisedBy: ticket.raisedBy?.firstName || "Unknown",
@@ -54,13 +55,17 @@ const ClosedTickets = ({ title, departmentId }) => {
         }));
   };
 
+  useEffect(() => {
+    console.log("selectedTicket : ", viewTicketDetails);
+  }, [viewTicketDetails]);
+
   const rows = isLoading ? [] : transformTicketsData(data);
 
   const recievedTicketsColumns = [
     { field: "srNo", headerName: "Sr No" },
     { field: "raisedBy", headerName: "Raised By" },
     { field: "fromDepartment", headerName: "From Department" },
-    { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
+    { field: "ticketTitle", headerName: "Ticket Title", width : 250 },
     {
       field: "status",
       headerName: "Status",
@@ -92,6 +97,7 @@ const ClosedTickets = ({ title, departmentId }) => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned: "right",
       cellRenderer: (params) => (
         <div className="p-2 mb-2 flex gap-2">
           <span
@@ -132,7 +138,7 @@ const ClosedTickets = ({ title, departmentId }) => {
         onClose={() => setOpenModal(false)}
         title={"View Ticket Details"}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
           <DetalisFormatted
             title="Ticket Title"
             detail={viewTicketDetails?.ticketTitle}
@@ -147,7 +153,7 @@ const ClosedTickets = ({ title, departmentId }) => {
           />
           <DetalisFormatted
             title="Raised At"
-            detail={humanDate(new Date(viewTicketDetails.raisedDate))}
+            detail={humanDate(viewTicketDetails.createdAt)}
           />
           <DetalisFormatted
             title="From Department"
@@ -155,7 +161,7 @@ const ClosedTickets = ({ title, departmentId }) => {
           />
           <DetalisFormatted
             title="Raised To Department"
-            detail={viewTicketDetails.raisedToDepartment || "N/A"}
+            detail={viewTicketDetails.raisedToDepartment?.name || "N/A"}
           />
           <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
           <DetalisFormatted

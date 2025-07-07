@@ -90,7 +90,7 @@ export default function PastEmployees() {
         <div className="w-full">
           <AgTable
             search={true}
-            tableTitle={"Employees List"}
+            tableTitle={"Past Employees List"}
             data={
               isLoading
                 ? []

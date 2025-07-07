@@ -154,11 +154,13 @@ const HousekeepingTeamMembersSchedule = () => {
       enabled: !!watchedUnitId,
       queryFn: async () => {
         const response = await axios.get(
-          `/api/weekly-unit/get-unit-schedule?unitId=${watchedUnitId}&department=${department?._id}`
+          `/api/company/get-housekeeping-schedule?unitId=${watchedUnitId}`
         );
-        return response.data;
+        return response.data.data;
       },
     });
+
+    console.log("unit schedule : ",unitSchedule)
   useEffect(() => {
     setMultipleRanges([]);
   }, [watchedUnitId]);
@@ -166,33 +168,34 @@ const HousekeepingTeamMembersSchedule = () => {
   useEffect(() => {
     if (!unitSchedule || !unitSchedule.length) return;
 
+    console.log("unitSchedule : ", unitSchedule)
+
     const matchedSchedules = unitSchedule.filter(
       (schedule) =>
-        schedule.location?._id === watchedUnitId &&
-        schedule.employee?.id &&
+        schedule.unit?._id === watchedUnitId &&
+        schedule.housekeepingMember?._id &&
         schedule.startDate &&
         schedule.endDate &&
         !isNaN(new Date(schedule.startDate)) &&
         !isNaN(new Date(schedule.endDate))
     );
+    console.log("matched schedule : ", matchedSchedules)
 
     if (matchedSchedules.length) {
       const detailedRanges = [];
 
       matchedSchedules.forEach((item) => {
         const {
-          employee,
+          housekeepingMember,
           startDate,
           endDate,
-          manager,
-          substitutions = [],
           _id,
         } = item;
 
         // Add original employee schedule
         if (
-          employee?.id?.firstName &&
-          employee?.id?.lastName &&
+          housekeepingMember?.firstName &&
+          // housekeepingMember?.lastName &&
           !isNaN(new Date(startDate)) &&
           !isNaN(new Date(endDate))
         ) {
@@ -200,32 +203,31 @@ const HousekeepingTeamMembersSchedule = () => {
             key: `main-${_id}`,
             startDate: new Date(startDate),
             endDate: new Date(endDate),
-            employeeName: `${employee.id.firstName} ${employee.id.lastName}`,
-            manager: manager || "Unknown",
-            isActive: employee.isActive ? "Active" : "Inactive",
+            employeeName: `${housekeepingMember.firstName} ${housekeepingMember.lastName || ""}`,
+            isActive: housekeepingMember.isActive ? "Active" : "Inactive",
           });
         }
 
         // Add active substitutes
-        substitutions
-          .filter(
-            (sub) =>
-              sub?.isActive &&
-              sub?.substitute?.firstName &&
-              sub?.substitute?.lastName &&
-              !isNaN(new Date(sub.fromDate)) &&
-              !isNaN(new Date(sub.toDate))
-          )
-          .forEach((sub, index) => {
-            detailedRanges.push({
-              key: `sub-${_id}-${index}`,
-              startDate: new Date(sub.fromDate),
-              endDate: new Date(sub.toDate),
-              employeeName: `${sub.substitute.firstName} ${sub.substitute.lastName} (Substitute)`,
-              manager: manager || "Unknown",
-              isActive: "Active",
-            });
-          });
+        // substitutions
+        //   .filter(
+        //     (sub) =>
+        //       sub?.isActive &&
+        //       sub?.substitute?.firstName &&
+        //       sub?.substitute?.lastName &&
+        //       !isNaN(new Date(sub.fromDate)) &&
+        //       !isNaN(new Date(sub.toDate))
+        //   )
+        //   .forEach((sub, index) => {
+        //     detailedRanges.push({
+        //       key: `sub-${_id}-${index}`,
+        //       startDate: new Date(sub.fromDate),
+        //       endDate: new Date(sub.toDate),
+        //       employeeName: `${sub.substitute.firstName} ${sub.substitute.lastName} (Substitute)`,
+        //       manager: manager || "Unknown",
+        //       isActive: "Active",
+        //     });
+        //   });
       });
 
       setMultipleRanges(detailedRanges);
@@ -364,12 +366,38 @@ const HousekeepingTeamMembersSchedule = () => {
   ];
 
   //---------------------------------------Event Handlers------------------------------//
+  useEffect(()=>{
+    console.log("slected user : ", selectedUser)
+  },[selectedUser])
 
-  const handleViewUser = (user) => {
+const handleViewUser = async (user) => {
+  try {
+    const response = await axios.get(
+      `/api/company/get-housekeeping-schedule?unitId=${user?._id}&`
+    );
+    const matchingSchedule = response.data.data?.[0]; // adjust as needed
+    console.log("matching schedule : ", matchingSchedule)
+
+    if (matchingSchedule) {
+      setSelectedUser({
+        ...user,
+        startDate: matchingSchedule.startDate,
+        endDate: matchingSchedule.endDate,
+        substitutions: matchingSchedule.substitutions || [],
+        isEmployeeActive: matchingSchedule.employee?.isActive ?? true,
+      });
+    } else {
+      toast.warning("No schedule found for this unit.");
+      setSelectedUser(user);
+    }
+
     setModalMode("view");
-    setSelectedUser(user);
     setIsModalOpen(true);
-  };
+  } catch (error) {
+    console.error("Error fetching schedule details:", error);
+    toast.error("Failed to load schedule details.");
+  }
+};
   const handleAddUser = () => {
     setModalMode("add");
     setIsModalOpen(true);
@@ -544,10 +572,10 @@ const HousekeepingTeamMembersSchedule = () => {
                                     <strong>Employee:</strong>{" "}
                                     {range.employeeName}
                                   </div>
-                                  <div className="text-sm text-gray-700">
+                                  {/* <div className="text-sm text-gray-700">
                                     <strong>Manager:</strong> {range.manager}
-                                  </div>
-                                  <div className="text-sm text-gray-700">
+                                  </div> */}
+                                  {/* <div className="text-sm text-gray-700">
                                     <strong>Status:</strong>{" "}
                                     <span
                                       className={`font-semibold ${
@@ -558,7 +586,7 @@ const HousekeepingTeamMembersSchedule = () => {
                                     >
                                       {range.isActive}
                                     </span>
-                                  </div>
+                                  </div> */}
                                 </div>
                               ))}
                           </div>
@@ -606,7 +634,7 @@ const HousekeepingTeamMembersSchedule = () => {
 
         {modalMode === "view" && selectedUser && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <DetalisFormatted title="Name" detail={selectedUser.name} />
+            <DetalisFormatted title="Name" detail={`${selectedUser?.adminLead?.firstName} ${selectedUser?.adminLead?.lastName}`} />
             <DetalisFormatted
               title="Member Status"
               gap={"w-full"}
@@ -614,12 +642,12 @@ const HousekeepingTeamMembersSchedule = () => {
             />
             <DetalisFormatted
               title="Unit Name"
-              detail={selectedUser.location?.unitNo}
+              detail={selectedUser?.unitNo}
             />
             <DetalisFormatted
               title="Building Name"
               gap={"w-full"}
-              detail={selectedUser.location?.building?.buildingName}
+              detail={selectedUser?.buildingName}
             />
 
             {/* DateRange picker view-only */}

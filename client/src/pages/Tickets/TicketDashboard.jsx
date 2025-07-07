@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import FinanceCard from "../../components/FinanceCard";
 import { CircularProgress } from "@mui/material";
 import { useState } from "react";
+import dayjs from "dayjs";
 
 const TicketDashboard = () => {
   const navigate = useNavigate();
@@ -21,7 +22,10 @@ const TicketDashboard = () => {
 
   const roles = auth.user.role.map((role) => role.roleTitle);
   const depts = auth.user.departments.map((dept) => dept.name);
+  const [timeFilter, setTimeFilter] = useState("Yearly");
   const [filteredTotal, setFilteredTotal] = useState(0);
+  const [dateLabel, setDateLabel] = useState("");
+
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
     queryFn: async () => {
@@ -51,26 +55,55 @@ const TicketDashboard = () => {
   });
   const totalTickets = ticketsData.length || 0;
 
+  const todayDate = dayjs().startOf("day");
+
   const ticketsFilteredData = {
-    openTickets: ticketsData.filter((item) => item.status === "Open").length,
-    closedTickets: ticketsData.filter((item) => item.status === "Closed")
-      .length,
-    pendingTickets: ticketsData.filter((item) => item.status === "Pending")
-      .length,
-    acceptedTickets: ticketsData
-      .filter((item) => item?.accepted?.acceptedBy?._id === auth.user?._id)
-      .filter((item) => item.status === "In Progress").length,
-    assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0)
-      .length,
+    openTickets: ticketsData.filter(
+      (item) =>
+        item.status === "Open" && dayjs(item.createdAt).isSame(todayDate, "day")
+    ).length,
+
+    closedTickets: ticketsData.filter(
+      (item) =>
+        item.status === "Closed" &&
+        dayjs(item.createdAt).isSame(todayDate, "day")
+    ).length,
+
+    pendingTickets: ticketsData.filter(
+      (item) =>
+        item.status === "Pending" &&
+        dayjs(item.createdAt).isSame(todayDate, "day")
+    ).length,
+
+    acceptedTickets: ticketsData.filter(
+      (item) =>
+        item?.acceptedBy?._id === auth.user?._id &&
+        item.status === "In Progress" &&
+        dayjs(item.createdAt).isSame(todayDate, "day")
+    ).length,
+
+    assignedTickets: ticketsData.filter(
+      (item) =>
+        item.assignees?.length > 0 &&
+        dayjs(item.createdAt).isSame(todayDate, "day")
+    ).length,
+
     escalatedTickets: ticketsData.filter(
       (item) =>
-        auth.user.departments.includes(item.raisedToDepartment) &&
-        item.status === "Escalated"
+        auth.user.departments.includes(item.raisedToDepartment?._id) &&
+        item.status === "Escalated" &&
+        dayjs(item.createdAt).isSame(todayDate, "day")
     ).length,
+
     averagePerformance: (
-      (ticketsData.filter((item) => item.status === "Closed").length /
-        ticketsData.length) *
-      100
+      (ticketsData.filter(
+        (item) =>
+          item.status === "Closed" &&
+          dayjs(item.createdAt).isSame(todayDate, "day")
+      ).length /
+        ticketsData.filter((item) =>
+          dayjs(item.createdAt).isSame(todayDate, "day")
+        ).length || 1) * 100
     ).toFixed(0),
   };
 
@@ -185,13 +218,16 @@ const TicketDashboard = () => {
           layout={1}
           border
           padding
-          title={"Overall Department Raised Tickets"}
+          title={`Overall Department Raised Tickets - ${dateLabel}`}
           TitleAmount={`TOTAL TICKETS : ${filteredTotal}`}
         >
           {!isLoading ? (
             <AreaGraph
               responseData={ticketsData}
               onTotalChange={setFilteredTotal}
+              timeFilter={timeFilter}
+              setTimeFilter={setTimeFilter}
+              onDateLabelChange={setDateLabel}
             />
           ) : (
             <div className="h-72 flex items-center justify-center">
@@ -238,16 +274,9 @@ const TicketDashboard = () => {
           layout={1}
           padding
           border
-          titleLabel={`${new Date(
-            new Date().getFullYear(),
-            new Date().getMonth() - 1
-          ).toLocaleString("default", { month: "short" })}-${new Date(
-            new Date().getFullYear(),
-            new Date().getMonth() - 1
-          )
-            .getFullYear()
-            .toString()
-            .slice(-2)}`}
+          titleLabel={`${new Date().toLocaleString("default", {
+            month: "short",
+          })}-${new Date().getFullYear().toString().slice(-2)}`}
           title={"Total Tickets"}
         >
           <DonutChart
@@ -283,11 +312,12 @@ const TicketDashboard = () => {
             tooltipValue={donutSeries}
             onSliceClick={(index) => {
               const clickedDepartment = masterDepartments[index];
+              console.log("dep : ", clickedDepartment);
 
               const departmentTickets =
                 filterDepartmentTickts(clickedDepartment);
 
-              navigate("department-wise-tickets", {
+              navigate(`manage-tickets/${clickedDepartment}`, {
                 state: { departmentTickets },
               });
             }}
@@ -305,11 +335,11 @@ const TicketDashboard = () => {
             highlightNegativePositive={true}
             disableColorChange
             descriptionData={[
-              {
-                title: "MT. AV. Performance",
-                value: `${ticketsFilteredData.averagePerformance}%`,
-                route: "/app/tickets/manage-tickets",
-              },
+              // {
+              //   title: "MT. AV. Performance",
+              //   value: `${ticketsFilteredData.averagePerformance}%`,
+              //   route: "/app/tickets/manage-tickets",
+              // },
               {
                 title: "Immediate Attended",
                 value: todayTicketseries[0],

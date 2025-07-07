@@ -939,7 +939,7 @@ const FinanceDashboard = () => {
   ];
 
   return (
-    <div>
+    <div className="flex flex-col gap-4">
       {techWidgets.map((section, index) => (
         <WidgetSection key={index} layout={section?.layout}>
           {section?.widgets}

@@ -5,6 +5,7 @@ const humanDate = (date) => {
 
   try {
     const parsedDate = new Date(date);
+
     if (isNaN(parsedDate)) return "N/A";
 
     // return new Intl.DateTimeFormat("en-GB", {
@@ -15,6 +16,7 @@ const humanDate = (date) => {
 
     return dayjs(parsedDate).format("DD-MM-YYYY");
   } catch (error) {
+    console.log("error");
     return "N/A";
   }
 };

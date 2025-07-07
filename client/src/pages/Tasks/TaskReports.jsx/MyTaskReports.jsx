@@ -8,6 +8,7 @@ import humanTime from "../../../utils/humanTime";
 import PageFrame from "../../../components/Pages/PageFrame";
 import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const MyTaskReports = () => {
   const axios = useAxiosPrivate();
@@ -92,9 +93,9 @@ const myTaskReportsColumns = [
             <DetalisFormatted title="Completed Date" detail={selectedTask.completedDate} />
             <DetalisFormatted title="Completed Time" detail={selectedTask.completedTime} />
             <DetalisFormatted title="Department" detail={selectedTask.department} />
-            <DetalisFormatted title="Priority" detail={selectedTask.priority} />
+            {/* <DetalisFormatted title="Priority" detail={selectedTask.priority} /> */}
             <DetalisFormatted title="Status" detail={selectedTask.status} />
-            <DetalisFormatted title="Remarks" detail={selectedTask.remarks} />
+            {/* <DetalisFormatted title="Remarks" detail={selectedTask.remarks} /> */}
           </div>
         ) : (
           <CircularProgress />

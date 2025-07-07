@@ -11,6 +11,7 @@ import UploadFileInput from "../../../../components/UploadFileInput";
 import { toast } from "sonner";
 import humanDate from "../../../../utils/humanDateForamt";
 import PrimaryButton from "../../../../components/PrimaryButton";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 
 const DirectorData = () => {
   const location = useLocation();
@@ -30,6 +31,7 @@ const DirectorData = () => {
     setValue,
     formState: { errors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       type: isCompany ? "companyKyc" : "directorKyc",
       nameOfDirector: name,
@@ -103,7 +105,24 @@ const DirectorData = () => {
 
   const columns = [
     { field: "srno", headerName: "Sr No", width: 100 },
-    { field: "label", headerName: "Document", flex: 1 },
+    {
+      field: "label",
+      headerName: "Document",
+      flex: 1,
+      cellRenderer: (params) =>
+        params.value ? (
+          <a
+            href={params.data?.documentLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline cursor-pointer"
+          >
+            {params.value}
+          </a>
+        ) : (
+          <span className="text-gray-400 italic">No Link</span>
+        ),
+    },
     {
       field: "uploadedDate",
       headerName: "Uploaded Date",
@@ -115,23 +134,6 @@ const DirectorData = () => {
       headerName: "Last Modified",
       flex: 1,
       cellRenderer: (params) => humanDate(params.value),
-    },
-    {
-      field: "documentLink",
-      headerName: "View Link",
-      flex: 1,
-      cellRenderer: (params) =>
-        params.value ? (
-          <a
-            href={params.value}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary underline cursor-pointer">
-            View
-          </a>
-        ) : (
-          <span className="text-gray-400 italic">No Link</span>
-        ),
     },
   ];
 
@@ -157,7 +159,8 @@ const DirectorData = () => {
           setOpenModal(false);
           reset();
         }}
-        title={"Add Document"}>
+        title={"Add Document"}
+      >
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 gap-4">
             {!isCompany && (
@@ -194,12 +197,21 @@ const DirectorData = () => {
             <Controller
               name="documentName"
               control={control}
+              rules={{
+                required: "Document Name is required",
+                validate: {
+                  isAlphanumeric,
+                  noOnlyWhitespace,
+                },
+              }}
               render={({ field }) => (
                 <TextField
                   {...field}
                   label={"Document Name"}
                   fullWidth
                   size="small"
+                  error={!!errors.documentName}
+                  helperText={errors?.documentName?.message}
                 />
               )}
             />
