@@ -26,9 +26,10 @@ const AdminClientsData = () => {
     },
   });
   const handleClickRow = (clientData) => {
+   
     dispatch(setSelectedClient(clientData));
     navigate(
-      `/app/dashboard/admin-dashboard/client-members/client-members-data/${clientData.clientName}`
+      `/app/dashboard/admin-dashboard/mix-bag/client-members/client-members-data/${encodeURIComponent(clientData.clientName)}`
     );
   };
 

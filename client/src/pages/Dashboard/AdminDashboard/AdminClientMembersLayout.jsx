@@ -13,15 +13,15 @@ const AdminClientMembersLayout = () => {
   ];
 
   useEffect(() => {
-    const basePath = `/app/dashboard/admin-dashboard/client-members/client-members-data`;
+    const basePath = `/app/dashboard/admin-dashboard/mix-bag/client-members/client-members-data`;
 
     const pathParts = location.pathname.split("/").filter(Boolean); // remove empty parts
     const clientNameIndex = pathParts.indexOf("client-members-data") + 1;
     const clientName = pathParts[clientNameIndex];
-
     const isAtClientRoot =
       location.pathname === `${basePath}/${clientName}`;
 
+      
     if (isAtClientRoot) {
       navigate(`${basePath}/${clientName}/client-details`, { replace: true });
     }
