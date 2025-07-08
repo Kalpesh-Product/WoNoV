@@ -14,11 +14,11 @@ const VisitorTeamMembers = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "/api/tickets/get-team-members/6798bae6e469e809084e24a4"
+          "/api/visitors/fetch-team-members?dept=6798bae6e469e809084e24a4"
         );
         return response.data
           .filter((m) => m._id !== auth.user._id)
-          .filter((m) => m.department.includes("Administration"));
+          .filter((m) => m.department.includes("Administration") || m.department.includes("Top Management"));
       } catch (error) {
         console.error(error);
       }

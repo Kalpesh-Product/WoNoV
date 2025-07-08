@@ -909,7 +909,8 @@ const heatmapData = timeSlots.map((slot, slotIndex) => ({
           />
         )),
     },
-    {
+...(isWidgetAllowed ? [ 
+  {
       layout: 3,
       widgets: [
         <DataCard
@@ -972,8 +973,42 @@ const heatmapData = timeSlots.map((slot, slotIndex) => ({
         />,
       ],
     },
-
-...(isWidgetAllowed ? [ 
+     {
+      layout: 2,
+      widgets: [
+        <MuiTable
+          Title={"Internal Ongoing Meeting Hourly"}
+          // rows={meetingInternalRows}
+          rows={[
+            ...meetingsInternal.map((item, index) => ({
+              id: index + 1,
+              roomName: item.roomName,
+              meetingType: item.meetingType,
+              endTime: item.endTime,
+              unitName: item.location?.unitName,
+            })),
+          ]}
+          columns={meetingColumns}
+          rowsToDisplay={5}
+          scroll={true}
+        />,
+        <MuiTable
+          Title={"External Ongoing Meeting Hourly"}
+          rows={[
+            ...meetingsExternal.map((item, index) => ({
+              id: index + 1,
+              roomName: item.roomName,
+              meetingType: item.meetingType,
+              endTime: item.endTime,
+              unitName: item.location?.unitName,
+            })),
+          ]}
+          columns={meetingColumns}
+          rowsToDisplay={5}
+          scroll={true}
+        />,
+      ],
+    },
     {
       layout: 2,
       widgets: [
@@ -1062,42 +1097,7 @@ const heatmapData = timeSlots.map((slot, slotIndex) => ({
         </WidgetSection>,
       ],
     },
-       {
-      layout: 2,
-      widgets: [
-        <MuiTable
-          Title={"Internal Ongoing Meeting Hourly"}
-          // rows={meetingInternalRows}
-          rows={[
-            ...meetingsInternal.map((item, index) => ({
-              id: index + 1,
-              roomName: item.roomName,
-              meetingType: item.meetingType,
-              endTime: item.endTime,
-              unitName: item.location?.unitName,
-            })),
-          ]}
-          columns={meetingColumns}
-          rowsToDisplay={5}
-          scroll={true}
-        />,
-        <MuiTable
-          Title={"External Ongoing Meeting Hourly"}
-          rows={[
-            ...meetingsExternal.map((item, index) => ({
-              id: index + 1,
-              roomName: item.roomName,
-              meetingType: item.meetingType,
-              endTime: item.endTime,
-              unitName: item.location?.unitName,
-            })),
-          ]}
-          columns={meetingColumns}
-          rowsToDisplay={5}
-          scroll={true}
-        />,
-      ],
-    }] : [])
+      ] : [])
    
    
   ];
