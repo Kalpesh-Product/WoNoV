@@ -300,7 +300,8 @@ const fetchPayrolls = async (req, res, next) => {
   const { company } = req;
 
   try {
-    const currentMonthStart = startOfMonth(new Date());
+    // const currentMonthStart = startOfMonth(new Date());
+    const currentMonthStart = startOfMonth(new Date()).toISOString();
 
     // Fetch all users
     const allUsers = await User.find({ company, isActive: true })
@@ -343,7 +344,11 @@ const fetchPayrolls = async (req, res, next) => {
       const userPayrolls = payrollMap[userId] || [];
 
       const hasCurrentMonth = userPayrolls.some((entry) =>
-        isSameMonth(startOfMonth(new Date(entry.month)), currentMonthStart)
+        // isSameMonth(startOfMonth(new Date(entry.month)), currentMonthStart)
+        isSameMonth(
+          startOfMonth(new Date(entry.month)).toISOString(),
+          currentMonthStart
+        )
       );
 
       if (!hasCurrentMonth) {
