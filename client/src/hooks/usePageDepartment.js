@@ -63,7 +63,6 @@ const usePageDepartment = () => {
   );
 
   if (isManagementAccess && Array.isArray(fetchedDepartments)) {
-
     const matchedDept = fetchedDepartments.find((deptObj) =>
       deptObj?.department?.name?.toLowerCase()?.includes(section)
     );
@@ -83,6 +82,7 @@ const usePageDepartment = () => {
   );
 
   if (matchedUserDept) {
+    console.log("matched dept", matchedUserDept);
     return matchedUserDept;
   } else {
     console.warn(

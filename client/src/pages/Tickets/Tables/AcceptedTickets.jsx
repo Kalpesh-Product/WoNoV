@@ -183,15 +183,15 @@ const AcceptedTickets = ({ title, departmentId }) => {
   };
 
   const recievedTicketsColumns = [
-    { field: "srNo", headerName: "Sr No" },
+    { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "acceptedBy", headerName: "Accepted By" },
     { field: "raisedUser", headerName: "Raised By" },
     {
       field: "raisedToDepartment",
       headerName: "From Department",
-      width: 100,
+     width:100,
     },
-    { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
+    { field: "ticketTitle", headerName: "Ticket Title",},
     {
       field: "status",
       headerName: "Status",

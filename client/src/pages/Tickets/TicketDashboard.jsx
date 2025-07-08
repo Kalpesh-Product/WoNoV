@@ -190,6 +190,7 @@ const TicketDashboard = () => {
   //Live tickets
   const todayPriorityCountMap = {};
 
+
   todayTickets.forEach((item) => {
     const priority = item.priority.toLowerCase();
     if (priority) {
@@ -202,6 +203,7 @@ const TicketDashboard = () => {
   const todayTicketseries = todayPriorityOrder.map(
     (priority) => todayPriorityCountMap[priority] || 0
   );
+
 
   const filterDepartmentTickts = (department) => {
     const tickets = currentMonthTickets.filter(
@@ -330,7 +332,7 @@ const TicketDashboard = () => {
       widgets: [
         <div className="rounded-md">
           <FinanceCard
-            cardTitle="Live Tickets"
+            cardTitle="Priority Wise Tickets"
             timePeriod="Today"
             highlightNegativePositive={true}
             disableColorChange
@@ -341,17 +343,17 @@ const TicketDashboard = () => {
               //   route: "/app/tickets/manage-tickets",
               // },
               {
-                title: "Immediate Attended",
+                title: "High",
                 value: todayTicketseries[0],
                 route: "/app/tickets/manage-tickets",
               },
               {
-                title: "Medium Attended",
+                title: "Medium",
                 value: todayTicketseries[1],
                 route: "/app/tickets/manage-tickets",
               },
               {
-                title: "Low Attended",
+                title: "Low",
                 value: todayTicketseries[2],
                 route: "/app/tickets/manage-tickets",
               },
