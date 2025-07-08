@@ -61,7 +61,7 @@ const PayrollReports = () => {
             empId: item.empId,
             employeeName: item.name,
             status: item?.status,
-            totalSalary: inrFormat(item?.totalSalary),
+            totalSalary: item?.totalSalary ? inrFormat(item?.totalSalary) : 0,
             departmentName: item.departments?.map(
               (item) => item.name || "null"
             ),
@@ -121,10 +121,10 @@ const PayrollReports = () => {
             <DetalisFormatted
               title="Payslip"
               detail={
-                selectedEmployee?.payslip?.[0] ? (
+                selectedEmployee?.payslip ? (
                   <a
                     className="text-primary underline cursor-pointer"
-                    href={selectedEmployee.payslip[0]}
+                    href={selectedEmployee.payslip}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
