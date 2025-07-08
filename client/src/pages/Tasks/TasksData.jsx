@@ -331,25 +331,25 @@ const myTasksData = [
 
 const myTodayMeetingsColumns = [
   { id: "id", label: "Sr No" },
-  { id: "meeting", label: "Meeting" },
+  { id: "meeting", label: "Title" },
   { id: "location", label: "Location" },
-  {
-    id: "participants",
-    label: "Participants",
-    align: "center",
-    renderCell: (row) => (
-      <AvatarGroup max={4}>
-        {row.participants.map((participant, index) => (
-          <Avatar
-            key={index}
-            alt={`${participant?.firstName} ${participant?.lastName}`}
-            src={participant?.avatar}
-            sx={{ width: 23, height: 23 }}
-          />
-        ))}
-      </AvatarGroup>
-    ),
-  },
+  // {
+  //   id: "participants",
+  //   label: "Participants",
+  //   align: "center",
+  //   renderCell: (row) => (
+  //     <AvatarGroup max={4}>
+  //       {row.participants.map((participant, index) => (
+  //         <Avatar
+  //           key={index}
+  //           alt={`${participant?.firstName} ${participant?.lastName}`}
+  //           src={participant?.avatar}
+  //           sx={{ width: 23, height: 23 }}
+  //         />
+  //       ))}
+  //     </AvatarGroup>
+  //   ),
+  // },
   { id: "time", label: "Time" },
 ];
 
