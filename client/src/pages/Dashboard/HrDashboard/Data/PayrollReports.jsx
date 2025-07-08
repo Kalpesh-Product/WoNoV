@@ -24,79 +24,79 @@ const PayrollReports = () => {
       try {
         const response = await axios.get("/api/payroll/get-payrolls");
 
-    //   const res = [...response.data, {
-    //     "employeeId": "67b83885daad0f7bab2f189a",
-    //     "empId": "B00077",
-    //     "name": "Aiwinraj KS",
-    //     "email": "aiwinraj.wono@gmail.com",
-    //     "departments": [
-    //         {
-    //             "_id": "6798ba9de469e809084e2494",
-    //             "departmentId": "D-0001",
-    //             "name": "Tech",
-    //             "__v": 0,
-    //             "templates": [
-    //                 {
-    //                     "name": "Assets",
-    //                     "documentLink": "https://res.cloudinary.com/dua5bpiab/raw/upload/v1751005481/BizNest/departments/Tech/templates/Tech%20Assets.xlsx",
-    //                     "documentId": "BizNest/departments/Tech/templates/Tech Assets.xlsx",
-    //                     "isActive": true,
-    //                     "createdAt": "2025-06-27T06:24:42.645Z",
-    //                     "updatedAt": null,
-    //                     "_id": "685e392a0334e479f71db057"
-    //                 },
-    //                 {
-    //                     "name": "Expense And Budget",
-    //                     "documentLink": "https://res.cloudinary.com/dua5bpiab/raw/upload/v1751005497/BizNest/departments/Tech/templates/Tech%20Budget%20And%20Expense.xlsx",
-    //                     "documentId": "BizNest/departments/Tech/templates/Tech Budget And Expense.xlsx",
-    //                     "isActive": true,
-    //                     "createdAt": "2025-06-27T06:24:58.714Z",
-    //                     "updatedAt": null,
-    //                     "_id": "685e393a0334e479f71db05c"
-    //                 },
-    //                 {
-    //                     "name": "Vendors",
-    //                     "documentLink": "https://res.cloudinary.com/dua5bpiab/raw/upload/v1751522858/BizNest/departments/Tech/templates/Tech%20Vendor%20Template.xlsx",
-    //                     "documentId": "BizNest/departments/Tech/templates/Tech Vendor Template.xlsx",
-    //                     "isActive": true,
-    //                     "createdAt": "2025-07-03T06:07:38.921Z",
-    //                     "updatedAt": null,
-    //                     "_id": "68661e2a8368244f35e94669"
-    //                 }
-    //             ]
-    //         }
-    //     ],
-    //     "role": [
-    //         {
-    //             "_id": "6798c001e469e809084e2500",
-    //             "roleTitle": "Tech Employee",
-    //             "roleID": "ROLE_TECH_EMPLOYEE",
-    //             "__v": 0
-    //         }
-    //     ],
-    //     "month": "2025-07-01T00:00:00.000Z",
-    //     "totalSalary": 0,
-    //     "reimbursment": 0,
-    //     "deductions": [],
-    //     "status": "Pending",
-    //     "payslip": null
-    // },]
+      const res = [...response.data, {
+        "employeeId": "67b83885daad0f7bab2f189a",
+        "empId": "B00077",
+        "name": "Aiwinraj KS",
+        "email": "aiwinraj.wono@gmail.com",
+        "departments": [
+            {
+                "_id": "6798ba9de469e809084e2494",
+                "departmentId": "D-0001",
+                "name": "Tech",
+                "__v": 0,
+                "templates": [
+                    {
+                        "name": "Assets",
+                        "documentLink": "https://res.cloudinary.com/dua5bpiab/raw/upload/v1751005481/BizNest/departments/Tech/templates/Tech%20Assets.xlsx",
+                        "documentId": "BizNest/departments/Tech/templates/Tech Assets.xlsx",
+                        "isActive": true,
+                        "createdAt": "2025-06-27T06:24:42.645Z",
+                        "updatedAt": null,
+                        "_id": "685e392a0334e479f71db057"
+                    },
+                    {
+                        "name": "Expense And Budget",
+                        "documentLink": "https://res.cloudinary.com/dua5bpiab/raw/upload/v1751005497/BizNest/departments/Tech/templates/Tech%20Budget%20And%20Expense.xlsx",
+                        "documentId": "BizNest/departments/Tech/templates/Tech Budget And Expense.xlsx",
+                        "isActive": true,
+                        "createdAt": "2025-06-27T06:24:58.714Z",
+                        "updatedAt": null,
+                        "_id": "685e393a0334e479f71db05c"
+                    },
+                    {
+                        "name": "Vendors",
+                        "documentLink": "https://res.cloudinary.com/dua5bpiab/raw/upload/v1751522858/BizNest/departments/Tech/templates/Tech%20Vendor%20Template.xlsx",
+                        "documentId": "BizNest/departments/Tech/templates/Tech Vendor Template.xlsx",
+                        "isActive": true,
+                        "createdAt": "2025-07-03T06:07:38.921Z",
+                        "updatedAt": null,
+                        "_id": "68661e2a8368244f35e94669"
+                    }
+                ]
+            }
+        ],
+        "role": [
+            {
+                "_id": "6798c001e469e809084e2500",
+                "roleTitle": "Tech Employee",
+                "roleID": "ROLE_TECH_EMPLOYEE",
+                "__v": 0
+            }
+        ],
+        "month": "2025-05-31T00:00:00.000Z",
+        "totalSalary": 0,
+        "reimbursment": 0,
+        "deductions": [],
+        "status": "Pending",
+        "payslip": null
+    },]
 
-    //   const uniquePayrollMap = new Map();
+      const uniquePayrollMap = new Map();
 
-    //   res.forEach((payroll) => {
-    //     const monthKey = dayjs(payroll.month).format("MM-YYYY");
+      res.forEach((payroll) => {
+        const monthKey = dayjs(payroll.month).format("MM-YYYY");
 
-    //     // Only keep the first encountered entry for that monthKey
-    //     if (!uniquePayrollMap.has(`${payroll.employeeId}-${monthKey}`)) {
-    //       uniquePayrollMap.set(`${payroll.employeeId}-${monthKey}`, payroll);
-    //     }
-    //   });
+        // Only keep the first encountered entry for that monthKey
+        if (!uniquePayrollMap.has(`${payroll.employeeId}-${monthKey}`)) {
+          uniquePayrollMap.set(`${payroll.employeeId}-${monthKey}`, payroll);
+        }
+      });
 
-    //   const filteredData = Array.from(uniquePayrollMap.values());
+      const filteredData = Array.from(uniquePayrollMap.values());
 
       
-        return response.data
+        return filteredData
       } catch (error) {
         throw new Error(
           error.response?.data?.message || "Failed to fetch employees"
