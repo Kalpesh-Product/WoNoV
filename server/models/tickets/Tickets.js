@@ -65,6 +65,8 @@ const ticketsSchema = new mongoose.Schema(
       },
     },
     resolvedDate: Date,
+    assignedAt: Date,
+    escalatededAt: Date,
     company: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",

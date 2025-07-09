@@ -70,12 +70,17 @@ const EscalatedTickets = ({ title, departmentId }) => {
               : null;
 
           const raisedBy = `${ticket.raisedBy?.firstName} ${ticket.raisedBy?.lastName}`;
-          const acceptedBy = `${ticket.acceptedBy?.firstName} ${ticket.acceptedBy?.lastName}`;
+          const acceptedBy = ticket.acceptedBy ? `${ticket.acceptedBy?.firstName} ${ticket.acceptedBy?.lastName}` : "N/A";
+ 
           const escalatedTicket = {
             srno: index + 1,
             id: ticket._id,
             raisedBy: raisedBy || "Unknown",
-            acceptedBy: acceptedBy || "Unknown",
+            description: ticket.description || "N/A",
+            priority: ticket.priority,
+            raisedAt: ticket.createdAt || "N/A",
+            acceptedBy: acceptedBy,
+            raisedToDepartment: ticket.raisedToDepartment.name || "N/A",
             selectedDepartment:
               ticket.raisedBy?.departments.map((dept) => dept.name) || "N/A",
             ticketTitle: ticket?.ticket || "No Title",
@@ -86,6 +91,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
                 ? "Ticket Accepted"
                 : "N/A",
             status: ticket.status || "Pending",
+            acceptedAt: ticket.acceptedAt || "N/A",
             escalatedStatus,
             escalatedTo:
               ticket.escalatedTo
@@ -242,7 +248,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
               />
               <DetalisFormatted
                 title="Raised At"
-                detail={humanDate(new Date(selectedTicket.raisedDate))}
+                detail={humanDate(new Date(selectedTicket.raisedAt))}
               />
               <DetalisFormatted
                 title="From Department"
@@ -267,7 +273,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
               />
               <DetalisFormatted
                 title="Accepted at"
-                detail={selectedTicket?.acceptedAt || "N/A"}
+                detail={humanDate(selectedTicket?.acceptedAt) || "N/A"}
               />
               <DetalisFormatted
                 title="Escalated To"

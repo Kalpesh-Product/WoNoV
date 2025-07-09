@@ -772,8 +772,20 @@ const bulkInsertUsers = async (req, res, next) => {
 const getAssignees = async (req, res, next) => {
   try {
     const { company, departments, user } = req;
+    const { deptId } = req.query;
 
-    const departmentIds = departments.map((dept) => dept._id);
+    let departmentIds = [];
+
+    if (deptId && !mongoose.Types.ObjectId.isValid(deptId)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid Department ID provided" });
+    }
+    if (!deptId) {
+      departmentIds = departments.map((dept) => dept._id);
+    } else {
+      departmentIds = [...departmentIds, deptId];
+    }
 
     const team = await User.find({
       _id: { $ne: user },

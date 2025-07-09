@@ -845,7 +845,11 @@ const assignTicket = async (req, res, next) => {
     // Update the ticket by adding the assignees and setting status to "In Progress"
     const updatedTicket = await Tickets.findOneAndUpdate(
       { _id: ticketId },
-      { $addToSet: { assignees: assignees }, status: "In Progress" },
+      {
+        $addToSet: { assignees: assignees },
+        status: "In Progress",
+        assignedAt: new Date(),
+      },
       { new: true }
     );
 
@@ -1067,7 +1071,7 @@ const escalateTicket = async (req, res, next) => {
       ticketId,
       {
         $push: { escalatedTo: { $each: escalatedTicketIds } },
-        $set: { status: "Escalated" },
+        $set: { status: "Escalated", escalatededAt: new Date() },
       },
       { new: true }
     );
