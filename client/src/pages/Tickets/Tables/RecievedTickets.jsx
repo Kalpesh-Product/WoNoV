@@ -115,7 +115,7 @@ const RecievedTickets = ({ title, departmentId }) => {
 
   const fetchSubOrdinates = async () => {
     try {
-      const response = await axios.get("/api/users/assignees");
+      const response = await axios.get(`/api/users/assignees?deptId=${departmentId}`);
 
       return response.data;
     } catch (error) {

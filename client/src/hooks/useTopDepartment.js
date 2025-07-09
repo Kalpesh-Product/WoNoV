@@ -10,9 +10,9 @@ export function useTopDepartment({
 
   const loggedInUserId = auth.user?._id.toString();
   const allowedUserIds = [
-    "67b83885daad0f7bab2f184f", // abrar
-    "67b83885daad0f7bab2f1852", // kashif
-    "67b83885daad0f7bab2f1864", // kalpesh
+    "67b83885daad0f7bab2f184f", // Abrar
+    "67b83885daad0f7bab2f1852", // Kashif
+    "67b83885daad0f7bab2f1864", // Kalpesh
   ];
 
   const topUserId = allowedUserIds.find((id) => loggedInUserId === id);

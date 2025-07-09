@@ -31,7 +31,6 @@ const TicketDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(`/api/tickets/get-all-tickets`);
-
         return response.data;
       } catch (error) {
         console.error("Error fetching tickets:", error);
@@ -58,15 +57,16 @@ const TicketDashboard = () => {
   const todayDate = dayjs().startOf("day");
 
   const ticketsFilteredData = {
-    openTickets: ticketsData.filter(
-      (item) =>
+    openTickets: ticketsData.filter((item) => {
+      return (
         item.status === "Open" && dayjs(item.createdAt).isSame(todayDate, "day")
-    ).length,
+      );
+    }).length,
 
     closedTickets: ticketsData.filter(
       (item) =>
         item.status === "Closed" &&
-        dayjs(item.createdAt).isSame(todayDate, "day")
+        dayjs(item?.closedAt).isSame(todayDate, "day")
     ).length,
 
     pendingTickets: ticketsData.filter(
@@ -79,21 +79,25 @@ const TicketDashboard = () => {
       (item) =>
         item?.acceptedBy?._id === auth.user?._id &&
         item.status === "In Progress" &&
-        dayjs(item.createdAt).isSame(todayDate, "day")
+        dayjs(item?.acceptedAt).isSame(todayDate, "day")
     ).length,
 
     assignedTickets: ticketsData.filter(
       (item) =>
         item.assignees?.length > 0 &&
-        dayjs(item.createdAt).isSame(todayDate, "day")
+        dayjs(item?.assignedAt).isSame(todayDate, "day")
     ).length,
 
-    escalatedTickets: ticketsData.filter(
-      (item) =>
-        auth.user.departments.includes(item.raisedToDepartment?._id) &&
+    escalatedTickets: ticketsData.filter((item) => {
+
+      const depts = auth.user.departments.map((dept)=>dept._id.toString())
+      
+      const matchedDept = depts.some((dept)=> dept === item.raisedToDepartment?._id.toString())
+
+       return  matchedDept &&
         item.status === "Escalated" &&
-        dayjs(item.createdAt).isSame(todayDate, "day")
-    ).length,
+        dayjs(item?.escalatededAt).isSame(todayDate, "day");
+    }).length,
 
     averagePerformance: (
       (ticketsData.filter(
@@ -190,7 +194,6 @@ const TicketDashboard = () => {
   //Live tickets
   const todayPriorityCountMap = {};
 
-
   todayTickets.forEach((item) => {
     const priority = item.priority.toLowerCase();
     if (priority) {
@@ -203,7 +206,6 @@ const TicketDashboard = () => {
   const todayTicketseries = todayPriorityOrder.map(
     (priority) => todayPriorityCountMap[priority] || 0
   );
-
 
   const filterDepartmentTickts = (department) => {
     const tickets = currentMonthTickets.filter(
