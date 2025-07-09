@@ -8,11 +8,22 @@ export function useTopDepartment({
 } = {}) {
   const { auth } = useAuth();
 
-  const baseTopUserId = "67b83885daad0f7bab2f184f";
+  const loggedInUserId = auth.user?._id.toString();
+  const allowedUserIds = [
+    "67b83885daad0f7bab2f184f", // abrar
+    "67b83885daad0f7bab2f1852", // kashif
+    "67b83885daad0f7bab2f1864", // kalpesh
+  ];
+
+  const topUserId = allowedUserIds.find((id) => loggedInUserId === id);
+
+  const baseTopUserId = topUserId;
   const baseTopDepartmentIds = []; // Add base top-department IDs here if any
 
   const currentUserId = auth.user?._id;
-  const currentUserName = `${auth.user?.firstName || ""} ${auth.user?.lastName || ""}`.trim();
+  const currentUserName = `${auth.user?.firstName || ""} ${
+    auth.user?.lastName || ""
+  }`.trim();
 
   // Combine and memoize user and department ID lists
   const topUserIds = useMemo(() => {
@@ -20,7 +31,9 @@ export function useTopDepartment({
   }, [additionalTopUserIds]);
 
   const topDepartmentIds = useMemo(() => {
-    return Array.from(new Set([...baseTopDepartmentIds, ...additionalTopDepartmentIds]));
+    return Array.from(
+      new Set([...baseTopDepartmentIds, ...additionalTopDepartmentIds])
+    );
   }, [additionalTopDepartmentIds]);
 
   // Get all department IDs of current user
