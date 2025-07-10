@@ -250,6 +250,7 @@ const fetchPayrolls = async (req, res, next) => {
   const { company } = req;
 
   try {
+    console.log("data");
     const currentMonthStart = startOfMonth(new Date()).toISOString();
 
     // Fetch all users
@@ -288,6 +289,8 @@ const fetchPayrolls = async (req, res, next) => {
     // Final flattened list
     const flattenedResponse = [];
 
+    console.log("data", allPayrolls);
+
     for (const user of allUsers) {
       const userId = user._id.toString();
       const userPayrolls = payrollMap[userId] || [];
@@ -304,6 +307,7 @@ const fetchPayrolls = async (req, res, next) => {
         const payrollMonthStart = startOfMonth(
           new Date(entry.month)
         ).toISOString();
+        console.log("entry", entry.month);
         return payrollMonthStart === currentMonthStart;
       });
 
