@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Tabs } from "@mui/material";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import useIsMobile from "../../hooks/useIsMobile"; // adjust the path
+import { AnimatePresence, motion } from "motion/react";
 
 const TabLayout = ({
   basePath,
