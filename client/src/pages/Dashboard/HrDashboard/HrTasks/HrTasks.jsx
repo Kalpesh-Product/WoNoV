@@ -29,6 +29,8 @@ const HrTasks = () => {
 
   const selectedMonth = useSelector((state) => state.hr.selectedMonth);
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
+
+  console.log("tasks data", selectedMonth, tasksRawData)
   const yearArray = tasksRawData.map((item)=>((item.tasks?.map((task)=>task.assignedDate)[0])))
 
   const currentMonthIndex = calendarMonths.findIndex(

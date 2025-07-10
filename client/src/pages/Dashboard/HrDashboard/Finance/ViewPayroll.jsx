@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import { useState, useRef } from "react";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import humanTime from "../../../../utils/humanTime";
@@ -18,9 +18,12 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { queryClient } from "../../../../main";
 import { toast } from "sonner";
 import StatusChip from "../../../../components/StatusChip";
+import dayjs from "dayjs";
+import html2pdf from "html2pdf.js";
 
 const ViewPayroll = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const payslipRef = useRef();
   const [openModal, setOpenModal] = useState(false);
   const payrollColumns = [
     { field: "srNo", headerName: "SrNo", flex: 1 },
@@ -98,20 +101,24 @@ const ViewPayroll = () => {
     { field: "leaveType", headerName: "Leave Type" },
     { field: "leavePeriod", headerName: "Leave Period" },
     { field: "description", headerName: "Description", flex: 1 },
-    { field: "status", headerName: "Status", cellRenderer : (params)=> (
-      <StatusChip status={params.value} />
-    ) },
-     {
+    {
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
+    {
       field: "action",
       headerName: "Action",
       cellRenderer: (params) => (
         <div>
           {params.data.status === "Pending" ? (
-
             <ThreeDotMenu
               rowId={params.data.id}
               menuItems={[
-                { label: "Accept", onClick: () => approveLeave(params.data.id) },
+                {
+                  label: "Accept",
+                  onClick: () => approveLeave(params.data.id),
+                },
                 { label: "Reject", onClick: () => rejectLeave(params.data.id) },
               ]}
             />
@@ -123,7 +130,10 @@ const ViewPayroll = () => {
     },
   ];
   const location = useLocation();
-  const { empId } = location.state;
+  const navigate = useNavigate();
+  const { empId, month, status, employeeName, departmentName, employeeId, designation } = location.state;
+
+  console.log("status : ", status);
   const axios = useAxiosPrivate();
 
   const { data: userPayrollData = [], isLoading } = useQuery({
@@ -131,7 +141,7 @@ const ViewPayroll = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/payroll/get-user-payrolls/${empId}`
+          `/api/payroll/get-user-payrolls/${empId}?month=${month}`
         );
 
         return response.data;
@@ -142,7 +152,7 @@ const ViewPayroll = () => {
       }
     },
   });
-//Attendance correction
+  //Attendance correction
   const { mutate: approveRequest, isPending: approveRequestPending } =
     useMutation({
       mutationFn: async (id) => {
@@ -186,8 +196,7 @@ const ViewPayroll = () => {
     setOpenModal(true);
   };
 
-
-//Leaves correction
+  //Leaves correction
 
   const { mutate: approveLeave, isPending: isApproving } = useMutation({
     mutationFn: async (leaveId) => {
@@ -217,13 +226,88 @@ const ViewPayroll = () => {
     },
   });
 
+  const { mutate: payrollMutate, isPending: isPayrollPending } = useMutation({
+    mutationKey: ["batchPayrollMutate"],
+    mutationFn: async (data) => {
+      const response = await axios.post("/api/payroll/generate-payroll", data);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["payrollData"] });
+      navigate("/app/dashboard/HR-dashboard/finance/payroll");
+      toast.success(data.message || "BATCH SENT");
+    },
+    onError: (error) => {
+      toast.error(error.message || "BATCH FAILED");
+    },
+  });
+
+  const handleGeneratePayslip = async () => {
+    const element = payslipRef.current;
+
+    const opt = {
+      margin: 0.3,
+      filename: `${userData.empId}-${dayjs(month).format("MMMM-YYYY")}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: {
+        unit: "mm",
+        format: "a4", // Set to A4
+        orientation: "portrait",
+      },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] }, // Prevent abrupt breaks
+    };
+
+    const pdfBlob = await html2pdf().set(opt).from(element).outputPdf("blob");
+
+    const formData = new FormData();
+    formData.append("payslips", pdfBlob, opt.filename);
+
+    const payload = {
+      name: userData.name[0],
+      userId: empId,
+      email: attendanceData[0]?.email || "",
+      month: month,
+      totalSalary: netPay,
+      departmentName: userData.department[0],
+      empId: userData.empId[0],
+      // Flatten earnings and deductions
+      ...earnings[0],
+      ...deductions[0],
+    };
+
+    formData.append("payrolls", JSON.stringify([payload]));
+
+    payrollMutate(formData);
+  };
+
+  const handleDownloadPayslip = async () => {
+  const element = payslipRef.current;
+
+  const opt = {
+    margin: 0.3,
+    filename: `${userData.empId}-${dayjs(month).format("MMMM-YYYY")}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+    },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+  };
+
+  await html2pdf().set(opt).from(element).save(); // Directly triggers download
+};
+
+
   const attendanceData = isLoading
     ? []
     : userPayrollData.attendances.map((item) => {
         return {
           ...item,
           id: item._id,
-          correctionId : item.correctionId,
+          correctionId: item.correctionId,
           date: item.inTime,
           inTime: item.inTime,
           outTime: item.outTime,
@@ -238,7 +322,7 @@ const ViewPayroll = () => {
     : userPayrollData.leaves.map((item) => {
         return {
           ...item,
-          id : item._id,
+          id: item._id,
           name: `${item.takenBy?.firstName} ${item.takenBy?.lastName}`,
           email: item.takenBy?.email,
           empId: item.takenBy?.empId,
@@ -266,29 +350,59 @@ const ViewPayroll = () => {
     ],
   };
 
-  const paymentBreakup = isLoading ? [] : userPayrollData.paymentBreakup;
+  const earnings = isLoading ? [] : [userPayrollData.earnings];
+  const deductions = isLoading ? [] : [userPayrollData.deductions];
+
+  const formatKeyLabel = (key) => {
+    return key
+      .replace(/([A-Z])/g, " $1") // Convert camelCase to space-separated
+      .replace(/_/g, " ") // Convert snake_case to space-separated
+      .replace(/\s+/g, " ") // Replace multiple spaces with one
+      .trim() // Trim leading/trailing spaces
+      .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
+  };
+
+  console.log("payment breakup : ", deductions);
+
+  const netPay = (() => {
+    const totalEarnings = earnings.reduce(
+      (sum, item) =>
+        sum +
+        Object.values(item || {}).reduce(
+          (acc, val) => acc + (Number(val) || 0),
+          0
+        ),
+      0
+    );
+    const totalDeductions = deductions.reduce(
+      (sum, item) =>
+        sum +
+        Object.values(item || {}).reduce(
+          (acc, val) => acc + (Number(val) || 0),
+          0
+        ),
+      0
+    );
+    return totalEarnings - totalDeductions;
+  })();
 
   return (
     <div className="flex flex-col gap-4">
       <PageFrame>
-        <YearWiseTable
+        <AgTable
           key={attendanceData.length}
           search={true}
-          dateColumn={"date"}
-          tableTitle={"Attendance"}
-          formatTime
+          tableTitle={`Attendance ${dayjs(month).format("MMMM-YYYY")}`}
           data={attendanceData}
           columns={payrollColumns}
         />
       </PageFrame>
 
       <PageFrame>
-        <YearWiseTable
+        <AgTable
           key={leavesData.length}
-          dateColumn={"fromDate"}
           search={true}
-          searchColumn={"Leave Type"}
-          tableTitle={"Leaves List"}
+          tableTitle={`Leaves List ${dayjs(month).format("MMMM-YYYY")}`}
           data={leavesData}
           columns={leavesRecord}
         />
@@ -302,7 +416,10 @@ const ViewPayroll = () => {
         title={"Payslip Generator"}
       >
         <div className="flex flex-col gap-4 justify-center items-center">
-          <div className="border-default border-borderGray p-6 rounded-xl">
+          <div
+            ref={payslipRef}
+            className="border-default border-borderGray p-6 rounded-xl"
+          >
             <span className="text-center text-title font-pmedium mb-4">
               Pay Slip
             </span>
@@ -312,13 +429,13 @@ const ViewPayroll = () => {
                   <span className="text-content">Employee Name:</span>{" "}
                   <span className="text-content text-gray-600">
                     {" "}
-                    {userData.name}{" "}
+                    {employeeName || ""}{" "}
                   </span>
                 </div>
                 <div className="flex flex-col w-full">
                   <span className="text-content">Employee ID:</span>{" "}
                   <span className="text-content text-gray-600">
-                    {userData.empId}
+                    {employeeId}
                   </span>
                 </div>
               </div>
@@ -326,13 +443,13 @@ const ViewPayroll = () => {
                 <div className="flex flex-col w-full">
                   <span className="text-content">Designation:</span>{" "}
                   <span className="text-content text-gray-600">
-                    {userData.role}
+                    {designation || ""}
                   </span>
                 </div>
                 <div className="flex flex-col w-full">
                   <span className="text-content">Department</span>{" "}
                   <span className="text-content text-gray-600">
-                    {userData.department}
+                    {departmentName || ""}
                   </span>
                 </div>
               </div>
@@ -340,29 +457,13 @@ const ViewPayroll = () => {
                 <div className="flex flex-col w-full">
                   <span className="text-content">Start Date</span>
                   <span className="text-content text-gray-600">
-                    {new Date(
-                      new Date().getFullYear(),
-                      new Date().getMonth(),
-                      1
-                    ).toLocaleDateString("default", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {dayjs(month).format("MMM DD, YYYY")}
                   </span>
                 </div>
                 <div className="flex flex-col w-full">
                   <span className="text-content">End Date</span>
                   <span className="text-content text-gray-600">
-                    {new Date(
-                      new Date().getFullYear(),
-                      new Date().getMonth() + 1,
-                      0
-                    ).toLocaleDateString("default", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {dayjs(month).endOf("month").format("MMM DD, YYYY")}
                   </span>
                 </div>
               </div>
@@ -376,54 +477,18 @@ const ViewPayroll = () => {
               </div>
               <div className="flex flex-col text-content py-4 gap-4">
                 <div className="flex flex-col text-content py-4 gap-4">
-                  <div className="flex justify-between py-1 border-b border-borderGray">
-                    <span>Basic Pay</span>
-                    <span>{inrFormat(paymentBreakup.basic) || 0}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-borderGray">
-                    <span>HRA</span>
-                    <span>{inrFormat(paymentBreakup.hra) || 0}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-borderGray">
-                    <span>Special Allowance</span>
-                    <span>
-                      {inrFormat(paymentBreakup.specialAllowance) || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-borderGray">
-                    <span>Bonus</span>
-                    <span>{inrFormat(paymentBreakup.bonus) || 0}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-borderGray">
-                    <span>Other Allowance</span>
-                    <span>{inrFormat(paymentBreakup.otherAllowance) || 0}</span>
-                  </div>
-                  <div className="flex justify-between py-1 font-semibold">
-                    <span>Total Earnings</span>
-                    <span>
-                      {inrFormat(
-                        (paymentBreakup.basic || 0) +
-                          (paymentBreakup.hra || 0) +
-                          (paymentBreakup.specialAllowance || 0) +
-                          (paymentBreakup.bonus || 0) +
-                          (paymentBreakup.otherAllowance || 0)
-                      )}
-                    </span>
-                  </div>
+                  {earnings.map((item, index) =>
+                    Object.entries(item).map(([key, value]) => (
+                      <div
+                        key={`${index}-${key}`}
+                        className="flex justify-between py-1 border-b border-borderGray"
+                      >
+                        <span>{formatKeyLabel(key)}</span>
+                        <span>{inrFormat(value) || 0}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
-
-                {/* <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
-                  <span>House Rent Allowance (HRA)</span>
-                  <span>INR 15,000</span>
-                </div>
-                <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
-                  <span>Other Allowances</span>
-                  <span>INR 10,000</span>
-                </div>
-                <div className="flex justify-between py-1 font-semibold">
-                  <span>Total Earnings</span>
-                  <span>INR 95,000</span>
-                </div> */}
               </div>
             </div>
             <div className="mb-4">
@@ -432,64 +497,46 @@ const ViewPayroll = () => {
                   Deductions
                 </span>
               </div>
+
               <div className="flex flex-col text-content py-4 gap-4">
-                <div className="flex justify-between py-1 border-b border-borderGray">
-                  <span>PF</span>
-                  <span>{inrFormat(paymentBreakup.employeePf) || 0}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-borderGray">
-                  <span>ESI</span>
-                  <span>
-                    {inrFormat(paymentBreakup.employeesStateInsurance) || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-borderGray">
-                  <span>Professional Tax</span>
-                  <span>{inrFormat(paymentBreakup.professionTax) || 0}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-borderGray">
-                  <span>Income Tax</span>
-                  <span>{inrFormat(paymentBreakup.incomeTax) || 0}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-borderGray">
-                  <span>Other Deductions</span>
-                  <span>{inrFormat(paymentBreakup.recovery) || 0}</span>
-                </div>
-                <div className="flex justify-between py-1 font-semibold">
-                  <span>Total Deductions</span>
-                  <span>
-                    {inrFormat(
-                      (paymentBreakup.employeePf || 0) +
-                        (paymentBreakup.employeesStateInsurance || 0) +
-                        (paymentBreakup.professionTax || 0) +
-                        (paymentBreakup.incomeTax || 0) +
-                        (paymentBreakup.recovery || 0)
-                    )}
-                  </span>
+                <div className="flex flex-col text-content py-4 gap-4">
+                  {deductions.map((item, index) =>
+                    Object.entries(item).map(([key, value]) => (
+                      <div
+                        key={`${index}-${key}`}
+                        className="flex justify-between py-1 border-b border-borderGray"
+                      >
+                        <span>{formatKeyLabel(key)}</span>
+                        <span>{inrFormat(value) || 0}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
 
             <div className="text-sm text-right font-semibold text-gray-800">
               <span>Net Pay : </span>{" "}
-              <span className="text-lg">
-                {inrFormat(paymentBreakup.netAmount || 0)}
-              </span>
+              <span className="text-lg">{inrFormat(netPay || 0)}</span>
             </div>
 
             <p className="text-xs text-gray-500 mt-4 text-center">
               *This is a computer-generated document and does not require a
               signature.
             </p>
-
-            <div className="mt-6 text-center">
-              <PrimaryButton title={"Save"} />
-            </div>
           </div>
 
           <div className="flex items-center gap-[8.5rem]">
-            <PrimaryButton title={"Generate Payslip"} />
-            <PrimaryButton title={"Download Payslip"} />
+            {status !== "Completed" && (
+              <PrimaryButton
+                title={"Generate Payslip"}
+                handleSubmit={handleGeneratePayslip}
+                disabled={isPayrollPending}
+                isLoading={isPayrollPending}
+              />
+            )}
+
+            <PrimaryButton title={"Download Payslip"} handleSubmit={handleDownloadPayslip}  />
           </div>
         </div>
       </WidgetSection>
