@@ -7,6 +7,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import { useSelector } from "react-redux";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../components/PrimaryButton";
+import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
 const HrDepartmentTasks = () => {
   const location = useLocation();
@@ -270,7 +271,8 @@ const HrDepartmentTasks = () => {
       <WidgetSection
         title={`${departmentName} department task overview`}
         border
-        TitleAmount={`TOTAL TASKS :  ${tasksData.length || 0}`}>
+        TitleAmount={`TOTAL TASKS :  ${tasksData.length || 0}`}
+      >
         <NormalBarGraph
           data={graphData}
           options={graphOptions}
@@ -279,22 +281,6 @@ const HrDepartmentTasks = () => {
         />
       </WidgetSection>
 
-      <div className="flex justify-center items-center w-full">
-        <SecondaryButton
-          title={"Prev"}
-          handleSubmit={handlePrevMonth}
-          disabled={selectedMonthIndex === 0}
-        />
-        <div className="text-subtitle w-full text-center font-pmedium">
-          {selectedMonth}
-        </div>
-        <PrimaryButton
-          title={"Next"}
-          handleSubmit={handleNextMonth}
-          disabled={selectedMonthIndex === fyMonths.length - 1}
-        />
-      </div>
-
       <WidgetSection
         title={`Task details`}
         border
@@ -302,26 +288,45 @@ const HrDepartmentTasks = () => {
           filteredTasks.length > 1
             ? `${filteredTasks.length} tasks`
             : `${filteredTasks.length} task`
-        } `}>
+        } `}
+      >
+          <div className="flex justify-center items-center gap-4">
+              <SecondaryButton
+                title={<MdNavigateBefore />}
+                handleSubmit={handlePrevMonth}
+                disabled={selectedMonthIndex === 0}
+              />
+              <div className="text-subtitle  text-center font-pmedium">
+                {selectedMonth}
+              </div>
+              <PrimaryButton
+                title={<MdNavigateNext />}
+                handleSubmit={handleNextMonth}
+                disabled={selectedMonthIndex === fyMonths.length - 1}
+              />
+            </div>
         {filteredTasks.length === 0 ? (
           <div className="text-center flex justify-center items-center py-8 text-gray-500 h-80">
             No data available
           </div>
         ) : (
-          <AgTable
-            tableHeight={300}
-            hideFilter
-            columns={tasksColumns}
-            data={filteredTasks.map((item, index) => ({
-              id: index + 1,
-              taskName: item.taskName,
-              assignedTo: item.assignedTo,
-              assignedBy: item.assignedBy,
-              assignedDate: item.assignedDate,
-              dueDate: item.dueDate,
-              status: item.status,
-            }))}
-          />
+          <div>
+          
+            <AgTable
+              tableHeight={300}
+              hideFilter
+              columns={tasksColumns}
+              data={filteredTasks.map((item, index) => ({
+                id: index + 1,
+                taskName: item.taskName,
+                assignedTo: item.assignedTo,
+                assignedBy: item.assignedBy,
+                assignedDate: item.assignedDate,
+                dueDate: item.dueDate,
+                status: item.status,
+              }))}
+            />
+          </div>
         )}
       </WidgetSection>
     </div>

@@ -193,11 +193,11 @@ const YearWiseTable = ({
       </div>
       <hr />
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 w-full justify-center">
+        <div className="flex items-center flex-wrap gap-4 w-full justify-center">
           {monthsInFY.length > 0 && (
-            <>
+            <div className="flex flex-wrap gap-4">
               {/* Month Switcher */}
-              <div className="flex items-center gap-2">
+              <div className="flex  items-center gap-2">
                 <PrimaryButton
                   title={<MdNavigateBefore />}
                   handleSubmit={() =>
@@ -220,7 +220,7 @@ const YearWiseTable = ({
               </div>
 
               {/* FY Switcher */}
-              <div className="flex items-center gap-2">
+              <div className="flex  items-center gap-2">
                 <PrimaryButton
                   title={<MdNavigateBefore />}
                   handleSubmit={() =>
@@ -241,7 +241,7 @@ const YearWiseTable = ({
                   disabled={selectedFYIndex === fiscalYears.length - 1}
                 />
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>

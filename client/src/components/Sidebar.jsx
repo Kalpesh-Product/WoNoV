@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FaAngleDown,
   FaChevronUp,
@@ -30,8 +30,9 @@ import SeperatorUnderline from "./SeperatorUnderline";
 import { VscPersonAdd } from "react-icons/vsc";
 import useAuth from "../hooks/useAuth";
 
-const Sidebar = () => {
+const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
+  const [mobileOpen,setMobileOpen] = useState(false)
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedModule, setExpandedModule] = useState(0);
@@ -42,6 +43,11 @@ const Sidebar = () => {
     "67b2cf85b9b6ed5cedeb9a2e",
     "6798ba9de469e809084e2494",
   ];
+
+
+  useEffect(() => {
+    setMobileOpen(drawerOpen);
+  }, [drawerOpen]);
 
   const userDeptIds = auth?.user?.departments?.map((d) => d._id) || [];
 
@@ -202,8 +208,10 @@ const Sidebar = () => {
   // If none match, return the original defaultModules
   const finalModules = hasAnySubmenus ? filteredModules : defaultModules;
 
+
   const handleMenuOpen = (item) => {
     navigate(item.route);
+    if (onCloseDrawer) onCloseDrawer(); // 🔁 Close drawer on menu click
   };
 
   const toggleModule = (index) => {
@@ -292,7 +300,7 @@ const Sidebar = () => {
                                 ? "text-[#1E3D73]"
                                 : "text-gray-500"
                             }  py-3`}
-                            onClick={() => navigate(submenu.route)}
+                            onClick={() => handleMenuOpen(submenu)} 
                           >
                             <div
                               className={`flex items-center ${
