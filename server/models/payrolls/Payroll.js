@@ -57,18 +57,19 @@ const payrollSchema = new mongoose.Schema(
 
     // Allowances & Earnings
     hra: Number,
-    childrenEducationAllowance: Number,
+    specialAllowance: Number,
     bonus: Number,
+    otherAllowance: Number,
+
+    childrenEducationAllowance: Number,
     commissions: Number,
     overTime: Number,
-    specialAllowance: Number,
     leaveEncashment: Number,
     expenses: Number,
     dearnessAllowance: Number,
     gratuity: Number,
     medicalAllowance: Number,
     conveyanceAllowance: Number,
-    otherAllowance: Number,
     arrears: Number,
 
     // Deductions
@@ -78,8 +79,9 @@ const payrollSchema = new mongoose.Schema(
     adjustments: Number,
     additionalIncomeTax: Number,
     reduceIncomeTax: Number,
+    otherDeduction: Number,
     voluntaryProvidentFund: Number,
-    lwf: Number, // Employee LWF
+    lwf: Number, //Employee LWF
     recovery: Number,
 
     // Reimbursements

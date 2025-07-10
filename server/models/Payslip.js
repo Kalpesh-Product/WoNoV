@@ -8,22 +8,56 @@ const payslipSchema = new mongoose.Schema(
     },
     month: {
       type: Date,
-      // required: true,
     },
-    earnings: {
-      basicPay: {
-        type: Number,
-        // required: true,
-      },
-      hra: {
-        type: Number,
-        // required: true,
-      },
-      netPay: {
-        type: Number,
-        // required: true,
-      },
+
+    // earnings
+    basicPay: {
+      type: Number,
+      default: 0,
     },
+    hra: {
+      type: Number,
+      default: 0,
+    },
+    netPay: {
+      type: Number,
+      default: 0,
+    },
+    specialAllowance: {
+      type: Number,
+      default: 0,
+    },
+    otherAllowance: {
+      type: Number,
+      default: 0,
+    },
+    bonus: {
+      type: Number,
+      default: 0,
+    },
+
+    // deductions
+    employeePf: {
+      type: Number,
+      default: 0,
+    },
+    employeesStateInsurance: {
+      type: Number,
+      default: 0,
+    },
+    professionTax: {
+      type: Number,
+      default: 0,
+    },
+    otherDeduction: {
+      type: Number,
+      default: 0,
+    },
+    reduceIncomeTax: {
+      type: Number,
+      default: 0,
+    },
+
     payslipName: {
       type: String,
     },
