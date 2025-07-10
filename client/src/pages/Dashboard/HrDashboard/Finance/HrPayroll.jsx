@@ -84,7 +84,7 @@ const HrPayroll = () => {
     },
     { field: "email", headerName: "Employee Email" },
     { field: "departmentName", headerName: "Department" },
-    { field: "designation", headerName: "Desig" },
+    // { field: "designation", headerName: "Desig" },
     // { field: "month", headerName: "Date" },
     // { field: "role", headerName: "Role" },
     // { field: "time", headerName: "Time" },
