@@ -81,7 +81,7 @@ const payrollSchema = new mongoose.Schema(
     reduceIncomeTax: Number,
     otherDeduction: Number,
     voluntaryProvidentFund: Number,
-    lwf: Number, // Employee LWF
+    lwf: Number, //Employee LWF
     recovery: Number,
 
     // Reimbursements
