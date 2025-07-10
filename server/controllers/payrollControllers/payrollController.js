@@ -18,7 +18,22 @@ const generatePayroll = async (req, res, next) => {
   const logSourceKey = "payroll";
   const { user, ip, company } = req;
 
-  //payrolls = [{userId,totalSalary,deductions:[],month}]
+  //payrolls = [{userId,totalSalary,deductions:[],month,earnings}]
+
+  //earnings
+  // basic: Number,
+  //  hra: Number,
+  // specialAllowance: Number,
+  // bonus: Number,
+  // otherAllowance: Number,
+
+  //deductions
+  // employeePf: Number,
+  // employeesStateInsurance: Number,
+  // professionTax: Number,
+  // otherDeduction: Number,
+  // reduceIncomeTax: Number,
+
   try {
     const payrolls = JSON.parse(req.body.payrolls);
     const files = req.files || [];
@@ -49,8 +64,19 @@ const generatePayroll = async (req, res, next) => {
         month,
         totalSalary,
         reimbursment = 0,
-        deductions = [],
-        earnings = {}, // { basicPay, hra, netPay }
+        //earnings
+        basicPay = 0,
+        hra = 0,
+        netPay = 0,
+        specialAllowance = 0,
+        otherAllowance = 0,
+        bonus = 0,
+        //deductions
+        employeePf = 0,
+        employeesStateInsurance = 0,
+        professionTax = 0,
+        otherDeduction = 0,
+        reduceIncomeTax = 0,
       } = payrolls[i];
 
       const file = files[i];
@@ -158,11 +184,17 @@ const generatePayroll = async (req, res, next) => {
       const payslip = new Payslip({
         employee: userId,
         month: new Date(month),
-        earnings: {
-          basicPay: earnings.basicPay || 0,
-          hra: earnings.hra || 0,
-          netPay: earnings.netPay,
-        },
+        basicPay,
+        hra,
+        netPay,
+        specialAllowance,
+        otherAllowance,
+        bonus,
+        employeePf,
+        employeesStateInsurance,
+        professionTax,
+        otherDeduction,
+        reduceIncomeTax,
         payslipName: originalFilename,
         payslipLink: uploadResponse.secure_url,
         payslipId: uploadResponse.public_id,
@@ -313,15 +345,115 @@ const fetchPayrolls = async (req, res, next) => {
   }
 };
 
+// const fetchUserPayroll = async (req, res, next) => {
+//   const { company } = req;
+//   const { userId } = req.params;
+//   const {month} = req.query
+//   try {
+//     if (!mongoose.Types.ObjectId.isValid(userId)) {
+//       return res.status(400).json({ message: "Invalid user ID provided" });
+//     }
+
+//     const attendances = await Attendance.find({ user: userId,createdAt: }).populate({
+//       path: "user",
+//       select: "firstName lastName empId email departments role",
+//       populate: [{ path: "departments" }, { path: "role" }],
+//     });
+
+//     const attendancesRequests = await AttendanceCorrection.find({
+//       user: userId,
+//       company,
+//       status: "Pending",
+//     })
+//       .lean()
+//       .exec();
+
+//     let transformedAttendances = attendances.map((attendance) => ({
+//       ...attendance._doc,
+//       correctionId: null,
+//     }));
+
+//     if (attendancesRequests && attendancesRequests.length > 0) {
+//       transformedAttendances = attendances.map((attendance) => {
+//         const matchingRequest = attendancesRequests.find((request) => {
+//           const isPending = attendance.status === "Pending";
+//           const attendanceInTime = attendance.inTime;
+//           const requestInTime = request.originalInTime;
+
+//           const attendanceOutTime = attendance.outTime;
+//           const requestOutTime = request.originalOutTime;
+//           const matchedAttendance =
+//             new Date(attendanceInTime).toString() ===
+//               new Date(requestInTime).toString() ||
+//             new Date(attendanceOutTime).toString() ===
+//               new Date(requestOutTime).toString();
+//           return matchedAttendance && isPending;
+//         });
+
+//         return {
+//           ...attendance._doc,
+//           correctionId: matchingRequest ? matchingRequest._id : null,
+//         };
+//       });
+//     }
+
+//     const leaves = await Leave.find({ takenBy: userId,createdAt: }).populate({
+//       path: "takenBy",
+//       select: "firstName lastName empId email departments role",
+//       populate: [{ path: "departments" }, { path: "role" }],
+//     });
+
+//     const payslip = await Payslip.findOne({employee:userId,month:})
+//     const paymentBreakup = {
+//       basicPay: 0,
+//       hra: 0,
+//       netPay: 0,
+//       specialAllowance: 0,
+//       otherAllowance: 0,
+//       bonus: 0,
+
+//       // deductions
+//       employeePf: 0,
+//       employeesStateInsurance: 0,
+//       professionTax: 0,
+//       otherDeduction: 0,
+//       reduceIncomeTax: 0,
+//     };
+
+//     const transformedResponse = {
+//       attendances: transformedAttendances,
+//       leaves,
+//       paymentBreakup,
+//     };
+
+//     res.status(200).json(transformedResponse);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const fetchUserPayroll = async (req, res, next) => {
   const { company } = req;
   const { userId } = req.params;
+  const { month } = req.query;
+
   try {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID provided" });
     }
 
-    const attendances = await Attendance.find({ user: userId }).populate({
+    if (!month) {
+      return res.status(400).json({ message: "Month query is required" });
+    }
+
+    const monthStart = new Date(month);
+    const monthEnd = new Date(monthStart);
+    monthEnd.setMonth(monthEnd.getMonth() + 1);
+
+    const attendances = await Attendance.find({
+      user: userId,
+      inTime: { $gte: monthStart, $lt: monthEnd },
+    }).populate({
       path: "user",
       select: "firstName lastName empId email departments role",
       populate: [{ path: "departments" }, { path: "role" }],
@@ -331,29 +463,22 @@ const fetchUserPayroll = async (req, res, next) => {
       user: userId,
       company,
       status: "Pending",
-    })
-      .lean()
-      .exec();
+    }).lean();
 
     let transformedAttendances = attendances.map((attendance) => ({
       ...attendance._doc,
       correctionId: null,
     }));
 
-    if (attendancesRequests && attendancesRequests.length > 0) {
+    if (attendancesRequests?.length > 0) {
       transformedAttendances = attendances.map((attendance) => {
         const matchingRequest = attendancesRequests.find((request) => {
           const isPending = attendance.status === "Pending";
-          const attendanceInTime = attendance.inTime;
-          const requestInTime = request.originalInTime;
-
-          const attendanceOutTime = attendance.outTime;
-          const requestOutTime = request.originalOutTime;
           const matchedAttendance =
-            new Date(attendanceInTime).toString() ===
-              new Date(requestInTime).toString() ||
-            new Date(attendanceOutTime).toString() ===
-              new Date(requestOutTime).toString();
+            new Date(attendance.inTime).toString() ===
+              new Date(request.originalInTime).toString() ||
+            new Date(attendance.outTime).toString() ===
+              new Date(request.originalOutTime).toString();
           return matchedAttendance && isPending;
         });
 
@@ -364,24 +489,39 @@ const fetchUserPayroll = async (req, res, next) => {
       });
     }
 
-    const leaves = await Leave.find({ takenBy: userId }).populate({
+    const leaves = await Leave.find({
+      takenBy: userId,
+      fromDate: { $gte: monthStart, $lt: monthEnd },
+    }).populate({
       path: "takenBy",
       select: "firstName lastName empId email departments role",
       populate: [{ path: "departments" }, { path: "role" }],
     });
 
+    const payslip = await Payslip.findOne({
+      employee: userId,
+      month: { $gte: monthStart, $lt: monthEnd },
+    });
+
     const paymentBreakup = {
-      basicPay: 28000,
-      pf: 4000,
+      basicPay: payslip?.basicPay || 0,
+      hra: payslip?.hra || 0,
+      netPay: payslip?.netPay || 0,
+      specialAllowance: payslip?.specialAllowance || 0,
+      otherAllowance: payslip?.otherAllowance || 0,
+      bonus: payslip?.bonus || 0,
+      employeePf: payslip?.employeePf || 0,
+      employeesStateInsurance: payslip?.employeesStateInsurance || 0,
+      professionTax: payslip?.professionTax || 0,
+      otherDeduction: payslip?.otherDeduction || 0,
+      reduceIncomeTax: payslip?.reduceIncomeTax || 0,
     };
 
-    const transformedResponse = {
+    res.status(200).json({
       attendances: transformedAttendances,
       leaves,
       paymentBreakup,
-    };
-
-    res.status(200).json(transformedResponse);
+    });
   } catch (error) {
     next(error);
   }
