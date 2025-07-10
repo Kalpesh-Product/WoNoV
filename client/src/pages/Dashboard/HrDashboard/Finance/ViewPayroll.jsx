@@ -98,20 +98,24 @@ const ViewPayroll = () => {
     { field: "leaveType", headerName: "Leave Type" },
     { field: "leavePeriod", headerName: "Leave Period" },
     { field: "description", headerName: "Description", flex: 1 },
-    { field: "status", headerName: "Status", cellRenderer : (params)=> (
-      <StatusChip status={params.value} />
-    ) },
-     {
+    {
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
+    {
       field: "action",
       headerName: "Action",
       cellRenderer: (params) => (
         <div>
           {params.data.status === "Pending" ? (
-
             <ThreeDotMenu
               rowId={params.data.id}
               menuItems={[
-                { label: "Accept", onClick: () => approveLeave(params.data.id) },
+                {
+                  label: "Accept",
+                  onClick: () => approveLeave(params.data.id),
+                },
                 { label: "Reject", onClick: () => rejectLeave(params.data.id) },
               ]}
             />
@@ -142,7 +146,7 @@ const ViewPayroll = () => {
       }
     },
   });
-//Attendance correction
+  //Attendance correction
   const { mutate: approveRequest, isPending: approveRequestPending } =
     useMutation({
       mutationFn: async (id) => {
@@ -186,8 +190,7 @@ const ViewPayroll = () => {
     setOpenModal(true);
   };
 
-
-//Leaves correction
+  //Leaves correction
 
   const { mutate: approveLeave, isPending: isApproving } = useMutation({
     mutationFn: async (leaveId) => {
@@ -223,7 +226,7 @@ const ViewPayroll = () => {
         return {
           ...item,
           id: item._id,
-          correctionId : item.correctionId,
+          correctionId: item.correctionId,
           date: item.inTime,
           inTime: item.inTime,
           outTime: item.outTime,
@@ -238,7 +241,7 @@ const ViewPayroll = () => {
     : userPayrollData.leaves.map((item) => {
         return {
           ...item,
-          id : item._id,
+          id: item._id,
           name: `${item.takenBy?.firstName} ${item.takenBy?.lastName}`,
           email: item.takenBy?.email,
           empId: item.takenBy?.empId,
@@ -266,7 +269,19 @@ const ViewPayroll = () => {
     ],
   };
 
-  const paymentBreakup = isLoading ? [] : userPayrollData.paymentBreakup;
+  const paymentBreakup = isLoading ? [] : [userPayrollData.paymentBreakup];
+
+  const formatKeyLabel = (key) => {
+  return key
+    .replace(/([A-Z])/g, " $1")         // Convert camelCase to space-separated
+    .replace(/_/g, " ")                 // Convert snake_case to space-separated
+    .replace(/\s+/g, " ")               // Replace multiple spaces with one
+    .trim()                             // Trim leading/trailing spaces
+    .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
+};
+
+
+  console.log("payment breakup : ", paymentBreakup);
 
   return (
     <div className="flex flex-col gap-4">
@@ -376,54 +391,18 @@ const ViewPayroll = () => {
               </div>
               <div className="flex flex-col text-content py-4 gap-4">
                 <div className="flex flex-col text-content py-4 gap-4">
-                  <div className="flex justify-between py-1 border-b border-borderGray">
-                    <span>Basic Pay</span>
-                    <span>{inrFormat(paymentBreakup.basic) || 0}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-borderGray">
-                    <span>HRA</span>
-                    <span>{inrFormat(paymentBreakup.hra) || 0}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-borderGray">
-                    <span>Special Allowance</span>
-                    <span>
-                      {inrFormat(paymentBreakup.specialAllowance) || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-borderGray">
-                    <span>Bonus</span>
-                    <span>{inrFormat(paymentBreakup.bonus) || 0}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-borderGray">
-                    <span>Other Allowance</span>
-                    <span>{inrFormat(paymentBreakup.otherAllowance) || 0}</span>
-                  </div>
-                  <div className="flex justify-between py-1 font-semibold">
-                    <span>Total Earnings</span>
-                    <span>
-                      {inrFormat(
-                        (paymentBreakup.basic || 0) +
-                          (paymentBreakup.hra || 0) +
-                          (paymentBreakup.specialAllowance || 0) +
-                          (paymentBreakup.bonus || 0) +
-                          (paymentBreakup.otherAllowance || 0)
-                      )}
-                    </span>
-                  </div>
+                  {paymentBreakup.map((item, index) =>
+                    Object.entries(item).map(([key, value]) => (
+                      <div
+                        key={`${index}-${key}`}
+                        className="flex justify-between py-1 border-b border-borderGray"
+                      >
+                         <span>{formatKeyLabel(key)}</span>
+                        <span>{inrFormat(value) || 0}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
-
-                {/* <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
-                  <span>House Rent Allowance (HRA)</span>
-                  <span>INR 15,000</span>
-                </div>
-                <div className="flex justify-between py-1 border-b-[1px] border-borderGray">
-                  <span>Other Allowances</span>
-                  <span>INR 10,000</span>
-                </div>
-                <div className="flex justify-between py-1 font-semibold">
-                  <span>Total Earnings</span>
-                  <span>INR 95,000</span>
-                </div> */}
               </div>
             </div>
             <div className="mb-4">

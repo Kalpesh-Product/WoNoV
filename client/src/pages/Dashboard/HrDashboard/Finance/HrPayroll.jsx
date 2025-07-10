@@ -31,10 +31,7 @@ const HrPayroll = () => {
   const navigate = useNavigate();
 
   const axios = useAxiosPrivate();
-  const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedVisitor, setSelectedVisitor] = useState([]);
-  const [isEditing, setIsEditing] = useState(false);
 
   const { data: payrollData, isLoading } = useQuery({
     queryKey: ["payrollData"],
@@ -50,60 +47,6 @@ const HrPayroll = () => {
       }
     },
   });
-
-  const { handleSubmit, reset, control } = useForm({
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phoneNumber: "",
-      purposeOfVisit: "",
-      toMeet: "",
-      checkIn: "",
-    },
-  });
-
-  const handleEditToggle = () => {
-    if (!isEditing && selectedVisitor) {
-      reset({
-        firstName: selectedVisitor.firstName || "Aiwinraj",
-        lastName: selectedVisitor.lastName || "KS",
-        address: selectedVisitor.address || "Associate Software Engineer",
-        email: selectedVisitor.email || "aiwinraj.wono@gmail.com",
-        phoneNumber: selectedVisitor.phoneNumber || " 40,000",
-        purposeOfVisit: selectedVisitor.purposeOfVisit || "EMP007",
-        toMeet: selectedVisitor.toMeet || "36 Months",
-        checkIn: selectedVisitor.checkIn ? selectedVisitor.checkIn : "",
-      });
-    }
-    setIsEditing(!isEditing);
-  };
-
-  const handleDetailsClick = (asset) => {
-    setSelectedVisitor(asset);
-    setModalMode("view");
-    setIsModalOpen(true);
-  };
-
-  const handleAddAsset = () => {
-    setModalMode("add");
-    setSelectedVisitor(null);
-    setIsModalOpen(true);
-  };
-
-  const handleSumit = async (assetData) => {
-    if (modalMode === "add") {
-      try {
-      } catch (error) {
-        console.error("Error adding asset:", error);
-      }
-    } else if (modalMode === "edit") {
-      try {
-      } catch (error) {
-        console.error("Error updating asset:", error);
-      }
-    }
-  };
 
   const payrollColumn = [
     { field: "srNo", headerName: "Sr No", width: 100 },
