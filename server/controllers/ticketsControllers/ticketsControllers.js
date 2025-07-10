@@ -1288,7 +1288,11 @@ const fetchFilteredTickets = async (req, res, next) => {
         );
         break;
       case "escalate":
-        filteredTickets = await filterEscalatedTickets(roles, department);
+        filteredTickets = await filterEscalatedTickets(
+          roles,
+          department,
+          company
+        );
         break;
       case "close":
         filteredTickets = await filterCloseTickets(
