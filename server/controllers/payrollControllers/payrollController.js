@@ -18,15 +18,7 @@ const generatePayroll = async (req, res, next) => {
   const logSourceKey = "payroll";
   const { user, ip, company } = req;
 
-  //payrolls = [{userId,totalSalary,month}]
-
-  //    {
-  //     "userId": "67b83885daad0f7bab2f189a",
-  //     "month": "2025-07-07",
-  //     "reimbursment": 2000,
-  //   "netPay":40000,
-  // "employeePf":4000
-  //   }
+  //payrolls = [{userId,totalSalary,month,reimbursement}]
 
   //earnings
   // basic: Number,
@@ -202,6 +194,7 @@ const generatePayroll = async (req, res, next) => {
         professionTax,
         otherDeduction,
         reduceIncomeTax,
+        reimbursment,
         payslipName: originalFilename,
         payslipLink: uploadResponse.secure_url,
         payslipId: uploadResponse.public_id,
@@ -215,7 +208,6 @@ const generatePayroll = async (req, res, next) => {
         employee: userId,
         month: new Date(month),
         totalSalary: netPay,
-        reimbursment,
         payslip: savedPayslip._id,
         status: "Completed",
         company,
