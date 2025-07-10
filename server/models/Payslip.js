@@ -22,6 +22,7 @@ const payslipSchema = new mongoose.Schema(
     netPay: {
       type: Number,
       default: 0,
+      required: true,
     },
     specialAllowance: {
       type: Number,
@@ -57,7 +58,6 @@ const payslipSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-
     payslipName: {
       type: String,
     },
@@ -71,6 +71,67 @@ const payslipSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
     },
+
+    //Additional Fields
+
+    // Core Salary Breakdown
+    basic: Number,
+    earnedBasic: Number,
+    calculatedBasic: Number,
+    pfApplicableAllowances: Number,
+    actualGross: Number,
+    gross: Number,
+    netAmount: Number,
+
+    // TDS & Taxes
+    incomeTax: Number,
+    surcharge: Number,
+    cess: Number,
+    totalTds: Number,
+
+    // Attendance
+    paidDays: Number,
+    lopDays: Number,
+    lopAmount: Number,
+
+    // ESI/PT Grosses
+    earnedGrossOfEsi: Number,
+    earnedGrossOfPt: Number,
+
+    // Employer Contributions
+    employerLwf: Number,
+
+    // Allowances & Earnings
+    childrenEducationAllowance: Number,
+    commissions: Number,
+    overTime: Number,
+    leaveEncashment: Number,
+    expenses: Number,
+    dearnessAllowance: Number,
+    gratuity: Number,
+    medicalAllowance: Number,
+    conveyanceAllowance: Number,
+    arrears: Number,
+
+    // Deductions
+    employeePf: Number,
+    employeesStateInsurance: Number,
+    professionTax: Number,
+    otherDeduction: Number,
+    reduceIncomeTax: Number,
+
+    adjustments: Number,
+    additionalIncomeTax: Number,
+    voluntaryProvidentFund: Number,
+    lwf: Number, //Employee LWF
+    recovery: Number,
+
+    // Reimbursements
+    reimbursment: Number,
+
+    // Bank Info (optional but useful for backend validation)
+    ifscCode: String,
+    accountNumber: String,
   },
   {
     timestamps: true,

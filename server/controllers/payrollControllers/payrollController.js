@@ -62,7 +62,6 @@ const generatePayroll = async (req, res, next) => {
       const {
         userId,
         month,
-        totalSalary,
         reimbursment = 0,
         //earnings
         basicPay = 0,
@@ -81,7 +80,7 @@ const generatePayroll = async (req, res, next) => {
 
       const file = files[i];
 
-      if (!userId || !month || isNaN(totalSalary)) {
+      if (!userId || !month || isNaN(netPay)) {
         throw new CustomError(
           `Missing required fields in payroll ${i + 1}`,
           logPath,
@@ -111,10 +110,10 @@ const generatePayroll = async (req, res, next) => {
       const existing = await Payroll.findOne({
         employee: userId,
         month: new Date(month),
-      });
+      }).populate("employee", "firstName lastName");
       if (existing) {
         throw new CustomError(
-          `Payroll already exists for user ${userId} in ${month}`,
+          `Payroll already exists for user ${existing.employee.firstName} ${existing.employee.lastName} in ${month}`,
           logPath,
           logAction,
           logSourceKey,
@@ -207,9 +206,8 @@ const generatePayroll = async (req, res, next) => {
       const payroll = new Payroll({
         employee: userId,
         month: new Date(month),
-        salary: totalSalary,
+        totalSalary: netPay,
         reimbursment,
-        deductions,
         payslip: savedPayslip._id,
         status: "Completed",
         company,
@@ -345,93 +343,6 @@ const fetchPayrolls = async (req, res, next) => {
   }
 };
 
-// const fetchUserPayroll = async (req, res, next) => {
-//   const { company } = req;
-//   const { userId } = req.params;
-//   const {month} = req.query
-//   try {
-//     if (!mongoose.Types.ObjectId.isValid(userId)) {
-//       return res.status(400).json({ message: "Invalid user ID provided" });
-//     }
-
-//     const attendances = await Attendance.find({ user: userId,createdAt: }).populate({
-//       path: "user",
-//       select: "firstName lastName empId email departments role",
-//       populate: [{ path: "departments" }, { path: "role" }],
-//     });
-
-//     const attendancesRequests = await AttendanceCorrection.find({
-//       user: userId,
-//       company,
-//       status: "Pending",
-//     })
-//       .lean()
-//       .exec();
-
-//     let transformedAttendances = attendances.map((attendance) => ({
-//       ...attendance._doc,
-//       correctionId: null,
-//     }));
-
-//     if (attendancesRequests && attendancesRequests.length > 0) {
-//       transformedAttendances = attendances.map((attendance) => {
-//         const matchingRequest = attendancesRequests.find((request) => {
-//           const isPending = attendance.status === "Pending";
-//           const attendanceInTime = attendance.inTime;
-//           const requestInTime = request.originalInTime;
-
-//           const attendanceOutTime = attendance.outTime;
-//           const requestOutTime = request.originalOutTime;
-//           const matchedAttendance =
-//             new Date(attendanceInTime).toString() ===
-//               new Date(requestInTime).toString() ||
-//             new Date(attendanceOutTime).toString() ===
-//               new Date(requestOutTime).toString();
-//           return matchedAttendance && isPending;
-//         });
-
-//         return {
-//           ...attendance._doc,
-//           correctionId: matchingRequest ? matchingRequest._id : null,
-//         };
-//       });
-//     }
-
-//     const leaves = await Leave.find({ takenBy: userId,createdAt: }).populate({
-//       path: "takenBy",
-//       select: "firstName lastName empId email departments role",
-//       populate: [{ path: "departments" }, { path: "role" }],
-//     });
-
-//     const payslip = await Payslip.findOne({employee:userId,month:})
-//     const paymentBreakup = {
-//       basicPay: 0,
-//       hra: 0,
-//       netPay: 0,
-//       specialAllowance: 0,
-//       otherAllowance: 0,
-//       bonus: 0,
-
-//       // deductions
-//       employeePf: 0,
-//       employeesStateInsurance: 0,
-//       professionTax: 0,
-//       otherDeduction: 0,
-//       reduceIncomeTax: 0,
-//     };
-
-//     const transformedResponse = {
-//       attendances: transformedAttendances,
-//       leaves,
-//       paymentBreakup,
-//     };
-
-//     res.status(200).json(transformedResponse);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
 const fetchUserPayroll = async (req, res, next) => {
   const { company } = req;
   const { userId } = req.params;
@@ -503,13 +414,16 @@ const fetchUserPayroll = async (req, res, next) => {
       month: { $gte: monthStart, $lt: monthEnd },
     });
 
-    const paymentBreakup = {
+    console.log("payslip", payslip);
+    const earnings = {
       basicPay: payslip?.basicPay || 0,
       hra: payslip?.hra || 0,
       netPay: payslip?.netPay || 0,
       specialAllowance: payslip?.specialAllowance || 0,
       otherAllowance: payslip?.otherAllowance || 0,
       bonus: payslip?.bonus || 0,
+    };
+    const deductions = {
       employeePf: payslip?.employeePf || 0,
       employeesStateInsurance: payslip?.employeesStateInsurance || 0,
       professionTax: payslip?.professionTax || 0,
@@ -520,7 +434,8 @@ const fetchUserPayroll = async (req, res, next) => {
     res.status(200).json({
       attendances: transformedAttendances,
       leaves,
-      paymentBreakup,
+      earnings,
+      deductions,
     });
   } catch (error) {
     next(error);
