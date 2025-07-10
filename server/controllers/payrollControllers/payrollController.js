@@ -414,7 +414,6 @@ const fetchUserPayroll = async (req, res, next) => {
       month: { $gte: monthStart, $lt: monthEnd },
     });
 
-    console.log("payslip", payslip);
     const earnings = {
       basicPay: payslip?.basicPay || 0,
       hra: payslip?.hra || 0,
