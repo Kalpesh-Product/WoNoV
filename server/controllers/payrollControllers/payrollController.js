@@ -18,7 +18,15 @@ const generatePayroll = async (req, res, next) => {
   const logSourceKey = "payroll";
   const { user, ip, company } = req;
 
-  //payrolls = [{userId,totalSalary,deductions:[],month,earnings}]
+  //payrolls = [{userId,totalSalary,month}]
+
+  //    {
+  //     "userId": "67b83885daad0f7bab2f189a",
+  //     "month": "2025-07-07",
+  //     "reimbursment": 2000,
+  //   "netPay":40000,
+  // "employeePf":4000
+  //   }
 
   //earnings
   // basic: Number,
