@@ -40,7 +40,6 @@ const MainLayout = () => {
     };
   }, []);
 
-
   return (
     <div className="w-full flex flex-col justify-between h-screen overflow-y-auto">
       <header className="flex w-full shadow-md items-center px-4">
@@ -62,13 +61,9 @@ const MainLayout = () => {
               style: { width: 250 },
             }}
           >
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 text-gray-500 text-xl"
-            >
-              {isSidebarOpen ? <GiHamburgerMenu /> : <IoIosArrowForward />}
-            </button>
-            <Sidebar />
+            <div className="py-2">
+              <Sidebar drawerOpen={mobileOpen} onCloseDrawer={() => setMobileOpen(false)} />
+            </div>
           </Drawer>
         ) : (
           <aside className="bg-white">
@@ -81,7 +76,10 @@ const MainLayout = () => {
             <div className="p-4 rounded-t-md bg-white">
               <BreadCrumbComponent />
             </div>
-            <div id="scrollable-content" className="bg-white h-[80vh] overflow-y-auto flex flex-col justify-between">
+            <div
+              id="scrollable-content"
+              className="bg-white h-[80vh] overflow-y-auto flex flex-col justify-between"
+            >
               <ScrollToTop />
               <Outlet />
               <div
@@ -95,10 +93,11 @@ const MainLayout = () => {
 
       {showFooter && (
         <footer
-          className={`transition-all duration-500 transform ${showFooter
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-10"
-            }`}
+          className={`transition-all duration-500 transform ${
+            showFooter
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-10"
+          }`}
         >
           <Footer />
         </footer>

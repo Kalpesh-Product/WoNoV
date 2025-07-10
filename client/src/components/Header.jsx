@@ -128,7 +128,7 @@ const Header = () => {
           </>
         )}
         {/* <div className="flex items-center gap-4 w-[40%]"> */}
-        <div className="flex items-center gap-4 w-[45%]">
+        <div className="flex items-center gap-4 md:w-[45%] w-fit">
           <Avatar onClick={handleAvatarClick} className="cursor-pointer">
             {/* {auth.user.email === "abrar@biznest.co.in" ? ( */}
             {auth?.user?.profilePicture?.url ? (

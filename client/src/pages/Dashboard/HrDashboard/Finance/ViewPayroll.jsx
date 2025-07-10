@@ -18,6 +18,7 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { queryClient } from "../../../../main";
 import { toast } from "sonner";
 import StatusChip from "../../../../components/StatusChip";
+import dayjs from "dayjs";
 
 const ViewPayroll = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -127,7 +128,7 @@ const ViewPayroll = () => {
     },
   ];
   const location = useLocation();
-  const { empId } = location.state;
+  const { empId, month } = location.state;
   const axios = useAxiosPrivate();
 
   const { data: userPayrollData = [], isLoading } = useQuery({
@@ -135,7 +136,7 @@ const ViewPayroll = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/payroll/get-user-payrolls/${empId}`
+          `/api/payroll/get-user-payrolls/${empId}?month=${month}`
         );
 
         return response.data;
@@ -272,38 +273,33 @@ const ViewPayroll = () => {
   const paymentBreakup = isLoading ? [] : [userPayrollData.paymentBreakup];
 
   const formatKeyLabel = (key) => {
-  return key
-    .replace(/([A-Z])/g, " $1")         // Convert camelCase to space-separated
-    .replace(/_/g, " ")                 // Convert snake_case to space-separated
-    .replace(/\s+/g, " ")               // Replace multiple spaces with one
-    .trim()                             // Trim leading/trailing spaces
-    .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
-};
-
+    return key
+      .replace(/([A-Z])/g, " $1") // Convert camelCase to space-separated
+      .replace(/_/g, " ") // Convert snake_case to space-separated
+      .replace(/\s+/g, " ") // Replace multiple spaces with one
+      .trim() // Trim leading/trailing spaces
+      .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
+  };
 
   console.log("payment breakup : ", paymentBreakup);
 
   return (
     <div className="flex flex-col gap-4">
       <PageFrame>
-        <YearWiseTable
+        <AgTable
           key={attendanceData.length}
           search={true}
-          dateColumn={"date"}
-          tableTitle={"Attendance"}
-          formatTime
+          tableTitle={`Attendance ${dayjs(month).format("MMMM-YYYY")}`}
           data={attendanceData}
           columns={payrollColumns}
         />
       </PageFrame>
 
       <PageFrame>
-        <YearWiseTable
+        <AgTable
           key={leavesData.length}
-          dateColumn={"fromDate"}
           search={true}
-          searchColumn={"Leave Type"}
-          tableTitle={"Leaves List"}
+          tableTitle={`Leaves List ${dayjs(month).format("MMMM-YYYY")}`}
           data={leavesData}
           columns={leavesRecord}
         />
@@ -355,29 +351,13 @@ const ViewPayroll = () => {
                 <div className="flex flex-col w-full">
                   <span className="text-content">Start Date</span>
                   <span className="text-content text-gray-600">
-                    {new Date(
-                      new Date().getFullYear(),
-                      new Date().getMonth(),
-                      1
-                    ).toLocaleDateString("default", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {dayjs(month).format("MMM DD, YYYY")}
                   </span>
                 </div>
                 <div className="flex flex-col w-full">
                   <span className="text-content">End Date</span>
                   <span className="text-content text-gray-600">
-                    {new Date(
-                      new Date().getFullYear(),
-                      new Date().getMonth() + 1,
-                      0
-                    ).toLocaleDateString("default", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {dayjs(month).endOf("month").format("MMM DD, YYYY")}
                   </span>
                 </div>
               </div>
@@ -397,7 +377,7 @@ const ViewPayroll = () => {
                         key={`${index}-${key}`}
                         className="flex justify-between py-1 border-b border-borderGray"
                       >
-                         <span>{formatKeyLabel(key)}</span>
+                        <span>{formatKeyLabel(key)}</span>
                         <span>{inrFormat(value) || 0}</span>
                       </div>
                     ))

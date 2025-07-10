@@ -64,7 +64,7 @@ const HrPayroll = () => {
           onClick={() =>
             navigate(
               `/app/dashboard/HR-dashboard/finance/payroll/${params.value}`,
-              { state: { empId: params.data.id } }
+              { state: { empId: params.data.id, month : params.data.month } }
             )
           }
         >
