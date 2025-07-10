@@ -306,9 +306,9 @@ const MeetingDashboard = () => {
   const meetings = []
   // To check the number of times a meeting room is booked based on timings
   const durationCount = {};
-  meetings.forEach((meeting) => {
-    durationCount[meeting.meetingTime] =
-      (durationCount[meeting.meetingTime] || 0) + 1;
+  meetingsData.forEach((meeting) => {
+    durationCount[meeting.duration] =
+      (durationCount[meeting.duration] || 0) + 1;
   });
 
   // Convert to Pie Chart Data Format
@@ -323,13 +323,13 @@ const MeetingDashboard = () => {
     legend: {
       position: "right",
     },
-    colors: [
-      "#BBDEFB", // Light Blue (darker than before)
-      "#90CAF9", // Soft Blue
-      "#64B5F6", // Mild Blue
-      "#42A5F5", // Medium Blue
-      "#1E88E5", // Deep Blue
-      "#1565C0", // Dark Blue
+  colors: [
+      "#1E3D73", // original
+      "#34528A", // slightly lighter
+      "#4A68A1", // medium shade
+      "#608DB8", // lighter
+      "#76A2CF", // even lighter
+      "#8CB8E6", // lightest
     ],
     dataLabels: {
       enabled: true,

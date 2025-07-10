@@ -21,7 +21,6 @@ const TabLayout = ({
     }
   }, [location, navigate, basePath, defaultTabPath]);
 
-  console.log("tabs", tabs)
 
   const showTabs = !hideTabsCondition(location.pathname);
   const activeTab = tabs.findIndex((tab) => location.pathname.includes(tab.path));

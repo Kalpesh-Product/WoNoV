@@ -159,7 +159,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
           color: "white",
         };
         return (
-          <>
+          <div className="pt-3">
             <Chip
               label={params.value}
               style={{
@@ -167,7 +167,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
                 color,
               }}
             />
-          </>
+          </div>
         );
       },
     },

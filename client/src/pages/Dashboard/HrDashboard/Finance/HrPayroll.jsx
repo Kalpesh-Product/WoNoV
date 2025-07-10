@@ -64,7 +64,17 @@ const HrPayroll = () => {
           onClick={() =>
             navigate(
               `/app/dashboard/HR-dashboard/finance/payroll/${params.value}`,
-              { state: { empId: params.data.id, month : params.data.month } }
+              {
+                state: {
+                  empId: params.data.id,
+                  month: params.data.month,
+                  status: params.data.status,
+                  employeeName: params.data.employeeName,
+                  departmentName: params.data.departmentName,
+                  employeeId: params.data.empId,
+                  designation: params.data.designation,
+                },
+              }
             )
           }
         >
@@ -74,6 +84,7 @@ const HrPayroll = () => {
     },
     { field: "email", headerName: "Employee Email" },
     { field: "departmentName", headerName: "Department" },
+    { field: "designation", headerName: "Desig" },
     // { field: "month", headerName: "Date" },
     // { field: "role", headerName: "Role" },
     // { field: "time", headerName: "Time" },
@@ -138,39 +149,43 @@ const HrPayroll = () => {
     // },
   ];
 
-  const tableData = isLoading
-    ? []
-    : payrollData
-        .map((item) => ({
-          ...item,
-          id: item.employeeId,
-          employeeName: item.name,
-          status: item.status,
-          totalSalary: item.totalSalary,
-          departmentName: item.departments?.map((item) => item.name || "null"),
-          monthDate: item.month,
-        }))
-        .sort((a, b) =>
-          a.employeeName?.localeCompare(b.employeeName, undefined, {
-            sensitivity: "base",
-          })
-        );
+const tableData = isLoading
+  ? []
+  : payrollData
+      .map((item) => ({
+        ...item,
+        id: item.employeeId,
+        employeeName: item.name,
+        status: item.status,
+        totalSalary: item.totalSalary,
+        departmentName: item.departments?.map((item) => item.name).join(", ") || "N/A",
+        monthDate: item.month,
+        designation: item.role?.map((item) => item.roleTitle).join(", ") || "N/A",
+      }))
+      .sort((a, b) =>
+        a.employeeName?.localeCompare(b.employeeName, undefined, {
+          sensitivity: "base",
+        })
+      );
+
+
+  console.log("des : ", tableData)
 
   const { mutate: payrollMutate, isPending: isPayrollPending } = useMutation({
     mutationKey: ["batchPayrollMutate"],
     mutationFn: async (data) => {
-      setIsModalOpen(true)
+      setIsModalOpen(true);
       const response = await axios.post("/api/payroll/generate-payroll", data);
       return response.data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["payrollData"] });
       toast.success(data.message || "BATCH SENT");
-      setIsModalOpen(false)
+      setIsModalOpen(false);
     },
     onError: (error) => {
       toast.error(error.message || "BATCH FAILED");
-      setIsModalOpen(false)
+      setIsModalOpen(false);
     },
   });
   const handleBatchAction = async (selectedRows) => {
@@ -271,7 +286,11 @@ const HrPayroll = () => {
           exportData={true}
         />
       </PageFrame>
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={"Payslip Generation"}>
+      <MuiModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={"Payslip Generation"}
+      >
         <div className="h-36 flex justify-center items-center">
           <div className="flex flex-col gap-2 justify-center items-center">
             <CircularProgress />
