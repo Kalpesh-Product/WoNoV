@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import { DateRangePicker } from "react-date-range";
 import { addDays, isWithinInterval } from "date-fns";
 import dayjs from "dayjs";
@@ -34,11 +34,15 @@ const YearWiseTable = ({
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
-
   const today = dayjs();
 
-  // ✅ Default dateRange logic
-  const [dateRange, setDateRange] = useState(() => {
+  // ✅ Safe initial empty state
+  const [dateRange, setDateRange] = useState([]);
+
+  // ✅ Set dateRange after data is available
+  useEffect(() => {
+    if (!data.length || !dateColumn) return;
+
     const currentMonthStart = today.startOf("month");
     const currentMonthEnd = today.endOf("month");
 
@@ -52,13 +56,14 @@ const YearWiseTable = ({
     });
 
     if (monthHasData) {
-      return [
+      setDateRange([
         {
           startDate: currentMonthStart.toDate(),
           endDate: currentMonthEnd.toDate(),
           key: "selection",
         },
-      ];
+      ]);
+      return;
     }
 
     const validDates = data
@@ -68,31 +73,32 @@ const YearWiseTable = ({
 
     if (validDates.length > 0) {
       const latest = validDates[0];
-      return [
+      setDateRange([
         {
           startDate: latest.startOf("month").toDate(),
           endDate: latest.endOf("month").toDate(),
           key: "selection",
         },
-      ];
+      ]);
+      return;
     }
 
-    return [
+    setDateRange([
       {
-        startDate: addDays(new Date(), 0),
+        startDate: addDays(new Date(), -30),
         endDate: new Date(),
         key: "selection",
       },
-    ];
-  });
+    ]);
+  }, [data, dateColumn]);
 
-  // Popover calendar logic
+  // Calendar popover logic
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const handleOpenCalendar = (e) => setAnchorEl(e.currentTarget);
   const handleCloseCalendar = () => setAnchorEl(null);
 
-  // Precompute valid date set for highlighting
+  // Precompute valid dates for highlighting
   const validDateSet = useMemo(() => {
     const set = new Set();
     data.forEach((item) => {
@@ -102,28 +108,22 @@ const YearWiseTable = ({
     return set;
   }, [data, dateColumn]);
 
-  // Filter table data by selected range
-const filteredData = useMemo(() => {
-  if (!dateColumn) return data;
-  const [range] = dateRange;
+  // ✅ Filter table data based on safe range
+  const filteredData = useMemo(() => {
+    if (!dateColumn || dateRange.length === 0 || !dateRange[0]) return data;
 
-  // Normalize the range to cover full day range
-  const start = dayjs(range.startDate).startOf("day").toDate();
-  const end = dayjs(range.endDate).endOf("day").toDate();
+    const { startDate, endDate } = dateRange[0];
+    const start = dayjs(startDate).startOf("day").toDate();
+    const end = dayjs(endDate).endOf("day").toDate();
 
-  return data.filter((item) => {
-    const itemDate = dayjs(item[dateColumn]);
-    if (!itemDate.isValid()) return false;
+    return data.filter((item) => {
+      const itemDate = dayjs(item[dateColumn]);
+      if (!itemDate.isValid()) return false;
 
-    return isWithinInterval(itemDate.toDate(), {
-      start,
-      end,
+      return isWithinInterval(itemDate.toDate(), { start, end });
     });
-  });
-}, [data, dateColumn, dateRange]);
+  }, [data, dateColumn, dateRange]);
 
-
-  // Format date columns
   const formattedColumns = useMemo(() => {
     return columns.map((col) => {
       if (col.field?.toLowerCase().includes("date")) {
@@ -169,7 +169,6 @@ const filteredData = useMemo(() => {
         )}
 
         <div className="flex gap-2 items-center flex-wrap">
-          {/* Calendar Icon */}
           <IconButton onClick={handleOpenCalendar}>
             <MdCalendarToday size={24} />
           </IconButton>
@@ -183,81 +182,84 @@ const filteredData = useMemo(() => {
               horizontal: "left",
             }}
           >
-            <DateRangePicker
-              onChange={(item) => setDateRange([item.selection])}
-              moveRangeOnFirstSelection={false}
-              ranges={dateRange}
-              direction="vertical"
-              dayContentRenderer={(date) => {
-                const dateStr = dayjs(date).format("YYYY-MM-DD");
-                const hasData = validDateSet.has(dateStr);
-                return (
-                  <div className="overflow-hidden h-[30px]">
-                    <div
-                      style={{
-                        backgroundColor: hasData ? "#E0F7FA" : "transparent",
-                        borderRadius: "50%",
-                        height: "32px",
-                        width: "32px",
-                        fontWeight: hasData ? "bold" : "normal",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      {date.getDate()}
+            {dateRange.length > 0 && (
+              <DateRangePicker
+                onChange={(item) => setDateRange([item.selection])}
+                moveRangeOnFirstSelection={false}
+                ranges={dateRange}
+                direction="vertical"
+                dayContentRenderer={(date) => {
+                  const dateStr = dayjs(date).format("YYYY-MM-DD");
+                  const hasData = validDateSet.has(dateStr);
+                  return (
+                    <div className="overflow-hidden h-[30px]">
+                      <div
+                        style={{
+                          backgroundColor: hasData ? "#E0F7FA" : "transparent",
+                          borderRadius: "50%",
+                          height: "32px",
+                          width: "32px",
+                          fontWeight: hasData ? "bold" : "normal",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {date.getDate()}
+                      </div>
                     </div>
-                  </div>
-                );
-              }}
-            />
+                  );
+                }}
+              />
+            )}
           </Popover>
 
-          {/* Action Buttons */}
           {buttonTitle && (
             <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
           )}
           {exportData && (
-            <PrimaryButton title={"Export"} handleSubmit={handleExportPass} />
+            <PrimaryButton title="Export" handleSubmit={handleExportPass} />
           )}
           {batchButton && selectedRows.length > 0 && (
             <PrimaryButton
-              title={batchButton || "Generate"}
+              title={batchButton}
               handleSubmit={() => handleBatchAction(selectedRows)}
             />
           )}
         </div>
       </div>
 
-      {/* Table or No Data Message */}
-      {finalTableData.length > 0 ? (
-        <AgTable
-          key={key}
-          enableCheckbox={checkbox}
-          tableRef={agGridRef}
-          exportData={exportTable}
-          dropdownColumns={dropdownColumns}
-          checkAll={checkAll}
-          tableTitle={tableTitle}
-          tableHeight={tableHeight || 300}
-          columns={formattedColumns}
-          data={finalTableData}
-          hideFilter={filteredData.length <= 9}
-          search={search}
-          dateColumn={dateColumn}
-          isRowSelectable={isRowSelectable}
-          onSelectionChange={(rows) => setSelectedRows(rows)}
-          batchButton={batchButton}
-          hideTitle={hideTitle}
-        />
-      ) : (
-        <Typography
-          variant="body1"
-          align="center"
-          style={{ padding: "2rem", color: "#666" }}
-        >
-          No data available for the selected date range.
-        </Typography>
+      {/* Table */}
+      {dateRange.length > 0 && (
+        <>
+          {finalTableData.length > 0 ? (
+            <AgTable
+              key={key}
+              enableCheckbox={checkbox}
+              tableRef={agGridRef}
+              exportData={exportTable}
+              dropdownColumns={dropdownColumns}
+              checkAll={checkAll}
+              tableTitle={tableTitle}
+              tableHeight={tableHeight || 300}
+              columns={formattedColumns}
+              data={finalTableData}
+              hideFilter={filteredData.length <= 9}
+              search={search}
+              dateColumn={dateColumn}
+              isRowSelectable={isRowSelectable}
+              onSelectionChange={(rows) => setSelectedRows(rows)}
+              batchButton={batchButton}
+              hideTitle={hideTitle}
+            />
+          ) : (
+            <div className="h-[60vh] flex justify-center items-center"
+              style={{ padding: "2rem", color: "#666" }}
+            >
+              No data available for the selected date range.
+            </div>
+          )}
+        </>
       )}
     </div>
   );
