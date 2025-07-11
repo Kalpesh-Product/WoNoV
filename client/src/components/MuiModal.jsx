@@ -15,9 +15,9 @@ const MuiModal = ({ open, onClose, title, children, headerBackground }) => {
             className="fixed inset-0 flex items-center justify-center"
           >
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
+              initial={{ y: 30 }}
+              animate={{ y: 0 }}
+              exit={{ y: 100, opacity:0 }}
               className="w-2/5 bg-white shadow-xl rounded-lg outline-none max-h-[90vh] overflow-hidden flex flex-col"
             >
               {/* Scrollable container with sticky header */}

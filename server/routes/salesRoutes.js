@@ -6,6 +6,7 @@ const {
   bulkInsertCoworkingClients,
   uploadClientOccupancyImage,
   updateCoworkingClient,
+  getCoworkingClientRevenues,
 } = require("../controllers/salesControllers/coworkingClientControllers");
 const {
   createClientService,
@@ -93,6 +94,10 @@ router.post(
 router.post("/add-coworking-revenue", addRevenue);
 router.get("/fetch-coworking-revenues", getRevenues);
 router.get("/get-meeting-revenue", getMeetingRevenue);
+router.get(
+  "/coworking-client-revenue/:coworkingId",
+  getCoworkingClientRevenues
+);
 router.post("/create-meeting-revenue", createMeetingRevenue);
 router.patch("/update-meeting-revenue", updateMeetingRevenue);
 router.get("/get-alternate-revenue", getAlternateRevenues);

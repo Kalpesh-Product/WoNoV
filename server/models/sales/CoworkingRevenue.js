@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const coworkingClientRevenue = new mongoose.Schema(
   {
-    client: {
+    clients: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CoworkingClient",
     },
