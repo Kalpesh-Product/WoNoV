@@ -465,7 +465,8 @@ const getAllDeptTasks = async (req, res, next) => {
     if (
       !roles.includes("Master Admin") &&
       !roles.includes("Super Admin") &&
-      !roles.includes("HR Admin")
+      !roles.includes("HR Admin") &&
+      !roles.includes("HR Employee")
     ) {
       query.department = { $in: departments };
     }

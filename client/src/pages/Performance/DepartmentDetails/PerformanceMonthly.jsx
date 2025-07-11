@@ -39,13 +39,13 @@ const PerformanceMonthly = () => {
     return departmentAccess.includes(item._id.toString());
   });
 
-  const adminDept = auth.user.departments.some((item) => {
-    return item.name === "Administration";
+   const allowedDept = auth.user.departments.some((item) => {
+    return item._id.toString() === deptId.toString() ;
   });
 
   const isHr = department === "HR";
-  const isHrAdmin = department === "Administration" && adminDept;
-  const showCheckBox = !isTop || isHr || isHrAdmin;
+  // const showCheckBox = !isTop || isHr  
+  const showCheckBox = allowedDept
 
   const {
     handleSubmit: submitDailyKra,

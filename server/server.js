@@ -38,8 +38,11 @@ const administrationRoutes = require("./routes/administrationRoutes");
 const financeRoutes = require("./routes/financeRoutes");
 const weeklyUnitRoutes = require("./routes/weeklyUnitRoutes");
 const getLogs = require("./controllers/logController");
+const auditLogger = require("./middlewares/auditLogger");
+require("./listeners/logEventListener");
 const app = express();
 const PORT = process.env.PORT || 5000;
+app.set("trust proxy", true);
 
 connectDb(process.env.DB_URL);
 
@@ -70,7 +73,7 @@ app.use("/api/designations", designationRoutes);
 app.use("/api/tech", verifyJwt, techRoutes);
 app.use("/api/assets", verifyJwt, assetsRoutes);
 app.use("/api/meetings", verifyJwt, meetingsRoutes);
-app.use("/api/tickets", verifyJwt, ticketsRoutes);
+app.use("/api/tickets", verifyJwt, auditLogger, ticketsRoutes);
 app.use("/api/leaves", verifyJwt, leaveRoutes);
 app.use("/api/employee-agreements", employeeAgreementRoutes);
 app.use("/api/editor", websiteRoutes);
