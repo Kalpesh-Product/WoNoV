@@ -297,7 +297,7 @@ const SalesDashboard = () => {
         value:
           ((totalOccupiedSeats / totalCoWorkingSeats) * 100).toFixed(0) || 0,
         route:
-          "/app/dashboard/sales-dashboard/mix-bag/inventory/check-availability",
+          "/app/dashboard/sales-dashboard/mix-bag/inventory",
       },
       {
         title: "Current Free Desks",
