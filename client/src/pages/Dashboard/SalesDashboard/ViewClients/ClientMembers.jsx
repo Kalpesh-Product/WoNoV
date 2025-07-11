@@ -9,6 +9,8 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 const ClientMembers = () => {
   const navigate = useNavigate();
   const selectedClient = useSelector((state) => state.client.selectedClient);
+  console.log("client : ", selectedClient);
+
 
   const viewEmployeeColumns = [
     { field: "srno", headerName: "SR No" },
@@ -64,9 +66,10 @@ const ClientMembers = () => {
       <div className="w-full">
         <PageFrame>
           <AgTable
-            key={selectedClient?.members.length}
+            key={selectedClient?._id}
             search={true}
             searchColumn="Email"
+            tableTitle={`${selectedClient?.clientName} Members`}
             data={selectedClient?.members.map((item, index) => ({
               srno: index + 1,
               employeeName: item.employeeName,
