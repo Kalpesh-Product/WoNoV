@@ -61,7 +61,10 @@ const ManageVisitors = () => {
       setValue("email", visitor.email || "");
       setValue("phoneNumber", visitor.phoneNumber || "");
       setValue("purposeOfVisit", visitor.purposeOfVisit || "");
-      setValue("checkOutRaw", visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null);
+      setValue(
+        "checkOutRaw",
+        visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null
+      );
     }
   };
 
@@ -116,32 +119,55 @@ const ManageVisitors = () => {
         <AgTable
           search
           tableTitle="Visitors Today"
-          data={visitorsData.map((item, index) => ({
-            srNo: index + 1,
-            mongoId: item._id,
-            firstName: item.firstName,
-            lastName: item.lastName,
-            email: item.email,
-            phoneNumber: item.phoneNumber,
-            purposeOfVisit: item.purposeOfVisit,
-            toMeet: `${item?.toMeet?.firstName || ""} ${item?.toMeet?.lastName || ""}`,
-            checkIn: humanTime(item.checkIn),
-            checkOut: item.checkOut ? humanTime(item.checkOut) : "",
-            checkOutRaw: item.checkOut,
-          }))}
+          data={visitorsData
+            .filter((m) => m.visitorFlag !== "Client")
+            .map((item, index) => ({
+              srNo: index + 1,
+              mongoId: item._id,
+              firstName: item.firstName,
+              lastName: item.lastName,
+              email: item.email,
+              phoneNumber: item.phoneNumber,
+              purposeOfVisit: item.purposeOfVisit,
+              toMeet: `${item?.toMeet?.firstName || ""} ${
+                item?.toMeet?.lastName || ""
+              }`,
+              checkIn: humanTime(item.checkIn),
+              checkOut: item.checkOut ? humanTime(item.checkOut) : "",
+              checkOutRaw: item.checkOut,
+            }))}
           columns={visitorsColumns}
         />
       </PageFrame>
 
-      <MuiModal open={isModalOpen} onClose={handleCloseModal} title="Visitor Details">
-        <form onSubmit={handleSubmit(submit)} className="grid grid-cols-1 gap-4">
+      <MuiModal
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        title="Visitor Details"
+      >
+        <form
+          onSubmit={handleSubmit(submit)}
+          className="grid grid-cols-1 gap-4"
+        >
           {modalMode === "view" ? (
             <>
-              <DetalisFormatted title="First Name" detail={selectedVisitor?.firstName} />
-              <DetalisFormatted title="Last Name" detail={selectedVisitor?.lastName} />
-              <DetalisFormatted title="Phone Number" detail={selectedVisitor?.phoneNumber} />
+              <DetalisFormatted
+                title="First Name"
+                detail={selectedVisitor?.firstName}
+              />
+              <DetalisFormatted
+                title="Last Name"
+                detail={selectedVisitor?.lastName}
+              />
+              <DetalisFormatted
+                title="Phone Number"
+                detail={selectedVisitor?.phoneNumber}
+              />
               <DetalisFormatted title="Email" detail={selectedVisitor?.email} />
-              <DetalisFormatted title="Purpose" detail={selectedVisitor?.purposeOfVisit} />
+              <DetalisFormatted
+                title="Purpose"
+                detail={selectedVisitor?.purposeOfVisit}
+              />
               <DetalisFormatted
                 title="Checkout"
                 detail={
@@ -156,27 +182,57 @@ const ManageVisitors = () => {
               <Controller
                 name="firstName"
                 control={control}
-                render={({ field }) => <TextField {...field} label="First Name" size="small" fullWidth />}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="First Name"
+                    size="small"
+                    fullWidth
+                  />
+                )}
               />
               <Controller
                 name="lastName"
                 control={control}
-                render={({ field }) => <TextField {...field} label="Last Name" size="small" fullWidth />}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Last Name"
+                    size="small"
+                    fullWidth
+                  />
+                )}
               />
               <Controller
                 name="phoneNumber"
                 control={control}
-                render={({ field }) => <TextField {...field} label="Phone Number" size="small" fullWidth />}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Phone Number"
+                    size="small"
+                    fullWidth
+                  />
+                )}
               />
               <Controller
                 name="email"
                 control={control}
-                render={({ field }) => <TextField {...field} label="Email" size="small" fullWidth />}
+                render={({ field }) => (
+                  <TextField {...field} label="Email" size="small" fullWidth />
+                )}
               />
               <Controller
                 name="purposeOfVisit"
                 control={control}
-                render={({ field }) => <TextField {...field} label="Purpose" size="small" fullWidth />}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Purpose"
+                    size="small"
+                    fullWidth
+                  />
+                )}
               />
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <Controller
@@ -187,7 +243,9 @@ const ManageVisitors = () => {
                       label="Checkout Time"
                       value={field.value}
                       onChange={field.onChange}
-                      slotProps={{ textField: { size: "small", fullWidth: true } }}
+                      slotProps={{
+                        textField: { size: "small", fullWidth: true },
+                      }}
                     />
                   )}
                 />
