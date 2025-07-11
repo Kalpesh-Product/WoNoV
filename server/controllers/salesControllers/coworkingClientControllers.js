@@ -13,6 +13,7 @@ const {
 } = require("../../config/cloudinaryConfig");
 const sharp = require("sharp");
 const ClientService = require("../../models/sales/ClientService");
+const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 
 const createCoworkingClient = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -338,6 +339,27 @@ const getCoworkingClients = async (req, res, next) => {
   }
 };
 
+const getCoworkingClientRevenues = async (req, res, next) => {
+  try {
+    const coworkingId = req.params;
+    if (!mongoose.Types.ObjectId.isValid(coworkingId)) {
+      return res.status(400).json({ message: "The coworking id is invalid" });
+    }
+    const coworkingRevenue = await CoworkingRevenue.find({
+      clients: coworkingId,
+    })
+      .lean()
+      .exec();
+
+    if (!coworkingRevenue?.length) {
+      return res.status(200).json([]);
+    }
+    return res.status(200).json(coworkingRevenue);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateCoworkingClient = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -658,4 +680,5 @@ module.exports = {
   getCoworkingClients,
   bulkInsertCoworkingClients,
   uploadClientOccupancyImage,
+  getCoworkingClientRevenues
 };
