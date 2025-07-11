@@ -5,7 +5,7 @@ import dayjs from "dayjs";
 import AgTable from "../AgTable";
 import PrimaryButton from "../PrimaryButton";
 import humanDate from "../../utils/humanDateForamt";
-import { IconButton, Popover, Typography } from "@mui/material";
+import { IconButton, Popover } from "@mui/material";
 import { MdCalendarToday } from "react-icons/md";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
@@ -36,10 +36,8 @@ const YearWiseTable = ({
   const [selectedRows, setSelectedRows] = useState([]);
   const today = dayjs();
 
-  // ✅ Safe initial empty state
   const [dateRange, setDateRange] = useState([]);
 
-  // ✅ Set dateRange after data is available
   useEffect(() => {
     if (!data.length || !dateColumn) return;
 
@@ -92,13 +90,11 @@ const YearWiseTable = ({
     ]);
   }, [data, dateColumn]);
 
-  // Calendar popover logic
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const handleOpenCalendar = (e) => setAnchorEl(e.currentTarget);
   const handleCloseCalendar = () => setAnchorEl(null);
 
-  // Precompute valid dates for highlighting
   const validDateSet = useMemo(() => {
     const set = new Set();
     data.forEach((item) => {
@@ -108,7 +104,6 @@ const YearWiseTable = ({
     return set;
   }, [data, dateColumn]);
 
-  // ✅ Filter table data based on safe range
   const filteredData = useMemo(() => {
     if (!dateColumn || dateRange.length === 0 || !dateRange[0]) return data;
 
@@ -169,9 +164,12 @@ const YearWiseTable = ({
         )}
 
         <div className="flex gap-2 items-center flex-wrap">
-          <IconButton onClick={handleOpenCalendar}>
-            <MdCalendarToday size={24} />
-          </IconButton>
+          {/* ✅ Show calendar only if data is not empty */}
+          {dateRange.length > 0 && (
+            <IconButton onClick={handleOpenCalendar}>
+              <MdCalendarToday size={24} />
+            </IconButton>
+          )}
 
           <Popover
             open={open}
@@ -230,37 +228,37 @@ const YearWiseTable = ({
       </div>
 
       {/* Table */}
-      {dateRange.length > 0 && (
-        <>
-          {finalTableData.length > 0 ? (
-            <AgTable
-              key={key}
-              enableCheckbox={checkbox}
-              tableRef={agGridRef}
-              exportData={exportTable}
-              dropdownColumns={dropdownColumns}
-              checkAll={checkAll}
-              tableTitle={tableTitle}
-              tableHeight={tableHeight || 300}
-              columns={formattedColumns}
-              data={finalTableData}
-              hideFilter={filteredData.length <= 9}
-              search={search}
-              dateColumn={dateColumn}
-              isRowSelectable={isRowSelectable}
-              onSelectionChange={(rows) => setSelectedRows(rows)}
-              batchButton={batchButton}
-              hideTitle={hideTitle}
-            />
-          ) : (
-            <div className="h-[60vh] flex justify-center items-center"
-              style={{ padding: "2rem", color: "#666" }}
-            >
-              No data available for the selected date range.
-            </div>
-          )}
-        </>
-      )}
+
+      <>
+        {finalTableData.length > 0 ? (
+          <AgTable
+            key={key}
+            enableCheckbox={checkbox}
+            tableRef={agGridRef}
+            exportData={exportTable}
+            dropdownColumns={dropdownColumns}
+            checkAll={checkAll}
+            tableTitle={tableTitle}
+            tableHeight={tableHeight || 300}
+            columns={formattedColumns}
+            data={finalTableData}
+            hideFilter={filteredData.length <= 9}
+            search={search}
+            dateColumn={dateColumn}
+            isRowSelectable={isRowSelectable}
+            onSelectionChange={(rows) => setSelectedRows(rows)}
+            batchButton={batchButton}
+            hideTitle={hideTitle}
+          />
+        ) : (
+          <div
+            className="h-[60vh] flex justify-center items-center"
+            style={{ padding: "2rem", color: "#666" }}
+          >
+            No data available for the selected date range.
+          </div>
+        )}
+      </>
     </div>
   );
 };
