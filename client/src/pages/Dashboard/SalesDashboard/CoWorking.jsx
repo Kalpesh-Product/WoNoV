@@ -1,20 +1,11 @@
-import BarGraph from "../../../components/graphs/BarGraph";
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  CircularProgress,
-} from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
-import AgTable from "../../../components/AgTable";
-import WidgetSection from "../../../components/WidgetSection";
-import dayjs from "dayjs";
-import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
+import { CircularProgress } from "@mui/material";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
-import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import PageFrame from "../../../components/Pages/PageFrame";
+import StatusChip from "../../../components/StatusChip";
 
 const CoWorking = () => {
   const axios = useAxiosPrivate();
@@ -29,6 +20,20 @@ const CoWorking = () => {
       }
     },
   });
+
+  const revenueArray = isCoWorkingLoading
+    ? []
+    : coWorkingData.flatMap((item) =>
+        item.clients?.map((item) => ({
+          ...item,
+          deskRate: inrFormat(item.deskRate || 0),
+          totalTerm: item.totalTerm || 0,
+          noOfDesks: item.noOfDesks || 0,
+          annualIncrement: item.annualIncrement || 0,
+          revenue: inrFormat(item.revenue || 0),
+        }))
+      );
+
   const fiscalOrder = [
     "Apr-24",
     "May-24",
@@ -106,35 +111,6 @@ const CoWorking = () => {
   };
   const totalActual = coWorkingData.reduce((sum, c) => sum + c.totalRevenue, 0);
 
-  const tableData = isCoWorkingLoading
-    ? []
-    : coWorkingData.map((monthData, index) => {
-        const totalRevenue = monthData?.clients?.reduce(
-          (sum, c) => sum + c.revenue,
-          0
-        );
-        return {
-          id: index,
-          month: monthData.month,
-          acutal: `INR ${totalRevenue}`,
-          revenue: monthData?.clients?.map((client, i) => ({
-            id: i + 1,
-            clientName: client.clientName,
-            channel: client.channel,
-            noOfDesks: client.noOfDesks,
-            deskRate: client.deskRate,
-            revenue: `${client.revenue.toLocaleString()}`,
-            totalTerm: client.totalTerm,
-            rentDate: dayjs(client.rentDate).format("DD-MM-YYYY"),
-            rentStatus: client.rentStatus,
-            pastDueDate: dayjs(client.pastDueDate).format("DD-MM-YYYY"),
-            annualIncrement: client.annualIncrement,
-            nextIncrementDate: dayjs(client.nextIncrementDate).format(
-              "DD-MM-YYYY"
-            ),
-          })),
-        };
-      });
   return (
     <div className="flex flex-col gap-4">
       {!isCoWorkingLoading ? (
@@ -149,13 +125,12 @@ const CoWorking = () => {
           <CircularProgress />
         </div>
       )}
-
-      {!isCoWorkingLoading ? (
-        <MonthWiseAgTable
-          financialData={tableData}
-          title={"MONTHLY REVENUE WITH CLIENT DETAILS"}
-          passedColumns={[
-            { headerName: "Sr No", field: "id", width: 100 },
+      <PageFrame>
+        <YearWiseTable
+          data={revenueArray}
+          tableTitle={"MONTHLY REVENUE WITH CLIENT DETAILS"}
+          columns={[
+            { headerName: "Sr No", field: "srNo", width: 100 },
             { headerName: "Client Name", field: "clientName", width: 350 },
             { headerName: "Channel", field: "channel" },
             { headerName: "Revenue (INR)", field: "revenue" },
@@ -163,7 +138,7 @@ const CoWorking = () => {
             { headerName: "Desk Rate", field: "deskRate" },
             { headerName: "Total Term", field: "totalTerm" },
             { headerName: "Rent Date", field: "rentDate" },
-            { headerName: "Rent Status", field: "rentStatus" },
+
             { headerName: "Past Due Date", field: "pastDueDate" },
             {
               headerName: "Annual Increment (%)",
@@ -173,13 +148,16 @@ const CoWorking = () => {
               headerName: "Next Increment Date",
               field: "nextIncrementDate",
             },
+            {
+              headerName: "Rent Status",
+              field: "rentStatus",
+              pinned : 'right',
+              cellRenderer: (params) => <StatusChip status={params.value} />,
+            },
           ]}
+          dateColumn={"rentDate"}
         />
-      ) : (
-        <div className="h-72 flex justify-center items-center">
-          <CircularProgress />
-        </div>
-      )}
+      </PageFrame>
     </div>
   );
 };

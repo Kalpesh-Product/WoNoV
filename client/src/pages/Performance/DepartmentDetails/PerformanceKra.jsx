@@ -21,6 +21,7 @@ import dayjs from "dayjs";
 import { InsertEmoticonTwoTone } from "@mui/icons-material";
 import PageFrame from "../../../components/Pages/PageFrame";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
 
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
@@ -40,11 +41,11 @@ const PerformanceKra = () => {
   });
 
   const adminDept = auth.user.departments.some((item) => {
-    return item.name === "Administration" ;
+    return item.name === "Administration";
   });
 
   const isHr = department === "HR";
-  const isHrAdmin = department === "Administration" && adminDept
+  const isHrAdmin = department === "Administration" && adminDept;
   const showCheckBox = !isTop || isHr || isHrAdmin;
 
   useEffect(() => {
@@ -234,9 +235,10 @@ const PerformanceKra = () => {
         <PageFrame>
           {!departmentLoading ? (
             <WidgetSection padding layout={1}>
-              <DateWiseTable
+              <AgTable
                 formatTime
                 checkbox={showCheckBox}
+                search
                 buttonTitle={"Add Daily KRA"}
                 handleSubmit={() => setOpenModal(true)}
                 tableTitle={`${department} DEPARTMENT - DAILY KRA`}
@@ -264,7 +266,7 @@ const PerformanceKra = () => {
           <div>
             {!departmentLoading ? (
               <WidgetSection padding>
-                <DateWiseTable
+                <YearWiseTable
                   formatTime
                   tableTitle={`COMPLETED - DAILY KRA`}
                   exportData={true}

@@ -166,9 +166,9 @@ const YearWiseTable = ({
         <div className="flex gap-2 items-center flex-wrap">
           {/* ✅ Show calendar only if data is not empty */}
           {dateRange.length > 0 && (
-            <IconButton onClick={handleOpenCalendar}>
-              <MdCalendarToday size={24} />
-            </IconButton>
+            <div className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]" onClick={handleOpenCalendar}>
+              <MdCalendarToday size={19} />
+            </div>
           )}
 
           <Popover
@@ -190,13 +190,15 @@ const YearWiseTable = ({
                   const dateStr = dayjs(date).format("YYYY-MM-DD");
                   const hasData = validDateSet.has(dateStr);
                   return (
-                    <div className="overflow-hidden h-[30px]">
+                    <div className="overflow-hidden">
                       <div
                         style={{
-                          backgroundColor: hasData ? "#E0F7FA" : "transparent",
-                          borderRadius: "50%",
-                          height: "32px",
-                          width: "32px",
+                          backgroundColor: hasData ? "white" : "transparent",
+                          borderBottom: hasData ? "4px solid #1E3D73" : "",
+                          borderTopLeftRadius : "5px",
+                          borderTopRightRadius : "5px",
+                          height: "25px",
+                          width: "25px",
                           fontWeight: hasData ? "bold" : "normal",
                           display: "flex",
                           alignItems: "center",

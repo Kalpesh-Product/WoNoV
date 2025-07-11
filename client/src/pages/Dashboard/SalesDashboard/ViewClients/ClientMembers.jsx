@@ -5,6 +5,7 @@ import { Chip } from "@mui/material";
 import { useSelector } from "react-redux";
 import humanDate from "../../../../utils/humanDateForamt";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import { formatMobileNumber } from "../../../../utils/formatMobileNumber ";
 
 const ClientMembers = () => {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ const ClientMembers = () => {
       ),
     },
     { field: "dob", headerName: "DOB" },
-    { field: "mobileNo", headerName: "Mobile No." },
+    { field: "mobileNo", headerName: "Mobile No.", cellRenderer : (params)=>(formatMobileNumber(params.value)) },
     { field: "email", headerName: "Email", flex: 1 },
     // {
     //   field: "status",

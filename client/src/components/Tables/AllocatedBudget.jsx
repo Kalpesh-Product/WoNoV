@@ -24,7 +24,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
-import { MdNavigateNext } from "react-icons/md";
+import { MdCalendarToday, MdNavigateNext } from "react-icons/md";
 
 const AllocatedBudget = ({
   financialData,
@@ -195,6 +195,8 @@ const AllocatedBudget = ({
     return base;
   }, [financialData, noInvoice]);
 
+  console.log("filtered ata : ", filteredRows);
+
   const totalProjectedAmount = useMemo(() => {
     return filteredRows.reduce(
       (sum, r) => sum + Number((r.projectedAmount || "0").replace(/,/g, "")),
@@ -217,9 +219,12 @@ const AllocatedBudget = ({
       >
         <div className="flex flex-col gap-4 rounded-md">
           <div className="flex justify-end">
-            <IconButton onClick={handleOpenCalendar}>
-              <MdNavigateNext size={20} />
-            </IconButton>
+            <div
+              className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
+              onClick={handleOpenCalendar}
+            >
+              <MdCalendarToday size={19} />
+            </div>
             <Popover
               open={openCalendar}
               anchorEl={anchorEl}
@@ -242,6 +247,7 @@ const AllocatedBudget = ({
               search
               data={filteredRows}
               columns={tableColumns}
+              // exportData
               tableHeight={350}
             />
           ) : (

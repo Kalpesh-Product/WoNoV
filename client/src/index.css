@@ -69,6 +69,8 @@
     background-color: #1E3D73 !important;
     color: #ffffff !important;
   }
+
+
   
 
 }
@@ -107,6 +109,11 @@
 }
 .rdrInRange{
   color: #d1d5db !important;
+}
+
+  .rdrDefinedRangesWrapper .rdrStaticRangeSelected {
+    color: #1E3D73 !important;
+    font-weight: 600;
 }
 .rdrDay:not(.rdrDayPassive) .rdrInRange ~ .rdrDayNumber span, .rdrDay:not(.rdrDayPassive), .rdrDay:not(.rdrDayPassive) , .rdrDay:not(.rdrDayPassive) .rdrSelected ~ .rdrDayNumber span {
   color: black !important;
