@@ -2,8 +2,27 @@ import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
 
 const ClientRevenue = () => {
+  const selectedClient = useSelector((state) => state.client.selectedClient);
+  console.log("client : ", selectedClient);
+  const axios = useAxiosPrivate();
+  const { data: revenueDetails, isPending: isRevenuePending } = useQuery({
+    queryKey: ["clientRevenue"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/sales/coworking-client-revenue/${selectedClient?._id}`
+        );
+        return response.data;
+      } catch (error) {
+        console.error(error.messa);
+      }
+    },
+  });
   const viewEmployeeColumns = [
     { field: "srno", headerName: "SR No", width: 100 },
     {
