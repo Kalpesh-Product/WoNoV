@@ -43,19 +43,19 @@ const WidgetSection = ({
           className={`border-default border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl ${
             normalCase ? "" : "uppercase"
           }`}>
-          <div className="flex w-full gap-8 items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col md:flex-col lg:flex-row w-full gap-4 items-center justify-between">
+            <div className="flex flex-col lg:flex-row justify-start lg:justify-start items-center gap-2">
               <span
                 className={`${
                   titleFont
-                    ? "text-subtitle text-primary"
-                    : "text-widgetTitle text-primary font-pmedium"
+                    ? "text-mobileTitle lg:text-subtitle text-primary text-center w-full"
+                    : "text-mobileTitle lg:text-widgetTitle text-primary font-pmedium text-center"
                 }`}>
                 {title}
               </span>
 
               {titleLabel ? (
-                <span className="text-widgetTitle text-primary font-pmedium">
+                <span className="text-mobileTitle lg:text-widgetTitle text-primary font-pmedium">
                   {titleLabel}
                 </span>
               ) : (

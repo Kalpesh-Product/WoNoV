@@ -74,7 +74,7 @@ const SupportTickets = ({ title, departmentId }) => {
                 ? `${ticket.ticket?.raisedBy?.firstName} ${ticket.ticket?.raisedBy?.lastName}`
                 : "Unknown",
             
-
+            priority:ticket.priority,
             selectedDepartment:
               Array.isArray(ticket.ticket.raisedBy?.departments) &&
               ticket.ticket.raisedBy.departments.length > 0
@@ -85,6 +85,7 @@ const SupportTickets = ({ title, departmentId }) => {
             acceptedBy: `${ticket.ticket?.acceptedBy?.firstName ?? ""} ${
               ticket.ticket.acceptedBy?.lastName ?? ""
             }`,
+            acceptedAt: ticket.ticket.acceptedAt,
             tickets:
               ticket.ticket?.assignees.length > 0
                 ? "Assigned Ticket"
@@ -345,7 +346,7 @@ const SupportTickets = ({ title, departmentId }) => {
         return (
           <ThreeDotMenu
             rowId={params.data.id}
-            menuItems={[...conditionalItems, ...commonItems]}
+            menuItems={[...commonItems,...conditionalItems]}
           />
         );
       },
