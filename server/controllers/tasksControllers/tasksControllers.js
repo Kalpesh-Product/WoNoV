@@ -757,12 +757,13 @@ const getAllDeptTasks = async (req, res, next) => {
 
     if (
       !roles.includes("Master Admin") &&
-      !roles.includes("Super Adtmin") &&
-      !roles.includes("HR Admin")
+      !roles.includes("Super Admin") &&
+      !roles.includes("HR")
     ) {
       query.department = { $in: departments };
     }
 
+    console.log("role");
     const tasks = await Task.find(query)
       .populate([{ path: "department", select: "name" }])
       .select("-company")
