@@ -341,7 +341,7 @@ const getCoworkingClients = async (req, res, next) => {
 
 const getCoworkingClientRevenues = async (req, res, next) => {
   try {
-    const coworkingId = req.params;
+    const { coworkingId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(coworkingId)) {
       return res.status(400).json({ message: "The coworking id is invalid" });
     }
@@ -680,5 +680,5 @@ module.exports = {
   getCoworkingClients,
   bulkInsertCoworkingClients,
   uploadClientOccupancyImage,
-  getCoworkingClientRevenues
+  getCoworkingClientRevenues,
 };
