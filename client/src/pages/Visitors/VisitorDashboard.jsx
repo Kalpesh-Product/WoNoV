@@ -439,14 +439,16 @@ const VisitorDashboard = () => {
   const departmentWiseCounts = {};
 
   visitorsData.forEach((visitor) => {
-    const dept = visitor.department?.name || "Unknown";
+    const dept = visitor.department?.name;
+    if (!dept) return; // Skip if no department name
+
     departmentWiseCounts[dept] = (departmentWiseCounts[dept] || 0) + 1;
   });
 
   const pieChartData = Object.entries(departmentWiseCounts).map(
-    ([name, count]) => ({
-      label: name,
-      value: count,
+    ([label, value]) => ({
+      label,
+      value,
     })
   );
 
