@@ -1,15 +1,14 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
-import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+import React, { useMemo, useState, useRef } from "react";
+import { DateRangePicker } from "react-date-range";
+import { addDays, isWithinInterval } from "date-fns";
 import dayjs from "dayjs";
 import AgTable from "../AgTable";
 import PrimaryButton from "../PrimaryButton";
 import humanDate from "../../utils/humanDateForamt";
-
-const getFiscalYear = (date) => {
-  const d = dayjs(date);
-  const year = d.month() >= 3 ? d.year() : d.year() - 1;
-  return `FY ${year}-${String((year + 1) % 100).padStart(2, "0")}`;
-};
+import { IconButton, Popover, Typography } from "@mui/material";
+import { MdCalendarToday } from "react-icons/md";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 const YearWiseTable = ({
   data = [],
@@ -24,118 +23,107 @@ const YearWiseTable = ({
   checkbox,
   checkAll,
   key,
-  initialMonth,
-  onMonthChange,
   exportData,
   dropdownColumns = [],
-  dateFilter,
   handleBatchAction,
   batchButton,
   isRowSelectable,
   hideTitle = true,
   search = true,
 }) => {
-  const lastEmittedMonthRef = useRef(null);
+  const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
-  const agGridRef = useRef(null);
-  const handleExportPass = () => {
-    if (agGridRef.current) {
-      agGridRef.current.api.exportDataAsCsv({
-        fileName: `${tableTitle || "data"}.csv`,
-      });
-    }
-  };
-  const fiscalMap = useMemo(() => {
-    const map = new Map();
-    data.forEach((item) => {
+
+  const today = dayjs();
+
+  // ✅ Default dateRange logic
+  const [dateRange, setDateRange] = useState(() => {
+    const currentMonthStart = today.startOf("month");
+    const currentMonthEnd = today.endOf("month");
+
+    const monthHasData = data.some((item) => {
       const date = dayjs(item[dateColumn]);
-      if (!date.isValid()) return;
-
-      const fy = getFiscalYear(date);
-      const month = date.format("MMM-YYYY");
-
-      if (!map.has(fy)) map.set(fy, new Map());
-      const monthMap = map.get(fy);
-
-      if (!monthMap.has(month)) monthMap.set(month, []);
-      monthMap.get(month).push(item);
+      return (
+        date.isValid() &&
+        date.isAfter(currentMonthStart.subtract(1, "day")) &&
+        date.isBefore(currentMonthEnd.add(1, "day"))
+      );
     });
-    return map;
-  }, [data, dateColumn]);
 
-  const fiscalYears = useMemo(
-    () => Array.from(fiscalMap.keys()).sort(),
-    [fiscalMap]
-  );
+    if (monthHasData) {
+      return [
+        {
+          startDate: currentMonthStart.toDate(),
+          endDate: currentMonthEnd.toDate(),
+          key: "selection",
+        },
+      ];
+    }
 
-  const [selectedFYIndex, setSelectedFYIndex] = useState(() => {
-    const defaultIndex = fiscalYears.findIndex(
-      (fy) => fy === getFiscalYear(new Date())
-    );
-    return defaultIndex !== -1 ? defaultIndex : 0;
+    const validDates = data
+      .map((item) => dayjs(item[dateColumn]))
+      .filter((d) => d.isValid())
+      .sort((a, b) => b.valueOf() - a.valueOf());
+
+    if (validDates.length > 0) {
+      const latest = validDates[0];
+      return [
+        {
+          startDate: latest.startOf("month").toDate(),
+          endDate: latest.endOf("month").toDate(),
+          key: "selection",
+        },
+      ];
+    }
+
+    return [
+      {
+        startDate: addDays(new Date(), 0),
+        endDate: new Date(),
+        key: "selection",
+      },
+    ];
   });
 
-  const selectedFY = fiscalYears[selectedFYIndex] || fiscalYears[0];
+  // Popover calendar logic
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+  const handleOpenCalendar = (e) => setAnchorEl(e.currentTarget);
+  const handleCloseCalendar = () => setAnchorEl(null);
 
-  const monthsInFY = useMemo(() => {
-    if (!selectedFY) return [];
-    return Array.from(fiscalMap.get(selectedFY)?.keys() || []).sort(
-      (a, b) => dayjs(a, "MMM-YYYY").toDate() - dayjs(b, "MMM-YYYY").toDate()
-    );
-  }, [fiscalMap, selectedFY]);
+  // Precompute valid date set for highlighting
+  const validDateSet = useMemo(() => {
+    const set = new Set();
+    data.forEach((item) => {
+      const d = dayjs(item[dateColumn]);
+      if (d.isValid()) set.add(d.format("YYYY-MM-DD"));
+    });
+    return set;
+  }, [data, dateColumn]);
 
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
+  // Filter table data by selected range
+const filteredData = useMemo(() => {
+  if (!dateColumn) return data;
+  const [range] = dateRange;
 
-  // ✅ Sync initial month if provided
-  useEffect(() => {
-    if (monthsInFY.length > 0) {
-      if (initialMonth) {
-        const matchedIndex = monthsInFY.findIndex((monthStr) => {
-          return dayjs(monthStr, "MMM-YYYY").format("MMMM") === initialMonth;
-        });
-        if (matchedIndex !== -1) {
-          setSelectedMonthIndex(matchedIndex);
-          return;
-        }
-      }
+  // Normalize the range to cover full day range
+  const start = dayjs(range.startDate).startOf("day").toDate();
+  const end = dayjs(range.endDate).endOf("day").toDate();
 
-      // ✅ Default to latest month available
-      setSelectedMonthIndex(monthsInFY.length - 1);
-    }
-  }, [initialMonth, monthsInFY]);
+  return data.filter((item) => {
+    const itemDate = dayjs(item[dateColumn]);
+    if (!itemDate.isValid()) return false;
 
-  // ✅ Reset month if it doesn't exist in the new FY
-  useEffect(() => {
-    if (monthsInFY.length === 0) return;
+    return isWithinInterval(itemDate.toDate(), {
+      start,
+      end,
+    });
+  });
+}, [data, dateColumn, dateRange]);
 
-    const currentMonth = monthsInFY[selectedMonthIndex];
-    const isValid = fiscalMap.get(selectedFY)?.has(currentMonth);
 
-    if (!isValid) {
-      setSelectedMonthIndex(0); // Default to first month
-    }
-  }, [selectedFYIndex, monthsInFY, fiscalMap, selectedFY, selectedMonthIndex]);
-
-  // Notify parent on month change
-  useEffect(() => {
-    const currentMonth = monthsInFY[selectedMonthIndex];
-    if (
-      onMonthChange &&
-      currentMonth &&
-      currentMonth !== lastEmittedMonthRef.current
-    ) {
-      onMonthChange(currentMonth);
-      lastEmittedMonthRef.current = currentMonth;
-    }
-  }, [selectedMonthIndex, monthsInFY, onMonthChange]);
-
-  const selectedMonth = monthsInFY[selectedMonthIndex] || "";
-
-  const filteredData = useMemo(() => {
-    return fiscalMap.get(selectedFY)?.get(selectedMonth) || [];
-  }, [fiscalMap, selectedFY, selectedMonth]);
-
+  // Format date columns
   const formattedColumns = useMemo(() => {
     return columns.map((col) => {
       if (col.field?.toLowerCase().includes("date")) {
@@ -144,13 +132,9 @@ const YearWiseTable = ({
           valueFormatter: (params) => {
             const date = dayjs(params.value);
             if (!date.isValid()) return params.value;
-
-            if (!formatDate && !formatTime) {
-              return params.value;
-            }
-
             if (formatTime) return date.format("hh:mm A");
             if (formatDate) return date.format("DD-MM-YYYY");
+            return params.value;
           },
         };
       }
@@ -166,24 +150,77 @@ const YearWiseTable = ({
     }));
   }, [filteredData, dateColumn]);
 
+  const handleExportPass = () => {
+    if (agGridRef.current) {
+      agGridRef.current.api.exportDataAsCsv({
+        fileName: `${tableTitle || "data"}.csv`,
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center w-full justify-between">
+      {/* Header */}
+      <div className="flex items-center w-full justify-between flex-wrap">
         {tableTitle && (
-          <div>
-            <span className="text-title text-primary font-pmedium uppercase">
-              {tableTitle}
-            </span>
-          </div>
+          <span className="text-title text-primary font-pmedium uppercase">
+            {tableTitle}
+          </span>
         )}
-        <div className="flex gap-4 items-center">
+
+        <div className="flex gap-2 items-center flex-wrap">
+          {/* Calendar Icon */}
+          <IconButton onClick={handleOpenCalendar}>
+            <MdCalendarToday size={24} />
+          </IconButton>
+
+          <Popover
+            open={open}
+            anchorEl={anchorEl}
+            onClose={handleCloseCalendar}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "left",
+            }}
+          >
+            <DateRangePicker
+              onChange={(item) => setDateRange([item.selection])}
+              moveRangeOnFirstSelection={false}
+              ranges={dateRange}
+              direction="vertical"
+              dayContentRenderer={(date) => {
+                const dateStr = dayjs(date).format("YYYY-MM-DD");
+                const hasData = validDateSet.has(dateStr);
+                return (
+                  <div className="overflow-hidden h-[30px]">
+                    <div
+                      style={{
+                        backgroundColor: hasData ? "#E0F7FA" : "transparent",
+                        borderRadius: "50%",
+                        height: "32px",
+                        width: "32px",
+                        fontWeight: hasData ? "bold" : "normal",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {date.getDate()}
+                    </div>
+                  </div>
+                );
+              }}
+            />
+          </Popover>
+
+          {/* Action Buttons */}
           {buttonTitle && (
             <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
           )}
           {exportData && (
             <PrimaryButton title={"Export"} handleSubmit={handleExportPass} />
           )}
-          {batchButton && selectedRows.length>0 && (
+          {batchButton && selectedRows.length > 0 && (
             <PrimaryButton
               title={batchButton || "Generate"}
               handleSubmit={() => handleBatchAction(selectedRows)}
@@ -191,80 +228,37 @@ const YearWiseTable = ({
           )}
         </div>
       </div>
-      <hr />
-      <div className="flex items-center justify-between">
-        <div className="flex items-center flex-wrap gap-4 w-full justify-center">
-          {monthsInFY.length > 0 && (
-            <div className="flex flex-wrap gap-4">
-              {/* Month Switcher */}
-              <div className="flex  items-center gap-2">
-                <PrimaryButton
-                  title={<MdNavigateBefore />}
-                  handleSubmit={() =>
-                    setSelectedMonthIndex((prev) => Math.max(prev - 1, 0))
-                  }
-                  disabled={selectedMonthIndex === 0}
-                />
-                <div className="text-subtitle text-center font-pmedium w-[100px]">
-                  {selectedMonth}
-                </div>
-                <PrimaryButton
-                  title={<MdNavigateNext />}
-                  handleSubmit={() =>
-                    setSelectedMonthIndex((prev) =>
-                      Math.min(prev + 1, monthsInFY.length - 1)
-                    )
-                  }
-                  disabled={selectedMonthIndex === monthsInFY.length - 1}
-                />
-              </div>
 
-              {/* FY Switcher */}
-              <div className="flex  items-center gap-2">
-                <PrimaryButton
-                  title={<MdNavigateBefore />}
-                  handleSubmit={() =>
-                    setSelectedFYIndex((prev) => Math.max(prev - 1, 0))
-                  }
-                  disabled={selectedFYIndex === 0}
-                />
-                <div className="text-subtitle text-center font-pmedium w-fit">
-                  {selectedFY}
-                </div>
-                <PrimaryButton
-                  title={<MdNavigateNext />}
-                  handleSubmit={() =>
-                    setSelectedFYIndex((prev) =>
-                      Math.min(prev + 1, fiscalYears.length - 1)
-                    )
-                  }
-                  disabled={selectedFYIndex === fiscalYears.length - 1}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <AgTable
-        key={key}
-        enableCheckbox={checkbox}
-        tableRef={agGridRef}
-        exportData={exportTable}
-        dropdownColumns={dropdownColumns}
-        checkAll={checkAll}
-        tableTitle={tableTitle}
-        tableHeight={tableHeight || 300}
-        columns={formattedColumns}
-        data={finalTableData}
-        hideFilter={filteredData.length <= 9}
-        search={search}
-        dateColumn={dateColumn}
-        isRowSelectable={isRowSelectable}
-        onSelectionChange={(rows) => setSelectedRows(rows)}
-        batchButton={batchButton}
-        hideTitle={hideTitle}
-      />
+      {/* Table or No Data Message */}
+      {finalTableData.length > 0 ? (
+        <AgTable
+          key={key}
+          enableCheckbox={checkbox}
+          tableRef={agGridRef}
+          exportData={exportTable}
+          dropdownColumns={dropdownColumns}
+          checkAll={checkAll}
+          tableTitle={tableTitle}
+          tableHeight={tableHeight || 300}
+          columns={formattedColumns}
+          data={finalTableData}
+          hideFilter={filteredData.length <= 9}
+          search={search}
+          dateColumn={dateColumn}
+          isRowSelectable={isRowSelectable}
+          onSelectionChange={(rows) => setSelectedRows(rows)}
+          batchButton={batchButton}
+          hideTitle={hideTitle}
+        />
+      ) : (
+        <Typography
+          variant="body1"
+          align="center"
+          style={{ padding: "2rem", color: "#666" }}
+        >
+          No data available for the selected date range.
+        </Typography>
+      )}
     </div>
   );
 };
