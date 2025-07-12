@@ -57,6 +57,8 @@ const MeetingDashboard = () => {
     },
   });
 
+  
+
   const now = dayjs();
 
   const { data: roomsData = [], isLoading: isRoomLoading } = useQuery({
@@ -66,6 +68,8 @@ const MeetingDashboard = () => {
       return response.data;
     },
   });
+
+  console.log("rooms", roomsData.map((item)=>item.name))
 
   const { data: holidaysData = [], isLoading: isHolidaysLoading } = useQuery({
     queryKey: ["holidays"],
@@ -299,20 +303,6 @@ const MeetingDashboard = () => {
     colors: ["#08b6bc"], // Blue color bars
   };
 
-  // const meetings = [
-  //   { meetingId: 1, meetingTime: "30min", mostUsedRoom: "Baga" },
-  //   { meetingId: 2, meetingTime: "1hr", mostUsedRoom: "Baga" },
-  //   { meetingId: 3, meetingTime: "30min", mostUsedRoom: "Aqua" },
-  //   { meetingId: 4, meetingTime: "2hr", mostUsedRoom: "Baga" },
-  //   { meetingId: 5, meetingTime: "1hr", mostUsedRoom: "Aqua" },
-  //   { meetingId: 6, meetingTime: "30min", mostUsedRoom: "Lagoon" },
-  //   { meetingId: 7, meetingTime: "2hr", mostUsedRoom: "Baga" },
-  //   { meetingId: 8, meetingTime: "1hr", mostUsedRoom: "Lagoon" },
-  //   { meetingId: 9, meetingTime: "1hr 30min", mostUsedRoom: "Lagoon" },
-  //   { meetingId: 10, meetingTime: "1hr 30min", mostUsedRoom: "Lagoon" },
-  //   { meetingId: 11, meetingTime: "3hr", mostUsedRoom: "Lagoon" },
-  //   { meetingId: 11, meetingTime: "3hr", mostUsedRoom: "Lagoon" },
-  // ];
 
   const meetings = [];
   // To check the number of times a meeting room is booked based on timings
@@ -370,38 +360,27 @@ const MeetingDashboard = () => {
   // ];
 
   // 🔁 Transform API response into availabilityRooms format
-  const availabilityRooms = (() => {
-    const roomMap = {};
+  const availabilityRooms = roomsData.map((room, index) => {
+    const roomName = room.name;
 
-    meetingsData.forEach((meeting) => {
-      const roomName = meeting.roomName;
-      const roomID = meeting._id;
-      const start = dayjs(meeting.startTime);
-      const end = dayjs(meeting.endTime);
-      const isOngoing = now.isAfter(start) && now.isBefore(end);
-
-      if (!roomMap[roomName]) {
-        roomMap[roomName] = {
-          roomID,
-          roomName,
-          status: "Available",
-        };
-      }
-
-      if (isOngoing) {
-        roomMap[roomName].status = "Unavailable";
-      }
+    // Check if any current meeting is ongoing for this room
+    const hasOngoingMeeting = meetingsData.some((meeting) => {
+      return (
+        meeting.roomName === roomName &&
+        now.isAfter(dayjs(meeting.startTime)) &&
+        now.isBefore(dayjs(meeting.endTime))
+      );
     });
 
-    return Object.values(roomMap);
-  })();
+    return {
+      roomID: index + 1,
+      roomName,
+      status: hasOngoingMeeting ? "Unavailable" : "Available",
+    };
+  });
 
-  const availableRooms = availabilityRooms.filter(
-    (r) => r.status === "Available"
-  );
-  const unavailableRooms = availabilityRooms.filter(
-    (r) => r.status === "Unavailable"
-  );
+  const availableRooms = availabilityRooms.filter((r) => r.status === "Available");
+  const unavailableRooms = availabilityRooms.filter((r) => r.status === "Unavailable");
 
   const RoomPieData = [
     { label: "Available", value: availableRooms.length },
@@ -429,7 +408,7 @@ const MeetingDashboard = () => {
     <div>
       <ul>
         {availabilityRooms
-          .sort((a, b) => (a.status === "Available" ? -1 : 1))
+          .sort((a, b) => (a.status === "Available" ? 1 : -1))
           .map((room, index) => (
             <li key={index} className="flex items-center mb-1">
               <span
@@ -439,9 +418,7 @@ const MeetingDashboard = () => {
                     room.status === "Available" ? "#28a745" : "#dc3545",
                 }}
               ></span>
-              <span className="text-content text-gray-400">
-                {room.roomName}
-              </span>
+              <span className="text-content text-gray-400">{room.roomName}</span>
             </li>
           ))}
       </ul>
