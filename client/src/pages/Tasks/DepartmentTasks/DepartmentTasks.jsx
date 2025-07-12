@@ -18,12 +18,13 @@ const DepartmentTasks = () => {
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
   useTopDepartment({
-    additionalTopUserIds: ["67b83885daad0f7bab2f188b"], //mac
+    additionalTopUserIds: ["67b83885daad0f7bab2f188b", "681a10b13fc9dc666ede401c"], //mac
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       navigate(`/app/tasks/department-tasks/${currentDepartment}`);
     },
   });
+
   const fetchDepartments = async () => {
     try {
       const response = await axios.get("api/tasks/get-depts-tasks");

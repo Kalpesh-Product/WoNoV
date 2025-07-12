@@ -446,16 +446,16 @@ const ClockInOutAttendance = () => {
     },
     {
       label: "Work Hours",
-      value: workHours,
+      value: isToday ? workHours : "0h:0m:0s",
     },
     {
       label: "Break Hours",
-      value: breakHours,
+      value: isToday ? breakHours : "0h:0m:0s",
     },
     {
       label: "Clock-out Time",
       value:
-        clockOutTime ? humanTime(clockOutTime) : "0h:0m:0s",
+        clockOutTime && isToday ? humanTime(clockOutTime) : "0h:0m:0s",
     },
   ];
 
@@ -503,7 +503,7 @@ const ClockInOutAttendance = () => {
             )}
           </div>
           <div className="text-subtitle text-primary font-pmedium font-medium mb-4 pt-4">
-            {hasClockedIn
+            {hasClockedIn && isToday
               ? `${formatElapsedTime(elapsedTime)}`
               : clockOutTime
               ? "Clocked Out"
