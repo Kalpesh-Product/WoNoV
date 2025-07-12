@@ -423,7 +423,7 @@ const HrDashboard = () => {
             });
           });
 
-          navigate(`overall-tasks`, {
+          navigate(`overall-KPA`, {
             state: {
               month: clickedMonth,
               tasks: selectedMonthTasks,

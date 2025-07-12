@@ -10,6 +10,9 @@ const departmentSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  isActive: {
+    type: Boolean,
+  },
   templates: [
     {
       name: {
