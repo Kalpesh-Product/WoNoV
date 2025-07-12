@@ -63,19 +63,24 @@ app.get("/", (req, res) => {
   }
 });
 
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", auditLogger, authRoutes);
 
-app.use("/api/access", verifyJwt, accessRoutes);
+app.use("/api/access", verifyJwt, auditLogger, accessRoutes);
 app.use("/api/company", verifyJwt, auditLogger, companyRoutes);
 app.use("/api/budget", verifyJwt, auditLogger, budgetRoutes);
-app.use("/api/departments", departmentsRoutes);
-app.use("/api/designations", designationRoutes);
+app.use("/api/departments", verifyJwt, auditLogger, departmentsRoutes);
+app.use("/api/designations", verifyJwt, auditLogger, designationRoutes);
 app.use("/api/tech", verifyJwt, auditLogger, techRoutes);
 app.use("/api/assets", verifyJwt, auditLogger, assetsRoutes);
 app.use("/api/meetings", verifyJwt, auditLogger, meetingsRoutes);
 app.use("/api/tickets", verifyJwt, auditLogger, ticketsRoutes);
-app.use("/api/leaves", verifyJwt, leaveRoutes);
-app.use("/api/employee-agreements", employeeAgreementRoutes);
+app.use("/api/leaves", verifyJwt, auditLogger, leaveRoutes);
+app.use(
+  "/api/employee-agreements",
+  verifyJwt,
+  auditLogger,
+  employeeAgreementRoutes
+);
 app.use("/api/editor", websiteRoutes);
 app.use("/api/users", verifyJwt, auditLogger, userRoutes);
 app.use("/api/roles", verifyJwt, auditLogger, roleRoutes);
