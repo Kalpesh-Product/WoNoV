@@ -101,6 +101,11 @@ const SalesDashboard = () => {
         enabled: false, // ✅ disables all animations
       },
       toolbar: { show: false },
+      events: {
+        dataPointSelection: () => {
+          navigate("turnover");
+        },
+      },
       fontFamily: "Poppins-Regular",
     },
     colors: ["#54C4A7", "#EB5C45"],
