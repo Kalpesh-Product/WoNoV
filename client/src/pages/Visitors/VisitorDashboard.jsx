@@ -632,8 +632,7 @@ const VisitorDashboard = () => {
           <PieChartMui
             data={pieChartData}
             options={pieChartOptions}
-            width={438}
-            height={800}
+            height={320}
           />
         </WidgetSection>,
       ],

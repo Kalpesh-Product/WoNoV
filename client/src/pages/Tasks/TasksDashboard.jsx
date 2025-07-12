@@ -641,15 +641,6 @@ const TasksDashboard = () => {
     {
       layout: 2,
       widgets: [
-        // <WidgetSection
-        //   layout={1}
-        //   title={"Overall Pending v/s Assigned Tasks"}
-        //   border>
-        //   <PieChartMui
-        //     data={tasksPieChartData}
-        //     options={tasksPieChartOptions}
-        //   />
-        // </WidgetSection>,
         <WidgetSection border title={"Overall Pending v/s Completed Tasks"}>
           <PieChartMui
             data={dynamicTasksPieChartData}
@@ -657,21 +648,11 @@ const TasksDashboard = () => {
             height={325}
           />
         </WidgetSection>,
-        // <WidgetSection
-        //   layout={1}
-        //   title={"Department-wise Pending Tasks"}
-        //   border>
-        //   <PieChartMui
-        //     data={departmentPendingStats}
-        //     options={departmentPieChartOptions}
-        //   />
-        // </WidgetSection>,
-
         <WidgetSection border title={"Department-wise Pending Tasks"}>
           <PieChartMui
             data={departmentPendingStats}
             options={departmentPendingOptions}
-            height={500}
+            height={325}
           />
         </WidgetSection>,
       ],

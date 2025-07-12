@@ -81,6 +81,8 @@ const AcceptedTickets = ({ title, departmentId }) => {
     },
   });
 
+  console.log("depts : ", departments.map((item)=>item.department))
+
   // Fetch Accepted Tickets
   const { data: acceptedTickets = [], isLoading } = useQuery({
     queryKey: ["accepted-tickets"],
@@ -145,7 +147,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
       const response = await axios.patch("/api/tickets/escalate-ticket", {
         ticketId: esCalatedTicket.id,
         description: ticketDetails.description,
-        departmentIds: ticketDetails.departmentIds,
+        departmentIds: [ticketDetails.departmentIds],
       });
       return response.data;
     },
@@ -189,9 +191,9 @@ const AcceptedTickets = ({ title, departmentId }) => {
     {
       field: "raisedToDepartment",
       headerName: "From Department",
-     width:100,
+      width: 100,
     },
-    { field: "ticketTitle", headerName: "Ticket Title",},
+    { field: "ticketTitle", headerName: "Ticket Title" },
     {
       field: "status",
       headerName: "Status",
@@ -211,7 +213,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
     {
       field: "actions",
       headerName: "Actions",
-            pinned : 'right',
+      pinned: "right",
       cellRenderer: (params) => {
         const commonItems = [
           { label: "View", onClick: () => handleViewTicket(params.data) },
@@ -338,7 +340,11 @@ const AcceptedTickets = ({ title, departmentId }) => {
         </form>
       </MuiModal>
 
-      <MuiModal open={esCalateModal} onClose={() => setEscalateModal(false)}>
+      <MuiModal
+        open={esCalateModal}
+        onClose={() => setEscalateModal(false)}
+        title={"Escalate Ticket"}
+      >
         <div>
           <form
             onSubmit={handleEscalateTicketSubmit(onEscalate)}
@@ -349,34 +355,22 @@ const AcceptedTickets = ({ title, departmentId }) => {
               control={escalateFormControl}
               rules={{ required: "Department is required" }}
               render={({ field }) => (
-                <Autocomplete
-                  multiple
-                  options={departments}
-                  getOptionLabel={(dept) => `${dept.department.name}`}
-                  onChange={(_, newValue) =>
-                    field.onChange(newValue.map((dept) => dept.department._id))
-                  }
-                  renderTags={(selected, getTagProps) =>
-                    selected.map((dept, index) => (
-                      <Chip
-                        key={dept.department._id}
-                        label={`${dept.department.name}`}
-                        {...getTagProps({ index })}
-                        deleteIcon={<IoMdClose />}
-                      />
-                    ))
-                  }
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Select Departments"
-                      size="small"
-                      fullWidth
-                      error={!!escalateTicketErrors.departmentIds}
-                      helperText={escalateTicketErrors.departmentIds?.message}
-                    />
-                  )}
-                />
+                <TextField
+                {...field}
+                  select
+                  fullWidth
+                  size="small"
+                  label="Select Department"
+                >
+                  <MenuItem value="" disabled>
+                    Select a Department
+                  </MenuItem>
+                  {departments.map((item) => (
+                    <MenuItem key={item.department?._id} value={item.department?._id}>
+                      {item.department?.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
               )}
             />
 
