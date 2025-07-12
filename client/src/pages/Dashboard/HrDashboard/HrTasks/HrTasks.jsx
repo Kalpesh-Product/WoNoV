@@ -98,8 +98,8 @@ const HrTasks = () => {
 
   const graphData = [
     {
-      name: "Completed Tasks",
-      group: `Tasks - ${selectedMonth}`,
+      name: "Completed KPA",
+      group: `KPA - ${selectedMonth}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -110,8 +110,8 @@ const HrTasks = () => {
       }),
     },
     {
-      name: "Remaining Tasks",
-      group: `Tasks - ${selectedMonth}`,
+      name: "Remaining KPA",
+      group: `KPA - ${selectedMonth}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -137,7 +137,7 @@ const HrTasks = () => {
           // Fetch all tasks for the clicked department for the selected month
           const departmentTasks = groupedTasks[clickedDept] || [];
 
-          navigate("department-tasks", {
+          navigate("department-KPA", {
             state: {
               month: selectedMonth,
               department: clickedDept,
@@ -182,16 +182,16 @@ const HrTasks = () => {
           <div style="padding:8px; font-family: Poppins, sans-serif; font-size: 13px ; width : 150px ">
             <strong>${dept}</strong><br/>
             <div style="display:flex ; justify-content:space-between ; width:"100%" ">
-              <div>Total tasks</div> 
+              <div>Total KPA</div> 
               <div>${total}</div>
             </div>
             <div style="display:flex ; justify-content:space-between ; width:"100%" ">
-              <div>Completed tasks</div> 
+              <div>Completed KPA</div> 
               <div>${completed}</div>
             </div>
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
              <div style="display:flex ; justify-content:space-between ; width:"100%" ">
-              <div>Remaining tasks</div> 
+              <div>Remaining KPA</div> 
               <div>${remaining}</div>
             </div>
           </div>
@@ -241,7 +241,7 @@ const HrTasks = () => {
         <span
           role="button"
           onClick={() =>
-            navigate("department-tasks", {
+            navigate("department-KPA", {
               state: {
                 month: selectedMonth,
                 department: params.value,
@@ -265,7 +265,7 @@ const HrTasks = () => {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-        title={`Task overview - ${selectedMonth} ${yearArray[0].split("-")[2]}`}
+        title={`KPA overview - ${selectedMonth} ${yearArray[0].split("-")[2]}`}
         border
         padding
         greenTitle={"completed"}
@@ -299,9 +299,9 @@ const HrTasks = () => {
       </WidgetSection>
 
       <WidgetSection
-        title="Department-wise task overview"
+        title="Department-wise KPA overview"
         border
-        TitleAmount={`TOTAL TASKS : ${tableData.reduce((sum, item) => item.totalTasks + sum, 0)}`}
+        TitleAmount={`TOTAL KPA : ${tableData.reduce((sum, item) => item.totalTasks + sum, 0)}`}
       >
         <AgTable
           columns={tasksColumns}

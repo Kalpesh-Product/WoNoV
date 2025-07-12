@@ -99,7 +99,7 @@ const HrDepartmentTasks = () => {
 
   const graphData = [
     {
-      name: "Completed Tasks",
+      name: "Completed KPA",
       group: `${departmentName} - ${month}`,
       data: fyMonths.map((label) => {
         const { total, achieved } = monthlyMap[label] || {
@@ -115,7 +115,7 @@ const HrDepartmentTasks = () => {
       }),
     },
     {
-      name: "Remaining Tasks",
+      name: "Remaining KPA",
       group: `${departmentName} - ${month}`,
       data: fyMonths.map((label) => {
         const { total, achieved } = monthlyMap[label] || {
@@ -182,19 +182,19 @@ const HrDepartmentTasks = () => {
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
     
             <div style="display: flex; justify-content: space-between;">
-              <span>Total tasks</span>
+              <span>Total KPA</span>
               <span>${total}</span>
             </div>
     
             <div style="display: flex; justify-content: space-between;">
-              <span>Completed tasks</span>
+              <span>Completed KPA</span>
               <span>${completed}</span>
             </div>
     
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
     
             <div style="display: flex; justify-content: space-between;">
-              <span>Remaining tasks</span>
+              <span>Remaining KPA</span>
               <span>${remaining}</span>
             </div>
           </div>
@@ -212,7 +212,7 @@ const HrDepartmentTasks = () => {
     },
     {
       field: "taskName",
-      headerName: "Task Name",
+      headerName: "KPA Name",
       flex: 1,
     },
     {
@@ -263,15 +263,15 @@ const HrDepartmentTasks = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <span className="uppercase text-title text-primary font-pmedium">
-        {departmentName} department tasks {fullMonthNames[shortMonth]} - {year}
-      </span>
+      {/* <span className="uppercase text-title text-primary font-pmedium">
+        {departmentName} department KPA {fullMonthNames[shortMonth]} - {year}
+      </span> */}
       <hr className="p-0 mb-2" />
 
       <WidgetSection
-        title={`${departmentName} department task overview`}
+        title={`${departmentName} department KPA overview`}
         border
-        TitleAmount={`TOTAL TASKS :  ${tasksData.length || 0}`}
+        TitleAmount={`TOTAL KPA :  ${tasksData.length || 0}`}
       >
         <NormalBarGraph
           data={graphData}
@@ -282,12 +282,12 @@ const HrDepartmentTasks = () => {
       </WidgetSection>
 
       <WidgetSection
-        title={`Task details`}
+        title={`KPA details`}
         border
         TitleAmount={`${fullMonthNames[shortMonth]} : ${
           filteredTasks.length > 1
-            ? `${filteredTasks.length} tasks`
-            : `${filteredTasks.length} task`
+            ? `${filteredTasks.length} KPA`
+            : `${filteredTasks.length} KPA`
         } `}
       >
           <div className="flex justify-center items-center gap-4">

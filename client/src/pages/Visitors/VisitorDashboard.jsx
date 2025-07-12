@@ -633,7 +633,7 @@ const VisitorDashboard = () => {
             data={pieChartData}
             options={pieChartOptions}
             width={438}
-            height={323}
+            height={800}
           />
         </WidgetSection>,
       ],

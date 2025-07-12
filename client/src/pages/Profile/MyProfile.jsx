@@ -87,7 +87,10 @@ const MyProfile = ({ handleClose, pageTitle }) => {
       // ✅ Show success message
       // alert(response.data.message || "Image uploaded successfully!");
       // toast.success(response.data.message || "Profile Image uploaded successfully!");
-      toast.success("Profile Image uploaded successfully!");
+      if (!response?.status === 200) {
+        toast.error(response.data.message || "Failed to upload image.");
+        return;
+      }
       setTimeout(() => {
         window.location.reload();
       }, 1000); // delay of 1000ms = 1 second
@@ -302,7 +305,8 @@ const MyProfile = ({ handleClose, pageTitle }) => {
                 height: "100%",
                 fontSize: "5rem",
               }}
-              src={previewUrl || auth?.user?.profilePicture?.url}>
+              src={previewUrl || auth?.user?.profilePicture?.url}
+            >
               {!previewUrl &&
                 !auth?.user?.profilePicture?.url &&
                 user.name?.charAt(0)}
@@ -319,7 +323,8 @@ const MyProfile = ({ handleClose, pageTitle }) => {
             <label
               htmlFor="fileUpload"
               // className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 p-6 rounded-md cursor-pointer transition">
-              className="flex flex-col items-center justify-center   rounded-md cursor-pointer transition">
+              className="flex flex-col items-center justify-center   rounded-md cursor-pointer transition"
+            >
               {previewUrl ? (
                 // <img
                 //   src={previewUrl}
@@ -347,7 +352,8 @@ const MyProfile = ({ handleClose, pageTitle }) => {
               <div className=" flex flex-col items-center gap-2">
                 <label
                   htmlFor="fileUpload"
-                  className="text-primary cursor-pointer underline">
+                  className="text-primary cursor-pointer underline"
+                >
                   Change Image
                 </label>
                 <button
@@ -357,7 +363,8 @@ const MyProfile = ({ handleClose, pageTitle }) => {
                     uploading
                       ? "bg-gray-400"
                       : "bg-primary hover:scale-[1.05] transition"
-                  }`}>
+                  }`}
+                >
                   {uploading ? "Uploading..." : "Save Image"}
                 </button>
               </div>
@@ -397,7 +404,8 @@ const MyProfile = ({ handleClose, pageTitle }) => {
           onSubmit={(e) => {
             e.preventDefault();
             handleSubmit();
-          }}>
+          }}
+        >
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <PersonalDetails
               formData={personalDetails}

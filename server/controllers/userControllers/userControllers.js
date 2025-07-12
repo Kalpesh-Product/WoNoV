@@ -457,7 +457,7 @@ const updateProfile = async (req, res, next) => {
               logAction,
               logSourceKey
             );
-            console.log("old profile pic deleted successfully");
+            
           }
         } catch (error) {
           throw new CustomError(
