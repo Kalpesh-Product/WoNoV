@@ -322,13 +322,13 @@ const SalesDashboard = () => {
       {
         title: "Occupied Desks",
         value: 553,
-        route: "/app/dashboard/sales-dashboard/co-working-seats",
+        route: "/app/dashboard/sales-dashboard/inventory",
       },
       {
         title: "Occupancy %",
         value: "93",
         route:
-          "/app/dashboard/sales-dashboard/co-working-seats/check-availability",
+          "/app/dashboard/sales-dashboard/inventory",
       },
       {
         title: "Clients",
@@ -338,7 +338,7 @@ const SalesDashboard = () => {
       {
         title: "Provisioned Desks",
         value: "140",
-        route: "/app/dashboard/sales-dashboard/co-working-seats",
+        route: "/app/dashboard/sales-dashboard/inventory",
       },
     ],
   };

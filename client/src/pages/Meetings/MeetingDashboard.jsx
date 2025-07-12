@@ -19,6 +19,7 @@ import dayjs from "dayjs";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import useAuth from "../../hooks/useAuth";
+import humanTime from "../../utils/humanTime";
 const WidgetSection = lazy(() => import("../../components/WidgetSection"));
 
 const MeetingDashboard = () => {
@@ -984,7 +985,7 @@ const heatmapData = timeSlots.map((slot, slotIndex) => ({
               id: index + 1,
               roomName: item.roomName,
               meetingType: item.meetingType,
-              endTime: item.endTime,
+              endTime: humanTime(item.endTime),
               unitName: item.location?.unitName,
             })),
           ]}

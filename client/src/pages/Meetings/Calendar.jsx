@@ -98,6 +98,7 @@ const Calender = () => {
   };
 
   const todaysEvents = getTodaysEvents();
+  console.log("selected : ", selectedEvent);
 
   const handleEventClick = (clickInfo) => {
     const event = clickInfo.event;
@@ -317,12 +318,19 @@ const Calender = () => {
 
               <DetalisFormatted
                 title="Booked By"
-                detail={selectedEvent.extendedProps.bookedBy}
+                detail={
+                  selectedEvent.extendedProps.bookedBy
+                    ? selectedEvent.extendedProps.bookedBy
+                    : selectedEvent.extendedProps?.clientBookedBy?.employeeName
+                }
               />
               <DetalisFormatted
                 title="Receptionist"
-                detail={selectedEvent.extendedProps.receptionist? selectedEvent.extendedProps.receptionist : "N/A"}
-                
+                detail={
+                  selectedEvent.extendedProps.receptionist
+                    ? selectedEvent.extendedProps.receptionist
+                    : "N/A"
+                }
               />
               <DetalisFormatted
                 title="Department"

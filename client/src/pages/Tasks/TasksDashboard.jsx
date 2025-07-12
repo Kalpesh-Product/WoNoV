@@ -2,54 +2,26 @@ import { RiPagesLine } from "react-icons/ri";
 import { MdFormatListBulleted, MdMiscellaneousServices } from "react-icons/md";
 import { CgProfile } from "react-icons/cg";
 import Card from "../../components/Card";
-import DonutChart from "../../components/graphs/DonutChart";
 import WidgetSection from "../../components/WidgetSection";
 import DataCard from "../../components/DataCard";
 import MuiTable from "../../components/Tables/MuiTable";
-import BarGraph from "../../components/graphs/BarGraph";
 import PieChartMui from "../../components/graphs/PieChartMui";
 import {
-  tasksPieChartOptions,
-  tasksMonthlyData,
-  tasksMonthlyOptions,
-  pieGenderData,
-  pieGenderOptions,
-  myTasksColumns,
   myTodayMeetingsColumns,
   recentlyAddedTasksCol,
 } from "./TasksData";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import useAuth from "../../hooks/useAuth";
-import { Chip } from "@mui/material";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
-import usePageDepartment from "../../hooks/usePageDepartment";
-import { useLocation, useSearchParams } from "react-router-dom";
-import { Task } from "@mui/icons-material";
 const TasksDashboard = () => {
   const axios = useAxiosPrivate();
   const [selectedFY, setSelectedFY] = useState(null);
 
-  const { auth } = useAuth();
-  const department = usePageDepartment();
-  const monthOrder = [
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-    "January",
-    "February",
-    "March",
-  ];
+
   //-------------------Tasks graph ---------------------//
   const normalizeDataByMonth = (tasks) => {
     const fyBuckets = {};
@@ -402,7 +374,6 @@ const TasksDashboard = () => {
   //Department-wise Pending Tasks
 
   const calculateDepartmentPendingStats = (tasks) => {
-    
     const departmentMap = tasks.reduce((acc, task) => {
       const departmentName = task.department || "Unknown";
       const isPending = task.status === "Pending";

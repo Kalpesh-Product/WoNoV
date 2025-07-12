@@ -33,6 +33,7 @@ const AddVisitor = () => {
     mode: "onChange",
     defaultValues: {
       firstName: "",
+      lastName:"",
       email: "",
       gender: "",
       address: "",
@@ -125,6 +126,7 @@ const AddVisitor = () => {
       return response.data;
     },
     onSuccess: (data) => {
+      reset();
       toast.custom((t) => (
         <div className="p-4 bg-successGreen rounded shadow text-green-800 flex flex-col gap-4">
           <span className="text-content font-pmedium">
@@ -132,7 +134,6 @@ const AddVisitor = () => {
           </span>
         </div>
       ));
-      reset();
     },
     onError: (error) => {
       toast.error(error.message || "Error Adding Visitor");
