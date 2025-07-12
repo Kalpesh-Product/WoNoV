@@ -19,12 +19,13 @@ import dayjs from "dayjs";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import useAuth from "../../hooks/useAuth";
+import humanTime from "../../utils/humanTime";
 const WidgetSection = lazy(() => import("../../components/WidgetSection"));
 
 const MeetingDashboard = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
-  const {auth} = useAuth()
+  const { auth } = useAuth();
   const [selectedFY, setSelectedFY] = useState("FY 2024-25");
   const { isTop } = useTopDepartment({
     additionalTopUserIds: [
@@ -32,13 +33,21 @@ const MeetingDashboard = () => {
       "67b83885daad0f7bab2f18a9",
       "67b83885daad0f7bab2f18a6",
     ],
-    additionalTopDepartmentIds: ["6798bae6e469e809084e24a4","6798ba9de469e809084e2494"],
+    additionalTopDepartmentIds: [
+      "6798bae6e469e809084e24a4",
+      "6798ba9de469e809084e2494",
+    ],
   });
 
-  
-   const departments =  auth.user.departments.map((dept)=>{ return dept._id.toString()})
-  const allowedDepts = ["67b2cf85b9b6ed5cedeb9a2e","6798bae6e469e809084e24a4","6798ba9de469e809084e2494"]
-  const isWidgetAllowed = departments.some((id) => allowedDepts.includes(id));  
+  const departments = auth.user.departments.map((dept) => {
+    return dept._id.toString();
+  });
+  const allowedDepts = [
+    "67b2cf85b9b6ed5cedeb9a2e",
+    "6798bae6e469e809084e24a4",
+    "6798ba9de469e809084e2494",
+  ];
+  const isWidgetAllowed = departments.some((id) => allowedDepts.includes(id));
 
   const { data: meetingsData = [], isLoading } = useQuery({
     queryKey: ["meetings"],
@@ -48,6 +57,10 @@ const MeetingDashboard = () => {
     },
   });
 
+  
+
+  const now = dayjs();
+
   const { data: roomsData = [], isLoading: isRoomLoading } = useQuery({
     queryKey: ["rooms"],
     queryFn: async () => {
@@ -55,6 +68,8 @@ const MeetingDashboard = () => {
       return response.data;
     },
   });
+
+  console.log("rooms", roomsData.map((item)=>item.name))
 
   const { data: holidaysData = [], isLoading: isHolidaysLoading } = useQuery({
     queryKey: ["holidays"],
@@ -288,22 +303,8 @@ const MeetingDashboard = () => {
     colors: ["#08b6bc"], // Blue color bars
   };
 
-  // const meetings = [
-  //   { meetingId: 1, meetingTime: "30min", mostUsedRoom: "Baga" },
-  //   { meetingId: 2, meetingTime: "1hr", mostUsedRoom: "Baga" },
-  //   { meetingId: 3, meetingTime: "30min", mostUsedRoom: "Aqua" },
-  //   { meetingId: 4, meetingTime: "2hr", mostUsedRoom: "Baga" },
-  //   { meetingId: 5, meetingTime: "1hr", mostUsedRoom: "Aqua" },
-  //   { meetingId: 6, meetingTime: "30min", mostUsedRoom: "Lagoon" },
-  //   { meetingId: 7, meetingTime: "2hr", mostUsedRoom: "Baga" },
-  //   { meetingId: 8, meetingTime: "1hr", mostUsedRoom: "Lagoon" },
-  //   { meetingId: 9, meetingTime: "1hr 30min", mostUsedRoom: "Lagoon" },
-  //   { meetingId: 10, meetingTime: "1hr 30min", mostUsedRoom: "Lagoon" },
-  //   { meetingId: 11, meetingTime: "3hr", mostUsedRoom: "Lagoon" },
-  //   { meetingId: 11, meetingTime: "3hr", mostUsedRoom: "Lagoon" },
-  // ];
 
-  const meetings = []
+  const meetings = [];
   // To check the number of times a meeting room is booked based on timings
   const durationCount = {};
   meetingsData.forEach((meeting) => {
@@ -323,7 +324,7 @@ const MeetingDashboard = () => {
     legend: {
       position: "right",
     },
-  colors: [
+    colors: [
       "#1E3D73", // original
       "#34528A", // slightly lighter
       "#4A68A1", // medium shade
@@ -358,46 +359,41 @@ const MeetingDashboard = () => {
   //   { roomID: 7, roomName: "Horizon", status: "Available" },
   // ];
 
-  const availabilityRooms = [
-    { roomID: 1, roomName: "Arambol", status: "Available" },
-    { roomID: 2, roomName: "Atlantis", status: "Unavailable" },
-    { roomID: 3, roomName: "Baga", status: "Available" },
-    { roomID: 4, roomName: "Barber", status: "Unavailable" },
-    { roomID: 5, roomName: "Colosseum", status: "Available" },
-    { roomID: 6, roomName: "Hawaii", status: "Unavailable" },
-    { roomID: 7, roomName: "Library", status: "Available" },
-    { roomID: 8, roomName: "Madrid", status: "Unavailable" },
-    { roomID: 9, roomName: "Miami", status: "Available" },
-    { roomID: 10, roomName: "Nicolas", status: "Unavailable" },
-    { roomID: 11, roomName: "San Fransisco", status: "Available" },
-    { roomID: 12, roomName: "Vagator", status: "Unavailable" },
-    { roomID: 13, roomName: "Vatican", status: "Available" },
-    { roomID: 14, roomName: "Zurich", status: "Unavailable" },
-  ];
+  // 🔁 Transform API response into availabilityRooms format
+  const availabilityRooms = roomsData.map((room, index) => {
+    const roomName = room.name;
 
-  // 🔹 Process Data for Pie Chart
-  const availableRooms = availabilityRooms.filter(
-    (room) => room.status === "Available"
-  );
-  const unavailableRooms = availabilityRooms.filter(
-    (room) => room.status === "Unavailable"
-  );
+    // Check if any current meeting is ongoing for this room
+    const hasOngoingMeeting = meetingsData.some((meeting) => {
+      return (
+        meeting.roomName === roomName &&
+        now.isAfter(dayjs(meeting.startTime)) &&
+        now.isBefore(dayjs(meeting.endTime))
+      );
+    });
+
+    return {
+      roomID: index + 1,
+      roomName,
+      status: hasOngoingMeeting ? "Unavailable" : "Available",
+    };
+  });
+
+  const availableRooms = availabilityRooms.filter((r) => r.status === "Available");
+  const unavailableRooms = availabilityRooms.filter((r) => r.status === "Unavailable");
 
   const RoomPieData = [
     { label: "Available", value: availableRooms.length },
     { label: "Unavailable", value: unavailableRooms.length },
   ];
 
-  // 🔹 ApexCharts Options
   const RoomOptions = {
-    chart: {
-      fontFamily: "Poppins-Regular",
-    },
-    labels: RoomPieData.map((item) => item.label), // Labels: Available & Unavailable
-    legend: { show: false }, // Hide default ApexCharts legend
+    chart: { fontFamily: "Poppins-Regular" },
+    labels: RoomPieData.map((item) => item.label),
+    legend: { show: false },
     dataLabels: {
       enabled: true,
-      formatter: (val) => `${val.toFixed(1)}%`, // Show percentage
+      formatter: (val) => `${val.toFixed(1)}%`,
     },
     tooltip: {
       y: {
@@ -405,16 +401,14 @@ const MeetingDashboard = () => {
           `${RoomPieData[seriesIndex].label}: ${val} rooms`,
       },
     },
-    // colors: ["#28a745", "#dc3545"], // Green for Available, Red for Unavailable
     colors: ["#54C4A7", "#EB5C45"],
   };
 
-  // 🔹 Custom Legend Component
   const CustomLegend = (
     <div>
       <ul>
         {availabilityRooms
-          .sort((a, b) => (a.status === "Available" ? -1 : 1)) // Sort Available rooms first
+          .sort((a, b) => (a.status === "Available" ? 1 : -1))
           .map((room, index) => (
             <li key={index} className="flex items-center mb-1">
               <span
@@ -424,15 +418,12 @@ const MeetingDashboard = () => {
                     room.status === "Available" ? "#28a745" : "#dc3545",
                 }}
               ></span>
-              <span className="text-content text-gray-400">
-                {room.roomName}
-              </span>
+              <span className="text-content text-gray-400">{room.roomName}</span>
             </li>
           ))}
       </ul>
     </div>
   );
-
   const BookingMonths = [
     "Apr-24",
     "May-24",
@@ -647,9 +638,9 @@ const MeetingDashboard = () => {
         formatter: function (val) {
           return `${(val / 100) * totalBookableHours} hrs`; // Custom text, like "12 hrs"
         },
-         title: {
-      formatter: () => 'Total hours : ', // 🔥 Hides "Series 1"
-    },
+        title: {
+          formatter: () => "Total hours : ", // 🔥 Hides "Series 1"
+        },
       },
       x: {
         formatter: function (val) {
@@ -815,14 +806,13 @@ const MeetingDashboard = () => {
   });
 
   // Convert to heatmap format
-const heatmapData = timeSlots.map((slot, slotIndex) => ({
-  name: slot,
-  data: days.map((day, dayIndex) => ({
-    x: day,
-    y: matrix[slotIndex][dayIndex], // No more 0 for Sat/Sun
-  })),
-}));
-
+  const heatmapData = timeSlots.map((slot, slotIndex) => ({
+    name: slot,
+    data: days.map((day, dayIndex) => ({
+      x: day,
+      y: matrix[slotIndex][dayIndex], // No more 0 for Sat/Sun
+    })),
+  }));
 
   const heatmapOptions = {
     chart: {
@@ -909,197 +899,210 @@ const heatmapData = timeSlots.map((slot, slotIndex) => ({
           />
         )),
     },
-...(isWidgetAllowed ? [ 
-  {
-      layout: 3,
-      widgets: [
-        <DataCard
-          title={"Total"}
-          data={totalDurationInHours.toFixed(0)}
-          description={"Hours Booked"}
-          route={"reports"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={meetingsData.length || 0}
-          description={"Unique Bookings"}
-          route={"reports"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={
-            meetingsData.filter((item) => item.meetingType === "Internal")
-              .length || 0
-          }
-          description={"BIZ Nest Bookings"}
-          route={"reports"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={
-            meetingsData.filter((item) => item.meetingType === "External")
-              .length
-          }
-          description={"Guest Bookings"}
-          route={"reports"}
-        />,
-        <DataCard
-          title={"Average"}
-          data={parseFloat(
-            (
-              meetingsData.reduce(
-                (sum, item) => sum + parseInt(item.duration.replace("m", "")),
-                0
-              ) /
-              60 /
-              meetingsData.length
-            ).toFixed(2)
-          )}
-          description={"Hours Booked"}
-          route={"reports"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={
-            meetingsData
-              .filter((item) => item.meetingStatus === "Cancelled")
-              .reduce(
-                (sum, item) => sum + parseInt(item.duration.replace("m", "")),
-                0
-              ) / 60
-          }
-          description={"Hours Cancelled"}
-          route={"reports"}
-        />,
-      ],
-    },
-     {
-      layout: 2,
-      widgets: [
-        <MuiTable
-          Title={"Internal Ongoing Meeting Hourly"}
-          // rows={meetingInternalRows}
-          rows={[
-            ...meetingsInternal.map((item, index) => ({
-              id: index + 1,
-              roomName: item.roomName,
-              meetingType: item.meetingType,
-              endTime: item.endTime,
-              unitName: item.location?.unitName,
-            })),
-          ]}
-          columns={meetingColumns}
-          rowsToDisplay={5}
-          scroll={true}
-        />,
-        <MuiTable
-          Title={"External Ongoing Meeting Hourly"}
-          rows={[
-            ...meetingsExternal.map((item, index) => ({
-              id: index + 1,
-              roomName: item.roomName,
-              meetingType: item.meetingType,
-              endTime: item.endTime,
-              unitName: item.location?.unitName,
-            })),
-          ]}
-          columns={meetingColumns}
-          rowsToDisplay={5}
-          scroll={true}
-        />,
-      ],
-    },
-    {
-      layout: 2,
-      widgets: [
-        <WidgetSection
-          layout={1}
-          border
-          title={"External Guests Visited"}
-          titleLabel={`${new Date().toLocaleString("default", {
-            month: "short",
-          })}-${new Date().getFullYear().toString().slice(-2)}`}
-          padding
-        >
-          <BarGraph data={externalGuestsData} options={externalGuestsOptions} />
-        </WidgetSection>,
-        <WidgetSection
-          layout={1}
-          border
-          title={"Average Occupancy Of Rooms in %"}
-          titleLabel={`${new Date().toLocaleString("default", {
-            month: "short",
-          })}-${new Date().getFullYear().toString().slice(-2)}`}
-          padding
-        >
-          <BarGraph
-            data={averageOccupancySeries}
-            options={averageOccupancyOptions}
-          />
-        </WidgetSection>,
-      ],
-    },
-    {
-      layout: 2,
-      widgets: [
-        <WidgetSection layout={1} title={"Busy time during the week"} border>
-          <HeatMap
-            data={heatmapData}
-            options={heatmapOptions}
-            height={400}
-            width={550}
-          />
-        </WidgetSection>,
-        <WidgetSection layout={1} title={"Meeting Duration Breakdown"} border>
-          <PieChartMui
-            data={meetingPieData}
-            options={meetingPieOptions}
-            height={410}
-            width={550}
-          />
-        </WidgetSection>,
-      ],
-    },
-    {
-      layout: 2,
-      widgets: [
-        <WidgetSection
-          layout={1}
-          title={"Room Availability Status"}
-          border
-          height={400}
-        >
-          <PieChartMui
-            data={RoomPieData}
-            options={RoomOptions}
-            customLegend={CustomLegend}
-            width={300}
-            height={300}
-          />
-        </WidgetSection>,
-        <WidgetSection
-          layout={1}
-          padding
-          border
-          titleLabel={"Today"}
-          title={"Cleaning & Hygiene Status"}
-          height={350}
-        >
-          <DonutChart
-            series={housekeepingStatusSeries}
-            labels={["Cleaning", "Clean"]}
-            colors={["#ffc107", "#28a745"]}
-            centerLabel={"Meeting Rooms"}
-            tooltipValue={housekeepingStatusSeries}
-            width={457}
-            height={400}
-          />
-        </WidgetSection>,
-      ],
-    },
-      ] : [])
-   
-   
+    ...(isWidgetAllowed
+      ? [
+          {
+            layout: 3,
+            widgets: [
+              <DataCard
+                title={"Total"}
+                data={totalDurationInHours.toFixed(0)}
+                description={"Hours Booked"}
+                route={"reports"}
+              />,
+              <DataCard
+                title={"Total"}
+                data={meetingsData.length || 0}
+                description={"Unique Bookings"}
+                route={"reports"}
+              />,
+              <DataCard
+                title={"Total"}
+                data={
+                  meetingsData.filter((item) => item.meetingType === "Internal")
+                    .length || 0
+                }
+                description={"BIZ Nest Bookings"}
+                route={"reports"}
+              />,
+              <DataCard
+                title={"Total"}
+                data={
+                  meetingsData.filter((item) => item.meetingType === "External")
+                    .length
+                }
+                description={"Guest Bookings"}
+                route={"reports"}
+              />,
+              <DataCard
+                title={"Average"}
+                data={parseFloat(
+                  (
+                    meetingsData.reduce(
+                      (sum, item) =>
+                        sum + parseInt(item.duration.replace("m", "")),
+                      0
+                    ) /
+                    60 /
+                    meetingsData.length
+                  ).toFixed(2)
+                )}
+                description={"Hours Booked"}
+                route={"reports"}
+              />,
+              <DataCard
+                title={"Total"}
+                data={
+                  meetingsData
+                    .filter((item) => item.meetingStatus === "Cancelled")
+                    .reduce(
+                      (sum, item) =>
+                        sum + parseInt(item.duration.replace("m", "")),
+                      0
+                    ) / 60
+                }
+                description={"Hours Cancelled"}
+                route={"reports"}
+              />,
+            ],
+          },
+          {
+            layout: 2,
+            widgets: [
+              <MuiTable
+                Title={"INTERNAL ONGOING MEETINGS HOURLY"}
+                // rows={meetingInternalRows}
+                rows={[
+                  ...meetingsInternal.map((item, index) => ({
+                    id: index + 1,
+                    roomName: item.roomName,
+                    meetingType: item.meetingType,
+                    endTime: humanTime(item.endTime),
+                    unitName: item.location?.unitName,
+                  })),
+                ]}
+                columns={meetingColumns}
+                rowsToDisplay={5}
+                scroll={true}
+              />,
+              <MuiTable
+                Title={"EXTERNAL ONGOING MEETINGS HOURLY"}
+                rows={[
+                  ...meetingsExternal.map((item, index) => ({
+                    id: index + 1,
+                    roomName: item.roomName,
+                    meetingType: item.meetingType,
+                    endTime: humanTime(item.endTime),
+                    unitName: item.location?.unitName,
+                  })),
+                ]}
+                columns={meetingColumns}
+                rowsToDisplay={5}
+                scroll={true}
+              />,
+            ],
+          },
+          {
+            layout: 2,
+            widgets: [
+              <WidgetSection
+                layout={1}
+                border
+                title={"External Guests Visited"}
+                titleLabel={`${new Date().toLocaleString("default", {
+                  month: "short",
+                })}-${new Date().getFullYear().toString().slice(-2)}`}
+                padding
+              >
+                <BarGraph
+                  data={externalGuestsData}
+                  options={externalGuestsOptions}
+                />
+              </WidgetSection>,
+              <WidgetSection
+                layout={1}
+                border
+                title={"Average Occupancy Of Rooms in %"}
+                titleLabel={`${new Date().toLocaleString("default", {
+                  month: "short",
+                })}-${new Date().getFullYear().toString().slice(-2)}`}
+                padding
+              >
+                <BarGraph
+                  data={averageOccupancySeries}
+                  options={averageOccupancyOptions}
+                />
+              </WidgetSection>,
+            ],
+          },
+          {
+            layout: 2,
+            widgets: [
+              <WidgetSection
+                layout={1}
+                title={"Busy time during the week"}
+                border
+              >
+                <HeatMap
+                  data={heatmapData}
+                  options={heatmapOptions}
+                  height={400}
+                  width={550}
+                />
+              </WidgetSection>,
+              <WidgetSection
+                layout={1}
+                title={"Meeting Duration Breakdown"}
+                border
+              >
+                <PieChartMui
+                  data={meetingPieData}
+                  options={meetingPieOptions}
+                  height={410}
+                  width={550}
+                />
+              </WidgetSection>,
+            ],
+          },
+          {
+            layout: 2,
+            widgets: [
+              <WidgetSection
+                layout={1}
+                title={"Room Availability Status"}
+                border
+                height={400}
+              >
+                <PieChartMui
+                  data={RoomPieData}
+                  options={RoomOptions}
+                  customLegend={CustomLegend}
+                  width={300}
+                  height={300}
+                />
+              </WidgetSection>,
+              <WidgetSection
+                layout={1}
+                padding
+                border
+                titleLabel={"Today"}
+                title={"Cleaning & Hygiene Status"}
+                height={350}
+              >
+                <DonutChart
+                  series={housekeepingStatusSeries}
+                  labels={["Cleaning", "Clean"]}
+                  colors={["#ffc107", "#28a745"]}
+                  centerLabel={"Meeting Rooms"}
+                  tooltipValue={housekeepingStatusSeries}
+                  width={457}
+                  height={400}
+                />
+              </WidgetSection>,
+            ],
+          },
+        ]
+      : []),
   ];
   return (
     <div>

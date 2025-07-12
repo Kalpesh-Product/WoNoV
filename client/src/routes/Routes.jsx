@@ -1532,7 +1532,7 @@ export const routes = createBrowserRouter([
                         element: <HrDashboard />,
                       },
                       {
-                        path: "overall-tasks",
+                        path: "overall-KPA",
                         element: <HrTasksLayout />,
                         children: [
                           {
@@ -1541,7 +1541,7 @@ export const routes = createBrowserRouter([
                             index: true,
                           },
                           {
-                            path: "department-tasks",
+                            path: "department-KPA",
                             element: <HrDepartmentTasks />,
                           },
                         ],

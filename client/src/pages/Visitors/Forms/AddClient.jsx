@@ -17,6 +17,7 @@ import {
   isValidPhoneNumber,
   noOnlyWhitespace,
 } from "../../../utils/validators";
+import dayjs from "dayjs";
 
 const AddClient = () => {
   const {
@@ -24,11 +25,13 @@ const AddClient = () => {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({
     mode: "onChange",
     defaultValues: {
       firstName: "",
+      lastName: "",
       email: "",
       gender: "",
       address: "",
@@ -42,6 +45,9 @@ const AddClient = () => {
       department: "",
       clientToMeet: "",
       clientCompany: "",
+      sector:"",
+      hoState : "",
+      hoCity : "",
       visitorType: "",
       visitorCompany: "",
       paymentAmount: "",
@@ -60,6 +66,9 @@ const AddClient = () => {
   const [cities, setCities] = useState([]);
   useEffect(() => {
     setStates(State.getStatesOfCountry("IN"));
+  }, []);
+  useEffect(() => {
+    setValue("checkIn", dayjs(new Date()));
   }, []);
 
   const handleStateSelect = (stateCode) => {
@@ -102,6 +111,7 @@ const AddClient = () => {
       return response.data;
     },
     onSuccess: (data) => {
+      reset();
       toast.custom((t) => (
         <div className="p-4 bg-successGreen rounded shadow text-green-800 flex flex-col gap-4">
           <span className="text-content font-pmedium">
@@ -109,7 +119,6 @@ const AddClient = () => {
           </span>
         </div>
       ));
-      reset();
     },
     onError: (error) => {
       toast.error(error.message || "Error Adding Visitor");
@@ -304,7 +313,15 @@ const AddClient = () => {
                       error={!!errors.purposeOfVisit}
                       helperText={errors.purposeOfVisit?.message}
                       fullWidth
-                    />
+                      select
+                    >
+                      <MenuItem value="" disabled>
+                        Select a Purpose of Visit
+                      </MenuItem>
+                      <MenuItem value="Meeting Room Booking">
+                        Meeting Room Booking
+                      </MenuItem>
+                    </TextField>
                   )}
                 />
               </div>

@@ -91,7 +91,7 @@ const Inventory = () => {
     },
     onSuccess: () => {
       toast.success("Inventory added successfully!");
-      queryClient.invalidateQueries(["maintainance-inventory"]);
+      queryClient.invalidateQueries({ queryKey: ["maintainance-inventory"] });
       setIsModalOpen(false);
     },
     onError: (error) => {
@@ -139,7 +139,21 @@ const Inventory = () => {
       width: 100,
       valueGetter: (params) => params.node.rowIndex + 1,
     },
-    { field: "itemName", headerName: "Item Name" },
+    {
+      field: "itemName",
+      headerName: "Item Name",
+      cellRenderer: (params) => (
+        <span
+          role="button"
+          onClick={() => {
+            handleDetailsClick(params.data);
+          }}
+          className="text-primary cursor-pointer underline"
+        >
+          {params.value}
+        </span>
+      ),
+    },
     {
       field: "openingInventoryUnits",
       headerName: "Opening Units",
@@ -183,22 +197,6 @@ const Inventory = () => {
       field: "date",
       headerName: "Date",
       valueGetter: (params) => humanDate(params.data?.date),
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <div
-          onClick={() => {
-            handleDetailsClick(params.data);
-          }}
-          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
-        >
-          <span className="text-subtitle">
-            <MdOutlineRemoveRedEye />
-          </span>
-        </div>
-      ),
     },
   ];
 

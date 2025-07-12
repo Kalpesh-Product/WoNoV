@@ -79,7 +79,7 @@ const createDepartment = async (req, res, next) => {
 const getDepartments = async (req, res, next) => {
   try {
     // Fetch all departments
-    const departments = await Department.find()
+    const departments = await Department.find({ isActive: true })
       //  .populate("company", "companyName") // Populate company reference with selected fields
       //.populate("admin", "name email") // Populate admin reference with selected fields
       //.populate("designations", "title responsibilities") // Populate admin reference with selected fields

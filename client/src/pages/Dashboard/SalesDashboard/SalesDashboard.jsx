@@ -101,6 +101,11 @@ const SalesDashboard = () => {
         enabled: false, // ✅ disables all animations
       },
       toolbar: { show: false },
+      events: {
+        dataPointSelection: () => {
+          navigate("turnover");
+        },
+      },
       fontFamily: "Poppins-Regular",
     },
     colors: ["#54C4A7", "#EB5C45"],
@@ -322,13 +327,13 @@ const SalesDashboard = () => {
       {
         title: "Occupied Desks",
         value: 553,
-        route: "/app/dashboard/sales-dashboard/co-working-seats",
+        route: "/app/dashboard/sales-dashboard/inventory",
       },
       {
         title: "Occupancy %",
         value: "93",
         route:
-          "/app/dashboard/sales-dashboard/co-working-seats/check-availability",
+          "/app/dashboard/sales-dashboard/inventory",
       },
       {
         title: "Clients",
@@ -338,7 +343,7 @@ const SalesDashboard = () => {
       {
         title: "Provisioned Desks",
         value: "140",
-        route: "/app/dashboard/sales-dashboard/co-working-seats",
+        route: "/app/dashboard/sales-dashboard/inventory",
       },
     ],
   };
