@@ -39,13 +39,12 @@ const PerformanceKra = () => {
     return departmentAccess.includes(item._id.toString());
   });
 
-  const adminDept = auth.user.departments.some((item) => {
-    return item.name === "Administration" ;
+  const allowedDept = auth.user.departments.some((item) => {
+    return item._id.toString() === deptId.toString() ;
   });
 
+  const showCheckBox = allowedDept;
   const isHr = department === "HR";
-  const isHrAdmin = department === "Administration" && adminDept
-  const showCheckBox = !isTop || isHr || isHrAdmin;
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
