@@ -6,7 +6,6 @@ const auditLogger = (req, res, next) => {
   // Only log meaningful HTTP methods
   const validMethods = ["GET", "POST", "PATCH", "PUT", "DELETE"];
 
-  console.log("logggggg");
   if (!validMethods.includes(req.method)) return next();
 
   //Do not store logs of refresh route
