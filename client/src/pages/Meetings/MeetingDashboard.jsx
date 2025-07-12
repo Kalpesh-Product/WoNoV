@@ -977,7 +977,7 @@ const heatmapData = timeSlots.map((slot, slotIndex) => ({
       layout: 2,
       widgets: [
         <MuiTable
-          Title={"Internal Ongoing Meeting Hourly"}
+          Title={"INTERNAL ONGOING MEETINGS HOURLY"}
           // rows={meetingInternalRows}
           rows={[
             ...meetingsInternal.map((item, index) => ({
@@ -993,7 +993,7 @@ const heatmapData = timeSlots.map((slot, slotIndex) => ({
           scroll={true}
         />,
         <MuiTable
-          Title={"External Ongoing Meeting Hourly"}
+          Title={"EXTERNAL ONGOING MEETINGS HOURLY"}
           rows={[
             ...meetingsExternal.map((item, index) => ({
               id: index + 1,

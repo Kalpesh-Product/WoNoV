@@ -500,10 +500,7 @@ const getMyMeetings = async (req, res, next) => {
     const { user, company, roles } = req;
 
     let meetings = [];
-    if (
-      !roles.includes("Administration Admin") &&
-      !roles.includes("Administration Employee")
-    ) {
+    if (!roles.includes("Administration Employee")) {
       meetings = await Meeting.find({
         company,
         $or: [{ bookedBy: user }, { internalParticipants: { $in: [user] } }],
@@ -904,7 +901,7 @@ const getMeetingsByTypes = async (req, res, next) => {
         roomName: meeting.bookedRoom.name,
         location: meeting.bookedRoom.location,
         meetingType: meeting.meetingType,
-        endTime: formatTime(meeting.endTime),
+        endTime: meeting.endTime,
         company: meeting.company.companyName,
       };
     });
