@@ -5,6 +5,7 @@ const CustomError = require("../../utils/customErrorlogs");
 const { formatDate, formatTime } = require("../../utils/formatDateTime");
 const { createLog } = require("../../utils/moduleLogs");
 const validateUsers = require("../../utils/validateUsers");
+const Department = require("../../models/Departments");
 
 const createTasks = async (req, res, next) => {
   const { user, ip, company } = req;
@@ -748,6 +749,55 @@ const getTeamMembersTasks = async (req, res, next) => {
   }
 };
 
+// const getAllDeptTasks = async (req, res, next) => {
+//   try {
+//     const { roles, departments, company } = req;
+
+//     let departmentMap = new Map();
+//     let query = { company };
+
+//     if (
+//       !roles.includes("Master Admin") &&
+//       !roles.includes("Super Admin") &&
+//       !roles.includes("HR Admin")
+//     ) {
+//       query.department = { $in: departments };
+//     }
+
+//     const fetchedDepartments = await Department.find();
+
+//     const tasks = await Task.find(query)
+//       .populate([{ path: "department", select: "name" }])
+//       .select("-company")
+//       .lean();
+
+//     tasks.forEach((task) => {
+//       const dept = task.department || "Unknown";
+
+//       if (!departmentMap.has(dept)) {
+//         departmentMap.set(dept, {
+//           department: dept,
+//           totalTasks: 0,
+//           pendingTasks: 0,
+//           completedTasks: 0,
+//         });
+//       }
+
+//       const department = departmentMap.get(dept);
+
+//       department.totalTasks++;
+//       if (task.status === "Pending") department.pendingTasks++;
+//       if (task.status === "Completed") department.completedTasks++;
+//     });
+
+//     const result = Array.from(departmentMap.values());
+
+//     return res.status(200).json(result);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const getAllDeptTasks = async (req, res, next) => {
   try {
     const { roles, departments, company } = req;
@@ -758,36 +808,44 @@ const getAllDeptTasks = async (req, res, next) => {
     if (
       !roles.includes("Master Admin") &&
       !roles.includes("Super Admin") &&
-      !roles.includes("HR")
+      !roles.includes("HR Admin")
     ) {
       query.department = { $in: departments };
     }
 
-    console.log("role");
+    // Step 1: Fetch all departments
+    const fetchedDepartments = await Department.find({ isActive: true }).lean();
+
+    // Step 2: Pre-fill the departmentMap with all departments
+    fetchedDepartments.forEach((dept) => {
+      departmentMap.set(dept._id.toString(), {
+        department: dept,
+        totalTasks: 0,
+        pendingTasks: 0,
+        completedTasks: 0,
+      });
+    });
+
+    // Step 3: Fetch tasks that match the user's access level
     const tasks = await Task.find(query)
       .populate([{ path: "department", select: "name" }])
       .select("-company")
       .lean();
 
+    // Step 4: Count tasks into the pre-filled map
     tasks.forEach((task) => {
-      const dept = task.department || "Unknown";
+      const dept = task.department;
+      const deptId = dept?._id?.toString();
 
-      if (!departmentMap.has(dept)) {
-        departmentMap.set(dept, {
-          department: dept,
-          totalTasks: 0,
-          pendingTasks: 0,
-          completedTasks: 0,
-        });
+      if (deptId && departmentMap.has(deptId)) {
+        const entry = departmentMap.get(deptId);
+        entry.totalTasks++;
+        if (task.status === "Pending") entry.pendingTasks++;
+        if (task.status === "Completed") entry.completedTasks++;
       }
-
-      const department = departmentMap.get(dept);
-
-      department.totalTasks++;
-      if (task.status === "Pending") department.pendingTasks++;
-      if (task.status === "Completed") department.completedTasks++;
     });
 
+    // Step 5: Return all departments, even if they have 0 tasks
     const result = Array.from(departmentMap.values());
 
     return res.status(200).json(result);
