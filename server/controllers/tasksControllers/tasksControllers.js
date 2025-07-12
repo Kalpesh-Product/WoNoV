@@ -752,53 +752,39 @@ const getAllDeptTasks = async (req, res, next) => {
   try {
     const { roles, departments, company } = req;
 
-    let deptQuery = { company };
+    let departmentMap = new Map();
+    let query = { company };
+
     if (
       !roles.includes("Master Admin") &&
-      !roles.includes("Super Admin") &&
+      !roles.includes("Super Adtmin") &&
       !roles.includes("HR Admin")
     ) {
-      deptQuery._id = { $in: departments };
+      query.department = { $in: departments };
     }
 
-    // Fetch all departments first
-    const allDepartments = await Department.find(deptQuery)
-      .select("name")
+    const tasks = await Task.find(query)
+      .populate([{ path: "department", select: "name" }])
+      .select("-company")
       .lean();
 
-    // Prepare map to store task stats per department
-    const departmentMap = new Map();
-    allDepartments.forEach((dept) => {
-      departmentMap.set(dept._id.toString(), {
-        departmentId: dept._id,
-        department: dept.name,
-        totalTasks: 0,
-        pendingTasks: 0,
-        completedTasks: 0,
-      });
-    });
-
-    // Fetch tasks for those departments
-    const taskQuery = { company };
-    if (
-      !roles.includes("Master Admin") &&
-      !roles.includes("Super Admin") &&
-      !roles.includes("HR Admin")
-    ) {
-      taskQuery.department = { $in: departments };
-    }
-
-    const tasks = await Task.find(taskQuery).select("status department").lean();
-
-    // Count tasks per department
     tasks.forEach((task) => {
-      const deptId = task.department?.toString();
-      if (departmentMap.has(deptId)) {
-        const dept = departmentMap.get(deptId);
-        dept.totalTasks++;
-        if (task.status === "Pending") dept.pendingTasks++;
-        if (task.status === "Completed") dept.completedTasks++;
+      const dept = task.department || "Unknown";
+
+      if (!departmentMap.has(dept)) {
+        departmentMap.set(dept, {
+          department: dept,
+          totalTasks: 0,
+          pendingTasks: 0,
+          completedTasks: 0,
+        });
       }
+
+      const department = departmentMap.get(dept);
+
+      department.totalTasks++;
+      if (task.status === "Pending") department.pendingTasks++;
+      if (task.status === "Completed") department.completedTasks++;
     });
 
     const result = Array.from(departmentMap.values());
