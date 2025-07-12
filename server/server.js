@@ -66,33 +66,33 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 
 app.use("/api/access", verifyJwt, accessRoutes);
-app.use("/api/company", verifyJwt, companyRoutes);
-app.use("/api/budget", verifyJwt, budgetRoutes);
+app.use("/api/company", verifyJwt, auditLogger, companyRoutes);
+app.use("/api/budget", verifyJwt, auditLogger, budgetRoutes);
 app.use("/api/departments", departmentsRoutes);
 app.use("/api/designations", designationRoutes);
-app.use("/api/tech", verifyJwt, techRoutes);
-app.use("/api/assets", verifyJwt, assetsRoutes);
-app.use("/api/meetings", verifyJwt, meetingsRoutes);
+app.use("/api/tech", verifyJwt, auditLogger, techRoutes);
+app.use("/api/assets", verifyJwt, auditLogger, assetsRoutes);
+app.use("/api/meetings", verifyJwt, auditLogger, meetingsRoutes);
 app.use("/api/tickets", verifyJwt, auditLogger, ticketsRoutes);
 app.use("/api/leaves", verifyJwt, leaveRoutes);
 app.use("/api/employee-agreements", employeeAgreementRoutes);
 app.use("/api/editor", websiteRoutes);
-app.use("/api/users", verifyJwt, userRoutes);
-app.use("/api/roles", verifyJwt, roleRoutes);
-app.use("/api/vendors", verifyJwt, vendorRoutes);
-app.use("/api/events", verifyJwt, eventRoutes);
-app.use("/api/payroll", verifyJwt, payrollRoutes);
-app.use("/api/payslip", verifyJwt, payslipRoutes);
-app.use("/api/tasks", verifyJwt, taskRoutes);
-app.use("/api/performance", verifyJwt, performanceRoutes);
-app.use("/api/attendance", verifyJwt, attendanceRoutes);
-app.use("/api/sales", verifyJwt, salesRoutes);
-app.use("/api/visitors", verifyJwt, visitorRoutes);
-app.use("/api/inventory", verifyJwt, inventoryRoutes);
-app.use("/api/administration", verifyJwt, administrationRoutes);
-app.use("/api/finance", verifyJwt, financeRoutes);
-app.use("/api/weekly-unit", verifyJwt, weeklyUnitRoutes);
-app.use("/api/logs/:path", verifyJwt, getLogs);
+app.use("/api/users", verifyJwt, auditLogger, userRoutes);
+app.use("/api/roles", verifyJwt, auditLogger, roleRoutes);
+app.use("/api/vendors", verifyJwt, auditLogger, vendorRoutes);
+app.use("/api/events", verifyJwt, auditLogger, eventRoutes);
+app.use("/api/payroll", verifyJwt, auditLogger, payrollRoutes);
+app.use("/api/payslip", verifyJwt, auditLogger, payslipRoutes);
+app.use("/api/tasks", verifyJwt, auditLogger, taskRoutes);
+app.use("/api/performance", verifyJwt, auditLogger, performanceRoutes);
+app.use("/api/attendance", verifyJwt, auditLogger, attendanceRoutes);
+app.use("/api/sales", verifyJwt, auditLogger, salesRoutes);
+app.use("/api/visitors", verifyJwt, auditLogger, visitorRoutes);
+app.use("/api/inventory", verifyJwt, auditLogger, inventoryRoutes);
+app.use("/api/administration", verifyJwt, auditLogger, administrationRoutes);
+app.use("/api/finance", verifyJwt, auditLogger, financeRoutes);
+app.use("/api/weekly-unit", verifyJwt, auditLogger, weeklyUnitRoutes);
+app.use("/api/logs/:path", verifyJwt, auditLogger, getLogs);
 
 app.all("*", (req, res) => {
   if (req.accepts("html")) {

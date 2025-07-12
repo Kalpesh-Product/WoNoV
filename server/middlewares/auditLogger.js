@@ -6,7 +6,7 @@ const auditLogger = (req, res, next) => {
   // Only log meaningful HTTP methods
   const validMethods = ["GET", "POST", "PATCH", "PUT", "DELETE"];
   if (!validMethods.includes(req.method)) return next();
-
+  s;
   // Setup once the response is done
   res.on("finish", () => {
     const status = res.statusCode;

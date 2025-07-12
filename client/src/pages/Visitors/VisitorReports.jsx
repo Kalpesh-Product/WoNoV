@@ -31,7 +31,15 @@ const VisitorReports = () => {
   const meetingReportsColumn = [
     { field: "srNo", headerName: "Sr No" },
     { field: "visitorType", headerName: "Type" },
-    { field: "name", headerName: "Name" },
+    { field: "name", headerName: "Name",
+      cellRenderer: (params) => (
+        <div role="button" onClick={() => handleDetailsClick(params.data)}>
+          <span className="underline text-primary cursor-pointer">
+            {params.value}
+          </span>
+        </div>
+      ),
+     },
     { field: "address", headerName: "Address" },
     { field: "email", headerName: "Email" },
     { field: "phone", headerName: "Phone No" },
@@ -39,18 +47,18 @@ const VisitorReports = () => {
     { field: "toMeet", headerName: "To Meet" },
     { field: "checkIn", headerName: "Check In" },
     { field: "checkOut", headerName: "Check Out" },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <div className="p-2">
-          <PrimaryButton
-            title={"View Details"}
-            handleSubmit={() => handleDetailsClick(params.data)}
-          />
-        </div>
-      ),
-    },
+    // {
+    //   field: "actions",
+    //   headerName: "Actions",
+    //   cellRenderer: (params) => (
+    //     <div className="p-2">
+    //       <PrimaryButton
+    //         title={"View Details"}
+    //         handleSubmit={() => handleDetailsClick(params.data)}
+    //       />
+    //     </div>
+    //   ),
+    // },
   ];
 
   // Format table rows for AgTable
