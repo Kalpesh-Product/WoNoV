@@ -187,9 +187,9 @@ const SupportTickets = ({ title, departmentId }) => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "api/company/get-company-data?field=selectedDepartments"
+          "api/departments/get-departments"
         );
-        return response.data?.selectedDepartments;
+        return response.data;
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -426,17 +426,17 @@ const SupportTickets = ({ title, departmentId }) => {
                     <Autocomplete
                       multiple
                       options={departments}
-                      getOptionLabel={(dept) => `${dept.department.name}`}
+                      getOptionLabel={(dept) => `${dept.name}`}
                       onChange={(_, newValue) =>
                         field.onChange(
-                          newValue.map((dept) => dept.department._id)
+                          newValue.map((dept) => dept._id)
                         )
                       }
                       renderTags={(selected, getTagProps) =>
                         selected.map((dept, index) => (
                           <Chip
-                            key={dept.department._id}
-                            label={`${dept.department.name}`}
+                            key={dept._id}
+                            label={`${dept.name}`}
                             {...getTagProps({ index })}
                             deleteIcon={<IoMdClose />}
                           />

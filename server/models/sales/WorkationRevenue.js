@@ -17,6 +17,9 @@ const workationRevenueSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  status: {
+    type: String,
+  },
   gst: {
     type: Number,
     required: true,
