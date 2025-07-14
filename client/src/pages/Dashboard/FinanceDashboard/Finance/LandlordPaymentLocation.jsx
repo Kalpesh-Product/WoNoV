@@ -7,12 +7,12 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import WidgetSection from "../../../../components/WidgetSection";
-import MonthWiseTable from "../../../../components/Tables/MonthWiseTable";
 import humanDate from "../../../../utils/humanDateForamt";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import dayjs from "dayjs";
 import { calculateMonthTotal } from "../../../../utils/calculateMonthTotal";
+import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 
 const LandlordPaymentLocation = () => {
   const axios = useAxiosPrivate();
@@ -22,6 +22,7 @@ const LandlordPaymentLocation = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(null);
+  const [rangeTotal, setRangeTotal] = useState(0);
 
   const building = searchParams.get("location") || "";
   const rawUnit = searchParams.get("floor") || "";
@@ -167,24 +168,23 @@ const LandlordPaymentLocation = () => {
 
   const paymentColumns = [
     { field: "srNo", headerName: "Sr No", width: 100, flex: 1 },
-    { field: "expanseName", headerName: "Expanse Name", flex: 1 },
+    {
+      field: "expanseName",
+      headerName: "Expanse Name",
+      flex: 1,
+      cellRenderer: (params) => (
+        <span
+          onClick={() => handleViewModal(params.data)}
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value}
+        </span>
+      ),
+    },
     { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
     { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
     { field: "dueDate", headerName: "Due Date", flex: 1 },
     { field: "status", headerName: "Status", flex: 1 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <div className="p-2 mb-2 flex gap-2">
-          <span
-            className="text-subtitle cursor-pointer"
-            onClick={() => handleViewModal(params.data)}>
-            <MdOutlineRemoveRedEye />
-          </span>
-        </div>
-      ),
-    },
   ];
 
   const handleViewModal = (rowData) => {
@@ -219,9 +219,10 @@ const LandlordPaymentLocation = () => {
           <WidgetSection
             layout={1}
             title={`Landlord Payments (${unit})`}
-            TitleAmount={`INR ${inrFormat(currentMonthTotal)}`}
-            border>
-            <MonthWiseTable
+            TitleAmount={`INR ${inrFormat(rangeTotal)}`}
+            border
+          >
+            <YearWiseTable
               dateColumn={"dueDate"}
               data={payments.map((payment, index) => ({
                 ...payment,
@@ -229,7 +230,8 @@ const LandlordPaymentLocation = () => {
                 actualAmount: inrFormat(payment.actualAmount),
               }))}
               columns={paymentColumns}
-              onMonthChange={setSelectedMonth} // 👈 get the month from table
+              onMonthChange={setRangeTotal}
+              TitleAmount={`INR ${inrFormat(rangeTotal)}`}
             />
           </WidgetSection>
         </>
@@ -239,7 +241,8 @@ const LandlordPaymentLocation = () => {
         <MuiModal
           open={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
-          title="Landlord Payment Details">
+          title="Landlord Payment Details"
+        >
           <div className="space-y-3">
             <div className="font-bold">Basic Information</div>
             <DetalisFormatted

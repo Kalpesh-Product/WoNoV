@@ -20,7 +20,6 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import MuiModal from "../../components/MuiModal";
 import { queryClient } from "../../main";
 import { toast } from "sonner";
-import MonthWiseTable from "../../components/Tables/MonthWiseTable";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 

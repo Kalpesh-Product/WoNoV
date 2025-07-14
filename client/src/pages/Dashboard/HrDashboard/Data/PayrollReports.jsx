@@ -1,5 +1,4 @@
 import React from "react";
-import MonthWiseTable from "../../../../components/Tables/MonthWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { useQuery } from "@tanstack/react-query";

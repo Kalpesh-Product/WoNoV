@@ -21,6 +21,7 @@ import dayjs from "dayjs";
 import { InsertEmoticonTwoTone } from "@mui/icons-material";
 import PageFrame from "../../../components/Pages/PageFrame";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
 
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
@@ -233,7 +234,7 @@ const PerformanceKra = () => {
         <PageFrame>
           {!departmentLoading ? (
             <WidgetSection padding layout={1}>
-              <DateWiseTable
+              <YearWiseTable
                 formatTime
                 checkbox={showCheckBox}
                 buttonTitle={"Add Daily KRA"}

@@ -32,7 +32,7 @@ import dayjs from "dayjs";
 import UploadFileInput from "../../components/UploadFileInput";
 import { inrFormat } from "../../utils/currencyFormat";
 import PageFrame from "../../components/Pages/PageFrame";
-import MonthWiseTable from "../../components/Tables/MonthWiseTable";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
 
 const ExternalMeetingCLients = () => {
   const axios = useAxiosPrivate();
@@ -575,7 +575,7 @@ const ExternalMeetingCLients = () => {
     <div className="flex-col gap-4">
       <PageFrame>
         {!isMeetingsLoading ? (
-          <MonthWiseTable
+          <YearWiseTable
             key={transformedMeetings.length}
             search
             dateColumn={"date"}

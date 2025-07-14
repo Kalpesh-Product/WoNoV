@@ -12,7 +12,6 @@ import { Controller, useForm } from "react-hook-form";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import MuiModal from "../../components/MuiModal";
 import dayjs from "dayjs";
-import MonthWiseTable from "../../components/Tables/MonthWiseTable";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 
