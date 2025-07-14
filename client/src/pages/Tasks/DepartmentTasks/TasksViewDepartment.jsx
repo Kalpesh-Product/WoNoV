@@ -37,6 +37,12 @@ const TasksViewDepartment = () => {
   const [selectedTask, setSelectedTask] = useState({});
   const [modalMode, setModalMode] = useState("");
 
+   const allowedDept = auth.user.departments.some((item) => {
+    return item._id.toString() === deptId.toString() ;
+  });
+
+  const showCheckBox = allowedDept;
+
   const {
     handleSubmit: submitDailyKra,
     control,
@@ -276,7 +282,7 @@ const TasksViewDepartment = () => {
             {!departmentLoading ? (
               <WidgetSection padding layout={1}>
                 <YearWiseTable
-                  checkbox
+                  checkbox={showCheckBox}
                   key={departmentKra.length}
                   buttonTitle={"Add Task"}
                   handleSubmit={() => setOpenModal(true)}
