@@ -1,7 +1,6 @@
 import { useLocation, useParams } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
-import DateWiseTable from "../../../components/Tables/DateWiseTable";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
@@ -264,7 +263,7 @@ const PerformanceKra = () => {
           <div>
             {!departmentLoading ? (
               <WidgetSection padding>
-                <DateWiseTable
+                <YearWiseTable
                   formatTime
                   tableTitle={`COMPLETED - DAILY KRA`}
                   exportData={true}

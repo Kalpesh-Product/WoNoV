@@ -1,13 +1,13 @@
 import { useLocation, useParams } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
-import DateWiseTable from "../../../components/Tables/DateWiseTable";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 import { Chip } from "@mui/material";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
 
 const PerformanceAnnual = () => {
   const axios = useAxiosPrivate();
@@ -66,7 +66,7 @@ const PerformanceAnnual = () => {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection padding layout={1}>
-        <DateWiseTable
+        <YearWiseTable
         tableTitle={`${department} DEPARTMENT - ANNUAL KPA`}
         // checkbox={true}
           data={[

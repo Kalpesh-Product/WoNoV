@@ -1,7 +1,6 @@
 import { useLocation, useParams } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
-import DateWiseTable from "../../../components/Tables/DateWiseTable";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
@@ -26,6 +25,7 @@ import dayjs from "dayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import PageFrame from "../../../components/Pages/PageFrame";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
 
 const TasksViewDepartment = () => {
   const axios = useAxiosPrivate();
@@ -275,7 +275,7 @@ const TasksViewDepartment = () => {
           <div>
             {!departmentLoading ? (
               <WidgetSection padding layout={1}>
-                <DateWiseTable
+                <YearWiseTable
                   checkbox
                   key={departmentKra.length}
                   buttonTitle={"Add Task"}
@@ -310,7 +310,7 @@ const TasksViewDepartment = () => {
           <div>
             {!departmentLoading ? (
               <WidgetSection padding>
-                <DateWiseTable
+                <YearWiseTable
                   tableTitle={`COMPLETED TASKS`}
                   exportData={true}
                   key={completedTasks.length}
