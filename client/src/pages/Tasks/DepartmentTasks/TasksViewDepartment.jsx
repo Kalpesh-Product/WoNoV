@@ -216,7 +216,7 @@ const TasksViewDepartment = () => {
     },
   ];
   const completedColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "Sr no", field: "srNo", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskName",
@@ -319,7 +319,6 @@ const TasksViewDepartment = () => {
                 <YearWiseTable
                   tableTitle={`COMPLETED TASKS`}
                   exportData={true}
-                  key={completedTasks.length}
                   data={
                     completedTasksFetchPending
                       ? []
@@ -330,12 +329,12 @@ const TasksViewDepartment = () => {
                           assignedDate: humanDate(item.assignedDate),
                           dueDate: humanDate(item.dueDate),
                           dueTime: humanTime(item.dueTime),
-                          completedDate: humanDate(item.completedDate),
+                          completedDate: item.completedDate,
                           completedTime: humanTime(item.completedDate),
                           status: item.status,
                         }))
                   }
-                  dateColumn={"assignedDate"}
+                  dateColumn={"completedDate"}
                   columns={completedColumns}
                 />
               </WidgetSection>
