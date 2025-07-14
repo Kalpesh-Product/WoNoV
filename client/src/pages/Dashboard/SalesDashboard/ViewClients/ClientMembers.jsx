@@ -9,8 +9,6 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 const ClientMembers = () => {
   const navigate = useNavigate();
   const selectedClient = useSelector((state) => state.client.selectedClient);
-  console.log("client : ", selectedClient);
-
 
   const viewEmployeeColumns = [
     { field: "srno", headerName: "SR No" },
@@ -28,7 +26,8 @@ const ClientMembers = () => {
             navigate(`view-member/${params.data.employeeName}`, {
               state: { memberDetails: params.data },
             })
-          }>
+          }
+        >
           {params.value}
         </span>
       ),
@@ -71,6 +70,7 @@ const ClientMembers = () => {
             searchColumn="Email"
             tableTitle={`${selectedClient?.clientName} Members`}
             data={selectedClient?.members.map((item, index) => ({
+              ...item,
               srno: index + 1,
               employeeName: item.employeeName,
               dob: humanDate(item.dob),

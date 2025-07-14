@@ -5,6 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const MemberDetails = () => {
   const { control, handleSubmit, reset } = useForm({
@@ -45,9 +46,9 @@ const MemberDetails = () => {
       employeePF: "1500",
     },
   });
-
   const location = useLocation();
   const { memberDetails } = location.state;
+  console.log(JSON.stringify(memberDetails));
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -90,7 +91,16 @@ const MemberDetails = () => {
               {/* Section:  Customer Details */}
               <div>
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {["dob", "email", "mobileNo"].map((fieldKey) => (
+                  {[
+                    "dob",
+                    "email",
+                    "mobileNo",
+                    "designation",
+                    "bloodGroup",
+                    "emergencyName",
+                    "emergencyNo",
+                    "credits",
+                  ].map((fieldKey) => (
                     <div key={fieldKey}>
                       {isEditing ? (
                         <Controller

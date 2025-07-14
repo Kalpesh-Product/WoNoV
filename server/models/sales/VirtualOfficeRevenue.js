@@ -11,6 +11,7 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
     channel: {
       type: String,
       enum: ["Direct", "SPV"],
@@ -35,6 +36,10 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
     rentDate: {
       type: Date,
       required: true,
+    },
+    status: {
+      type: Boolean,
+      default: true,
     },
     rentStatus: {
       type: String,
