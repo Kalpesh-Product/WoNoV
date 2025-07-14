@@ -22,6 +22,17 @@ const TotalRevenue = () => {
       }
     },
   });
+  const { data: simpleRevenue = [], isLoading: isSimpleRevenue } = useQuery({
+    queryKey: ["completeRevenue"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/simple-consolidated-revenue");
+        return response.data;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+  });
 
   const months = [
     "Apr-24",

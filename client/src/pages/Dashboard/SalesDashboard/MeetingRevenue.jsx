@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { CircularProgress } from "@mui/material";
 import WidgetTable from "../../../components/Tables/WidgetTable";
+import StatusChip from "../../../components/StatusChip";
 
 const MeetingRevenue = () => {
   const axios = useAxiosPrivate();
@@ -89,13 +90,13 @@ const MeetingRevenue = () => {
 
   const tableData = meetingsData.map((monthData, index) => ({
     revenue: monthData?.revenue?.map((client, i) => ({
-      id: i + 1,
+      ...client,
       particulars: client.particulars || "-",
       unitsOrHours: client.unitsOrHours ?? "-",
       taxable: client.taxable ?? 0,
       gst: client.gst ?? 0,
       totalAmount: client.totalAmount ?? 0,
-      date: (client.date),
+      date: client.date,
       paymentDate: humanDate(client.paymentDate),
       remarks: client.remarks || "-",
     })),
@@ -164,6 +165,12 @@ const MeetingRevenue = () => {
               { headerName: "Date", field: "date" },
               { headerName: "Payment Date", field: "paymentDate" },
               { headerName: "Remarks", field: "remarks" },
+              {
+                headerName: "Status",
+                field: "status",
+                pinned : "right",
+                cellRenderer: (params) => <StatusChip status={params.value} />,
+              },
             ]}
           />
         </>
