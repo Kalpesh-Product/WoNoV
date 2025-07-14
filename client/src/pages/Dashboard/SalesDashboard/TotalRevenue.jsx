@@ -3,9 +3,10 @@ import WidgetSection from "../../../components/WidgetSection";
 import { inrFormat } from "../../../utils/currencyFormat";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CircularProgress } from "@mui/material";
 import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
+import WidgetTable from "../../../components/Tables/WidgetTable";
 
 const TotalRevenue = () => {
   const axios = useAxiosPrivate();
@@ -26,7 +27,9 @@ const TotalRevenue = () => {
     queryKey: ["completeRevenue"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/sales/simple-consolidated-revenue");
+        const response = await axios.get(
+          "/api/sales/simple-consolidated-revenue"
+        );
         return response.data;
       } catch (error) {
         console.error(error);
@@ -127,24 +130,26 @@ const TotalRevenue = () => {
     //     },
     //   },
     // },
-   tooltip: {
-  shared: true,
-  intersect: false,
-  custom: function ({ dataPointIndex, w }) {
-    const monthLabel = w.globals.labels[dataPointIndex];
+    tooltip: {
+      shared: true,
+      intersect: false,
+      custom: function ({ dataPointIndex, w }) {
+        const monthLabel = w.globals.labels[dataPointIndex];
 
-    const coworking = filteredByYear[0]?.data?.[dataPointIndex] ?? 0;
-    const meetings = filteredByYear[1]?.data?.[dataPointIndex] ?? 0;
-    const virtualOffice = filteredByYear[2]?.data?.[dataPointIndex] ?? 0;
-    const workation = filteredByYear[3]?.data?.[dataPointIndex] ?? 0;
-    const altRevenue = filteredByYear[4]?.data?.[dataPointIndex] ?? 0;
+        const coworking = filteredByYear[0]?.data?.[dataPointIndex] ?? 0;
+        const meetings = filteredByYear[1]?.data?.[dataPointIndex] ?? 0;
+        const virtualOffice = filteredByYear[2]?.data?.[dataPointIndex] ?? 0;
+        const workation = filteredByYear[3]?.data?.[dataPointIndex] ?? 0;
+        const altRevenue = filteredByYear[4]?.data?.[dataPointIndex] ?? 0;
 
-    return `
+        return `
       <div style="padding: 10px; width: 300px">
         <div class="apexcharts-tooltip-title" style="margin-bottom: 8px; font-weight: bold;">${monthLabel}</div>
 
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${w.globals.colors[0]}; display: inline-block;"></span>
+          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${
+            w.globals.colors[0]
+          }; display: inline-block;"></span>
           <div style="display: flex; justify-content: space-between; width: 100%;">
             <span>Co-Working</span>
             <span>INR ${coworking.toLocaleString("en-IN")}</span>
@@ -152,7 +157,9 @@ const TotalRevenue = () => {
         </div>
 
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${w.globals.colors[1]}; display: inline-block;"></span>
+          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${
+            w.globals.colors[1]
+          }; display: inline-block;"></span>
           <div style="display: flex; justify-content: space-between; width: 100%;">
             <span>Meetings</span>
             <span>INR ${meetings.toLocaleString("en-IN")}</span>
@@ -160,7 +167,9 @@ const TotalRevenue = () => {
         </div>
 
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${w.globals.colors[2]}; display: inline-block;"></span>
+          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${
+            w.globals.colors[2]
+          }; display: inline-block;"></span>
           <div style="display: flex; justify-content: space-between; width: 100%;">
             <span>Virtual Office</span>
             <span>INR ${virtualOffice.toLocaleString("en-IN")}</span>
@@ -168,7 +177,9 @@ const TotalRevenue = () => {
         </div>
 
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${w.globals.colors[3]}; display: inline-block;"></span>
+          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${
+            w.globals.colors[3]
+          }; display: inline-block;"></span>
           <div style="display: flex; justify-content: space-between; width: 100%;">
             <span>Workation</span>
             <span>INR ${workation.toLocaleString("en-IN")}</span>
@@ -176,7 +187,9 @@ const TotalRevenue = () => {
         </div>
 
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${w.globals.colors[4]}; display: inline-block;"></span>
+          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${
+            w.globals.colors[4]
+          }; display: inline-block;"></span>
           <div style="display: flex; justify-content: space-between; width: 100%;">
             <span>Alt Revenues</span>
             <span>INR ${altRevenue.toLocaleString("en-IN")}</span>
@@ -184,9 +197,8 @@ const TotalRevenue = () => {
         </div>
       </div>
     `;
-  },
-},
-
+      },
+    },
 
     plotOptions: {
       bar: {
@@ -218,10 +230,82 @@ const TotalRevenue = () => {
       },
     },
   };
+  const unifiedRevenueData = useMemo(() => {
+    if (!simpleRevenue) return [];
 
-  const totalAnnualRevenue = filteredByYear.reduce((sum, domain) => {
-    return sum + domain.data.reduce((acc, monthVal) => acc + monthVal, 0);
-  }, 0);
+    const flatten = [];
+
+    simpleRevenue.meetingRevenue?.forEach((item) => {
+      flatten.push({
+        vertical: "Meeting",
+        revenue: item.taxable,
+        date: item.date,
+      });
+    });
+
+    simpleRevenue.alternateRevenues?.forEach((item) => {
+      flatten.push({
+        vertical: "Alternate",
+        revenue: item.taxableAmount,
+        date: item.invoiceCreationDate,
+      });
+    });
+
+    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
+      flatten.push({
+        vertical: "Virtual Office",
+        revenue: item.revenue,
+        date: item.rentDate,
+      });
+    });
+
+    simpleRevenue.workationRevenues?.forEach((item) => {
+      flatten.push({
+        vertical: "Workation",
+        revenue: item.taxableAmount,
+        date: item.date,
+      });
+    });
+
+    simpleRevenue.coworkingRevenues?.forEach((item) => {
+      flatten.push({
+        vertical: "Coworking",
+        revenue: item.revenue,
+        date: item.rentDate,
+      });
+    });
+
+    return flatten;
+  }, [simpleRevenue]);
+
+  console.log("unified : ", unifiedRevenueData)
+
+  const revenueByVertical = useMemo(() => {
+    const grouped = {};
+
+    unifiedRevenueData.forEach((entry) => {
+      const amount = parseFloat(entry.revenue) || 0;
+      if (!grouped[entry.vertical]) {
+        grouped[entry.vertical] = 0;
+      }
+      grouped[entry.vertical] += amount;
+    });
+
+    return Object.entries(grouped).map(([vertical, revenue], idx) => ({
+      srNo: idx + 1,
+      vertical,
+      revenue: inrFormat(revenue),
+    }));
+  }, [unifiedRevenueData]);
+
+    console.log("revenueByVertical : ", revenueByVertical)
+
+  const totalAnnualRevenue = useMemo(() => {
+    return revenueByVertical.reduce(
+      (sum, item) => sum + parseFloat(item.revenue.replace(/,/g, "")),
+      0
+    );
+  }, [revenueByVertical]);
 
   return (
     <div className="flex flex-col gap-4 ">
@@ -240,106 +324,18 @@ const TotalRevenue = () => {
         </WidgetSection>
       )}
 
-      {/* <WidgetSection
-        border
-        title={"Annual Monthly Revenue Breakup"}
-        padding
-        TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}
-      >
-        <div className="flex flex-col gap-2 rounded-md p-4">
-          <CollapsibleTable
-            columns={[
-              { headerName: "Vertical", field: "vertical" },
-              { headerName: "Revenue (INR)", field: "revenue" },
-              {
-                headerName: "Percentage Of Business (%)",
-                field: "contribution",
-              },
-            ]}
-            data={filteredByYear.map((domain, index) => {
-              const totalRevenue = domain.data.reduce(
-                (sum, val) => sum + val,
-                0
-              );
-              const contribution =
-                totalAnnualRevenue > 0
-                  ? ((totalRevenue / totalAnnualRevenue) * 100).toFixed(2)
-                  : "0.00";
-
-              return {
-                id: index,
-                vertical: domain.name,
-                revenue: totalRevenue.toLocaleString("en-IN"),
-                contribution: `${contribution}%`,
-                monthly: domain.data.map((val, idx) => {
-                  const [shortMonth, yearSuffix] = [
-                    "Apr-24",
-                    "May-24",
-                    "Jun-24",
-                    "Jul-24",
-                    "Aug-24",
-                    "Sep-24",
-                    "Oct-24",
-                    "Nov-24",
-                    "Dec-24",
-                    "Jan-25",
-                    "Feb-25",
-                    "Mar-25",
-                  ][idx].split("-");
-
-                  const fullMonthMap = {
-                    Jan: "January",
-                    Feb: "February",
-                    Mar: "March",
-                    Apr: "April",
-                    May: "May",
-                    Jun: "June",
-                    Jul: "July",
-                    Aug: "August",
-                    Sep: "September",
-                    Oct: "October",
-                    Nov: "November",
-                    Dec: "December",
-                  };
-
-                  return {
-                    srNo: idx + 1,
-                    month: fullMonthMap[shortMonth],
-                    year: `20${yearSuffix}`,
-                    revenue: val.toLocaleString("en-IN"),
-                  };
-                }),
-              };
-            })}
-            renderExpandedRow={(row) => (
-              <AgTable
-                data={row.monthly}
-                columns={[
-                  { headerName: "Sr No", field: "srNo", flex: 1 },
-                  { headerName: "Month", field: "month", flex: 1 },
-                  { headerName: "Year", field: "year", flex: 1 },
-                  { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
-                ]}
-                tableHeight={300}
-                hideFilter
-              />
-            )}
-          /> 
-
-         
-        </div>
-         
-      </WidgetSection> */}
-
-      <MonthWiseAgTable
-        title={"Annual Monthly Revenue Breakup"}
-        passedColumns={[
+      <WidgetTable
+        tableTitle={"Annual Monthly Revenue Breakup"}
+        dateColumn="date"
+        totalKey="revenue"
+        groupByKey="vertical" // 👈 we’ll use this to show 1 row per vertical
+        columns={[
           { headerName: "Sr No", field: "srNo", flex: 1 },
           { headerName: "Vertical", field: "vertical", flex: 1 },
           { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
         ]}
         amount={`INR ${inrFormat(totalAnnualRevenue)}`}
-        financialData={financialDataForTable}
+       data={unifiedRevenueData}
       />
     </div>
   );

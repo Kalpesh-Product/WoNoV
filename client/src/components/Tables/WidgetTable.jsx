@@ -35,6 +35,7 @@ const WidgetTable = ({
   onMonthChange,
   totalKey = "actualAmount",
   totalText = "INR",
+  groupByKey
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -192,6 +193,26 @@ const WidgetTable = ({
     }
   };
 
+
+  const groupedData = useMemo(() => {
+  if (!groupByKey || !totalKey) return finalTableData;
+
+  const grouped = {};
+
+  filteredData.forEach((item) => {
+    const group = item[groupByKey];
+    const amount = parseFloat(item[totalKey]) || 0;
+    if (!grouped[group]) grouped[group] = 0;
+    grouped[group] += amount;
+  });
+
+  return Object.entries(grouped).map(([group, total], idx) => ({
+    srNo: idx + 1,
+    [groupByKey]: group,
+    [totalKey]: inrFormat(total),
+  }));
+}, [filteredData, groupByKey, totalKey]);
+
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
@@ -303,7 +324,7 @@ const WidgetTable = ({
               tableTitle={tableTitle}
               tableHeight={tableHeight || 300}
               columns={formattedColumns}
-              data={finalTableData}
+              data={groupedData}
               hideFilter={filteredData.length <= 9}
               search={search}
               dateColumn={dateColumn}
