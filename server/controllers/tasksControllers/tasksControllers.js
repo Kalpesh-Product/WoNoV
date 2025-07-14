@@ -805,18 +805,24 @@ const getAllDeptTasks = async (req, res, next) => {
     let departmentMap = new Map();
     let query = { company };
 
-    if (
-      !roles.includes("Master Admin") &&
-      !roles.includes("Super Admin") &&
-      !roles.includes("HR Admin")
-    ) {
+    const isSuperAdmin =
+      roles.includes("Master Admin") ||
+      roles.includes("Super Admin") ||
+      roles.includes("HR Admin");
+
+    if (!isSuperAdmin) {
       query.department = { $in: departments };
     }
 
-    // Step 1: Fetch all departments
-    const fetchedDepartments = await Department.find({ isActive: true }).lean();
+    // Step 1: Fetch only accessible departments
+    const deptFilter = { isActive: true };
+    if (!isSuperAdmin) {
+      deptFilter._id = { $in: departments };
+    }
 
-    // Step 2: Pre-fill the departmentMap with all departments
+    const fetchedDepartments = await Department.find(deptFilter).lean();
+
+    // Step 2: Pre-fill the departmentMap with only allowed departments
     fetchedDepartments.forEach((dept) => {
       departmentMap.set(dept._id.toString(), {
         department: dept,
@@ -845,7 +851,7 @@ const getAllDeptTasks = async (req, res, next) => {
       }
     });
 
-    // Step 5: Return all departments, even if they have 0 tasks
+    // Step 5: Return departments user has access to, even if no tasks
     const result = Array.from(departmentMap.values());
 
     return res.status(200).json(result);

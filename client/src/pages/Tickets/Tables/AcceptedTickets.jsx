@@ -72,7 +72,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "api/company/get-company-data?field=selectedDepartments"
+          "api/departments/get-departments"
         );
         return response.data?.selectedDepartments;
       } catch (error) {
@@ -366,8 +366,8 @@ const AcceptedTickets = ({ title, departmentId }) => {
                     Select a Department
                   </MenuItem>
                   {departments.map((item) => (
-                    <MenuItem key={item.department?._id} value={item.department?._id}>
-                      {item.department?.name}
+                    <MenuItem key={item._id} value={item._id}>
+                      {item.name}
                     </MenuItem>
                   ))}
                 </TextField>

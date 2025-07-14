@@ -11,6 +11,7 @@ import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import { parseRevenue } from "../../../utils/removeCommaInNum";
 import { Skeleton } from "@mui/material";
 import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
+import WidgetTable from "../../../components/Tables/WidgetTable";
 
 const VirtualOffice = () => {
   const axios = useAxiosPrivate();
@@ -146,6 +147,13 @@ const VirtualOffice = () => {
     0
   );
 
+  const tableData = isLoadingVirtualOfficeRevenue
+    ? []
+    : virtualOfficeRevenue.map((item) => ({
+        ...item,
+        clientName: item.client?.clientName,
+      }));
+
   return (
     <div className="flex flex-col gap-4">
       {!isLoadingVirtualOfficeRevenue ? (
@@ -162,13 +170,20 @@ const VirtualOffice = () => {
       )}
 
       {!isLoadingVirtualOfficeRevenue ? (
-        <MonthWiseAgTable
-          title={"Monthly Revenue with Client Details"}
-          financialData={transformRevenuesData}
-          passedColumns={[
-            { headerName: "Sr No", field: "id", flex: 1 },
+        <WidgetTable
+          tableTitle={"Monthly Revenue with Client Details"}
+          data={tableData}
+          totalKey="revenue"
+          dateColumn={"rentDate"}
+          columns={[
+            { headerName: "Sr No", field: "srNo", flex: 1 },
             { headerName: "Client Name", field: "clientName", flex: 1 },
-            { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
+            {
+              headerName: "Revenue (INR)",
+              field: "revenue",
+              flex: 1,
+              cellRenderer: (params) => inrFormat(params.value || 0),
+            },
             { headerName: "Status", field: "status", flex: 1 },
           ]}
         />

@@ -29,7 +29,7 @@ import humanTime from "../../utils/humanTime";
 import { TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
-import MonthWiseTable from "../../components/Tables/MonthWiseTable";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
 
 const ManageMeetings = () => {
   const axios = useAxiosPrivate();
@@ -479,7 +479,7 @@ const ManageMeetings = () => {
     <div className="flex flex-col gap-4">
       <PageFrame>
         {!isMeetingsLoading ? (
-          <MonthWiseTable
+          <YearWiseTable
             key={transformedMeetings.length}
             search
             dateColumn={"date"}

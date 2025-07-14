@@ -1,7 +1,6 @@
 import { useLocation, useParams } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
-import MonthWiseTable from "../../../components/Tables/MonthWiseTable";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";

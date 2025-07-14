@@ -50,6 +50,9 @@ const meetingClientRevenueSchema = new mongoose.Schema(
       type: Date,
       required: false, // could be null if not yet paid
     },
+    status: {
+      type: String,
+    },
     remarks: {
       type: String,
       required: false, // could be payment mode (Cheque,NEFT etc)

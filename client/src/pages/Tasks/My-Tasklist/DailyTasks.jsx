@@ -1,7 +1,6 @@
 import { useLocation, useParams } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
-import MonthWiseTable from "../../../components/Tables/MonthWiseTable";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
@@ -27,9 +26,9 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 import useAuth from "../../../hooks/useAuth";
-import DateWiseTable from "../../../components/Tables/DateWiseTable";
 import PageFrame from "../../../components/Pages/PageFrame";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
 
 const DailyTasks = () => {
   const axios = useAxiosPrivate();
@@ -314,7 +313,7 @@ const DailyTasks = () => {
       <div className="flex flex-col gap-4">
         <PageFrame>
           <WidgetSection padding layout={1}>
-            <DateWiseTable
+            <YearWiseTable
               key={departmentKra.length}
               checkbox
               tableTitle={`MY TASKS`}
@@ -346,7 +345,7 @@ const DailyTasks = () => {
         <PageFrame>
           {!isCompletedLoading ? (
             <WidgetSection padding layout={1}>
-              <DateWiseTable
+              <YearWiseTable
                 exportData={true}
                 key={completedEntries.length}
                 tableTitle={`MY COMPLETED TASKS`}

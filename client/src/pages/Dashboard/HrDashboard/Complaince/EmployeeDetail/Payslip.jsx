@@ -4,6 +4,7 @@ import useAuth from "../../../../../hooks/useAuth";
 import YearWiseTable from "../../../../../components/Tables/YearWiseTable";
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
+import PageFrame from "../../../../../components/Pages/PageFrame";
 
 const HrCommonPayslips = () => {
   const employmentID = useSelector((state) => state.hr.selectedEmployeeMongoId);
@@ -75,7 +76,7 @@ const HrCommonPayslips = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
+      <PageFrame>
         <YearWiseTable
           key={tableData.length}
           search={true}
@@ -86,7 +87,7 @@ const HrCommonPayslips = () => {
           columns={payslipColumns}
           isLoading={isLoading}
         />
-      </div>
+      </PageFrame>
     </div>
   );
 };

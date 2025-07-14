@@ -23,12 +23,13 @@ import { CircularProgress, Skeleton, TextField } from "@mui/material";
 import humanTime from "../../../../../utils/humanTime";
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
-import MonthWiseTable from "../../../../../components/Tables/MonthWiseTable";
 import { formatDuration } from "../../../../../utils/dateFormat";
 import {
   isAlphanumeric,
   noOnlyWhitespace,
 } from "../../../../../utils/validators";
+import YearWiseTable from "../../../../../components/Tables/YearWiseTable";
+import PageFrame from "../../../../../components/Pages/PageFrame";
 
 const Attendance = () => {
   const axios = useAxiosPrivate();
@@ -353,12 +354,13 @@ const Attendance = () => {
 
       <div>
         {!isLoading ? (
-          <WidgetSection layout={1} title={`${name}'s Attendance table`} border>
-            <MonthWiseTable
+          <PageFrame>
+            <YearWiseTable
               buttonTitle={"Correction Request"}
               handleSubmit={() => {
                 setOpenModal(true);
               }}
+              tableTitle={`${name}'s Attendance table`}
               // data={
               //   !isLoading
               //     ? attendance?.map((record, index) => ({
@@ -413,7 +415,7 @@ const Attendance = () => {
               columns={attendanceColumns}
               dateColumn="date"
             />
-          </WidgetSection>
+          </PageFrame>
         ) : (
           <>
             <Skeleton height={300} width={"100%"} />

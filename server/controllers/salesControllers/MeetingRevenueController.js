@@ -123,6 +123,7 @@ const getMeetingRevenue = async (req, res, next) => {
           costPerPass: item.costPerPass,
           taxable: item.taxable,
           gst: item.gst,
+          status: item.status,
           totalAmount: item.totalAmount,
           date: item.date,
           paymentDate: item.paymentDate,

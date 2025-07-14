@@ -22,7 +22,6 @@ import { toast } from "sonner";
 import useAuth from "../../../../../hooks/useAuth";
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
-import MonthWiseTable from "../../../../../components/Tables/MonthWiseTable";
 import PageFrame from "../../../../../components/Pages/PageFrame";
 import ThreeDotMenu from "../../../../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
@@ -30,6 +29,7 @@ import {
   noOnlyWhitespace,
   isAlphanumeric,
 } from "../../../../../utils/validators";
+import YearWiseTable from "../../../../../components/Tables/YearWiseTable";
 
 const Leaves = () => {
   const axios = useAxiosPrivate();
@@ -337,7 +337,7 @@ const Leaves = () => {
       </div>
       <div>
         <PageFrame>
-          <MonthWiseTable
+          <YearWiseTable
             key={leaves.length}
             search={true}
             searchColumn={"Leave Type"}

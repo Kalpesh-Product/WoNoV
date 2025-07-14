@@ -72,9 +72,7 @@ const getConsolidatedRevenue = async (req, res, next) => {
       if (item.rentDate) {
         const fy = getFinancialYear(item.rentDate);
         const idx = getFinancialMonthIndex(item.rentDate);
-        const amount =
-          parseFloat(item.taxableAmount) ||
-          0;
+        const amount = parseFloat(item.taxableAmount) || 0;
         categoryMap["Virtual Offices"].data[fy] ??= initFYData();
         categoryMap["Virtual Offices"].data[fy][idx] += amount;
       }
@@ -112,4 +110,33 @@ const getConsolidatedRevenue = async (req, res, next) => {
   }
 };
 
-module.exports = getConsolidatedRevenue;
+const getSimpleConsolidatedRevenue = async (req, res, next) => {
+  const company = req.company;
+  try {
+    const [
+      meetingRevenue,
+      alternateRevenues,
+      virtualOfficeRevenues,
+      workationRevenues,
+      coworkingRevenues,
+    ] = await Promise.all([
+      MeetingRevenue.find({ company }).lean().exec(),
+      AlternateRevenues.find({ company }).lean().exec(),
+      VirtualOfficeRevenues.find({ company }).lean().exec(),
+      WorkationRevenues.find({ company }).lean().exec(),
+      CoworkingRevenue.find({ company }).lean().exec(),
+    ]);
+
+    return res.status(200).json({
+      meetingRevenue,
+      alternateRevenues,
+      virtualOfficeRevenues,
+      workationRevenues,
+      coworkingRevenues,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getConsolidatedRevenue, getSimpleConsolidatedRevenue };

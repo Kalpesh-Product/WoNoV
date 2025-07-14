@@ -1,11 +1,12 @@
 import BarGraph from "../../../components/graphs/BarGraph";
 import WidgetSection from "../../../components/WidgetSection";
-import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 import { inrFormat } from "../../../utils/currencyFormat";
 import humanDate from "../../../utils/humanDateForamt";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { CircularProgress } from "@mui/material";
+import WidgetTable from "../../../components/Tables/WidgetTable";
+import StatusChip from "../../../components/StatusChip";
 
 const MeetingRevenue = () => {
   const axios = useAxiosPrivate();
@@ -87,29 +88,25 @@ const MeetingRevenue = () => {
     0
   );
 
-  const tableData = meetingsData.map((monthData, index) => {
-    const actual = monthData?.revenue?.reduce((sum, c) => sum + (c.totalAmount || 0), 0);
-    return {
-      id: index,
-      month: monthData.month || "N/A",
-      actual: `INR ${actual?.toLocaleString()}`,
-      revenue: monthData?.revenue?.map((client, i) => ({
-        id: i + 1,
-        particulars: client.particulars || "-",
-        unitsOrHours: client.unitsOrHours ?? "-",
-        taxable: client.taxable ?? 0,
-        gst: client.gst ?? 0,
-        totalAmount: client.totalAmount ?? 0,
-        date: humanDate(client.date),
-        paymentDate: humanDate(client.paymentDate),
-        remarks: client.remarks || "-",
-      })) ?? [],
-    };
-  });
+  const tableData = meetingsData.map((monthData, index) => ({
+    revenue: monthData?.revenue?.map((client, i) => ({
+      ...client,
+      particulars: client.particulars || "-",
+      unitsOrHours: client.unitsOrHours ?? "-",
+      taxable: client.taxable ?? 0,
+      gst: client.gst ?? 0,
+      totalAmount: client.totalAmount ?? 0,
+      date: client.date,
+      paymentDate: humanDate(client.paymentDate),
+      remarks: client.remarks || "-",
+    })),
+  }));
+
+  const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
 
   return (
     <div className="flex flex-col gap-4">
-      { isMeetingsLoading ? (
+      {isMeetingsLoading ? (
         <div className="flex h-72 justify-center items-center">
           <CircularProgress />
         </div>
@@ -132,11 +129,13 @@ const MeetingRevenue = () => {
             <BarGraph data={series} options={options} height={400} />
           </WidgetSection>
 
-          <MonthWiseAgTable
-            financialData={tableData}
-            title={"Monthly Revenue with Client Details"}
-            passedColumns={[
-              { headerName: "Sr No", field: "id", width: 100 },
+          <WidgetTable
+            data={flattenedRevenueData}
+            tableTitle={"Monthly Revenue with Client Details"}
+            dateColumn={"date"}
+            totalKey="taxable"
+            columns={[
+              { headerName: "Sr No", field: "srNo", width: 100 },
               { headerName: "Particulars", field: "particulars", width: 200 },
               { headerName: "Units / Hours", field: "unitsOrHours" },
               {
@@ -166,6 +165,12 @@ const MeetingRevenue = () => {
               { headerName: "Date", field: "date" },
               { headerName: "Payment Date", field: "paymentDate" },
               { headerName: "Remarks", field: "remarks" },
+              {
+                headerName: "Status",
+                field: "status",
+                pinned : "right",
+                cellRenderer: (params) => <StatusChip status={params.value} />,
+              },
             ]}
           />
         </>

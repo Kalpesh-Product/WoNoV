@@ -6,7 +6,6 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanDate from "../../utils/humanDateForamt";
 import { Chip, CircularProgress } from "@mui/material";
 import MuiModal from "../../components/MuiModal";
-import MonthWiseTable from "../../components/Tables/MonthWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import dayjs from "dayjs";
