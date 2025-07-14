@@ -111,6 +111,7 @@ const getConsolidatedRevenue = async (req, res, next) => {
 };
 
 const getSimpleConsolidatedRevenue = async (req, res, next) => {
+  const company = req.company;
   try {
     const [
       meetingRevenue,
