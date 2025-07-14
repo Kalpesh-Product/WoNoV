@@ -111,10 +111,7 @@ const MyProfile = ({ handleClose, pageTitle }) => {
     } catch (error) {
       console.error("Upload Error:", error);
       // alert("Failed to upload image.");
-      toast.success("Profile Image uploaded successfully!");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000); // delay of 1000ms = 1 second
+      toast.error(error.response.data.message);
     } finally {
       setUploading(false);
     }
