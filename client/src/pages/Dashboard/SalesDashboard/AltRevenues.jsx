@@ -8,6 +8,8 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 import { CircularProgress } from "@mui/material";
+import WidgetTable from "../../../components/Tables/WidgetTable";
+import StatusChip from "../../../components/StatusChip";
 
 const AltRevenues = () => {
   const axios = useAxiosPrivate();
@@ -352,39 +354,18 @@ const AltRevenues = () => {
   );
 
   const tableData = alternateRevenue.map((monthData, index) => {
-    const totalRevenue = monthData.revenue?.reduce(
-      (sum, c) => sum + c.invoiceAmount,
-      0
-    );
     return {
-      id: index,
-      month: monthData.month,
-      revenue: `INR ${totalRevenue.toLocaleString()}`,
+      // revenue: `INR ${totalRevenue.toLocaleString()}`,
       clients: monthData.revenue.map((client, i) => ({
-        id: i + 1,
-        revenueSource: client.particulars,
-        revenue: `${inrFormat(client.invoiceAmount)}`,
-        recievedDate: dayjs(client.invoicePaidDate).format("DD-MM-YYYY"),
+        ...client,
       })),
     };
   });
 
-  const transformedData = isLoadingAlternateRevenue
-    ? []
-    : alternateRevenue.map((item, index) => {
-        const revenue = item?.revenue.map((rev) => ({
-          ...rev,
-          taxableAmount: inrFormat(rev?.taxableAmount),
-          invoiceAmount: inrFormat(rev?.invoiceAmount),
-          gst: inrFormat(rev?.gst),
-        }));
+  const columns = [{}];
 
-        return {
-          ...item,
-          revenue,
-        };
-      });
-
+  const flattenedRevenueData = tableData.flatMap((month) => month.clients);
+  console.log("flattenedRevenueData:", flattenedRevenueData);
   return (
     <div className="flex flex-col gap-4">
       {isLoadingAlternateRevenue ? (
@@ -408,10 +389,38 @@ const AltRevenues = () => {
       )}
 
       {!isLoadingAlternateRevenue ? (
-        <MonthWiseAgTable
-          title={"Monthly Revenue with Source Details"}
-          financialData={transformedData}
-          noFilter
+        <WidgetTable
+          tableTitle={"Monthly Revenue with Source Details"}
+          data={flattenedRevenueData}
+          dateColumn={"invoiceCreationDate"}
+          totalKey="taxableAmount"
+          columns={[
+            { headerName: "Sr No", field: "srNo", width: 100 },
+            { headerName: "Particulars", field: "particulars", width: 350 },
+            {
+              headerName: "Taxable Amount (INR)",
+              field: "taxableAmount",
+              cellRenderer: (params) => inrFormat(params.value),
+            },
+            {
+              headerName: "Invoice Creation Date",
+              field: "invoiceCreationDate",
+            },
+
+            { headerName: "Invoice Paid Date", field: "invoicePaidDate" },
+            {
+              headerName: "GST (INR)",
+              field: "gst",
+              cellRenderer: (params) => inrFormat(params.value || 0),
+            },
+
+            {
+              headerName: "Status",
+              field: "status",
+              pinned: "right",
+              cellRenderer: (params) => <StatusChip status={params.value} />,
+            },
+          ]}
         />
       ) : (
         <div className="flex h-72 justify-center items-center">

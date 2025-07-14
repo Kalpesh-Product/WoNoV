@@ -9,8 +9,10 @@ import { IconButton, Popover } from "@mui/material";
 import { MdCalendarToday } from "react-icons/md";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
+import WidgetSection from "../WidgetSection";
+import { inrFormat } from "../../utils/currencyFormat";
 
-const YearWiseTable = ({
+const WidgetTable = ({
   data = [],
   columns = [],
   dateColumn,
@@ -32,6 +34,7 @@ const YearWiseTable = ({
   search = true,
   onMonthChange,
   totalKey = "actualAmount",
+  totalText = "INR",
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -192,143 +195,135 @@ const YearWiseTable = ({
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
-      <div className="grid grid-cols-9 items-center w-full">
-        {tableTitle ? (
-          <span className="text-title text-primary font-pmedium uppercase col-span-6">
-            {tableTitle}
-          </span>
-        ) : (
-          <span></span>
-        )}
 
-        <div className="flex gap-2 items-center justify-end flex-wrap col-span-3">
-          {/* ✅ Show calendar only if data is not empty */}
+      <WidgetSection
+        border
+        title={tableTitle}
+        TitleAmount={`${totalText}  ${inrFormat(rangeTotal)}`}
+      >
+        <div className="grid grid-cols-9 items-center w-full">
+          <div className="flex gap-2 items-center justify-end flex-wrap col-span-3">
+            {/* ✅ Show calendar only if data is not empty */}
 
-          <Popover
-            open={open}
-            anchorEl={anchorEl}
-            onClose={handleCloseCalendar}
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "left",
-            }}
-          >
-            {dateRange.length > 0 && (
-              <DateRangePicker
-                onChange={handleDateRangeChange}
-                moveRangeOnFirstSelection={false}
-                ranges={dateRange}
-                direction="vertical"
-                dayContentRenderer={(date) => {
-                  const dateStr = dayjs(date).format("YYYY-MM-DD");
-                  const hasData = validDateSet.has(dateStr);
-                  return (
-                    <div className="overflow-hidden">
-                      <div
-                        style={{
-                          backgroundColor: hasData ? "white" : "transparent",
-                          borderBottom: hasData ? "4px solid #1E3D73" : "",
-                          borderTopLeftRadius: "5px",
-                          borderTopRightRadius: "5px",
-                          height: "25px",
-                          width: "25px",
-                          fontWeight: hasData ? "bold" : "normal",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {date.getDate()}
+            <Popover
+              open={open}
+              anchorEl={anchorEl}
+              onClose={handleCloseCalendar}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "left",
+              }}
+            >
+              {dateRange.length > 0 && (
+                <DateRangePicker
+                  onChange={handleDateRangeChange}
+                  moveRangeOnFirstSelection={false}
+                  ranges={dateRange}
+                  direction="vertical"
+                  dayContentRenderer={(date) => {
+                    const dateStr = dayjs(date).format("YYYY-MM-DD");
+                    const hasData = validDateSet.has(dateStr);
+                    return (
+                      <div className="overflow-hidden">
+                        <div
+                          style={{
+                            backgroundColor: hasData ? "white" : "transparent",
+                            borderBottom: hasData ? "4px solid #1E3D73" : "",
+                            borderTopLeftRadius: "5px",
+                            borderTopRightRadius: "5px",
+                            height: "25px",
+                            width: "25px",
+                            fontWeight: hasData ? "bold" : "normal",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {date.getDate()}
+                        </div>
                       </div>
-                    </div>
-                  );
-                }}
+                    );
+                  }}
+                />
+              )}
+            </Popover>
+
+            {buttonTitle && (
+              <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
+            )}
+            {exportData && (
+              <PrimaryButton title="Export" handleSubmit={handleExportPass} />
+            )}
+            {batchButton && selectedRows.length > 0 && (
+              <PrimaryButton
+                title={batchButton}
+                handleSubmit={() => handleBatchAction(selectedRows)}
               />
             )}
-          </Popover>
-
-          {buttonTitle && (
-            <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
-          )}
-          {exportData && (
-            <PrimaryButton title="Export" handleSubmit={handleExportPass} />
-          )}
-          {batchButton && selectedRows.length > 0 && (
-            <PrimaryButton
-              title={batchButton}
-              handleSubmit={() => handleBatchAction(selectedRows)}
-            />
-          )}
-        </div>
-      </div>
-      {dateRange.length > 0 && dateRange[0] && (
-        <div className="flex justify-center items-center gap-2">
-          {/* Date information here */}
-
-          <div className="flex items-center gap-2  justify-center">
-            <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-              <span className="text-gray-600 text-content font-pregular">
-                {dateRange.length > 0 &&
-                  dateRange[0] &&
-                  dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
-              </span>{" "}
-            </div>
-
-            <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-              <span className="text-gray-600 text-content font-pregular">
-                {dateRange.length > 0 &&
-                  dateRange[0] &&
-                  dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
-              </span>
-            </div>
-          </div>
-          <div
-            className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
-            onClick={handleOpenCalendar}
-          >
-            <MdCalendarToday size={19} />
           </div>
         </div>
-      )}
+        {dateRange.length > 0 && dateRange[0] && (
+          <div className="flex justify-center items-center gap-2">
+            {/* Date information here */}
 
-      <div className="px-6 py-1 rounded-md border-green-600 border-[1px] bg-green-50 text-green-800 font-semibold">
-        Total: INR {rangeTotal.toLocaleString("en-IN")}
-      </div>
+            <div className="flex items-center gap-2  justify-center">
+              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+                <span className="text-gray-600 text-content font-pregular">
+                  {dateRange.length > 0 &&
+                    dateRange[0] &&
+                    dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
+                </span>{" "}
+              </div>
 
-      {/* Table */}
-
-      <>
-        {finalTableData.length > 0 ? (
-          <AgTable
-            key={key}
-            enableCheckbox={checkbox}
-            tableRef={agGridRef}
-            exportData={exportTable}
-            dropdownColumns={dropdownColumns}
-            checkAll={checkAll}
-            tableTitle={tableTitle}
-            tableHeight={tableHeight || 300}
-            columns={formattedColumns}
-            data={finalTableData}
-            hideFilter={filteredData.length <= 9}
-            search={search}
-            dateColumn={dateColumn}
-            isRowSelectable={isRowSelectable}
-            onSelectionChange={(rows) => setSelectedRows(rows)}
-            batchButton={batchButton}
-            hideTitle={hideTitle}
-          />
-        ) : (
-          <div
-            className="h-[60vh] flex justify-center items-center"
-            style={{ padding: "2rem", color: "#666" }}
-          >
-            No data available for the selected date range.
+              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+                <span className="text-gray-600 text-content font-pregular">
+                  {dateRange.length > 0 &&
+                    dateRange[0] &&
+                    dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
+                </span>
+              </div>
+            </div>
+            <div
+              className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
+              onClick={handleOpenCalendar}
+            >
+              <MdCalendarToday size={19} />
+            </div>
           </div>
         )}
-      </>
+        <>
+          {finalTableData.length > 0 ? (
+            <AgTable
+              key={key}
+              enableCheckbox={checkbox}
+              tableRef={agGridRef}
+              exportData={exportTable}
+              dropdownColumns={dropdownColumns}
+              checkAll={checkAll}
+              tableTitle={tableTitle}
+              tableHeight={tableHeight || 300}
+              columns={formattedColumns}
+              data={finalTableData}
+              hideFilter={filteredData.length <= 9}
+              search={search}
+              dateColumn={dateColumn}
+              isRowSelectable={isRowSelectable}
+              onSelectionChange={(rows) => setSelectedRows(rows)}
+              batchButton={batchButton}
+              hideTitle={hideTitle}
+            />
+          ) : (
+            <div
+              className="h-[60vh] flex justify-center items-center"
+              style={{ padding: "2rem", color: "#666" }}
+            >
+              No data available for the selected date range.
+            </div>
+          )}
+        </>
+      </WidgetSection>
     </div>
   );
 };
 
-export default YearWiseTable;
+export default WidgetTable;

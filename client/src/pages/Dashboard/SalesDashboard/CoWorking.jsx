@@ -15,6 +15,10 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import PageFrame from "../../../components/Pages/PageFrame";
+import WidgetTable from "../../../components/Tables/WidgetTable";
+import StatusChip from "../../../components/StatusChip";
 
 const CoWorking = () => {
   const axios = useAxiosPrivate();
@@ -108,33 +112,29 @@ const CoWorking = () => {
 
   const tableData = isCoWorkingLoading
     ? []
-    : coWorkingData.map((monthData, index) => {
-        const totalRevenue = monthData?.clients?.reduce(
-          (sum, c) => sum + c.revenue,
-          0
-        );
-        return {
-          id: index,
-          month: monthData.month,
-          acutal: `INR ${totalRevenue}`,
-          revenue: monthData?.clients?.map((client, i) => ({
-            id: i + 1,
-            clientName: client.clientName,
-            channel: client.channel,
-            noOfDesks: client.noOfDesks,
-            deskRate: client.deskRate,
-            revenue: `${client.revenue.toLocaleString()}`,
-            totalTerm: client.totalTerm,
-            rentDate: dayjs(client.rentDate).format("DD-MM-YYYY"),
-            rentStatus: client.rentStatus,
-            pastDueDate: dayjs(client.pastDueDate).format("DD-MM-YYYY"),
-            annualIncrement: client.annualIncrement,
-            nextIncrementDate: dayjs(client.nextIncrementDate).format(
-              "DD-MM-YYYY"
-            ),
-          })),
-        };
-      });
+    : coWorkingData.map((monthData, index) => ({
+        revenue: monthData?.clients?.map((client, i) => ({
+          id: i + 1,
+          clientName: client.clientName,
+          channel: client.channel,
+          noOfDesks: client.noOfDesks,
+          deskRate: inrFormat(client.deskRate),
+          revenue: client.revenue,
+          totalTerm: client.totalTerm || 0,
+          rentDate: client.rentDate,
+          rentStatus: client.rentStatus,
+          pastDueDate: dayjs(client.pastDueDate).format("DD-MM-YYYY"),
+          annualIncrement: client.annualIncrement || 0,
+          nextIncrementDate: dayjs(client.nextIncrementDate).format(
+            "DD-MM-YYYY"
+          ),
+        })),
+      }));
+
+  const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
+
+
+
   return (
     <div className="flex flex-col gap-4">
       {!isCoWorkingLoading ? (
@@ -151,19 +151,25 @@ const CoWorking = () => {
       )}
 
       {!isCoWorkingLoading ? (
-        <MonthWiseAgTable
-          financialData={tableData}
-          title={"MONTHLY REVENUE WITH CLIENT DETAILS"}
-          passedColumns={[
+        <WidgetTable
+          data={flattenedRevenueData}
+          dateColumn={"rentDate"}
+          tableTitle={"MONTHLY REVENUE WITH CLIENT DETAILS"}
+          totalKey="revenue"
+          columns={[
             { headerName: "Sr No", field: "id", width: 100 },
             { headerName: "Client Name", field: "clientName", width: 350 },
             { headerName: "Channel", field: "channel" },
-            { headerName: "Revenue (INR)", field: "revenue" },
+            {
+              headerName: "Revenue (INR)",
+              field: "revenue",
+              cellRenderer: (params) => inrFormat(params.value),
+            },
             { headerName: "No. of Desks", field: "noOfDesks" },
             { headerName: "Desk Rate", field: "deskRate" },
             { headerName: "Total Term", field: "totalTerm" },
             { headerName: "Rent Date", field: "rentDate" },
-            { headerName: "Rent Status", field: "rentStatus" },
+
             { headerName: "Past Due Date", field: "pastDueDate" },
             {
               headerName: "Annual Increment (%)",
@@ -173,6 +179,9 @@ const CoWorking = () => {
               headerName: "Next Increment Date",
               field: "nextIncrementDate",
             },
+            { headerName: "Rent Status", field: "rentStatus", pinned: "right", cellRenderer : (params)=>(
+              <StatusChip status={params.value} />
+            ) },
           ]}
         />
       ) : (

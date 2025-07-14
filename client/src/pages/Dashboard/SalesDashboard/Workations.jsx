@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
+import WidgetTable from "../../../components/Tables/WidgetTable";
+import StatusChip from "../../../components/StatusChip";
 
 const Workations = () => {
   const axios = useAxiosPrivate();
@@ -178,25 +180,16 @@ const Workations = () => {
     0
   );
 
-  const tableData = transformRevenuesData?.map((monthData, index) => {
-    const totalRevenue = monthData.clients.reduce(
-      (sum, c) => sum + c.revenue,
-      0
-    );
-    return {
-      id: index,
-      month: monthData.month,
-      actual: `INR ${totalRevenue.toLocaleString()}`,
-      revenue: monthData.clients.map((client, i) => ({
-        id: i + 1,
-        clientName: client.clientName,
-        revenue: `${client.revenue.toLocaleString()}`,
-        status: client.status,
-        taxableAmount: inrFormat(client.taxableAmount),
-        gst: inrFormat(client.gst),
-      })),
-    };
-  });
+  const tableData = isWorkationLoading
+    ? []
+    : workationData?.map((monthData) => ({
+        ...monthData,
+        clientName: monthData.nameOfClient,
+        revenue: monthData.revenue,
+        status: monthData.status,
+        taxableAmount: inrFormat(monthData.taxableAmount),
+        gst: inrFormat(monthData.gst),
+      }));
 
   return (
     <div className="flex flex-col gap-4">
@@ -208,44 +201,51 @@ const Workations = () => {
       >
         <NormalBarGraph data={series} options={options} height={400} />
       </WidgetSection>
-        <MonthWiseAgTable
-          financialData={tableData}
-          title={"Monthly Revenue with Client Details"}
-          passedColumns={[
-            { headerName: "Sr No", field: "id", flex: 1 },
-            { headerName: "Client Name", field: "clientName", flex: 1 },
+      <WidgetTable
+        data={tableData}
+        tableTitle={"Monthly Revenue with Client Details"}
+        totalKey="taxableAmount"
+        dateColumn={"date"}
+        columns={[
+          { headerName: "Sr No", field: "srNo", flex: 1 },
+          { headerName: "Client Name", field: "clientName", flex: 1 },
 
-            {
-              headerName: "Taxable (INR)",
-              field: "taxableAmount",
-              flex: 1,
-              valueFormatter: ({ value }) =>
-                typeof value === "number"
-                  ? value.toLocaleString()
-                  : `${value ?? ""}`,
-            },
-            {
-              headerName: "GST (INR)",
-              field: "gst",
-              flex: 1,
-              valueFormatter: ({ value }) =>
-                typeof value === "number"
-                  ? value.toLocaleString()
-                  : `${value ?? ""}`,
-            },
-            {
-              headerName: "Total (INR)",
-              field: "revenue",
-              flex: 1,
-              valueFormatter: ({ value }) =>
-                typeof value === "number"
-                  ? value.toLocaleString()
-                  : `${value ?? ""}`,
-            },
-            { headerName: "Status", field: "status", flex: 1, pinned : "right" },
-          ]}
-        />
-
+          {
+            headerName: "Taxable (INR)",
+            field: "taxableAmount",
+            flex: 1,
+            valueFormatter: ({ value }) =>
+              typeof value === "number"
+                ? value.toLocaleString()
+                : `${value ?? ""}`,
+          },
+          {
+            headerName: "GST (INR)",
+            field: "gst",
+            flex: 1,
+            valueFormatter: ({ value }) =>
+              typeof value === "number"
+                ? value.toLocaleString()
+                : `${value ?? ""}`,
+          },
+          {
+            headerName: "Total (INR)",
+            field: "totalAmount",
+            flex: 1,
+            valueFormatter: ({ value }) =>
+              typeof value === "number"
+                ? value.toLocaleString()
+                : `${value ?? ""}`,
+          },
+          {
+            headerName: "Status",
+            field: "status",
+            flex: 1,
+            pinned: "right",
+            cellRenderer: (params) => <StatusChip status={params.value ? params.value : "Unpaid"} />,
+          },
+        ]}
+      />
     </div>
   );
 };
