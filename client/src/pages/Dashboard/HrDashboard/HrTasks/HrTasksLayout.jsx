@@ -20,7 +20,7 @@ const HrTasksLayout = () => {
 
 
   // Determine whether to show the tabs
-  const showTabs = !location.pathname.includes("overall-tasks");
+  const showTabs = !location.pathname.includes("/overall-KPA");
 
   // Determine active tab based on location
   const activeTab = tabs.findIndex((tab) =>
