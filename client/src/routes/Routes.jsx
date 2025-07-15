@@ -312,7 +312,7 @@ import CollectionsLayout from "../pages/Dashboard/FinanceDashboard/Finance/Colle
 import HrAttendance from "../pages/Dashboard/HrDashboard/HrEmployee/HrAttendance";
 import HrLeaves from "../pages/Dashboard/HrDashboard/HrEmployee/HrLeaves";
 import HrEvents from "../pages/Dashboard/HrDashboard/Complaince/HrEvents";
-import HrTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrTasks";
+import HrTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrKPA";
 import HrDepartmentTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentTasks";
 import HrTasksLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrTasksLayout";
 import PerformanceLayout from "../pages/Performance/PerformanceLayout";
@@ -383,6 +383,9 @@ import BuildingUnits from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/Buil
 import HouseKeepingMembersList from "../pages/Dashboard/AdminDashboard/HouseKeepingMembersList";
 import HouseKeepingLayout from "../pages/Dashboard/AdminDashboard/HouseKeepingLayout";
 import HouseKeepingOnboard from "../pages/Dashboard/AdminDashboard/HouseKeepingOnboard";
+import HrKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrKPA";
+import HrOverallTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrOverallTasks";
+import HrDepartmentKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKPA";
 
 export const routes = createBrowserRouter([
   {
@@ -1536,12 +1539,22 @@ export const routes = createBrowserRouter([
                         element: <HrTasksLayout />,
                         children: [
                           {
-                            path: "",
-                            element: <HrTasks />,
+                            path: "department-KPA",
+                            element: <HrKPA />,
                             index: true,
                           },
+
                           {
-                            path: "department-KPA",
+                            path: "department-tasks",
+                            element: <HrOverallTasks />,
+                          },
+
+                          {
+                            path: "department-KPA/:department",
+                            element: <HrDepartmentKPA />,
+                          },
+                          {
+                            path: "department-tasks/:department",
                             element: <HrDepartmentTasks />,
                           },
                         ],

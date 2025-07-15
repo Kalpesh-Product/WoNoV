@@ -308,6 +308,8 @@ const Calender = () => {
                           ? p.employeeName
                           : p.firstName
                           ? `${p.firstName} ${p.lastName}`
+                          : p.name
+                          ? p.name
                           : "N/A";
                       })
                       .join(", ") || "N/A"

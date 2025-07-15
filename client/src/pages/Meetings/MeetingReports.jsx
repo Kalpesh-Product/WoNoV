@@ -133,7 +133,6 @@ const MeetingReports = () => {
               tableTitle={"Meetings Reports"}
               data={[
                 ...meetingReportsData.map((item, index) => {
-
                   return {
                     srNo: index + 1,
                     id: index + 1,
@@ -157,7 +156,11 @@ const MeetingReports = () => {
                     subject: item.subject,
                     housekeepingChecklist: item.housekeepingChecklist,
                     participants: item.participants
-                      ?.map((p) => `${p.firstName || ""} ${p.lastName || ""}`)
+                      ?.map((p) =>
+                        p.firstName
+                          ? `${p.firstName || ""} ${p.lastName || ""} `
+                          : `${p.name || ""}`
+                      )
                       .join(", "),
                   };
                 }),
@@ -193,9 +196,7 @@ const MeetingReports = () => {
             />
             <DetalisFormatted
               title="Date"
-              detail={
-                selectedMeeting?.date ? selectedMeeting?.date : "N/A"
-              }
+              detail={selectedMeeting?.date ? selectedMeeting?.date : "N/A"}
             />
             <DetalisFormatted
               title="Time"
