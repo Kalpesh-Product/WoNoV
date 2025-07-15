@@ -1025,6 +1025,49 @@ const deleteTask = async (req, res, next) => {
   }
 };
 
+const getTasksSummary = async (req, res, next) => {
+  try {
+    const { company, departments, roles } = req;
+
+    const tasks = await Task.find({ company })
+      .populate("assignedBy", "firstName lastName")
+      .populate("completedBy", "firstName lastName")
+      .populate("department", "name")
+      .select("-company")
+      .lean();
+
+    const taskMap = new Map();
+
+    tasks.forEach((task) => {
+      const dept = task.department.name || "Unknown";
+
+      if (!taskMap.has(dept)) {
+        taskMap.set(dept, {
+          department: dept,
+          total: 0,
+          achieved: 0,
+          tasks: [],
+        });
+      }
+
+      const mappedTask = taskMap.get(dept);
+
+      mappedTask.total += 1;
+
+      if (task.status === "Completed") {
+        mappedTask.achieved += 1;
+      }
+
+      mappedTask.tasks.push(task);
+    });
+
+    const result = Array.from(taskMap.values());
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createTasks,
   updateTask,
@@ -1042,4 +1085,5 @@ module.exports = {
   getMyCompletedTasks,
   getMyAssignedTasks,
   getTodayDeptTasks,
+  getTasksSummary,
 };

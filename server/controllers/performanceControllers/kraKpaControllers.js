@@ -533,50 +533,6 @@ const getAllKpaTasks = async (req, res, next) => {
       .select("-company")
       .lean();
 
-    const transformedPendingTasks = pendingTasks.map((task) => ({
-      ...task,
-      status: "Penidng",
-    }));
-    // completedTasks.forEach((task) => {
-    //   if (task.task.taskType !== "KPA") return;
-    //   const departmentName = task.task.department.name;
-    //   // const assignedBy = `${task.task.assignedBy.firstName} ${
-    //   //   task.task.assignedBy.middleName || ""
-    //   // } ${task.task.assignedBy.lastName}`;
-
-    //   const assignee = `${task.completedBy.firstName}  ${
-    //     task.completedBy.middleName || ""
-    //   } ${task.completedBy.lastName}`;
-
-    //   const transformedTask = {
-    //     taskName: task.task.task,
-    //     // description: task.task.description,
-    //     // assignedBy: assignedBy.trim(),
-    //     assignedTo: assignee.trim(),
-    //     assignedDate: task.task.assignedDate,
-    //     dueDate: task.task.dueDate,
-    //     status: task.status,
-    //   };
-
-    //   if (!transformedByDepartment[departmentName]) {
-    //     transformedByDepartment[departmentName] = {
-    //       department: departmentName,
-    //       total: 0,
-    //       achieved: 0,
-    //       tasks: [],
-    //     };
-    //   }
-
-    //   transformedByDepartment[departmentName].tasks.push(transformedTask);
-    //   transformedByDepartment[departmentName].total += 1;
-
-    //   if (task.status === "Completed") {
-    //     transformedByDepartment[departmentName].achieved += 1;
-    //   }
-    // });
-
-    // const transformedDeptTasks = Object.values(transformedByDepartment);
-
     const transformedByDepartment = {};
 
     // Step 1: Handle Completed Tasks
