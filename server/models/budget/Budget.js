@@ -11,8 +11,7 @@ const budgetSchema = new mongoose.Schema({
     ref: "Department",
   },
   expanseName: {
-    type: String,
-    required: true,
+    type: String
   },
   expanseType: {
     type: String,
@@ -52,8 +51,7 @@ const budgetSchema = new mongoose.Schema({
     default: false,
   },
   dueDate: {
-    type: Date,
-    required: true,
+    type: Date
   },
   // typeOfBudget: {
   //   type: String,

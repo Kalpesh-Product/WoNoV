@@ -16,7 +16,7 @@ const MonthlyInvoiceCommon = () => {
   const axios = useAxiosPrivate();
   const department = usePageDepartment();
   const departmentId = department?._id;
-  console.log("department : ", departmentId)
+  console.log("department : ", departmentId);
 
   const [viewModal, setViewModal] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
@@ -29,7 +29,9 @@ const MonthlyInvoiceCommon = () => {
         const res = await axios.get(
           `/api/budget/company-budget?departmentId=${departmentId}`
         );
-        return Array.isArray(res.data?.allBudgets) ? res.data.allBudgets : [];
+        return Array.isArray(res.data?.allBudgets)
+          ? res.data.allBudgets.filter((data) => data.isPaid === "Paid")
+          : [];
       } catch (err) {
         console.error("Error fetching department budgets:", err);
         return [];
@@ -129,14 +131,17 @@ const MonthlyInvoiceCommon = () => {
             dropdownColumns={["department"]}
             columns={invoiceCreationColumns}
             search
-            tableTitle={`${department?.name || ""} Department - Invoice Reports`}
+            tableTitle={`${
+              department?.name || ""
+            } Department - Invoice Reports`}
             dateColumn="dueDate"
             formatDate={true}
             tableHeight={450}
           />
         ) : (
           <div className="text-red-500 text-sm font-medium">
-            Department ID not available. Kindly log-in through the relevant department.
+            Department ID not available. Kindly log-in through the relevant
+            department.
           </div>
         )}
       </PageFrame>
@@ -254,14 +259,13 @@ const MonthlyInvoiceCommon = () => {
                   title="Cheque Date"
                   detail={
                     viewDetails.finance.chequeDate
-                      ? new Date(viewDetails.finance.chequeDate).toLocaleDateString(
-                          "en-IN",
-                          {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          }
-                        )
+                      ? new Date(
+                          viewDetails.finance.chequeDate
+                        ).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
                       : "-"
                   }
                 />
@@ -269,14 +273,13 @@ const MonthlyInvoiceCommon = () => {
                   title="Approved At"
                   detail={
                     viewDetails.finance.approvedAt
-                      ? new Date(viewDetails.finance.approvedAt).toLocaleDateString(
-                          "en-IN",
-                          {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          }
-                        )
+                      ? new Date(
+                          viewDetails.finance.approvedAt
+                        ).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
                       : "-"
                   }
                 />

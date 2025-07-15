@@ -67,7 +67,8 @@ const ViewClients = () => {
             textDecoration: "underline",
             cursor: "pointer",
           }}
-          onClick={() => handleClickRow(params.data)}>
+          onClick={() => handleClickRow(params.data)}
+        >
           {params.value}
         </span>
       ),
@@ -147,6 +148,7 @@ const ViewClients = () => {
                 serviceDescription: item.service?.description,
                 sector: item.sector,
                 hoCity: item.hoCity,
+                bookingType: item.bookingType,
                 hoState: item.hoState,
                 unitName: item.unit?.unitName,
                 unitNo: item.unit?.unitNo,

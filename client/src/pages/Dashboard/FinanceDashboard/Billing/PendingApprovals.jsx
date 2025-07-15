@@ -15,7 +15,7 @@ import { queryClient } from "../../../../main";
 import { IoCloseCircleOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { setVoucherDetails } from "../../../../redux/slices/financeSlice"; // adjust path as needed
+import { setVoucherDetails } from "../../../../redux/slices/financeSlice";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 
@@ -76,9 +76,27 @@ const PendingApprovals = () => {
     },
   });
 
-useEffect(()=>{
-  console.log("selected budget : ", selectedBudget);
-},[selectedBudget])
+  const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
+    mutationKey: ["approve"],
+    mutationFn: async (formData) => {
+      const response = await axios.patch(`/api/budget/approve-budget`, {
+        budgetId: formData,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+      reset();
+      navigate("/app/dashboard/finance-dashboard/billing/pending-approvals");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  useEffect(() => {
+    console.log("selected budget : ", selectedBudget);
+  }, [selectedBudget]);
 
   const kraColumn = [
     { field: "srno", headerName: "Sr No", width: 100 },
@@ -109,16 +127,23 @@ useEffect(()=>{
                       setModalOpen(true);
                     },
                   },
-                  {
-                    label: "Review",
-                    onClick: () => {
-                      dispatch(setVoucherDetails(params.data)); // dispatching to redux
-                      setSelectedBudget(params.data);
-                      navigate(
-                        `/app/dashboard/finance-dashboard/billing/pending-approvals/review-request`
-                      );
-                    },
-                  },
+                  params.data.expanseType === "Reimbursement"
+                    ? {
+                        label: "Review",
+                        onClick: () => {
+                          dispatch(setVoucherDetails(params.data));
+                          setSelectedBudget(params.data);
+                          navigate(
+                            `/app/dashboard/finance-dashboard/billing/pending-approvals/review-request`
+                          );
+                        },
+                      }
+                    : {
+                        label: "Accept",
+                        onClick: () => {
+                          submitRequest(params.data._id);
+                        },
+                      },
                   {
                     label: "Reject",
                     onClick: () => {

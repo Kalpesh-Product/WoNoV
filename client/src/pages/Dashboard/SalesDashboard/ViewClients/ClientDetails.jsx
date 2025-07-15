@@ -10,6 +10,7 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 
 const ClientDetails = () => {
   const selectedClient = useSelector((state) => state.client.selectedClient);
+  console.log(selectedClient);
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       clientName: "",
@@ -17,6 +18,7 @@ const ClientDetails = () => {
       serviceDescription: "",
       sector: "",
       hoCity: "",
+
       hoState: "",
       unitName: "",
       unitNo: "",
@@ -25,6 +27,7 @@ const ClientDetails = () => {
       cabinDesks: 0,
       openDesks: 0,
       totalDesks: 0,
+      bookingType: "",
       ratePerOpenDesk: 0,
       ratePerCabinDesk: 0,
       annualIncrement: 0,
@@ -69,6 +72,7 @@ const ClientDetails = () => {
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
+        bookingType: selectedClient.bookingType,
         endDate: selectedClient.endDate,
         lockinPeriod: selectedClient.lockinPeriod,
         rentDate: selectedClient.rentDate,
@@ -110,7 +114,10 @@ const ClientDetails = () => {
           </span>
         </div>
         <div>
-          <PrimaryButton handleSubmit={handleEditToggle} title={isEditing ? "Save" : "Edit"} />
+          <PrimaryButton
+            handleSubmit={handleEditToggle}
+            title={isEditing ? "Save" : "Edit"}
+          />
         </div>
       </div>
 
@@ -127,46 +134,50 @@ const ClientDetails = () => {
                 </div>
 
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {["clientName", "service", "sector", "hoCity", "hoState"].map(
-                    (fieldKey) => (
-                      <div key={fieldKey}>
-                        {isEditing ? (
-                          <Controller
-                            name={fieldKey}
-                            control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                label={fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                                fullWidth
-                              />
-                            )}
-                          />
-                        ) : (
-                          <div className="py-2 flex justify-between items-center gap-2">
-                            <div className="w-[100%] justify-start flex">
-                              <span className="font-pmedium text-gray-600 text-content">
-                                {fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                              </span>{" "}
-                            </div>
-                            <div className="">
-                              <span>:</span>
-                            </div>
-                            <div className="w-full">
-                              <span className="text-gray-500">
-                                {control._defaultValues[fieldKey] || "N/A"}
-                              </span>
-                            </div>
+                  {[
+                    "clientName",
+                    "sector",
+                    "hoCity",
+                    "hoState",
+                    "bookingType",
+                  ].map((fieldKey) => (
+                    <div key={fieldKey}>
+                      {isEditing ? (
+                        <Controller
+                          name={fieldKey}
+                          control={control}
+                          render={({ field }) => (
+                            <TextField
+                              {...field}
+                              size="small"
+                              label={fieldKey
+                                .replace(/([A-Z])/g, " $1")
+                                .replace(/^./, (str) => str.toUpperCase())}
+                              fullWidth
+                            />
+                          )}
+                        />
+                      ) : (
+                        <div className="py-2 flex justify-between items-center gap-2">
+                          <div className="w-[100%] justify-start flex">
+                            <span className="font-pmedium text-gray-600 text-content">
+                              {fieldKey
+                                .replace(/([A-Z])/g, " $1")
+                                .replace(/^./, (str) => str.toUpperCase())}
+                            </span>{" "}
                           </div>
-                        )}
-                      </div>
-                    )
-                  )}
+                          <div className="">
+                            <span>:</span>
+                          </div>
+                          <div className="w-full">
+                            <span className="text-gray-500">
+                              {control._defaultValues[fieldKey] || "N/A"}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
               {/* Section: Company Details */}
@@ -463,7 +474,7 @@ const ClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {humanDate(control._defaultValues.rentDate)}
+                            {control._defaultValues.rentDate}
                           </span>
                         </div>
                       </div>
