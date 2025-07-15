@@ -4,12 +4,14 @@ import { api } from "../utils/axios";
 import { toast } from "sonner";
 
 export default function useLogout() {
-  const { setAuth } = useAuth();
+  const { setAuth, auth } = useAuth();
   const navigate = useNavigate();
+  const user = auth.user;
 
   const logout = async () => {
     try {
-      await api.get("/api/auth/logout", {
+      await api.post("/api/auth/logout", {
+        user,
         withCredentials: true,
       });
       toast.success("Successfully logged out");
