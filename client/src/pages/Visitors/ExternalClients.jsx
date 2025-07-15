@@ -18,6 +18,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { inrFormat } from "../../utils/currencyFormat";
 import PageFrame from "../../components/Pages/PageFrame";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
 
 const ExternalClients = () => {
   const axios = useAxiosPrivate();
@@ -111,9 +112,12 @@ const ExternalClients = () => {
     {
       field: "purposeOfVisit",
       headerName: "Purpose",
-      cellStyle: { textAlign: "right" },
     },
-    { field: "checkIn", headerName: "Check In" },
+    {
+      field: "checkIn",
+      headerName: "Check In",
+      cellRenderer: (params) => humanTime(params.value),
+    },
     { field: "checkOut", headerName: "Checkout" },
     // {
     //   field: "paymentStatus",
@@ -223,11 +227,10 @@ const ExternalClients = () => {
   return (
     <div>
       <PageFrame>
-        <AgTable
-          key={visitorsData.length}
+        <YearWiseTable
           search={true}
-          searchColumn={"Asset Number"}
           tableTitle={"Visitors Today"}
+          dateColumn={"checkIn"}
           data={[
             ...visitorsData
               .filter((m) => m.visitorFlag === "Client")
@@ -245,8 +248,8 @@ const ExternalClients = () => {
                   : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
                 checkInRaw: item.checkIn,
                 checkOutRaw: item.checkOut,
-                checkIn: humanTime(item.checkIn),
-                checkOut: item.checkOut ? humanTime(item.checkOut) : "",
+                checkIn: item.checkIn,
+                checkOut: item.checkOut ? humanTime(item.checkOut) : "N/A",
                 paymentStatus:
                   item?.meeting?.paymentStatus === true ? "Paid" : "Unpaid",
                 paymentAmount: item?.meeting?.paymentAmount

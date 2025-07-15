@@ -74,6 +74,7 @@ const AssignedTaskReports = () => {
     <div className="flex flex-col gap-8">
       <PageFrame>
         <AgTable
+          exportData
           search={true}
           tableTitle={"Assigned Tasks Reports"}
           data={
