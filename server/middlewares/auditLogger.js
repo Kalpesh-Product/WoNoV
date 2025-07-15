@@ -3,50 +3,63 @@ const emitter = require("../utils/eventEmitter");
 const auditLogger = (req, res, next) => {
   const startTime = Date.now();
 
-  // Only log meaningful HTTP methods
   const validMethods = ["GET", "POST", "PATCH", "PUT", "DELETE"];
+  const cleanUrl = req.originalUrl.split("?")[0];
+  const lastSegment = cleanUrl.split("/").pop();
 
+  // Skip invalid HTTP methods
   if (!validMethods.includes(req.method)) return next();
 
-  //Do not store logs of refresh route
+  // Skip GET methods except logout
+  if (req.method === "GET" && lastSegment !== "logout") {
+    return next();
+  }
+
+  // Skip refresh token route
   if (req.originalUrl.includes("refresh")) return next();
 
-  if (req.originalUrl.includes("login")) {
-    console.log("logout");
-    console.log("body", req.body);
-  }
+  // Skip if body is empty on POST
   if (
     !req.body ||
-    (req.body.method === "POST" && Object.keys(req.body).length === 0)
+    (req.method === "POST" && Object.keys(req.body).length === 0)
   )
     return next();
 
-  // Setup once the response is done
   res.on("finish", () => {
-    const status = res.statusCode;
-    const success = status < 400;
-    let logData = {};
+    try {
+      const status = res.statusCode;
+      const success = status < 400;
+      const { method, ip } = req;
+      const url = req.originalUrl;
 
-    // Storing data appended in query other than ids is pending
-    const sanitizedPayload = { ...req.body };
-    if ("password" in sanitizedPayload) sanitizedPayload.password = "***";
-    logData.payload = sanitizedPayload;
+      const { performedBy, company, departments } = req.logContext || {
+        performedBy: req.user,
+        company: req.company,
+        departments: req.departments,
+      };
 
-    logData = {
-      performedBy: req?.user || req?.body?.user || null,
-      ipAddress: req.ip,
-      departments: req?.departments || null,
-      company: req?.company || req?.body?.user?.company || null,
-      action: req.method === "GET" ? "View" : "Edit",
-      method: req.method,
-      path: req.originalUrl,
-      statusCode: status,
-      success,
-      payload: req.body.user, // 🔥 captures data that was submitted
-      responseTime: Date.now() - startTime, //milliseconds
-    };
+      // Sanitize payload
+      const sanitizedPayload = { ...req.body };
+      if ("password" in sanitizedPayload) sanitizedPayload.password = "***";
 
-    emitter.emit("storeLog", logData);
+      const logData = {
+        performedBy,
+        ipAddress: ip,
+        departments,
+        company,
+        action: lastSegment,
+        method,
+        path: url,
+        statusCode: status,
+        success,
+        payload: sanitizedPayload,
+        responseTime: Date.now() - startTime,
+      };
+
+      emitter.emit("storeLog", logData);
+    } catch (error) {
+      console.error("Error in auditLogger:", error.message);
+    }
   });
 
   next();
