@@ -1,81 +1,28 @@
-import { Tab, Tabs } from "@mui/material";
-import React, { useEffect } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import TabLayout from "../../../../components/Tabs/TabLayout";
+import { useMatch } from "react-router-dom";
 
 const HrTasksLayout = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const selectedMonth = useSelector((state) => state.hr.selectedMonth);
-
-  // Map routes to tabs
-  const tabs = [
-    { label: "Employee On-Boarding", path: ":/month" },
-    { label: "View Employees", path: "view-employees" },
-    { label: "Attendance", path: "attendance" },
-    { label: "Leaves", path: "leaves" },
-  ];
-
-  // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
-
-
-  // Determine whether to show the tabs
-  const showTabs = !location.pathname.includes("/overall-KPA");
-
-  // Determine active tab based on location
-  const activeTab = tabs.findIndex((tab) =>
-    location.pathname.includes(tab.path)
+  const matchKPA = useMatch(
+    "/app/dashboard/HR-dashboard/overall-KPA/department-KPA/:department"
+  );
+  const matchTasks = useMatch(
+    "/app/dashboard/HR-dashboard/overall-KPA/department-tasks/:department"
   );
 
-  return (
-    <div className="p-4">
-      {showTabs && (
-        <Tabs
-          value={activeTab}
-          variant="fullWidth"
-          TabIndicatorProps={{ style: { display: "none" } }}
-          sx={{
-            backgroundColor: "white",
-            borderRadius: 2,
-            border: "1px solid #d1d5db",
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontWeight: "medium",
-              padding: "12px 16px",
-              borderRight: "0.1px solid #d1d5db",
-            },
-            "& .Mui-selected": {
-              backgroundColor: "#1E3D73", // Highlight background color for the active tab
-              color: "white",
-            },
-          }}
-        >
-          {tabs.map((tab, index) => (
-            <NavLink
-              key={index}
-              className={"border-r-[1px] border-borderGray"}
-              to={tab.path}
-              style={({ isActive }) => ({
-                textDecoration: "none",
-                color: isActive ? "white" : "#1E3D73",
-                flex: 1,
-                textAlign: "center",
-                padding: "12px 16px",
-                display: "block",
-                backgroundColor: isActive ? "#1E3D73" : "white",
-              })}
-            >
-              {tab.label}
-            </NavLink>
-          ))}
-        </Tabs>
-      )}
+  const isDepartmentView = !!matchKPA || !!matchTasks;
 
-      <div className="py-0 bg-white">
-        {/* Render the nested routes */}
-        <Outlet />
-      </div>
-    </div>
+  const tabs = [
+    { label: "Department KPA", path: "department-KPA" },
+    { label: "Department Tasks", path: "department-tasks" },
+  ];
+
+  return (
+    <TabLayout
+      basePath="/app/dashboard/HR-dashboard/overall-KPA"
+      defaultTabPath="department-KPA"
+      tabs={tabs}
+      hideTabsCondition={() => isDepartmentView}
+    />
   );
 };
 

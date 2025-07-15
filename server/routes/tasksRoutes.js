@@ -18,6 +18,7 @@ const {
   getMyCompletedTasks,
   getMyAssignedTasks,
   getTodayDeptTasks,
+  getTasksSummary,
 } = require("../controllers/tasksControllers/tasksControllers");
 
 router.post("/create-tasks", createTasks);
@@ -36,5 +37,6 @@ router.get("/get-completed-tasks/:deptId", getCompletedTasks);
 router.get("/get-my-completed-tasks", getMyCompletedTasks);
 router.patch("/delete-task/:id", deleteTask);
 router.get("/get-my-assigned-tasks", getMyAssignedTasks);
+router.get("/get-tasks-summary", getTasksSummary); // consolidated data for graph
 
 module.exports = router;

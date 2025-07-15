@@ -98,7 +98,6 @@ const Calender = () => {
   };
 
   const todaysEvents = getTodaysEvents();
-  console.log("selected : ", selectedEvent);
 
   const handleEventClick = (clickInfo) => {
     const event = clickInfo.event;
@@ -309,6 +308,8 @@ const Calender = () => {
                           ? p.employeeName
                           : p.firstName
                           ? `${p.firstName} ${p.lastName}`
+                          : p.name
+                          ? p.name
                           : "N/A";
                       })
                       .join(", ") || "N/A"

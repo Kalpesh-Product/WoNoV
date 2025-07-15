@@ -132,12 +132,6 @@ const ExternalMeetingCLients = () => {
   });
   const filteredMeetings = meetings
     .filter((item) => item.meetingStatus !== "Completed")
-    .map((meeting) => ({
-      ...meeting,
-      // startTime: humanTime(meeting.startTime),
-      // endTime: humanTime(meeting.endTime),
-      date: meeting.date,
-    }));
 
   const transformedMeetings = filteredMeetings
     .filter((m) => m.meetingType === "External")
@@ -732,7 +726,7 @@ const ExternalMeetingCLients = () => {
             />
             <DetalisFormatted
               title="Date"
-              detail={humanDate(selectedMeeting?.date)}
+              detail={(selectedMeeting?.date)}
             />
             <DetalisFormatted
               title="Time"
@@ -828,8 +822,8 @@ const ExternalMeetingCLients = () => {
             />
             <DetalisFormatted
               title="Receptionist"
-              // detail={selectedMeeting.receptionist}
-              detail={`N/A`}
+              detail={selectedMeeting.receptionist}
+              // detail={`N/A`}
             />
             <DetalisFormatted
               title="Department"
