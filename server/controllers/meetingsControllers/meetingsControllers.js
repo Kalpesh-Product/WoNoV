@@ -499,7 +499,6 @@ const getMeetings = async (req, res, next) => {
       };
     });
 
-    console.log("transformedMeetings", transformedMeetings);
     return res.status(200).json(transformedMeetings);
   } catch (error) {
     next(error);
