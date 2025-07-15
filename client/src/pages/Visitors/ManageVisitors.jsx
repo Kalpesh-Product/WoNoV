@@ -23,7 +23,7 @@ const ManageVisitors = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
   const { setValue, handleSubmit, reset, control } = useForm();
-
+  
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
     queryKey: ["visitors"],
     queryFn: async () => {

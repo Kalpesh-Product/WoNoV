@@ -98,7 +98,6 @@ const Calender = () => {
   };
 
   const todaysEvents = getTodaysEvents();
-  console.log("selected : ", selectedEvent);
 
   const handleEventClick = (clickInfo) => {
     const event = clickInfo.event;
