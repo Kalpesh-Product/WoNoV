@@ -385,6 +385,7 @@ import HouseKeepingLayout from "../pages/Dashboard/AdminDashboard/HouseKeepingLa
 import HouseKeepingOnboard from "../pages/Dashboard/AdminDashboard/HouseKeepingOnboard";
 import HrKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrKPA";
 import HrOverallTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrOverallTasks";
+import HrDepartmentKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKPA";
 
 export const routes = createBrowserRouter([
   {
@@ -1549,11 +1550,11 @@ export const routes = createBrowserRouter([
                           },
 
                           {
-                            path: "department-tasks/:department",
-                            element: <HrDepartmentTasks />,
+                            path: "department-KPA/:department",
+                            element: <HrDepartmentKPA />,
                           },
                           {
-                            path: "department-KPA/:department",
+                            path: "department-tasks/:department",
                             element: <HrDepartmentTasks />,
                           },
                         ],

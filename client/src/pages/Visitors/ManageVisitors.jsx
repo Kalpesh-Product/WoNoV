@@ -16,6 +16,7 @@ import { queryClient } from "../../main";
 import { toast } from "sonner";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import PageFrame from "../../components/Pages/PageFrame";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
 
 const ManageVisitors = () => {
   const axios = useAxiosPrivate();
@@ -89,7 +90,11 @@ const ManageVisitors = () => {
     { field: "phoneNumber", headerName: "Phone No" },
     { field: "purposeOfVisit", headerName: "Purpose" },
     { field: "toMeet", headerName: "To Meet" },
-    { field: "checkIn", headerName: "Check In" },
+    {
+      field: "checkIn",
+      headerName: "Check In",
+      cellRenderer: (params) => humanTime(params.value),
+    },
     { field: "checkOut", headerName: "Checkout" },
     {
       field: "actions",
@@ -116,7 +121,8 @@ const ManageVisitors = () => {
   return (
     <div>
       <PageFrame>
-        <AgTable
+        <YearWiseTable
+          dateColumn={"checkIn"}
           search
           tableTitle="Visitors Today"
           data={visitorsData
@@ -132,7 +138,7 @@ const ManageVisitors = () => {
               toMeet: `${item?.toMeet?.firstName || ""} ${
                 item?.toMeet?.lastName || ""
               }`,
-              checkIn: humanTime(item.checkIn),
+              checkIn: item.checkIn,
               checkOut: item.checkOut ? humanTime(item.checkOut) : "",
               checkOutRaw: item.checkOut,
             }))}

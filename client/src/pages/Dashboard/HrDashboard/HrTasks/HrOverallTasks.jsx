@@ -7,6 +7,10 @@ import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import humanDate from "../../../../utils/humanDateForamt";
+import dateToHyphen from "../../../../utils/dateToHyphen";
 
 const calendarMonths = [
   "April",
@@ -26,11 +30,40 @@ const calendarMonths = [
 const HrOverallTasks = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const selectedMonth = useSelector((state) => state.hr.selectedMonth);
-  const tasksRawData = useSelector((state) => state.hr.tasksRawData);
+  const axios = useAxiosPrivate();
+  // const tasksRawData = useSelector((state) => state.hr.tasksRawData);
 
-  console.log("tasks data", selectedMonth, tasksRawData);
+  const { data: tasksRawData = [], isLoading: isTasksLoading } = useQuery({
+    queryKey: ["tasksRawData"],
+    queryFn: async () => {
+      const response = await axios.get("api/tasks/get-tasks-summary");
+
+      return response.data.map((dept) => ({
+        ...dept,
+        department:
+          typeof dept.department === "object"
+            ? dept.department.name
+            : dept.department,
+        tasks: dept.tasks.map((task) => ({
+          ...task,
+          department:
+            typeof task.department === "object"
+              ? task.department.name
+              : task.department,
+          assignedDate: dateToHyphen(task.assignedDate),
+          dueDate: dateToHyphen(task.dueDate),
+        })),
+      }));
+    },
+  });
+
+  // const tasksRawData = isTasksLoading
+  //   ? []
+  //   : tasksData.map((item) => ({
+  //       ...item,
+  //     }));
+
   const yearArray = tasksRawData.map(
     (item) => item.tasks?.map((task) => task.assignedDate)[0]
   );
@@ -52,8 +85,6 @@ const HrOverallTasks = () => {
   };
 
   const filteredTasks = useMemo(() => {
-    if (!selectedMonth || tasksRawData.length === 0) return [];
-
     return tasksRawData.flatMap((dept) =>
       dept.tasks
         .filter((task) => {
@@ -61,7 +92,7 @@ const HrOverallTasks = () => {
           const taskMonth =
             calendarMonths[(new Date(y, m - 1, day).getMonth() + 9) % 12];
 
-          return taskMonth.toLowerCase() === selectedMonth.toLowerCase();
+          return taskMonth?.toLowerCase() === selectedMonth.toLowerCase();
         })
         .map((task) => ({ department: dept.department, ...task }))
     );
@@ -77,7 +108,9 @@ const HrOverallTasks = () => {
   const allDepartments = useMemo(() => {
     const deptSet = new Set();
     tasksRawData.forEach((dept) => {
-      if (dept?.department) deptSet.add(dept.department);
+      if (typeof dept.department === "string" && dept.department.trim()) {
+        deptSet.add(dept.department);
+      }
     });
     return Array.from(deptSet);
   }, [tasksRawData]);
@@ -85,18 +118,21 @@ const HrOverallTasks = () => {
   const departmentMap = useMemo(() => {
     const map = {};
 
-    allDepartments.forEach((dept) => {
-      map[dept] = { total: 0, achieved: 0 };
-    });
-
     filteredTasks.forEach((task) => {
       const dept = task.department;
+      if (!dept) return; // skip if department is missing
+
+      // Initialize if not already
+      if (!map[dept]) {
+        map[dept] = { total: 0, achieved: 0 };
+      }
+
       map[dept].total += 1;
       if (task.status === "Completed") map[dept].achieved += 1;
     });
 
     return map;
-  }, [filteredTasks, allDepartments]);
+  }, [filteredTasks]);
 
   const graphData = [
     {
@@ -139,7 +175,7 @@ const HrOverallTasks = () => {
           // Fetch all tasks for the clicked department for the selected month
           const departmentTasks = groupedTasks[clickedDept] || [];
 
-          navigate("department-KPA", {
+          navigate("department-tasks", {
             state: {
               month: selectedMonth,
               department: clickedDept,
@@ -208,17 +244,17 @@ const HrOverallTasks = () => {
       return acc;
     }, {});
   }, [filteredTasks]);
-
   const tableData = allDepartments.map((dept) => {
-    const deptTasks = groupedTasks[dept] || [];
+    const deptTasks = groupedTasks?.[dept] || [];
     const total = deptTasks.length;
     const achieved = deptTasks.filter((t) => t.status === "Completed").length;
     const shortfall =
       total > 0 ? (((total - achieved) / total) * 100).toFixed(0) : "0";
+
     return {
       department: dept,
-      totalTasks: total,
-      achievedTasks: achieved,
+      totalTasks: total || 0,
+      achievedTasks: achieved || 0,
       totalPercent: "100%",
       achievedPercent: `${
         total > 0 ? ((achieved / total) * 100).toFixed(0) : "0"
@@ -243,9 +279,7 @@ const HrOverallTasks = () => {
           role="button"
           onClick={() =>
             navigate(
-              `/app/dashboard/HR-dashboard/overall-KPA/department-KPA/${
-                params.value 
-              }`,
+              `/app/dashboard/HR-dashboard/overall-KPA/department-tasks/${params.value}`,
               {
                 state: {
                   month: selectedMonth,
@@ -272,7 +306,7 @@ const HrOverallTasks = () => {
     <div className="flex flex-col gap-4">
       <WidgetSection
         title={`Tasks overview - ${selectedMonth} ${
-          yearArray[0].split("-")[2]
+          yearArray[0]?.split("-")[2]
         }`}
         border
         padding
