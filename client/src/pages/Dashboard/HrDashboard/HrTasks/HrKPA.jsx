@@ -23,15 +23,17 @@ const calendarMonths = [
   "March",
 ];
 
-const HrTasks = () => {
+const HrKPA = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const selectedMonth = useSelector((state) => state.hr.selectedMonth);
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
 
-  console.log("tasks data", selectedMonth, tasksRawData)
-  const yearArray = tasksRawData.map((item)=>((item.tasks?.map((task)=>task.assignedDate)[0])))
+  console.log("tasks data", selectedMonth, tasksRawData);
+  const yearArray = tasksRawData.map(
+    (item) => item.tasks?.map((task) => task.assignedDate)[0]
+  );
 
   const currentMonthIndex = calendarMonths.findIndex(
     (m) => m.toLowerCase() === selectedMonth?.toLowerCase()
@@ -137,14 +139,13 @@ const HrTasks = () => {
           // Fetch all tasks for the clicked department for the selected month
           const departmentTasks = groupedTasks[clickedDept] || [];
 
-          navigate("department-KPA", {
+          navigate(`/app/dashboard/HR-dashboard/overall-KPA/department-KPA/${clickedDept}`, {
             state: {
               month: selectedMonth,
               department: clickedDept,
               tasks: departmentTasks,
-              year : yearArray[0].split("-")[2]
+              year: yearArray[0].split("-")[2],
             },
-            
           });
         },
       },
@@ -241,14 +242,17 @@ const HrTasks = () => {
         <span
           role="button"
           onClick={() =>
-            navigate("department-KPA", {
-              state: {
-                month: selectedMonth,
-                department: params.value,
-                tasks: groupedTasks[params.value],
-                year : yearArray[0].split("-")[2]
-              },
-            })
+            navigate(
+              `/app/dashboard/HR-dashboard/overall-KPA/department-KPA/${params.value}`,
+              {
+                state: {
+                  month: selectedMonth,
+                  department: params.value,
+                  tasks: groupedTasks[params.value],
+                  year: yearArray[0].split("-")[2],
+                },
+              }
+            )
           }
           className="text-primary underline cursor-pointer"
         >
@@ -301,7 +305,10 @@ const HrTasks = () => {
       <WidgetSection
         title="Department-wise KPA overview"
         border
-        TitleAmount={`TOTAL KPA : ${tableData.reduce((sum, item) => item.totalTasks + sum, 0)}`}
+        TitleAmount={`TOTAL Tasks : ${tableData.reduce(
+          (sum, item) => item.totalTasks + sum,
+          0
+        )}`}
       >
         <AgTable
           columns={tasksColumns}
@@ -314,4 +321,4 @@ const HrTasks = () => {
   );
 };
 
-export default HrTasks;
+export default HrKPA;

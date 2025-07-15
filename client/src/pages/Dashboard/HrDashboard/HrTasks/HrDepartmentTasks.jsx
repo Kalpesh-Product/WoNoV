@@ -263,10 +263,6 @@ const HrDepartmentTasks = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* <span className="uppercase text-title text-primary font-pmedium">
-        {departmentName} department KPA {fullMonthNames[shortMonth]} - {year}
-      </span> */}
-      <hr className="p-0 mb-2" />
 
       <WidgetSection
         title={`${departmentName} department KPA overview`}
