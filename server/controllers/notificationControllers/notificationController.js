@@ -3,18 +3,18 @@ const Notification = require("../../models/Notification");
 
 const getNotifications = async (req, res, next) => {
   try {
-    const user = req.user;
+    const userId = req.user;
 
     const notifications = await Notification.find({
       $or: [
-        { "initiatorData.initiator": user },
-        { "users.userActions.whichUser": user },
+        { initiatorData: userId },
+        { "users.userActions.whichUser": userId },
       ],
     })
       .sort({ createdAt: -1 })
       .populate([
         {
-          path: "initiatorData.initiator",
+          path: "initiatorData",
           select: "firstName lastName profilePicture",
         },
         {
@@ -31,7 +31,7 @@ const getNotifications = async (req, res, next) => {
   }
 };
 
-const markSingleNotificationAsRead = async (req, res) => {
+const markSingleNotificationAsRead = async (req, res, next) => {
   const { notificationId } = req.params;
   const userId = req.user;
 
@@ -52,35 +52,39 @@ const markSingleNotificationAsRead = async (req, res) => {
         .json({ success: false, message: "Notification not found." });
     }
 
-    // Check and update if user is the initiator
+    let updated = false;
+
+    // User is the initiator
     if (
       notification.initiatorData &&
-      notification.initiatorData.initiator.toString() === userId &&
-      !notification.initiatorData.hasRead
+      notification.initiatorData.toString() === userId
     ) {
-      notification.initiatorData.hasRead = true;
+      // Do nothing or optionally add logic if initiators should also track read
     }
 
-    // Check and update in users array
+    // Update matching user's hasRead to true
     notification.users = notification.users.map((userObj) => {
-      if (userObj.userActions.whichUser.toString() === userId) {
+      if (
+        userObj.userActions &&
+        userObj.userActions.whichUser.toString() === userId &&
+        !userObj.userActions.hasRead
+      ) {
         userObj.userActions.hasRead = true;
+        updated = true;
       }
       return userObj;
     });
 
-    await notification.save({ validateBeforeSave: false });
+    if (updated) {
+      await notification.save({ validateBeforeSave: false });
+    }
 
     res.status(200).json({
       success: true,
       message: "Notification marked as read for this user.",
     });
   } catch (error) {
-    console.error("Error updating notification:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to update notification.",
-    });
+    next(error);
   }
 };
 
