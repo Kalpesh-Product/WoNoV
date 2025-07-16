@@ -6,6 +6,7 @@ const hrSlice = createSlice({
     tasksRawData: [], // ✅ Inject here
     selectedEmployee: null,
     selectedEmployeeMongoId: null,
+    tasksOverallData : []
   },
   reducers: {
     setSelectedMonth: (state, action) => {
@@ -20,6 +21,9 @@ const hrSlice = createSlice({
     setSelectedEmployeeMongoId: (state, action) => {
       state.selectedEmployeeMongoId = action.payload;
     },
+        setTasksOverallData: (state, action) => {
+      state.tasksOverallData = action.payload;
+    },
   },
 });
 
@@ -28,5 +32,6 @@ export const {
   setTasksData,
   setSelectedEmployee,
   setSelectedEmployeeMongoId,
+  setTasksOverallData
 } = hrSlice.actions;
 export default hrSlice.reducer;
