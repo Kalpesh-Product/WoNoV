@@ -23,7 +23,11 @@ import FinanceCard from "../../../components/FinanceCard";
 import dayjs from "dayjs";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import { useDispatch, useSelector } from "react-redux";
-import { setSelectedMonth, setTasksData } from "../../../redux/slices/hrSlice";
+import {
+  setSelectedMonth,
+  setTasksData,
+  setTasksOverallData,
+} from "../../../redux/slices/hrSlice";
 import dateToHyphen from "../../../utils/dateToHyphen";
 import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardWidget";
 
@@ -37,6 +41,7 @@ const HrDashboard = () => {
   const [budgetData, setBudgetData] = useState({});
   const [totalSalary, setTotalSalary] = useState({});
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
+  const tasksOverallRedux = useSelector((state) => state.hr.tasksOverallData);
 
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -288,6 +293,31 @@ const HrDashboard = () => {
       },
     });
 
+  const { data: tasksOverallData = [], isLoading: isTasksLoading } = useQuery({
+    queryKey: ["tasksRawData"],
+    queryFn: async () => {
+      const response = await axios.get("api/tasks/get-tasks-summary");
+      const formattedData = response.data.map((dept) => ({
+        ...dept,
+        department:
+          typeof dept.department === "object"
+            ? dept.department.name
+            : dept.department,
+        tasks: dept.tasks.map((task) => ({
+          ...task,
+          department:
+            typeof task.department === "object"
+              ? task.department.name
+              : task.department,
+          assignedDate: dateToHyphen(task.assignedDate),
+          dueDate: dateToHyphen(task.dueDate),
+        })),
+      }));
+      dispatch(setTasksOverallData(formattedData));
+      return response.data;
+    },
+  });
+
   function getFiscalYearDateRange(fyString) {
     // Example: "FY 2024-25"
     const [startYearStr, endYearStr] = fyString.replace("FY ", "").split("-");
@@ -327,6 +357,11 @@ const HrDashboard = () => {
     selectedFiscalYear
   );
 
+  const overallTasksForYear = getTasksForSelectedFiscalYear(
+    tasksOverallData,
+    selectedFiscalYear
+  );
+
   // Month names in financial year order (Apr to Mar)
   const fyMonths = [
     "April",
@@ -343,54 +378,101 @@ const HrDashboard = () => {
     "March",
   ];
 
-  // Init counters
-  const monthlyTotals = {};
-  const monthlyAchieved = {};
-  fyMonths.forEach((month) => {
-    monthlyTotals[month] = 0;
-    monthlyAchieved[month] = 0;
-  });
+// Init counters
+const departmentMonthlyTotals = {};
+const departmentMonthlyAchieved = {};
+fyMonths.forEach((m) => {
+  departmentMonthlyTotals[m] = 0;
+  departmentMonthlyAchieved[m] = 0;
+});
 
+if (Array.isArray(tasksRawData)) {
   tasksRawData.forEach((dept) => {
-    dept.tasks.forEach((task) => {
+    dept.tasks?.forEach((task) => {
       const [day, month, year] = task.assignedDate.split("-").map(Number);
-      const dateObj = new Date(year, month - 1, day); // JS months are 0-indexed
+      const dateObj = new Date(year, month - 1, day);
+      const fyMonth = fyMonths[(dateObj.getMonth() + 9) % 12];
 
-      // Determine FY month name
-      const monthIndex = dateObj.getMonth(); // 0 to 11
-      const fyMonth = fyMonths[(dateObj.getMonth() + 9) % 12]; // shift Jan=9, Feb=10, Mar=11
-
-      monthlyTotals[fyMonth]++;
+      departmentMonthlyTotals[fyMonth]++;
       if (task.status === "Completed") {
-        monthlyAchieved[fyMonth]++;
+        departmentMonthlyAchieved[fyMonth]++;
       }
     });
   });
+}
+
+const overallMonthlyTotals = {};
+const overallMonthlyAchieved = {};
+fyMonths.forEach((m) => {
+  overallMonthlyTotals[m] = 0;
+  overallMonthlyAchieved[m] = 0;
+});
+
+if (Array.isArray(tasksOverallRedux)) {
+  tasksOverallRedux.forEach((dept) => {
+    dept.tasks?.forEach((task) => {
+      const [day, month, year] = task.assignedDate.split("-").map(Number);
+      const dateObj = new Date(year, month - 1, day);
+      const fyMonth = fyMonths[(dateObj.getMonth() + 9) % 12];
+
+      overallMonthlyTotals[fyMonth]++;
+      if (task.status === "Completed") {
+        overallMonthlyAchieved[fyMonth]++;
+      }
+    });
+  });
+}
+
 
   // Final structure
-  const tasksData = [
-    {
-      name: "Completed Tasks",
-      group: "FY 2025-26",
-      data: fyMonths.map((month) => {
-        const total = monthlyTotals[month];
-        const achieved = monthlyAchieved[month];
-        const percent = total > 0 ? (achieved / total) * 100 : 0;
-        return { x: month, y: +percent.toFixed(1), raw: achieved };
-      }),
-    },
-    {
-      name: "Remaining Tasks",
-      group: "FY 2025-26",
-      data: fyMonths.map((month) => {
-        const total = monthlyTotals[month];
-        const achieved = monthlyAchieved[month];
-        const remaining = total - achieved;
-        const percent = total > 0 ? (remaining / total) * 100 : 0;
-        return { x: month, y: +percent.toFixed(1), raw: remaining };
-      }),
-    },
-  ];
+const tasksData = [
+  {
+    name: "Completed KPA",
+    group: "FY 2025-26",
+    data: fyMonths.map((month) => {
+      const total = departmentMonthlyTotals[month];
+      const achieved = departmentMonthlyAchieved[month];
+      const percent = total > 0 ? (achieved / total) * 100 : 0;
+      return { x: month, y: +percent.toFixed(1), raw: achieved };
+    }),
+  },
+  {
+    name: "Remaining KPA",
+    group: "FY 2025-26",
+    data: fyMonths.map((month) => {
+      const total = departmentMonthlyTotals[month];
+      const achieved = departmentMonthlyAchieved[month];
+      const remaining = total - achieved;
+      const percent = total > 0 ? (remaining / total) * 100 : 0;
+      return { x: month, y: +percent.toFixed(1), raw: remaining };
+    }),
+  },
+];
+
+ const tasksGraphData = [
+  {
+    name: "Completed Tasks",
+    group: "FY 2025-26",
+    data: fyMonths.map((month) => {
+      const total = overallMonthlyTotals[month];
+      const achieved = overallMonthlyAchieved[month];
+      const percent = total > 0 ? (achieved / total) * 100 : 0;
+      return { x: month, y: +percent.toFixed(1), raw: achieved };
+    }),
+  },
+  {
+    name: "Remaining Tasks",
+    group: "FY 2025-26",
+    data: fyMonths.map((month) => {
+      const total = overallMonthlyTotals[month];
+      const achieved = overallMonthlyAchieved[month];
+      const remaining = total - achieved;
+      const percent = total > 0 ? (remaining / total) * 100 : 0;
+      return { x: month, y: +percent.toFixed(1), raw: remaining };
+    }),
+  },
+];
+
 
   const tasksOptions = {
     chart: {
@@ -473,6 +555,108 @@ const HrDashboard = () => {
             <strong>${month}</strong><br/>
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
             <div style="display:flex ; justify-content:space-between ; width:"100%" ">
+              <div style="width:100px ">Total KPA </div>
+              <div style="width:"100%" ">:</div>
+              <div style="width:"100%" ">${total}</div>
+            </div>
+            <div style="display:flex ; justify-content:space-between ; width:"100%" ">
+              <div style="width:100px ">Completed KPA</div>
+              <div style="width:"100%" ">:</div>
+              <div style="width:"100%" ">${completed}</div>
+            </div>
+            <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
+            <div style="display:flex ; justify-content:space-between ; width:"100%" ">
+              <div style="width:100px ">Remaining KPA</div>
+              <div style="width:"100%" ">:</div>
+              <div style="width:"100%" ">${remaining}</div>
+            </div>
+           
+          </div>
+        `;
+      },
+    },
+  };
+  const tasksOverallOptions = {
+    chart: {
+      type: "bar",
+      stacked: true, // ✅ Enable stacking
+      events: {
+        dataPointSelection: (event, chartContext, config) => {
+          const clickedMonth =
+            config.w.config.series[config.seriesIndex].data[
+              config.dataPointIndex
+            ].x;
+
+          dispatch(setSelectedMonth(clickedMonth));
+
+          const selectedMonthTasks = [];
+          tasksRawData.forEach((dept) => {
+            dept.tasks.forEach((task) => {
+              const [day, month, year] = task.assignedDate
+                .split("-")
+                .map(Number);
+              const taskDate = new Date(year, month - 1, day);
+              const taskMonth = fyMonths[(taskDate.getMonth() + 9) % 12];
+
+              if (taskMonth === clickedMonth) {
+                selectedMonthTasks.push({
+                  department: dept.department,
+                  ...task,
+                });
+              }
+            });
+          });
+
+          navigate(`overall-KPA/department-tasks`, {
+            state: {
+              month: clickedMonth,
+              tasks: selectedMonthTasks,
+            },
+          });
+        },
+      },
+      animations: { enabled: false },
+      fontFamily: "Poppins-Regular",
+      toolbar: { show: false },
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+      },
+    },
+    dataLabels: { enabled: false },
+    stroke: {
+      show: true,
+      width: 1,
+      colors: ["#fff"],
+    },
+    yaxis: {
+      title: { text: "Completion (%)" },
+      max: 100,
+      labels: { formatter: (val) => `${val.toFixed(0)}%` },
+    },
+    legend: {
+      position: "top",
+    },
+    fill: {
+      opacity: 1,
+    },
+    colors: ["#54C4A7", "#EB5C45"],
+    tooltip: {
+      custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+        const month = w.config.series[seriesIndex].data[dataPointIndex].x;
+
+        const completed = w.config.series[0].data[dataPointIndex].raw;
+        const remaining = w.config.series[1].data[dataPointIndex].raw;
+        const total = completed + remaining;
+
+        return `
+          <div style="padding:8px; font-family: Poppins, sans-serif; font-size: 13px; width : 200px ">
+            <strong>${month}</strong><br/>
+            <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
+            <div style="display:flex ; justify-content:space-between ; width:"100%" ">
               <div style="width:100px ">Total tasks </div>
               <div style="width:"100%" ">:</div>
               <div style="width:"100%" ">${total}</div>
@@ -494,10 +678,6 @@ const HrDashboard = () => {
       },
     },
   };
-
-  const totalTasksCount = tasksRawData.reduce((sum, dept) => {
-    return sum + dept.tasks.length;
-  }, 0);
 
   //-------------------Tasks vs Achievements graph--------------------//
 
@@ -910,7 +1090,7 @@ const HrDashboard = () => {
         )), // ✅ Convert objects into JSX elements
     },
     {
-      layout: 1,
+      layout: 2,
       widgets: [
         <Suspense
           fallback={
@@ -925,7 +1105,26 @@ const HrDashboard = () => {
             data={tasksData}
             options={tasksOptions}
             title={"ANNUAL KPA VS ACHIEVEMENTS"}
-            titleAmount={`TOTAL TASKS : ${tasksForSelectedYear.length || 0}`}
+            titleAmount={`TOTAL KPA : ${tasksForSelectedYear.length || 0}`}
+            secondParam
+            currentYear={true}
+            onYearChange={setSelectedFiscalYear}
+          />
+        </Suspense>,
+                <Suspense
+          fallback={
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {/* Simulating chart skeleton */}
+              <Skeleton variant="text" width={200} height={30} />
+              <Skeleton variant="rectangular" width="100%" height={300} />
+            </Box>
+          }
+        >
+          <YearlyGraph
+            data={tasksGraphData}
+            options={tasksOverallOptions}
+            title={"ANNUAL TASKS VS ACHIEVEMENTS"}
+            titleAmount={`TOTAL TASKS : ${overallTasksForYear.length || 0}`}
             secondParam
             currentYear={true}
             onYearChange={setSelectedFiscalYear}
@@ -933,6 +1132,7 @@ const HrDashboard = () => {
         </Suspense>,
       ],
     },
+
     {
       layout: 2,
       heading: "Site Visitor Analytics",

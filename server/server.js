@@ -37,6 +37,7 @@ const inventoryRoutes = require("./routes/inventoryRoutes");
 const administrationRoutes = require("./routes/administrationRoutes");
 const financeRoutes = require("./routes/financeRoutes");
 const weeklyUnitRoutes = require("./routes/weeklyUnitRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 const getLogs = require("./controllers/logController");
 const auditLogger = require("./middlewares/auditLogger");
 require("./listeners/logEventListener");
@@ -81,6 +82,7 @@ app.use(
   auditLogger,
   employeeAgreementRoutes
 );
+app.use("/api/notifications", verifyJwt, notificationRoutes);
 app.use("/api/editor", websiteRoutes);
 app.use("/api/users", verifyJwt, auditLogger, userRoutes);
 app.use("/api/roles", verifyJwt, auditLogger, roleRoutes);

@@ -18,6 +18,7 @@ const Company = require("../../models/hr/Company");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 const ExternalCompany = require("../../models/meetings/ExternalCompany");
 const MeetingRevenue = require("../../models/sales/MeetingRevenue");
+const emitter = require("../../utils/eventEmitter");
 const { isValid } = require("date-fns/isValid");
 
 const addMeetings = async (req, res, next) => {
@@ -265,6 +266,20 @@ const addMeetings = async (req, res, next) => {
         logSourceKey
       );
     }
+    isClient
+      ? null
+      : emitter.emit("notification", {
+          initiatorData: bookedBy,
+          users: internalParticipants.map((userId) => ({
+            userActions: {
+              whichUser: userId,
+              hasRead: false,
+            },
+          })),
+          type: "book meeting",
+          module: "Meetings",
+          message: "You have been added to a meeting",
+        });
 
     await createLog({
       path: logPath,
@@ -445,12 +460,6 @@ const getMeetings = async (req, res, next) => {
             .join(" ")
         : "";
 
-      console.log("Isclient", isClient);
-
-      if (isClient) {
-        console.log("client  company", meeting.client.clientName);
-      }
-
       return {
         _id: meeting._id,
         name: meeting.bookedBy?.name,
@@ -518,8 +527,12 @@ const getMyMeetings = async (req, res, next) => {
         company,
         $or: [
           { bookedBy: user },
-          { internalParticipants: { $in: [user] } },
-          { externalParticipants: { $in: [user] } },
+          {
+            internalParticipants: { $in: [new mongoose.Types.ObjectId(user)] },
+          },
+          {
+            externalParticipants: { $in: [new mongoose.Types.ObjectId(user)] },
+          },
         ],
       })
         .populate({
