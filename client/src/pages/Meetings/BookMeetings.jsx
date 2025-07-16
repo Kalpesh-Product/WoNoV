@@ -26,6 +26,8 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import humanDate from "../../utils/humanDateForamt";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
+import ThreeDotMenu from "../../components/ThreeDotMenu";
+import { TimePicker } from "@mui/x-date-pickers";
 
 const BookMeetings = () => {
   // ------------------------------Initializations ------------------------------------//
@@ -35,6 +37,7 @@ const BookMeetings = () => {
   const [selectedUnitId, setSelectedUnitId] = useState("");
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [openModal, setOpenModal] = useState(false);
+  const [modalMode, setModalMode] = useState("");
   const locations = auth.user.company.workLocations;
   const isEmployee = auth.user.company.companyName === "BizNest";
 
@@ -54,6 +57,7 @@ const BookMeetings = () => {
     },
   });
 
+
   const {
     handleSubmit: reviewForm,
     control: reviewControl,
@@ -65,6 +69,24 @@ const BookMeetings = () => {
       rating: 0,
     },
   });
+
+  const {
+    handleSubmit: handleEditSubmit,
+    control: editControl,
+    formState: { errors: editingErrors },
+    reset: resetEditForm
+  } = useForm({
+    mode: "onChange",
+    defaultValues: {
+      startDate: null,
+      endDate: null,
+      startTime: null,
+      endTime: null,
+      participants: []
+    },
+  });
+
+  
   const watchFields = watch();
   const selectedUnit = useWatch({ control, name: "location" });
   // ------------------------------Form Control ------------------------------------//
@@ -77,6 +99,11 @@ const BookMeetings = () => {
   const handleViewDetails = (meeting) => {
     setSelectedMeeting(meeting);
     setDetailsModal(true);
+  };
+
+  const handleMeetingDetails = (meeting) => {
+    setSelectedMeeting(meeting);
+    setOpenModal(true)
   };
 
   const {
@@ -121,6 +148,25 @@ const BookMeetings = () => {
     },
   });
 
+    const updateMutation = useMutation({
+      mutationFn: async (payload) => {
+        const response = await axios.patch(
+          "/api/meetings/update-meeting-details",
+          payload
+        );
+        return response.data;
+      },
+      onSuccess: () => {
+          toast.success("Meeting updated");
+        queryClient.invalidateQueries(["myMeetings"]);
+        setOpenModal(false);
+        resetEditForm();
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || "Update failed");
+      },
+    });
+
   const { mutate: addReview, isPending: isAddReviewPending } = useMutation({
     mutationKey: ["addReview"],
     mutationFn: async (review) => {
@@ -152,6 +198,19 @@ const BookMeetings = () => {
     setOpenModal(true);
   };
 
+   const onEditSubmit = (data) => {
+    console.log("dataa",data)
+    const payload = {
+     meetingId: selectedMeeting._id,
+      startDate: data.startTime,
+      endDate: data.endTime,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      participants: data.participants
+    };
+    updateMutation.mutate(payload);
+  };
+
   const buildings = locations.map((location) => ({
     _id: location._id,
     buildingName: location.buildingName,
@@ -166,44 +225,86 @@ const BookMeetings = () => {
       field: "location",
       headerName: "Location",
     },
+    // {
+    //   field: "actions",
+    //   headerName: "Actions",
+    //   cellRenderer: (params) => {
+    //     const rawReview = params.data?.reviews;
+
+    //     const meetingReviews = Array.isArray(rawReview)
+    //       ? rawReview
+    //       : rawReview
+    //       ? [rawReview]
+    //       : [];
+    //     const userName = `${auth.user?.firstName} ${auth.user?.lastName}`;
+
+    //     return (
+    //       <div className="p-2 flex items-center gap-2">
+    //         {meetingReviews.length > 0 ? (
+    //           "Review added"
+    //         ) : (
+    //           <>
+    //             {userName === params.data.bookedBy ? (
+    //               <span
+    //                 onClick={() => handleAddReview(params.data)}
+    //                 className="cursor-pointer"
+    //               >
+    //                 <MdOutlineRateReview size={20} />
+    //               </span>
+    //             ) : (
+    //               ""
+    //             )}
+    //           </>
+    //         )}
+    //         <span
+    //           className="text-subtitle cursor-pointer"
+    //           onClick={() => handleViewDetails(params.data)}
+    //         >
+    //           <MdOutlineRemoveRedEye />
+    //         </span>
+    //       </div>
+    //     );
+    //   },
+    // },
+
     {
       field: "actions",
       headerName: "Actions",
+      pinned: "right",
       cellRenderer: (params) => {
         const rawReview = params.data?.reviews;
-
         const meetingReviews = Array.isArray(rawReview)
           ? rawReview
           : rawReview
           ? [rawReview]
           : [];
-        const userName = `${auth.user?.firstName} ${auth.user?.lastName}`;
+
+        const isBookedByCurrentUser =
+          `${auth.user?.firstName} ${auth.user?.lastName}` ===
+          params.data.bookedBy;
+
+        const menuItems = [
+          {
+            label: "View",
+            onClick: () => handleViewDetails(params.data),
+          },
+        ];
+
+        // Allow editing only for meetings booked by the current user
+        if (isBookedByCurrentUser) {
+          menuItems.push({
+            label: "Update",
+            onClick: () => handleMeetingDetails(params.data)
+          });
+
+          menuItems.push({
+            label: "Review",
+            onClick: () => handleAddReview(params.data),
+          });
+        }
 
         return (
-          <div className="p-2 flex items-center gap-2">
-            {meetingReviews.length > 0 ? (
-              "Review added"
-            ) : (
-              <>
-                {userName === params.data.bookedBy ? (
-                  <span
-                    onClick={() => handleAddReview(params.data)}
-                    className="cursor-pointer"
-                  >
-                    <MdOutlineRateReview size={20} />
-                  </span>
-                ) : (
-                  ""
-                )}
-              </>
-            )}
-            <span
-              className="text-subtitle cursor-pointer"
-              onClick={() => handleViewDetails(params.data)}
-            >
-              <MdOutlineRemoveRedEye />
-            </span>
-          </div>
+          <ThreeDotMenu rowId={params.data.meetingId} menuItems={menuItems} />
         );
       },
     },
@@ -372,6 +473,66 @@ const BookMeetings = () => {
           />
         )}
       </div>
+
+         <MuiModal
+            title="Update Meeting"
+            open={openModal}
+            onClose={() => setOpenModal(false)}
+          >
+              <form
+                onSubmit={handleEditSubmit(onEditSubmit)}
+                className="flex flex-col gap-4"
+              >
+
+                <Controller
+                  name="startTime"
+                  control={editControl}
+                  rules={{
+                    required: "Start time is required",
+                  }}
+                  render={({ field }) => (
+                    <TimePicker
+                      {...field}
+                      label="Select Start Time"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          error: !!editingErrors.startTime,
+                          helperText: editingErrors.startTime?.message,
+                        },
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="endTime"
+                  control={editControl}
+                  rules={{
+                    required: "End time is required",
+                  }}
+                  render={({ field }) => (
+                    <TimePicker
+                      {...field}
+                      label="Select End Time"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          error: !!editingErrors.endTime,
+                          helperText: editingErrors?.endTime?.message,
+                        },
+                      }}
+                    />
+                  )}
+                />
+
+                <PrimaryButton
+                  title="Update Meeting"
+                  type="submit"
+                  isLoading={updateMutation.isLoading}
+                />
+              </form>
+          </MuiModal>
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
