@@ -270,7 +270,7 @@ const addMeetings = async (req, res, next) => {
       ? null
       : emitter.emit("notification", {
           initiatorData: {
-            initiaror: bookedBy,
+            initiator: bookedBy,
             hasRead: false,
           },
           users: internalParticipants.map((userId) => ({
