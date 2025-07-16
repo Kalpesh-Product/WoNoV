@@ -92,9 +92,10 @@ const YearlyGraph = ({
         normalCase
         border
         title={title || "Title not given"}
-        titleLabel={selectedYear}
+        // titleLabel={selectedYear}
         TitleAmount={titleAmount || ""}
         TitleAmountGreen={TitleAmountGreen}
+        // titleFont={"1rem"}
         TitleAmountRed={TitleAmountRed}
       >
         <BarGraph

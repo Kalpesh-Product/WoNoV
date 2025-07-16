@@ -11,12 +11,40 @@ import { useSidebar } from "../context/SideBarContext";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { IoIosArrowForward } from "react-icons/io";
 import ScrollToTop from "../components/ScrollToTop"; // Adjust path if needed
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../hooks/useAxiosPrivate";
+import useAuth from "../hooks/useAuth";
 
 const MainLayout = () => {
+  const { auth } = useAuth();
   const [showFooter, setShowFooter] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const dummyRef = useRef(null);
+  const axios = useAxiosPrivate();
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
+  const {
+    data: notifications = [],
+    isLoading: isNotificationsLoading,
+    refetch: refetchNotifications,
+  } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const res = await axios.get("/api/notifications/get-my-notifications");
+
+      const filtered = res.data.filter(
+        (n) => n.initiatorData?._id !== auth?.user?._id
+      );
+
+      return filtered;
+    },
+    // refetchInterval: 15000,
+  });
+
+
+  
+
+  const unseenInUsers = notifications.filter((n) => !n.users);
+    console.log("notification", unseenInUsers)
 
   // Detect mobile view
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -48,7 +76,12 @@ const MainLayout = () => {
             <MenuIcon />
           </IconButton>
         )}
-        <Header />
+        <Header
+          notifications={notifications}
+          unseenCount={2}
+          onRefreshNotifications={refetchNotifications}
+          isRefreshingNotifications={isNotificationsLoading}
+        />
       </header>
 
       <div className="flex w-full flex-grow">
@@ -62,7 +95,10 @@ const MainLayout = () => {
             }}
           >
             <div className="py-2">
-              <Sidebar drawerOpen={mobileOpen} onCloseDrawer={() => setMobileOpen(false)} />
+              <Sidebar
+                drawerOpen={mobileOpen}
+                onCloseDrawer={() => setMobileOpen(false)}
+              />
             </div>
           </Drawer>
         ) : (
