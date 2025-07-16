@@ -12,7 +12,7 @@ const getNotifications = async (req, res, next) => {
       ],
     })
       .sort({ createdAt: -1 })
-      .populate("initiatorData.initiator")
+      .populate("initiatorData.initiator", "firstName lastName profilePicture")
       .lean()
       .exec();
 
