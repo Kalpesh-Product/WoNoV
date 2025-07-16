@@ -3,13 +3,13 @@ const mongoose = require("mongoose");
 const userDataSchema = new mongoose.Schema({
   empId: {
     type: String,
-    required: true,
+
     unique: true,
     trim: true,
   },
   firstName: {
     type: String,
-    required: true,
+
     trim: true,
     minlength: 2,
   },
@@ -19,28 +19,25 @@ const userDataSchema = new mongoose.Schema({
   },
   lastName: {
     type: String,
-    required: true,
+
     trim: true,
     minlength: 2,
   },
   gender: {
     type: String,
     enum: ["Male", "Female", "Other"],
-    required: true,
   },
   dateOfBirth: {
     type: Date,
-    required: true,
   },
   phone: {
     type: String,
     minlength: 7,
     maxlength: 20,
-    match: [/^\+?[0-9]+$/, "Invalid phone number format"],
   },
   email: {
     type: String,
-    required: true,
+
     unique: true,
     trim: true,
     lowercase: true,
@@ -49,7 +46,6 @@ const userDataSchema = new mongoose.Schema({
   company: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Company",
-    required: true,
   },
   departments: [
     {
@@ -59,18 +55,17 @@ const userDataSchema = new mongoose.Schema({
   ],
   password: {
     type: String,
-    required: true,
+
     minlength: 8,
   },
   profilePicture: {
     id: { type: String },
-    url: { type: String, match: [/^https?:\/\//, "Invalid URL format"] },
+    url: { type: String },
   },
   role: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Role",
-      required: true,
     },
   ],
   permissions: {
@@ -98,7 +93,7 @@ const userDataSchema = new mongoose.Schema({
   },
   designation: {
     type: String,
-    required: true,
+
     trim: true,
   },
   clockInDetails: {
@@ -127,11 +122,10 @@ const userDataSchema = new mongoose.Schema({
   },
   startDate: {
     type: Date,
-    required: true,
   },
   workLocation: {
     type: String,
-    required: true,
+
     trim: true,
     // type: mongoose.Schema.Types.ObjectId,
     // ref: "Unit",
@@ -154,7 +148,7 @@ const userDataSchema = new mongoose.Schema({
     addressLine2: { type: String },
     city: { type: String },
     state: { type: String },
-    pinCode: { type: String, match: [/^[0-9]{4,10}$/, "Invalid pin code"] },
+    pinCode: { type: String },
     notes: { type: String },
   },
   bankInformation: {
@@ -164,17 +158,14 @@ const userDataSchema = new mongoose.Schema({
     nameOnAccount: { type: String },
     accountNumber: {
       type: String,
-      match: [/^[0-9]+$/, "Invalid account number"],
     },
   },
   panAadhaarDetails: {
     aadhaarId: {
       type: String,
-      match: [/^[0-9]{12}$/, "Invalid Aadhaar number"],
     },
     pan: {
       type: String,
-      match: [/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, "Invalid PAN format"],
     },
     pfAccountNumber: { type: String },
     pfUAN: { type: String },
@@ -193,12 +184,11 @@ const userDataSchema = new mongoose.Schema({
     motherName: { type: String },
     maritalStatus: {
       type: String,
-      enum: ["Single", "Married", "Divorced", "Widowed"],
     },
   },
   isActive: {
     type: Boolean,
-    default: false,
+    default: true,
   },
   credits: {
     type: Number,

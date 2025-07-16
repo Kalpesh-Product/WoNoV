@@ -457,7 +457,6 @@ const updateProfile = async (req, res, next) => {
               logAction,
               logSourceKey
             );
-            
           }
         } catch (error) {
           throw new CustomError(
@@ -583,13 +582,18 @@ const bulkInsertUsers = async (req, res, next) => {
         logSourceKey
       );
     }
+    const departments = await Department.find().lean().exec();
 
     // Build a map of department departmentId to its ObjectId
+    // const departmentMap = new Map(
+    //   foundCompany.selectedDepartments.map((dep) => [
+    //     dep.department.departmentId,
+    //     dep.department._id,
+    //   ])
+    // );
+
     const departmentMap = new Map(
-      foundCompany.selectedDepartments.map((dep) => [
-        dep.department.departmentId,
-        dep.department._id,
-      ])
+      departments.map((dept) => [dept.departmentId, dept._id])
     );
 
     // Fetch roles and build a role map (assuming each role document has roleID)
@@ -597,135 +601,146 @@ const bulkInsertUsers = async (req, res, next) => {
     const roleMap = new Map(roles.map((role) => [role.roleID, role._id]));
 
     const newUsers = [];
-    const hashedPassword = await bcrypt.hash("123456", 10);
 
-    // Wrap CSV stream processing in a promise so we can await its completion.
+    const rowPromises = [];
+
     await new Promise((resolve, reject) => {
       const stream = Readable.from(req.file.buffer.toString("utf-8").trim());
       stream
         .pipe(csvParser())
         .on("data", (row) => {
-          try {
-            // Process department field from CSV (departments separated by "/")
-            const departmentIds = row["Departments"]
-              ? row["Departments"].split("/").map((d) => d.trim())
-              : [];
-            const departmentObjectIds = departmentIds.map((id) => {
-              if (!departmentMap.has(id)) {
-                throw new Error(`Invalid department: ${id}`);
+          // Push a promise for each row's async processing
+          rowPromises.push(
+            (async () => {
+              try {
+                const departmentIds = row["Department (ID)"]
+                  ? row["Department (ID)"].split("/").map((d) => d.trim())
+                  : [];
+                const departmentObjectIds = departmentIds.map((id) => {
+                  if (!departmentMap.has(id)) {
+                    throw new Error(`Invalid department: ${id}`);
+                  }
+                  return departmentMap.get(id);
+                });
+
+                const roleIds = row["Role ID"]
+                  ? row["Role ID"].split("/").map((r) => r.trim())
+                  : [];
+                const roleObjectIds = roleIds
+                  .map((id) => roleMap.get(id))
+                  .filter(Boolean);
+
+                let reportsToId = row["Reports To (Emp ID)"]
+                  ? roleMap.get(row["Reports To (Emp ID)"].trim())
+                  : null;
+
+                const hashedPassword = await bcrypt.hash(
+                  `${row["First Name"]}@0625`,
+                  10
+                );
+
+                const userObj = {
+                  empId: row["Emp ID"],
+                  firstName: row["First Name"],
+                  middleName: row["Middle Name (optional)"] || "",
+                  lastName: row["Last Name"],
+                  gender: row["Gender"],
+                  dateOfBirth: new Date(row["Date Of Birth"]),
+                  phone: row["Phone Number"],
+                  email: row["Company Email"],
+                  company: new mongoose.Types.ObjectId(companyId),
+                  password: hashedPassword,
+                  isActive: row["isActive"]?.toLowerCase() !== "no", // or true by default
+                  departments: departmentObjectIds,
+                  role: roleObjectIds,
+                  reportsTo: reportsToId,
+                  employeeType: {
+                    name: row["Employement Type"] || "Full-Time",
+                    leavesCount: [
+                      {
+                        leaveType: "Privileged",
+                        count: row["Privileged"] || "0",
+                      },
+                      { leaveType: "Sick", count: row["Sick"] || "0" },
+                    ],
+                  },
+                  designation: row["Designation"],
+                  startDate: new Date(row["Date Of Joining"]),
+                  workLocation: row["Work Building"],
+                  policies: {
+                    shift: row["Shift Policy"] || "General",
+                    workSchedulePolicy: row["Work Schedule Policy"] || "",
+                    leavePolicy: row["Leave Policy"] || "",
+                    holidayPolicy: row["Holiday Policy"] || "",
+                  },
+                  homeAddress: {
+                    addressLine1: row["Address"] || "",
+                    addressLine2: row["Present Address"] || "",
+                    city: row["City"] || "",
+                    state: row["State"] || "",
+                    pinCode: row["PIN Code"] || "",
+                  },
+                  bankInformation: {
+                    bankIFSC: row["Bank IFSC"] || "",
+                    bankName: row["Bank Name"] || "",
+                    branchName: row["Branch Name"] || "",
+                    nameOnAccount: row["Account Name"] || "",
+                    accountNumber: row["Account Number"] || "",
+                  },
+                  panAadhaarDetails: {
+                    aadhaarId: row["Aadhaar Number"] || "",
+                    pan: row["PAN Card Number"] || "",
+                    pfAccountNumber: row["PF Account Number"] || "",
+                    pfUAN: row["PF UAN"] || "",
+                    esiAccountNumber: row["ESI Account Number"] || "",
+                  },
+                  payrollInformation: {
+                    includeInPayroll:
+                      row["Include In Payroll (Yes/No)"] === "Yes",
+                    professionTaxExemption:
+                      row["Profession Tax Exemption"] === "Yes",
+                    includePF: row["Include PF"] === "Yes",
+                    pfContributionRate: parseFloat(
+                      row["Employer PF Contri"] || "0"
+                    ),
+                    employeePF: parseFloat(row["Employee PF"] || "0"),
+                  },
+                  familyInformation: {
+                    fatherName: row["Father's Name"] || "",
+                    motherName: row["Mother's Name"] || "",
+                    maritalStatus: row["Martial Status"] || "Single",
+                  },
+                };
+
+                newUsers.push(userObj);
+              } catch (error) {
+                reject(
+                  new CustomError(
+                    error.message,
+                    "hr/HrLog",
+                    "Bulk Insert Users",
+                    "user"
+                  )
+                );
               }
-              return departmentMap.get(id);
-            });
-
-            // Process roles similarly (roles separated by "/")
-            const roleIds = row["Roles"]
-              ? row["Roles"].split("/").map((r) => r.trim())
-              : [];
-            const roleObjectIds = roleIds
-              .map((id) => roleMap.get(id))
-              .filter(Boolean);
-
-            // Process "Reports To" field (if available)
-            let reportsToId = row["Reports To"]
-              ? roleMap.get(row["Reports To"].trim())
-              : null;
-
-            const userObj = {
-              empId: row["Emp ID"],
-              firstName: row["First Name"],
-              middleName: row["Middle Name (optional)"] || "",
-              lastName: row["Last Name"],
-              gender: row["Gender"],
-              dateOfBirth: new Date(row["Date Of Birth"]),
-              phone: row["Phone Number"],
-              email: row["Company Email"],
-              company: new mongoose.Types.ObjectId(companyId),
-              password: hashedPassword,
-              isActive: Boolean(row["isActive"]) || false,
-              departments: departmentObjectIds,
-              role: roleObjectIds,
-              reportsTo: reportsToId,
-              employeeType: {
-                name: row["Employement Type"] || "Full-Time",
-                leavesCount: [
-                  { leaveType: "Privileged", count: row["Privileged"] || "0" },
-                  { leaveType: "Sick", count: row["Sick"] || "0" },
-                ],
-              },
-              designation: row["Designation"],
-              startDate: new Date(row["Date Of Joining"]),
-              workLocation: row["Work Building"],
-              policies: {
-                shift: row["Shift Policy"] || "General",
-                workSchedulePolicy: row["Work Schedule Policy"] || "",
-                leavePolicy: row["Leave Policy"] || "",
-                holidayPolicy: row["Holiday Policy"] || "",
-              },
-              homeAddress: {
-                addressLine1: row["Address"] || "",
-                addressLine2: row["Present Address"] || "",
-                city: row["City"] || "",
-                state: row["State"] || "",
-                pinCode: row["PIN Code"] || "",
-              },
-              bankInformation: {
-                bankIFSC: row["Bank IFSC"] || "",
-                bankName: row["Bank Name"] || "",
-                branchName: row["Branch Name"] || "",
-                nameOnAccount: row["Account Name"] || "",
-                accountNumber: row["Account Number"] || "",
-              },
-              panAadhaarDetails: {
-                aadhaarId: row["Aadhaar Number"] || "",
-                pan: row["PAN Card Number"] || "",
-                pfAccountNumber: row["PF Account Number"] || "",
-                pfUAN: row["PF UAN"] || "",
-                esiAccountNumber: row["ESI Account Number"] || "",
-              },
-              payrollInformation: {
-                includeInPayroll: row["Include In Payroll (Yes/No)"] === "Yes",
-                professionTaxExemption:
-                  row["Profession Tax Exemption"] === "Yes",
-                includePF: row["Include PF"] === "Yes",
-                pfContributionRate: parseFloat(
-                  row["Employer PF Contri"] || "0"
-                ),
-                employeePF: parseFloat(row["Employee PF"] || "0"),
-              },
-              familyInformation: {
-                fatherName: row["Father's Name"] || "",
-                motherName: row["Mother's Name"] || "",
-                maritalStatus: row["Martial Status"] || "Single",
-              },
-            };
-
-            newUsers.push(userObj);
-          } catch (error) {
-            // Reject the promise if any row processing fails
-            reject(
-              new CustomError(
-                error.message,
-                "hr/HrLog",
-                "Bulk Insert Users",
-                "user"
-              )
-            );
-          }
+            })()
+          );
         })
-        .on("end", () => {
-          resolve();
-        })
-        .on("error", (error) => {
+        .on("end", () => resolve())
+        .on("error", (err) =>
           reject(
             new CustomError(
-              error.message,
+              err.message,
               "hr/HrLog",
               "Bulk Insert Users",
               "user"
             )
-          );
-        });
+          )
+        );
     });
+
+    // Wait for all row processing to complete
+    await Promise.all(rowPromises);
 
     if (newUsers.length === 0) {
       throw new CustomError(
