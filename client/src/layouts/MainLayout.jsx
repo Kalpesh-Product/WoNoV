@@ -31,9 +31,8 @@ const MainLayout = () => {
     queryFn: async () => {
       const res = await axios.get("/api/notifications/get-my-notifications");
 
-      // ✅ Filter out notifications where logged-in user is the initiator
       const filtered = res.data.filter(
-        (n) => n.initiatorData?.initiator?._id !== auth?.user?._id
+        (n) => n.initiatorData?._id !== auth?.user?._id
       );
 
       return filtered;
@@ -41,7 +40,11 @@ const MainLayout = () => {
     // refetchInterval: 15000,
   });
 
-  const unseenInUsers = notifications.filter((n) => !n.seen).length;
+
+  
+
+  const unseenInUsers = notifications.filter((n) => !n.users);
+    console.log("notification", unseenInUsers)
 
   // Detect mobile view
   const isMobile = useMediaQuery("(max-width: 768px)");

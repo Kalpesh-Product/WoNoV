@@ -315,7 +315,6 @@ const Header = ({
 
                         const hasRead = userEntry?.userActions?.hasRead;
 
-                        console.log("hasReasd : ", userEntry);
                         return (
                           <li
                             key={n._id || index}

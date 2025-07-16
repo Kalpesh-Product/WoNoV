@@ -12,6 +12,7 @@ import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import humanDate from "../../../../utils/humanDateForamt";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import WidgetTable from "../../../../components/Tables/WidgetTable";
 
 const StatutoryPayments = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -70,9 +71,9 @@ const StatutoryPayments = () => {
     );
   };
 
-  const statutoryRaw = hrFinance.filter(
-    (item) => item.expanseType === "Statutory Payments"
-  );
+  const statutoryRaw = isHrLoading
+    ? []
+    : hrFinance.filter((item) => item.expanseType === "Statutory Payments");
   const statutoryFormatted = transformToCollectionData(statutoryRaw);
 
   const collectionData = [
@@ -193,7 +194,7 @@ const StatutoryPayments = () => {
     ...row,
     srNo: index + 1,
     projectedAmount: inrFormat(row.projectedAmount),
-    actualAmount: inrFormat(row.actualAmount),
+    actualAmount: row.actualAmount,
     dueDate: row.dueDate,
   }));
 
@@ -240,19 +241,13 @@ const StatutoryPayments = () => {
       </WidgetSection>
       {/* <YearlyGraph title={"Statutory Payments".toUpperCase()} /> */}
 
-      <WidgetSection
-        title={"Statutory Payments FY 2024-25"}
-        border
-        // titleLabel={`Month: ${selectedMonthLabel || "N/A"}`}
-        TitleAmount={`INR ${inrFormat(currentMonthTotal)}`}
-      >
-        <YearWiseTable
-          data={formattedRows}
-          dateColumn={"dueDate"}
-          columns={kraColumn}
-          onMonthChange={handleMonthChange}
-        />
-      </WidgetSection>
+      <WidgetTable
+        data={formattedRows}
+        dateColumn={"dueDate"}
+        totalKey="actualAmount"
+        columns={kraColumn}
+        tableTitle={"Statutory Payments FY 2024-25"}
+      />
 
       {viewDetails && (
         <MuiModal
