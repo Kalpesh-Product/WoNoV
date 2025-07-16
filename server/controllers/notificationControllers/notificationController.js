@@ -12,7 +12,16 @@ const getNotifications = async (req, res, next) => {
       ],
     })
       .sort({ createdAt: -1 })
-      .populate("initiatorData.initiator", "firstName lastName profilePicture")
+      .populate([
+        {
+          path: "initiatorData.initiator",
+          select: "firstName lastName profilePicture",
+        },
+        {
+          path: "users.userActions.whichUser",
+          select: "firstName lastName profilePicture",
+        },
+      ])
       .lean()
       .exec();
 
