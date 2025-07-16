@@ -3,10 +3,18 @@ const Notification = require("../../models/Notification");
 const getNotifications = async (req, res, next) => {
   try {
     const user = req.user;
-    const notifications = await Notification.find({ user: user._id })
+
+    const notifications = await Notification.find({
+      $or: [
+        { "initiatorData.initiator": user._id },
+        { "users.userActions.whichUser": user._id },
+      ],
+    })
       .sort({ createdAt: -1 })
+      .populate("initiatorData.initiator")
       .lean()
       .exec();
+
     res.json(notifications);
   } catch (error) {
     next(error);
