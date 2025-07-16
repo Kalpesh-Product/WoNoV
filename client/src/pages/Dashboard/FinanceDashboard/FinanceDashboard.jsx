@@ -18,7 +18,10 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useDispatch } from "react-redux";
-import { setTotalExpense, setTotalIncome } from "../../../redux/slices/financeSlice";
+import {
+  setTotalExpense,
+  setTotalIncome,
+} from "../../../redux/slices/financeSlice";
 
 const FinanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -133,7 +136,8 @@ const FinanceDashboard = () => {
     const monthKey = dayjs(rawDate).format("MMM-YY");
     if (excludedMonths.includes(monthKey)) return;
 
-    const amount = income.taxableAmount || income.revenue || 0;
+    const amount =
+      income.taxableAmount || income.revenue || income.taxable || 0;
     if (!monthWiseIncome[monthKey]) {
       monthWiseIncome[monthKey] = {
         month: monthKey,
@@ -217,16 +221,15 @@ const FinanceDashboard = () => {
     ? currentExpenseSeries.data.reduce((acc, val) => acc + val, 0)
     : 0;
 
- useEffect(() => {
-  if (totalIncomeAmount) {
-    dispatch(setTotalIncome(totalIncomeAmount));
-  }
+  useEffect(() => {
+    if (totalIncomeAmount) {
+      dispatch(setTotalIncome(totalIncomeAmount));
+    }
 
-  if (totalExpense) {
-    dispatch(setTotalExpense(totalExpense));
-  }
-}, [totalIncomeAmount, totalExpense, dispatch,setIsSidebarOpen]);
-
+    if (totalExpense) {
+      dispatch(setTotalExpense(totalExpense));
+    }
+  }, [totalIncomeAmount, totalExpense, dispatch, setIsSidebarOpen]);
 
   //------------------Expensedata----------------------//
 

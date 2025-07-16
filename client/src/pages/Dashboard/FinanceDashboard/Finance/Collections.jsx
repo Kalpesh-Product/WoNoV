@@ -125,8 +125,8 @@ const [selectedMonthLabel, setSelectedMonthLabel] = useState("");
 
     return {
       chartData: [
-        { name: "Paid", data: paid },
-        { name: "Unpaid", data: unpaid },
+        { name: "Collected", data: paid },
+        { name: "Due", data: unpaid },
       ],
       tooltipMeta,
     };
