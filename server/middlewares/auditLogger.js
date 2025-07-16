@@ -1,4 +1,3 @@
-// const sharp = require("sharp");
 const emitter = require("../utils/eventEmitter");
 
 const auditLogger = (req, res, next) => {
@@ -27,13 +26,6 @@ const auditLogger = (req, res, next) => {
 
     // Skip refresh token route
     if (req.originalUrl.includes("refresh")) return next();
-
-    console.log("segment", lastSegment);
-    console.log("method", req.method);
-    console.log("body", req.body);
-    console.log("params", req.params);
-    console.log("query", req.query);
-    console.log("file", req.file);
 
     // Skip if body is empty on methods other then GET
     if (
@@ -101,34 +93,12 @@ const auditLogger = (req, res, next) => {
           ...(req.query || {}),
         });
 
-        //Storing files
-
-        // let base64Image = null;
-
-        // if (req.file && req.file.buffer) {
-        //   try {
-        //     const buffer = await sharp(req.file.buffer)
-        //       .resize(1200, 800, { fit: "cover" })
-        //       .webp({ quality: 80 })
-        //       .toBuffer();
-
-        //     base64Image = `data:image/webp;base64,${buffer.toString("base64")}`;
-
-        //     combinedPayload = { ...combinedPayload, image: base64Image };
-        //   } catch (err) {
-        //     console.error("Image processing error:", err.message);
-        //   }
-        // }
-
         // Mask sensitive fields before flattening
         ["password", "newPassword", "confirmPassword"].forEach((field) => {
           if (field in combinedPayload) combinedPayload[field] = "***";
         });
 
-        const updatedPayload = flattenObject({
-          ...combinedPayload,
-          image: base64Image,
-        });
+        const updatedPayload = flattenObject(combinedPayload);
 
         const logData = {
           performedBy,
@@ -143,8 +113,7 @@ const auditLogger = (req, res, next) => {
           responseTime: Date.now() - startTime,
         };
 
-        // emitter.emit("storeLog", logData);
-        logEmitHandler("storeLog", logData);
+        emitter.emit("storeLog", logData);
       } catch (error) {
         console.error("Error in auditLogger:", error.message);
       }
