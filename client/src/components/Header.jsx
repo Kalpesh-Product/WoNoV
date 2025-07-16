@@ -314,7 +314,6 @@ const Header = ({
                         );
 
                         const hasRead = userEntry?.userActions?.hasRead;
-                        const initiatorRead = n.initiatorData?.hasRead;
 
                         console.log("hasReasd : ", userEntry);
                         return (
@@ -333,7 +332,7 @@ const Header = ({
                                   {n.message} by {initiator}
                                 </span>
                               </div>
-                              {!hasRead && !initiatorRead && (
+                              {!hasRead  && (
                                 <button
                                   onClick={() => updateRead(n._id)}
                                   className="p-2 rounded-full bg-green-300 text-green-600"
