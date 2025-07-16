@@ -251,7 +251,7 @@ const Header = ({
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <div className="p-4 w-96 max-h-[400px] overflow-y-auto">
+        <div className="p-4 w-[30rem] max-h-[400px] overflow-y-auto">
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-5 rounded-full">
               <span className="font-pmedium text-subtitle">Notifications</span>
@@ -294,6 +294,9 @@ const Header = ({
                               : "border-default border-borderGray"
                           }`}
                         >
+                          <div>
+                            <span className="font-pmedium">{n.module}</span>
+                          </div>
                           {n.message}
                         </li>
                       ))}
