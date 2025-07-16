@@ -452,7 +452,6 @@ const getMeetings = async (req, res, next) => {
             .join(" ")
         : "";
 
-      console.log("Isclient", isClient);
 
       if (isClient) {
         console.log("client  company", meeting.client.clientName);
