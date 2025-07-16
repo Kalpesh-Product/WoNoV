@@ -7,8 +7,8 @@ const getNotifications = async (req, res, next) => {
 
     const notifications = await Notification.find({
       $or: [
-        { "initiatorData.initiator": user._id },
-        { "users.userActions.whichUser": user._id },
+        { "initiatorData.initiator": user },
+        { "users.userActions.whichUser": user },
       ],
     })
       .sort({ createdAt: -1 })
