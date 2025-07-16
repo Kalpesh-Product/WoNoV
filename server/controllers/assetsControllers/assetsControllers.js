@@ -62,7 +62,6 @@ const getAssets = async (req, res, next) => {
   }
 };
 
-
 const addAsset = async (req, res, next) => {
   const logPath = "assets/AssetLog";
   const logAction = "Add Asset";
