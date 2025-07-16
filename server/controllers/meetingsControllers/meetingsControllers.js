@@ -266,12 +266,23 @@ const addMeetings = async (req, res, next) => {
         logSourceKey
       );
     }
-    emitter.emit("notification", {
-      userId: [...internalParticipants],
-      type: "book meeting",
-      module: "Meetings",
-      message: "You have been added to a meeting",
-    });
+    isClient
+      ? null
+      : emitter.emit("notification", {
+          initiatorData: {
+            initiaror: bookedBy,
+            hasRead: false,
+          },
+          users: internalParticipants.map((userId) => ({
+            userActions: {
+              whichUser: userId,
+              hasRead: false,
+            },
+          })),
+          type: "book meeting",
+          module: "Meetings",
+          message: "You have been added to a meeting",
+        });
 
     await createLog({
       path: logPath,
