@@ -17,6 +17,9 @@ const clientSchema = new mongoose.Schema(
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
     },
+    bookingType: {
+      type: String,
+    },
     phone: {
       type: String,
       minlength: 7,

@@ -113,6 +113,7 @@ const ManageMeetings = () => {
     endTime: meeting.endTime,
     extendTime: meeting.extendTime,
     srNo: index + 1,
+    department: meeting.bookedBy && [...meeting.bookedBy.departments.map((dept)=> dept.name) ].join(",") 
   }));
 
   // API mutation for submitting housekeeping tasks
@@ -705,9 +706,9 @@ const ManageMeetings = () => {
                       ? `${p.firstName} ${p.lastName}`
                       : p.employeeName
                       ? p.employeeName
-                      : null;
+                      :  "N/A";
                   })
-                  .join(", ")}
+                  .join(", ") || "N/A"}
               />
             )}
 
@@ -722,7 +723,11 @@ const ManageMeetings = () => {
             />
             <DetalisFormatted
               title="Department"
-              detail={selectedMeeting.department || "Top Management"}
+              detail={selectedMeeting.department || "Unknown"}
+            />
+            <DetalisFormatted
+              title="Company"
+              detail={selectedMeeting.client || "Unknown"}
             />
 
             <br />

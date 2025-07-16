@@ -600,6 +600,24 @@ const approveFinanceBudget = async (req, res, next) => {
       expectedDateInvoice,
     };
 
+    const budget = await Budget.findById({ _id: budgetId }).populate(
+      "department"
+    );
+    if (!budget) {
+      throw new CustomError(
+        "Budget not found",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (budget.expanseType !== "Reimbursement") {
+      budget.status = "Approved";
+      await budget.save({ validateModifiedOnly: true });
+      return res.status(200).json({ message: "Approved" });
+    }
+
     const missingFields = Object.entries(requiredFields)
       .filter(([_, value]) => value === undefined || value === "")
       .map(([key]) => key);
@@ -627,18 +645,6 @@ const approveFinanceBudget = async (req, res, next) => {
     }
 
     const foundCompany = await Company.findById({ _id: company });
-
-    const budget = await Budget.findById({ _id: budgetId }).populate(
-      "department"
-    );
-    if (!budget) {
-      throw new CustomError(
-        "Budget not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
 
     // ====== VOUCHER UPLOAD LOGIC =======
     const allowedMimeTypes = [

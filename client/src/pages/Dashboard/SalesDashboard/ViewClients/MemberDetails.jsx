@@ -1,5 +1,5 @@
 import { Avatar, Button, Chip, TextField } from "@mui/material";
-import React, { useLayoutEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import SecondaryButton from "../../../../components/SecondaryButton";
@@ -65,6 +65,20 @@ const MemberDetails = () => {
     reset();
   };
 
+  useEffect(() => {
+    if (memberDetails) {
+      reset({
+        dob: memberDetails.dob || "",
+        email: memberDetails.email || "",
+        mobileNo: memberDetails.mobileNo || "",
+        designation: memberDetails.designation || "",
+        bloodGroup: memberDetails.bloodGroup || "",
+        emergencyName: memberDetails.emergencyName || "",
+        emergencyNo: memberDetails.emergencyNo || "",
+        credits: memberDetails.credits || "",
+      });
+    }
+  }, [memberDetails, reset]);
   return (
     <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4 ">
       <div className="flex justify-between items-center">

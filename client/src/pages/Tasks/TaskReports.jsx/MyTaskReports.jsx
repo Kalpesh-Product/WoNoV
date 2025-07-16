@@ -27,34 +27,34 @@ const MyTaskReports = () => {
     setSelectedTask(params.data);
     setOpenModal(true);
   };
-const myTaskReportsColumns = [
-  { field: "srNo", headerName: "Sr No", width: 50 },
-  {
-    field: "taskName",
-    headerName: "Task",
-    width: 250,
-    cellRenderer: (params) => (
-      <span
-        className="text-primary hover:underline cursor-pointer"
-        onClick={() => handleViewDetails(params)}
-      >
-        {params.value}
-      </span>
-    ),
-  },
-  { field: "assignedBy", headerName: "Assigned By", width: 300 },
-  { field: "assignedDate", headerName: "Assigned Date" },
-  { field: "dueDate", headerName: "Due Date" },
-  { field: "completedDate", headerName: "Completed Date" },
-  { field: "completedTime", headerName: "Completed Time" },
-  { field: "department", headerName: "Department" },
-];
-
+  const myTaskReportsColumns = [
+    { field: "srNo", headerName: "Sr No", width: 50 },
+    {
+      field: "taskName",
+      headerName: "Task",
+      width: 250,
+      cellRenderer: (params) => (
+        <span
+          className="text-primary hover:underline cursor-pointer"
+          onClick={() => handleViewDetails(params)}
+        >
+          {params.value}
+        </span>
+      ),
+    },
+    { field: "assignedBy", headerName: "Assigned By", width: 300 },
+    { field: "assignedDate", headerName: "Assigned Date" },
+    { field: "dueDate", headerName: "Due Date" },
+    { field: "completedDate", headerName: "Completed Date" },
+    { field: "completedTime", headerName: "Completed Time" },
+    { field: "department", headerName: "Department" },
+  ];
 
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
         <AgTable
+          exportData
           search={true}
           tableTitle={"My Task Reports"}
           data={
@@ -70,7 +70,7 @@ const myTaskReportsColumns = [
                   completedTime: humanTime(task.completedDate),
                   assignedBy: `${task.assignedBy.firstName} ${task.assignedBy.lastName}`,
                   department: task.department?.name,
-                  description: task.description
+                  description: task.description,
                 }))
           }
           columns={myTaskReportsColumns}
@@ -85,14 +85,35 @@ const myTaskReportsColumns = [
       >
         {selectedTask ? (
           <div className="grid grid-cols-1 gap-4">
-            <DetalisFormatted title="Task Name" detail={selectedTask.taskName} />
-            <DetalisFormatted title="Description" detail={selectedTask.description} />
-            <DetalisFormatted title="Assigned By" detail={selectedTask.assignedBy} />
-            <DetalisFormatted title="Assigned Date" detail={selectedTask.assignedDate} />
+            <DetalisFormatted
+              title="Task Name"
+              detail={selectedTask.taskName}
+            />
+            <DetalisFormatted
+              title="Description"
+              detail={selectedTask.description}
+            />
+            <DetalisFormatted
+              title="Assigned By"
+              detail={selectedTask.assignedBy}
+            />
+            <DetalisFormatted
+              title="Assigned Date"
+              detail={selectedTask.assignedDate}
+            />
             <DetalisFormatted title="Due Date" detail={selectedTask.dueDate} />
-            <DetalisFormatted title="Completed Date" detail={selectedTask.completedDate} />
-            <DetalisFormatted title="Completed Time" detail={selectedTask.completedTime} />
-            <DetalisFormatted title="Department" detail={selectedTask.department} />
+            <DetalisFormatted
+              title="Completed Date"
+              detail={selectedTask.completedDate}
+            />
+            <DetalisFormatted
+              title="Completed Time"
+              detail={selectedTask.completedTime}
+            />
+            <DetalisFormatted
+              title="Department"
+              detail={selectedTask.department}
+            />
             {/* <DetalisFormatted title="Priority" detail={selectedTask.priority} /> */}
             <DetalisFormatted title="Status" detail={selectedTask.status} />
             {/* <DetalisFormatted title="Remarks" detail={selectedTask.remarks} /> */}
