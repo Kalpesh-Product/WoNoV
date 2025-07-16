@@ -305,7 +305,7 @@ const Header = ({
                   <div className="h-52 overflow-y-auto pr-4">
                     <ul className="space-y-2">
                       {notifications.slice(0, 9).map((n, index) => {
-                        const initiator = `${n.initiatorData?.initiator?.firstName} ${n.initiatorData?.initiator?.lastName}`;
+                        const initiator = `${n.initiatorData?.firstName} ${n.initiatorData?.lastName}`;
                         const currentUser = auth?.user?._id;
 
                         const userEntry = n.users?.find(
