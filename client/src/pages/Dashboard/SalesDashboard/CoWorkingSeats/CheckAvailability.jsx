@@ -84,6 +84,18 @@ const CheckAvailability = () => {
       fontFamily: "Poppins-Regular",
       stacked: true, // ✅ Stack bars
       stackType: "100%", // ✅ Normalize to 100%
+      // events: {
+      //   dataPointSelection: (event, chartContext, config) => {
+          
+      //     const buildingName =
+      //       updatedOptions.xaxis.categories[config.dataPointIndex];
+      //       const encodedName = encodeURIComponent(buildingName);
+      //     navigate(
+      //       `/app/dashboard/sales-dashboard/mix-bag/inventory/${encodedName}`,
+      //       { state: buildingName }
+      //     );
+      //   },
+      // },
       toolbar: {
         show: false,
       },
@@ -401,13 +413,6 @@ const CheckAvailability = () => {
             data={barGraphSeries}
             options={barGraphOptions}
             height={400}
-            handleClick={(buildingName) => {
-              const encodedName = encodeURIComponent(buildingName);
-              navigate(
-                `/app/dashboard/sales-dashboard/mix-bag/inventory/${encodedName}`,
-                { state: buildingName }
-              );
-            }}
           />
         ) : (
           <div className="text-center text-gray-500 text-sm py-10">

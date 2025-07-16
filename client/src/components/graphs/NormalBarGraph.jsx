@@ -1,6 +1,6 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import Chart from "react-apexcharts";
-import { Select, MenuItem, FormControl } from "@mui/material";
+import { Select, MenuItem, FormControl, Button } from "@mui/material";
 import SecondaryButton from "../SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
@@ -15,7 +15,6 @@ const NormalBarGraph = ({
   departments,
   singleParam,
   doubleParam,
-  handleClick,
 }) => {
   const [selectedYear, setSelectedYear] = useState("2024-2025");
   const [departmentIndex, setDepartmentIndex] = useState(0);
@@ -41,32 +40,14 @@ const NormalBarGraph = ({
     );
   }
 
-  // 👇 put this right where you build `updatedOptions`
   const updatedOptions = {
     ...options,
-
-   chart: {
-  ...options.chart,
-  zoom: { enabled: false },
-  events: {
-    dataPointSelection: (event, chartContext, config) => {
-      const buildingName = updatedOptions.xaxis.categories[config.dataPointIndex];
-      handleClick(buildingName);
+    chart: {
+      ...options.chart,
+      zoom: { enabled: false },
     },
-  },
-},
-
-
-    plotOptions: {
-      ...options.plotOptions,
-      bar: {
-        ...options.plotOptions?.bar,
-        // You can remove `events` from here
-      },
-    },
-
     xaxis: {
-      ...options.xaxis,
+      ...options?.xaxis,
     },
   };
 

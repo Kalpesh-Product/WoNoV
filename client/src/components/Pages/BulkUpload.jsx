@@ -2,6 +2,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import YearWiseTable from "../Tables/YearWiseTable";
+import AgTable from "../AgTable";
 import PrimaryButton from "../PrimaryButton";
 import { MdUpload } from "react-icons/md";
 import { IoMdDownload } from "react-icons/io";
@@ -12,6 +13,7 @@ import MuiModal from "../MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import UploadFileInput from "../UploadFileInput";
 import { toast } from "sonner";
+import humanDate from "../../utils/humanDateForamt";
 
 export default function BulkUpload() {
   const axios = useAxiosPrivate();
@@ -78,7 +80,7 @@ export default function BulkUpload() {
       name: template.name,
       documentLink: template.documentLink,
       isActive: template.isActive ? "Active" : "Inactive",
-      date: template.createdAt,
+      date: humanDate(template.createdAt),
       updatedAt: template.updatedAt,
     }));
   }, [departmentDocuments]);
@@ -144,14 +146,13 @@ export default function BulkUpload() {
   return (
     <div className=" flex flex-col gap-4">
       <PageFrame>
-        <YearWiseTable
+        <AgTable
           data={formattedTemplates}
           columns={templateColumns}
-          dateColumn="date"
           formatDate={true}
           tableTitle={"Bulk Upload Data templates"}
           buttonTitle={"Upload Document"}
-          handleSubmit={() => {
+          handleClick={() => {
             setModalMode("add");
             setOpenModal(true);
           }}

@@ -103,12 +103,7 @@ const ManageMeetings = () => {
   });
   const filteredMeetings = meetings
     .filter((item) => item.meetingStatus !== "Completed")
-    .map((meeting) => ({
-      ...meeting,
-      // startTime: humanTime(meeting.startTime),
-      // endTime: humanTime(meeting.endTime),
-      date: meeting.date,
-    }));
+  
 
   const transformedMeetings = filteredMeetings.map((meeting, index) => ({
     ...meeting,
@@ -120,6 +115,7 @@ const ManageMeetings = () => {
     endTime: meeting.endTime,
     extendTime: meeting.extendTime,
     srNo: index + 1,
+    department: meeting.bookedBy && [...meeting.bookedBy.departments.map((dept)=> dept.name) ].join(",") 
   }));
 
   // API mutation for submitting housekeeping tasks
@@ -343,7 +339,7 @@ const ManageMeetings = () => {
     {
       field: "date",
       headerName: "Date",
-      cellRenderer: (params) => humanDate(params.value),
+      cellRenderer: (params) => (params.value),
     },
     {
       field: "startTime",
@@ -480,7 +476,6 @@ const ManageMeetings = () => {
       <PageFrame>
         {!isMeetingsLoading ? (
           <YearWiseTable
-            key={transformedMeetings.length}
             search
             dateColumn={"date"}
             tableTitle={"Manage Meetings"}
@@ -629,7 +624,7 @@ const ManageMeetings = () => {
             />
             <DetalisFormatted
               title="Date"
-              detail={humanDate(selectedMeeting?.date)}
+              detail={(selectedMeeting?.date)}
             />
             <DetalisFormatted
               title="Time"
@@ -713,9 +708,9 @@ const ManageMeetings = () => {
                       ? `${p.firstName} ${p.lastName}`
                       : p.employeeName
                       ? p.employeeName
-                      : null;
+                      :  "N/A";
                   })
-                  .join(", ")}
+                  .join(", ") || "N/A"}
               />
             )}
 
@@ -730,7 +725,11 @@ const ManageMeetings = () => {
             />
             <DetalisFormatted
               title="Department"
-              detail={selectedMeeting.department || "Top Management"}
+              detail={selectedMeeting.department || "Unknown"}
+            />
+            <DetalisFormatted
+              title="Company"
+              detail={selectedMeeting.client || "Unknown"}
             />
 
             <br />
