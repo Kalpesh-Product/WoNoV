@@ -304,33 +304,48 @@ const Header = ({
                 <>
                   <div className="h-52 overflow-y-auto pr-4">
                     <ul className="space-y-2">
-                      {notifications.slice(0, 9).map((n, index) => (
-                        <li
-                          key={n._id || index}
-                          className={`text-sm p-2 rounded ${
-                            !n.seen
-                              ? "bg-gray-200 border-borderGray border-default"
-                              : "border-default border-borderGray"
-                          }`}
-                        >
-                          <div className="flex justify-between w-full items-center">
-                            <div className="flex flex-col gap-1">
-                              <span className="font-pmedium">{n.module}</span>
-                              <span>{n.message}</span>
+                      {notifications.slice(0, 9).map((n, index) => {
+                        const initiator = `${n.initiatorData?.initiator?.firstName} ${n.initiatorData?.initiator?.lastName}`;
+                        const currentUser = auth?.user?._id;
+
+                        const userEntry = n.users?.find(
+                          (item) =>
+                            item.userActions?.whichUser?._id === currentUser
+                        );
+
+                        const hasRead = userEntry?.userActions?.hasRead;
+                        const initiatorRead = n.initiatorData?.hasRead;
+
+                        console.log("hasReasd : ", userEntry);
+                        return (
+                          <li
+                            key={n._id || index}
+                            className={`text-sm p-2 rounded ${
+                              !n.seen
+                                ? "bg-gray-200 border-borderGray border-default"
+                                : "border-default border-borderGray"
+                            }`}
+                          >
+                            <div className="flex justify-between w-full items-center">
+                              <div className="flex flex-col gap-1">
+                                <span className="font-pmedium">{n.module}</span>
+                                <span>
+                                  {n.message} by {initiator}
+                                </span>
+                              </div>
+                              {!hasRead && !initiatorRead && (
+                                <button
+                                  onClick={() => updateRead(n._id)}
+                                  className="p-2 rounded-full bg-green-300 text-green-600"
+                                  title="Mark as Read"
+                                >
+                                  <FaCheck />
+                                </button>
+                              )}
                             </div>
-                            <div>
-                              <button
-                                onClick={() => {
-                                  updateRead(n._id);
-                                }}
-                                className="p-2 rounded-full bg-green-300 text-green-600"
-                              >
-                                <FaCheck />
-                              </button>
-                            </div>
-                          </div>
-                        </li>
-                      ))}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
 
