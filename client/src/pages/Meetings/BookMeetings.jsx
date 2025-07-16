@@ -102,7 +102,6 @@ const BookMeetings = () => {
   };
 
   const handleMeetingDetails = (meeting) => {
-    console.log("data",meeting)
     setSelectedMeeting(meeting);
     setOpenModal(true);
     setModalMode("edit");
