@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const Notification = require("../../models/Notification");
 
 const getNotifications = async (req, res, next) => {
