@@ -27,11 +27,13 @@ import Abrar from "../assets/abrar.jpeg";
 import useAuth from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import useLogout from "../hooks/useLogout";
-import { FaUserTie } from "react-icons/fa6";
+import { FaCheck, FaUserTie } from "react-icons/fa6";
 import { FiLogOut } from "react-icons/fi";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { HiOutlineRefresh } from "react-icons/hi";
+import { toast } from "sonner";
+import { queryClient } from "../main";
 
 const Header = ({
   notifications = [],
@@ -47,6 +49,23 @@ const Header = ({
   const logout = useLogout();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
+
+  const { mutate: updateRead, isPending: isUpdatePending } = useMutation({
+    mutationKey: ["updateRead"],
+    mutationFn: async (notificationId) => {
+      const response = await axios.patch(
+        `/api/notifications/mark-as-read/${notificationId}`
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success(data.message || "UPDATED");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error");
+    },
+  });
 
   // State for Popover
   const [anchorEl, setAnchorEl] = useState(null);
@@ -294,10 +313,22 @@ const Header = ({
                               : "border-default border-borderGray"
                           }`}
                         >
-                          <div>
-                            <span className="font-pmedium">{n.module}</span>
+                          <div className="flex justify-between w-full items-center">
+                            <div className="flex flex-col gap-1">
+                              <span className="font-pmedium">{n.module}</span>
+                              <span>{n.message}</span>
+                            </div>
+                            <div>
+                              <button
+                                onClick={() => {
+                                  updateRead(n._id);
+                                }}
+                                className="p-2 rounded-full bg-green-300 text-green-600"
+                              >
+                                <FaCheck />
+                              </button>
+                            </div>
                           </div>
-                          {n.message}
                         </li>
                       ))}
                     </ul>
