@@ -2,26 +2,6 @@ const mongoose = require("mongoose");
 
 const logSchema = new mongoose.Schema(
   {
-    departments: [
-      {
-        _id: {
-          type: String,
-          required: true,
-        },
-        name: {
-          type: String,
-          required: true,
-        },
-      },
-    ],
-    // module: {
-    //   type: String,
-    //   required: true,
-    // },
-    // submodule: {
-    //   type: String,
-    //   required: true,
-    // },
     action: {
       type: String,
       required: true,

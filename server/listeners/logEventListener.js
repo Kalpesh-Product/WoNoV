@@ -1,10 +1,26 @@
 const emitter = require("../utils/eventEmitter");
 const Log = require("../models/Log");
 
-emitter.on("storeLog", async (payload) => {
+const logEmitHandler = (storeLog, payload) => {
   try {
-    await Log.create(payload);
+    emitter.on(storeLog, async (payload) => {
+      try {
+        await Log.create(payload);
+      } catch (error) {
+        console.error("❌ Failed to save log:", error.message);
+      }
+    });
   } catch (error) {
-    console.error("❌ Failed to save log:", error.message);
+    next(error);
   }
-});
+};
+
+module.exports = logEmitHandler;
+
+// emitter.on("storeLog", async (payload) => {
+//   try {
+//     await Log.create(payload);
+//   } catch (error) {
+//     console.error("❌ Failed to save log:", error.message);
+//   }
+// });

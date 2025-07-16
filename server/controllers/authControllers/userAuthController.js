@@ -97,7 +97,6 @@ const login = async (req, res, next) => {
     req.logContext = {
       performedBy: userExists._id,
       company: userExists.company._id,
-      departments: userExists.departments,
     };
 
     res.status(200).json({ user: updatedUser, accessToken });
@@ -123,7 +122,10 @@ const logOut = async (req, res, next) => {
       return res.sendStatus(204);
     }
 
-    await User.findOneAndUpdate({ _id: foundUser._id }, { refreshToken: null })
+    const userExists = await User.findOneAndUpdate(
+      { _id: foundUser._id },
+      { refreshToken: null }
+    )
       .lean()
       .exec();
 
@@ -137,7 +139,6 @@ const logOut = async (req, res, next) => {
     req.logContext = {
       performedBy: userExists._id,
       company: userExists.company._id,
-      departments: userExists.departments,
     };
 
     res.sendStatus(204);
