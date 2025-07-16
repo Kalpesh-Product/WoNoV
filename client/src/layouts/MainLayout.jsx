@@ -11,12 +11,92 @@ import { useSidebar } from "../context/SideBarContext";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { IoIosArrowForward } from "react-icons/io";
 import ScrollToTop from "../components/ScrollToTop"; // Adjust path if needed
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../hooks/useAxiosPrivate";
 
 const MainLayout = () => {
   const [showFooter, setShowFooter] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const dummyRef = useRef(null);
+  const axios = useAxiosPrivate();
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
+  const {
+    data: notificatsions = [],
+    isLoading: isNotificationsLoading,
+    refetch: refetchNotifications,
+  } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const res = await axios.get("/api/notifications");
+      return res.data;
+    },
+    refetchInterval: 15000, // 15s polling
+  });
+
+  const notifications = [
+    {
+      _id: "1",
+      message: "You’ve been assigned a new ticket #456",
+      seen: false,
+      createdAt: "2025-07-16T09:00:00.000Z",
+    },
+    {
+      _id: "2",
+      message: "Meeting scheduled with John Doe on 18th July",
+      seen: false,
+      createdAt: "2025-07-15T15:45:00.000Z",
+    },
+    {
+      _id: "3",
+      message: "Monthly performance report is ready",
+      seen: true,
+      createdAt: "2025-07-14T10:30:00.000Z",
+    },
+    {
+      _id: "4",
+      message: "Your profile was viewed by HR",
+      seen: true,
+      createdAt: "2025-07-13T08:15:00.000Z",
+    },
+    {
+      _id: "5",
+      message: "Your profile was viewed by HR",
+      seen: true,
+      createdAt: "2025-07-13T08:15:00.000Z",
+    },
+    {
+      _id: "6",
+      message: "Your profile was viewed by HR",
+      seen: true,
+      createdAt: "2025-07-13T08:15:00.000Z",
+    },
+    {
+      _id: "7",
+      message: "Your profile was viewed by HR",
+      seen: true,
+      createdAt: "2025-07-13T08:15:00.000Z",
+    },
+    {
+      _id: "8",
+      message: "Your profile was viewed by HR",
+      seen: true,
+      createdAt: "2025-07-13T08:15:00.000Z",
+    },
+    {
+      _id: "9",
+      message: "Your profile was viewed by HR",
+      seen: true,
+      createdAt: "2025-07-13T08:15:00.000Z",
+    },
+    {
+      _id: "10",
+      message: "Your profile was viewed by HR",
+      seen: true,
+      createdAt: "2025-07-13T08:15:00.000Z",
+    },
+  ];
+
+  const unseenCount = notifications.filter((n) => !n.seen).length;
 
   // Detect mobile view
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -48,7 +128,12 @@ const MainLayout = () => {
             <MenuIcon />
           </IconButton>
         )}
-        <Header />
+        <Header
+          notifications={notifications}
+          unseenCount={2}
+          onRefreshNotifications={refetchNotifications}
+           isRefreshingNotifications={isNotificationsLoading}
+        />
       </header>
 
       <div className="flex w-full flex-grow">
@@ -62,7 +147,10 @@ const MainLayout = () => {
             }}
           >
             <div className="py-2">
-              <Sidebar drawerOpen={mobileOpen} onCloseDrawer={() => setMobileOpen(false)} />
+              <Sidebar
+                drawerOpen={mobileOpen}
+                onCloseDrawer={() => setMobileOpen(false)}
+              />
             </div>
           </Drawer>
         ) : (

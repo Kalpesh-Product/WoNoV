@@ -10,6 +10,9 @@ import {
   ListItemText,
   Divider,
   useMediaQuery,
+  IconButton,
+  Badge,
+  CircularProgress,
 } from "@mui/material";
 import {
   IoIosArrowForward,
@@ -28,8 +31,14 @@ import { FaUserTie } from "react-icons/fa6";
 import { FiLogOut } from "react-icons/fi";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import { HiOutlineRefresh } from "react-icons/hi";
 
-const Header = () => {
+const Header = ({
+  notifications = [],
+  unseenCount = 0,
+  onRefreshNotifications,
+  isRefreshingNotifications = false,
+}) => {
   const axios = useAxiosPrivate();
   const [isHovered, setIsHovered] = useState(false);
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
@@ -37,6 +46,7 @@ const Header = () => {
   const { auth } = useAuth(); // Assuming signOut is a method from useAuth()
   const logout = useLogout();
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
 
   // State for Popover
   const [anchorEl, setAnchorEl] = useState(null);
@@ -45,7 +55,7 @@ const Header = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/company/get-company-logo");
-   
+
         return response.data;
       } catch (error) {
         console.warn(error);
@@ -73,6 +83,9 @@ const Header = () => {
   const open = Boolean(anchorEl);
   const id = open ? "avatar-popover" : undefined;
 
+  const openNotification = Boolean(notificationAnchorEl);
+  const notificationId = openNotification ? "notification-popover" : undefined;
+
   return (
     <>
       <div className="flex w-full justify-between gap-x-10 items-center py-2">
@@ -88,7 +101,8 @@ const Header = () => {
               {!isMobile && (
                 <button
                   onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="p-2 text-gray-500 text-xl">
+                  className="p-2 text-gray-500 text-xl"
+                >
                   {isSidebarOpen ? <GiHamburgerMenu /> : <IoIosArrowForward />}
                 </button>
               )}
@@ -118,11 +132,23 @@ const Header = () => {
             </div>
 
             <div className="flex w-full justify-end gap-4">
-              <button className="bg-[#1E3D73] p-2 text-white rounded-md">
-                <IoMdNotificationsOutline />
+              <button
+                onClick={(e) => setNotificationAnchorEl(e.currentTarget)}
+                className="relative bg-[#1E3D73] text-white rounded-md "
+              >
+                <Badge
+                  badgeContent={unseenCount > 9 ? "9+" : unseenCount}
+                  color="error"
+                  className="bg-primary rounded-md p-2"
+                  anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                  overlap="circular"
+                >
+                  <IoMdNotificationsOutline size={20} />
+                </Badge>
               </button>
+
               <button className="bg-[#1E3D73] p-2 text-white rounded-md">
-                <MdOutlineMailOutline />
+                <MdOutlineMailOutline size={20} />
               </button>
             </div>
           </>
@@ -142,7 +168,8 @@ const Header = () => {
           <div
             className="w-full relative"
             onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}>
+            onMouseLeave={() => setIsHovered(false)}
+          >
             {!isMobile && (
               <>
                 <h1 className="text-xl font-semibold text-start">
@@ -182,14 +209,16 @@ const Header = () => {
         transformOrigin={{
           vertical: "top",
           horizontal: "center",
-        }}>
+        }}
+      >
         <div className="p-4 w-48">
           <List>
             {/* Profile Option */}
             <ListItem
               button
               onClick={handleProfileClick}
-              className="hover:text-primary transition-all duration-100 text-gray-500 cursor-pointer">
+              className="hover:text-primary transition-all duration-100 text-gray-500 cursor-pointer"
+            >
               <ListItemIcon>
                 <FaUserTie className="text-gray-500" />
               </ListItemIcon>
@@ -202,13 +231,92 @@ const Header = () => {
             <ListItem
               button
               onClick={handleSignOut}
-              className="hover:text-red-600 transition-all duration-100 text-gray-500 cursor-pointer">
+              className="hover:text-red-600 transition-all duration-100 text-gray-500 cursor-pointer"
+            >
               <ListItemIcon>
                 <FiLogOut className="text-gray-500" />
               </ListItemIcon>
               <ListItemText primary="Sign Out" />
             </ListItem>
           </List>
+        </div>
+      </Popover>
+
+      {/* 🔔 Notification Popover */}
+      <Popover
+        id={notificationId}
+        open={openNotification}
+        anchorEl={notificationAnchorEl}
+        onClose={() => setNotificationAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <div className="p-4 w-96 max-h-[400px] overflow-y-auto">
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex items-center gap-5 rounded-full">
+              <span className="font-pmedium text-subtitle">Notifications</span>
+              <Badge
+                badgeContent={unseenCount > 9 ? "9+" : unseenCount}
+                color="error"
+                anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                overlap="circular"
+              ></Badge>
+            </div>
+            <IconButton
+              size="small"
+              onClick={onRefreshNotifications}
+              disabled={isRefreshingNotifications}
+            >
+              <HiOutlineRefresh
+                className={`${isRefreshingNotifications ? "animate-spin" : ""}`}
+              />
+            </IconButton>
+          </div>
+          <Divider className="my-2" />
+          {isRefreshingNotifications ? (
+            <div className="h-52 flex justify-center items-center">
+              <CircularProgress size={15} />
+            </div>
+          ) : (
+            <div className="mt-2">
+              {notifications.length === 0 ? (
+                <p className="text-gray-500 text-sm">No notifications yet.</p>
+              ) : (
+                <>
+                  <div className="h-52 overflow-y-auto pr-4">
+                    <ul className="space-y-2">
+                      {notifications.slice(0, 9).map((n, index) => (
+                        <li
+                          key={n._id || index}
+                          className={`text-sm p-2 rounded ${
+                            !n.seen
+                              ? "bg-gray-200 border-borderGray border-default"
+                              : "border-default border-borderGray"
+                          }`}
+                        >
+                          {n.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {notifications.length > 9 && (
+                    <div className="mt-2 text-start">
+                      <button
+                        onClick={() => {
+                          setNotificationAnchorEl(null);
+                          navigate("/app/notifications");
+                        }}
+                        className="text-primary text-content font-pregular hover:underline"
+                      >
+                        View more
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
       </Popover>
     </>
