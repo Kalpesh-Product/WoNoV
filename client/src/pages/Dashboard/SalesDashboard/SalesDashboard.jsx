@@ -34,6 +34,7 @@ import { YearCalendar } from "@mui/x-date-pickers";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import humanDate from "../../../utils/humanDateForamt";
 import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardWidget";
+import SectorLegend from "../../../components/graphs/SectorLegend";
 
 const SalesDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -301,8 +302,7 @@ const SalesDashboard = () => {
         title: "Occupancy %",
         value:
           ((totalOccupiedSeats / totalCoWorkingSeats) * 100).toFixed(0) || 0,
-        route:
-          "/app/dashboard/sales-dashboard/mix-bag/inventory",
+        route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
       },
       {
         title: "Current Free Desks",
@@ -332,8 +332,7 @@ const SalesDashboard = () => {
       {
         title: "Occupancy %",
         value: "93",
-        route:
-          "/app/dashboard/sales-dashboard/inventory",
+        route: "/app/dashboard/sales-dashboard/inventory",
       },
       {
         title: "Clients",
@@ -597,6 +596,7 @@ const SalesDashboard = () => {
     chart: {
       fontFamily: "Poppins-Regular",
     },
+
     stroke: {
       show: true,
       width: 2, // Increase for more "gap"
@@ -625,7 +625,22 @@ const SalesDashboard = () => {
     ],
 
     legend: {
-      position: "right",
+      position: "bottom",
+      horizontalAlign: "center",
+      fontSize: "14px",
+      itemMargin: {
+        horizontal: 8,
+        vertical: 4,
+      },
+      markers: {
+        width: 12,
+        height: 12,
+      },
+      formatter: (seriesName) => {
+        return seriesName.length > 20
+          ? seriesName.slice(0, 20) + "..."
+          : seriesName;
+      },
     },
   };
 
@@ -887,11 +902,7 @@ const SalesDashboard = () => {
       widgets: [
         <WidgetSection layout={1} title={"Sector-wise Occupancy"} border>
           {!isClientsDataPending ? (
-            <PieChartMui
-              data={sectorPieData}
-              options={sectorPieChartOptions}
-              width={"100%"}
-            />
+            <PieChartMui data={sectorPieData} options={sectorPieChartOptions} />
           ) : (
             <CircularProgress color="#1E3D73" />
           )}
@@ -913,13 +924,17 @@ const SalesDashboard = () => {
       layout: 2,
       widgets: [
         <WidgetSection layout={1} title={"Client Gender Wise Data"} border>
-          <PieChartMui data={[]} options={[]} />
+          <div className="h-[300px]">
+            <PieChartMui data={[]} options={[]} />
+          </div>
         </WidgetSection>,
         <WidgetSection layout={1} title={"India-wise Members"} border>
-          <PieChartMui
-            data={locationWiseData}
-            options={locationPieChartOptions}
-          />
+          <div className="h-[300px]">
+            <PieChartMui
+              data={locationWiseData}
+              options={locationPieChartOptions}
+            />
+          </div>
         </WidgetSection>,
       ],
     },

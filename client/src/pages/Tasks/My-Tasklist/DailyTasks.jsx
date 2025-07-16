@@ -49,6 +49,7 @@ const DailyTasks = () => {
     handleSubmit: submitDailyKra,
     control,
     formState: { errors },
+    watch,
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -58,6 +59,7 @@ const DailyTasks = () => {
       description: "",
     },
   });
+  const startDate = watch("startDate");
 
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
     queryKey: ["fetchMyTask"],
@@ -82,7 +84,6 @@ const DailyTasks = () => {
     },
   });
 
- 
   //--------------POST REQUEST FOR MONTHLY KPA-----------------//
   const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
     mutationKey: ["addMonthlyKpa"],
@@ -459,6 +460,7 @@ const DailyTasks = () => {
                     {...field}
                     label="End Date"
                     format="DD-MM-YYYY"
+                    disabled={!startDate}
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(date) =>
                       field.onChange(date ? date.toISOString() : null)
@@ -484,6 +486,7 @@ const DailyTasks = () => {
                   <TimePicker
                     label="Due Time"
                     {...field}
+                    disabled={!startDate}
                     slotProps={{ textField: { size: "small" } }}
                     renderInput={(params) => (
                       <TextField

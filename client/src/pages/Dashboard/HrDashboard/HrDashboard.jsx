@@ -982,22 +982,39 @@ const tasksData = [
 
   //----------------------------------Second pie-chart config data start--------------------------------
 
-  const cityData = {};
+const cityData = {};
 
-  usersQuery.data?.forEach((emp) => {
-    let rawCity = emp?.homeAddress?.city || "Others";
-    let normalizedCity = rawCity.trim().toLowerCase();
-    let displayCity =
-      normalizedCity.charAt(0).toUpperCase() + normalizedCity.slice(1);
+usersQuery.data?.forEach((emp) => {
+  let rawCity = emp?.homeAddress?.city || "Others";
+  let normalizedCity = rawCity.trim().toLowerCase();
+  let displayCity =
+    normalizedCity.charAt(0).toUpperCase() + normalizedCity.slice(1);
 
-    cityData[displayCity] = (cityData[displayCity] || 0) + 1;
-  });
+  cityData[displayCity] = (cityData[displayCity] || 0) + 1;
+});
 
-  // Convert to array format suitable for PieChartMui
-  const pieChartData = Object.entries(cityData).map(([city, count]) => ({
-    label: city,
-    value: count,
-  }));
+// 🔁 Group small-count cities into 'Others'
+const processedCityData = {};
+let othersCount = 0;
+
+Object.entries(cityData).forEach(([city, count]) => {
+  if (count <= 1) {
+    othersCount += count;
+  } else {
+    processedCityData[city] = count;
+  }
+});
+
+if (othersCount > 0) {
+  processedCityData["Others"] = (processedCityData["Others"] || 0) + othersCount;
+}
+
+// ✅ Convert to array for PieChartMui
+const pieChartData = Object.entries(processedCityData).map(([city, count]) => ({
+  label: city,
+  value: count,
+}));
+
 
   const techGoaVisitorsOptions = {
     chart: {

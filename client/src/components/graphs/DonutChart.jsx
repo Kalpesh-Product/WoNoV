@@ -45,7 +45,7 @@ const truncatedLabels = fullLabels.map(label =>
     colors: chartData.colors,
     labels: truncatedLabels,
     legend: {
-      position: "right",
+      position: "bottom",
     },
     dataLabels: {
       enabled: true,
