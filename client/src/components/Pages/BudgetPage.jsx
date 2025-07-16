@@ -295,6 +295,7 @@ const BudgetPage = () => {
     yaxis: {
       max: roundedMax,
       title: { text: "Amount In Lakhs (INR)" },
+      
       labels: {
         formatter: (val) => `${val / 100000}`,
       },
