@@ -364,7 +364,11 @@ const getMeetings = async (req, res, next) => {
         },
       })
       .populate([
-        { path: "bookedBy", select: "departments firstName lastName email" },
+        {
+          path: "bookedBy",
+          select: "departments firstName lastName email",
+          populate: { path: "departments", select: "name" },
+        },
         { path: "clientBookedBy", select: "employeeName email" },
         { path: "receptionist", select: "firstName lastName" },
         { path: "client", select: "clientName" },
@@ -441,13 +445,19 @@ const getMeetings = async (req, res, next) => {
             .join(" ")
         : "";
 
+      console.log("Isclient", isClient);
+
+      if (isClient) {
+        console.log("client  company", meeting.client.clientName);
+      }
+
       return {
         _id: meeting._id,
         name: meeting.bookedBy?.name,
         receptionist: receptionist,
         bookedBy: { ...meeting.bookedBy },
         clientBookedBy: meeting.clientBookedBy,
-        department: department.name,
+        department: meeting?.bookedBy?.departments,
         roomName: meeting.bookedRoom.name,
         bookedBy: meeting.bookedBy,
         location: meeting.bookedRoom.location,
@@ -500,10 +510,17 @@ const getMyMeetings = async (req, res, next) => {
     const { user, company, roles } = req;
 
     let meetings = [];
-    if (!roles.includes("Administration Employee")) {
+    if (
+      !roles.includes("Administration Employee") ||
+      !roles.includes("Administration Admin")
+    ) {
       meetings = await Meeting.find({
         company,
-        $or: [{ bookedBy: user }, { internalParticipants: { $in: [user] } }],
+        $or: [
+          { bookedBy: user },
+          { internalParticipants: { $in: [user] } },
+          { externalParticipants: { $in: [user] } },
+        ],
       })
         .populate({
           path: "bookedRoom",
@@ -518,7 +535,11 @@ const getMyMeetings = async (req, res, next) => {
           },
         })
         .populate([
-          { path: "bookedBy", selected: "firstName lastName email" },
+          {
+            path: "bookedBy",
+            selected: "firstName lastName email departments",
+            populate: { path: "departments" },
+          },
           { path: "clientBookedBy", select: "employeeName email" },
           { path: "receptionist", select: "firstName lastName" },
           { path: "client", select: "clientName" },
@@ -547,7 +568,11 @@ const getMyMeetings = async (req, res, next) => {
           },
         })
         .populate([
-          { path: "bookedBy", selected: "firstName lastName email" },
+          {
+            path: "bookedBy",
+            selected: "firstName lastName email departments",
+            populate: { path: "departments" },
+          },
           { path: "clientBookedBy", select: "employeeName email" },
           { path: "receptionist", select: "firstName lastName" },
           { path: "client", select: "clientName" },
@@ -561,13 +586,13 @@ const getMyMeetings = async (req, res, next) => {
         ]);
     }
 
-    const departments = await User.findById({ _id: user }).select(
-      "departments"
-    );
+    // const departments = await User.findById({ _id: user }).select(
+    //   "departments"
+    // );
 
-    const department = await Department.findById({
-      _id: departments.departments[0],
-    });
+    // const department = await Department.findById({
+    //   _id: { $in: { departments } },
+    // });
 
     const reviews = await Review.find().select(
       "-createdAt -updatedAt -__v -company"
@@ -624,12 +649,14 @@ const getMyMeetings = async (req, res, next) => {
             .join(" ")
         : "";
 
+      console.log("depart meetings", meeting.bookedBy.departments);
+
       return {
         _id: meeting._id,
         receptionist: receptionist,
         bookedBy: bookedBy,
         clientBookedBy: meeting.clientBookedBy,
-        department: department.name,
+        department: meeting?.bookedBy?.departments,
         roomName: meeting.bookedRoom.name,
         location: meeting.bookedRoom.location,
         client: isClient

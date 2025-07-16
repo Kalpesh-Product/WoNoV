@@ -8,39 +8,11 @@ import { useSelector } from "react-redux";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
-import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
-import dateToHyphen from "../../../../utils/dateToHyphen";
 
-const HrDepartmentTasks = () => {
+const HrDepartmentKPA = () => {
   const location = useLocation();
-  const axios = useAxiosPrivate()
   const { month, department, tasks, year } = location.state || {};
-  // const tasksRawData = useSelector((state) => state.hr.tasksRawData);
-  const { data: tasksRawData = [], isLoading: isTasksLoading } = useQuery({
-    queryKey: ["tasksRawData"],
-    queryFn: async () => {
-      const response = await axios.get("api/tasks/get-tasks-summary");
-
-      return response.data.map((dept) => ({
-        ...dept,
-        department:
-          typeof dept.department === "object"
-            ? dept.department.name
-            : dept.department,
-        tasks: dept.tasks.map((task) => ({
-          ...task,
-          department:
-            typeof task.department === "object"
-              ? task.department.name
-              : task.department,
-          assignedDate: dateToHyphen(task.assignedDate),
-          dueDate: dateToHyphen(task.dueDate),
-        })),
-      }));
-    },
-  });
-  console.log("tasks : ", tasksRawData);
+  const tasksRawData = useSelector((state) => state.hr.tasksRawData);
   const fullMonthNames = {
     Jan: "January",
     Feb: "February",
@@ -210,19 +182,19 @@ const HrDepartmentTasks = () => {
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
     
             <div style="display: flex; justify-content: space-between;">
-              <span>Total Tasks</span>
+              <span>Total KPA</span>
               <span>${total}</span>
             </div>
     
             <div style="display: flex; justify-content: space-between;">
-              <span>Completed Tasks</span>
+              <span>Completed KPA</span>
               <span>${completed}</span>
             </div>
     
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
     
             <div style="display: flex; justify-content: space-between;">
-              <span>Remaining Tasks</span>
+              <span>Remaining KPA</span>
               <span>${remaining}</span>
             </div>
           </div>
@@ -240,7 +212,7 @@ const HrDepartmentTasks = () => {
     },
     {
       field: "taskName",
-      headerName: "Tasks Name",
+      headerName: "KPA Name",
       flex: 1,
     },
     {
@@ -291,10 +263,11 @@ const HrDepartmentTasks = () => {
 
   return (
     <div className="flex flex-col gap-4">
+
       <WidgetSection
-        title={`${departmentName} department Tasks overview`}
+        title={`${departmentName} department KPA overview`}
         border
-        TitleAmount={`TOTAL Tasks :  ${tasksData.length || 0}`}
+        TitleAmount={`TOTAL KPA :  ${tasksData.length || 0}`}
       >
         <NormalBarGraph
           data={graphData}
@@ -305,35 +278,36 @@ const HrDepartmentTasks = () => {
       </WidgetSection>
 
       <WidgetSection
-        title={`Tasks details`}
+        title={`KPA details`}
         border
         TitleAmount={`${fullMonthNames[shortMonth]} : ${
           filteredTasks.length > 1
-            ? `${filteredTasks.length} Tasks`
-            : `${filteredTasks.length} Tasks`
+            ? `${filteredTasks.length} KPA`
+            : `${filteredTasks.length} KPA`
         } `}
       >
-        <div className="flex justify-center items-center gap-4">
-          <SecondaryButton
-            title={<MdNavigateBefore />}
-            handleSubmit={handlePrevMonth}
-            disabled={selectedMonthIndex === 0}
-          />
-          <div className="text-subtitle  text-center font-pmedium">
-            {selectedMonth}
-          </div>
-          <PrimaryButton
-            title={<MdNavigateNext />}
-            handleSubmit={handleNextMonth}
-            disabled={selectedMonthIndex === fyMonths.length - 1}
-          />
-        </div>
+          <div className="flex justify-center items-center gap-4">
+              <SecondaryButton
+                title={<MdNavigateBefore />}
+                handleSubmit={handlePrevMonth}
+                disabled={selectedMonthIndex === 0}
+              />
+              <div className="text-subtitle  text-center font-pmedium">
+                {selectedMonth}
+              </div>
+              <PrimaryButton
+                title={<MdNavigateNext />}
+                handleSubmit={handleNextMonth}
+                disabled={selectedMonthIndex === fyMonths.length - 1}
+              />
+            </div>
         {filteredTasks.length === 0 ? (
           <div className="text-center flex justify-center items-center py-8 text-gray-500 h-80">
             No data available
           </div>
         ) : (
           <div>
+          
             <AgTable
               tableHeight={300}
               hideFilter
@@ -342,7 +316,7 @@ const HrDepartmentTasks = () => {
                 id: index + 1,
                 taskName: item.taskName,
                 assignedTo: item.assignedTo,
-                assignedBy: `${item.assignedBy?.firstName || ""} ${item.assignedBy?.lastName || ""}`,
+                assignedBy: item.assignedBy,
                 assignedDate: item.assignedDate,
                 dueDate: item.dueDate,
                 status: item.status,
@@ -355,4 +329,4 @@ const HrDepartmentTasks = () => {
   );
 };
 
-export default HrDepartmentTasks;
+export default HrDepartmentKPA;

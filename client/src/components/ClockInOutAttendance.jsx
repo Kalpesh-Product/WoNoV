@@ -83,7 +83,6 @@ const ClockInOutAttendance = () => {
       const startBreakTime = Array.isArray(breaksFromServer) && breaksFromServer.length > 0 && new Date(breaksFromServer[0].start)
       const isTodayBreak = isSameDay(startBreakTime)
 
-      console.log("break issue",isTodayBreak)
     dispatch(setLastUserId(userId)); 
 
     if (hasClockedIn && clockIn && serverNow) {
@@ -191,10 +190,8 @@ const ClockInOutAttendance = () => {
       if (clockInTime) {
         // avoid showing clock-out time if clocking out for prev day
         setClockTime((prev) => ({ ...prev, endTime: outTime }));
-        console.log("breaks",breaks)
         
         if(breaks.length > 0){
-           console.log("breaks",breaks)
         //     setTotalHours((prev) => ({
         //   ...prev,
         //   workHours: calculateTotalHours(
@@ -221,7 +218,7 @@ const ClockInOutAttendance = () => {
       dispatch(setHasClockedIn(false));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
     },
-    onError: (error) => toast.error(error.response.data.message),
+    t: (error) => toast.error(error.response.data.message),
   });
 
   const { mutate: startBreak, isPending: isStartbreak } = useMutation({
