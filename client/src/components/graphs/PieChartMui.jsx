@@ -3,52 +3,36 @@ import React, { useRef, useState } from "react";
 import ReactApexChart from "react-apexcharts";
 import useResponsiveChart from "../../hooks/useResponsiveChart";
 
-const PieChartMui = ({ data, options, customLegend, width, height }) => {
-  // Extract series data for ApexCharts
-  const chartData = data.map((item) => parseFloat(item.value)); // Ensure values are numbers
-
-  // Detect mobile view
-  const isMobile = useMediaQuery("(max-width: 768px)");
+const PieChartMui = ({ data, options, width = 320, height = 320 }) => {
+  const chartData = data.map((item) => parseFloat(item.value));
   const { containerRef, chartKey } = useResponsiveChart();
+
   const updatedOptions = {
     ...options,
     chart: {
       ...options.chart,
       zoom: { enabled: false },
-      animations: {
-        enabled: false,
-      },
+      animations: { enabled: false },
+    },
+    legend: {
+      ...options.legend,
+      position: "bottom",
     },
   };
 
   return (
-    <div className="">
-      <div className="w-full m-0 flex  gap-4">
-        <div ref={containerRef} className="flex-1">
-          <ReactApexChart
-            key={chartKey}
-            options={updatedOptions} // Use options passed directly from parent
-            series={chartData} // Data values for the pie slices
-            type="pie"
-            width={isMobile ? "100%" : width ? width : 500}
-            height={height ? height : 350}
-          />
-        </div>
-
-        {/* Custom Legend Passed from Parent */}
-        {customLegend ? (
-          <div
-            className={`${
-              customLegend ? "flex-1" : ""
-            } p-4 justify-center items-center h-56 overflow-y-auto`}
-          >
-            {customLegend}
-          </div>
-        ) : (
-          <></>
-        )}
+ <div className="w-full flex flex-col justify-between" style={{ height }}>
+      <div ref={containerRef} style={{ flex: 1 }}>
+        <ReactApexChart
+          key={chartKey}
+          options={updatedOptions}
+          series={chartData}
+          type="pie"
+          height={height - 20} // Reserve space for built-in legend
+        />
       </div>
     </div>
+
   );
 };
 

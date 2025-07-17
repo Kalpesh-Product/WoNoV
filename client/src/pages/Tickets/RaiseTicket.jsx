@@ -562,6 +562,10 @@ const RaiseTicket = () => {
             detail={viewTicketDetails?.acceptedBy}
           />
           <DetalisFormatted
+            title="Accepted Date"
+            detail={humanDate(viewTicketDetails?.acceptedAt)}
+          />
+          <DetalisFormatted
             title="Accepted at"
             detail={humanTime(viewTicketDetails?.acceptedAt)}
           />

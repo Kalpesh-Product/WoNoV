@@ -873,8 +873,6 @@ const FinanceDashboard = () => {
           <PieChartMui
             data={pieMonthlyPayoutData}
             options={pieMonthlyPayoutOptions}
-            width={500}
-            height={350}
           />
         </WidgetSection>,
         <WidgetSection title={`Customer Collections MAR-25 `} border>

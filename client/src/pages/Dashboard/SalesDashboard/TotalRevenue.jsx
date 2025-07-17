@@ -136,11 +136,12 @@ const TotalRevenue = () => {
       custom: function ({ dataPointIndex, w }) {
         const monthLabel = w.globals.labels[dataPointIndex];
 
-        const coworking = filteredByYear[0]?.data?.[dataPointIndex] ?? 0;
-        const meetings = filteredByYear[1]?.data?.[dataPointIndex] ?? 0;
+        // meetings altRevenue
+        const meetings = filteredByYear[0]?.data?.[dataPointIndex] ?? 0;
+        const altRevenue = filteredByYear[1]?.data?.[dataPointIndex] ?? 0;
         const virtualOffice = filteredByYear[2]?.data?.[dataPointIndex] ?? 0;
         const workation = filteredByYear[3]?.data?.[dataPointIndex] ?? 0;
-        const altRevenue = filteredByYear[4]?.data?.[dataPointIndex] ?? 0;
+        const coworking = filteredByYear[4]?.data?.[dataPointIndex] ?? 0;
 
         return `
       <div style="padding: 10px; width: 300px">
