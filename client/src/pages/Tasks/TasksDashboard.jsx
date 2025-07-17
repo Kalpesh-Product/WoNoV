@@ -6,10 +6,7 @@ import WidgetSection from "../../components/WidgetSection";
 import DataCard from "../../components/DataCard";
 import MuiTable from "../../components/Tables/MuiTable";
 import PieChartMui from "../../components/graphs/PieChartMui";
-import {
-  myTodayMeetingsColumns,
-  recentlyAddedTasksCol,
-} from "./TasksData";
+import { myTodayMeetingsColumns, recentlyAddedTasksCol } from "./TasksData";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanDate from "../../utils/humanDateForamt";
@@ -20,7 +17,6 @@ import YearlyGraph from "../../components/graphs/YearlyGraph";
 const TasksDashboard = () => {
   const axios = useAxiosPrivate();
   const [selectedFY, setSelectedFY] = useState(null);
-
 
   //-------------------Tasks graph ---------------------//
   const normalizeDataByMonth = (tasks) => {
@@ -614,7 +610,8 @@ const TasksDashboard = () => {
           title={"Total"}
           // data={allTasksQuery.isLoading ? 0 : allTasksQuery.data.length}
           data={allTasksQuery.isLoading ? 0 : allTasksQuery.data.length}
-          description={"Tasks"}
+          description={"Dept. Tasks"}
+          route={"/app/tasks/department-tasks"}
         />,
         <DataCard
           title={"Total"}
@@ -624,7 +621,8 @@ const TasksDashboard = () => {
               : allTasksQuery.data.filter((task) => task.status === "Pending")
                   .length
           }
-          description={"Pending Tasks"}
+          description={"Dept. Pending Tasks "}
+          route={"/app/tasks/department-tasks"}
         />,
         <DataCard
           title={"Total"}
@@ -634,7 +632,8 @@ const TasksDashboard = () => {
               : allTasksQuery.data.filter((task) => task.status === "Completed")
                   .length
           }
-          description={"Completed Tasks"}
+          description={"Dept. Completed Tasks"}
+          route={"/app/tasks/department-tasks"}
         />,
       ],
     },

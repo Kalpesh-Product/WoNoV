@@ -70,8 +70,8 @@ const Shifts = () => {
       resetAddForm();
       // console.log("data", data);
     },
-    onError: function (data) {
-      toast.error(data.message);
+    onError: function (error) {
+      toast.error(error.response?.data?.message || "Addition failed");
     },
   });
 
