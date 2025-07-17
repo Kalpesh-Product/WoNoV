@@ -37,7 +37,7 @@ const MainLayout = () => {
 
       return filtered;
     },
-    // refetchInterval: 15000,
+    refetchInterval: 15000,
   });
 
 

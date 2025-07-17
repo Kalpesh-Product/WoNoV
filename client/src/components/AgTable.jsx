@@ -28,7 +28,7 @@ const AgTableComponent = React.memo(
     tableTitle,
     handleClick,
     buttonTitle,
-    tableHeight,
+    tableHeight=400,
     enableCheckbox, // ✅ New prop to enable checkboxes
     getRowStyle,
     checkAll,
@@ -337,7 +337,7 @@ const handleSelectionChanged = useCallback((params) => {
         <div
           ref={tableRef}
           className="ag-theme-quartz border-none w-full font-pregular"
-          style={{ height: tableHeight || 500 }}>
+          style={{ height: 440 }}>
           <AgGridReact
             ref={gridRef}
             rowData={filteredData}

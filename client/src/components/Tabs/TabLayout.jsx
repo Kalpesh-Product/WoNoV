@@ -9,6 +9,7 @@ const TabLayout = ({
   tabs = [],
   defaultTabPath,
   hideTabsCondition = () => false,
+  hideTabsOnPaths = [], // NEW PROP
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -21,11 +22,15 @@ const TabLayout = ({
     }
   }, [location, navigate, basePath, defaultTabPath]);
 
+  const activeTab = tabs.findIndex((tab) =>
+    location.pathname.includes(tab.path)
+  );
+  const tabPercent = 100 / tabs.length;
 
-  const showTabs = !hideTabsCondition(location.pathname);
-  const activeTab = tabs.findIndex((tab) => location.pathname.includes(tab.path));
-  const tabPercent = 100/tabs.length
-  console.log("tabs", tabPercent)
+  // FINAL DECISION: whether to show tabs
+  const showTabs =
+    !hideTabsCondition(location.pathname) &&
+    !hideTabsOnPaths.some((path) => location.pathname.includes(path));
 
   return (
     <div className="p-4">

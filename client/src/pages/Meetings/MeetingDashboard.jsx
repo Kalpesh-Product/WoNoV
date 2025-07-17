@@ -636,7 +636,7 @@ const MeetingDashboard = () => {
       enabled: true, // or false to disable
       y: {
         formatter: function (val) {
-          return `${(val / 100) * totalBookableHours} hrs`; // Custom text, like "12 hrs"
+          return `${((val / 100) * totalBookableHours).toFixed(0)} hrs`; // Custom text, like "12 hrs"
         },
         title: {
           formatter: () => "Total hours : ", // 🔥 Hides "Series 1"
@@ -699,14 +699,14 @@ const MeetingDashboard = () => {
         formatter: function (value, { dataPointIndex }) {
           const roomName = rooms[dataPointIndex];
           const actual = actualBookedHours[roomName];
-          return `${actual} hours booked`;
+          return `${(actual).toFixed(0)} hours booked`;
         },
       },
     },
     dataLabels: {
       enabled: true,
       formatter: function (val) {
-        return Math.round(val) + "%";
+        return (val).toFixed(0) + "%";
       },
       style: {
         fontSize: "11px",
@@ -874,7 +874,7 @@ const MeetingDashboard = () => {
           }
         >
           <YearlyGraph
-            titleAmount={`TOTAL BOOKED HOURS : ${fyBookedHours}`}
+            titleAmount={`TOTAL BOOKED HOURS : ${(fyBookedHours).toFixed(0)}`}
             title={"AVERAGE MEETING ROOM UTILIZATION"}
             data={averageBookingSeries}
             options={averageBookingOptions}
