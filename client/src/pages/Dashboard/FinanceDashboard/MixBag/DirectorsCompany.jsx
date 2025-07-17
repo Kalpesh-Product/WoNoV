@@ -82,7 +82,6 @@ const DirectorsCompany = () => {
           columns={columns}
           data={tableData}
           tableTitle=" DIRECTORS & COMPANY KYC"
-          tableHeight={400}
           hideFilter
           search
           loading={isLoading}

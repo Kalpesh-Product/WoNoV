@@ -307,6 +307,10 @@ const Header = ({
                       {notifications.slice(0, 9).map((n, index) => {
                         const initiator = `${n.initiatorData?.firstName} ${n.initiatorData?.lastName}`;
                         const currentUser = auth?.user?._id;
+                        const module = n.module || "";
+                        const navigations = {
+                          Meetings: "/app/meetings/calendar",
+                        };
 
                         const userEntry = n.users?.find(
                           (item) =>
@@ -325,13 +329,22 @@ const Header = ({
                             }`}
                           >
                             <div className="flex justify-between w-full items-center">
-                              <div className="flex flex-col gap-1">
+                              <div
+                                role="button"
+                                onClick={() => {
+                                  if (navigations[module]) {
+                                    navigate(navigations[module]);
+                                    setNotificationAnchorEl(null);
+                                  }
+                                }}
+                                className="flex flex-col gap-1"
+                              >
                                 <span className="font-pmedium">{n.module}</span>
                                 <span>
-                                  {n.message} by {initiator}
+                                  {n.message} 
                                 </span>
                               </div>
-                              {!hasRead  && (
+                              {!hasRead && (
                                 <button
                                   onClick={() => updateRead(n._id)}
                                   className="p-2 rounded-full bg-green-300 text-green-600"

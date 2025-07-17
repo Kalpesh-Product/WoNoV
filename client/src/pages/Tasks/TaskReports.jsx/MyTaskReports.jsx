@@ -9,6 +9,7 @@ import PageFrame from "../../../components/Pages/PageFrame";
 import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
 
 const MyTaskReports = () => {
   const axios = useAxiosPrivate();
@@ -53,18 +54,18 @@ const MyTaskReports = () => {
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
-        <AgTable
+        <YearWiseTable
           exportData
           search={true}
+          dateColumn={"assignedDate"}
           tableTitle={"My Task Reports"}
           data={
             isLoading
               ? []
               : taskList.map((task, index) => ({
-                  srNo: index + 1,
                   ...task,
                   taskName: task.taskName,
-                  assignedDate: humanDate(task.assignedDate),
+                  assignedDate: (task.assignedDate),
                   dueDate: humanDate(task.dueDate),
                   completedDate: humanDate(task.completedDate),
                   completedTime: humanTime(task.completedDate),
@@ -99,7 +100,7 @@ const MyTaskReports = () => {
             />
             <DetalisFormatted
               title="Assigned Date"
-              detail={selectedTask.assignedDate}
+              detail={humanDate(selectedTask.assignedDate)}
             />
             <DetalisFormatted title="Due Date" detail={selectedTask.dueDate} />
             <DetalisFormatted

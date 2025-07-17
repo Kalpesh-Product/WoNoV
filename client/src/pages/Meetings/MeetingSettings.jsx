@@ -59,6 +59,7 @@ const MeetingSettings = () => {
       seats: 0,
       description: "",
       location: selectedRoom?.location?.building?._id,
+      isActive: true,
     },
   });
   const [editFile, setEditFile] = useState(null);
@@ -72,6 +73,7 @@ const MeetingSettings = () => {
         description: selectedRoom.description ?? "",
         location: selectedRoom.location?.building?._id ?? "",
         unit: selectedRoom.location?._id ?? "",
+        isActive: selectedRoom.isActive ?? "",
       });
     }
   }, [selectedRoom, resetEditForm]);
@@ -118,7 +120,7 @@ const MeetingSettings = () => {
     formData.append("seats", data.seats);
     formData.append("description", data.description);
     formData.append("location", data.unit);
-    // formData.append("unit", data.unit);
+    formData.append("isActive", data.isActive === "false" ? false : true);
 
     if (editFile) {
       formData.append("room", editFile);
@@ -597,6 +599,28 @@ const MeetingSettings = () => {
                   </div>
                 )}
               />
+              <Controller
+                name="isActive"
+                control={editControl}
+                render={({ field }) => (
+                  <TextField
+                    select
+                    {...field}
+                    fullWidth
+                    size="small"
+                    label="Status"
+                    error={!!editErrors?.isActive}
+                    helperText={editErrors?.isActive?.message}
+                  >
+                    <MenuItem value="" disabled>
+                      Select a status
+                    </MenuItem>
+                    <MenuItem value="true">Active</MenuItem>
+                    <MenuItem value="false">Inactive</MenuItem>
+                  </TextField>
+                )}
+              />
+
               <div className="flex justify-center">
                 <PrimaryButton title={"Save Changes"} type={"submit"} />
               </div>

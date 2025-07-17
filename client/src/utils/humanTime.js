@@ -2,7 +2,7 @@ const humanTime = (date) => {
   if (!date) return "—"; // or return "", or some fallback
 
   const parsedDate = new Date(date);
-  if (isNaN(parsedDate.getTime())) return "Invalid date";
+  if (isNaN(parsedDate.getTime())) return "-";
 
   return new Intl.DateTimeFormat("en-GB", {
     hour: "numeric",

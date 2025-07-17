@@ -64,7 +64,22 @@ const ItDashboard = () => {
   const averageMonthlyExpense = monthlyTotals.length
     ? monthlyTotals.reduce((a, b) => a + b, 0) / monthlyTotals.length
     : 0;
-
+  //----------------------KPA Data-----------------------//
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(
+        `api/performance/get-tasks?dept=${department?._id}&type=KPA`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+  const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
+    queryKey: ["fetchedMonthlyKPA"],
+    queryFn: fetchDepartments,
+  });
+  //----------------------KPA Data-----------------------//
   //----------------------------Tasks Data-------------------------------//
   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["tasks"],
@@ -717,7 +732,11 @@ const ItDashboard = () => {
           data={`INR ${inrFormat(averageMonthlyExpense)}`}
           description={"Monthly Expense"}
         />,
-        <DataCard data={0} title={"Average"} description={"Yearly Expense"} />,
+        <DataCard
+          data={departmentKra.length || 0}
+          title={"Total"}
+          description={"Monthly KPA"}
+        />,
       ],
     },
     {

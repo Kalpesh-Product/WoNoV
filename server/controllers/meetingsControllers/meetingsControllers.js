@@ -20,6 +20,7 @@ const ExternalCompany = require("../../models/meetings/ExternalCompany");
 const MeetingRevenue = require("../../models/sales/MeetingRevenue");
 const emitter = require("../../utils/eventEmitter");
 const { isValid } = require("date-fns/isValid");
+const Role = require("../../models/roles/Roles");
 
 const addMeetings = async (req, res, next) => {
   const logPath = "meetings/MeetingLog";
@@ -266,10 +267,11 @@ const addMeetings = async (req, res, next) => {
         logSourceKey
       );
     }
+
     isClient
       ? null
       : emitter.emit("notification", {
-          initiatorData: bookedBy,
+          initiatorData: updatedUser._id,
           users: internalParticipants.map((userId) => ({
             userActions: {
               whichUser: userId,
@@ -278,7 +280,7 @@ const addMeetings = async (req, res, next) => {
           })),
           type: "book meeting",
           module: "Meetings",
-          message: "You have been added to a meeting",
+          message: `You have been added to a meeting by ${updatedUser.firstName} ${updatedUser.lastName}`,
         });
 
     await createLog({
@@ -662,7 +664,6 @@ const getMyMeetings = async (req, res, next) => {
             .join(" ")
         : "";
 
-      console.log("depart meetings", meeting.bookedBy.departments);
 
       return {
         _id: meeting._id,
@@ -719,12 +720,7 @@ const getMyMeetings = async (req, res, next) => {
 const addHousekeepingTask = async (req, res, next) => {
   try {
     const { housekeepingTasks, meetingId, roomName } = req.body;
-    const company = req.company;
     const user = req.user;
-    const ip = req.ip;
-    const logPath = "meetings/MeetingLog";
-    const logAction = "Add Housekeeping Tasks";
-    const logSourceKey = "meeting";
 
     if (!housekeepingTasks || !meetingId || !roomName) {
       throw new CustomError(
@@ -794,30 +790,52 @@ const addHousekeepingTask = async (req, res, next) => {
       );
     }
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Housekeeping tasks completed and room status updated",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: foundMeeting._id,
-      changes: { housekeepingTasks: completedTasks, roomName },
-    });
+    const adminManager = await UserData.aggregate([
+      {
+        $lookup: {
+          from: "roles",
+          localField: "role",
+          foreignField: "_id",
+          as: "roleDetails",
+        },
+      },
+      {
+        $unwind: "$roleDetails",
+      },
+      {
+        $match: {
+          "roleDetails.roleTitle": "Administration Admin",
+        },
+      },
+    ]);
+
+    if (!adminManager) {
+      return res
+        .send(400)
+        .json({ message: "Administration Admin role not found" });
+    }
+
+    const adminIds = adminManager.map((admin) => admin._id);
+
+    const isClient = foundMeeting.clientBookedBy;
+
+    if (!isClient) {
+      emitter.emit("notification", {
+        initiatorData: user,
+        users: adminIds.map((userId) => ({
+          userActions: { whichUser: userId, hasRead: false },
+        })),
+        type: "update checklist",
+        module: "Meetings",
+        message: "Housekeeping checklist is updated",
+      });
+    }
 
     return res
       .status(200)
       .json({ message: "Housekeeping tasks added successfully" });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
-    }
+    next(error);
   }
 };
 
@@ -988,7 +1006,7 @@ const cancelMeeting = async (req, res, next) => {
       { status: "Cancelled" },
       { reason },
       { new: true }
-    );
+    ).populate({ path: "bookedBy", select: "firstName lastName" });
 
     if (!cancelledMeeting) {
       throw new CustomError(
@@ -999,19 +1017,20 @@ const cancelMeeting = async (req, res, next) => {
       );
     }
 
-    // Log the successful meeting cancellation
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Meeting cancelled successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: cancelledMeeting._id,
-      changes: { meetingId },
-    });
+    const isClient = cancelledMeeting.clientBookedBy;
+
+    if (!isClient && cancelledMeeting.internalParticipants.length > 0) {
+      const bookedBy = cancelledMeeting.bookedBy;
+      emitter.emit("notification", {
+        initiatorData: user,
+        users: cancelledMeeting.internalParticipants.map((userId) => ({
+          userActions: { whichUser: userId, hasRead: false },
+        })),
+        type: "cancel meeting",
+        module: "Meetings",
+        message: `Your meeting has been cancelled by ${bookedBy.firstName} ${bookedBy.lastName}`,
+      });
+    }
 
     return res.status(200).json({ message: "Meeting cancelled successfully" });
   } catch (error) {
@@ -1051,7 +1070,10 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
-    const meeting = await Meeting.findById(meetingId).populate("bookedRoom");
+    const meeting = await Meeting.findById(meetingId).populate([
+      { path: "bookedRoom" },
+      { path: "bookedBy", select: "firstName lastName" },
+    ]);
     if (!meeting) {
       throw new CustomError(
         "Meeting not found",
@@ -1142,24 +1164,20 @@ const extendMeeting = async (req, res, next) => {
     meeting.creditsUsed = (meeting.creditsUsed || 0) + addedCredits;
     await meeting.save();
 
-    // Step 4: Log success
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Meeting extended successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: meeting._id,
-      changes: {
-        meetingId,
-        oldEndTime,
-        newEndTime: newEndTimeObj,
-        addedCredits,
-      },
-    });
+    const isInternal = meeting.bookedBy;
+
+    if (isInternal && meeting.internalParticipants.length > 0) {
+      const bookedBy = meeting.bookedBy;
+      emitter.emit("notification", {
+        initiatorData: user,
+        users: meeting.internalParticipants.map((userId) => ({
+          userActions: { whichUser: userId, hasRead: false },
+        })),
+        type: "extend meeting",
+        module: "Meetings",
+        message: `Your meeting has been extended by ${bookedBy.firstName} ${bookedBy.lastName}`,
+      });
+    }
 
     return res.status(200).json({
       message: "Meeting extended successfully",
@@ -1338,11 +1356,13 @@ const updateMeeting = async (req, res, next) => {
 
 const updateMeetingStatus = async (req, res, next) => {
   const { status, meetingId } = req.body;
+  const { user } = req;
   const updatedMeeting = await Meeting.findByIdAndUpdate(
     meetingId,
     { status },
     { new: true }
-  );
+  ).populate("bookedBy", "firstName lastName");
+
   const updateRoomStatus = await Room.findByIdAndUpdate(
     {
       _id: updatedMeeting.bookedRoom,
@@ -1357,6 +1377,26 @@ const updateMeetingStatus = async (req, res, next) => {
   if (!updateRoomStatus) {
     return res.status(404).json({ message: "Failed to update room status" });
   }
+
+  const isClient = updatedMeeting.clientBookedBy;
+
+  const statusChart = {
+    Ongoing: "Your meeting is currently ongoing",
+    Completed: "Your meeting has concluded",
+  };
+
+  if (!isClient && updatedMeeting.internalParticipants.length > 0) {
+    emitter.emit("notification", {
+      initiatorData: user,
+      users: updatedMeeting.internalParticipants.map((userId) => ({
+        userActions: { whichUser: userId, hasRead: false },
+      })),
+      type: "update status",
+      module: "Meetings",
+      message: statusChart[status],
+    });
+  }
+
   return res
     .status(200)
     .json({ message: "Meeting status updated successfully" });
@@ -1462,7 +1502,10 @@ const updateMeetingDetails = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid meeting ID" });
     }
 
-    const meeting = await Meeting.findById(meetingId).populate("bookedRoom");
+    const meeting = await Meeting.findById(meetingId).populate(
+      { path: "bookedRoom" },
+      { path: "bookedBy", select: "firstName lastName" }
+    );
     if (!meeting) {
       return res.status(404).json({ message: "Meeting not found" });
     }
@@ -1597,14 +1640,15 @@ const updateMeetingDetails = async (req, res, next) => {
     }
 
     if (!isClient && internalParticipants?.length > 0) {
+      const bookedBy = meeting.bookedBy;
       emitter.emit("notification", {
-        initiatorData: meeting.bookedBy,
+        initiatorData: bookedBy,
         users: internalParticipants.map((userId) => ({
           userActions: { whichUser: userId, hasRead: false },
         })),
         type: "update meeting",
         module: "Meetings",
-        message: "You have been added to an updated meeting",
+        message: `Your meeting has been updated by ${bookedBy.firstName} ${bookedBy.lastName}`,
       });
     }
 

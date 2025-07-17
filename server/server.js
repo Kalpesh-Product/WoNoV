@@ -64,7 +64,7 @@ app.get("/", (req, res) => {
   }
 });
 
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", auditLogger, authRoutes);
 
 app.use("/api/access", verifyJwt, auditLogger, accessRoutes);
 app.use("/api/company", verifyJwt, auditLogger, companyRoutes);
@@ -99,7 +99,7 @@ app.use("/api/inventory", verifyJwt, auditLogger, inventoryRoutes);
 app.use("/api/administration", verifyJwt, auditLogger, administrationRoutes);
 app.use("/api/finance", verifyJwt, auditLogger, financeRoutes);
 app.use("/api/weekly-unit", verifyJwt, auditLogger, weeklyUnitRoutes);
-app.use("/api/logs/:path", verifyJwt, auditLogger, getLogs);
+app.use("/api/logs", verifyJwt, auditLogger, getLogs);
 
 app.all("*", (req, res) => {
   if (req.accepts("html")) {
