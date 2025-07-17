@@ -664,7 +664,6 @@ const getMyMeetings = async (req, res, next) => {
             .join(" ")
         : "";
 
-      console.log("depart meetings", meeting.bookedBy.departments);
 
       return {
         _id: meeting._id,

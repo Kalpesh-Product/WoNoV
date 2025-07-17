@@ -23,18 +23,25 @@ const getConsolidatedRevenue = async (req, res, next) => {
     ]);
 
     // Helpers
-    const getFinancialYear = (date) => {
+    const toIST = (date) => {
       const d = new Date(date);
-      const year = d.getFullYear();
-      const month = d.getMonth(); // 0 = Jan
+      // IST is UTC + 5 hours 30 minutes → 19800 seconds = 19800000 ms
+      return new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+    };
+
+    const getFinancialYear = (date) => {
+      const istDate = toIST(date);
+      const year = istDate.getFullYear();
+      const month = istDate.getMonth(); // 0 = Jan
       return month >= 3
         ? `${year}-${(year + 1).toString().slice(-2)}`
         : `${year - 1}-${year.toString().slice(-2)}`;
     };
 
     const getFinancialMonthIndex = (date) => {
-      const month = new Date(date).getMonth(); // 0 = Jan
-      return (month + 9) % 12; // Apr = 0, Mar = 11
+      const istDate = toIST(date);
+      const month = istDate.getMonth(); // 0 = Jan
+      return (month + 9) % 12; // Apr = 0
     };
 
     const initFYData = () => Array(12).fill(0);

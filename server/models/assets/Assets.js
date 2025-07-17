@@ -9,6 +9,16 @@ const assetsSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  rentedMonths: {
+    type: Number,
+  },
+  tangable: {
+    type: Boolean,
+  },
+  ownershipType: {
+    type: String,
+    enum: ["Owned", "Rental"],
+  },
   vendor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Vendor",
@@ -25,10 +35,6 @@ const assetsSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  quantity: {
-    type: Number,
-    required: true,
-  },
   price: {
     type: Number,
     required: true,
@@ -37,9 +43,9 @@ const assetsSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  image: {
-    url: String,
-    id: String,
+  warrantyDocument: {
+    link: String,
+    documentId: String,
   },
   brand: {
     type: String,
@@ -58,15 +64,9 @@ const assetsSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Unit",
   },
-  assignedTo: {
-    person: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "UserData",
-    },
-  },
-  category: {
+  subCategory: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "AssetCategory",
+    ref: "SubCategory",
   },
   isUnderMaintenance: {
     type: Boolean,
