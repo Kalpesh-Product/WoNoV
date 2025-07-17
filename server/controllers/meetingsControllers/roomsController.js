@@ -153,29 +153,7 @@ const updateRoom = async (req, res, next) => {
     const { id: roomId } = req.params;
     const { name, description, seats, location, isActive } = req.body;
 
-    if (!roomId) {
-      throw new CustomError(
-        "Room ID must be provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    const isValidLocation = await Unit.findById({ _id: location })
-      .lean()
-      .exec();
-
-    if (!isValidLocation) {
-      throw new CustomError(
-        "Invalid location. Must be a valid company work location.",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(roomId)) {
+    if (!roomId || !mongoose.Types.ObjectId.isValid(roomId)) {
       throw new CustomError(
         "Invalid Room ID",
         logPath,
@@ -184,21 +162,58 @@ const updateRoom = async (req, res, next) => {
       );
     }
 
-    // Find the room to update
-    const room = await Room.findOne({ _id: roomId });
+    const room = await Room.findById(roomId);
     if (!room) {
       throw new CustomError("Room not found", logPath, logAction, logSourceKey);
     }
 
-    // Keep track of the existing image
-    let imageId = room.image?.id;
-    let imageUrl = room.image?.url;
+    if (location) {
+      const isValidLocation = await Unit.findById(location).lean().exec();
+      if (!isValidLocation) {
+        throw new CustomError(
+          "Invalid location. Must be a valid company work location.",
+          logPath,
+          logAction,
+          logSourceKey
+        );
+      }
+    }
 
-    // Check if a new file is provided
+    const updatedFields = {};
+
+    // Handle individual field updates
+    if (Object.hasOwn(req.body, "name") && req.body.name !== room.name) {
+      updatedFields.name = req.body.name;
+    }
+
+    if (
+      Object.hasOwn(req.body, "description") &&
+      req.body.description !== room.description
+    ) {
+      updatedFields.description = req.body.description;
+    }
+
+    if (Object.hasOwn(req.body, "seats") && req.body.seats !== room.seats) {
+      updatedFields.seats = req.body.seats;
+    }
+
+    if (
+      Object.hasOwn(req.body, "location") &&
+      req.body.location !== String(room.location)
+    ) {
+      updatedFields.location = req.body.location;
+    }
+
+    if (Object.hasOwn(req.body, "isActive")) {
+      updatedFields.isActive =
+        req.body.isActive === true || req.body.isActive === "true"
+          ? true
+          : false;
+    }
+
+    // Handle image update
     if (req.file) {
       const file = req.file;
-
-      // Process the image using Sharp
       const buffer = await sharp(file.buffer)
         .resize(800, 800, { fit: "cover" })
         .webp({ quality: 80 })
@@ -206,45 +221,33 @@ const updateRoom = async (req, res, next) => {
 
       const base64Image = `data:image/webp;base64,${buffer.toString("base64")}`;
 
-      // Delete the current image in Cloudinary if it exists
-      if (imageId) {
-        await handleFileDelete(imageId);
+      if (room.image?.id) {
+        await handleFileDelete(room.image.id);
       }
 
-      // Upload the new image to Cloudinary
       const uploadResult = await handleFileUpload(base64Image, "rooms");
-      imageId = uploadResult.public_id;
-      imageUrl = uploadResult.secure_url;
+      updatedFields.image = {
+        id: uploadResult.public_id,
+        url: uploadResult.secure_url,
+      };
     }
 
-    // Only update fields if they were provided and changed
-    const updatedFields = {};
-    if (typeof isActive !== "undefined") {
-      updatedFields.isActive = isActive === true || isActive === "true";
+    // Update only if there are changes
+    if (Object.keys(updatedFields).length === 0) {
+      return res.status(200).json({ message: "No changes to update.", room });
     }
-
-    if (name && name !== room.name) updatedFields.name = name;
-    if (description && description !== room.description) {
-      updatedFields.description = description;
-    }
-    if (seats && seats !== room.seats) updatedFields.seats = seats;
-    if (location && location !== room.location)
-      updatedFields.location = location;
-    if (req.file) updatedFields.image = { id: imageId, url: imageUrl };
 
     Object.assign(room, updatedFields);
-
     const updatedRoom = await room.save({ validateBeforeSave: false });
 
-    // Log the successful update
     await createLog({
       path: logPath,
       action: logAction,
       remarks: "Room updated successfully",
       status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
+      user,
+      ip,
+      company,
       sourceKey: logSourceKey,
       sourceId: updatedRoom._id,
       changes: updatedFields,
@@ -255,13 +258,11 @@ const updateRoom = async (req, res, next) => {
       room: updatedRoom,
     });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
-    }
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+    );
   }
 };
 
