@@ -341,7 +341,7 @@ const Header = ({
                               >
                                 <span className="font-pmedium">{n.module}</span>
                                 <span>
-                                  {n.message} by {initiator}
+                                  {n.message} 
                                 </span>
                               </div>
                               {!hasRead && (

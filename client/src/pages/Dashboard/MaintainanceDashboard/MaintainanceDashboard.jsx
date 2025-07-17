@@ -65,8 +65,8 @@ const MaintainanceDashboard = () => {
 
   const totalOverallExpense = isHrFinanceLoading
     ? []
-    : hrFinance.reduce((sum, item) => ((sum + item.actualAmount || 0), 0));
-  console.log("totalExpense : ", totalOverallExpense)
+    : hrFinance.reduce((sum, item) => (sum + item.actualAmount || 0, 0));
+  console.log("totalExpense : ", totalOverallExpense);
   //----------------------Monthly average-----------------------//
 
   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
@@ -264,15 +264,6 @@ const MaintainanceDashboard = () => {
   }, []); // Empty dependency array ensures this runs once on mount
 
   const navigate = useNavigate();
-  const utilisedData = [
-    125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
-    50000, 120000,
-  ];
-
-  const maxBudget = [
-    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
-    60000, 110000,
-  ];
 
   const taskData = [
     { unit: "ST-701A", tasks: 25 },
@@ -287,36 +278,7 @@ const MaintainanceDashboard = () => {
     value: item.tasks,
   }));
 
-  const unitPieChartOptions = {
-    labels: unitWisePieData.map((item) => item.label),
-    chart: {
-      fontFamily: "Poppins-Regular",
-    },
-    toolTip: {
-      y: {
-        formatter: (val) => `${((val / totalUnitWiseTask) * 100).toFixed(1)}%`,
-      },
-    },
-  };
-
   // ------------------------------------------------------------------------------------------------------------------//
-  const executiveTasks = [
-    { name: "Mac", tasks: 10 },
-    { name: "Rajiv", tasks: 20 },
-    { name: "Faizan", tasks: 30 },
-  ];
-
-  const executiveTotalTasks = executiveTasks.reduce(
-    (sum, user) => sum + user.tasks,
-    0
-  );
-  const pieExecutiveData = executiveTasks.map((user) =>
-    parseFloat(((user.tasks / executiveTotalTasks) * 100).toFixed(1))
-  );
-  const executiveTasksCount = executiveTasks.map((user) => user.tasks);
-  const labels = executiveTasks.map((user) => user.name);
-  const colors = ["#FF5733", "#FFC300", "#28B463"];
-
   // ------------------------------------------------------------------------------------------------------------------//
   // Due Maintenance
   const dueMaintenance = [
@@ -328,15 +290,7 @@ const MaintainanceDashboard = () => {
     { name: "Others", tasks: 30 },
   ];
 
-  const executiveDueMaintenance = dueMaintenance.reduce(
-    (sum, user) => sum + user.tasks,
-    0
-  );
-  const pieDueMaintenanceData = dueMaintenance.map((user) =>
-    parseFloat(((user.tasks / executiveDueMaintenance) * 100).toFixed(1))
-  );
   const dueMaintenanceCount = dueMaintenance.map((user) => user.tasks);
-  const labelsMaintenance = dueMaintenance.map((user) => user.name);
   const colorsMaintenance = [
     "#FF5733",
     "#FFC300",
@@ -346,23 +300,6 @@ const MaintainanceDashboard = () => {
     "#ff00e6",
   ];
   //----------------------------------------------------------------------------------------------------------//
-  const unitWiseExpense = [
-    { unit: "ST-701A", expense: 12000 },
-    { unit: "ST-701B", expense: 10000 },
-    { unit: "ST-601A", expense: 11500 },
-    { unit: "ST-601B", expense: 10000 },
-  ];
-  const totalUnitWiseExpense = unitWiseExpense.reduce(
-    (sum, item) => sum + item.expense,
-    0
-  );
-  const pieUnitWiseExpenseData = unitWiseExpense.map((item) => ({
-    label: `${item.unit} (${(
-      (item.expense / totalUnitWiseExpense) *
-      100
-    ).toFixed(1)}%)`,
-    value: item.expense,
-  }));
 
   //----------------------------------------------------------------------------------------------------------//
   // Categoty Wise Maintenance
@@ -863,9 +800,9 @@ const MaintainanceDashboard = () => {
         />,
         <DataCard
           route={"annual-expenses"}
-          title={"Free"}
+          title={"Total"}
           data={0}
-          description={"Yearly Expense"}
+          description={"Monthly KPA"}
         />,
       ],
     },
