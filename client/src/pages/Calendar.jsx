@@ -81,8 +81,8 @@ const Calender = () => {
       endTime: meeting.endTime,
       subject: meeting.subject,
       department: meeting.department,
-      participants: meeting.participants?.map((p) =>
-       `${p.firstName} ${p.lastName}`
+      participants: meeting.participants?.map(
+        (p) => `${p.firstName} ${p.lastName}`
       ),
       meetingStatus: meeting.meetingStatus,
       housekeepingStatus: meeting.housekeepingStatus,
@@ -91,24 +91,23 @@ const Calender = () => {
   }));
 
   const transformedEvents = events.map((event) => {
-  const type = event?.extendedProps?.type?.toLowerCase?.() || "event";
-  const colorMap = {
-    holiday: "#4caf50",
-    event: "#ff9800",
-    meeting: "#2196f3",
-  };
+    const type = event?.extendedProps?.type?.toLowerCase?.() || "event";
+    const colorMap = {
+      holiday: "#4caf50",
+      event: "#ff9800",
+      meeting: "#2196f3",
+    };
 
-  return {
-    ...event,
-    backgroundColor: colorMap[type] || "#757575", // default gray if unknown
-  };
-});
+    return {
+      ...event,
+      backgroundColor: colorMap[type] || "#757575", // default gray if unknown
+    };
+  });
 
   //---------------------------------API------------------------------------------//
 
   useEffect(() => {
-   const allCombinedEvents = [...transformedEvents, ...transformedMeetings];
-
+    const allCombinedEvents = [...transformedEvents, ...transformedMeetings];
 
     if (eventFilter.length === 0) {
       setFilteredEvents([]); // ✅ Show nothing if no filter selected
@@ -120,22 +119,22 @@ const Calender = () => {
     }
   }, [eventFilter, events, meetings]);
 
-const getTodaysEvents = () => {
-  const today = dayjs().startOf("day");
+  const getTodaysEvents = () => {
+    const today = dayjs().startOf("day");
 
-  return filteredEvents.filter((event) => {
-    const start = dayjs(event.start).startOf("day");
-    const end = event.end ? dayjs(event.end).startOf("day") : start;
+    return filteredEvents.filter((event) => {
+      const start = dayjs(event.start).startOf("day");
+      const end = event.end ? dayjs(event.end).startOf("day") : start;
 
-    return (
-      today.isSame(start) ||
-      today.isSame(end) ||
-      (today.isAfter(start) && today.isBefore(end))
-    );
-  });
-};
+      return (
+        today.isSame(start) ||
+        today.isSame(end) ||
+        (today.isAfter(start) && today.isBefore(end))
+      );
+    });
+  };
 
-console.log("filtered events : ",filteredEvents)
+  console.log("filtered events : ", filteredEvents);
   const todaysEvents = getTodaysEvents();
 
   const handleEventClick = (clickInfo) => {
@@ -166,7 +165,7 @@ console.log("filtered events : ",filteredEvents)
     });
   };
 
-  console.log("selected : ", filteredEvents)
+  console.log("selected : ", filteredEvents);
   return (
     <div className="flex w-[70%] md:w-full">
       {!isMeetingsLoading && !isEventsPending ? (
@@ -469,7 +468,6 @@ console.log("filtered events : ",filteredEvents)
                         <span>:</span>
                         <span className="text-content   w-full justify-start pl-4 ">
                           {selectedEvent.extendedProps.receptionist || "N/A"}
-                      
                         </span>
                       </span>
                     </div>
@@ -480,7 +478,9 @@ console.log("filtered events : ",filteredEvents)
                         <span className="w-[30%]">Department</span>
                         <span>:</span>
                         <span className="text-content   w-full justify-start pl-4">
-                          {selectedEvent.extendedProps.department}
+                          {selectedEvent.extendedProps.department?.map(
+                            (item) => item.name
+                          )}
                         </span>
                       </span>
                     </div>

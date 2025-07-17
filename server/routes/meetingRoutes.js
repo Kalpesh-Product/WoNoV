@@ -13,6 +13,7 @@ const {
   updateMeetingStatus,
   getAllCompanies,
   updateMeeting,
+  updateMeetingDetails,
 } = require("../controllers/meetingsControllers/meetingsControllers");
 const {
   getReviews,
@@ -32,6 +33,7 @@ router.post("/create-room", upload.single("room"), addRoom);
 router.post("/create-review", addReview);
 router.post("/create-reply", replyReview);
 router.patch("/extend-meeting", extendMeeting);
+router.patch("/update-meeting-details", updateMeetingDetails);
 router.get("/get-rooms", getRooms);
 router.get("/get-meetings", getMeetings);
 router.get("/get-room-meetings/:roomId", getSingleRoomMeetings);

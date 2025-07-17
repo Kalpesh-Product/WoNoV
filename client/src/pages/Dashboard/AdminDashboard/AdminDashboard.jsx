@@ -38,7 +38,7 @@ const AdminDashboard = () => {
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
 
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
-    queryKey: ["maintainance-budget"],
+    queryKey: ["admin-budget"],
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -51,6 +51,57 @@ const AdminDashboard = () => {
       }
     },
   });
+  //----------------------Electricity expense-----------------------//
+  const electrictyExpense = isHrFinanceLoading
+    ? 0
+    : hrFinance
+        .filter((item) => item.expanseType === "ELECTRICITY")
+        .reduce((sum, item) => sum + item.actualAmount || 0, 0);
+  console.log("electric : ", electrictyExpense);
+  //----------------------Electricity expense-----------------------//
+  //----------------------Monthly average-----------------------//
+  const monthlyGroups = {};
+
+  hrFinance.forEach((item) => {
+    const dueDate = new Date(item.dueDate);
+    const monthKey = `${dueDate.getFullYear()}-${dueDate.getMonth() + 1}`; // e.g., "2024-4"
+    if (!monthlyGroups[monthKey]) monthlyGroups[monthKey] = [];
+    monthlyGroups[monthKey].push(item.actualAmount || 0);
+  });
+
+  const monthlyTotals = Object.values(monthlyGroups).map((amounts) =>
+    amounts.reduce((sum, val) => sum + val, 0)
+  );
+
+  const averageMonthlyExpense = monthlyTotals.length
+    ? monthlyTotals.reduce((a, b) => a + b, 0) / monthlyTotals.length
+    : 0;
+
+    const totalOverallExpense = isHrFinanceLoading
+    ? []
+    : hrFinance.reduce((sum, item) => sum + item.actualAmount || 0, 0);
+  //----------------------Monthly average-----------------------//
+  //----------------------Units data-----------------------//
+  const { data: unitsData = [], isLoading: isUnitsData } = useQuery({
+    queryKey: ["units-data"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/company/fetch-simple-units
+          `
+        );
+        return response.data;
+      } catch (error) {
+        throw new Error("Error fetching data");
+      }
+    },
+  });
+  const totalSqFt = isUnitsData
+    ? []
+    : unitsData.reduce((acc, unit) => acc + (unit.sqft || 0), 0);
+
+
+  //----------------------Units data-----------------------//
 
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
@@ -84,6 +135,8 @@ const AdminDashboard = () => {
       }
     },
   });
+
+  console.log("tasks", tasks.length)
 
   const { data: weeklySchedule = [], isLoading: isWeeklyScheduleLoading } =
     useQuery({
@@ -448,160 +501,6 @@ const AdminDashboard = () => {
     { id: "date", label: "Date", align: "left" },
     { id: "location", label: "Location", align: "left" },
   ];
-  //-----------------------------------------------------------------------------------------------------------------//
-  // const clientMemberBirthdays = [
-  //   {
-  //     name: "John Doe",
-  //     company: "Zomato",
-  //     dateOfJoin: "02-02-2024",
-  //     dateOfBirth: "18-03-2001",
-  //   },
-  //   {
-  //     name: "Anita Rao",
-  //     company: "Swiggy",
-  //     dateOfJoin: "12-05-2021",
-  //     dateOfBirth: "25-03-1995",
-  //   },
-  //   {
-  //     name: "Ravi Patel",
-  //     company: "Paytm",
-  //     dateOfJoin: "01-01-2020",
-  //     dateOfBirth: "01-04-1988",
-  //   },
-  //   {
-  //     name: "Sneha Shah",
-  //     company: "Byju's",
-  //     dateOfJoin: "10-07-2022",
-  //     dateOfBirth: "22-03-1990",
-  //   },
-  //   {
-  //     name: "Vikram Singh",
-  //     company: "Nykaa",
-  //     dateOfJoin: "15-08-2019",
-  //     dateOfBirth: "29-03-1993",
-  //   },
-  //   {
-  //     name: "Meena Iyer",
-  //     company: "Flipkart",
-  //     dateOfJoin: "20-09-2023",
-  //     dateOfBirth: "20-03-1997",
-  //   },
-  // ];
-
-  const clientMemberBirthdays = [
-    {
-      srNo: 1,
-      name: "Aarav Mehta",
-      upcomingIn: "3 days",
-      dateOfBirth: "1996-04-22",
-      company: "Zomato",
-    },
-    {
-      srNo: 2,
-      name: "Riya Sharma",
-      upcomingIn: "5 days",
-      dateOfBirth: "1992-04-24",
-      company: "SquadStack",
-    },
-    {
-      srNo: 3,
-      name: "Kabir Khanna",
-      upcomingIn: "7 days",
-      dateOfBirth: "1994-04-26",
-      company: "Zimetrics",
-    },
-    {
-      srNo: 4,
-      name: "Sneha Patel",
-      upcomingIn: "9 days",
-      dateOfBirth: "1997-04-28",
-      company: "IBDO",
-    },
-    {
-      srNo: 5,
-      name: "Vikram Singh",
-      upcomingIn: "1 day",
-      dateOfBirth: "1995-04-20",
-      company: "Flipkart",
-    },
-    {
-      srNo: 6,
-      name: "Ananya Gupta",
-      upcomingIn: "2 days",
-      dateOfBirth: "1993-04-21",
-      company: "Nykaa",
-    },
-    {
-      srNo: 7,
-      name: "Rohan Desai",
-      upcomingIn: "3 days",
-      dateOfBirth: "1998-04-22",
-      company: "Paytm",
-    },
-    {
-      srNo: 8,
-      name: "Priya Nair",
-      upcomingIn: "4 days",
-      dateOfBirth: "1990-04-23",
-      company: "Amazon",
-    },
-    {
-      srNo: 9,
-      name: "Arjun Reddy",
-      upcomingIn: "5 days",
-      dateOfBirth: "1996-04-24",
-      company: "Swiggy",
-    },
-    {
-      srNo: 10,
-      name: "Meera Iyer",
-      upcomingIn: "6 days",
-      dateOfBirth: "1994-04-25",
-      company: "Ola",
-    },
-    {
-      srNo: 11,
-      name: "Nikhil Joshi",
-      upcomingIn: "7 days",
-      dateOfBirth: "1992-04-26",
-      company: "Myntra",
-    },
-    {
-      srNo: 12,
-      name: "Sanya Kapoor",
-      upcomingIn: "8 days",
-      dateOfBirth: "1997-04-27",
-      company: "Uber",
-    },
-    {
-      srNo: 13,
-      name: "Ishaan Malhotra",
-      upcomingIn: "10 days",
-      dateOfBirth: "1995-04-29",
-      company: "Zomato",
-    },
-    {
-      srNo: 14,
-      name: "Tara Bose",
-      upcomingIn: "11 days",
-      dateOfBirth: "1993-04-30",
-      company: "SquadStack",
-    },
-    {
-      srNo: 15,
-      name: "Aditya Rao",
-      upcomingIn: "15 days",
-      dateOfBirth: "1991-05-04",
-      company: "Flipkart",
-    },
-    {
-      srNo: 16,
-      name: "Kavya Menon",
-      upcomingIn: "20 days",
-      dateOfBirth: "1996-05-09",
-      company: "Nykaa",
-    },
-  ];
 
   const clientMemberBirthdaysColumns = [
     { id: "srNo", label: "Sr No", align: "left" },
@@ -613,30 +512,6 @@ const AdminDashboard = () => {
 
   const today = dayjs.utc().startOf("day");
   const cutOff = today.add(15, "day");
-
-  // const upcomingBirthdays = clientsData
-  //   .map((item) => {
-  //     const dob = dayjs(item.dateOfBirth, "YYYY-MM-DD");
-  //     const thisYearBirthday = dob.set("year", today.year());
-
-  //     const birthday = thisYearBirthday.isBefore(today)
-  //       ? thisYearBirthday.add(1, "year")
-  //       : thisYearBirthday;
-
-  //     const doj = dayjs(item.dateOfJoin, "YYYY-MM-DD");
-  //     const completedYears = today.diff(doj, "year");
-  //     const upComingIn = birthday.diff(today, "days");
-
-  //     return {
-  //       ...item,
-  //       dateOfBirth: dayjs(item.dateOfBirth, "YYYY-MM-DD").format("DD-MM-YYYY"),
-  //       upComingIn: `${upComingIn} days`,
-  //       isUpcoming:
-  //         birthday.isBefore(cutOff) &&
-  //         birthday.isAfter(today.subtract(1, "day")),
-  //     };
-  //   })
-  //   .filter((item) => item.isUpcoming);
 
   const upcomingBirthdays = clientsData
     .flatMap((client) =>
@@ -668,7 +543,6 @@ const AdminDashboard = () => {
     .filter((item) => item.isUpcoming);
 
   //-----------------------------------------------------------------------------------------------------------------//
-
 
   const calculateCompletedTime = (startDate) => {
     const start = dayjs(startDate);
@@ -911,19 +785,19 @@ const AdminDashboard = () => {
         <DataCard
           route={"admin-offices"}
           title={"Total"}
-          data={""}
+          data={Array.isArray(unitsData) ? unitsData.length : 0}
           description={"Admin Offices"}
         />,
         <DataCard
           route={"/app/tasks"}
           title={"Total"}
-          data={""}
+          data={tasks.length || 0}
           description={"Monthly Due Tasks"}
         />,
         <DataCard
           route={"admin-expenses"}
           title={"Average"}
-          data={""}
+          data={`INR ${inrFormat(averageMonthlyExpense)}`}
           description={"Monthly Expense"}
         />,
       ],
@@ -934,13 +808,13 @@ const AdminDashboard = () => {
         <DataCard
           route={"per-sq-ft-expense"}
           title={"Total"}
-          data={""}
+          data={`INR ${inrFormat(totalOverallExpense / totalSqFt)}`}
           description={"Expense Per Sq. Ft."}
         />,
         <DataCard
           route={"per-sq-ft-electricity-expense"}
           title={"Total"}
-          data={""}
+          data={`INR ${inrFormat(electrictyExpense / totalSqFt)}`}
           description={"Electricity Expense Per Sq. Ft."}
         />,
         <DataCard

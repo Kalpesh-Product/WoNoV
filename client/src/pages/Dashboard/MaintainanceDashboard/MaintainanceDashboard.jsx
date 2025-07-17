@@ -45,6 +45,30 @@ const MaintainanceDashboard = () => {
     },
   });
 
+  //----------------------Monthly average-----------------------//
+  const monthlyGroups = {};
+
+  hrFinance.forEach((item) => {
+    const dueDate = new Date(item.dueDate);
+    const monthKey = `${dueDate.getFullYear()}-${dueDate.getMonth() + 1}`; // e.g., "2024-4"
+    if (!monthlyGroups[monthKey]) monthlyGroups[monthKey] = [];
+    monthlyGroups[monthKey].push(item.actualAmount || 0);
+  });
+
+  const monthlyTotals = Object.values(monthlyGroups).map((amounts) =>
+    amounts.reduce((sum, val) => sum + val, 0)
+  );
+
+  const averageMonthlyExpense = monthlyTotals.length
+    ? monthlyTotals.reduce((a, b) => a + b, 0) / monthlyTotals.length
+    : 0;
+
+  const totalOverallExpense = isHrFinanceLoading
+    ? []
+    : hrFinance.reduce((sum, item) => ((sum + item.actualAmount || 0), 0));
+  console.log("totalExpense : ", totalOverallExpense)
+  //----------------------Monthly average-----------------------//
+
   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["tasks"],
     queryFn: async () => {
@@ -58,6 +82,27 @@ const MaintainanceDashboard = () => {
       }
     },
   });
+
+  //----------------------Units data-----------------------//
+  const { data: unitsData = [], isLoading: isUnitsData } = useQuery({
+    queryKey: ["units-data"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/company/fetch-simple-units
+            `
+        );
+        return response.data;
+      } catch (error) {
+        throw new Error("Error fetching data");
+      }
+    },
+  });
+  const totalSqFt = isUnitsData
+    ? []
+    : unitsData.reduce((acc, unit) => acc + (unit.sqft || 0), 0);
+
+  //----------------------Units data-----------------------//
 
   const { data: weeklySchedule = [], isLoading: isWeeklyScheduleLoading } =
     useQuery({
@@ -511,15 +556,14 @@ const MaintainanceDashboard = () => {
   };
   //----------------------------------------------------------------------------------------------------------//
 
-  const transformedTasks = tasks.map((task,index) => {
- 
+  const transformedTasks = tasks.map((task, index) => {
     return {
-      id:index+1,
+      id: index + 1,
       taskName: task.taskName,
       status: task.status,
       endTime: humanTime(task.dueTime),
-    }
-});
+    };
+  });
 
   const priorityTasks = [
     { taskName: "Check Lights", type: "Daily", endTime: "12:00 PM" },
@@ -553,7 +597,6 @@ const MaintainanceDashboard = () => {
       id: "status",
       label: "Status",
       renderCell: (data) => {
-       
         return (
           <>
             <Chip sx={{ color: "#1E3D73" }} label={data.status} />
@@ -786,19 +829,19 @@ const MaintainanceDashboard = () => {
         <DataCard
           route={"maintenance-offices"}
           title={"Total"}
-          data={""}
+          data={Array.isArray(unitsData) ? unitsData.length : 0}
           description={"Offices Under Management"}
         />,
         <DataCard
           route={"/app/tasks"}
           title={"Total"}
-          data={""}
+          data={tasks.length || 0}
           description={"Monthly Due Tasks"}
         />,
         <DataCard
           route={"maintenance-expenses"}
           title={"Average"}
-          data={""}
+          data={`INR ${inrFormat(averageMonthlyExpense)}`}
           description={"Monthly Expense"}
         />,
       ],
@@ -809,24 +852,24 @@ const MaintainanceDashboard = () => {
         <DataCard
           route={"per-sq-ft-expense"}
           title={"Total"}
-          data={""}
+          data={`INR ${inrFormat(totalUtilised / totalSqFt)}`}
           description={"Expense Per Sq. Ft."}
         />,
         <DataCard
           // route={"maintenance-assets"}
           title={"Total"}
-          data={""}
+          data={0}
           description={"Assets Under Management"}
         />,
         <DataCard
           route={"annual-expenses"}
           title={"Free"}
-          data={""}
+          data={0}
           description={"Yearly Expense"}
         />,
       ],
     },
-       {
+    {
       layout: 2,
       widgets: [
         <MuiTable
@@ -888,7 +931,6 @@ const MaintainanceDashboard = () => {
         </WidgetSection>,
       ],
     },
- 
   ];
 
   return (

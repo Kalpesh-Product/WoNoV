@@ -120,6 +120,7 @@ const TasksViewDepartment = () => {
       console.error("Error fetching data:", error);
     }
   };
+
   const fetchCompletedTasks = async () => {
     try {
       const response = await axios.get(

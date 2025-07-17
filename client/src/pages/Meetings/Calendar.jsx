@@ -126,6 +126,8 @@ const Calender = () => {
     });
   };
 
+
+console.log("filteredEvents : ", filteredEvents)
   return (
     <div className="flex w-[70%] md:w-full">
       <div className="flex-1 p-4 bg-white">
@@ -335,7 +337,7 @@ const Calender = () => {
               />
               <DetalisFormatted
                 title="Department"
-                detail={selectedEvent.extendedProps.department}
+                detail={selectedEvent.extendedProps.department?.map((item)=>item.name)}
               />
 
               <br />
