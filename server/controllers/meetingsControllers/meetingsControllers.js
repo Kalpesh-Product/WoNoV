@@ -521,93 +521,48 @@ const getMyMeetings = async (req, res, next) => {
     const { user, company, roles } = req;
 
     let meetings = [];
-    if (
-      !roles.includes("Administration Employee") ||
-      !roles.includes("Administration Admin")
-    ) {
-      meetings = await Meeting.find({
-        company,
-        $or: [
-          { bookedBy: user },
-          {
-            internalParticipants: { $in: [new mongoose.Types.ObjectId(user)] },
-          },
-          {
-            externalParticipants: { $in: [new mongoose.Types.ObjectId(user)] },
-          },
-        ],
-      })
-        .populate({
-          path: "bookedRoom",
-          select: "name housekeepingStatus",
-          populate: {
-            path: "location",
-            select: "unitName unitNo",
-            populate: {
-              path: "building",
-              select: "buildingName",
-            },
-          },
-        })
-        .populate([
-          {
-            path: "bookedBy",
-            selected: "firstName lastName email departments",
-            populate: { path: "departments" },
-          },
-          { path: "clientBookedBy", select: "employeeName email" },
-          { path: "receptionist", select: "firstName lastName" },
-          { path: "client", select: "clientName" },
-          // {
-          //   path: "externalClient",
-          //   select: "companyName pocName mobileNumber",
-          // },
-          { path: "internalParticipants", select: "firstName lastName email" },
-          { path: "clientParticipants", select: "employeeName email" },
-          { path: "externalParticipants", select: "firstName lastName email" },
-        ]);
-    } else {
-      meetings = await Meeting.find({
-        company,
-      })
-        .populate({
-          path: "bookedRoom",
-          select: "name housekeepingStatus",
-          populate: {
-            path: "location",
-            select: "unitName unitNo",
-            populate: {
-              path: "building",
-              select: "buildingName",
-            },
-          },
-        })
-        .populate([
-          {
-            path: "bookedBy",
-            selected: "firstName lastName email departments",
-            populate: { path: "departments" },
-          },
-          { path: "clientBookedBy", select: "employeeName email" },
-          { path: "receptionist", select: "firstName lastName" },
-          { path: "client", select: "clientName" },
-          // {
-          //   path: "externalClient",
-          //   select: "companyName pocName mobileNumber",
-          // },
-          { path: "internalParticipants", select: "firstName lastName email" },
-          { path: "clientParticipants", select: "employeeName email" },
-          { path: "externalParticipants", select: "firstName lastName email" },
-        ]);
-    }
 
-    // const departments = await User.findById({ _id: user }).select(
-    //   "departments"
-    // );
-
-    // const department = await Department.findById({
-    //   _id: { $in: { departments } },
-    // });
+    meetings = await Meeting.find({
+      company,
+      $or: [
+        { bookedBy: user },
+        {
+          internalParticipants: { $in: [new mongoose.Types.ObjectId(user)] },
+        },
+        {
+          externalParticipants: { $in: [new mongoose.Types.ObjectId(user)] },
+        },
+      ],
+    })
+      .populate({
+        path: "bookedRoom",
+        select: "name housekeepingStatus",
+        populate: {
+          path: "location",
+          select: "unitName unitNo",
+          populate: {
+            path: "building",
+            select: "buildingName",
+          },
+        },
+      })
+      .populate([
+        {
+          path: "bookedBy",
+          selected: "firstName lastName email departments",
+          populate: { path: "departments" },
+        },
+        { path: "clientBookedBy", select: "employeeName email" },
+        { path: "receptionist", select: "firstName lastName" },
+        { path: "client", select: "clientName" },
+        // {
+        //   path: "externalClient",
+        //   select: "companyName pocName mobileNumber",
+        // },
+        { path: "internalParticipants", select: "firstName lastName email" },
+        { path: "clientParticipants", select: "employeeName email" },
+        { path: "externalParticipants", select: "firstName lastName email" },
+      ]);
 
     const reviews = await Review.find().select(
       "-createdAt -updatedAt -__v -company"
@@ -663,7 +618,6 @@ const getMyMeetings = async (req, res, next) => {
             .filter(Boolean)
             .join(" ")
         : "";
-
 
       return {
         _id: meeting._id,

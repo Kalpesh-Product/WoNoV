@@ -29,6 +29,14 @@ const addLeaveType = async (req, res, next) => {
       );
     }
 
+    const existingLeaveType = await Company.findOne({
+      "leaveTypes.name": { $in: leaveType },
+    });
+
+    if (existingLeaveType) {
+      return res.status(400).json({ message: "The leave type already exists" });
+    }
+
     const updatedCompany = await Company.findByIdAndUpdate(
       { _id: company },
       {

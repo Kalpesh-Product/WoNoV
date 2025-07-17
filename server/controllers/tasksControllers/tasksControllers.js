@@ -360,9 +360,36 @@ const getTasks = async (req, res, next) => {
     const { dept } = req.query;
     const query = { company };
 
+    // const team = await UserData.find({});
+
     if (dept) {
+      //      const admins = await User.aggregate([
+      //   {
+      //     $match: {
+      //       departments: { $in: [dept] },
+      //     },
+      //   },
+      //   {
+      //     $lookup: {
+      //       from: "roles", // collection name (lowercase + plural of model name)
+      //       localField: "role",
+      //       foreignField: "_id",
+      //       as: "roleInfo",
+      //     },
+      //   },
+      //   {
+      //     $unwind: "$roleInfo",
+      //   },
+      //   {
+      //     $match: {
+      //       "roleInfo.roleTitle": { $regex: /Admin$/, $options: "i" },
+      //     },
+      //   },
+      // ]);
+
       query.department = dept;
       query.status = "Pending";
+      // query.assignedBy =
     }
 
     const tasks = await Task.find(query)

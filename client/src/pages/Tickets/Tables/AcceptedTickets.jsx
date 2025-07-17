@@ -80,10 +80,6 @@ const AcceptedTickets = ({ title, departmentId }) => {
     },
   });
 
-  console.log(
-    "depts : ",
-    departments.map((item) => item.department)
-  );
 
   // Fetch Accepted Tickets
   const { data: acceptedTickets = [], isLoading } = useQuery({
