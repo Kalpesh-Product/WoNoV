@@ -8,8 +8,12 @@ import PrimaryButton from "../../../../../components/PrimaryButton";
 import { toast } from "sonner";
 import PageFrame from "../../../../../components/Pages/PageFrame";
 import { useSelector } from "react-redux";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import YearWiseTable from "../../../../../components/Tables/YearWiseTable";
+import {
+  isAlphanumeric,
+  noOnlyWhitespace,
+} from "../../../../../utils/validators";
 
 const Agreements = () => {
   const axios = useAxiosPrivate();
@@ -19,11 +23,11 @@ const Agreements = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [newAgreement, setNewAgreement] = useState("");
 
-  const {handleSubmit, control, setValue} = useForm({
+  const { handleSubmit, control, setValue } = useForm({
     defaultValues: {
-      agreementName : ""
-    }
-  })
+      agreementName: "",
+    },
+  });
 
   const agreementColumn = [
     {
@@ -148,20 +152,29 @@ const Agreements = () => {
         onClose={() => setModalOpen(false)}
         title="Add New Agreement"
       >
-        <div>
-          <TextField
-            label="Agreement Name"
-            fullWidth
-            value={newAgreement}
-            onChange={(e) => setNewAgreement(e.target.value)}
+        <form onSubmit={handleSubmit()} className="grid grid-cols-1 gap-4">
+          <Controller
+            name="agreementName"
+            control={control}
+            rules={{
+              required: "Agreement name is required",
+              validate: {
+                isAlphanumeric,
+                noOnlyWhitespace,
+              },
+            }}
+            render={({ field }) => (
+              <TextField {...field} label="Agreement Name" fullWidth size="small" />
+            )}
           />
-        </div>
-        <PrimaryButton
-          handleSubmit={handleAddAgreement}
-          type="submit"
-          title="Submit"
-          className="w-full mt-2"
-        />
+
+          <PrimaryButton
+            handleSubmit={handleAddAgreement}
+            type="submit"
+            title="Submit"
+            className="w-full mt-2"
+          />
+        </form>
       </MuiModal>
     </div>
   );
