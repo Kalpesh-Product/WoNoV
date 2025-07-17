@@ -20,6 +20,7 @@ import { IoCloseSharp } from "react-icons/io5";
 
 const LoginPage = () => {
   const { auth, setAuth } = useAuth();
+  const user = auth.user
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const [email, setEmail] = useState("");

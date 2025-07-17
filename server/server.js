@@ -64,7 +64,7 @@ app.get("/", (req, res) => {
   }
 });
 
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", auditLogger, authRoutes);
 
 app.use("/api/access", verifyJwt, auditLogger, accessRoutes);
 app.use("/api/company", verifyJwt, auditLogger, companyRoutes);

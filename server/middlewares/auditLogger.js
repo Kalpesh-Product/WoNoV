@@ -1,51 +1,128 @@
 const emitter = require("../utils/eventEmitter");
 
 const auditLogger = (req, res, next) => {
-  const startTime = Date.now();
+  try {
+    const startTime = Date.now();
 
-  // Only log meaningful HTTP methods
-  const validMethods = ["GET", "POST", "PATCH", "PUT", "DELETE"];
+    const validMethods = ["GET", "POST", "PATCH", "PUT", "DELETE"];
+    const cleanUrl = req.originalUrl.split("?")[0];
+    const pathSegments = cleanUrl.split("/").filter(Boolean);
 
-  if (!validMethods.includes(req.method)) return next();
+    // If last segment is alphanumeric or just numeric, it's likely an ID
+    const isPossiblyId = (segment) => /^[a-zA-Z0-9]+$/.test(segment);
 
-  //Do not store logs of refresh route
-  if (req.originalUrl.includes("refresh")) return next();
+    const lastSegment =
+      pathSegments.length > 1 && isPossiblyId(pathSegments.at(-1))
+        ? pathSegments.at(-2)
+        : pathSegments.at(-1);
 
-  if (
-    !req.body ||
-    (req.body.method === "POST" && Object.keys(req.body).length === 0)
-  )
-    return next();
+    // Skip invalid HTTP methods
+    if (!validMethods.includes(req.method)) return next();
 
-  // Setup once the response is done
-  res.on("finish", () => {
-    const status = res.statusCode;
-    const success = status < 400;
-    let logData = {};
+    // Skip GET methods except logout
+    if (req.method === "GET" && lastSegment !== "logout") {
+      return next();
+    }
 
-    // Storing data appended in query other than ids is pending
-    const sanitizedPayload = { ...req.body };
-    if ("password" in sanitizedPayload) sanitizedPayload.password = "***";
-    logData.payload = sanitizedPayload;
+    // Skip refresh token route
+    if (req.originalUrl.includes("refresh")) return next();
 
-    logData = {
-      performedBy: req?.user || null,
-      ipAddress: req.ip,
-      departments: req?.departments || "Unknown",
-      company: req?.company || null,
-      action: req.method === "GET" ? "View" : "Edit",
-      method: req.method,
-      path: req.originalUrl,
-      statusCode: status,
-      success,
-      payload: req.body, // 🔥 captures data that was submitted
-      responseTime: Date.now() - startTime, //milliseconds
-    };
+    // Skip if body is empty on methods other then GET
+    if (
+      !req.body &&
+      !isPossiblyId &&
+      req.method !== "GET" &&
+      Object.keys(req.body).length === 0
+    ) {
+      return next();
+    }
 
-    emitter.emit("storeLog", logData);
-  });
+    res.on("finish", async () => {
+      try {
+        const status = res.statusCode;
+        const success = status < 400;
+        const { method, ip } = req;
+        const url = req.originalUrl;
 
-  next();
+        const { performedBy, company } = req.logContext || {
+          performedBy: req.user,
+          company: req.company,
+        };
+
+        const parseJSONFields = (obj) => {
+          for (const key in obj) {
+            if (
+              typeof obj[key] === "string" &&
+              obj[key].startsWith("[") &&
+              obj[key].endsWith("]")
+            ) {
+              try {
+                const parsed = JSON.parse(obj[key]);
+                if (Array.isArray(parsed)) {
+                  obj[key] = parsed;
+                }
+              } catch (_) {
+                // leave as-is if not parseable
+              }
+            }
+          }
+          return obj;
+        };
+
+        const flattenObject = (obj, prefix = "", result = {}) => {
+          for (const key in obj) {
+            const value = obj[key];
+            const prefixedKey = prefix ? `${prefix}.${key}` : key;
+
+            if (
+              typeof value === "object" &&
+              value !== null &&
+              !Array.isArray(value)
+            ) {
+              flattenObject(value, prefixedKey, result);
+            } else {
+              result[prefixedKey] = value;
+            }
+          }
+          return result;
+        };
+
+        let combinedPayload = parseJSONFields({
+          ...(req.body || {}),
+          ...(req.params || {}),
+          ...(req.query || {}),
+        });
+
+        // Mask sensitive fields before flattening
+        ["password", "newPassword", "confirmPassword"].forEach((field) => {
+          if (field in combinedPayload) combinedPayload[field] = "***";
+        });
+
+        const updatedPayload = flattenObject(combinedPayload);
+
+        const logData = {
+          performedBy,
+          ipAddress: ip,
+          company,
+          action: lastSegment,
+          method,
+          path: url,
+          statusCode: status,
+          success,
+          payload: updatedPayload,
+          responseTime: Date.now() - startTime,
+        };
+
+        emitter.emit("storeLog", logData);
+      } catch (error) {
+        console.error("Error in auditLogger:", error.message);
+      }
+    });
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 };
 
 module.exports = auditLogger;
