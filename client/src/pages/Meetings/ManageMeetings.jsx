@@ -614,7 +614,7 @@ const ManageMeetings = () => {
             <div className="font-bold">Basic Info</div>
             <DetalisFormatted
               title="Title"
-              detail={selectedMeeting?.title || "Title"}
+              detail={selectedMeeting?.subject || "Title"}
             />
             <DetalisFormatted
               title="Agenda"
