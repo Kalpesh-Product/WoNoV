@@ -46,6 +46,24 @@ const MaintainanceDashboard = () => {
   });
 
   //----------------------Monthly average-----------------------//
+  //----------------------KPA Data-----------------------//
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(
+        `api/performance/get-tasks?dept=${department?._id}&type=KPA`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+  const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
+    queryKey: ["fetchedMonthlyKPA"],
+    queryFn: fetchDepartments,
+  });
+
+  console.log("department KPA : ", departmentKra.length);
+  //----------------------KPA Data-----------------------//
   const monthlyGroups = {};
 
   hrFinance.forEach((item) => {
@@ -799,9 +817,9 @@ const MaintainanceDashboard = () => {
           description={"Assets Under Management"}
         />,
         <DataCard
-          route={"annual-expenses"}
+          route={`/app/performance`}
           title={"Total"}
-          data={0}
+          data={departmentKra.length || 0}
           description={"Monthly KPA"}
         />,
       ],
