@@ -151,7 +151,7 @@ const updateRoom = async (req, res, next) => {
 
   try {
     const { id: roomId } = req.params;
-    const { name, description, seats, location } = req.body;
+    const { name, description, seats, location, isActive } = req.body;
 
     if (!roomId) {
       throw new CustomError(
@@ -219,6 +219,8 @@ const updateRoom = async (req, res, next) => {
 
     // Only update fields if they were provided and changed
     const updatedFields = {};
+    if (typeof isActive === "boolean" && isActive !== room.isActive)
+      updatedFields.isActive = isActive;
     if (name && name !== room.name) updatedFields.name = name;
     if (description && description !== room.description) {
       updatedFields.description = description;
@@ -230,7 +232,7 @@ const updateRoom = async (req, res, next) => {
 
     Object.assign(room, updatedFields);
 
-    const updatedRoom = await room.save();
+    const updatedRoom = await room.save({ validateBeforeSave: false });
 
     // Log the successful update
     await createLog({

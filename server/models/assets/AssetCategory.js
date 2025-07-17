@@ -17,25 +17,7 @@ const categorySchema = new mongoose.Schema({
   company: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Company",
-  },
-  subCategories: [
-    {
-      name: {
-        type: String,
-        required: true,
-      },
-      assets: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Asset",
-        },
-      ],
-      isActive: {
-        type: Boolean,
-        default: true,
-      },
-    },
-  ],
+  }
 });
 
 const AssetCategory = mongoose.model("AssetCategory", categorySchema);
