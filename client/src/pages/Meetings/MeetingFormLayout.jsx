@@ -95,13 +95,11 @@ const MeetingFormLayout = () => {
   const isReceptionist = auth.user?.role?.some((item) =>
     item.roleTitle.startsWith("Administration")
   );
-  console.log("check : ", auth?.user?.role);
 
   useEffect(() => {
     if (!isReceptionist) {
       setValue("company", "6799f0cd6a01edbe1bc3fcea");
     }
-    console.log("recep : ", isReceptionist);
   }, [isReceptionist, setValue]);
 
   const meetingType = watch("meetingType");

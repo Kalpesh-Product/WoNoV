@@ -4,8 +4,9 @@ import { api } from "../utils/axios";
 import { toast } from "sonner";
 
 export default function useLogout() {
-  const { setAuth } = useAuth();
+  const { setAuth, auth } = useAuth();
   const navigate = useNavigate();
+  const user = auth.user;
 
   const logout = async () => {
     try {
