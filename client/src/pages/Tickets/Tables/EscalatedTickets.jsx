@@ -70,8 +70,10 @@ const EscalatedTickets = ({ title, departmentId }) => {
               : null;
 
           const raisedBy = `${ticket.raisedBy?.firstName} ${ticket.raisedBy?.lastName}`;
-          const acceptedBy = ticket.acceptedBy ? `${ticket.acceptedBy?.firstName} ${ticket.acceptedBy?.lastName}` : "N/A";
- 
+          const acceptedBy = ticket.acceptedBy
+            ? `${ticket.acceptedBy?.firstName} ${ticket.acceptedBy?.lastName}`
+            : "N/A";
+
           const escalatedTicket = {
             srno: index + 1,
             id: ticket._id,
@@ -106,13 +108,13 @@ const EscalatedTickets = ({ title, departmentId }) => {
   const rows = isLoading ? [] : transformTicketsData(escalatedTickets);
 
   const recievedTicketsColumns = [
-    { field: "srno", headerName: "Sr No", width : 100 },
+    { field: "srno", headerName: "Sr No", width: 100 },
     { field: "raisedBy", headerName: "Raised By" },
     {
       field: "selectedDepartment",
       headerName: "From Department",
     },
-    { field: "ticketTitle", headerName: "Ticket Title", width:250 },
+    { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     {
       field: "tickets",
       headerName: "Tickets",
@@ -207,17 +209,27 @@ const EscalatedTickets = ({ title, departmentId }) => {
     {
       field: "action",
       headerName: "Action",
-      pinned : 'right',
-      cellRenderer: (params) => (
-        <div className="flex items-center gap-2">
-          <div
-            role="button"
-            onClick={() => handleViewTicket(params.data)}
-            className="p-2 rounded-full hover:bg-borderGray cursor-pointer">
-            <MdOutlineRemoveRedEye />
-          </div>
-        </div>
-      ),
+      pinned: "right",
+      cellRenderer: (params) => {
+        const menuItems = [
+          {
+            label: "View",
+            onClick: () => handleViewTicket(params.data),
+          },
+        ];
+
+        // Allow closing the original ticket only if escalated ticket is closed
+        const isClosed = params.data.escalatedStatus === "Closed";
+        if (isClosed) {
+          menuItems.push({
+            label: "Close",
+            onClick: () => mutate(params.data.id),
+          });
+        }
+        return (
+          <ThreeDotMenu rowId={params.data.meetingId} menuItems={menuItems} />
+        );
+      },
     },
   ];
 
@@ -231,7 +243,8 @@ const EscalatedTickets = ({ title, departmentId }) => {
         <MuiModal
           open={openView}
           onClose={() => setOpenView(false)}
-          title="View Escalated Ticket">
+          title="View Escalated Ticket"
+        >
           {selectedTicket && (
             <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
               <DetalisFormatted

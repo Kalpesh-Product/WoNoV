@@ -29,6 +29,16 @@ const addEmployeeType = async (req, res, next) => {
       );
     }
 
+    const existingEmployeeType = await Company.findOne({
+      "employeeTypes.name": { $in: employeeType },
+    });
+
+    if (existingEmployeeType) {
+      return res
+        .status(400)
+        .json({ message: "The employee type already exists" });
+    }
+
     const updateEmployeeType = await Company.findByIdAndUpdate(
       { _id: company },
       {

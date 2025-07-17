@@ -55,10 +55,6 @@ const ClosedTickets = ({ title, departmentId }) => {
         }));
   };
 
-  useEffect(() => {
-    console.log("selectedTicket : ", viewTicketDetails);
-  }, [viewTicketDetails]);
-
   const rows = isLoading ? [] : transformTicketsData(data);
 
   const recievedTicketsColumns = [

@@ -30,6 +30,14 @@ const addShift = async (req, res, next) => {
       );
     }
 
+    const existingShift = await Company.findOne({
+      "shifts.name": { $in: shiftName },
+    });
+
+    if (existingShift) {
+      return res.status(400).json({ message: "The shift already exists" });
+    }
+
     const updatedCompany = await Company.updateOne(
       { _id: company },
       {
