@@ -16,7 +16,7 @@ const FinanceBudgetLayout = () => {
     <TabLayout
       tabs={tabs}
       basePath={"/app/dashboard/finance-dashboard/finance"}
-      defaultTabPath={"/app/dashboard/finance-dashboard/finance/budget"}
+      defaultTabPath={"budget"}
       hideTabsOnPaths={[
         "/app/dashboard/finance-dashboard/finance/dept-wise-budget/:id",
         "/app/dashboard/finance-dashboard/finance/landlord-payments-unit",

@@ -493,7 +493,7 @@ const VisitorDashboard = () => {
       ],
     },
     {
-      layout: 6,
+      layout: 5,
       widgets: [
         <Card
           route={"/app/visitors/add-visitor"}
@@ -520,11 +520,11 @@ const VisitorDashboard = () => {
           title={"Reports"}
           icon={<CgProfile />}
         />,
-        <Card
-          route={"/app/visitors/reviews"}
-          title={"Reviews"}
-          icon={<RiPagesLine />}
-        />,
+        // <Card
+        //   route={"/app/visitors/reviews"}
+        //   title={"Reviews"}
+        //   icon={<RiPagesLine />}
+        // />,
       ],
     },
     {
