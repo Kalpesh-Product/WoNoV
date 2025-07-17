@@ -1,11 +1,6 @@
 import { useState } from "react";
 import AgTable from "../../../../components/AgTable";
-import {
-  Chip,
-  TextField,
-  IconButton,
-  DialogActions,
-} from "@mui/material";
+import { Chip, TextField, IconButton, DialogActions } from "@mui/material";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import MuiModal from "../../../../components/MuiModal";
@@ -32,7 +27,7 @@ const HrSettingsPolicies = () => {
     reset,
     formState: { errors },
   } = useForm({
-    mode:"onChange",
+    mode: "onChange",
     defaultValues: {
       policyName: "",
       file: null,
@@ -42,16 +37,22 @@ const HrSettingsPolicies = () => {
   const { data: policies = [] } = useQuery({
     queryKey: ["policies"],
     queryFn: async () => {
-      const response = await axios.get("/api/company/get-company-documents/policies");
+      const response = await axios.get(
+        "/api/company/get-company-documents/policies"
+      );
       return response.data.policies;
     },
   });
 
   const addPolicyMutation = useMutation({
     mutationFn: async (formData) => {
-      const response = await axios.post("/api/company/upload-company-document", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await axios.post(
+        "/api/company/upload-company-document",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
       return response.data;
     },
     onSuccess: () => {
@@ -67,14 +68,16 @@ const HrSettingsPolicies = () => {
 
   const updatePolicyMutation = useMutation({
     mutationFn: async (payload) => {
-
-      const response = await axios.patch(`/api/company/update-company-data`, payload);
+      const response = await axios.patch(
+        `/api/company/update-company-data`,
+        payload
+      );
       return response.data;
     },
     onSuccess: () => {
       toast.success("Policy updated successfully");
       queryClient.invalidateQueries(["policies"]);
-       reset();
+      reset();
       setOpenModal(false);
     },
     onError: (error) => {
@@ -102,6 +105,11 @@ const HrSettingsPolicies = () => {
     setModalType("inactive");
     setOpenModal(true);
   };
+  const handleActive = (row) => {
+    setSelectedPolicy(row);
+    setModalType("inactive");
+    setOpenModal(true);
+  };
 
   const handleUpdatePolicy = (data) => {
     updatePolicyMutation.mutate({
@@ -119,6 +127,15 @@ const HrSettingsPolicies = () => {
       oldDocumentName: selectedPolicy.policyname,
       newDocumentName: null,
       isActive: false,
+    });
+  };
+  const handleMarkActive = () => {
+    updatePolicyMutation.mutate({
+      type: "policies",
+      itemId: selectedPolicy.mongoId,
+      oldDocumentName: selectedPolicy.policyname,
+      newDocumentName: null,
+      isActive: true,
     });
   };
 
@@ -139,7 +156,7 @@ const HrSettingsPolicies = () => {
         </a>
       ),
     },
-      {
+    {
       field: "uploadedDate",
       headerName: "Uploaded Date",
       width: 150,
@@ -170,9 +187,19 @@ const HrSettingsPolicies = () => {
         const actions = [
           { label: "Edit", onClick: () => handleEdit(params.data) },
         ];
-        if (isActive) {
-          actions.push({ label: "Mark As Inactive", onClick: () => handleInactive(params.data) });
+
+        if (isActive === true) {
+          actions.push({
+            label: "Mark As Inactive",
+            onClick: () => handleInactive(params.data),
+          });
+        } else if (isActive === false) {
+          actions.push({
+            label: "Mark As Active",
+            onClick: () => handleActive(params.data), // You probably want a separate handler here
+          });
         }
+
         return <ThreeDotMenu rowId={params.data.id} menuItems={actions} />;
       },
     },
@@ -188,7 +215,7 @@ const HrSettingsPolicies = () => {
         buttonTitle="Add Policy"
         handleClick={() => {
           setModalType("add");
-          reset({ policyName: "", file: null })
+          reset({ policyName: "", file: null });
           setOpenModal(true);
         }}
         columns={columns}
@@ -214,15 +241,7 @@ const HrSettingsPolicies = () => {
             : "Add New Policy"
         }
       >
-        {modalType === "inactive" ? (
-          <div className="space-y-4">
-            <p>Are you sure you want to mark <b>{selectedPolicy?.policyname}</b> as inactive?</p>
-            <DialogActions>
-              <PrimaryButton title="Confirm" handleSubmit={handleMarkInactive} />
-              <PrimaryButton title="Cancel" handleSubmit={() => setOpenModal(false)} />
-            </DialogActions>
-          </div>
-        ) : (
+        {modalType === "edit" && (
           <form
             onSubmit={handleSubmit(
               modalType === "edit" ? handleUpdatePolicy : handleAddPolicy
@@ -273,7 +292,11 @@ const HrSettingsPolicies = () => {
                       InputProps={{
                         readOnly: true,
                         endAdornment: (
-                          <IconButton color="primary" component="label" htmlFor="image-upload">
+                          <IconButton
+                            color="primary"
+                            component="label"
+                            htmlFor="image-upload"
+                          >
                             <LuImageUp />
                           </IconButton>
                         ),
@@ -287,10 +310,47 @@ const HrSettingsPolicies = () => {
             <PrimaryButton
               title={modalType === "edit" ? "Update Policy" : "Add Policy"}
               type="submit"
-              isLoading={addPolicyMutation.isPending || updatePolicyMutation.isPending}
-              disabled={addPolicyMutation.isPending || updatePolicyMutation.isPending}
+              isLoading={
+                addPolicyMutation.isPending || updatePolicyMutation.isPending
+              }
+              disabled={
+                addPolicyMutation.isPending || updatePolicyMutation.isPending
+              }
             />
           </form>
+        )}
+        {modalType === "inactive" && (
+          <div className="space-y-4">
+            <p>
+              Are you sure you want to mark <b>{selectedPolicy?.policyname}</b>{" "}
+              as inactive?
+            </p>
+            <DialogActions>
+              <PrimaryButton
+                title="Confirm"
+                handleSubmit={handleMarkInactive}
+              />
+              <PrimaryButton
+                title="Cancel"
+                handleSubmit={() => setOpenModal(false)}
+              />
+            </DialogActions>
+          </div>
+        )}
+        {modalType === "active" && (
+          <div className="space-y-4">
+            <p>
+              Are you sure you want to mark <b>{selectedPolicy?.policyname}</b>{" "}
+              as active
+            </p>
+            <DialogActions>
+              <PrimaryButton title="Confirm" handleSubmit={handleMarkActive} />
+              <PrimaryButton
+                title="Cancel"
+                handleSubmit={() => setOpenModal(false)}
+              />
+            </DialogActions>
+          </div>
         )}
       </MuiModal>
     </PageFrame>

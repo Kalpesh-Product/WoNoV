@@ -8,8 +8,16 @@ const statusColorMap = {
   completed: { backgroundColor: "#D3D3D3", color: "#696969" },
   Approved: { backgroundColor: "#90EE90", color: "#006400" },
   Paid: { backgroundColor: "#90EE90", color: "#006400" },
-  Unpaid: { backgroundColor: "#FDECEA", color: "#B71C1C" }
-,
+  Unpaid: { backgroundColor: "#FDECEA", color: "#B71C1C" },
+
+  Upcoming: { bg: "#E3F2FD", text: "#1565C0" }, // Light Blue
+  Ongoing: { bg: "#FFF3E0", text: "#E65100" }, // Light Orange
+  Completed: { bg: "#E8F5E9", text: "#1B5E20" }, // Light Green
+  Cancelled: { bg: "#FFEBEE", text: "#B71C1C" }, // Light Red
+  Available: { bg: "#E3F2FD", text: "#0D47A1" },
+  Occupied: { bg: "#ECEFF1", text: "#37474F" },
+  Cleaning: { bg: "#E0F2F1", text: "#00796B" },
+  "In Progress": { bg: "#FBE9E7", text: "#BF360C" },
 };
 
 const StatusChip = ({ status }) => {
